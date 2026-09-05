@@ -1,3 +1,4 @@
+import { logEvent } from './logging.js';
 import { htmlEscape } from "./format.js";
 
 const RESEND_EMAILS_URL = "https://api.resend.com/emails";
@@ -43,10 +44,14 @@ export function agapayEmailHtml(appUrl, title, bodyHtml) {
   `;
 }
 
-export async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 0 } = {}) {
+export async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 10000 } = {}) {
   const apiKey = String(env.RESEND_API_KEY || "").trim();
   if (!apiKey) return { status: "not_configured" };
 
+  // Invalid overrides cannot accidentally disable the provider deadline.
+  const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(Math.ceil(timeoutMs), 30000) : 10000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), deadlineMs);
   try {
     const response = await fetch(RESEND_EMAILS_URL, {
       method: "POST",
@@ -57,13 +62,15 @@ export async function sendEmail(env, message, { idempotencyKey = '', timeoutMs =
         ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       },
       body: JSON.stringify(message),
-      ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
+      signal: controller.signal,
     });
     const bodyText = await response.text();
     let body = {};
     try { body = bodyText ? JSON.parse(bodyText) : {}; } catch { body = {}; }
     if (!response.ok) {
+      await logEvent(env, { eventType: 'email.delivery.failed', severity: 'warn', metadata: { errorClass: 'provider_rejected', httpStatus: response.status } });
       return {
+        errorCode: 'provider_rejected',
         status: "failed",
         httpStatus: response.status,
         body: bodyText,
@@ -71,7 +78,13 @@ export async function sendEmail(env, message, { idempotencyKey = '', timeoutMs =
       };
     }
     return { status: "sent", httpStatus: response.status, body: bodyText, id: body.id || "" };
-  } catch (error) {
-    return { status: "error", detail: error?.message || "Email request failed", error: error?.message || String(error) };
+  } catch {
+    const errorCode = controller.signal.aborted ? 'timeout' : 'network_error';
+    const detail = errorCode === 'timeout' ? 'Email provider did not respond before the deadline; delivery is unconfirmed.' : 'Email provider request failed; delivery is unconfirmed.';
+    await logEvent(env, { eventType: 'email.delivery.failed', severity: 'warn', metadata: { errorClass: errorCode, deadlineMs } });
+    // A timeout may occur after acceptance; retries belong to the idempotent caller.
+    return { status: 'error', errorCode, detail, error: detail };
+  } finally {
+    clearTimeout(timer);
   }
 }

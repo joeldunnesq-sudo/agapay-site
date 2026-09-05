@@ -25,7 +25,7 @@ assert.match(givePage, /href="\/downloads\/agapay-parish-council-overview\.pdf" 
 assert.match(givePage, /href="\/give\/request-demo"/, "the consolidated Give page must preserve the guided-demo path");
 
 assert.match(requestDemoPage, /attribution: window.getAgapayAttribution/);
-const backendSuccessCheck = requestDemoPage.indexOf('if (!response.ok || !payload.ok) throw new Error');
+const backendSuccessCheck = requestDemoPage.indexOf('if (!response.ok || !payload.ok) {');
 const leadCall = requestDemoPage.indexOf("trackLeadOnce();", backendSuccessCheck);
 assert.ok(backendSuccessCheck > -1 && leadCall > backendSuccessCheck, "Lead must fire only after backend-confirmed success");
 assert.match(requestDemoPage, /trackMetaStandardEvent\("Lead", \{ content_name: "AGAPAY Parish Demo Request" \}\)/);

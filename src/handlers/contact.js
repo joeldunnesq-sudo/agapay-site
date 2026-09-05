@@ -1,3 +1,4 @@
+import { safeErrorClass } from '../lib/request-context.js';
 import { d1, json, rateLimit, unauthorized } from '../lib/core.js';
 import { cleanText } from '../../public/attribution-core.js';
 import { sanitizeAttribution } from '../lib/lead-attribution.js';
@@ -56,8 +57,8 @@ export async function handleContact(request, env) {
     const delivery = await deliverContactNotification(env, id);
     return json({ ok: true, reference: id, notificationStatus: delivery.status,
       message: delivery.status === 'sent' ? 'Your message was received.' : 'Your message was saved for the AGAPAY team to follow up.' }, { status: 200 });
-  } catch {
-    await logEvent(env, { eventType: 'contact.submission.failed', severity: 'error', jobId: id || null, retryable: true });
+  } catch (error) {
+    await logEvent(env, { eventType: 'contact.submission.failed', severity: 'error', jobId: id || null, retryable: true, metadata: { errorClass: safeErrorClass(error) } });
     // If persistence succeeded, acknowledge receipt without falsely claiming delivery.
     if (id) return json({ ok: true, reference: id, notificationStatus: 'review_required', message: 'Your message was saved for the AGAPAY team to follow up.' });
     return json({ error: 'Unable to save your message. Please try again.' }, { status: 503 });

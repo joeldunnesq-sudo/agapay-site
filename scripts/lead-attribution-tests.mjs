@@ -8,7 +8,7 @@ import { attributionEmail } from '../src/lib/lead-attribution.js';
 import { sanitizePublicRegistrationInput } from '../src/lib/registration-intake.js';
 import { sendAdminRegistrationNotice } from '../src/lib/parish-notifications.js';
 
-const browserSource = readFileSync('public/attribution.js', 'utf8').replace(/^import .*\n/, '').replace('export function', 'function');
+const browserSource = readFileSync('public/attribution.js', 'utf8').replace(/^import .*\r?\n/, '').replace('export function', 'function');
 function storage() {
   const data = new Map();
   return { getItem: key => data.get(key) || null, setItem: (key, value) => data.set(key, value), data };

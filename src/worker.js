@@ -1,3 +1,4 @@
+import { withRequestDiagnostics } from './lib/request-diagnostics.js';
 export { RateLimiter } from './operations/rate-limiter.js';
 import { routeAdminRequest } from "./routes/admin.js";
 import { routeAccountingRequest } from "./routes/accounting.js";
@@ -319,7 +320,7 @@ const API_ROUTE_REGISTRIES = Object.freeze([
   routeParishRequest,
 ]);
 
-export default {
+export default withRequestDiagnostics({
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     await assertRestoreSafe(env);
@@ -764,4 +765,4 @@ export default {
 
     return fetchCleanAsset(request, env);
   }
-};
+});

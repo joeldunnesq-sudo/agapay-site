@@ -1,3 +1,4 @@
+import { requestContext } from './request-context.js';
 // Structured, sanitized event logging for Cloudflare Worker log ingestion.
 //
 // This is intentionally NOT a durable store — it emits JSON lines to
@@ -102,12 +103,14 @@ export async function logEvent(env, fields = {}) {
     metadata = null,
   } = fields;
 
+  const context = requestContext.getStore();
   const line = {
     eventType: eventType || "unknown",
     severity,
-    requestId,
-    route,
-    method,
+    requestId: context?.requestId || requestId,
+    route: context?.route || route,
+    method: context?.method || method,
+    durationMs: context ? Math.max(0, Date.now() - context.startedAt) : null,
     userId,
     organizationId,
     stripeEventId,
@@ -115,7 +118,7 @@ export async function logEvent(env, fields = {}) {
     errorName: errorName || (error && error.name) || null,
     errorMessage: error ? sanitizedErrorMessage(error) : null,
     retryable,
-    deploymentVersion: env?.AGAPAY_BUILD_SHA || "unknown",
+    deploymentVersion: context?.deploymentVersion || env?.AGAPAY_BUILD_SHA || "unknown",
     timestamp: new Date().toISOString(),
     metadata: metadata ? sanitize(metadata) : null,
   };

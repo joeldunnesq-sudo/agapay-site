@@ -8,12 +8,13 @@ try {
   const context = await browser.newContext();
   const page = await context.newPage();
   const submissions = [];
+  let failSubmission = false;
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'agapay.test') return route.fulfill({ status: 204, body: '' });
     if (url.pathname === '/api/contact') {
       submissions.push(route.request().postDataJSON());
-      return route.fulfill({ contentType: 'application/json', body: '{"ok":true}' });
+      return route.fulfill(failSubmission ? { status: 503, headers: { 'X-Request-ID': 'browser-failure-reference' }, contentType: 'application/json', body: '{"error":"Unable to save your message."}' } : { contentType: 'application/json', body: '{"ok":true}' });
     }
     let path = url.pathname;
     if (path === '/') path = '/index.html';
@@ -26,7 +27,7 @@ try {
     } catch { return route.fulfill({ status: 404, body: '' }); }
   });
   const ready = () => page.waitForFunction(() => typeof window.getAgapayAttribution === 'function');
-  const contact = async () => {
+  const contact = async (expected = /Message sent/) => {
     await page.locator('[name=name]').fill('Test User');
     await page.locator('[name=email]').fill('test@example.com');
     await page.locator('[name=topic]').selectOption({ index: 1 });
@@ -35,7 +36,7 @@ try {
     await page.locator('button[type=submit]').click();
     await response;
     await page.locator('#formStatus.visible').waitFor();
-    assert.match(await page.locator('#formStatus').textContent(), /Message sent/);
+    assert.match(await page.locator('#formStatus').textContent(), expected);
   };
   await page.goto('https://agapay.test/give?utm_source=facebook&utm_medium=paid&utm_campaign=agapay-give');
   await ready();
@@ -63,5 +64,22 @@ try {
   await page.reload();
   await contact();
   assert.equal(submissions[2].attribution, null);
-  console.log('PASS - Chromium demo navigation, direct return contact, and blocked tracking module submissions');
+  await page.reload();
+  failSubmission = true;
+  await contact(/Reference: browser-failure-reference/);
+  const failedKey = submissions.at(-1).submissionId;
+  failSubmission = false;
+  await contact();
+  assert.equal(submissions.at(-1).submissionId, failedKey, 'network/server retries keep the same submission key');
+  await page.goto('https://agapay.test/give/request-demo');
+  await page.locator('[name=name]').fill('Test User');
+  await page.locator('[name=email]').fill('test@example.com');
+  await page.locator('[name=parish]').fill('Test Parish');
+  await page.locator('[name=role]').selectOption({ index: 1 });
+  failSubmission = true;
+  const failureResponse = page.waitForResponse('**/api/contact');
+  await page.locator('button[type=submit]').click();
+  await failureResponse;
+  await page.getByText(/Reference: browser-failure-reference/).waitFor();
+  console.log('PASS - Chromium attribution, blocked tracking, contact/demo failure references, and idempotent form retries');
 } finally { await browser.close(); }
