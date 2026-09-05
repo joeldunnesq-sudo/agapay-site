@@ -1,3 +1,4 @@
+import { visibleDonationRecords } from '../payments/donation-events.js';
 // src/handlers/parish-giving-read-models.js
 // Paid and recurring giving read models for parish dashboards.
 
@@ -166,21 +167,23 @@ export async function loadParishRecurringOfferings(env, parishId, limit = 1000) 
       parishId,
       limit
     );
-    return rows
-      .map((row) => {
-        const offering = parseJsonRow(row);
-        if (!offering) return null;
-        return {
-          ...offering,
-          id: offering.id || row.id || '',
-          status: offering.status || row.status || '',
-          paymentStatus: offering.paymentStatus || row.payment_status || '',
-          stripeSubscriptionId: offering.stripeSubscriptionId || row.stripe_subscription_id || '',
-          createdAt: offering.createdAt || row.created_at || '',
-          updatedAt: offering.updatedAt || row.updated_at || '',
-        };
-      })
-      .filter(Boolean);
+    return visibleDonationRecords(
+      rows
+        .map((row) => {
+          const offering = parseJsonRow(row);
+          if (!offering) return null;
+          return {
+            ...offering,
+            id: offering.id || row.id || '',
+            status: offering.status || row.status || '',
+            paymentStatus: offering.paymentStatus || row.payment_status || '',
+            stripeSubscriptionId: offering.stripeSubscriptionId || row.stripe_subscription_id || '',
+            createdAt: offering.createdAt || row.created_at || '',
+            updatedAt: offering.updatedAt || row.updated_at || '',
+          };
+        })
+        .filter(Boolean)
+    );
   }
 
   if (!env.AGAPAY_REGISTRATIONS) return [];
@@ -199,7 +202,9 @@ export async function loadParishRecurringOfferings(env, parishId, limit = 1000) 
       }
     } catch {}
   }
-  return offerings.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, limit);
+  return visibleDonationRecords(
+    offerings.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, limit)
+  );
 }
 
 export function summarizeParishRecurringHealth(records = []) {

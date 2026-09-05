@@ -1,3 +1,5 @@
+import { deliverDonationReceipt, sendDonationReceiptMessage } from '../payments/donation-receipts.js';
+import { subscriptionSetupUpdates } from '../payments/donation-events.js';
 import { addOutsideDonorPledgeSummary } from "../lib/outside-pledges.js";
 import { logEvent } from "../lib/logging.js";
 import { directoryInvitationNext } from "../lib/directory-invitation-next.js";
@@ -52,7 +54,6 @@ import {
   findCheckoutParish,
   findRegistrationByParishId,
   loadDonorOfferingByCheckout,
-  loadDonorOfferingByPaymentIntent,
   loadDonorOfferings,
   loadReconciledDonorCommemorations,
   migrateDonorEmailReferences,
@@ -62,7 +63,6 @@ import {
   reconcilePendingDonorOfferings,
   requireDonor,
   slugify,
-  storeDonorOffering,
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
 } from "./parish.js";
@@ -125,7 +125,7 @@ export async function handleDonorClaimCheckout(request, env) {
     const paymentIntentId = checkoutPaymentIntentId(verifiedSession);
     const paymentStatus = normalizedCheckoutPaymentStatus(verifiedSession, offering.paymentStatus);
     let status = offering.status || "checkout_created";
-    if (paymentStatus === "paid" || verifiedSession.status === "complete") status = "completed";
+    if (paymentStatus === "paid") status = "completed";
     if (verifiedSession.status === "expired") status = "expired";
     const feeUpdates = status === "completed" || paymentStatus === "paid" ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering) : {};
     await updateDonorOfferingByCheckout(env, sessionId, {
@@ -136,11 +136,12 @@ export async function handleDonorClaimCheckout(request, env) {
       stripeSubscriptionId: verifiedSession.subscription || offering.stripeSubscriptionId || "",
       completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || "",
       ...feeUpdates,
+      ...subscriptionSetupUpdates(verifiedSession, offering),
     });
   }
 
   const refreshed = (await loadDonorOfferingByCheckout(env, sessionId)) || offering;
-  const isPaid = refreshed.status === "completed" || refreshed.paymentStatus === "paid" || refreshed.paymentStatus === "succeeded";
+  const isPaid = verifiedSession?.payment_status === "paid" || paidOfferingStatus(refreshed);
   if (!isPaid) {
     return json({ error: "Payment is still processing. Please wait and try again in a moment." }, { status: 409 });
   }
@@ -420,7 +421,7 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
       <p style="margin:0 0 18px;padding:13px 15px;border-left:3px solid #C9A25B;background:#FFF8EA;font-size:14px;line-height:1.65;color:#171715;">
         Next time, you can choose to cover the processing fees so ${parishName} receives the full intended gift.
       </p>`;
-  return sendEmail(env, {
+  return sendDonationReceiptMessage(env, offering, {
     from,
     to: [donorEmail],
     reply_to: replyTo,
@@ -450,29 +451,7 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
 }
 
 export async function sendDonationReceiptIfNeeded(env, offering = {}) {
-  if (!offering) return offering;
-  if (offering.emailReceiptSentAt) return offering;
-  const paidLike = offering.status === "completed" || offering.paymentStatus === "paid" || offering.paymentStatus === "succeeded";
-  if (!paidLike) return offering;
-
-  let current = offering;
-  if (offering.checkoutSessionId) {
-    const byCheckout = await loadDonorOfferingByCheckout(env, offering.checkoutSessionId);
-    if (byCheckout) current = byCheckout;
-  } else if (offering.stripePaymentIntentId) {
-    const byIntent = await loadDonorOfferingByPaymentIntent(env, offering.stripePaymentIntentId);
-    if (byIntent) current = byIntent;
-  }
-  if (current.emailReceiptSentAt) return current;
-
-  const email = await sendDonorDonationReceiptEmail(env, current);
-  const updates = {
-    emailReceiptStatus: email.status || "unknown",
-    emailReceiptId: email.id || "",
-    emailReceiptDetail: email.detail || "",
-    emailReceiptSentAt: email.status === "sent" ? new Date().toISOString() : "",
-  };
-  return storeDonorOffering(env, { ...current, ...updates });
+  return deliverDonationReceipt(env, offering, sendDonorDonationReceiptEmail);
 }
 
 export async function handleDonorSignup(request, env) {

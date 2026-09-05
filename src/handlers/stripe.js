@@ -1,3 +1,4 @@
+import { subscriptionSetupUpdates, invoiceDonationMetadata, invoicePaymentIntentId, invoiceSubscriptionId } from '../payments/donation-events.js';
 import {
   claimStripeEvent,
   finishStripeEvent,
@@ -41,6 +42,7 @@ import {
   stripeAccountStatus,
   stripeFormRequest,
   stripeGetRequest,
+  stripeGetConnectedRequest,
   stripeObjectId,
 } from "../lib/stripe-connect.js";
 import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
@@ -53,6 +55,7 @@ import {
   appendAdminAudit,
   findRegistrationByStripeAccountId,
   findRegistrationByStripeSubscriptionId,
+  findCheckoutParish,
   loadDonorOfferingByCheckout,
   loadDonorOfferingByPaymentIntent,
   loadRegistrationByReference,
@@ -517,9 +520,15 @@ export async function processStripeWebhookEvent(env, event) {
       return;
     }
 
-    const paymentStatus = object.payment_status || "paid";
-    const status = paymentStatus === "paid" || object.mode === "subscription" ? "completed" : "pending";
     const existingOffering = object.id ? await loadDonorOfferingByCheckout(env, object.id) : null;
+    const setup = (existingOffering || object.metadata?.donor_email) && subscriptionSetupUpdates(object);
+    if (setup) {
+      await updateDonorOfferingByCheckout(env, object.id, setup);
+      return;
+    }
+
+    const paymentStatus = object.payment_status || "pending";
+    const status = paymentStatus === "paid" ? "completed" : "pending";
     const paymentIntentId = checkoutPaymentIntentId(object);
     const feeUpdates = status === "completed" && paymentIntentId
       ? await stripePaymentIntentFinancialUpdates(
@@ -684,9 +693,17 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "invoice.payment_succeeded" || event.type === "invoice.paid") {
-    const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
+    const metadata = invoiceDonationMetadata(object);
     if (metadata.donor_email) {
-      const paymentIntentId = stripeObjectId(object.payment_intent);
+      let paymentIntentId = invoicePaymentIntentId(object);
+      if (!paymentIntentId && env.STRIPE_SECRET_KEY) {
+        const accountId = event.account || (await findCheckoutParish(env, metadata.parish_id))?.stripeAccountId;
+        if (!accountId) throw new Error('The recurring donation invoice has no connected parish account.');
+        const invoice = await stripeGetConnectedRequest(env,
+          `/v1/invoices/${encodeURIComponent(object.id)}?expand[]=payments.data.payment.payment_intent`, accountId);
+        if (!invoice.ok) throw new Error('Unable to resolve the recurring donation invoice payment.');
+        paymentIntentId = invoicePaymentIntentId(invoice.body);
+      }
       const giftAmountCents = numericCents(metadata.amount_cents) || numericCents(object.amount_paid);
       const feeUpdates = paymentIntentId
         ? await stripePaymentIntentFinancialUpdates(
@@ -717,7 +734,7 @@ export async function processStripeWebhookEvent(env, event) {
         fund: metadata.fund || "",
         fundId: metadata.fund_id || "",
         campaign: metadata.campaign || "",
-        campaignId: metadata.campaign || "",
+        campaignId: metadata.campaign_id || "",
         campaignDescription: metadata.campaign_description || "",
         publicAnonymous: booleanFromStripeMetadata(metadata.public_anonymous, false),
         publicDisplayName: metadata.public_display_name || metadata.donor_name || object.customer_name || "",
@@ -736,13 +753,15 @@ export async function processStripeWebhookEvent(env, event) {
         paymentStatus: "paid",
         stripeCustomerId: object.customer || "",
         stripePaymentIntentId: paymentIntentId,
-        stripeSubscriptionId: object.subscription || "",
+        stripeSubscriptionId: invoiceSubscriptionId(object),
+        stripeInvoiceId: object.id,
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
         commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
         ...feeUpdates
       });
+      if (storedOffering) await wireGivingOfferingToAccounting(env, storedOffering);
       await ensureCommemorationEntryFromOffering(env, storedOffering || {}, {
         id: object.id,
         parishId: metadata.parish_id || "",
