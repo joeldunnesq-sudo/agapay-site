@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { completeGateMfa, gateMfaSecretName } from './lib/release-gate-mfa.mjs';
 
 import {
   baseUrlFrom,
@@ -42,6 +43,7 @@ const login = await requestJson(
   { method: "POST", body: { password: credentials.ACCOUNTING_GATE_PARISH_A_PASSWORD } },
 );
 assert.equal(login.response.status, 200, `Parish login returned HTTP ${login.response.status}.`);
+login.payload = await completeGateMfa({ baseUrl, payload: login.payload, secretName: gateMfaSecretName('PARISH', parishId) });
 assert.ok(login.payload.token, "Parish login did not return a token.");
 
 const diagnostics = await requestJson(

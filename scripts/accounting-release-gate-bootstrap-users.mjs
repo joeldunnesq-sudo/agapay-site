@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { baseUrlFrom, requiredEnvironment } from "./lib/accounting-release-gates.mjs";
+import { completeGateMfa, gateMfaSecretName } from "./lib/release-gate-mfa.mjs";
 
 const baseUrl = baseUrlFrom();
 const target = new URL(baseUrl);
@@ -49,6 +50,7 @@ async function identitySession(email, password) {
   });
   if (login.response.status === 401) return null;
   assert.equal(login.response.status, 200, `Platform-user login returned HTTP ${login.response.status}.`);
+  login.payload = await completeGateMfa({ baseUrl, payload: login.payload, secretName: gateMfaSecretName('USER', email) });
   assert.ok(login.payload.token, "Platform-user login did not return a token.");
 
   const session = await requestJson("/api/identity/session", {
@@ -77,6 +79,7 @@ async function provisionPrincipal(label, { parishId, parishPassword, email, pass
     { method: "POST", body: { password: parishPassword } }
   );
   assert.equal(parishLogin.response.status, 200, `${label} parish login returned HTTP ${parishLogin.response.status}.`);
+  parishLogin.payload = await completeGateMfa({ baseUrl, payload: parishLogin.payload, secretName: gateMfaSecretName('PARISH', parishId) });
   assert.ok(parishLogin.payload.token, `${label} parish login did not return a token.`);
 
   const invitation = await requestJson(
@@ -124,3 +127,15 @@ await provisionPrincipal("B", {
   email: credentials.ACCOUNTING_GATE_USER_B_EMAIL,
   password: credentials.ACCOUNTING_GATE_USER_B_PASSWORD
 });
+
+// Enroll/verify shared dashboard principals separately from named users. Their
+// subsequent browser logins still complete MFA and require an accounting PIN.
+for (const side of ['A', 'B']) {
+  const parishId = credentials[`ACCOUNTING_GATE_PARISH_${side}_ID`];
+  const login = await requestJson(`/api/parish/dashboard/${encodeURIComponent(parishId)}/session`, {
+    method: 'POST', body: { password: credentials[`ACCOUNTING_GATE_PARISH_${side}_PASSWORD`] },
+  });
+  assert.equal(login.response.status, 200, `Parish ${side} login returned HTTP ${login.response.status}.`);
+  const session = await completeGateMfa({ baseUrl, payload: login.payload, secretName: gateMfaSecretName('PARISH', parishId) });
+  assert.ok(session.token, `Parish ${side} did not complete authentication.`);
+}

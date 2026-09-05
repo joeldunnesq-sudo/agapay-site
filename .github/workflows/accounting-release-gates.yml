@@ -19,6 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     timeout-minutes: 30
+    env:
+      ACCOUNTING_GATE_USER_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_A_TOTP_SECRET }}
+      ACCOUNTING_GATE_USER_B_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_B_TOTP_SECRET }}
+      ACCOUNTING_GATE_PARISH_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_PARISH_A_TOTP_SECRET }}
+      ACCOUNTING_GATE_PARISH_B_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_PARISH_B_TOTP_SECRET }}
+      ACCOUNTING_GATE_MFA_ENROLLMENT_PUBLIC_KEY: ${{ secrets.ACCOUNTING_GATE_MFA_ENROLLMENT_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v7
 
