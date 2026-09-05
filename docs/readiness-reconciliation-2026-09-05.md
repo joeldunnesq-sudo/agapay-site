@@ -39,6 +39,16 @@ The protected two-parish acceptance workflow was then dispatched against `https:
 
 The current staging registrations also use `acct_staging_*` onboarding simulation IDs, not real Stripe test-account IDs. These fixtures can exercise onboarding presentation but cannot demonstrate real Stripe checkout, payout reconciliation, recurring billing, or webhook delivery. Existing synthetic commerce history indicates earlier test activity, but does not establish that the current setup remains connected.
 
+### Setup repairs after the initial attempt
+
+After the user completed staging administrator MFA, both test connections were restored through the existing staging reset and Stripe metadata recovery actions. Parish A now uses `acct_1TyvxS4MIV9oqpYA`; Parish B uses `acct_1Tyx1K9JNQkYmrEj`. The Stripe response confirmed staging uses a test key. No production account connection changed. Resetting the simulations intentionally cleared their launch signoffs and hid their giving pages. Parish A's synthetic review was then completed through the admin UI with an explicit unrestricted `general` fund mapped to `fund_general`; its twelve setup checks passed and it awaits fresh parish launch approval.
+
+The MFA-aware rerun [33989528933](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33989528933) exposed a missing runtime authenticator encryption key. Staging health returned HTTP 503 with `totp_key_unconfigured`. Although the secret name existed, it supplied no usable value. A read-only check found zero encrypted or confirmed TOTP profiles. A fresh staging-only encryption key was configured, preserving existing passkeys. Staging health subsequently returned `ok=true` and `checks.mfa.ok=true`. The staging deployment workflow now includes a post-deploy health assertion.
+
+Rerun [33989721765](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33989721765) successfully enrolled and authenticated both dedicated named test users through the real MFA endpoints. Their setup secrets and recovery codes were retained only in encrypted evidence. The run then stopped at Parish A's existing shared-account second factor. No existing factor was reset. A request to store the newly generated test-user secrets in the protected GitHub environment was blocked by automatic approval review pending explicit user authorization for that destination.
+
+The updated harness supports named-staff browser sign-in with MFA followed by the independent accounting PIN. This is the application's normal supported sign-in route; it does not remove the existing shared-dashboard factor. Shared-dashboard launch acceptance remains a separately identified check. Protected workflow credentials are restricted to the exact dedicated staging origin before any authentication request.
+
 The latest production smoke artifact from [deployment 33987746217](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33987746217) reports public health passed and `authenticated.status=blocked_missing_credentials`. A green deployment job must not be described as a successful authenticated two-parish test. The staging runbook intentionally keeps staging credentials out of production deployment secrets.
 
 ## Work required to finish acceptance

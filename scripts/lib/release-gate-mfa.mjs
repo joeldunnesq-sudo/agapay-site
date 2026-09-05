@@ -36,6 +36,26 @@ export function encryptGateCredential(publicKey, value) {
   };
 }
 
+export async function loginGateParish({ baseUrl, parishId, parishPassword, env = process.env, fetchImpl = fetch }) {
+  if (baseUrl !== 'https://agapay-site-staging.joeldunnesq.workers.dev') throw new Error('Staging credentials require the dedicated staging origin.');
+  const named = env.ACCOUNTING_GATE_USE_NAMED_STAFF === 'true';
+  const side = ['A', 'B'].find((value) => env[`ACCOUNTING_GATE_PARISH_${value}_ID`] === parishId);
+  if (!side) throw new Error('Unknown release-gate parish.');
+  const email = env[`ACCOUNTING_GATE_USER_${side}_EMAIL`];
+  const password = env[`ACCOUNTING_GATE_USER_${side}_PASSWORD`];
+  if (named && (!email || !password)) throw new Error('Named staging staff credentials are missing.');
+  const response = await fetchImpl(`${baseUrl}${named ? '/api/identity/login' : `/api/parish/dashboard/${encodeURIComponent(parishId)}/session`}`, {
+    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30000),
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(named ? { parishId, email, password } : { password: parishPassword }),
+  });
+  if (!response.ok) throw new Error(`Staging parish login returned HTTP ${response.status}.`);
+  const payload = await completeGateMfa({ baseUrl, payload: await response.json(), env, fetchImpl,
+    secretName: gateMfaSecretName(named ? 'USER' : 'PARISH', named ? email : parishId, env) });
+  if (named && !payload.parishToken) throw new Error('Named staging staff login did not grant a parish dashboard session.');
+  return { response, payload: named ? { ...payload, token: payload.parishToken } : payload };
+}
+
 export async function completeGateMfa({ baseUrl, payload, secretName, env = process.env, fetchImpl = fetch }) {
   if (!payload?.mfaRequired) return payload;
   const target = new URL(baseUrl);

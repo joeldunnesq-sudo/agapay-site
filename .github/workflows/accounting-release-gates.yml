@@ -20,6 +20,13 @@ jobs:
     environment: ${{ inputs.environment }}
     timeout-minutes: 30
     env:
+      ACCOUNTING_GATE_USE_NAMED_STAFF: 'true'
+      ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+      ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
+      ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
+      ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
+      ACCOUNTING_GATE_USER_B_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_B_EMAIL }}
+      ACCOUNTING_GATE_USER_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_B_PASSWORD }}
       ACCOUNTING_GATE_USER_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_A_TOTP_SECRET }}
       ACCOUNTING_GATE_USER_B_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_B_TOTP_SECRET }}
       ACCOUNTING_GATE_PARISH_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_PARISH_A_TOTP_SECRET }}
@@ -35,6 +42,11 @@ jobs:
 
       - run: npm ci
       - run: npx playwright install chromium --with-deps
+
+      - name: Restrict protected credentials to dedicated staging
+        env:
+          GATE_TARGET_URL: ${{ inputs.target_url }}
+        run: node -e 'if (process.env.GATE_TARGET_URL !== "https://agapay-site-staging.joeldunnesq.workers.dev") throw new Error("Protected credentials are restricted to the dedicated staging origin.")'
 
       - name: Bootstrap dedicated staging platform users
         run: node scripts/accounting-release-gate-bootstrap-users.mjs "${{ inputs.target_url }}"

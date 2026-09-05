@@ -126,13 +126,24 @@ export async function loginParishAccounting(page, {
   baseUrl, parishId, parishPassword, profileId = "", profileName = "", pin
 }) {
   await page.goto(`${baseUrl}/give/login`, { waitUntil: "domcontentloaded" });
-  await page.locator("#parishId").fill(parishId);
-  await page.locator("#parishToken").fill(parishPassword);
-  const loginResponse = page.waitForResponse((response) => response.url().endsWith(`/api/parish/dashboard/${encodeURIComponent(parishId)}/session`) && response.request().method() === 'POST');
-  await page.getByRole("button", { name: /^log in$/i }).click();
+  const named = process.env.ACCOUNTING_GATE_USE_NAMED_STAFF === 'true';
+  const side = ['A', 'B'].find((value) => process.env[`ACCOUNTING_GATE_PARISH_${value}_ID`] === parishId);
+  const email = process.env[`ACCOUNTING_GATE_USER_${side}_EMAIL`];
+  if (named) {
+    await page.getByRole('button', { name: 'Staff sign in', exact: true }).click();
+    await page.locator('#parishStaffId').fill(parishId);
+    await page.locator('#parishStaffEmail').fill(email);
+    await page.locator('#parishStaffPassword').fill(process.env[`ACCOUNTING_GATE_USER_${side}_PASSWORD`]);
+  } else {
+    await page.locator("#parishId").fill(parishId);
+    await page.locator("#parishToken").fill(parishPassword);
+  }
+  const loginPath = named ? '/api/identity/login' : `/api/parish/dashboard/${encodeURIComponent(parishId)}/session`;
+  const loginResponse = page.waitForResponse((response) => response.url().endsWith(loginPath) && response.request().method() === 'POST');
+  await page.getByRole("button", { name: named ? /^sign in$/i : /^log in$/i }).click();
   const loginPayload = await (await loginResponse).json();
   if (loginPayload.mfaRequired) {
-    const secretName = gateMfaSecretName('PARISH', parishId);
+    const secretName = gateMfaSecretName(named ? 'USER' : 'PARISH', named ? email : parishId);
     if (loginPayload.enrollmentRequired || !process.env[secretName]) {
       throw new Error(`Complete the staging MFA bootstrap and configure ${secretName} before browser acceptance.`);
     }

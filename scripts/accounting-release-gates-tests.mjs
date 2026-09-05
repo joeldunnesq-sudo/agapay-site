@@ -136,3 +136,16 @@ await assert.rejects(completeGateMfa({ ...mfaArgs, baseUrl: 'https://agapay.app'
 await assert.rejects(completeGateMfa({ ...mfaArgs, env: {} }), /protected secret/);
 await assert.rejects(completeGateMfa({ ...mfaArgs, payload: { mfaRequired: true, enrollmentRequired: true }, env: {} }), /public key first/);
 console.log('PASS - release-gate MFA uses valid TOTP, encrypts retained credentials, and refuses production or missing factors');
+const { loginGateParish } = await import('./lib/release-gate-mfa.mjs');
+const namedEnv = { ...mfaArgs.env, ACCOUNTING_GATE_USE_NAMED_STAFF: 'true', ACCOUNTING_GATE_PARISH_A_ID: 'synthetic-parish', ACCOUNTING_GATE_USER_A_EMAIL: 'a@example.test', ACCOUNTING_GATE_USER_A_PASSWORD: 'synthetic-password' };
+const namedSession = await loginGateParish({ baseUrl: mfaArgs.baseUrl, parishId: 'synthetic-parish', env: namedEnv, fetchImpl: async (url, options) => {
+  if (url.endsWith('/api/identity/login')) {
+    assert.deepEqual(JSON.parse(options.body), { parishId: 'synthetic-parish', email: 'a@example.test', password: 'synthetic-password' });
+    return Response.json(mfaArgs.payload);
+  }
+  assert.ok(url.endsWith('/api/mfa/verify'));
+  return Response.json({ token: 'named-identity-session', parishToken: 'parish-dashboard-session' });
+} });
+assert.equal(namedSession.payload.token, 'parish-dashboard-session');
+await assert.rejects(loginGateParish({ baseUrl: 'https://untrusted.example', parishId: 'synthetic-parish', env: namedEnv }), /dedicated staging/);
+console.log('PASS - named-staff MFA produces a real parish session and rejects untrusted destinations before sending credentials');

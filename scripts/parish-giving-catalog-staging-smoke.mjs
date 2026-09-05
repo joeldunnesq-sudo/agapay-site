@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { completeGateMfa, gateMfaSecretName } from './lib/release-gate-mfa.mjs';
+import { completeGateMfa, gateMfaSecretName, loginGateParish } from './lib/release-gate-mfa.mjs';
 
 import {
   baseUrlFrom,
@@ -55,10 +55,7 @@ const summary = await requestJson("/api/platform/summary");
 assert.equal(summary.response.status, 200, `Platform summary returned HTTP ${summary.response.status}.`);
 assert.ok(summary.payload.summary?.organizationsSupported > 0, "Platform summary should include organizations.");
 
-const login = await requestJson(
-  `/api/parish/dashboard/${encodeURIComponent(parishId)}/session`,
-  { method: "POST", body: { password: credentials.ACCOUNTING_GATE_PARISH_A_PASSWORD } },
-);
+const login = await loginGateParish({ baseUrl, parishId, parishPassword: credentials.ACCOUNTING_GATE_PARISH_A_PASSWORD });
 assert.equal(login.response.status, 200, `Parish login returned HTTP ${login.response.status}.`);
 login.payload = await completeGateMfa({ baseUrl, payload: login.payload, secretName: gateMfaSecretName('PARISH', parishId) });
 assert.ok(login.payload.token, "Parish login did not return a token.");

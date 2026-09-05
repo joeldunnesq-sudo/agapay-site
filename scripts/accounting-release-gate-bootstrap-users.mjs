@@ -130,7 +130,7 @@ await provisionPrincipal("B", {
 
 // Enroll/verify shared dashboard principals separately from named users. Their
 // subsequent browser logins still complete MFA and require an accounting PIN.
-for (const side of ['A', 'B']) {
+for (const side of process.env.ACCOUNTING_GATE_USE_NAMED_STAFF === 'true' ? [] : ['A', 'B']) {
   const parishId = credentials[`ACCOUNTING_GATE_PARISH_${side}_ID`];
   const login = await requestJson(`/api/parish/dashboard/${encodeURIComponent(parishId)}/session`, {
     method: 'POST', body: { password: credentials[`ACCOUNTING_GATE_PARISH_${side}_PASSWORD`] },
