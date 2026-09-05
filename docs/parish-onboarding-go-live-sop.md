@@ -1,3 +1,4 @@
+<!-- Policy updated September 5, 2026: user-authorized shared-session initial launch; accounting PIN remains separate. -->
 # Parish Onboarding and Go-Live SOP
 
 Document owner: AGAPAY Operations
@@ -73,7 +74,7 @@ The record must contain:
 - Priest/rector name, email, authoritative verification source, reviewer, and timestamp.
 - Treasurer name and email, plus the verified priest/leader's confirmation method and timestamp. The treasurer does not need to appear in a public directory.
 - Dashboard invite delivery status and recipients.
-- Personal invitation status, acceptance timestamp, membership ID, and verified recipient. Never store the new password.
+- Dashboard invitation delivery and credential-security status. Record personal membership evidence separately when applicable; never store plaintext passwords.
 - Stripe connected account ID, status-check timestamp, last server confirmation timestamp, readiness booleans, and only the bank name/masked last four digits returned by Stripe. Never store a full bank account or routing number.
 - Selected AGAPAY plan and subscription status.
 - General Operating Fund configuration snapshot.
@@ -98,7 +99,7 @@ The onboarding record must be in exactly one primary state.
 | `NEEDS_MORE_INFO` | Required identity or authority evidence is missing | `IDENTITY_REVIEW`, `REJECTED`, `CANCELLED` |
 | `VERIFIED_HIDDEN` | Canonical verification passed; giving remains nonpublic | `INVITED`, `ON_HOLD` |
 | `INVITED` | Personal access invitations were successfully delivered | `CREDENTIAL_SECURED`, `ON_HOLD` |
-| `CREDENTIAL_SECURED` | Required personal invitations were accepted and individual passwords created | `STRIPE_PENDING`, `ON_HOLD` |
+| `CREDENTIAL_SECURED` | Parish dashboard invitation accepted and temporary credential replaced | `STRIPE_PENDING`, `ON_HOLD` |
 | `STRIPE_PENDING` | Stripe onboarding started but financial readiness is incomplete | `STRIPE_READY`, `ON_HOLD` |
 | `STRIPE_READY` | Charges and payouts are enabled and requirements are clear | `CONFIGURING`, `ON_HOLD` |
 | `CONFIGURING` | Plan, giving, funds, campaigns, and import decisions are being configured | `AWAITING_TREASURER_SIGNOFF`, `ON_HOLD` |
@@ -203,7 +204,7 @@ Actions:
 3. Ask that verified leader to confirm the named treasurer's name and email and that the treasurer may review Stripe, payout, plan, fund configuration, and the P1-3 Go-Live signoff.
 4. If the treasurer submitted the registration, obtain the same approval from the verified priest/leader. Do not treat the registration itself as the approval.
 5. Record the authoritative priest source, confirmation channel, verifier, date, and result.
-6. Send personal access invitations only after the confirmation is recorded.
+6. Send dashboard access only after the confirmation is recorded.
 
 The treasurer is not required to appear on a diocesan or parish website. Public-source verification establishes the parish and approving priest/leader. That verified leader's direct confirmation establishes the treasurer's authority, and invitation acceptance confirms control of the treasurer email address.
 
@@ -218,7 +219,7 @@ Exit criteria:
 
 - The parish and approving priest/leader are matched to an authoritative source.
 - That verified leader has confirmed the named treasurer and email address.
-- A treasurer authorized to perform P1-3 signoff is identified and ready to receive a personal invitation.
+- A treasurer authorized to perform P1-3 signoff is identified and ready to receive parish dashboard access.
 
 Block when:
 
@@ -264,73 +265,19 @@ Block when:
 
 Current product safeguard: the Admin save path forces a newly verified parish to remain `hidden`. The operator must still reopen the record and verify the saved `verified` and `hidden` values. The treasurer's completed Go Live signoff is the only pre-live transition to `active`.
 
-### Step 5 — Send personal dashboard invitations
+### Step 5 — Send the parish dashboard invitation
 
-Owner: AGAPAY onboarding owner
+Send the supported parish invitation to verified contacts after canonical and representative verification. Confirm delivery; correct and resend failed or expired invitations. Never send passwords by email or forward access to an unverified alternate address.
 
-Entry criteria:
+### Step 6 — Secure shared parish dashboard access
 
-- State is `VERIFIED_HIDDEN`.
-- Priest and treasurer email addresses have been verified.
+The parish follows the invitation and creates its dashboard password. Confirm delivery is recorded, the password record exists, and the temporary credential has been replaced. This secured shared dashboard session authorizes initial Go Live, including during the 30-day free trial. No separate personal treasurer login or accounting PIN is required to approve initial publication.
 
-Actions:
+The signer still enters their treasurer name/title, confirms authority, and checks all eight launch affirmations. Store the authentication method as parish_dashboard_session and the treasurer email on file; do not describe that email as proof of an individually authenticated signer.
 
-1. Send personal invitations from AGAPAY Admin to the verified priest and treasurer addresses.
-2. Confirm each message contains a private, one-use account-claim link.
-3. Confirm the message does not require a parish ID or shared temporary credential.
-4. Confirm delivery status is `sent` to the intended recipients.
-5. If delivery fails, correct the verified address or delivery configuration and resend. Do not forward an invitation to an unverified alternate address.
+Accounting remains protected by its separate treasurer PIN and accounting session, with its own plan entitlement and authorization checks. Go Live grants no accounting access. Individual paid-account invitations can proceed separately and must not delay initial launch. After initial publication, existing paid-account access requirements continue to apply.
 
-Evidence:
-
-- Invite recipients.
-- Delivery status and provider identifier when available.
-- Sent timestamp.
-
-Exit criteria:
-
-- Invite delivery is confirmed.
-- State is `INVITED`.
-
-Block when:
-
-- Delivery status is failed, missing recipient, or not configured.
-- The recipients do not match the verified roster.
-
-### Step 6 — Confirm personal access acceptance
-
-Owner: Invited priest and treasurer
-
-Entry criteria:
-
-- Invite was delivered.
-
-Actions:
-
-1. Each recipient opens their own private invitation link.
-2. Each recipient creates their own password that meets the current password policy.
-3. AGAPAY activates the membership and opens the parish dashboard automatically.
-4. AGAPAY records acceptance without recording either password.
-5. The access gate completes automatically when the required invitations are accepted.
-6. Confirm the recorded accepted membership IDs still resolve to active memberships for this parish. Email delivery alone is not acceptance.
-
-Evidence:
-
-- Invitation and membership identifiers.
-- Acceptance timestamps.
-- Verified recipient emails and assigned roles.
-
-Exit criteria:
-
-- State is `CREDENTIAL_SECURED`.
-
-Block when:
-
-- A required invitation is expired, revoked, or unaccepted.
-- An invitation was sent to an unverified person.
-- An accepted identity is connected to the wrong parish or role.
-
-Legacy shared parish credentials do not satisfy this gate by default. A migrated record may use shared access only under an explicit, persisted exception containing approval, approver, timestamp, and reason. The exception is compatibility-only and never grants Go-Live authority; Go Live always requires the authenticated treasurer membership.
+Block initial access when the invitation was not delivered, the password was not created, or the credential remains temporary. A persisted legacy-access exception remains available for migrated records.
 
 ### Step 7 — Connect the parish's Stripe account
 
@@ -526,42 +473,9 @@ Block when:
 - The parish has not approved the donor-facing wording.
 - A restricted purpose cannot be mapped correctly in reporting/accounting.
 
-### Step 12 — Add priest and treasurer users
+### Step 12 — Confirm contacts and arrange additional access
 
-Owner: AGAPAY onboarding owner
-
-Entry criteria:
-
-- Verified user roster exists.
-
-Actions:
-
-1. Add or confirm the priest/rector and treasurer using their individually verified email addresses.
-2. Assign only the role and access the parish authorized.
-3. Send supported invitations and confirm delivery.
-4. Require each person to use their own supported identity or invitation. Do not intentionally create a shared named-user identity.
-5. Test that each user can access the intended parish and cannot access another parish.
-6. Record any additional user request separately with requester, approver, role, and result.
-
-Evidence:
-
-- User/access roster.
-- Invitation delivery status.
-- Role approval.
-- Access test result.
-
-Exit criteria:
-
-- Priest and treasurer access is present and verified.
-- No unauthorized user remains.
-
-Block when:
-
-- A requested user or role lacks parish approval.
-- Access is delivered to the wrong parish or address.
-- Cross-parish access is observed.
-
-Current-product note: priest and treasurer onboarding invitations now create unique role-based identities. The access gate updates automatically when the personal invitations are accepted.
+Confirm the approved priest and treasurer contacts. The shared parish dashboard session is sufficient for initial setup and launch. Do not require individual invitations before initial Go Live. When paid-account or additional staff access is provisioned, assign only approved roles and verify parish boundaries. Accounting staff must use the separate supported PIN/session flow; the shared launch approval does not unlock accounting.
 
 ### Step 13 — Import donors and pledges when applicable
 
@@ -781,7 +695,7 @@ When a risk-based internal check is performed, attach its result to the onboardi
 
 The parish treasurer must affirmatively verify the financial and donor-facing configuration immediately before publication. This is a hard launch gate.
 
-The signer identity is derived only from the authenticated platform-user session and active parish membership. A browser-submitted email, display field, parish dashboard bearer, shared credential, or AGAPAY admin session is never authoritative for Go Live. The authenticated user must hold the dedicated `parish.giving.go_live` capability and their normalized email and membership ID must match the accepted treasurer access record for the same parish.
+Initial Go Live is authorized by a valid secured parish dashboard session. A separate treasurer account, membership capability, or accounting PIN is not a prerequisite. The signer self-attests their name, treasurer title, and authority; the server records the treasurer email from the parish record and ignores any submitted signer email. An AGAPAY admin session or another parish session cannot substitute for this parish dashboard session.
 
 AGAPAY must show the treasurer a read-only signoff summary generated from the exact configuration snapshot that will go live. The summary must display enough information to identify the connected Stripe account without exposing full bank data.
 
@@ -791,7 +705,7 @@ The **Go Live** action must remain disabled unless all of the following are true
 
 - Canonical status is verified.
 - Giving status is hidden.
-- Priest and treasurer personal invitations have both been accepted and their recorded membership IDs are active for this parish.
+- The parish dashboard invitation was delivered and its temporary credential replaced with a password.
 - Dashboard invite was delivered.
 - Stripe status was freshly retrieved for the reviewed snapshot, and the Go-Live command can retrieve it again server-side before activation.
 - `stripeChargesEnabled = true`.
@@ -834,7 +748,7 @@ The treasurer must enter or confirm their name and title and then click **Go Liv
 
 Record:
 
-- Treasurer platform user ID, active parish membership ID, and server-verified email.
+- Authentication method (`parish_dashboard_session`) and treasurer contact email from the parish record. Do not invent personal platform-user or membership evidence.
 - Name and title.
 - Timestamp and timezone.
 - IP/request/audit identifier consistent with AGAPAY privacy and logging policy.
@@ -875,10 +789,10 @@ Entry criteria:
 Go-Live transaction:
 
 1. Recheck all hard predicates server-side. Client-side checks are not sufficient.
-2. Authenticate the platform user, require the dedicated Go-Live capability for this parish, and exactly match the accepted treasurer email and membership ID.
+2. Authenticate the secured dashboard session for this parish. Use the treasurer email on file and validate all affirmations, name, title, and authority. Initial launch does not require individual membership or an accounting PIN.
 3. Retrieve the connected account directly from Stripe. Recompute charges, payouts, details, requirements, status, and masked payout-bank summary. If Stripe fails, readiness regresses, or the refreshed material state changes the snapshot, fail closed and require the treasurer to refresh and review again.
-4. Recheck that the signoff snapshot hash matches the current material configuration after the Stripe refresh.
-5. Atomically:
+4. Recheck that the signoff snapshot hash matches the current material configuration after the Stripe refresh. Keep the Stripe refresh in memory until the conditional write; do not overwrite a concurrent configuration edit.
+5. Use a conditional D1 write against the full registration record read for review. If it changed, return the latest summary and require fresh review. KV-only storage cannot publish. Atomically:
    - Record the treasurer's attestations and audit event.
    - Set onboarding state to `LIVE`.
    - Set giving status to `active`.
@@ -954,8 +868,8 @@ This checklist is a summary. The detailed exit criteria above control if the sum
 - [ ] Parish and approving priest/leader verified from an authoritative source.
 - [ ] Verified priest/leader confirmed the treasurer's name, email, and authority; confirmation method recorded.
 - [ ] Organization verified in AGAPAY Admin with giving status `hidden`.
-- [ ] Personal invitations delivered to the verified priest and treasurer.
-- [ ] Required personal invitations accepted; individual access recorded automatically.
+- [ ] Parish dashboard invitation delivered to verified contacts.
+- [ ] Shared parish dashboard password created; temporary credential replaced.
 - [ ] Stripe connected account created for the correct parish.
 - [ ] Stripe charges, payouts, details, and requirements readiness confirmed by refresh.
 - [ ] AGAPAY plan and subscription status confirmed.
@@ -1012,7 +926,7 @@ Conceptually:
 canGoLive =
   canonicalVerified
   AND givingStatus == hidden
-  AND priestAndTreasurerPersonalMembershipsAccepted
+  AND securedParishDashboardAccess
   AND dashboardInviteDelivered
   AND stripeChargesEnabled
   AND stripePayoutsEnabled
@@ -1027,7 +941,7 @@ canGoLive =
   AND usersConfirmed
   AND importDecisionComplete
   AND requiredConfigurationChecksPassed
-  AND authenticatedTreasurerAttestsCurrentSnapshot
+  AND authenticatedParishDashboardSessionAttestsCurrentSnapshot
   AND noOpenP0OrP1Blocker
 ```
 
@@ -1056,15 +970,15 @@ The treasurer's **Go Live** click must call one server-side command that re-eval
 | Registration and canonical fields | Supported in registration/admin handlers | Retain; make evidence and state transitions explicit |
 | Canonical verification guard | Requires reviewer, source, bishop/authority, and diocese/deanery | Retain as the identity gate |
 | Giving visibility | Supports `active`, `paused`, and `hidden`; newly verified workflow records default to hidden | Treasurer Go Live is the only pre-live transition to active |
-| Dashboard access | Personal one-use priest and treasurer invitations, individual password creation, and automatic acceptance tracking | Treat required accepted identities as the access gate; do not expose parish IDs or temporary credentials |
+| Dashboard access | Parish invitation and shared dashboard password for initial launch; individual paid-account invitations separately | Treat the secured parish credential as the initial access gate |
 | Stripe Connect/status refresh | Supported with charges, payouts, details, disabled reason, and due requirements | Make fields read-only and require both charges and payouts |
 | Subscription | Supported with tier and status | Require agreement and status match before validation |
 | General/designated funds and campaigns | Structured General Fund validator and versioned giving snapshot implemented | Require stable ID, unrestricted/default/donor-visible flags, and `fund_general` mapping when Accounting is enabled |
-| Priest/treasurer contacts | Personal role-based identities and memberships are supported | Track delivery and acceptance automatically |
+| Priest/treasurer contacts | Personal role-based identities and memberships are supported | Track dashboard delivery and credential security; track individual access separately |
 | Donor/pledge import | Applicability and evidence gate implemented; import remains operator-managed | Record `not_applicable` only when no import was requested; otherwise block until evidence exists |
 | Internal diagnostics | Payment, receipt, reporting, accounting, URL, and QR tooling remain available | Use when risk or defect investigation warrants; not a parish-facing or standard blocking phase |
 | Giving URL and QR | Dashboard generates the canonical URL and QR assets | Provide them automatically after Go Live |
-| Treasurer signoff and Go Live | Dedicated treasurer capability, active membership/email match, mandatory fresh Stripe retrieval, snapshot hash, eight affirmations, actor IDs, audit record, and atomic publication implemented | Required P1-3 control; shared parish credentials cannot launch |
+| Treasurer signoff and Go Live | Parish dashboard session, treasurer email on file, mandatory fresh Stripe retrieval, snapshot hash, eight affirmations, and audit record | Required P1-3 control; a secured shared dashboard session can approve initial launch |
 
 ### 12.6 Staging workflow test
 
@@ -1073,10 +987,10 @@ Use the isolated staging site at `https://agapay-site-staging.joeldunnesq.worker
 For a fast UI and state-machine exercise:
 
 1. Sign in to `/admin` on staging and open a registration with both priest and treasurer email addresses.
-2. Choose **Prepare parish test**. This creates and accepts test priest/treasurer identities through the real membership APIs and activates the verified treasurer session in the current browser.
-3. Copy the one-time parish password. It is shown once and opens the parish dashboard; it does not authorize Go Live.
+2. Choose **Prepare parish test**. This prepares the trial parish and one parish dashboard credential.
+3. Copy the one-time parish password. It is shown once and opens the parish dashboard; the resulting secured dashboard session authorizes initial Go Live.
 4. Open `/parish/dashboard?parish={parishId}` and sign in with that password.
-5. Confirm the parish sees only the three-stage setup, review the locked summary, check all eight treasurer affirmations, enter the treasurer name/title, confirm authority, and click **Go Live**. The server uses the staging treasurer platform session, not a submitted email or shared parish bearer.
+5. Confirm the parish sees only the three-stage setup, review the locked summary, check all eight treasurer affirmations, enter the treasurer name/title, confirm authority, and click **Go Live**. The server uses the secured staging parish dashboard session and the treasurer email on file.
 6. Confirm the dashboard reports `LIVE`, the giving status is `active`, and the direct giving URL opens.
 7. Return to Admin and choose **Reset test** to repeat the exercise.
 

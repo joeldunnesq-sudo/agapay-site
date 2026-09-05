@@ -574,7 +574,7 @@ export async function saveRegistrationRecord(env, reference, registration, previ
   const previousParishId = previous ? previous.parishId || parishSlug(previous.parishName, previous.city) : '';
 
   if (d1(env)) {
-    await d1Run(
+    const saved = await d1Run(
       env,
       `INSERT INTO registrations (
         reference, parish_id, status, parish_name, community_type,
@@ -590,7 +590,8 @@ export async function saveRegistrationRecord(env, reference, registration, previ
          stripe_subscription_id = excluded.stripe_subscription_id,
          received_at = excluded.received_at,
          updated_at = excluded.updated_at,
-         data = excluded.data`,
+         data = excluded.data
+       WHERE COALESCE(json_extract(registrations.data, '$.goLiveAt'), '') = ?11`,
       reference,
       parishId,
       registration.status || 'pending',
@@ -603,8 +604,14 @@ export async function saveRegistrationRecord(env, reference, registration, previ
         registration.parishUpdatedAt ||
         registration.subscriptionUpdatedAt ||
         new Date().toISOString(),
-      JSON.stringify(registration)
+      JSON.stringify(registration),
+      (previous || registration).goLiveAt || ''
     );
+    if (saved?.meta?.changes === 0) {
+      const error = new Error('The parish was launched while this change was being saved. Refresh the dashboard and review your changes before saving again.');
+      error.code = 'registration_publication_conflict';
+      throw error;
+    }
     return registration;
   }
 

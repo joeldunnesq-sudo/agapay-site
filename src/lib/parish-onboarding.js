@@ -1,6 +1,6 @@
 import { normalizeEmail, sha256Hex } from "./core.js";
 import { accountingEnabledFor } from "./entitlements.js";
-import { subscriptionReady, subscriptionTier } from "./subscriptions.js";
+import { subscriptionReady, subscriptionTier, subscriptionAddOnsFor, subscriptionAddOnPricing } from "./subscriptions.js";
 import {
   VERIFICATION_ONBOARDING_MANUAL_CHECKS,
   verificationOnboardingSteps
@@ -196,6 +196,9 @@ function accessAccepted(registration = {}, options = {}) {
     && Boolean(registration.parishDashboardPasswordRecord)
     && registration.parishDashboardTokenTemporary !== true;
   if (!dashboardSecured) return legacySharedAccessApproved(registration);
+  // Initial publication uses the secured parish dashboard session, including
+  // during the 30-day trial. Accounting authorization remains a separate gate.
+  if (!registration.goLiveAt && !registration.treasurerSignoff?.signedAt) return true;
   const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active";
   if (!paidSubscription) return true;
   return requiredPersonalAccessAccepted(registration, options) || legacySharedAccessApproved(registration);
@@ -287,6 +290,10 @@ export function onboardingMaterialSnapshot(registration = {}, options = {}) {
   const generalFunds = funds.filter(isGeneralFundCandidate);
   const designatedFunds = funds.filter((fund) => !isGeneralFundCandidate(fund));
   const plan = subscriptionTier(registration);
+  const baseMonthlyCents = plan.monthlyCents ?? registration.subscriptionMonthlyCents ?? null;
+  const addOns = subscriptionAddOnsFor(registration).map((id) => subscriptionAddOnPricing(id)).filter(Boolean);
+  const modules = { ...plan.modules };
+  for (const addOn of addOns) for (const moduleId of addOn.modules) modules[moduleId] = true;
   return stableValue({
     workflowVersion: PARISH_ONBOARDING_WORKFLOW_VERSION,
     organization: {
@@ -309,7 +316,15 @@ export function onboardingMaterialSnapshot(registration = {}, options = {}) {
       id: text(registration.subscriptionTier || plan?.id, 80),
       label: text(registration.subscriptionTierLabel || plan?.label, 160),
       monthlyCents: plan?.monthlyCents ?? registration.subscriptionMonthlyCents ?? null,
-      status: text(registration.subscriptionStatus, 80)
+      status: text(registration.subscriptionStatus, 80),
+      ...(options.legacyPlanSummary ? {} : {
+        totalMonthlyCents: baseMonthlyCents === null ? null : Number(baseMonthlyCents) + addOns.reduce((sum, item) => sum + item.monthlyCents, 0),
+        addOns: addOns.map((item) => ({ id: item.id, label: item.label, monthlyCents: item.monthlyCents })),
+        modules: Object.keys(modules).filter((key) => modules[key] === true).sort(),
+        trialEndsAt: text(registration.subscriptionTrialEndsAt, 80),
+        transactionRateLabel: text(plan.transactionRateLabel, 240),
+        householdBand: text(registration.parishHouseholdBand, 80)
+      })
     },
     giving: {
       recurringGivingEnabled: registration.recurringGivingEnabled !== false,
@@ -356,14 +371,15 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
   const generalFund = validateGeneralOperatingFund(registration);
   const verificationSteps = verificationOnboardingSteps(registration, checks);
   const personalAccessAccepted = accessAccepted(registration, options);
-  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active";
+  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active"
+    && Boolean(registration.goLiveAt || registration.treasurerSignoff?.signedAt);
   const workflowSteps = [
     step("registration", "Registration received", Boolean(registration.reference), registration.reference ? `Reference ${registration.reference}` : "Registration reference is missing."),
     ...verificationSteps,
     step("verifiedHidden", "Organization verified and hidden", registration.status === "verified" && registration.givingStatus === "hidden", registration.status === "verified" ? `Giving status: ${registration.givingStatus || "hidden"}.` : "Verify the organization in AGAPAY Admin."),
     step("invite", "Dashboard invite delivered", registration.dashboardInviteEmailStatus === "sent", registration.dashboardInviteEmailStatus === "sent" ? "Invite delivery is confirmed." : "Send the dashboard invite to verified recipients."),
     step("credential", paidSubscription ? "Treasurer dashboard access secured" : "Parish dashboard access secured", personalAccessAccepted, personalAccessAccepted
-      ? paidSubscription ? "The treasurer's individual access is active for the paid subscription." : "One parish dashboard credential is active for the trial."
+      ? paidSubscription ? "The treasurer's individual access is active for the paid subscription." : "The shared parish dashboard credential is ready for initial launch."
       : paidSubscription ? "Ask the treasurer to accept the individual access invitation for the paid subscription." : "Open the dashboard invitation and replace the temporary credential.", "Parish"),
     step("stripeConnected", "Stripe connected", stripe.connected, stripe.connected ? `Connected account ${registration.stripeAccountId}.` : "Create the parish connected account.", "Treasurer"),
     step("stripeReady", "Stripe charges and payouts ready", stripe.ready, stripe.ready ? "Charges, payouts, details, and requirements passed a fresh refresh." : "Refresh Stripe; charges and payouts must both be enabled with no requirements due.", "Treasurer"),
@@ -374,7 +390,9 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
   ];
   const materialVersion = await onboardingMaterialVersion(registration, options);
   const signedCurrentSnapshot = registration.treasurerSignoff?.status === "signed"
-    && registration.treasurerSignoff?.snapshotVersion === materialVersion;
+    && (registration.treasurerSignoff?.snapshotVersion === materialVersion
+      || (registration.treasurerSignoff?.reviewVersion !== 2
+        && registration.treasurerSignoff?.snapshotVersion === await onboardingMaterialVersion(registration, { ...options, legacyPlanSummary: true })));
   const derivedState = recommendedOnboardingState(registration, checks, options);
   const recommendedState = derivedState === "LIVE" && !signedCurrentSnapshot ? "CONFIGURING" : derivedState;
   const state = recommendedState;
@@ -395,6 +413,7 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     enabled: onboardingWorkflowEnabled(registration),
     state,
     recommendedState,
+    updatedAt: registration.parishUpdatedAt || registration.reviewedAt || registration.receivedAt || '',
     steps: workflowSteps,
     completedSteps: workflowSteps.filter((item) => item.passed).length,
     totalSteps: workflowSteps.length,
@@ -409,7 +428,7 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
         key: "access",
         title: paidSubscription ? "Treasurer access" : "Parish access",
         detail: personalAccessAccepted
-          ? paidSubscription ? "The treasurer's individual account is ready." : "Your single trial credential is ready."
+          ? paidSubscription ? "The treasurer's individual account is ready." : "Your parish dashboard credential is ready."
           : paidSubscription ? "The treasurer accepts an individual invitation after the parish becomes paid." : "Open the parish invitation and create one dashboard password.",
         passed: personalAccessAccepted
       },

@@ -30,7 +30,7 @@ The leader must confirm the treasurer's name, email, and authority through an in
 - Additional staff who require invitations, with requested role:
 - Preferred onboarding session date:
 
-Every staff member receives a personal invitation. Shared credentials are not permitted.
+Initial launch may be approved through the secured shared parish dashboard session, including during the 30-day free trial. Accounting uses its separate treasurer PIN/session. Provision individual staff access separately when needed.
 
 ## 4. Stripe and settlement
 

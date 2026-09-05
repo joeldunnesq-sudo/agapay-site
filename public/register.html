@@ -712,6 +712,7 @@
     </div>
 
   </main>
+  <script src="/registration-assistance.js"></script>
   <script src="/security.js?v=20260812turnstile1"></script>
   <script>
     // ─── STATE ───────────────────────────────────────────────
@@ -956,31 +957,36 @@
     // ─── VALIDATION ──────────────────────────────────────────
     function validateStep(step) {
       const config = activeTypeConfig();
-      if (step === 1) {
-        if (!document.getElementById('parishName').value.trim())   { alert('Please enter the organization name.'); return false; }
-        if (config.requiresJurisdiction && !document.getElementById('jurisdiction').value) { alert('Please select your jurisdiction.'); return false; }
-        if (!document.getElementById('addressLine1').value.trim()) { alert('Please enter the organization street address.'); return false; }
-        if (!document.getElementById('city').value.trim())         { alert('Please enter your city.'); return false; }
-        if (!document.getElementById('state').value)               { alert('Please select your state.'); return false; }
-        if (!document.getElementById('postalCode').value.trim())   { alert('Please enter the ZIP or postal code.'); return false; }
-        if (!document.getElementById('subscriptionTier').value)    { alert('Please choose the AGAPAY tier you want to start with.'); return false; }
-        if (document.getElementById('subscriptionTier').value === 'parish' && !document.getElementById('parishHouseholdBand').value) { alert('Please choose the approximate number of active parish households.'); return false; }
-        if (config.requiresWebsite && !document.getElementById('website').value.trim()) { alert('Please enter the business website so AGAPAY can verify fit.'); return false; }
-        if (config.requiresDescription && !document.getElementById('organizationDescription').value.trim()) { alert('Please enter a short description so AGAPAY can review fit.'); return false; }
+      const required = step === 1 ? [
+        ['parishName', 'Enter the organization name.'],
+        ...(config.requiresJurisdiction ? [['jurisdiction', 'Select your jurisdiction.']] : []),
+        ['addressLine1', 'Enter the street address.'], ['city', 'Enter the city.'],
+        ['state', 'Select the state.'], ['postalCode', 'Enter the ZIP or postal code.'],
+        ['subscriptionTier', 'Choose a starting AGAPAY plan.'],
+        ...(document.getElementById('subscriptionTier').value === 'parish' ? [['parishHouseholdBand', 'Choose the active-household range.']] : []),
+        ...(config.requiresWebsite ? [['website', 'Enter the organization website.']] : []),
+        ...(config.requiresDescription ? [['organizationDescription', 'Describe your organization.']] : [])
+      ] : step === 2 ? [
+        ['priestFirst', 'Enter the primary contact name.'], ['priestEmail', 'Enter the primary contact email.'],
+        ['priestPhone', 'Enter the primary contact phone.'], ['treasurerFirst', 'Enter the finance contact name.'],
+        ['treasurerEmail', 'Enter the finance contact email.']
+      ] : [];
+      for (const [id, message] of required) {
+        const input = document.getElementById(id);
+        if (!input.value.trim()) return registrationError(message, id);
+        if (input.type === 'email' && !registrationEmailValid(input.value)) return registrationError('Enter a valid email address, such as name@example.org.', id);
       }
-      if (step === 2) {
-        if (!document.getElementById('priestFirst').value.trim())    { alert('Please enter the primary contact name.'); return false; }
-        const pEmail = document.getElementById('priestEmail').value.trim();
-        if (!pEmail || !pEmail.includes('@'))                         { alert('Please enter a valid email for the primary contact.'); return false; }
-        if (!document.getElementById('priestPhone').value.trim())    { alert('Please enter a phone number.'); return false; }
-        if (!document.getElementById('treasurerFirst').value.trim()) { alert('Please enter the finance contact name.'); return false; }
-        const tEmail = document.getElementById('treasurerEmail').value.trim();
-        if (!tEmail || !tEmail.includes('@'))                         { alert('Please enter a valid email for the finance contact.'); return false; }
-      }
+      document.querySelectorAll('[data-registration-error]').forEach(el => el.remove());
+      document.querySelectorAll('[aria-invalid="true"]').forEach(el => el.removeAttribute('aria-invalid'));
       return true;
     }
 
     // ─── BUILD REVIEW ─────────────────────────────────────────
+    function registrationReviewText(value) {
+      const span = document.createElement('span');
+      span.textContent = String(value ?? '');
+      return span.innerHTML;
+    }
     function buildReview() {
       const config = activeTypeConfig();
       const address = [
@@ -1010,10 +1016,10 @@
       if (notes) contact.push(['Notes', notes]);
 
       document.getElementById('reviewCommunity').innerHTML = community.map(([k,v]) =>
-        `<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`
+        `<div class="review-row"><span class="review-key">${registrationReviewText(k)}</span><span class="review-val">${registrationReviewText(v)}</span></div>`
       ).join('');
       document.getElementById('reviewContact').innerHTML = contact.map(([k,v]) =>
-        `<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`
+        `<div class="review-row"><span class="review-key">${registrationReviewText(k)}</span><span class="review-val">${registrationReviewText(v)}</span></div>`
       ).join('');
       const reviewName = document.getElementById('reviewParishName');
       if (reviewName) reviewName.textContent = document.getElementById('parishName').value;
@@ -1114,9 +1120,18 @@
     }
 
     // ─── SUBMIT via AGAPAY API ────────────────────────────────
+    let registrationSubmitting = false;
     async function handleSubmit() {
+      if (registrationSubmitting) return;
+      for (const step of [1, 2]) {
+        if (!validateStep(step)) {
+          goToStep(step);
+          document.querySelector('[aria-invalid="true"]')?.focus();
+          return;
+        }
+      }
       if (!document.getElementById('agreeTerms').checked) {
-        alert('Please confirm authorization and agree to the Terms of Service before submitting.');
+        registrationError('Confirm your authorization and agree to the Terms of Service.', 'agreeTerms');
         return;
       }
 
@@ -1124,15 +1139,16 @@
       const acceptingEmail = document.getElementById('acceptingEmail').value.trim();
       const acceptingRole = document.getElementById('acceptingRole').value.trim();
       if (!acceptingName || !acceptingEmail || !acceptingRole) {
-        alert('Enter your name, email, and organizational role before accepting the Terms.');
+        registrationError('Enter your name, email, and organizational role before accepting the Terms.', !acceptingName ? 'acceptingName' : !acceptingEmail ? 'acceptingEmail' : 'acceptingRole');
         return;
       }
 
+      if (!registrationEmailValid(acceptingEmail)) { registrationError('Enter a valid email address.', 'acceptingEmail'); return; }
       let taxExemption = null;
       try {
         taxExemption = buildTaxExemptionPayload();
       } catch (err) {
-        alert(err.message);
+        registrationError(err.message);
         return;
       }
       const exemptionFile = (() => {
@@ -1144,6 +1160,7 @@
       const priestEmail    = document.getElementById('priestEmail').value.trim();
       const treasurerEmail = document.getElementById('treasurerEmail').value.trim();
       const notes          = document.getElementById('notes').value.trim();
+      registrationSubmitting = true;
       // Hide form, show spinner
       document.getElementById('progressWrap').style.display = 'none';
       document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
@@ -1187,13 +1204,17 @@
       try {
         const response = await fetch('/api/registrations', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Idempotency-Key': registrationRetryKey() },
           body:    JSON.stringify(payload),
         });
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
 
-        if (!response.ok) throw new Error(result.error || 'Submission failed');
+        if (!response.ok) {
+          const error = new Error(result.error || 'Registration could not be submitted. Please try again.');
+          error.field = result.fields?.[0];
+          throw error;
+        }
 
         // Registration succeeded. If an exemption was claimed and a
         // document was selected, upload it now in a SEPARATE request using
@@ -1221,14 +1242,18 @@
         document.getElementById('successParishName').textContent = parishName + ' has been received.' + exemptionNote;
 
         document.getElementById('successRef').textContent = 'Reference: ' + result.reference;
+        clearRegistrationDraft();
+        finishRegistrationRetry();
         document.getElementById('successState').classList.add('visible');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
+        registrationSubmitting = false;
         document.getElementById('sendingState').classList.remove('visible');
         document.querySelectorAll('.step-panel').forEach(p => p.style.display = '');
         document.getElementById(`step-3`).classList.add('active');
         document.getElementById('progressWrap').style.display = '';
-        alert('Something went wrong sending your registration. Please email us directly at support@agapay.app and we will get you set up.');
+        registrationError((err.message || 'We could not confirm your registration.') + ' Your entries are still here. You can try again, or contact support@agapay.app for help.', err.field);
+        window.AgapaySecurity?.resetTurnstile?.();
         console.error('AGAPAY registration error:', err);
       }
     }
