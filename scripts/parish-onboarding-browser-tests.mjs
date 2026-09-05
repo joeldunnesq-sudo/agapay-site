@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { openParishFixture, parish } from './lib/parish-browser-fixture.mjs';
 
@@ -44,6 +45,163 @@ async function confirmations(page, checked) {
 }
 
 try {
+  const registrationPage = await browser.newPage();
+  try {
+    const html = await readFile(new URL('../public/register.html', import.meta.url), 'utf8');
+    const assistance = await readFile(new URL('../public/registration-assistance.js', import.meta.url), 'utf8');
+    await registrationPage.route('**/*', (route) =>
+      route.fulfill({
+        contentType: route.request().url() === 'https://registration.test/register' ? 'text/html' : 'text/javascript',
+        body:
+          route.request().url() === 'https://registration.test/register'
+            ? html
+            : route.request().url().endsWith('/registration-assistance.js')
+              ? assistance
+              : '',
+      })
+    );
+    await registrationPage.goto('https://registration.test/register');
+    await registrationPage.locator('#parishName').fill('<img src=x onerror="window.reviewInjected=true">');
+    await registrationPage.evaluate(() => {
+      document.getElementById('notes').value = '<script>window.reviewInjected=true</script>';
+      window.buildReview();
+    });
+    assert.equal(await registrationPage.locator('#reviewCommunity img, #reviewContact script').count(), 0);
+    assert.ok((await registrationPage.locator('#reviewCommunity').textContent()).includes('<img src=x'));
+    assert.equal(await registrationPage.evaluate(() => Boolean(window.reviewInjected)), false);
+    await registrationPage.reload();
+    assert.ok((await registrationPage.locator('#parishName').inputValue()).includes('<img src=x'));
+    assert.equal(await registrationPage.locator('#agreeTerms').isChecked(), false);
+    await registrationPage.locator('#parishName').fill('');
+    await registrationPage.getByRole('button', { name: 'Continue', exact: false }).first().click();
+    assert.equal(await registrationPage.locator('#parishName').getAttribute('aria-invalid'), 'true');
+    assert.equal(await registrationPage.locator('#parishName').evaluate((el) => el === document.activeElement), true);
+    assert.equal(await registrationPage.evaluate(() => window.registrationEmailValid('bad@@mail')), false);
+    const retryKey = await registrationPage.evaluate(() => window.registrationRetryKey());
+    await registrationPage.reload();
+    assert.equal(await registrationPage.evaluate(() => window.registrationRetryKey()), retryKey);
+    console.log('PASS - registration review renders entered HTML as literal text');
+  } finally {
+    await registrationPage.close();
+  }
+
+  await scenario(
+    'launch review explains price, trial, modules, and each designated destination',
+    () => ({
+      parish: {
+        ...readyToLaunch,
+        onboarding: {
+          ...readyToLaunch.onboarding,
+          summary: {
+            plan: {
+              label: 'Give +',
+              status: 'trialing',
+              totalMonthlyCents: 20800,
+              trialEndsAt: '2026-10-05T12:00:00Z',
+              modules: ['accounting'],
+              addOns: [{ label: 'Accounting Suite', monthlyCents: 12900 }],
+            },
+            giving: {
+              generalFunds: [{ id: 'general', name: 'General Operating Fund', restrictionType: 'unrestricted' }],
+              campaigns: [
+                {
+                  name: 'Roof repair',
+                  restrictionType: 'donor_restricted_temporary',
+                  destinationFundId: 'general',
+                  description: 'Replace the roof',
+                },
+              ],
+            },
+          },
+        },
+      },
+    }),
+    async (page) => {
+      const summary = await page.locator('#treasurerSignoff').textContent();
+      for (const copy of [
+        '$208.00/month if you continue after the free trial',
+        'Accounting Suite',
+        'Trial ends',
+        'Replace the roof',
+        'donor restricted temporary',
+        'Destination: General Operating Fund',
+      ])
+        assert.ok(summary.includes(copy), copy);
+    }
+  );
+
+  await scenario(
+    'mobile wizard keeps keyboard focus inside and rejects reserved or colliding destinations',
+    () => ({ parish: setup }),
+    async (page) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      const modal = await openWizard(page);
+      const close = modal.getByRole('button', { name: 'Close giving setup' });
+      await close.focus();
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(
+        await modal
+          .getByRole('button', { name: 'Continue', exact: true })
+          .evaluate((el) => el === document.activeElement),
+        true
+      );
+      await page.keyboard.press('Tab');
+      assert.equal(await close.evaluate((el) => el === document.activeElement), true);
+      await modal.getByRole('button', { name: 'Continue', exact: true }).click();
+      for (const name of ['General', 'General Operating Fund', 'Candles', '!!!']) {
+        await modal.locator('#givingSetupCustomFund').fill(name);
+        await modal.getByRole('button', { name: 'Add fund', exact: true }).click();
+        assert.equal(await modal.locator('.giving-setup-selected-row').count(), 0);
+      }
+      await modal.locator('#givingSetupCustomFund').fill('Roof repair');
+      await modal.getByRole('button', { name: 'Add fund', exact: true }).click();
+      await modal.locator('#givingSetupCustomFund').fill('Roof-repair');
+      await modal.getByRole('button', { name: 'Add fund', exact: true }).click();
+      assert.equal(await modal.locator('.giving-setup-selected-row').count(), 1);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      await page.keyboard.press('Escape');
+      await modal.waitFor({ state: 'detached' });
+      assert.equal(
+        await page
+          .getByRole('button', { name: 'Review giving setup', exact: true })
+          .evaluate((el) => el === document.activeElement),
+        true
+      );
+    }
+  );
+
+  await scenario(
+    'failed save followed by cancel leaves the original catalog intact',
+    (_count, request) =>
+      request.method() === 'PATCH' ? { status: 503, body: { error: 'Synthetic save unavailable' } } : { parish: setup },
+    async (page) => {
+      const modal = await openWizard(page);
+      await modal.locator('#givingSetupGeneralName').fill('Unsaved name');
+      await modal.getByRole('button', { name: 'Continue', exact: true }).click();
+      await modal.getByRole('button', { name: 'Continue', exact: true }).click();
+      await modal.getByRole('button', { name: 'Save giving setup', exact: true }).click();
+      await modal.locator('#givingSetupSaveStatus.error').waitFor();
+      await modal.getByRole('button', { name: 'Close giving setup' }).click();
+      await openWizard(page);
+      assert.equal(await modal.locator('#givingSetupGeneralName').inputValue(), 'General Operating Fund');
+    }
+  );
+
+  await scenario(
+    'incomplete Stripe account offers both continuation and a popup fallback link',
+    () => ({
+      parish: {
+        ...setup,
+        onboarding: { enabled: true, state: 'SETUP', stripe: { connected: true }, blockers: [{ key: 'stripeReady' }] },
+      },
+    }),
+    async (page) => {
+      assert.equal(await page.getByRole('button', { name: 'Continue Stripe setup', exact: true }).count(), 1);
+      assert.equal(await page.getByRole('button', { name: 'Check Stripe status', exact: true }).count(), 1);
+      assert.equal(await page.locator('#setupActionLink').count(), 1);
+    }
+  );
+
   await scenario(
     'starter wizard validates input, preserves draft across steps, and discards it on cancel',
     () => ({ parish: setup }),
@@ -196,13 +354,19 @@ try {
       await page.locator('#goLiveSignerName').fill('Synthetic Treasurer');
       await page.locator('#goLiveSignerTitle').fill('Treasurer');
       assert.equal(await page.locator('#goLiveSignerEmail').getAttribute('readonly'), '');
-      // Validation is server-owned: submit unchecked confirmations and retain its error.
+      // Catch omissions locally before refreshing Stripe or submitting signoff.
       await goLive.click();
       await page.getByText('Confirm all launch affirmations.', { exact: true }).first().waitFor();
       assert.equal(await goLive.isEnabled(), true);
       assert.equal(await page.locator('#goLiveSignerName').inputValue(), 'Synthetic Treasurer');
-      assert.equal(submissions[0].authorityConfirmed, false);
-      assert.ok(Object.values(submissions[0].affirmations).every((value) => value === false));
+      assert.equal(submissions.length, 0, 'incomplete confirmations must not call the server');
+      assert.equal(
+        await page
+          .locator('.treasurer-affirmation')
+          .first()
+          .evaluate((el) => el === document.activeElement),
+        true
+      );
       await confirmations(page, true);
       await goLive.click();
       await page.getByText('Synthetic signoff unavailable', { exact: true }).first().waitFor();
@@ -220,18 +384,19 @@ try {
       await confirmations(page, true);
       await goLive.click();
       await page.locator('#treasurerSignoff').waitFor({ state: 'detached' });
-      assert.equal(await page.locator('#setupWizardPane').textContent(), '');
-      assert.equal(submissions.length, 4);
+      assert.ok((await page.locator('#setupWizardPane').textContent()).includes('Giving is live'));
+      assert.equal(await page.getByRole('button', { name: 'Download giving QR code', exact: true }).count(), 1);
+      assert.equal(submissions.length, 3);
       assert.deepEqual(
         submissions.map((body) => body.snapshotVersion),
-        ['v1-snapshot', 'v1-snapshot', 'v1-snapshot', 'v2-snapshot']
+        ['v1-snapshot', 'v1-snapshot', 'v2-snapshot']
       );
       assert.deepEqual(
-        Object.keys(submissions[3]).sort(),
+        Object.keys(submissions[2]).sort(),
         ['snapshotVersion', 'affirmations', 'signerName', 'signerTitle', 'authorityConfirmed'].sort()
       );
       assert.deepEqual(
-        Object.keys(submissions[3].affirmations).sort(),
+        Object.keys(submissions[2].affirmations).sort(),
         [
           'stripeAccount',
           'payoutBank',
@@ -243,8 +408,8 @@ try {
           'agapayPlan',
         ].sort()
       );
-      assert.ok(Object.values(submissions[3].affirmations).every(Boolean));
-      assert.equal(submissions[3].authorityConfirmed, true);
+      assert.ok(Object.values(submissions[2].affirmations).every(Boolean));
+      assert.equal(submissions[2].authorityConfirmed, true);
     },
     {
       '/onboarding': (request) => {
@@ -253,9 +418,8 @@ try {
         assert.equal(request.headers().accept, 'application/json');
         assert.equal(request.headers()['content-type'], 'application/json');
         submissions.push(request.postDataJSON());
-        if (submissions.length === 1) return { status: 400, body: { errors: ['Confirm all launch affirmations.'] } };
-        if (submissions.length === 2) return { status: 503, body: { error: 'Synthetic signoff unavailable' } };
-        if (submissions.length === 3)
+        if (submissions.length === 1) return { status: 503, body: { error: 'Synthetic signoff unavailable' } };
+        if (submissions.length === 2)
           return {
             status: 409,
             body: {

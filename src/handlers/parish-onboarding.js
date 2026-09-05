@@ -21,10 +21,10 @@ import {
   appendAdminAudit,
   findRegistrationByParishId,
   parishDashboardPayload,
-  saveRegistrationRecord,
   verifyParishDashboardBearer,
 } from "./parish.js";
 import { refreshStripeStatusForRegistration } from "./stripe.js";
+import { saveReviewedRegistration } from "../lib/registration-publication.js";
 
 export async function handleParishOnboarding(request, env, parishId) {
   const limited = await rateLimit(request, env, "parish-onboarding", {
@@ -67,6 +67,9 @@ export async function handleParishOnboarding(request, env, parishId) {
   } catch {
     return json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return json({ error: "Enter the launch confirmations before submitting." }, { status: 400 });
+  }
 
   if (!onboardingWorkflowEnabled(found.registration)) {
     return json({ error: "This parish has not been enrolled in the deterministic onboarding workflow." }, { status: 409 });
@@ -78,16 +81,33 @@ export async function handleParishOnboarding(request, env, parishId) {
     && persistedWorkflow.signedCurrentSnapshot) {
     return json({ ok: true, alreadyLive: true, onboarding: persistedWorkflow });
   }
+  if (!env.AGAPAY_DB?.prepare) {
+    return json({ error: "Launch is temporarily unavailable. Contact AGAPAY support to enable secure publication.", code: "publication_store_required" }, { status: 503 });
+  }
+
+  const reviewChanged = async () => {
+    const latest = await findRegistrationByParishId(env, parishId);
+    if (!latest) return json({ error: "Parish record not found." }, { status: 404 });
+    const onboarding = await buildParishOnboardingWorkflow(latest.registration, workflowOptions);
+    const parish = parishDashboardPayload(parishId, latest.registration);
+    parish.onboarding = onboarding;
+    if (onboarding.state === "LIVE" && onboarding.signedCurrentSnapshot) {
+      return json({ ok: true, alreadyLive: true, parish, onboarding });
+    }
+    return json({ error: "The parish setup changed while you were reviewing. Review the current details and confirm again.", code: "onboarding_snapshot_changed", parish, onboarding }, { status: 409 });
+  };
 
   const refreshed = await refreshStripeStatusForRegistration(env, found.key, found.registration, {
     actor: verifiedTreasurerEmail,
     reason: "The mandatory Go-Live Stripe refresh changed material connected-account state.",
-    preserveReviewedTimestamp: true
+    preserveReviewedTimestamp: true,
+    persist: false
   });
   if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
   const currentRegistration = refreshed.registration;
   const currentWorkflow = await buildParishOnboardingWorkflow(currentRegistration, workflowOptions);
   if (!body.snapshotVersion || !secureCompare(body.snapshotVersion, currentWorkflow.materialVersion)) {
+    if (!await saveReviewedRegistration(env, found.key, found.registration, currentRegistration)) return reviewChanged();
     const parish = parishDashboardPayload(parishId, currentRegistration);
     parish.onboarding = currentWorkflow;
     return json({
@@ -98,10 +118,13 @@ export async function handleParishOnboarding(request, env, parishId) {
     }, { status: 409 });
   }
   if (!currentWorkflow.canGoLive) {
+    if (!await saveReviewedRegistration(env, found.key, found.registration, currentRegistration)) return reviewChanged();
     return json({
       error: "Go Live is blocked until every onboarding gate passes.",
       code: "onboarding_blocked",
-      blockers: currentWorkflow.blockers
+      blockers: currentWorkflow.blockers,
+      onboarding: currentWorkflow,
+      parish: { ...parishDashboardPayload(parishId, currentRegistration), onboarding: currentWorkflow }
     }, { status: 409 });
   }
 
@@ -132,6 +155,7 @@ export async function handleParishOnboarding(request, env, parishId) {
       signedAt: now,
       snapshotVersion: currentWorkflow.materialVersion,
       affirmationVersion: 1,
+      reviewVersion: 2,
       affirmations: signedAffirmations,
       requestId
     },
@@ -145,7 +169,7 @@ export async function handleParishOnboarding(request, env, parishId) {
     snapshotVersion: currentWorkflow.materialVersion,
     requestId
   });
-  await saveRegistrationRecord(env, found.key, updated, currentRegistration);
+  if (!await saveReviewedRegistration(env, found.key, found.registration, updated)) return reviewChanged();
 
   const onboarding = await buildParishOnboardingWorkflow(updated, workflowOptions);
   const parish = parishDashboardPayload(parishId, updated);

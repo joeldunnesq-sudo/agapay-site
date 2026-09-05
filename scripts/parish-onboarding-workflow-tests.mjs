@@ -357,9 +357,22 @@ const paidWithoutTreasurer = await buildParishOnboardingWorkflow(readyRegistrati
 });
 assert.equal(
   paidWithoutTreasurer.steps.find((step) => step.key === 'credential')?.passed,
-  false,
-  'a paid subscription must require individual treasurer access'
+  true,
+  'initial launch must accept shared dashboard access even if billing is already active'
 );
+assert.equal(paidWithoutTreasurer.canGoLive, true);
+const detailedPlan = await buildParishOnboardingWorkflow(readyRegistration({ subscriptionTier: 'giving', subscriptionAddOns: ['accounting'] }));
+assert.equal(detailedPlan.summary.plan.totalMonthlyCents, 20800);
+assert.ok(detailedPlan.summary.plan.modules.includes('accounting'));
+const legacyLiveRegistration = readyRegistration({ givingStatus: 'active', onboardingState: 'LIVE', goLiveAt: now });
+legacyLiveRegistration.treasurerSignoff = { status: 'signed', snapshotVersion: await onboardingMaterialVersion(legacyLiveRegistration, { legacyPlanSummary: true }) };
+const legacyLiveWorkflow = await buildParishOnboardingWorkflow(legacyLiveRegistration);
+assert.equal(legacyLiveWorkflow.signedCurrentSnapshot, true, 'expanded review must not invalidate unchanged historical approvals');
+const previouslyLaunched = await buildParishOnboardingWorkflow(readyRegistration({
+  onboardingAccess: {}, goLiveAt: now,
+}), { now: Date.now() });
+assert.equal(previouslyLaunched.steps.find((step) => step.key === 'credential')?.passed, false,
+  'existing paid-account access requirements still apply after initial launch');
 const sanitizedRegistration = sanitizePublicRegistrationInput({
   parishName: 'Test',
   legacySharedAccessAllowed: { approved: true, reason: 'self-created', approvedBy: 'submitter', approvedAt: now },
@@ -517,9 +530,10 @@ const dashboardResponse = await worker.fetch(
 );
 assert.equal(
   dashboardResponse.status,
-  200,
-  'the authenticated parish dashboard must authorize trial Go Live without a second treasurer login'
+  503,
+  'KV-only storage must not publish without an atomic database comparison'
 );
+assert.equal((await dashboardResponse.json()).code, 'publication_store_required');
 
 const [
   parishUi,
@@ -558,7 +572,7 @@ assert.match(
 );
 assert.match(
   parishUi,
-  /data\.code === 'onboarding_snapshot_changed'[\s\S]*currentParish\.onboarding = data\.onboarding[\s\S]*renderDashboard\(\)/,
+  /'onboarding_snapshot_changed', 'onboarding_blocked'[\s\S]*currentParish\.onboarding = data\.onboarding[\s\S]*renderDashboard\(\)/,
   'a snapshot conflict must replace the stale signoff with the refreshed server summary'
 );
 assert.match(
@@ -655,7 +669,7 @@ assert.match(
   /onboarding-phase-card:not\(\.is-current\)[^{]*\{[^}]*padding/,
   'non-current onboarding phases must collapse to compact rows'
 );
-assert.match(parishUi, /10-minute parish setup/, 'the parish UI must present the setup-time target');
+assert.doesNotMatch(parishUi, /10-minute parish setup/, 'setup must not promise a fixed verification time');
 assert.match(parishUi, /Three steps to start giving/, 'the parish UI must present three simple stages');
 assert.match(
   parishUi,

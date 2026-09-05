@@ -37,6 +37,46 @@ function onboardingSignoffMarkup(workflow) {
     : 'not refreshed';
   const designated = [...(giving.designatedFunds || []), ...(giving.campaigns || []), ...(giving.feastCampaigns || [])];
   const general = (giving.generalFunds || [])[0];
+  const money = (cents) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+  const fundDetail = (item) => {
+    const destination = (giving.generalFunds || [])
+      .concat(giving.designatedFunds || [])
+      .find((fund) => fund.id === item.destinationFundId);
+    return [
+      item.description,
+      String(item.restrictionType || 'unrestricted').replaceAll('_', ' '),
+      item.destinationFundId ? `Destination: ${destination?.name || item.destinationFundId}` : '',
+      item.accountingFundId ? `Accounting fund: ${item.accountingFundId}` : '',
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  };
+  const moduleNames = {
+    givingPlus: 'Enhanced giving',
+    stewardshipHealth: 'Stewardship Health',
+    sacraments: 'Sacraments & Services',
+    directory: 'Directory',
+    library: 'Parish Library',
+    bookstore: 'Bookstore',
+    commerceSuite: 'Commerce',
+    communications: 'Koinonia',
+    textToGive: 'Text-to-Give',
+    accounting: 'Accounting',
+  };
+  const planDetails = [
+    plan.status,
+    plan.totalMonthlyCents === null
+      ? 'Custom pricing: confirm your agreed terms with AGAPAY'
+      : Number.isFinite(plan.totalMonthlyCents ?? plan.monthlyCents)
+        ? `${money(plan.totalMonthlyCents ?? plan.monthlyCents)}/month${plan.status === 'trialing' ? ' if you continue after the free trial' : ''}`
+        : 'Confirm pricing with AGAPAY',
+    plan.trialEndsAt ? `Trial ends ${new Date(plan.trialEndsAt).toLocaleDateString()}` : '',
+    ...(plan.addOns || []).map((item) => `${item.label}: ${money(item.monthlyCents)}/month`),
+    (plan.modules || []).map((id) => moduleNames[id] || id).join(', '),
+    plan.transactionRateLabel,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   const bankLabel = stripe.payoutBankName
     ? `${stripe.payoutBankName}${stripe.payoutBankLast4 ? ` ending ${stripe.payoutBankLast4}` : ''}`
     : 'Confirm the payout bank directly in Stripe';
@@ -57,7 +97,7 @@ function onboardingSignoffMarkup(workflow) {
     generalFund: [
       'General fund',
       general?.name || 'Not configured',
-      general?.accountNumber ? `Account ${general.accountNumber}` : 'Unrestricted operating fund',
+      general ? fundDetail(general) : 'Unrestricted operating fund',
     ],
     designatedFunds: [
       'Designated giving',
@@ -77,7 +117,7 @@ function onboardingSignoffMarkup(workflow) {
       receipt.legalName || org.publicName || 'Not set',
       receipt.contact || 'No contact configured',
     ],
-    agapayPlan: ['AGAPAY plan', plan.label || plan.id || 'Not selected', plan.status || 'Status unavailable'],
+    agapayPlan: ['AGAPAY plan', plan.label || plan.id || 'Not selected', planDetails],
   };
   const reviewGroups = [
     {
@@ -108,7 +148,7 @@ function onboardingSignoffMarkup(workflow) {
         <div class="signoff-summary">${group.keys
           .map((key) => {
             const [label, value, detail] = rows[key];
-            return `<div class="signoff-summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`;
+            return `<div class="signoff-summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small>${key === 'designatedFunds' ? designated.map((item) => `<div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(fundDetail(item))}</small></div>`).join('') : ''}</div>`;
           })
           .join('')}</div>
         <div class="signoff-affirmations">${group.keys.map((key) => `<label><input class="treasurer-affirmation" type="checkbox" data-key="${key}"><span>${escapeHtml(treasurerAffirmationCopy[key])}</span></label>`).join('')}</div>
@@ -116,7 +156,7 @@ function onboardingSignoffMarkup(workflow) {
     )
     .join('');
   return `<div class="treasurer-signoff" id="treasurerSignoff">
-      <div class="treasurer-signoff-head"><div><span>Required final approval</span><h3>Treasurer go-live signoff</h3><p>Review four short sections. Check each confirmation, add your name and title, then launch giving.</p></div></div>
+      <div class="treasurer-signoff-head"><div><span>Required final approval</span><h3>Treasurer go-live signoff</h3><p>Review four short sections. Check each confirmation, add your name and title, then launch giving. Your shared parish dashboard session can approve initial launch; accounting still requires its separate treasurer PIN.</p></div></div>
       <div class="signoff-review-grid">${reviewMarkup}</div>
       <div class="signoff-record-note"><strong>Review record</strong><span class="onboarding-snapshot">Configuration ${escapeHtml(String(workflow.materialVersion || '').slice(0, 10))} · Stripe refreshed ${escapeHtml(stripeCheckedAt)}</span></div>
       <section class="signoff-approval"><div class="signoff-approval-head"><span>5</span><div><strong>Approve the launch</strong><small>Your identity and authority are stored with all eight confirmations.</small></div></div><div class="signoff-identity">
@@ -160,18 +200,23 @@ function renderSimpleParishSetupWizard(workflow) {
   const needsGivingReview = ['generalFund', 'givingConfiguration', 'importDecision'].some((key) =>
     blockerKeys.has(key)
   );
+  const waiting = blockerKeys.has('credential')
+    ? 'Open the parish invitation and finish creating the dashboard password. Contact AGAPAY if the link has expired.'
+    : blockerKeys.has('givingHidden')
+      ? 'AGAPAY needs to prepare the giving page for a fresh launch approval.'
+      : 'AGAPAY is completing parish verification and preparing your launch review.';
   const action = live
-    ? `<div class="onboarding-live-mark" aria-hidden="true">&#10003;</div><strong>Giving is live</strong><p class="setup-copy setup-action-copy">Your giving page and QR code are ready to share.</p><a class="btn btn-gold onboarding-link-button" href="${escapeHtml(givingUrl)}" target="_blank" rel="noopener">Open giving page</a>`
+    ? `<div class="onboarding-live-mark" aria-hidden="true">&#10003;</div><strong>Giving is live</strong><p class="setup-copy setup-action-copy">Open your giving page, then share the link or download your QR code for the parish bulletin.</p><a class="btn btn-gold onboarding-link-button" href="${escapeHtml(givingUrl)}" target="_blank" rel="noopener">Open giving page</a><button class="btn btn-ghost" type="button" onclick="copyGivingLink()">Copy giving link</button><button class="btn btn-ghost" type="button" onclick="downloadQrPng()">Download giving QR code</button>`
     : workflow.canGoLive
       ? `<strong>Review and launch</strong><p class="setup-copy setup-action-copy">Everything is ready. The treasurer reviews the parish details once and approves giving.</p><button class="btn btn-gold" type="button" onclick="document.getElementById('treasurerSignoff')?.scrollIntoView({behavior:'smooth',block:'start'})">Review and launch</button>`
       : needsPlan
         ? `<strong>Choose your AGAPAY plan</strong><p class="setup-copy setup-action-copy">Confirm the plan your parish selected. Stripe opens immediately after billing is ready.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Choose plan</button>`
         : needsStripe
-          ? `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
+          ? `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button><button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Continue Stripe setup</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
           : needsGivingReview
             ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">A short wizard will show only the giving choices included with ${escapeHtml(currentParish.subscriptionTierLabel || 'your plan')}.</p><button class="btn btn-gold" type="button" onclick="openGivingSetupWizard()">Review giving setup</button>`
-            : `<strong>AGAPAY is preparing your setup</strong><p class="setup-copy setup-action-copy">Your onboarding team is finishing an internal verification. There is nothing else for the parish to complete right now.</p>`;
-  pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding parish-simple-setup"><div class="setup-wizard-body"><div><div class="onboarding-kicker">10-minute parish setup</div><div class="setup-title">Three steps to start giving</div><p class="setup-copy">${live ? 'Launch is complete.' : 'AGAPAY handles the internal checks. Your parish only completes the three steps below.'}</p><div class="parish-setup-stages">${stageMarkup}</div></div><div class="setup-action-panel">${action}</div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
+            : `<strong>Next step: ${blockerKeys.has('credential') ? 'secure parish access' : 'AGAPAY review'}</strong><p class="setup-copy setup-action-copy">${escapeHtml(waiting)}</p><a href="mailto:onboarding@agapay.app">Contact onboarding support</a><button class="btn btn-ghost" type="button" onclick="loadDashboard()">Check for updates</button>`;
+  pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding parish-simple-setup"><div class="setup-wizard-body"><div><div class="onboarding-kicker">Parish setup</div><div class="setup-title">Three steps to start giving</div><p class="setup-copy">${live ? 'Launch is complete.' : 'AGAPAY handles the internal checks. Your parish only completes the three steps below.'}</p><div class="parish-setup-stages">${stageMarkup}</div></div><div class="setup-action-panel">${action}${workflow.updatedAt ? `<p class="setup-copy">Last updated ${escapeHtml(new Date(workflow.updatedAt).toLocaleString())}</p>` : ''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open Stripe setup</a><p id="setupLinkHelp"></p></div></div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
 }
 
 function renderDeterministicOnboardingWizard(workflow) {
@@ -180,6 +225,30 @@ function renderDeterministicOnboardingWizard(workflow) {
 
 let givingSetupWizardStep = 0;
 let givingSetupDraft = null;
+let givingSetupSaving = false;
+let givingSetupReturnFocus = null;
+
+function givingSetupKeydown(event) {
+  const modal = document.getElementById('givingSetupModal');
+  if (!modal) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeGivingSetupWizard();
+  }
+  if (event.key !== 'Tab') return;
+  const controls = [
+    ...modal.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex="0"]'),
+  ];
+  const first = controls[0];
+  const last = controls.at(-1);
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last?.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first?.focus();
+  }
+}
 
 function givingSetupTierDetails() {
   const tier = String(currentParish?.subscriptionTier || 'starter').toLowerCase();
@@ -227,10 +296,13 @@ function buildGivingSetupDraft() {
 }
 
 function closeGivingSetupWizard() {
+  if (givingSetupSaving) return;
   document.getElementById('givingSetupModal')?.remove();
+  document.removeEventListener('keydown', givingSetupKeydown);
   document.body.classList.remove('giving-setup-modal-open');
   givingSetupDraft = null;
   givingSetupWizardStep = 0;
+  givingSetupReturnFocus?.focus();
 }
 
 function captureGivingSetupWizardStep() {
@@ -273,7 +345,7 @@ function givingSetupPresetButtons(kind) {
 function givingSetupBasicsMarkup(tier) {
   return `<div class="giving-setup-screen">
       <div class="giving-setup-screen-heading"><span>Step 1 of 3</span><h3>Set the giving basics</h3><p>These are the choices every parish needs before accepting a gift.</p></div>
-      <div class="giving-setup-field"><label for="givingSetupGeneralName">Primary giving destination</label><input id="givingSetupGeneralName" maxlength="120" value="${escapeAttr(givingSetupDraft.general.name)}"><small>AGAPAY keeps the stable General Operating Fund identifier behind the scenes for reports and accounting.</small></div>
+      <div class="giving-setup-field"><label for="givingSetupGeneralName">Primary giving destination</label><input id="givingSetupGeneralName" maxlength="120" value="${escapeAttr(givingSetupDraft.general.name)}"><small>This is the default destination for donations. Choose a name your parishioners will recognize.</small></div>
       <div class="giving-setup-field"><label for="givingSetupGeneralDescription">What this fund supports</label><textarea id="givingSetupGeneralDescription" maxlength="500">${escapeHtml(givingSetupDraft.general.description)}</textarea></div>
       <div class="giving-setup-toggle-grid">
         <label class="giving-setup-toggle"><input id="givingSetupRecurring" type="checkbox" ${givingSetupDraft.recurringGivingEnabled ? 'checked' : ''}><span><strong>Allow recurring gifts</strong><small>Donors can give weekly, monthly, quarterly, or annually.</small></span></label>
@@ -324,7 +396,7 @@ function givingSetupReviewMarkup(tier) {
   return `<div class="giving-setup-screen">
       <div class="giving-setup-screen-heading"><span>Step 3 of 3</span><h3>Review and save</h3><p>This is what donors will see at launch. Saving sends the setup to AGAPAY for the final launch review.</p></div>
       <div class="giving-setup-review">${rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}</div>
-      <fieldset class="giving-setup-import"><legend>Do you need help importing existing donors or pledges?</legend><label><input type="radio" name="givingSetupImportDecision" value="none" ${givingSetupDraft.importDecision !== 'requested' ? 'checked' : ''}><span><strong>No, launch without an import</strong><small>You can request an import later.</small></span></label><label><input type="radio" name="givingSetupImportDecision" value="requested" ${givingSetupDraft.importDecision === 'requested' ? 'checked' : ''}><span><strong>Yes, contact me about an import</strong><small>This records the request without holding up the ten-minute setup.</small></span></label></fieldset>
+      <fieldset class="giving-setup-import"><legend>Do you need help importing existing donors or pledges?</legend><label><input type="radio" name="givingSetupImportDecision" value="none" ${givingSetupDraft.importDecision !== 'requested' ? 'checked' : ''}><span><strong>No, launch without an import</strong><small>You can request an import later.</small></span></label><label><input type="radio" name="givingSetupImportDecision" value="requested" ${givingSetupDraft.importDecision === 'requested' ? 'checked' : ''}><span><strong>Yes, contact me about an import</strong><small>AGAPAY will follow up about your records. You can finish setup now.</small></span></label></fieldset>
       <div class="giving-setup-ready"><span aria-hidden="true">&#10003;</span><div><strong>Ready to save</strong><small>You can reopen this wizard or use Funds &amp; Alms to make changes before launch.</small></div></div>
       <div class="giving-setup-save-status" id="givingSetupSaveStatus" role="status" aria-live="polite"></div>
     </div>`;
@@ -349,6 +421,8 @@ function renderGivingSetupWizard() {
 }
 
 function openGivingSetupWizard() {
+  if (givingSetupSaving) return;
+  givingSetupReturnFocus = document.activeElement;
   document.getElementById('givingSetupModal')?.remove();
   givingSetupDraft = buildGivingSetupDraft();
   givingSetupWizardStep = 0;
@@ -357,11 +431,13 @@ function openGivingSetupWizard() {
   modal.className = 'giving-setup-modal';
   document.body.appendChild(modal);
   document.body.classList.add('giving-setup-modal-open');
+  document.addEventListener('keydown', givingSetupKeydown);
   renderGivingSetupWizard();
   setTimeout(() => document.getElementById('givingSetupGeneralName')?.focus(), 0);
 }
 
 function setGivingSetupWizardStep(step) {
+  if (givingSetupSaving) return;
   captureGivingSetupWizardStep();
   if (!givingSetupDraft.general.name) {
     setStatus('Enter the primary giving destination before continuing.', 'error');
@@ -370,6 +446,7 @@ function setGivingSetupWizardStep(step) {
   }
   givingSetupWizardStep = Math.max(0, Math.min(2, Number(step) || 0));
   renderGivingSetupWizard();
+  document.querySelector('#givingSetupModal input, #givingSetupModal button')?.focus();
 }
 
 function addGivingSetupPreset(kind, key) {
@@ -401,12 +478,22 @@ function addGivingSetupCustom(kind) {
   }
   const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
   if (kind === 'campaign' && !tier.givingPlus) return;
+  const id = slugifyLocal(name);
+  if (
+    !/[a-z0-9]/i.test(name) ||
+    ['general', 'stewardship', 'general-operating-fund', 'general-stewardship', 'candles', 'candle'].includes(id) ||
+    target.some((item) => String(item.id || '').toLowerCase() === id)
+  ) {
+    setStatus('Choose a different name. This giving destination already exists or is reserved.', 'error');
+    input?.focus();
+    return;
+  }
   if (target.some((item) => String(item.name || '').toLowerCase() === name.toLowerCase())) {
     setStatus('That giving destination is already selected.', 'error');
     return;
   }
   target.push({
-    id: slugifyLocal(name),
+    id,
     name,
     description: kind === 'fund' ? 'Designated support for this parish.' : 'Parish-approved alms for this need.',
     enabled: true,
@@ -426,7 +513,7 @@ function removeGivingSetupChoice(kind, index) {
 }
 
 async function saveGivingSetupWizard(button) {
-  if (!currentParish || !givingSetupDraft) return;
+  if (!currentParish || !givingSetupDraft || givingSetupSaving) return;
   captureGivingSetupWizardStep();
   const general = {
     ...givingSetupDraft.general,
@@ -463,12 +550,12 @@ async function saveGivingSetupWizard(button) {
       (campaign.enabled === false || campaign.active === false) &&
       !selectedCampaignIds.has(String(campaign.id || campaign.name || '').toLowerCase())
   );
+  const previousFunds = editableFunds;
+  const previousCampaigns = editableCampaigns;
   editableFunds = [general, ...givingSetupDraft.designatedFunds, ...candleFunds, ...inactiveFunds];
   if (hasGivingPlusAccess()) editableCampaigns = [...givingSetupDraft.campaigns, ...inactiveCampaigns];
   const recurring = document.getElementById('recurringGivingEnabled');
   const candles = document.getElementById('candlesEnabled');
-  if (recurring) recurring.checked = givingSetupDraft.recurringGivingEnabled;
-  if (candles) candles.checked = givingSetupDraft.candlesEnabled;
   const body = {
     funds: editableFunds,
     recurringGivingEnabled: givingSetupDraft.recurringGivingEnabled,
@@ -479,6 +566,14 @@ async function saveGivingSetupWizard(button) {
     importDecision: givingSetupDraft.importDecision === 'requested' ? 'requested' : 'none',
     ...(hasGivingPlusAccess() ? { campaigns: editableCampaigns } : {}),
   };
+  // Snapshot helpers read the shared catalog. Restore it before any asynchronous
+  // work so failed saves cannot turn an unsaved draft into dashboard state.
+  editableFunds = previousFunds;
+  editableCampaigns = previousCampaigns;
+  givingSetupSaving = true;
+  document.querySelectorAll('#givingSetupModal button, #givingSetupModal input').forEach((el) => {
+    el.disabled = true;
+  });
   const saveStatus = document.getElementById('givingSetupSaveStatus');
   if (saveStatus) {
     saveStatus.className = 'giving-setup-save-status visible';
@@ -497,10 +592,17 @@ async function saveGivingSetupWizard(button) {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || data.message || data.detail || 'Unable to save the giving setup.');
+    givingSetupSaving = false;
+    if (recurring) recurring.checked = body.recurringGivingEnabled;
+    if (candles) candles.checked = body.candlesEnabled;
     closeGivingSetupWizard();
     await loadDashboard();
     setStatus('Giving setup saved. AGAPAY can now complete the final launch review.', 'success');
   } catch (error) {
+    givingSetupSaving = false;
+    document.querySelectorAll('#givingSetupModal button, #givingSetupModal input').forEach((el) => {
+      el.disabled = false;
+    });
     setStatus(error.message, 'error');
     if (saveStatus?.isConnected) {
       saveStatus.className = 'giving-setup-save-status visible error';
@@ -516,7 +618,23 @@ async function saveGivingSetupWizard(button) {
 async function submitTreasurerGoLive(button) {
   const workflow = currentParish?.onboarding;
   const errorEl = document.getElementById('goLiveError');
-  if (!workflow?.canGoLive) return;
+  if (!workflow?.canGoLive || button.disabled) return;
+  const missingConfirmation = document.querySelector('.treasurer-affirmation:not(:checked)');
+  const missingIdentity = ['goLiveSignerName', 'goLiveSignerTitle']
+    .map((id) => document.getElementById(id))
+    .find((input) => !input?.value.trim());
+  const authority = document.getElementById('goLiveAuthority');
+  const missing = missingConfirmation || missingIdentity || (!authority?.checked && authority);
+  if (missing) {
+    const message = missingConfirmation
+      ? 'Confirm all launch affirmations.'
+      : missingIdentity
+        ? 'Enter your name and title before launching.'
+        : 'Confirm that you are authorized to approve online giving.';
+    if (errorEl) errorEl.textContent = message;
+    missing.focus();
+    return;
+  }
   const affirmations = {};
   document.querySelectorAll('.treasurer-affirmation').forEach((input) => {
     affirmations[input.dataset.key] = input.checked;
@@ -537,8 +655,8 @@ async function submitTreasurerGoLive(button) {
       headers: { ...authHeaders(), Accept: 'application/json', 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
-    if (!res.ok && data.code === 'onboarding_snapshot_changed' && data.onboarding) {
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && ['onboarding_snapshot_changed', 'onboarding_blocked'].includes(data.code) && data.onboarding) {
       if (data.parish) currentParish = { ...currentParish, ...data.parish };
       currentParish.onboarding = data.onboarding;
       renderDashboard();
@@ -547,8 +665,9 @@ async function submitTreasurerGoLive(button) {
       if (signerName) signerName.value = body.signerName;
       if (signerTitle) signerTitle.value = body.signerTitle;
       const refreshedError = document.getElementById('goLiveError');
-      const refreshMessage =
-        'Stripe was refreshed and the current launch summary is shown below. Review it, check the confirmations again, and click Go Live.';
+      const refreshMessage = data.onboarding.canGoLive
+        ? 'The latest launch summary is shown below. Review it, check the confirmations again, and click Go Live.'
+        : 'Your setup changed and needs attention before launch. Follow the next step shown above.';
       if (refreshedError) refreshedError.textContent = refreshMessage;
       document.getElementById('treasurerSignoff')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setStatus(refreshMessage, 'info');
@@ -576,7 +695,8 @@ function renderOnboardingSetup() {
         String(currentParish.subscriptionStatus || '').toLowerCase() === 'active' &&
         credentialStep &&
         !credentialStep.passed;
-      pane.innerHTML = paidTreasurerAccessNeeded
+      renderSimpleParishSetupWizard(currentParish.onboarding);
+      pane.innerHTML += paidTreasurerAccessNeeded
         ? `<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="onboarding-kicker">Paid account security</div><div class="setup-title">Treasurer access needs one final step</div><p class="setup-copy">Your giving page remains live. We sent the treasurer an individual access link now that the parish subscription is paid.</p></div><div class="setup-action-panel"><strong>Check the treasurer email</strong><p class="setup-copy setup-action-copy">The treasurer creates a personal password once. Trial setup and Go Live never require this second login.</p></div></div></div>`
         : '';
       return;

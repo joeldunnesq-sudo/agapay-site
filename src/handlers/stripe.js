@@ -186,13 +186,13 @@ async function retrieveConnectedAccountForRefresh(env, registration = {}, refere
   return { ok: false, status: 422, body: { error: { message: "No connected Stripe account was found for this parish" } } };
 }
 
-async function invalidateAndSaveMaterialRegistration(env, reference, previous, next, actor, reason) {
+async function invalidateAndSaveMaterialRegistration(env, reference, previous, next, actor, reason, persist = true) {
   const updated = await invalidateOnboardingSignoffIfChanged(previous, next, {
     actor,
     reason,
     receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
   });
-  await saveRegistrationRecord(env, reference, updated, previous);
+  if (persist) await saveRegistrationRecord(env, reference, updated, previous);
   return updated;
 }
 
@@ -1104,7 +1104,8 @@ export async function refreshStripeStatusForRegistration(env, reference, registr
     registration,
     next,
     options.actor || "stripe-refresh",
-    options.reason || "Stripe changed the connected account readiness or payout destination."
+    options.reason || "Stripe changed the connected account readiness or payout destination.",
+    options.persist !== false
   );
 
   return { ok: true, registration: updated, account, confirmedAt, recovered: retrieved.recovered === true, simulated: retrieved.simulated === true };

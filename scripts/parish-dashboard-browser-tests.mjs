@@ -89,7 +89,7 @@ try {
           'Check Stripe status',
         ],
         [{ blockers: [{ key: 'givingConfiguration' }] }, 'Review the giving setup', 'Review giving setup'],
-        [{ blockers: [{ key: 'internal' }] }, 'AGAPAY is preparing your setup', null],
+        [{ blockers: [{ key: 'internal' }] }, 'Next step: AGAPAY review', 'Check for updates'],
         [{ blockers: [], canGoLive: true }, 'Review and launch', 'Go Live'],
       ];
       for (const [changes, text, button] of cases) {
@@ -113,7 +113,10 @@ try {
         currentParish.onboarding = { enabled: true, state: 'LIVE' };
         renderSetupWizard();
       });
-      assert.equal(await pane.textContent(), '', 'completed onboarding should disappear');
+      assert.ok(
+        (await pane.textContent()).includes('Giving is live'),
+        'completed onboarding should provide sharing actions'
+      );
       await page.evaluate(() => {
         currentParish.onboarding.steps = [{ key: 'credential', passed: false }];
         renderSetupWizard();
