@@ -47,9 +47,9 @@ assert.match(app, /panel\.inert = !isOpen[\s\S]*?bookstore-cart-close/,
 assert.match(app, /classList\.toggle\("has-cart", itemCount > 0\)/,
   "the storefront width must respond to actual cart state");
 
-assert.match(html, /donor\/style\.css\?v=20260819koinoniaweek1/,
+assert.match(html, /donor\/style\.css\?v=[a-f0-9]{16}/,
   "the bookstore must load the updated storefront styles with a fresh immutable URL");
-assert.match(html, /donor\/app\.js\?v=20260904-controllers1/,
+assert.match(html, /donor\/app\.js\?v=[a-f0-9]{16}/,
   "the bookstore must load the updated storefront behavior with a fresh immutable URL");
 assert.match(html, /id="donorStatus"[^>]*role="status"[^>]*aria-live="polite"[^>]*hidden/,
   "bookstore feedback must begin as a non-layout status surface");

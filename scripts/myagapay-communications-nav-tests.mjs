@@ -145,7 +145,7 @@ async function renderShell({ cached = null, transitionMarker = null, referrer = 
     clearTimeout,
     window,
   };
-  vm.runInNewContext(shell, sandbox);
+  vm.runInNewContext(`${await readFile(new URL('../public/donor/session.js', import.meta.url), 'utf8')}\n${shell}`, sandbox);
   const navigatingBeforeDomReady = body.classList.contains("myagapay-navigating");
   domReady();
   return { body, click: (event) => clickListener(event), dashboard, fetchCalls: () => fetchCalls, label: parishLifeLabel, link: parishLifeLink, shell: window.MyAgapayShell, storage, values, removed, documentElement, navigatingBeforeDomReady };

@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { execFileSync } from 'node:child_process';
 import { testGroups } from './test-manifest.mjs';
+import { changedGroups } from './lib/test-selection.mjs';
 
 function changedFiles() {
   try {
@@ -14,21 +15,6 @@ function changedFiles() {
   } catch {
     return [];
   }
-}
-
-function changedGroups(files) {
-  if (!files.length) return ['core'];
-  if (files.some((file) => /^(package|eslint)|scripts\/(?:run-tests|test-manifest)/.test(file))) return ['all'];
-  const groups = new Set();
-  for (const file of files) {
-    if (/^(src\/accounting|src\/handlers\/accounting|migrations\/.*accounting)/.test(file)) groups.add('accounting');
-    if (/directory/i.test(file)) groups.add('directory');
-    if (/sacrament/i.test(file)) groups.add('sacraments');
-    if (/^(public\/parish|src\/routes\/parish|src\/routes\/stewardship)/.test(file)) groups.add('parish-ui');
-    if (/^docs\/architecture\//.test(file)) groups.add('core');
-    if (/^(src\/worker|src\/routes|src\/handlers|src\/lib|migrations)/.test(file)) groups.add('core');
-  }
-  return groups.size ? [...groups] : ['core'];
 }
 
 function resolveSelection(names) {

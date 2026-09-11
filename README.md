@@ -1,6 +1,22 @@
 # agapay-site
 AGAPAY website files.
 
+## Local development and shared assets
+
+Use Node 24 and `npm ci`, then `npm run dev` for the local app. Shared My AGAPAY
+scripts and styles use content hashes in their URLs. `npm run dev`, `npm start`,
+and Wrangler's custom build synchronize these references automatically. After
+editing a shared asset, run `npm run assets:version` before checking or committing
+the changes. `npm run assets:check` and the quality gate reject stale references.
+The asset list lives in `scripts/lib/app-asset-versions.mjs`; generated versions
+are stable across Windows and Linux line endings.
+
+`npm run test:changed` selects conservative suites for uncommitted changes.
+My AGAPAY changes include calendar, session, and mobile-browser coverage;
+accounting migrations include the accounting and release-gate suites. Shared
+tooling, test-file changes, and unmapped executable files run the full manifest.
+Use `npm run check` for the full release check, including committed changes.
+
 ## Quality checks
 
 - **Local checks** (syntax, route-map integrity, platform/Learn assertions, hardening tests):

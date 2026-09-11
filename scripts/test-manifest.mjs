@@ -15,6 +15,9 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/test-selection-tests.mjs',
+  'scripts/app-asset-version-tests.mjs',
+  'scripts/myagapay-session-tests.mjs',
   'scripts/payment-integrity-tests.mjs',
   'scripts/parish-portability-tests.mjs',
   'scripts/require-node-22.mjs',
@@ -141,6 +144,7 @@ const accounting = [
 ];
 
 const productUi = [
+  'scripts/myagapay-calendar-browser-tests.mjs',
   'scripts/parish-dashboard-browser-tests.mjs',
   'scripts/parish-onboarding-browser-tests.mjs',
   'scripts/parish-campaign-browser-tests.mjs',
@@ -237,7 +241,7 @@ export const testGroups = Object.freeze({
   'parish-ui': unique(smoke, productUi),
   'donor-ui': unique(
     smoke.filter((test) => /myagapay|parish-life|podcast/.test(test)),
-    productUi.filter((test) => /donor|giving-history/.test(test))
+    productUi.filter((test) => /donor|giving-history|myagapay/.test(test))
   ),
   directory,
   sacraments: productUi.filter((test) => /sacrament|pastoral-followup|church-requested/.test(test)),

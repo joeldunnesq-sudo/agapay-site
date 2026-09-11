@@ -5,6 +5,8 @@ const STATIC_ASSETS = [
   "/donor/login.html",
   "/donor/style.css",
   "/donor/app.js",
+  "/donor/session.js",
+  "/donor/controllers/calendar.js",
   "/donor/pwa-install.js",
   "/scripts/consumer-passkeys.js",
   "/styles/numbers.css",
@@ -95,6 +97,8 @@ function isVersionedStaticAsset(request, url) {
   if (request.method !== "GET" || url.origin !== self.location.origin || !url.searchParams.has("v")) return false;
   return url.pathname === "/donor/style.css"
     || url.pathname === "/donor/app.js"
+    || url.pathname === "/donor/session.js"
+    || url.pathname === "/donor/controllers/calendar.js"
     || url.pathname === "/scripts/consumer-passkeys.js"
     || url.pathname === "/myagapay-shell.js"
     || url.pathname === "/liturgical-calendar.js"
