@@ -8,7 +8,7 @@ const donorCss = await read("public/donor/style.css");
 const koinoniaPages = ["feed", "news", "groups", "teaching", "media", "signups", "exchange"];
 const productPages = ["bookstore", "directory", "sacraments"];
 const navVersion = "20260817bookstoreprayer1";
-const shellVersion = "20260827librarymenu1";
+const shellVersion = "20260911sessionresume1";
 
 for (const pageName of [...koinoniaPages, ...productPages]) {
   const html = await read(`public/myagapay/${pageName}.html`);

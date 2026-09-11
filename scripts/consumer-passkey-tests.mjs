@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import vm from "node:vm";
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 import {
@@ -144,7 +145,6 @@ await test("My AGAPAY automatically unlocks the installed app and keeps email re
 await test("installed app starts one automatic required passkey request with email fallback", async () => {
   const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
   const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
-  const shell = readFileSync(path.join(root, "public", "myagapay-shell.js"), "utf8");
   assert.match(login, /function isInstalledApp\(\)/);
   assert.match(login, /if \(isInstalledApp\(\)\) \{[\s\S]*clearSession\(\)[\s\S]*await signInWithPasskey\(\);[\s\S]*return;/);
   assert.doesNotMatch(login, /passkeyLoginButton|donorPasskeyLogin/);
@@ -155,8 +155,57 @@ await test("installed app starts one automatic required passkey request with ema
   assert.doesNotMatch(client, /Passkey use was cancelled or timed out/);
   const pwaInstall = readFileSync(path.join(root, "public", "donor", "pwa-install.js"), "utf8");
   assert.doesNotMatch(pwaInstall, /redirectAuthenticatedPwaDonor|window\.location\.replace\("\/myagapay\/"\)/);
-  assert.match(shell, /function initializeInstalledAppBiometricLock\(\)/);
-  assert.match(shell, /backgroundLockDelayMs = 30 \* 1000[\s\S]*visibilitychange[\s\S]*redirectToLogin\("biometric-required"\)/);
+});
+
+await test("switching apps preserves the session while unauthorized responses still require sign-in", async () => {
+  const shell = readFileSync(path.join(root, "public", "myagapay-shell.js"), "utf8");
+  for (const installed of [true, false]) {
+    let now = 1000;
+    const values = new Map([["agapayDonorEmail", "member@example.com"], ["agapayDonorToken", "valid-session"]]);
+    const listeners = new Map();
+    const redirects = [];
+    const document = {
+      documentElement: { hasAttribute: () => false },
+      visibilityState: "visible",
+      addEventListener(type, handler) {
+        if (!listeners.has(type)) listeners.set(type, []);
+        listeners.get(type).push(handler);
+      },
+    };
+    const window = {
+      fetch: async () => ({ ok: true }),
+      navigator: { standalone: installed },
+      matchMedia: () => ({ matches: installed }),
+      location: {
+        pathname: "/myagapay/parish-life", search: "?week=2026-09-11",
+        origin: "https://agapay.test", href: "https://agapay.test/myagapay/parish-life?week=2026-09-11",
+        replace: (url) => redirects.push(url),
+      },
+      addEventListener() {},
+    };
+    vm.runInNewContext(shell, {
+      window, document, URL, Date: { now: () => now },
+      localStorage: {
+        getItem: (key) => values.get(key) || null,
+        removeItem: (key) => values.delete(key),
+      },
+    });
+    for (const awayMs of [5000, 31000, 5 * 60 * 1000, 60 * 60 * 1000]) {
+      document.visibilityState = "hidden";
+      for (const handler of listeners.get("visibilitychange") || []) handler();
+      now += awayMs;
+      document.visibilityState = "visible";
+      for (const handler of listeners.get("visibilitychange") || []) handler();
+      assert.equal(values.get("agapayDonorToken"), "valid-session");
+      assert.equal(redirects.length, 0, "resuming must not force biometric sign-in");
+    }
+    assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 200 }), false);
+    assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 401 }), true);
+    assert.equal(values.has("agapayDonorToken"), false);
+    const loginUrl = new URL(redirects[0]);
+    assert.equal(loginUrl.searchParams.get("reason"), "session-expired");
+    assert.equal(loginUrl.searchParams.get("next"), "/myagapay/parish-life?week=2026-09-11");
+  }
 });
 
 if (!process.exitCode) console.log(`\n${passed} consumer passkey tests passed.`);
