@@ -127,7 +127,7 @@ for (const file of ['public/donor/bookstore.html', 'public/myagapay/bookstore.ht
 for (const file of donorAppPagePaths) {
   assert.match(
     read(file),
-    /\/donor\/app\.js\?v=20260904-controllers1/,
+    /\/donor\/app\.js\?v=(?:20260904-controllers1|20260911-reading-labels1)/,
     `${file} must invalidate the pre-extraction Donor app cache`
   );
 }

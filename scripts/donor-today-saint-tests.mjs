@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import vm from "node:vm";
 
 import {
   enrichLiturgicalDayWithOrthocal,
@@ -78,15 +79,51 @@ const donorApp = readFileSync(path.join(repoRoot, "public", "donor", "app.js"), 
 const parishLife = readFileSync(path.join(repoRoot, "public", "myagapay", "parish-life.html"), "utf8");
 assert.match(donorApp, /today\.primarySaintTitle \|\| today\.feastTitle/);
 assert.match(donorApp, /stories\.find\(\(story\) => story\?\.primary\) \|\| stories\[0\]/);
-assert.match(donorApp, /if \(groups\.size > 1\) rows\.push\(\{[\s\S]*\? `Feast — \$\{observanceTitle\}`/,
-  "the Today hero must label feast and saint reading groups only when multiple appointments need distinction");
+const readingRowsStart = donorApp.indexOf("function liturgicalReadingRows");
+const readingRowsEnd = donorApp.indexOf("function renderDonorTodayInChurch", readingRowsStart);
+const readingSandbox = {};
+vm.runInNewContext(donorApp.slice(readingRowsStart, readingRowsEnd), readingSandbox);
+const readingTexts = (day) => Array.from(readingSandbox.liturgicalReadingRows(day), (row) => row.text);
+assert.deepEqual(readingTexts(tikhonEnriched), [
+  "Readings of the day",
+  "Epistle: 2 Corinthians 9:12-10:7",
+  "Gospel: Mark 3:19-27",
+  "Saint — St Tikhon",
+  "Epistle: Hebrews 7:26-8:2",
+  "Gospel: Matthew 5:14-19",
+], "ordinary readings must not inherit the day's observance title");
+
+// September 11, 2026 (Julian August 29): the two sets shown in the reported screenshot.
+const forerunnerDay = {
+  feastTitle: "Beheading of St John the Baptist",
+  readingAppointments: orthocalReadingAppointments({ readings: [
+    { source: "epistle", display: "Acts 13.25-33", description: "Forerunner" },
+    { source: "gospel", display: "Mark 6.14-30", description: "Forerunner" },
+    { source: "epistle", display: "Galatians 4.8-21", description: "" },
+    { source: "gospel", display: "Mark 6.45-53", description: "" },
+  ] }),
+};
+assert.deepEqual(readingTexts(forerunnerDay), [
+  "Feast — Forerunner",
+  "Epistle: Acts 13.25-33",
+  "Gospel: Mark 6.14-30",
+  "Readings of the day",
+  "Epistle: Galatians 4.8-21",
+  "Gospel: Mark 6.45-53",
+], "the Forerunner's feast readings and ordinary readings must remain distinct");
+assert.deepEqual(readingTexts({
+  feastTitle: forerunnerDay.feastTitle,
+  epistleRef: "Galatians 4.8-21",
+  gospelRef: "Mark 6.45-53",
+}), ["Epistle: Galatians 4.8-21", "Gospel: Mark 6.45-53"],
+"a single fallback set stays concise without a redundant heading");
 assert.match(donorApp, /\["epistle", "gospel"\]/,
   "each appointment must order the Gospel after the Epistle");
 assert.doesNotMatch(donorApp, /when this service is celebrated|The parish Typikon determines which appointed readings are proclaimed|Liturgical observance:/,
   "the Today hero must keep the grouped reading presentation concise");
 assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
   "each daily reading must render as its own hero line");
-assert.match(parishLife, /\/donor\/app\.js\?v=20260904-controllers1/,
+assert.match(parishLife, /\/donor\/app\.js\?v=20260911-reading-labels1/,
   "the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes");
 
 console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");

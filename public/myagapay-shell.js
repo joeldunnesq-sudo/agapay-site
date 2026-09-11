@@ -964,26 +964,6 @@
     return !["/myagapay/login", "/myagapay/signup", "/myagapay/password-reset"].some((path) => pathname.startsWith(path));
   }
 
-  function isInstalledAppMode() {
-    return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
-  }
-
-  function initializeInstalledAppBiometricLock() {
-    if (!isInstalledAppMode() || !isProtectedPath()) return;
-    const backgroundLockDelayMs = 30 * 1000;
-    let hiddenAt = 0;
-    let locking = false;
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden") {
-        hiddenAt = Date.now();
-        return;
-      }
-      if (!hiddenAt || locking || Date.now() - hiddenAt < backgroundLockDelayMs) return;
-      locking = true;
-      redirectToLogin("biometric-required");
-    });
-  }
-
   function redirectToLogin(reason = "session-expired") {
     const next = `${window.location.pathname}${window.location.search || ""}`;
     clearSession();
@@ -1023,7 +1003,8 @@
     viewport: currentViewport
   };
 
-  initializeInstalledAppBiometricLock();
+  // Backgrounding the app does not end the authenticated session. The normal
+  // missing-session and API 401 checks below still require sign-in when needed.
 
   const DESKTOP_BREAKPOINT = "(min-width: 901px)";
   let viewportQuery = null;

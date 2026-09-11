@@ -1217,14 +1217,11 @@ function liturgicalReadingRows(today = {}) {
   });
 
   const rows = [];
-  const observanceTitle = String(today.feastTitle || "").trim();
   groups.forEach((readings, appointment) => {
     if (groups.size > 1) rows.push({
       text: appointment
         ? `${/(?:^|\s)(?:St\.?|Saint)\s/i.test(appointment) ? "Saint" : "Feast"} — ${appointment}`
-        : observanceTitle
-          ? `Feast — ${observanceTitle}`
-          : "Readings of the day",
+        : "Readings of the day",
       className: "cal-reading-line is-heading"
     });
     ["epistle", "gospel"].forEach((type) => {
