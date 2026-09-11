@@ -68,12 +68,18 @@
 /give/login*
   X-Robots-Tag: noindex, nofollow
 
-# These shared files are referenced with explicit ?v= release identifiers on
-# every My AGAPAY page. Their URLs change whenever their contents change, so
+# These shared files are referenced with generated ?v= content hashes on
+# every consuming page. Their URLs change whenever their contents change, so
 # repeat navigations can safely reuse them without revalidation.
 /donor/style.css
   Cache-Control: public, max-age=31536000, immutable
 /donor/app.js
   Cache-Control: public, max-age=31536000, immutable
 /myagapay-shell.js
+  Cache-Control: public, max-age=31536000, immutable
+/donor/session.js
+  Cache-Control: public, max-age=31536000, immutable
+/donor/controllers/calendar.js
+  Cache-Control: public, max-age=31536000, immutable
+/scripts/consumer-passkeys.js
   Cache-Control: public, max-age=31536000, immutable

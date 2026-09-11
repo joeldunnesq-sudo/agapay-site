@@ -76,17 +76,10 @@
     };
   }
 
-  const storageKeys = {
-    email: "agapayDonorEmail",
-    token: "agapayDonorToken",
-    profile: "agapayDonorProfile",
-    learnPlan: "agapay.learn.plan",
-    // UX cache only: this makes the shared navigation render consistently
-    // across full-page loads. It must never be used as an authorization or
-    // content-access decision; the Worker remains the security boundary.
-    parishCapabilities: "agapay.parishCapabilities.v1",
-    navigationTransition: "agapay.navigationTransition.v1"
-  };
+  // UX cache only: capabilities make navigation consistent across pages. They
+  // must never be used as an authorization or content-access decision;
+  // the Worker remains the security boundary.
+  const storageKeys = window.AGAPAYDonorSession.storageKeys;
   const PARISH_CAPABILITIES_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
   const NAVIGATION_TRANSITION_MAX_AGE_MS = 15 * 1000;
 
@@ -857,22 +850,15 @@
   }
 
   function session() {
-    return {
-      email: localStorage.getItem(storageKeys.email) || "",
-      token: localStorage.getItem(storageKeys.token) || ""
-    };
+    return window.AGAPAYDonorSession.session();
   }
 
   function authHeaders(extra = {}) {
-    const current = session();
-    const headers = { Accept: "application/json", ...extra };
-    if (current.token) headers.Authorization = `Bearer ${current.token}`;
-    if (current.email) headers["X-AGAPAY-Donor-Email"] = current.email;
-    return headers;
+    return window.AGAPAYDonorSession.authHeaders(extra);
   }
 
   function clearSession() {
-    Object.values(storageKeys).forEach((key) => localStorage.removeItem(key));
+    window.AGAPAYDonorSession.clearSession();
   }
 
   // This marker only continues the parish dashboard's cosmetic progress pattern
@@ -964,7 +950,12 @@
     return !["/myagapay/login", "/myagapay/signup", "/myagapay/password-reset"].some((path) => pathname.startsWith(path));
   }
 
+  let redirectingToLogin = false;
   function redirectToLogin(reason = "session-expired") {
+    // Several parallel requests can return 401 together. Start only one
+    // navigation so a second response cannot abort the login page load.
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
     const next = `${window.location.pathname}${window.location.search || ""}`;
     clearSession();
     const loginUrl = new URL("/myagapay/login", window.location.origin);

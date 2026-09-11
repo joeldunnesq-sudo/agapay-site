@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { appAssetUrl } from './lib/app-asset-versions.mjs';
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const sharedCss = await read("public/myagapay/koinonia-inner.css");
@@ -8,7 +9,7 @@ const donorCss = await read("public/donor/style.css");
 const koinoniaPages = ["feed", "news", "groups", "teaching", "media", "signups", "exchange"];
 const productPages = ["bookstore", "directory", "sacraments"];
 const navVersion = "20260817bookstoreprayer1";
-const shellVersion = "20260911sessionresume1";
+const shellVersion = appAssetUrl('/myagapay-shell.js').split('?v=')[1];
 
 for (const pageName of [...koinoniaPages, ...productPages]) {
   const html = await read(`public/myagapay/${pageName}.html`);

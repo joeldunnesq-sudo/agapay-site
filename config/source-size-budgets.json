@@ -2,7 +2,7 @@
   "maximumUnbudgetedLines": 1200,
   "files": {
     "public/admin/app.js": 3477,
-    "public/donor/app.js": 4906,
+    "public/donor/app.js": 3963,
     "public/learn/dashboard-shell.js": 9272,
     "public/learn/dashboard-view-models.js": 1724,
     "public/learn/support.js": 1527,

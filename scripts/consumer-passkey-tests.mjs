@@ -183,7 +183,8 @@ await test("switching apps preserves the session while unauthorized responses st
       },
       addEventListener() {},
     };
-    vm.runInNewContext(shell, {
+    const sessionSource = readFileSync(path.join(root, 'public/donor/session.js'), 'utf8');
+    vm.runInNewContext(`${sessionSource}\n${shell}`, {
       window, document, URL, Date: { now: () => now },
       localStorage: {
         getItem: (key) => values.get(key) || null,
@@ -201,6 +202,8 @@ await test("switching apps preserves the session while unauthorized responses st
     }
     assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 200 }), false);
     assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 401 }), true);
+    assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 401 }), true);
+    assert.equal(redirects.length, 1, 'parallel unauthorized responses trigger only one login navigation');
     assert.equal(values.has("agapayDonorToken"), false);
     const loginUrl = new URL(redirects[0]);
     assert.equal(loginUrl.searchParams.get("reason"), "session-expired");

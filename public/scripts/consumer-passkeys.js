@@ -294,10 +294,7 @@
     remove,
     rename,
     storeSession(payload) {
-      if (payload?.token) localStorage.setItem('agapayDonorToken', payload.token);
-      const email = payload?.donor?.email || '';
-      if (email) localStorage.setItem('agapayDonorEmail', email);
-      if (payload?.donor) localStorage.setItem('agapayDonorProfile', JSON.stringify(payload.donor));
+      window.AGAPAYDonorSession.saveSession(payload);
     },
   };
 

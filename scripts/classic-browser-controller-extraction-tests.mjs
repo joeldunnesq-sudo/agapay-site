@@ -118,16 +118,12 @@ assert.ok(adminHtml.indexOf('/admin/presentation.js') < adminHtml.indexOf('/admi
 assert.doesNotMatch(read('public/admin/login.html'), /controllers\/tax-exemptions\.js/);
 
 for (const file of ['public/donor/bookstore.html', 'public/myagapay/bookstore.html']) {
-  assertOrderedScripts(
-    file,
-    '/donor/controllers/bookstore.js?v=20260904-controllers1',
-    '/donor/app.js?v=20260904-controllers1'
-  );
+  assertOrderedScripts(file, '/donor/controllers/bookstore.js?v=20260904-controllers1', '/donor/app.js?v=');
 }
 for (const file of donorAppPagePaths) {
   assert.match(
     read(file),
-    /\/donor\/app\.js\?v=(?:20260904-controllers1|20260911-reading-labels1)/,
+    /\/donor\/app\.js\?v=[a-f0-9]{16}/,
     `${file} must invalidate the pre-extraction Donor app cache`
   );
 }

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import vm from "node:vm";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 import {
   enrichLiturgicalDayWithOrthocal,
@@ -75,7 +76,7 @@ assert.equal(tikhonEnriched.readingAppointments.length, 4, "all ordinary and sai
 assert.equal(tikhonEnriched.feastTitle, "Leavetaking of Transfiguration", "the Apodosis remains a separate liturgical observance");
 assert.equal(tikhonEnriched.primarySaintTitle, "St Tikhon of Zadonsk (1783)", "the saint remains the Today hero title");
 
-const donorApp = readFileSync(path.join(repoRoot, "public", "donor", "app.js"), "utf8");
+const donorApp = readDonorAppSource();
 const parishLife = readFileSync(path.join(repoRoot, "public", "myagapay", "parish-life.html"), "utf8");
 assert.match(donorApp, /today\.primarySaintTitle \|\| today\.feastTitle/);
 assert.match(donorApp, /stories\.find\(\(story\) => story\?\.primary\) \|\| stories\[0\]/);
@@ -123,7 +124,7 @@ assert.doesNotMatch(donorApp, /when this service is celebrated|The parish Typiko
   "the Today hero must keep the grouped reading presentation concise");
 assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
   "each daily reading must render as its own hero line");
-assert.match(parishLife, /\/donor\/app\.js\?v=20260911-reading-labels1/,
+assert.match(parishLife, /\/donor\/app\.js\?v=[a-f0-9]{16}/,
   "the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes");
 
 console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");
