@@ -173,6 +173,7 @@ const productUi = [
   'scripts/giving-history-ui-tests.mjs',
   'scripts/myagapay-history-browser-tests.mjs',
   'scripts/myagapay-sacraments-browser-tests.mjs',
+  'scripts/myagapay-account-browser-tests.mjs',
   'scripts/donor-history-controller-tests.mjs',
   'scripts/donor-today-saint-tests.mjs',
   'scripts/stewardship-packet-editor-tests.mjs',
