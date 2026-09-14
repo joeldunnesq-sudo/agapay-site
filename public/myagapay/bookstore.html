@@ -505,7 +505,7 @@
       .bookstore-product-card,.bookstore-cart-card { transition:none; }
     }
   </style>
-  <link rel="stylesheet" href="/donor/bookstore-experience.css?v=2d88c6608f5ef935" />
+  <link rel="stylesheet" href="/donor/bookstore-experience.css?v=676250f4b7289fa4" />
   <script src="/donor/bookstore-experience.js?v=60909ea5ca8257c7" defer></script>
 </head>
 <body class="bookstore-boutique donor-mobile-page donor-bookstore-page app-inner-page app-main-feature-page">
@@ -531,7 +531,7 @@
               <div class="notice" id="bookstoreUnavailableNotice" style="display:none;"></div>
                 <div class="bookstore-store-context">
                   <div class="bookstore-store-context-copy"><label class="form-label">Shopping at</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div></div>
-                  <button class="boutique-bag" type="button" onclick="openBookstoreBag()" aria-label="Open shopping bag">Bag <span id="bookstoreBagCount">0</span></button>
+                  
                   <div class="bookstore-parish-switcher">
                     <button class="bookstore-parish-trigger" id="bookstoreParishTrigger" type="button" aria-label="Change church bookstore" aria-haspopup="listbox" aria-expanded="false" aria-controls="bookstoreParishMenu" onclick="toggleBookstoreParishMenu(event)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h11l-3-3M16 17H5l3 3M19 7l-3 3M5 17l3-3"/></svg></button>
                     <div class="bookstore-parish-menu" id="bookstoreParishMenu" hidden onclick="event.stopPropagation()">
@@ -540,7 +540,7 @@
                       <div class="bookstore-parish-options" id="bookstoreParishOptions" role="listbox" aria-label="Church bookstores"><div class="bookstore-parish-empty">Loading churches…</div></div>
                     </div>
                   </div>
-                  <input id="bookstoreParishId" type="hidden" />
+                  <button class="boutique-bag" type="button" onclick="openBookstoreBag()" aria-label="Open shopping bag">Bag <span id="bookstoreBagCount">0</span></button><input id="bookstoreParishId" type="hidden" />
                 </div>
               <form id="bookstoreForm" onsubmit="submitBookstoreOrder(event)">
                 <button class="bookstore-mobile-cart-bar" id="bookstoreMobileCartBar" type="button" aria-controls="bookstoreCartPanel" aria-expanded="false" onclick="toggleBookstoreMobileCart()" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.2 10h10.9l2-7H6"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg><span>Cart <span class="bookstore-mobile-cart-count" id="bookstoreMobileCartCount">0</span></span><strong id="bookstoreMobileCartTotal">$0.00</strong><em id="bookstoreMobileCartAction">View</em></button>
