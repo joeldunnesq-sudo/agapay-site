@@ -85,6 +85,18 @@ Neither the checkout nor available Git history contains `dc-runtime` sources or
 a source map. The frozen checksum remains unchanged pending source recovery or
 the dedicated replacement decision described above.
 
+## Giving history controller
+
+`public/donor/controllers/history.js` owns receipt rendering, activity filters,
+history loading, and recurring-gift management. Its 466 lines are extracted
+verbatim from the Donor app, whose physical budget is reduced to 3,497 lines.
+Every Donor app consumer loads the controller first to preserve existing globals,
+including the recurring-management action used outside the history page.
+The controller participates in generated content versions and offline caching.
+Focused tests protect completed-gift totals, escaping, recurring-parish grouping,
+billing-portal requests, failure cleanup, guest access, and script order. Real-page
+browser coverage protects the history timeline, filters, and cached activity.
+
 ## Bookstore presentation dependency repair
 
 `public/donor/bookstore-presentation.js` owns the category labels, payment-status
