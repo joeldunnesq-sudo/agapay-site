@@ -81,5 +81,11 @@
   Cache-Control: public, max-age=31536000, immutable
 /donor/controllers/calendar.js
   Cache-Control: public, max-age=31536000, immutable
+
+/donor/bookstore-presentation.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/donor/controllers/bookstore.js
+  Cache-Control: public, max-age=31536000, immutable
 /scripts/consumer-passkeys.js
   Cache-Control: public, max-age=31536000, immutable

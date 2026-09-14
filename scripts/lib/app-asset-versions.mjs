@@ -12,6 +12,8 @@ export const appAssets = Object.freeze([
   '/donor/session.js',
   '/scripts/consumer-passkeys.js',
   '/donor/controllers/calendar.js',
+  '/donor/bookstore-presentation.js',
+  '/donor/controllers/bookstore.js',
 ]);
 
 export function contentVersion(source) {

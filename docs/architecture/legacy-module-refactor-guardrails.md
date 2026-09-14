@@ -85,6 +85,17 @@ Neither the checkout nor available Git history contains `dc-runtime` sources or
 a source map. The frozen checksum remains unchanged pending source recovery or
 the dedicated replacement decision described above.
 
+## Bookstore presentation dependency repair
+
+`public/donor/bookstore-presentation.js` owns the category labels, payment-status
+labels, and currency formatter shared by Bookstore and giving history. Both
+Bookstore entry pages and both history entry pages load it before their consumers.
+The history pages previously referenced these globals without loading their owner,
+causing a nonempty Bookstore order list to make history unavailable. This dedicated
+repair moves the existing helpers unchanged and includes real-page browser coverage
+for purchases, escaped titles, product/year filters, and cached activity after reload.
+The Bookstore controller and shared presentation file use generated content versions.
+
 ## Server domain handlers
 
 Phase 4 starts with the Donor Bookstore server domain. `src/handlers/donor-bookstore.js` owns Bookstore catalog reads, cart normalization, parish availability, guest rules, and Stripe Checkout creation. The ordered Donor and Parish route registries remain unchanged, and `src/handlers/donor.js` re-exports the nine established Bookstore functions so Worker imports and test consumers migrate without an API-surface change.

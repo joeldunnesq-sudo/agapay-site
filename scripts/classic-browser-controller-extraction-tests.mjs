@@ -89,6 +89,9 @@ const bookstoreSandbox = {
   },
   historyCalls: [],
 };
+vm.runInNewContext(read('public/donor/bookstore-presentation.js'), bookstoreSandbox, {
+  filename: 'bookstore-presentation.js',
+});
 vm.runInNewContext(bookstoreController, bookstoreSandbox, { filename: 'bookstore.js' });
 assert.equal(bookstoreSandbox.formatCentsAsDollars(1250), '$12.50');
 assert.match(bookstoreSandbox.bookstoreCategoryIcon('book'), /<svg/);
@@ -118,8 +121,18 @@ assert.ok(adminHtml.indexOf('/admin/presentation.js') < adminHtml.indexOf('/admi
 assert.doesNotMatch(read('public/admin/login.html'), /controllers\/tax-exemptions\.js/);
 
 for (const file of ['public/donor/bookstore.html', 'public/myagapay/bookstore.html']) {
-  assertOrderedScripts(file, '/donor/controllers/bookstore.js?v=20260904-controllers1', '/donor/app.js?v=');
+  assertOrderedScripts(file, '/donor/bookstore-presentation.js?v=', '/donor/controllers/bookstore.js?v=');
+  assertOrderedScripts(file, '/donor/controllers/bookstore.js?v=', '/donor/app.js?v=');
 }
+for (const file of ['public/donor/offerings.html', 'public/myagapay/giving/history.html']) {
+  assertOrderedScripts(file, '/donor/bookstore-presentation.js?v=', '/donor/app.js?v=');
+  assert.doesNotMatch(read(file), /controllers\/bookstore\.js/);
+}
+assert.doesNotMatch(
+  bookstoreController,
+  /(?:const BOOKSTORE_CATEGORY_LABELS|const BOOKSTORE_STATUS_LABELS|function formatCentsAsDollars)/
+);
+assert.ok(donorAppScriptPaths().includes('public/donor/bookstore-presentation.js'));
 for (const file of donorAppPagePaths) {
   assert.match(
     read(file),
