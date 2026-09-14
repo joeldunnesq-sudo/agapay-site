@@ -70,7 +70,6 @@
   .koinonia-landing-page .parish-life-liturgical-hero .cal-hero-inner { padding: 20px 18px 0; }
   .koinonia-landing-page .parish-life-liturgical-hero .cal-today-title { font-size: 31px; }
   .koinonia-landing-page .parish-life-liturgical-hero .cal-today-note { font-size: 11px; }
-  .koinonia-year { margin: 0 -18px; padding: 12px 18px; }
   .koinonia-parish-context { font-size: 11px; }
   .koinonia-parish-context #todayGiveLink { font-size: 10px; padding: 9px 11px; }
   .koinonia-shortcuts a { font-size: 10px; }
@@ -91,16 +90,8 @@
 
 .koinonia-landing-page #todayChips > :is(span,button) { white-space:nowrap; height:28px; }
 .koinonia-landing-page #todayChips > span::before { display:none; }
-/* Match the home page pledge tracker's navy panel and gold progress bar. */
-.koinonia-year { margin:0 -27px; padding:16px 27px; background:linear-gradient(145deg,#061522,#0b2130); color:#f6f1e8; border-top:1px solid rgba(200,162,74,.22); }
-.koinonia-year-heading { gap:8px; }
-.koinonia-year-heading [data-year-day] { color:#e8c56a; font-size:10px; }
-.koinonia-year-track > .pledge-bar-fill { display:block; width:var(--year-progress,0%); }
-.koinonia-year-ends { gap:8px; }
-@media(max-width:700px) { .koinonia-year { margin:0 -18px; padding:14px 18px; } }
-@media(prefers-reduced-motion:reduce) { .koinonia-year .pledge-bar-fill { transition:none; } }
-/* Standalone church-year card and readable light parish cards. */
-.koinonia-landing-page .koinonia-year { margin:0 0 22px; padding:16px 23px; border:1px solid rgba(200,162,74,.22); border-radius:12px; }
+
+/* Readable light parish cards. */
 .koinonia-landing-page :is(.parish-life-community-inbox,.parish-life-inbox-head,.parish-life-inbox-list) { border:0; box-shadow:none; }
 .koinonia-landing-page .parish-life-ministry-tile,
 .koinonia-landing-page .parish-life-ministry-tile strong { color:#18354b; }
