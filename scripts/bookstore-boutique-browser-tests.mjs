@@ -108,6 +108,7 @@ try {
   assert.equal(await catalog.locator('.bookstore-price-sale strong').textContent(), '$18.00');
   assert.equal(await catalog.locator('.is-unavailable button.bookstore-product-add').isDisabled(), true);
   await page.screenshot({ path: 'output/bookstore-integrated-sale.png', fullPage: true });
+  await page.locator('.bookstore-category-toggle').click();
   await page.locator('#bookstoreCategoryFilters').getByRole('button', { name: /Sale/ }).click();
   assert.equal(await catalog.locator('article').count(), 1);
   await catalog.getByRole('button', { name: 'View details for Daily Prayers' }).click();
@@ -128,6 +129,7 @@ try {
   await page.locator('#bookstoreSavedToggle').click();
   assert.equal(await catalog.locator('article').count(), 1);
   await page.locator('#bookstoreSavedToggle').click();
+  await page.locator('.bookstore-category-toggle').click();
   await page.locator('#bookstoreCategoryFilters').getByRole('button', { name: /^All / }).click();
   await page.locator('#bookstoreSort').selectOption('high');
   assert.match(await catalog.locator('article').first().textContent(), /Christ Pantocrator/);
@@ -160,6 +162,20 @@ try {
   assert.equal(await page.locator('#bookstoreBagCount').textContent(), '0');
   assert.equal(await catalog.getByText('Daily Prayers', { exact: true }).count(), 0);
   assert.ok(catalogParishes.includes('parish-b'));
+  await page.getByRole('button', { name: 'Orders', exact: true }).click();
+  assert.equal(await page.locator('.bookstore-orders-card').isVisible(), true);
+  assert.equal(await catalog.isVisible(), false);
+  await page.getByRole('button', { name: 'Shop', exact: true }).click();
+  await page.locator('.bookstore-manual-panel summary').click();
+  await page.locator('#bookstoreCategory').selectOption('other');
+  await page.locator('#bookstoreField_description').fill('Parish prayer booklet');
+  await page.locator('#bookstorePrice').fill('8');
+  await page.getByRole('button', { name: 'Add item to cart', exact: true }).click();
+  assert.equal(await page.locator('#bookstoreBagCount').textContent(), '1');
+  assert.equal(await page.locator('#bookstoreCartTotal').textContent(), '$8.00');
+  await page.locator('.boutique-bag').click();
+  assert.equal(await page.locator('#bookstoreCartPanel').evaluate((el) => el.inert), false);
+  await page.getByRole('button', { name: 'Close cart', exact: true }).first().click();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   await page.screenshot({ path: 'output/bookstore-integrated-mobile.png', fullPage: true });
   assert.deepEqual(errors, []);

@@ -148,15 +148,9 @@ function parishLifeApprovedServiceEvents(payload = {}) {
   });
 }
 
-function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
+function parishLifeTierSectionsHtml(communicationsEnabled) {
   if (!communicationsEnabled) return "";
-  const communityTools = [
-    capabilities.signupsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/signups"><span aria-hidden="true">✓</span><strong>Parish Signups</strong><small>Serve the faithful</small><em>Open →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="signups" hidden></b></a>' : '',
-    capabilities.exchangeEnabled ? '<a class="parish-life-community-tool" href="/myagapay/exchange"><span aria-hidden="true">⇄</span><strong>Parish Exchange</strong><small>Offer or request useful items</small><em>Browse →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="exchange" hidden></b></a>' : '',
-    capabilities.prayerRequestsEnabled ? '<a class="parish-life-community-tool" href="/myagapay/prayer-requests"><span aria-hidden="true"><svg class="prayer-candle-icon" viewBox="0 0 24 24" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg></span><strong>Prayer Requests</strong><small>Pray for one another</small><em>Pray →</em><b class="parish-life-community-tool-badge" data-community-tool-badge="prayers" hidden></b></a>' : ''
-  ].filter(Boolean).join("");
   return `
-    ${communityTools ? `<section class="parish-life-home-section" aria-labelledby="communityToolsHeading"><div class="parish-life-section-head"><h2 id="communityToolsHeading">Community Tools</h2></div><div class="parish-life-community-tools">${communityTools}</div></section>` : ""}
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
@@ -173,7 +167,7 @@ function parishLifeTierSectionsHtml(communicationsEnabled, capabilities = {}) {
       </section>
     </section>
     <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
-      <div class="parish-life-section-head"><h2 id="recentVideosHeading">Recent Videos</h2><a href="/myagapay/media">All Media</a></div>
+      <div class="parish-life-section-head"><h2 id="recentVideosHeading">Latest Video</h2><a href="/myagapay/media">All Media</a></div>
       <div class="parish-life-video-grid" id="parishLifeVideos"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading videos…</p></div>
     </section>
     <div id="parishLifeNewsMount">
@@ -379,11 +373,9 @@ function renderRecentVideos(media = {}) {
   const curatedYouTube = (media.youtube || []).map((video) => ({ ...video, youtubeVideo: true }));
   const latestYouTube = media.youtubeLatest ? { ...media.youtubeLatest, youtubeVideo: true } : null;
   const byDate = (left, right) => new Date(right.publishedAt || right.createdAt || right.addedAt || 0) - new Date(left.publishedAt || left.createdAt || left.addedAt || 0);
-  const pinned = [...nativeVideos, ...curatedYouTube].filter((video) => video.pinned).sort(byDate);
-  const remainder = [...nativeVideos, ...curatedYouTube].filter((video) => !video.pinned).sort(byDate);
-  const videos = [...pinned, ...(latestYouTube ? [latestYouTube] : []), ...remainder]
+  const videos = [...nativeVideos, ...curatedYouTube, ...(latestYouTube ? [latestYouTube] : [])].sort(byDate)
     .filter((video, index, all) => all.findIndex((candidate) => (candidate.youtubeUrl || candidate.id) === (video.youtubeUrl || video.id)) === index)
-    .slice(0, 3);
+    .slice(0, 1);
   if (!videos.length) {
     target.innerHTML = '<div class="parish-life-empty-state"><strong>No videos yet</strong><p>Published parish video will appear here.</p></div>';
     return;
@@ -583,6 +575,7 @@ function renderMinistries(groups = {}) {
   const target = document.getElementById("parishLifeMinistries");
   if (!target) return;
   const ministries = groups.groups || [];
+  target.closest("section").hidden = ministries.length === 0;
   if (!ministries.length) {
     target.innerHTML = `
       <button type="button" class="parish-life-get-involved-card" onclick="requestParishServiceInterest(this)">
@@ -629,6 +622,7 @@ async function parishLifeFetch(path, headers) {
 }
 
 function applyParishLifeExperience(experience, parish) {
+  window.KoinoniaExperience?.parishContext(parish, experience.communicationsEnabled);
   document.title = `${experience.label} | My AGAPAY`;
   document.documentElement.dataset.parishLifeExperience = experience.communicationsEnabled ? "koinonia" : "today";
   document.querySelectorAll("[data-parish-life-label]").forEach((element) => { element.textContent = experience.label; });

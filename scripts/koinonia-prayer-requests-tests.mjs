@@ -135,8 +135,8 @@ const sources = {
 assert.match(sources.worker, /\/api\/donor\/koinonia\/prayer-requests/);
 assert.match(sources.worker, /handleParishPrayerRequests/);
 assert.match(sources.handler, /prayerRequestsEnabledFor\(found\.registration\)/, "the member API must enforce the ON/OFF switch server-side");
-assert.match(sources.parishLife, /Prayer Requests[\s\S]*data-community-tool-badge="prayers"/);
-assert.match(sources.parishLife, /href="\/myagapay\/prayer-requests"><span aria-hidden="true"><svg class="prayer-candle-icon"/, "the app Community Tool must use the line-art prayer candle");
+assert.match(read("public/myagapay/koinonia-experience.js"), /Prayer Requests[\s\S]*data-community-tool-badge/);
+assert.match(read("public/myagapay/koinonia-experience.js"), /prayers: '<path[\s\S]*prayer-requests/, "the app shortcut must retain a line-art prayer candle and the prayer request route");
 assert.match(sources.shell, /prayers:[^\n]*<svg class="prayer-candle-icon"/, "the unified app navigation must use the line-art prayer candle");
 assert.match(sources.memberPage, /Parish community[\s\S]*Clergy only[\s\S]*Post anonymously/);
 assert.match(sources.memberPage, /class="prayer-mobile-appbar"[\s\S]*class="prayer-page-heading"[\s\S]*class="prayer-page-back"[\s\S]*New request/, "the member page must use the mockup's app bar and compact heading");

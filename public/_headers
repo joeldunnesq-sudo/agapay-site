@@ -104,3 +104,12 @@
 
 /donor/bookstore-experience.css
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/parish-life.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/koinonia-experience.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/koinonia-experience.css
+  Cache-Control: public, max-age=31536000, immutable

@@ -1,0 +1,99 @@
+/* Approved Koinonia: cream canvas, light cards, soft-blue liturgical hero. */
+.koinonia-landing-page {
+  --k-bg: #f3eee4; --k-surface: #fffdf8; --k-surface-2: #f8f5ee;
+  --k-text: #18354b; --k-muted: #687983; --k-border: #e1d9cb;
+  --k-gold: #9a7837; --k-gold-hover: #795d29;
+  font-family: 'DM Sans', sans-serif;
+}
+.koinonia-landing-page,
+.koinonia-landing-page :is(.app,.content,.page) { background: #f3eee4; }
+.koinonia-landing-page .parish-life-page-shell { width: 100%; max-width: 850px; padding: 24px 30px 100px; }
+.koinonia-parish-context { display: flex; align-items: center; gap: 8px; padding: 0 2px 14px; color: #435866; font-size: 12px; }
+.koinonia-parish-context > svg { width: 16px; height: 16px; flex: 0 0 16px; stroke: #9a7837; fill: none; stroke-width: 1.6; }
+.koinonia-parish-context strong { flex: 1; min-width: 0; font-weight: 500; }
+.koinonia-parish-context #todayGiveLink { flex: 0 0 auto; border: 1px solid #b89139; border-radius: 999px; background: #c8a24a; color: #061522; font: 500 11px/1.2 'DM Sans',sans-serif; padding: 10px 13px; text-decoration: none; min-height: 40px; display: inline-flex; align-items: center; }
+.koinonia-parish-context #todayGiveLink:hover { background: #d4b362; }
+.koinonia-landing-page [hidden] { display: none !important; }
+.koinonia-landing-page .parish-life-liturgical-hero { background: #e8eef1; color: #18354b; border: 1px solid #d3dde2; border-radius: 12px; box-shadow: none; margin: 0; overflow: hidden; }
+.koinonia-landing-page .parish-life-liturgical-hero::before,
+.koinonia-landing-page .parish-life-liturgical-hero::after { display: none; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-hero-inner { display: block; padding: 23px 27px 0; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-heading-row { padding: 0; margin: 0 0 12px; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-badge { display: none; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-heading-copy { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-hero-eyebrow { color: #806532; background: transparent; padding: 0; border: 0; font: 500 11px/1.5 'DM Sans',sans-serif; letter-spacing: .3px; }
+#koinoniaChurchDate { font-size: 10px; color: #687983; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-today-title { color: #18354b; padding: 0; font: 500 35px/1.08 'Cormorant Garamond',Georgia,serif; letter-spacing: -.5px; margin: 0 0 12px; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-today-note { color: #687983; font: 400 12px/1.8 'DM Sans',sans-serif; margin: 0; }
+.koinonia-landing-page .cal-reading-line { display: block; }
+.koinonia-landing-page .cal-reading-line.is-heading { color: #435866; font-weight: 500; margin-top: 5px; }
+.koinonia-landing-page #todayChips { display: flex; flex-wrap: nowrap; gap: 5px; margin: 14px 0 18px; padding: 0; }
+.koinonia-landing-page #todayChips > :is(span,button) { display: inline-flex; align-items: center; justify-content: center; flex: 0 1 auto; min-width: 0; min-height: 28px; border: 1px solid #d9cba9; border-radius: 999px; padding: 5px 8px; background: #f8f3e8; color: #806532; font: 500 10px/1.15 'DM Sans',sans-serif; text-align: center; }
+.koinonia-landing-page #todayChips > .is-fast { background: #eee6ee; color: #765778; border-color: #d4c1d4; }
+.koinonia-landing-page #todayChips > .cal-saint-chip { position: relative; background: #18354b; color: #fffdf8; border-color: #18354b; cursor: pointer; gap: 3px; white-space: nowrap; }
+.koinonia-landing-page #todayChips > .cal-saint-chip::after { content: ''; position: absolute; inset: -8px 0; }
+.koinonia-landing-page #todayChips > .cal-saint-chip:hover { background: #294e67; }
+.koinonia-landing-page :is(a,button):focus-visible { outline: 2px solid #9a7837; outline-offset: 3px; }
+.koinonia-year { margin: 0 -27px; padding: 12px 27px; border-top: 1px solid #c2cdd2; background: #e3ebef; }
+.koinonia-year-heading,.koinonia-year-ends { display: flex; justify-content: space-between; gap: 8px; color: #687983; font: 400 10px/1.4 'DM Sans',sans-serif; }
+.koinonia-year-heading strong { font-size: 9px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #806532; }
+.koinonia-year-track { height: 4px; background: #cbd6da; border-radius: 4px; position: relative; margin: 12px 0 10px; }
+.koinonia-year-track > span { display: block; width: var(--year-progress,0%); height: 100%; background: #aa8844; border-radius: inherit; }
+.koinonia-year-track > i { position: absolute; left: var(--year-progress,0%); top: 50%; transform: translate(-50%,-50%); width: 9px; height: 9px; border: 2px solid #fffdf8; border-radius: 50%; background: #aa8844; }
+.koinonia-shortcuts { display: grid; grid-template-columns: repeat(var(--shortcut-count,5),minmax(0,1fr)); gap: 4px; border-bottom: 1px solid #e1d9cb; margin: 0 0 22px; }
+.koinonia-shortcuts a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 2px; font-size: 11px; color: #18354b; text-decoration: none; min-width: 0; }
+.koinonia-shortcuts svg { width: 20px; height: 20px; fill: none; stroke: #9a7837; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.koinonia-shortcut-badge { position: absolute; right: 12%; top: 8px; border-radius: 999px; background: #18354b; color: #fffdf8; font-size: 9px; min-width: 16px; padding: 1px 4px; text-align: center; }
+.koinonia-landing-page .parish-life-home-section { display: block; padding: 21px 23px; margin: 0 0 22px; background: #fffdf8; border: 1px solid #e1d9cb; border-radius: 12px; }
+.koinonia-landing-page .parish-life-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.koinonia-landing-page .parish-life-section-head h2 { margin: 0; color: #18354b; font: 500 28px/1.1 'Cormorant Garamond',Georgia,serif; }
+.koinonia-landing-page .parish-life-section-head a { color: #806532; font: 500 11px/1.3 'DM Sans',sans-serif; }
+.koinonia-landing-page .cal-parish-month { background: #f8f5ee; border-color: #e1d9cb; border-radius: 8px; box-shadow: none; }
+.koinonia-landing-page .cal-parish-day.is-selected { background: #18354b; color: #fffdf8; box-shadow: none; }
+.koinonia-landing-page :is(.parish-life-community-inbox,.parish-life-inbox-head,.parish-life-inbox-list) { background: transparent; box-shadow: none; border-color: #e1d9cb; }
+.koinonia-landing-page .parish-life-inbox-head { padding: 0 0 12px; }
+.koinonia-landing-page .parish-life-inbox-head strong { font: 500 28px/1.1 'Cormorant Garamond',Georgia,serif; color: #18354b; }
+.koinonia-landing-page .parish-life-ministry-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.koinonia-landing-page .parish-life-ministry-tile { background: #f8f5ee; border: 1px solid #e1d9cb; border-radius: 8px; box-shadow: none; padding: 17px; }
+.koinonia-landing-page .parish-life-ministry-tile strong { font: 500 23px/1.15 'Cormorant Garamond',Georgia,serif; }
+.koinonia-landing-page :is(.parish-life-audio-icon,.parish-life-continue-art) { width: 58px; height: 58px; flex: 0 0 58px; border-radius: 6px; overflow: hidden; background: #e8eef1; color: #9a7837; }
+.koinonia-landing-page :is(.parish-life-audio-icon,.parish-life-continue-art) img { width: 100%; height: 100%; object-fit: cover; }
+.koinonia-landing-page :is(.parish-life-recording-row,.parish-life-continue-card) { background: #fffdf8; border-color: #e1d9cb; border-radius: 8px; box-shadow: none; }
+.koinonia-landing-page .parish-life-video-grid { display: grid; grid-template-columns: minmax(0,1fr); }
+.koinonia-landing-page .parish-life-video-card { background: #fffdf8; border: 1px solid #e1d9cb; border-radius: 8px; overflow: hidden; box-shadow: none; }
+.koinonia-landing-page .parish-life-video-thumb { aspect-ratio: 16/9; }
+.koinonia-landing-page .parish-life-video-copy strong { font: 500 26px/1.15 'Cormorant Garamond',Georgia,serif; }
+.koinonia-landing-page .parish-life-blog-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.koinonia-landing-page .parish-life-blog-card { border-color: #e1d9cb; background: #fffdf8; border-radius: 8px; box-shadow: none; }
+.koinonia-landing-page .parish-life-blog-card strong { font: 500 23px/1.15 'Cormorant Garamond',Georgia,serif; }
+.koinonia-landing-page dialog.donor-saint-modal { width: min(520px,calc(100% - 28px)); max-height: calc(100dvh - 40px); height: auto; margin: auto; padding: 0; border: 1px solid #d9d0c0; border-radius: 16px; background: #fffdf8; overflow: auto; color: #18354b; }
+.koinonia-landing-page dialog.donor-saint-modal::backdrop { background: #06152299; }
+.koinonia-landing-page .donor-saint-modal-card { width: 100%; max-height: none; border: 0; border-radius: 0; background: #fffdf8; box-shadow: none; }
+.koinonia-landing-page .donor-saint-modal-head { background: #e8eef1; }
+.koinonia-landing-page .donor-saint-modal-head h2 { font: 500 32px/1.1 'Cormorant Garamond',Georgia,serif; color: #18354b; }
+@media(max-width:700px) {
+  .koinonia-landing-page .parish-life-page-shell { width: min(100%,480px); padding: 20px 15px 100px; }
+  .koinonia-landing-page .parish-life-liturgical-hero .cal-hero-inner { padding: 20px 18px 0; }
+  .koinonia-landing-page .parish-life-liturgical-hero .cal-today-title { font-size: 31px; }
+  .koinonia-landing-page .parish-life-liturgical-hero .cal-today-note { font-size: 11px; }
+  .koinonia-year { margin: 0 -18px; padding: 12px 18px; }
+  .koinonia-parish-context { font-size: 11px; }
+  .koinonia-parish-context #todayGiveLink { font-size: 10px; padding: 9px 11px; }
+  .koinonia-shortcuts a { font-size: 10px; }
+  .koinonia-landing-page .parish-life-home-section { padding: 18px 16px; margin-bottom: 18px; }
+  .koinonia-landing-page .parish-life-section-head h2 { font-size: 26px; }
+  .koinonia-landing-page .parish-life-ministry-grid { grid-template-columns: 1fr; }
+  .koinonia-landing-page :is(.parish-life-audio-icon,.parish-life-continue-art) { width: 50px; height: 50px; flex-basis: 50px; }
+  .koinonia-landing-page .parish-life-blog-list { gap: 8px; }
+  .koinonia-landing-page .parish-life-blog-card strong { font-size: 18px; }
+}
+@media(max-width:360px) {
+  .koinonia-landing-page #todayChips { gap: 3px; }
+  .koinonia-landing-page #todayChips > :is(span,button) { padding: 5px; font-size: 9px; }
+}
+
+.koinonia-landing-page dialog:not([open]) { display:none; }
+.koinonia-landing-page { color-scheme:light; }
+
+.koinonia-landing-page #todayChips > :is(span,button) { white-space:nowrap; height:28px; }
+.koinonia-landing-page #todayChips > span::before { display:none; }

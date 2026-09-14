@@ -19,6 +19,9 @@ export const appAssets = Object.freeze([
   '/donor/controllers/bookstore.js',
   '/donor/bookstore-experience.js',
   '/donor/bookstore-experience.css',
+  '/myagapay/parish-life.js',
+  '/myagapay/koinonia-experience.js',
+  '/myagapay/koinonia-experience.css',
 ]);
 
 export function contentVersion(source) {

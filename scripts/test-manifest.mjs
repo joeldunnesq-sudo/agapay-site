@@ -161,6 +161,7 @@ const productUi = [
   'scripts/bookstore-scanned-inventory-tests.mjs',
   'scripts/bookstore-storefront-experience-tests.mjs',
   'scripts/bookstore-boutique-browser-tests.mjs',
+  'scripts/koinonia-refresh-browser-tests.mjs',
   'scripts/bookstore-inventory-phase1-tests.mjs',
   'scripts/bookstore-inventory-phase2-tests.mjs',
   'scripts/bookstore-inventory-phase3-tests.mjs',

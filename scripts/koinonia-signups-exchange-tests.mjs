@@ -283,7 +283,7 @@ assert.match(sources.exchange, /exchangePhotoStorageKey[\s\S]*GROUP_MESSAGE_ASSE
 assert.match(sources.pushes, /sendSignupReminderPush[\s\S]*sendExchangeMessagePush/);
 assert.match(sources.pushes, /sendSignupPublishedPush[\s\S]*sendExchangeListingPush/);
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/community-tools\/badges/);
-assert.match(sources.parishLife, /data-community-tool-badge="signups"[\s\S]*data-community-tool-badge="exchange"[\s\S]*data-community-tool-badge="prayers"/);
+assert.match(read("public/myagapay/koinonia-experience.js"), /\['signups', 'exchange', 'prayers'\][\s\S]*data-community-tool-badge/);
 assert.match(sources.signupsClient, /community-tools\/signups\/opened/);
 assert.match(read("public/myagapay/exchange.js"), /community-tools\/exchange\/opened/);
 assert.match(sources.worker, /koinonia_exchange_expiry_sweep[\s\S]*expireKoinoniaExchangeListings/);

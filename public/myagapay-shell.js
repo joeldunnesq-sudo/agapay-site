@@ -121,7 +121,7 @@
     const items = [
       { id: "giving", href: "/myagapay/dashboard", label: "Give", mobileLabel: "Give", short: "Giving dashboard", icon: icons.home },
       { id: "parish-life", href: "/myagapay/parish-life", label: parishLife.label, short: parishLife.short, icon: icons.parishLife, deferUntilCapabilitiesLoaded: true },
-      { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
+      { id: "commemorations", href: "/myagapay/sacraments", label: "Sacraments & Services", mobileLabel: "Services", short: "Requests and prayer", icon: icons.sacraments, parishFeature: "sacramentsEnabled" },
       { id: "library", href: "/myagapay/library", label: "Parish Library", mobileLabel: "Library", short: "Documents and links from your church", icon: icons.library, parishFeature: "libraryEnabled" },
       { id: "history", href: "/myagapay/giving/history", label: "History", short: "Giving history", icon: icons.history, mobileFallbackFor: "sacramentsEnabled", desktopHidden: true },
       { id: "directory", href: "/myagapay/directory", label: "Directory", short: "Parish member directory", icon: icons.directory, parishFeature: "directoryEnabled" },
@@ -168,17 +168,13 @@
         ? feature
         : byId.get(fallbackId);
     };
-    const sacramentOrLibrary = parishCapabilities.sacramentsEnabled === true || active === "commemorations"
-      ? byId.get("commemorations")
-      : parishCapabilities.libraryEnabled === true || active === "library"
-        ? byId.get("library")
-        : byId.get("history");
+    const libraryOrLearn = featureOrFallback("library", "learn");
     return [
       byId.get("giving"),
       featureOrFallback("bookstore", "settings"),
       byId.get("parish-life"),
-      featureOrFallback("directory", "learn"),
-      sacramentOrLibrary,
+      libraryOrLearn,
+      byId.get("commemorations"),
     ].filter(Boolean);
   }
 

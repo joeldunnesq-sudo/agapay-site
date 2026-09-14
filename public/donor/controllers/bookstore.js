@@ -185,6 +185,7 @@ function renderBookstorePopularItems(products = []) {
   const grid = document.getElementById("bookstorePopularGrid");
   if (!section || !grid) return;
   const popular = [...products]
+    .filter(product => Number(product.unitsSold || 0) > 0)
     .sort((a, b) => Number(b.unitsSold || 0) - Number(a.unitsSold || 0) || String(a.name || "").localeCompare(String(b.name || "")))
     .slice(0, 4);
   section.hidden = popular.length === 0 || Boolean(bookstoreCatalogQuery) || bookstoreCatalogCategory !== "all" || (typeof bookstoreSavedOnly !== "undefined" && bookstoreSavedOnly);

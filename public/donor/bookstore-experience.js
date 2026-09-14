@@ -41,10 +41,48 @@ function toggleBookstoreSaved(index) {
 }
 
 function toggleBookstoreSavedView() {
-  bookstoreSavedOnly = !bookstoreSavedOnly;
-  document.getElementById('bookstoreSavedToggle')?.setAttribute('aria-pressed', String(bookstoreSavedOnly));
-  renderBookstoreProducts(bookstoreProducts);
+  setBookstoreView(bookstoreSavedOnly ? 'shop' : 'saved');
 }
+
+function setBookstoreView(view = 'shop') {
+  document.body.dataset.bookstoreView = view;
+  bookstoreSavedOnly = view === 'saved';
+  document.querySelectorAll('[data-bookstore-view]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.bookstoreView === view));
+  });
+  const orders = document.querySelector('.bookstore-orders-card');
+  if (orders) {
+    orders.hidden = view !== 'orders';
+    orders.open = view === 'orders';
+  }
+  document.querySelectorAll('.bookstore-app-collection, .bookstore-manual-panel, .boutique-editorial').forEach((el) => {
+    el.hidden = view === 'orders' || (view === 'saved' && !el.classList.contains('bookstore-app-collection'));
+  });
+  const title = document.getElementById('bookstoreCollectionTitle');
+  if (title) title.textContent = bookstoreSavedOnly ? 'Saved items' : 'Parish bookstore';
+  renderBookstoreProducts(bookstoreProducts);
+  if (view === 'orders') document.getElementById('bookstorePopularItems').hidden = true;
+}
+
+function scrollBookstoreSellers(direction) {
+  const rail = document.getElementById('bookstorePopularGrid');
+  rail?.scrollBy({ left: direction * 280, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const dialog = document.getElementById('bookstoreCategoryDialog');
+  dialog?.addEventListener('click', (event) => {
+    const category = event.target.closest('.bookstore-category-chip');
+    if (category) {
+      const label = document.getElementById('bookstoreCategoryLabel');
+      if (label) label.textContent = bookstoreCatalogCategory === 'all' ? 'Categories' : (BOOKSTORE_CATEGORY_LABELS[bookstoreCatalogCategory] || 'Sale');
+      dialog.close();
+    } else if (event.target === dialog) {
+      const bounds = dialog.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+    }
+  });
+});
 
 function setBookstoreSort(value) {
   bookstoreSort = value;
@@ -98,8 +136,7 @@ function openBookstoreBag() {
 }
 
 function browseBookstoreCollection(category = 'all') {
-  bookstoreSavedOnly = false;
-  document.getElementById('bookstoreSavedToggle')?.setAttribute('aria-pressed', 'false');
+  setBookstoreView('shop');
   bookstoreCatalogQuery = '';
   const search = document.getElementById('bookstoreProductSearch');
   if (search) search.value = '';
