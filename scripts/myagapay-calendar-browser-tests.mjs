@@ -92,6 +92,7 @@ try {
   };
   await page.goto('https://agapay.test/myagapay/parish-life');
   await assertReadings();
+  assert.equal(await page.locator('#calendarChurchYear').count(), 0);
   await page.locator('#saintPreviewCard').click();
   await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /A test saint life/);

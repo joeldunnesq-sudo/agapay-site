@@ -14,7 +14,7 @@
   <script src="/pwa-register.js" defer></script>
   <script src="/donor/session.js?v=efeba05c646552d3"></script>
   <script src="/myagapay-shell.js?v=5509ae115f54c4c3"></script>
-  <script src="/donor/controllers/calendar.js?v=cfa798e93d0ffb22" defer></script>
+  <script src="/donor/controllers/calendar.js?v=b7e4aa7beb3b5ae4" defer></script>
   <script src="/donor/controllers/history.js?v=a19335584ba4ded8" defer></script>
   <script src="/donor/controllers/sacraments.js?v=a70f198649e067b5" defer></script>
   <script src="/donor/app.js?v=21918d61a3bc3579" defer></script>
@@ -26,7 +26,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="/myagapay/koinonia-subpages.css?v=59475d874355b315" />
+  <link rel="stylesheet" href="/myagapay/koinonia-subpages.css?v=2770ac979c51f0f6" />
+  <script src="/myagapay/church-year.js?v=cdb027d76cc79f97" defer></script>
 </head>
 <body class="koinonia-design-page donor-mobile-page donor-calendar-page">
   <div class="app">
@@ -65,6 +66,12 @@
                   </div>
                 </div>
               </div>
+            </section>
+
+            <section class="calendar-church-year" id="calendarChurchYear" aria-label="The church year" hidden>
+              <div class="pledge-tracker-head"><strong class="pledge-tracker-label">The church year</strong><span data-year-day></span></div>
+              <div class="pledge-bar-track" role="progressbar" aria-label="Progress through the church year" aria-valuemin="0"><span class="pledge-bar-fill"></span></div>
+              <div class="pledge-tracker-meta"><span>September 1</span><span data-year-calendar></span><span>August 31</span></div>
             </section>
 
             <section class="cal-card cal-personal-services" id="personalUpcomingServicesCard" hidden>
