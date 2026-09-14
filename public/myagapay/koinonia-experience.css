@@ -99,3 +99,11 @@
 .koinonia-year-ends { gap:8px; }
 @media(max-width:700px) { .koinonia-year { margin:0 -18px; padding:14px 18px; } }
 @media(prefers-reduced-motion:reduce) { .koinonia-year .pledge-bar-fill { transition:none; } }
+/* Standalone church-year card and readable light parish cards. */
+.koinonia-landing-page .koinonia-year { margin:0 0 22px; padding:16px 23px; border:1px solid rgba(200,162,74,.22); border-radius:12px; }
+.koinonia-landing-page :is(.parish-life-community-inbox,.parish-life-inbox-head,.parish-life-inbox-list) { border:0; box-shadow:none; }
+.koinonia-landing-page .parish-life-ministry-tile,
+.koinonia-landing-page .parish-life-ministry-tile strong { color:#18354b; }
+.koinonia-landing-page .parish-life-ministry-tile small { color:#536773; }
+.koinonia-landing-page .parish-life-ministry-mark { color:#8a6b30; }
+.koinonia-landing-page .parish-life-ministry-tile:hover { background:#eee8db; border-color:#b89958; }

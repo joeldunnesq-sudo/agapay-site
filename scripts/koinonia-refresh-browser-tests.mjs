@@ -136,12 +136,18 @@ try {
   assert.equal(progress[1].day, 1);
   assert.equal(progress[2].length, 366);
   assert.equal(await page.locator('#donorSaintModal').isVisible(), false);
+  assert.equal(await page.locator('.parish-life-liturgical-hero #koinoniaYearProgress').count(), 0);
+  assert.equal(await page.locator('.parish-life-page-shell > #koinoniaYearProgress').count(), 1);
+  assert.equal(await page.locator('.parish-life-ministry-tile strong').evaluate(el => getComputedStyle(el).color), 'rgb(24, 53, 75)');
+  assert.equal(await page.locator('.parish-life-community-inbox').evaluate(el => getComputedStyle(el).borderTopWidth), '0px');
   await page.getByRole('button', { name: /commemorated today/ }).click();
   await page.locator('#donorSaintModal[open]').waitFor();
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#donorSaintModal').isVisible(), false);
   await page.evaluate(() => renderMinistries({ groups: [] }));
   assert.equal(await page.locator('[aria-labelledby="yourMinistriesHeading"]').isVisible(), false);
+  await page.evaluate(() => renderMinistries({ groups: [{ id: 'choir', name: 'Parish Choir', role: 'participant' }] }));
+  assert.equal(await page.locator('[aria-labelledby="yourMinistriesHeading"]').isVisible(), true);
   await mkdir('output', { recursive: true });
   for (const width of [320, 390, 1024]) {
     await page.setViewportSize({ width, height: 844 });
