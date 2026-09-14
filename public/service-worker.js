@@ -1,6 +1,7 @@
 const AGAPAY_CACHE = "agapay-static-v37";
 
 const STATIC_ASSETS = [
+  "/learn/legacy-planner.js",
   "/myagapay/login",
   "/donor/login.html",
   "/donor/style.css",
@@ -106,6 +107,7 @@ function isVersionedStaticAsset(request, url) {
     || url.pathname === "/donor/session.js"
     || url.pathname === "/donor/controllers/calendar.js"
     || url.pathname === "/donor/controllers/history.js"
+    || url.pathname === "/learn/legacy-planner.js"
     || url.pathname === "/donor/controllers/sacraments.js"
     || url.pathname === "/donor/bookstore-presentation.js"
     || url.pathname === "/donor/bookstore-experience.js"

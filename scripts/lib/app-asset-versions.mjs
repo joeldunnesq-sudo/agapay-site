@@ -6,6 +6,7 @@ import { repoRoot } from './browser-composed-source.mjs';
 // Shared My AGAPAY assets. Add extracted shared scripts here with their page
 // references so one content version is used by every consumer.
 export const appAssets = Object.freeze([
+  '/learn/legacy-planner.js',
   '/donor/app.js',
   '/donor/style.css',
   '/myagapay-shell.js',

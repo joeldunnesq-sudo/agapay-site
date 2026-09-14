@@ -248,6 +248,10 @@ function renderHistorySummary(activities = [], summary = {}) {
   }
 }
 
+function historyBookstoreCache(parishId = donorProfile()?.defaultParishId || "") {
+  return parishId ? readDonorCache(`bookstore:${parishId}`) || {} : {};
+}
+
 function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusText = "Live data", productPayloads = {}) {
   let offerings = Array.isArray(payload.offerings) ? payload.offerings : [];
   let summary = payload.summary || fallbackDashboard?.summary || {};
@@ -270,7 +274,7 @@ function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusTe
   window.donorOfferings = offerings;
   window.donorHistoryActivities = buildHistoryActivities({
     offerings,
-    bookstore: productPayloads.bookstore || readDonorCache("bookstore") || {},
+    bookstore: productPayloads.bookstore || historyBookstoreCache(),
     dashboard: fallbackDashboard
   });
   setText("offeringsYtd", money(summary.parishNetYtdCents ?? summary.ytdCents));
@@ -310,7 +314,7 @@ async function loadDonorOfferingsPage() {
       donorApi("/api/donor/dashboard"),
       profileParishId
         ? donorApi("/api/donor/bookstore", { headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": profileParishId }) })
-        : Promise.resolve(readDonorCache("bookstore") || {})
+        : Promise.resolve({})
     ]);
 
     if (offeringsResult.status === "rejected" && isDonorUnauthorized(offeringsResult.reason)) {
@@ -325,11 +329,11 @@ async function loadDonorOfferingsPage() {
 
     const dashboardData = dashboardResult.status === "fulfilled" ? dashboardResult.value : cachedDashboard;
     const offeringsData = offeringsResult.status === "fulfilled" ? offeringsResult.value : cachedOfferings;
-    const bookstoreData = bookstoreResult.status === "fulfilled" ? bookstoreResult.value : readDonorCache("bookstore");
+    const bookstoreData = bookstoreResult.status === "fulfilled" ? bookstoreResult.value : historyBookstoreCache(profileParishId);
     if (!offeringsData && !dashboardData) throw offeringsResult.reason || dashboardResult.reason || new Error("Unable to load offerings");
     if (dashboardData?.donor) setDonorProfile(dashboardData.donor);
     if (dashboardResult.status === "fulfilled") writeDonorCache("dashboard", dashboardData);
-    if (bookstoreResult.status === "fulfilled" && bookstoreData) writeDonorCache("bookstore", bookstoreData);
+    if (profileParishId && bookstoreResult.status === "fulfilled" && bookstoreData) writeDonorCache(`bookstore:${profileParishId}`, bookstoreData);
     const rendered = renderOfferingsPayload(offeringsData || {}, dashboardData, "Live data", { bookstore: bookstoreData });
     writeDonorCache("offerings", rendered);
   } catch (err) {

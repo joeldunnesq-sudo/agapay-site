@@ -61,7 +61,8 @@ try {
     ({ donor }) => {
       localStorage.setItem('agapayDonorEmail', donor.email);
       localStorage.setItem('agapayDonorToken', 'test-session');
-      localStorage.setItem('agapayDonorProfile', JSON.stringify(donor));
+      if (!localStorage.getItem('agapayDonorProfile'))
+        localStorage.setItem('agapayDonorProfile', JSON.stringify(donor));
     },
     { donor }
   );
@@ -92,6 +93,36 @@ try {
   await page.reload();
   await page.waitForFunction(() => document.querySelectorAll('.history-activity-row').length === 2);
   assert.match(await page.locator('#agapayHistoryTimeline').textContent(), /Prayer book <special>/);
+  // Simulate changing parish after visiting its Bookstore, while history's old
+  // unscoped cache still contains a purchase from the previous parish.
+  await page.evaluate(() => {
+    const profile = JSON.parse(localStorage.getItem('agapayDonorProfile'));
+    profile.defaultParishId = 'second-parish';
+    localStorage.setItem('agapayDonorProfile', JSON.stringify(profile));
+    writeDonorCache('bookstore', {
+      orders: [{ itemDescription: 'Legacy wrong parish purchase', createdAt: '2026-09-10' }],
+    });
+    writeDonorCache('bookstore:second-parish', {
+      orders: [{ itemDescription: 'Second parish purchase', createdAt: '2026-09-12' }],
+    });
+  });
+  await page.reload();
+  await page.waitForFunction(() =>
+    document.querySelector('#agapayHistoryTimeline')?.textContent.includes('Second parish purchase')
+  );
+  assert.doesNotMatch(await page.locator('#agapayHistoryTimeline').textContent(), /Legacy wrong parish|Prayer book/);
+  await page.evaluate(() => {
+    const profile = JSON.parse(localStorage.getItem('agapayDonorProfile'));
+    profile.defaultParishId = '';
+    localStorage.setItem('agapayDonorProfile', JSON.stringify(profile));
+  });
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#offeringsStatus')?.textContent === 'Live data');
+  assert.equal(
+    await page.locator('.history-product-bookstore').count(),
+    0,
+    'No parish must not reuse another parish cache'
+  );
   errors.assertClean();
   console.log(
     'PASS - History renders Bookstore purchases, escapes titles, filters by product/year, and restores cached activity'

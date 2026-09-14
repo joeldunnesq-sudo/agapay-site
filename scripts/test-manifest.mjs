@@ -15,6 +15,8 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/rate-limit-clock-tests.mjs',
+  'scripts/learn-legacy-planner-browser-tests.mjs',
   'scripts/test-selection-tests.mjs',
   'scripts/app-asset-version-tests.mjs',
   'scripts/myagapay-session-tests.mjs',

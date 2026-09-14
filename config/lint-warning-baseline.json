@@ -26,9 +26,6 @@
   "public/learn/dashboard-view-models.js": {
     "max-lines": 1
   },
-  "public/learn/support.js": {
-    "max-lines": 1
-  },
   "public/listen/app.js": {
     "max-lines": 1
   },

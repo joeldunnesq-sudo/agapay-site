@@ -1,4 +1,4 @@
-import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
+import { memoryRateLimiter, withFixedRateLimitClock } from './lib/memory-rate-limiter.mjs';
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
 import { LEARN_FREE_PRINT_LIMIT } from "../src/learn/billing.js";
@@ -671,7 +671,7 @@ async function withMockFetch(handler, run) {
   }
 }
 
-{
+await withFixedRateLimitClock(async () => {
   const testEnv = env();
   const signup = await worker.fetch(request("/api/donor/signup", {
     method: "POST",
@@ -703,9 +703,9 @@ async function withMockFetch(handler, run) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
-}
+});
 
-{
+await withFixedRateLimitClock(async () => {
   const testEnv = env();
   let limited;
   for (let index = 0; index < 21; index += 1) {
@@ -716,7 +716,7 @@ async function withMockFetch(handler, run) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
-}
+});
 
 {
   const testEnv = env();
@@ -952,7 +952,7 @@ async function withMockFetch(handler, run) {
   assert.ok(newPassword.token);
 }
 
-{
+await withFixedRateLimitClock(async () => {
   const testEnv = env();
   let limited;
   for (let index = 0; index < 11; index += 1) {
@@ -962,7 +962,7 @@ async function withMockFetch(handler, run) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
-}
+});
 
 {
   const testEnv = env();
@@ -997,7 +997,7 @@ async function withMockFetch(handler, run) {
   assert.equal(enabledBody.turnstileSiteKey, "turnstile-site");
 }
 
-{
+await withFixedRateLimitClock(async () => {
   const testEnv = env();
   let limited;
   for (let index = 0; index < 21; index += 1) {
@@ -1006,9 +1006,9 @@ async function withMockFetch(handler, run) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
-}
+});
 
-{
+await withFixedRateLimitClock(async () => {
   const testEnv = env();
   const registration = {
     reference: "AGP-PARISH-RATE",
@@ -1028,9 +1028,9 @@ async function withMockFetch(handler, run) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
-}
+});
 
-{
+await withFixedRateLimitClock(async () => {
   const testEnv = env();
   const registration = {
     reference: "AGP-PARISH-ACCOUNT-RATE",
@@ -1052,7 +1052,7 @@ async function withMockFetch(handler, run) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
-}
+});
 
 {
   const testEnv = env();
