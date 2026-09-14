@@ -7,25 +7,6 @@
 // See handleDonorBookstore in src/handlers/bookstore.js for the server side.
 // ------------------------------------------------------------------
 
-const BOOKSTORE_CATEGORY_LABELS = {
-  book: "Book",
-  prayer_rope: "Prayer Rope",
-  icon: "Icon",
-  candle: "Candle",
-  jewelry: "Jewelry / Cross",
-  incense: "Incense",
-  cd_dvd: "CD / DVD",
-  other: "Other Item"
-};
-
-const BOOKSTORE_STATUS_LABELS = {
-  checkout_created: "Awaiting payment",
-  completed: "Paid",
-  failed: "Payment failed",
-  expired: "Checkout expired",
-  refunded: "Refunded"
-};
-
 const BOOKSTORE_STATUS_TONE = {
   checkout_created: "pending",
   completed: "success",
@@ -64,10 +45,6 @@ const BOOKSTORE_FALLBACK_FIELDS = [
   { category: "cd_dvd", label: "CD / DVD", fields: [{ key: "title", label: "Title", required: true, maxLength: 180 }] },
   { category: "other", label: "Other Item", fields: [{ key: "description", label: "Description", required: true, maxLength: 180 }] }
 ];
-
-function formatCentsAsDollars(cents) {
-  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
-}
 
 let bookstoreItemFieldsSchema = null;
 let bookstoreProducts = [];
