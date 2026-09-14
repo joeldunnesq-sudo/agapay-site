@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { adminAppPagePaths, adminAppScriptPaths, readAdminAppSource } from './lib/admin-dashboard-source.mjs';
@@ -121,6 +121,14 @@ const guardrailGuide = readFileSync(
   path.join(repoRoot, 'docs/architecture/legacy-module-refactor-guardrails.md'),
   'utf8'
 );
+for (const [file, artifact] of Object.entries(contracts.retiredGeneratedArtifacts || {})) {
+  assert.equal(existsSync(path.join(repoRoot, file)), false, 'Retired runtime must not return to production');
+  assert.equal(artifact.status, 'replaced_by_maintained_planner');
+  assert.match(artifact.sha256, /^[a-f0-9]{64}$/);
+  assert.match(artifact.lastSourceCommit, /^[a-f0-9]{40}$/);
+  assert.ok(existsSync(path.join(repoRoot, artifact.replacement)));
+  assert.doesNotMatch(readFileSync(path.join(repoRoot, artifact.compatibilityEntry), 'utf8'), /support\.js|<x-dc>/);
+}
 assert.match(guardrailGuide, /frozen orphaned generated bundle/i);
 assert.match(guardrailGuide, /preserve route precedence/i);
 assert.match(guardrailGuide, /inline handler/i);

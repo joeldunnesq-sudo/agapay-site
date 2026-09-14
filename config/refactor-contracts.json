@@ -182,11 +182,15 @@
       "count": 12
     }
   },
-  "generatedArtifacts": {
+  "generatedArtifacts": {},
+  "retiredGeneratedArtifacts": {
     "public/learn/support.js": {
-      "status": "frozen_orphaned_generated_bundle",
+      "status": "replaced_by_maintained_planner",
       "sha256": "8166f14c9f4c4e39664679299a55d38b897088e714e7a001d31abc49c709e7f4",
-      "declaredSource": "dc-runtime/src/*.ts"
+      "declaredSource": "dc-runtime/src/*.ts",
+      "lastSourceCommit": "eea7aa23cf30dcd83e25836eb5fed54d12fabf75",
+      "compatibilityEntry": "public/learn/Meals.dc.html",
+      "replacement": "public/learn/dashboard-shell.js"
     }
   }
 }

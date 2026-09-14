@@ -26,17 +26,31 @@ Phase 5 completes with `src/worker.js` as an 811-line composition shell. Public 
 
 All extracted Phase 5 files remain below the 1,200-line ceiling. `scripts/lib/worker-composition-source.mjs` composes the shell, route registry, routes, and extracted domains for source-level policy tests, while `scripts/refactor-extraction-guardrails-tests.mjs` rejects route-action drift, scheduled-order drift, oversized Worker regressions, or restoration of the retired Worker size and lint exemptions.
 
-## Learn support bundle decision
+## Learn runtime retirement decision
 
-`public/learn/support.js` declares that it is generated from `dc-runtime/src/*.ts`, but that source tree and its build command are not present in this repository. It is therefore classified as a **frozen orphaned generated bundle**, not handwritten refactor material. Its checksum is calculated with canonical LF newlines so the guardrail is identical on Windows and Linux checkouts.
+The former `public/learn/support.js` was a **frozen orphaned generated bundle**
+claiming `dc-runtime/src/*.ts` as its source. The checkout, available Git history,
+and local project copies do not contain the authoritative source or build command.
+No recovered source or third-party license is claimed.
 
-The bundle is pinned by SHA-256 in `config/refactor-contracts.json`. Do not edit or mechanically split it. A dedicated change must choose one of these paths before its checksum can change:
+The only deployed consumer was the old standalone `Meals.dc.html` prototype.
+The current Family Planner uses maintained repository code in
+`public/learn/dashboard-shell.js` and no longer embeds that prototype. This
+change retires the unbuildable runtime in favor of that existing implementation,
+rather than attempting to reconstruct or mechanically split generated output.
 
-1. Restore the authoritative `dc-runtime` source, lockfile, and reproducible build command, then prove a clean rebuild.
-2. Replace the runtime with a maintained, provenance-recorded dependency and migrate `Meals.dc.html` with browser coverage.
-3. If it is confirmed to be third-party generated output, move it to the vendor boundary with its license, provenance, integrity record, and equivalent tests.
+The old URL remains a compatibility page linking to
+`/learn/planner?scope=meals&tool=plan&view=week`. If the browser has old planner
+or seed data, it offers a JSON backup preserving the exact stored strings, even
+malformed values. It never deletes that data or automatically assigns unscoped
+local data to the signed-in household. Browser tests cover the backup, blocked
+storage, unchanged local values, and navigation to the maintained planner.
 
-The checksum is not a permanent exemption. It prevents an unreviewable generated artifact from drifting while its source-of-truth decision is unresolved.
+`config/refactor-contracts.json` records the retired bundle's checksum and last
+source commit for recovery from Git history. Its source-size and lint exemptions
+are removed; guardrails prevent silently restoring it or loading it from the old
+page. Future planner changes use the maintained source and existing test/build
+workflow, so there is no dependency on a missing generator.
 
 ## Pilot extraction
 
@@ -82,8 +96,7 @@ existing references without inserting scripts or changing their loading mode.
 The Learn runtime source investigation on September 11, 2026 found only the
 generated bundle introduced in commit `908178680e4a558d47bbaaeb76fe67a1056eff6c`.
 Neither the checkout nor available Git history contains `dc-runtime` sources or
-a source map. The frozen checksum remains unchanged pending source recovery or
-the dedicated replacement decision described above.
+a source map. The retirement decision above supersedes the earlier freeze.
 
 ## Sacraments and Services controller
 
