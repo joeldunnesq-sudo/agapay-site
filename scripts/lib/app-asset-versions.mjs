@@ -13,6 +13,7 @@ export const appAssets = Object.freeze([
   '/scripts/consumer-passkeys.js',
   '/donor/controllers/calendar.js',
   '/donor/controllers/history.js',
+  '/donor/controllers/sacraments.js',
   '/donor/bookstore-presentation.js',
   '/donor/controllers/bookstore.js',
 ]);

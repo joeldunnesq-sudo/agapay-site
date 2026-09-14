@@ -13,6 +13,25 @@ const adminApp = read('public/admin/app.js');
 const taxController = read('public/admin/controllers/tax-exemptions.js');
 const donorApp = read('public/donor/app.js');
 const bookstoreController = read('public/donor/controllers/bookstore.js');
+const sacramentsController = read('public/donor/controllers/sacraments.js');
+assert.ok(physicalLines(sacramentsController) <= 1200);
+const sacramentSandbox = {};
+vm.runInNewContext(sacramentsController, sacramentSandbox, { filename: 'sacraments.js' });
+assert.equal(sacramentSandbox.sacramentTypeLabel('confession'), 'Confession');
+assert.equal(sacramentSandbox.sacramentTypeLabel('other', 'Parish service'), 'Parish service');
+assert.equal(sacramentSandbox.sacramentLocationHint('house_blessing'), true);
+assert.equal(sacramentSandbox.sacramentLocationHint('confession'), false);
+for (const name of [
+  'loadDonorSacramentsPage',
+  'submitSacramentAccordionBooking',
+  'openSacramentAccordion',
+  'closeSacramentModal',
+  'uploadSacramentPreparationDocument',
+  'cancelSacramentRequest',
+]) {
+  assert.equal(typeof sacramentSandbox[name], 'function', `${name} remains a classic global`);
+  assert.doesNotMatch(donorApp, new RegExp(`function ${name}\\(`));
+}
 
 const taxGlobals = [
   'closeTexDetail',
@@ -134,6 +153,7 @@ assert.doesNotMatch(
 );
 assert.ok(donorAppScriptPaths().includes('public/donor/bookstore-presentation.js'));
 for (const file of donorAppPagePaths) {
+  assertOrderedScripts(file, '/donor/controllers/sacraments.js?v=', '/donor/app.js?v=');
   assert.match(
     read(file),
     /\/donor\/app\.js\?v=[a-f0-9]{16}/,
@@ -145,6 +165,7 @@ assert.doesNotMatch(read('public/donor/index.html'), /controllers\/bookstore\.js
 
 assert.ok(adminAppScriptPaths().includes('public/admin/controllers/tax-exemptions.js'));
 assert.ok(donorAppScriptPaths().includes('public/donor/controllers/bookstore.js'));
+assert.ok(donorAppScriptPaths().includes('public/donor/controllers/sacraments.js'));
 
 console.log(
   `PASS - classic controller extraction preserves ${taxGlobals.length} Tax Exemptions globals and ${bookstoreGlobals.length} Bookstore globals`
