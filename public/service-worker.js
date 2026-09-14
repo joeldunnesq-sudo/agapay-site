@@ -10,6 +10,8 @@ const STATIC_ASSETS = [
   "/donor/controllers/history.js",
   "/donor/controllers/sacraments.js",
   "/donor/bookstore-presentation.js",
+  "/donor/bookstore-experience.js",
+  "/donor/bookstore-experience.css",
   "/donor/controllers/bookstore.js",
   "/donor/pwa-install.js",
   "/scripts/consumer-passkeys.js",
@@ -106,6 +108,8 @@ function isVersionedStaticAsset(request, url) {
     || url.pathname === "/donor/controllers/history.js"
     || url.pathname === "/donor/controllers/sacraments.js"
     || url.pathname === "/donor/bookstore-presentation.js"
+    || url.pathname === "/donor/bookstore-experience.js"
+    || url.pathname === "/donor/bookstore-experience.css"
     || url.pathname === "/donor/controllers/bookstore.js"
     || url.pathname === "/scripts/consumer-passkeys.js"
     || url.pathname === "/myagapay-shell.js"
