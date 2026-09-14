@@ -19,7 +19,7 @@ assert.ok(
     && html.indexOf('class="op-jurisdictions"') < html.indexOf('class="op-statement op-verse-band"'),
   "canonical-jurisdiction trust bar should sit directly between the hero and scripture"
 );
-assert.match(html, /data-src="\/images\/app\/screenshots\/parish-bookstore\.jpg\?v=7a0005fdc4b5"/, "homepage should defer the optimized Bookstore screenshot until its tab is shown");
+assert.match(html, /data-src="\/images\/app\/screenshots\/parish-bookstore\.jpg\?v=6e64e98eb164"/, "homepage should defer the optimized Bookstore screenshot until its tab is shown");
 assert.match(html, /data-src="\/images\/app\/screenshots\/sacraments-and-services\.jpg\?v=d341e8558523"/, "homepage should defer the optimized Sacraments & Services screenshot until its tab is shown");
 assert.ok(
   html.indexOf('class="op-statement op-verse-band"') < html.indexOf('id="connected-system"')
