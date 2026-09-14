@@ -175,6 +175,7 @@ function renderDonorTodayInChurch(parish, payload) {
   const civilParts = longDateParts(date);
   const churchParts = longDateParts(churchCalendarDate(date, calendar));
   window.KoinoniaExperience?.liturgicalDay(date, calendar, churchParts.monthDay);
+  window.KoinoniaChurchYear?.render(date, calendar);
   const usesJulianCalendar = calendarLabel(calendar) === "Julian";
   const today = payload?.today || {};
   const feast = payload?.feast || null;

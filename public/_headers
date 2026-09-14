@@ -116,3 +116,6 @@
 
 /myagapay/koinonia-subpages.css
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/church-year.js
+  Cache-Control: public, max-age=31536000, immutable

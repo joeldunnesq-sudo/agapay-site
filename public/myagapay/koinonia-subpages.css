@@ -123,3 +123,11 @@ body.koinonia-design-page {
 .koinonia-design-page .directory-shell { background: var(--k-bg); box-shadow: none; }
 .koinonia-design-page .directory-modal-card { background: var(--k-surface); color: var(--k-text); border-color: var(--k-border); }
 .koinonia-design-page .directory-modal-card :is(h2, h3) { font-family: var(--font-display); font-weight: 500; }
+
+.koinonia-design-page .calendar-church-year { width: 100%; order: 2; margin: 0 0 24px; padding: 16px 20px; border: 1px solid #d9cba9; border-radius: 12px; background: linear-gradient(145deg,#061522,#0b2130); color: #fffdf8; }
+.calendar-church-year .pledge-tracker-head { gap: 12px; }
+.calendar-church-year [data-year-day] { color: #e8c56a; font-size: 11px; }
+.calendar-church-year .pledge-bar-fill { display: block; width: var(--year-progress,0%); }
+.calendar-church-year .pledge-tracker-meta { gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .calendar-church-year .pledge-bar-fill { transition: none; } }
+
