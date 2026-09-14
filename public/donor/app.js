@@ -1787,7 +1787,7 @@ async function loadDonorSettingsPage() {
     setValue("settingsPhone", donor.contactPhone);
     setValue("defaultParishId", donor.defaultParishId);
     const pledgeEl = document.getElementById("pledgeAmount");
-    if (pledgeEl) pledgeEl.value = donor.pledgeAmountCents ? (donor.pledgeAmountCents / 100).toFixed(0) : "";
+    if (pledgeEl) pledgeEl.value = donor.pledgeAmountCents ? (donor.pledgeAmountCents / 100).toFixed(2) : "";
     const pledgeCadence = donor.pledgeCadence === "monthly" ? "monthly" : "annual";
     const pledgeCadenceEl = document.querySelector(`input[name="pledgeCadence"][value="${pledgeCadence}"]`);
     if (pledgeCadenceEl) pledgeCadenceEl.checked = true;

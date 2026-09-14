@@ -20,7 +20,7 @@ if ("serviceWorker" in navigator) {
   <script src="/donor/controllers/calendar.js?v=3cc7cbbf322da435" defer></script>
   <script src="/donor/controllers/history.js?v=12a7beb0a97aa89d" defer></script>
   <script src="/donor/controllers/sacraments.js?v=a70f198649e067b5" defer></script>
-  <script src="/donor/app.js?v=2038638f74b199f5" defer></script>
+  <script src="/donor/app.js?v=21918d61a3bc3579" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -89,7 +89,7 @@ if ("serviceWorker" in navigator) {
                 <label class="form-label" for="pledgeAmount">Pledge amount</label>
                 <div style="position:relative;">
                   <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--stone);font-size:0.9rem;pointer-events:none;">$</span>
-                  <input class="form-input" id="pledgeAmount" type="number" min="0" step="50" placeholder="e.g. 2400" style="padding-left:1.75rem;" />
+                  <input class="form-input" id="pledgeAmount" type="number" min="0" step="0.01" placeholder="e.g. 2400" style="padding-left:1.75rem;" />
                 </div>
                 <p class="form-help" style="margin-top:6px;">Your annual stewardship pledge in dollars. Only you can see this — it drives the progress bar on your dashboard home screen.</p>
               </div>
