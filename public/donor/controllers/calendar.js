@@ -246,6 +246,7 @@ function renderDonorTodayInChurch(parish, payload) {
       ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today">${window.KoinoniaExperience ? "Hagiography" : `${saintCount} saint${saintCount === 1 ? "" : "s"}`}<b aria-hidden="true">↗</b></button>`
       : "";
     chips.innerHTML = standardChips + saintChip;
+    window.KoinoniaExperience?.compactFasting(chips, fastingRule);
   }
   const give = document.getElementById("todayGiveLink");
   if (give) give.href = giveHref;
