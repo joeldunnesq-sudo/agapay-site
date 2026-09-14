@@ -3,6 +3,7 @@ import { readParishCommerceSource } from './lib/parish-commerce-source.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { DatabaseSync } from 'node:sqlite';
+import { loadDonorBookstoreProducts, normalizeBookstoreCartItems } from '../src/handlers/donor-bookstore.js';
 import { completeCommerceOrderFromStripe, patchBookstoreProduct } from '../src/handlers/parish-commerce.js';
 
 const sqlite = new DatabaseSync(':memory:');
@@ -235,6 +236,27 @@ assert.equal(
     .sale_price_cents,
   1795
 );
+
+// Exercise the same database from parish management through storefront and checkout.
+const saleProducts = await loadDonorBookstoreProducts(env, 'parish_1');
+assert.equal(saleProducts[0].priceCents, 1795);
+assert.equal(saleProducts[0].regularPriceCents, 2495);
+assert.equal(saleProducts[0].onSale, true);
+assert.equal(saleProducts[0].savingsPercent, 28);
+assert.equal((await loadDonorBookstoreProducts(env, 'another_parish')).length, 0);
+const discountedCheckout = await normalizeBookstoreCartItems(env, 'parish_1', [
+  { productId: 'product_1', variantId: 'variant_1', quantity: 1, unitPriceCents: 1 },
+]);
+assert.equal(discountedCheckout[0].unitPriceCents, 1795, 'checkout ignores client prices and uses the parish sale');
+const endSale = await patchBookstoreProduct(env, 'parish_1', 'product_1', { ...sharedBody, salePriceCents: null }, now);
+assert.equal(endSale.status, 200);
+const restored = (await loadDonorBookstoreProducts(env, 'parish_1'))[0];
+assert.equal(restored.onSale, false);
+assert.equal(restored.priceCents, 2495);
+const regularCheckout = await normalizeBookstoreCartItems(env, 'parish_1', [
+  { productId: 'product_1', variantId: 'variant_1', quantity: 1 },
+]);
+assert.equal(regularCheckout[0].unitPriceCents, 2495, 'ending a sale restores checkout price');
 
 const app = await readParishDashboardSource();
 assert.match(app, /Inventory audit trail/);
