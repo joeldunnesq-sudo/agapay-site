@@ -1,0 +1,125 @@
+/* Shared Koinonia destinations. Playback and global navigation retain their own surfaces. */
+body.koinonia-design-page {
+  color-scheme: light;
+  --k-bg: #f3eee4;
+  --k-surface: #fffdf8;
+  --k-surface-2: #f8f5ee;
+  --k-offset: #eee8db;
+  --k-divider: #e1d9cb;
+  --k-border: #ded6c6;
+  --k-text: #18354b;
+  --k-muted: #536773;
+  --k-faint: #687983;
+  --k-gold: #9a7837;
+  --k-gold-hover: #806532;
+  --k-gold-soft: #f2e8d2;
+  --k-navy: #18354b;
+  --pl-cream: #f3eee4;
+  --pl-paper: #fffdf8;
+  --pl-ink: #18354b;
+  --pl-muted: #536773;
+  --pl-line: #e1d9cb;
+  --sans: 'DM Sans', Arial, sans-serif;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --canvas: #f3eee4;
+  --ink: #18354b;
+  --muted: #536773;
+  --line: #e1d9cb;
+  --font-body: 'DM Sans', Arial, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --library-canvas: #f3eee4;
+  --library-navy: #18354b;
+  --library-muted: #536773;
+  --library-line: #e1d9cb;
+  background: var(--k-bg);
+  color: var(--k-text);
+  font-family: var(--font-body);
+}
+.koinonia-design-page :is(.app, .content, .page, .directory-main, .koinonia-inner-shell, .prayer-requests-shell, .koinonia-feature-shell) {
+  background: var(--k-bg);
+  color: var(--k-text);
+}
+.koinonia-design-page :is(button, input, select, textarea) { font-family: var(--font-body); }
+.koinonia-design-page :is(.page, .directory-main, .koinonia-feature-shell) :is(h1, h2, h3) {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+.koinonia-design-page :is(.koinonia-page-heading, .prayer-page-heading) {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--k-divider);
+  border-radius: 0;
+  box-shadow: none;
+  padding-top: 16px;
+  padding-bottom: 18px;
+}
+.koinonia-design-page :is(.koinonia-page-title-row, .prayer-page-title-row) h1 { color: var(--k-text); font-size: 32px; }
+.koinonia-design-page :is(.koinonia-page-heading, .prayer-page-heading) p { color: var(--k-muted); font-size: 12px; }
+.koinonia-design-page :is(.koinonia-page-back, .prayer-page-back) { color: var(--k-gold-hover); }
+.koinonia-design-page :is(.feed-card, .feed-digest-card, .push-notification-card, .groups-list-panel, .group-thread-panel, .news-source-card, .news-article-card, .media-card, .media-feature, .koinonia-feature-list-panel, .koinonia-feature-detail-panel, .koinonia-composer-panel, .exchange-listings-panel, .exchange-detail-panel, .exchange-listing-card, .prayer-request-card, .library-card, .panel, .command-card, .guide-card) {
+  background: var(--k-surface);
+  color: var(--k-text);
+  border-color: var(--k-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+.koinonia-design-page :is(.feed-card-summary, .feed-card-body, .media-card-copy strong, .news-article-card > strong, .prayer-request-card > p) { color: var(--k-text); }
+.koinonia-design-page :is(.feed-card-summary strong, .news-article-card > strong, .news-source-card h3, .groups-panel-head h2, .group-thread-head h2, .groups-empty strong, .group-thread-empty strong) { font-family: var(--font-display); font-weight: 500; }
+.koinonia-design-page :is(.feed-card-summary strong, .news-article-card > strong) { font-size: 24px; line-height: 1.15; }
+.koinonia-design-page :is(.media-card-copy p, .media-card-copy span, .watch-copy p, .watch-meta) { color: var(--k-muted); }
+.koinonia-design-page :is(.media-card-copy small, .eyebrow) { color: var(--k-gold-hover); }
+.koinonia-design-page .watch-copy h1 { color: var(--k-text); }
+.koinonia-design-page :is(.feed-card.is-pinned, .news-source-card.is-following, .prayer-request-card.is-pinned) { background: var(--k-surface); border-color: #c8a24a; }
+.koinonia-design-page :is(.koinonia-page-action, .prayer-new-request, .page .btn-primary, .page .btn-gold, .koinonia-feature-shell .btn-primary, .signup-action-primary) {
+  background: #c8a24a;
+  border-color: #c8a24a;
+  color: #18354b;
+  border-radius: 999px;
+  box-shadow: none;
+}
+.koinonia-design-page :is(.page .btn-ghost, .groups-refresh, .library-open) { border-radius: 999px; }
+.koinonia-design-page :is(.page, .directory-main, .koinonia-feature-shell) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea) {
+  background: var(--k-surface);
+  color: var(--k-text);
+  border-color: var(--k-border);
+  border-radius: 8px;
+}
+.koinonia-design-page :is(input, textarea)::placeholder { color: var(--k-faint); opacity: 1; }
+.koinonia-design-page :is(a, button, input, textarea, select, summary):focus-visible { outline: 2px solid #9a7837; outline-offset: 3px; }
+.koinonia-design-page :is(button, a)[aria-disabled=true], .koinonia-design-page button:disabled { cursor: not-allowed; }
+.koinonia-design-page :is(.prayer-dialog, .signup-action-dialog, .donor-saint-modal-card) {
+  background: var(--k-surface);
+  color: var(--k-text);
+  border-color: var(--k-border);
+  border-radius: 16px;
+}
+.koinonia-design-page dialog::backdrop { background: #06152299; }
+/* Directory keeps its household and membership panels, with a compact blue introduction. */
+.koinonia-design-page .directory-top.myagapay-page-hero { background: #e8eef1; box-shadow: none; border-radius: 12px; margin: 16px 0; }
+.koinonia-design-page .directory-top.myagapay-page-hero .directory-title h1 { color: var(--k-text); font-size: 32px; }
+.koinonia-design-page .directory-top.myagapay-page-hero .directory-title p { color: var(--k-muted); font-size: 12px; }
+.koinonia-design-page .directory-top.myagapay-page-hero .status-pill { background: var(--k-surface); color: var(--k-gold-hover); border-color: var(--k-border); }
+/* Match the calendar's visual palette without altering its dates, modes or selection states. */
+.koinonia-design-page.donor-calendar-page .cal-hero { background: #e8eef1; border: 1px solid #d5dfe3; border-radius: 12px; box-shadow: none; }
+.koinonia-design-page.donor-calendar-page .cal-hero :is(.cal-today-title, .cal-today-note, .cal-reading-line) { color: var(--k-text); }
+.koinonia-design-page.donor-calendar-page .cal-hero-eyebrow { color: var(--k-gold-hover); }
+.koinonia-design-page.donor-calendar-page :is(.cal-parish-month, .cal-note-box) { background: var(--k-surface); border-color: var(--k-border); box-shadow: none; }
+@media (max-width: 700px) {
+  .koinonia-design-page :is(.koinonia-inner-shell, .prayer-requests-shell) { box-shadow: none; }
+  .koinonia-design-page .koinonia-page-title-row { gap: 10px; }
+  .koinonia-design-page .koinonia-page-title-row > div { min-width: 0; }
+  .koinonia-design-page :is(.feed-card-summary strong, .news-article-card > strong) { font-size: 22px; }
+}
+/* Cards inside detail panels and calendars use the same light surface. */
+.koinonia-design-page :is(.signup-slot-card, .events-item-card, .cal-card, .exchange-thread-list button, .ministry-event-list > article, .ministry-member-grid > article, .ministry-resource-grid > article, .ministry-commerce-card) { background: var(--k-surface); color: var(--k-text); border-color: var(--k-border); border-radius: 12px; box-shadow: none; }
+.koinonia-design-page :is(.events-item-card strong, .media-card-copy strong, .media-feature .media-card-copy strong, .cal-card-title) { font-family: var(--font-display); color: var(--k-text); font-weight: 500; }
+.koinonia-design-page .cal-page { --cal-ink: #18354b; --cal-stone: #536773; --cal-muted: #687983; --cal-paper: #fffdf8; --cal-cream: #f3eee4; --cal-line: #e1d9cb; }
+.koinonia-design-page.donor-calendar-page .cal-parish-calendar > .cal-card-head { background: #e8eef1; padding-top: 18px; padding-bottom: 18px; }
+.koinonia-design-page.donor-calendar-page .cal-parish-calendar .cal-card-title { color: var(--k-text); }
+.koinonia-design-page.donor-calendar-page :is(.cal-date-badge, .cal-parish-calendar-status, .cal-chip-row > span) { background: #f8f3e8; color: #806532; border-color: #d9cba9; }
+.koinonia-design-page.donor-calendar-page :is(.cal-date-weekday, .cal-date-my, .cal-today-kicker) { color: var(--k-muted); }
+.koinonia-design-page.donor-calendar-page .cal-chip-row > .is-fast { background: #eee6ee; color: #765778; }
+.koinonia-design-page.donor-calendar-page :is(.cal-hero::before, .cal-hero::after, .cal-parish-calendar > .cal-card-head::before, .cal-parish-calendar > .cal-card-head::after) { display: none; }
+.koinonia-design-page .directory-shell { background: var(--k-bg); box-shadow: none; }
+.koinonia-design-page .directory-modal-card { background: var(--k-surface); color: var(--k-text); border-color: var(--k-border); }
+.koinonia-design-page .directory-modal-card :is(h2, h3) { font-family: var(--font-display); font-weight: 500; }

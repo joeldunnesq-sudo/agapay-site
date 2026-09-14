@@ -124,20 +124,10 @@ try {
   assert.equal(await page.locator('.koinonia-parish-context > svg').count(), 1);
   assert.equal(await page.locator('.koinonia-fasting-pill').textContent(), 'No fast');
   assert.equal(await page.locator('.koinonia-fasting-pill').getAttribute('aria-label'), 'No Fast (Bright Week)');
-  assert.equal(await page.locator('#koinoniaYearProgress .pledge-bar-track').evaluate(el => getComputedStyle(el).height), '10px');
   assert.equal(await page.locator('#parishLifeNewsMount .parish-life-blog-card').count(), 4);
   assert.match(await page.locator('#koinoniaChurchDate').textContent(), /September 1.*Julian/);
-  const progress = await page.evaluate(() => [
-    window.KoinoniaExperience.yearProgress('2026-09-14', 'julian'),
-    window.KoinoniaExperience.yearProgress('2026-09-01', 'gregorian'),
-    window.KoinoniaExperience.yearProgress('2024-02-29', 'gregorian'),
-  ]);
-  assert.equal(progress[0].day, 1);
-  assert.equal(progress[1].day, 1);
-  assert.equal(progress[2].length, 366);
+  assert.equal(await page.locator('#koinoniaYearProgress').count(), 0);
   assert.equal(await page.locator('#donorSaintModal').isVisible(), false);
-  assert.equal(await page.locator('.parish-life-liturgical-hero #koinoniaYearProgress').count(), 0);
-  assert.equal(await page.locator('.parish-life-page-shell > #koinoniaYearProgress').count(), 1);
   assert.equal(await page.locator('.parish-life-ministry-tile strong').evaluate(el => getComputedStyle(el).color), 'rgb(24, 53, 75)');
   assert.equal(await page.locator('.parish-life-community-inbox').evaluate(el => getComputedStyle(el).borderTopWidth), '0px');
   await page.getByRole('button', { name: /commemorated today/ }).click();
