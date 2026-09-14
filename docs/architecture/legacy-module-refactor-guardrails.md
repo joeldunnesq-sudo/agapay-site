@@ -85,6 +85,19 @@ Neither the checkout nor available Git history contains `dc-runtime` sources or
 a source map. The frozen checksum remains unchanged pending source recovery or
 the dedicated replacement decision described above.
 
+## Sacraments and Services controller
+
+`public/donor/controllers/sacraments.js` owns service cards, modal state, available
+slots, booking and request forms, preparation-document controls, and request
+cancellation. The 943-line implementation is moved unchanged from the Donor app;
+the remaining app's physical budget is reduced to 2,553 lines. All Donor entry
+pages load the classic controller before the app, preserving existing global
+handlers. Its content version and offline caching follow the shared asset registry.
+The mobile browser test covers parish-enabled cards, required slot selection,
+booking payloads, booked state, modal dismissal, and reloads. Preparation tests
+inspect the composed Donor source, and controller tests protect script order,
+global functions, and the new module's size ceiling.
+
 ## Giving history controller
 
 `public/donor/controllers/history.js` owns receipt rendering, activity filters,
