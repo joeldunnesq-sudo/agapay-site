@@ -13,16 +13,16 @@
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/donor/session.js?v=efeba05c646552d3"></script>
-  <script src="/myagapay-shell.js?v=e7d32adcee9b9b92"></script>
-  <script src="/donor/controllers/calendar.js?v=3cc7cbbf322da435" defer></script>
+  <script src="/myagapay-shell.js?v=5509ae115f54c4c3"></script>
+  <script src="/donor/controllers/calendar.js?v=99b74ae7da32aede" defer></script>
   <script src="/donor/controllers/history.js?v=a19335584ba4ded8" defer></script>
   <script src="/donor/controllers/sacraments.js?v=a70f198649e067b5" defer></script>
   <script src="/donor/app.js?v=21918d61a3bc3579" defer></script>
-  <script src="/myagapay/parish-life.js?v=20260825koinoniatoday2" defer></script>
+  <script src="/myagapay/parish-life.js?v=d5b2c52a4eccf69a" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
-</head>
+<link rel="stylesheet" href="/myagapay/koinonia-experience.css?v=be2737f56fbd69aa" /><script src="/myagapay/koinonia-experience.js?v=bb763bb5ff43b74f" defer></script></head>
 <body class="donor-mobile-page donor-parish-life-page koinonia-landing-page">
   <div class="app">
     <aside class="sidebar">
@@ -38,7 +38,7 @@
       <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Koinonia</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
       <div class="topbar"><div class="topbar-title" data-parish-life-label>Today</div><div class="topbar-actions"><a class="parish-life-notification-bell" href="/myagapay/feed" aria-label="Open Community Inbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span data-parish-life-unread hidden>0</span></a></div></div>
       <div class="page parish-life-page-shell">
-        <section class="cal-hero parish-life-liturgical-hero" aria-label="Today in the Church">
+        <div class="koinonia-parish-context"><strong id="koinoniaParishName">Loading your parish…</strong><a id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make an offering →</a></div><section class="cal-hero parish-life-liturgical-hero" aria-label="Today in the Church">
           <div class="cal-hero-inner">
             <div class="cal-date-heading-row">
               <div class="cal-date-badge" id="todayChurchDateBadge">
@@ -48,7 +48,7 @@
                 <div class="cal-date-calendar" id="todayChurchDateCalendar">Julian</div>
               </div>
               <div class="cal-date-heading-copy">
-                <div class="cal-hero-eyebrow" id="todayCivilDateEyebrow">Today’s civil date</div>
+                <div class="cal-hero-eyebrow" id="todayCivilDateEyebrow">Today’s civil date</div><span id="koinoniaChurchDate"></span>
               </div>
             </div>
             <div class="cal-today-row">
@@ -56,13 +56,13 @@
                 <h1 class="cal-today-title" id="todayFeastTitle">Loading today in the Church…</h1>
                 <p class="cal-today-note" id="todayFeastNote">AGAPAY is preparing today's feast and fasting context.</p>
                 <div class="cal-chip-row" id="todayChips"></div>
-                <div class="cal-hero-actions"><a class="cal-btn cal-btn-gold" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a></div>
+                <div class="koinonia-year" id="koinoniaYearProgress" hidden><div class="koinonia-year-heading"><strong>The church year</strong><span data-year-day></span></div><div class="koinonia-year-track" role="progressbar" aria-label="Progress through the church year" aria-valuemin="0"><span></span><i aria-hidden="true"></i></div><div class="koinonia-year-ends"><span>September 1</span><span>August 31</span></div></div>
               </div>
             </div>
           </div>
         </section>
 
-        <div id="parishLifeInboxMount"></div>
+        <nav class="koinonia-shortcuts" id="koinoniaShortcuts" aria-label="Community tools" hidden></nav><div id="parishLifeInboxMount"></div>
 
         <section class="parish-life-home-section parish-life-week-calendar" aria-labelledby="parishCalendarTitle">
           <div class="parish-life-section-head"><h2 id="parishCalendarTitle" data-calendar-title="fixed">This Week in the Church</h2><a href="/myagapay/calendar">Full Calendar</a></div>
@@ -87,13 +87,13 @@
         <div class="notice" id="parishLifeStatus" hidden></div>
       </div>
 
-      <div class="donor-saint-modal" id="donorSaintModal" hidden>
-        <div class="donor-saint-modal-card" role="dialog" aria-modal="true" aria-labelledby="donorSaintModalTitle">
+      <dialog class="donor-saint-modal" id="donorSaintModal" aria-labelledby="donorSaintModalTitle">
+        <div class="donor-saint-modal-card">
           <div class="donor-saint-modal-head"><div><span class="calendar-panel-kicker" id="donorSaintModalKicker">Saint of the Day</span><h2 id="donorSaintModalTitle">Saint of the Day</h2><p id="donorSaintModalSubtitle">Today's commemoration</p></div><button type="button" class="donor-saint-close" onclick="closeDonorSaintModal()" aria-label="Close saint life">×</button></div>
           <div class="donor-saint-modal-body" id="donorSaintModalBody"></div>
           <div class="donor-saint-modal-foot"><span>Lives of the Saints courtesy of Orthocal.info</span><button type="button" class="btn btn-ghost btn-sm" onclick="closeDonorSaintModal()">Close</button></div>
         </div>
-      </div>
+      </dialog>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
     </main>
   </div>

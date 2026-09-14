@@ -96,7 +96,8 @@ const [handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminS
 ].map((file) => readFileSync(path.join(root, file), "utf8"));
 assert.match(worker, /handleDonorParishLibrary/);
 assert.match(worker, /handleParishLibrary/);
-assert.match(shell, /const sacramentOrLibrary = parishCapabilities\.sacramentsEnabled[\s\S]*parishCapabilities\.libraryEnabled[\s\S]*byId\.get\("history"\)/);
+assert.match(shell, /const libraryOrLearn = featureOrFallback/);
+assert.match(shell, /libraryOrLearn,[\s\S]*byId.get\("commemorations"\)/);
 assert.match(shell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts\(\)/);
 assert.match(shell, /function mobileAppMenuLinks\(\)[\s\S]*const links = hamburgerProducts\(\)/);
 assert.match(shell, /mobileLabel: "Library"/);

@@ -18,12 +18,9 @@ assert.match(app, /donorApi\("\/api\/donor\/dashboard", \{[\s\S]*?method: "PATCH
 assert.match(app, /bookstoreCart = \[\][\s\S]*?renderBookstoreParishContext\(parish\)/,
   "switching churches must clear parish-specific cart state before rendering the next store");
 
-assert.match(html, /id="bookstorePopularItems"[\s\S]*?<h2 id="bookstorePopularHeading">Popular items<\/h2>[\s\S]*?id="bookstorePopularGrid"/,
+assert.match(html, /id="bookstorePopularItems"[\s\S]*?<h2 id="bookstorePopularHeading">Top Sellers<\/h2>[\s\S]*?id="bookstorePopularGrid"/,
   "the storefront must render a community-ranked Popular items rail");
-assert.ok(html.indexOf('class="bookstore-catalog-heading"') < html.indexOf('id="bookstoreCategoryFilters"')
-  && html.indexOf('id="bookstoreCategoryFilters"') < html.indexOf('id="bookstorePopularItems"')
-  && html.indexOf('id="bookstorePopularItems"') < html.indexOf('class="bookstore-scan-feature"'),
-  "search and category filters must lead the app-like discovery flow before recommendations and scanning");
+assert.ok(html.indexOf('class="bookstore-app-tools"') < html.indexOf('id="bookstorePopularItems"') && html.indexOf('class="bookstore-manual-panel"') < html.indexOf('id="bookstoreProductCatalog"'), 'search and scan lead shopping, with custom items before the catalog');
 assert.match(app, /Number\(b\.unitsSold \|\| 0\) - Number\(a\.unitsSold \|\| 0\)[\s\S]*?\.slice\(0, 4\)/,
   "Popular items must be ranked by completed sales and limited to four cards");
 assert.match(app, /function bookstoreCategoryIcon[\s\S]*?book:[\s\S]*?icon:[\s\S]*?candle:[\s\S]*?jewelry:[\s\S]*?incense:[\s\S]*?cd_dvd:/,
@@ -57,9 +54,8 @@ assert.match(html, /\.bookstore-toast \{[\s\S]*?position:fixed;[\s\S]*?transform
   "bookstore feedback must overlay the page and animate in from above");
 assert.match(app, /isBookstoreToast[\s\S]*?classList\.add\("is-visible"\)[\s\S]*?2800/,
   "non-error bookstore feedback must automatically slide away after a short delay");
-assert.match(html, /bookstore-scan-feature-icon[\s\S]*?barcode-lines/,
-  "the primary scanner card must feature a real barcode illustration");
-assert.match(html, /class="bookstore-scan-feature"[\s\S]*?startBookstoreBookScan\(\)/,
+assert.match(html, /bookstore-app-scan[\s\S]*?<svg/, 'the scan action retains its barcode icon');
+assert.match(html, /class="bookstore-app-scan"[\s\S]*?startBookstoreBookScan\(\)/,
   "the shopping feed must keep a prominent barcode scanner quick action");
 assert.match(html, /id="bookstoreScannerTorch"[^>]*aria-pressed="false"[^>]*toggleBookstoreScannerTorch\(\)[^>]*hidden/,
   "the barcode scanner must include an initially hidden, accessible flashlight control");

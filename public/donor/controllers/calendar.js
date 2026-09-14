@@ -174,6 +174,7 @@ function renderDonorTodayInChurch(parish, payload) {
   const date = payload?.date || todayIsoLocal();
   const civilParts = longDateParts(date);
   const churchParts = longDateParts(churchCalendarDate(date, calendar));
+  window.KoinoniaExperience?.liturgicalDay(date, calendar, churchParts.monthDay);
   const usesJulianCalendar = calendarLabel(calendar) === "Julian";
   const today = payload?.today || {};
   const feast = payload?.feast || null;
@@ -237,12 +238,12 @@ function renderDonorTodayInChurch(parish, payload) {
     const standardChips = [
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
-      toneOfWeekLabel(today.tone),
+      window.KoinoniaExperience && today.tone ? `Tone ${today.tone}` : toneOfWeekLabel(today.tone),
       dedicatedSaintCard && saintCount ? `${saintCount} saint${saintCount === 1 ? "" : "s"}` : "",
-      nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
+      !window.KoinoniaExperience && nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
     const saintChip = saintCount && !dedicatedSaintCard
-      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today">${saintCount} saint${saintCount === 1 ? "" : "s"}<b aria-hidden="true">→</b></button>`
+      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today">${window.KoinoniaExperience ? "Hagiography" : `${saintCount} saint${saintCount === 1 ? "" : "s"}`}<b aria-hidden="true">↗</b></button>`
       : "";
     chips.innerHTML = standardChips + saintChip;
   }
@@ -294,12 +295,12 @@ function showDonorSaintModal(title, subtitle, bodyHtml) {
   setText("donorSaintModalSubtitle", subtitle || "Today's commemoration");
   setHtml("donorSaintModalBody", bodyHtml || "");
   const modal = document.getElementById("donorSaintModal");
-  if (modal) modal.hidden = false;
+  if (modal) { modal.hidden = false; if (typeof modal.showModal === "function" && !modal.open) modal.showModal(); }
 }
 
 function closeDonorSaintModal() {
   const modal = document.getElementById("donorSaintModal");
-  if (modal) modal.hidden = true;
+  if (modal) { if (typeof modal.close === "function") modal.close(); else modal.hidden = true; }
 }
 
 async function openDonorSaintOfDay(button) {

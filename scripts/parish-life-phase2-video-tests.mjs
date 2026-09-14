@@ -118,7 +118,7 @@ assert.match(sources["public/parish/dashboard.html"], /Choose the YouTube privac
 assert.match(sources["public/parish/dashboard.html"], /Announcements, Groups, and Teaching[\s\S]*verified-household gate[\s\S]*YouTube-hosted video—even Unlisted—does not carry that same guarantee[\s\S]*AGAPAY cannot control YouTube access[\s\S]*youtubeVideoUrl[\s\S]*Validate and add/i, "privacy guidance must be permanent and appear before submission controls");
 assert.match(sources["public/myagapay/media.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
 assert.match(sources["public/myagapay/watch.html"], /href="\/myagapay\/parish-life"[^>]*>← Back</);
-assert.match(sources["public/myagapay/parish-life.js"], />Recent Videos<[\s\S]*href="\/myagapay\/media">All Media/);
+assert.match(sources["public/myagapay/parish-life.js"], />Latest Video<[\s\S]*href="\/myagapay\/media">All Media/);
 assert.match(sources["public/myagapay/parish-life.js"], /parishLifeFetch\("\/api\/donor\/videos"/);
 assert.match(sources["public/myagapay/parish-life.js"], /media\.youtubeLatest[\s\S]*Pinned ·[\s\S]*Latest from YouTube/);
 assert.match(sources["public/donor/style.css"], /\.parish-life-video-card:last-child:nth-child\(odd\)\s*\{\s*grid-column:\s*1 \/ -1;/, "a single or third video card must span the mobile grid instead of disappearing");
