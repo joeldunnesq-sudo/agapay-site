@@ -36,7 +36,7 @@ try {
           today: {
             feastTitle: 'The Beginning of the Church Year',
             feastRank: 'great',
-            fastingRule: 'No Fast',
+            fastingRule: 'No Fast (Bright Week)',
             tone: 4,
             saints: ['Saint Symeon'],
             saintStories: [{ title: 'Saint Symeon', story: 'A life of prayer.' }],
@@ -121,6 +121,10 @@ try {
   await page.evaluate(() => renderCommunityToolBadges({ counts: { signups: 2, exchange: 1, prayers: 3 } }));
   assert.equal(await page.locator('#koinoniaShortcuts [data-community-tool-badge="prayers"]').textContent(), '3');
   assert.equal(await page.locator('#koinoniaShortcuts a').count(), 5);
+  assert.equal(await page.locator('.koinonia-parish-context > svg').count(), 1);
+  assert.equal(await page.locator('.koinonia-fasting-pill').textContent(), 'No fast');
+  assert.equal(await page.locator('.koinonia-fasting-pill').getAttribute('aria-label'), 'No Fast (Bright Week)');
+  assert.equal(await page.locator('#koinoniaYearProgress .pledge-bar-track').evaluate(el => getComputedStyle(el).height), '10px');
   assert.equal(await page.locator('#parishLifeNewsMount .parish-life-blog-card').count(), 4);
   assert.match(await page.locator('#koinoniaChurchDate').textContent(), /September 1.*Julian/);
   const progress = await page.evaluate(() => [

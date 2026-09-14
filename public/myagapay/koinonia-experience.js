@@ -34,6 +34,20 @@
     if (offering) offering.hidden = !parish?.id;
     shortcuts(parish, communicationsEnabled);
   }
+  function compactFasting(chips, rule) {
+    const pill = [...chips.querySelectorAll('span')].find((item) => item.textContent === rule);
+    if (!pill) return;
+    const full = String(rule || '').trim();
+    const short = full.replace(/\s*\([^)]*\)/g, '').trim();
+    pill.textContent = /\bno fast(?:ing)?\b|\bfast[- ]free\b/i.test(full)
+      ? 'No fast'
+      : short.length <= 18
+        ? short
+        : 'Fast';
+    pill.title = full;
+    pill.setAttribute('aria-label', full);
+    pill.classList.add('koinonia-fasting-pill');
+  }
   // Use calendar conversion helpers, rather than a fixed 13-day offset.
   function yearProgress(civilDate, calendar) {
     const api = window.AGAPAYLiturgicalCalendar;
@@ -64,9 +78,10 @@
     track.setAttribute('aria-valuetext', `Day ${progress.day} of ${progress.length} in the church year`);
     target.style.setProperty('--year-progress', `${progress.percent}%`);
     target.querySelector('[data-year-day]').textContent = `Today · Day ${progress.day} of ${progress.length}`;
+    target.querySelector('[data-year-percent]').textContent = `${Math.floor(progress.percent)}%`;
     const calendarDate = document.getElementById('koinoniaChurchDate');
     if (calendarDate)
       calendarDate.textContent = `${churchDate} · ${window.AGAPAYLiturgicalCalendar.calendarLabel(calendar)}`;
   }
-  window.KoinoniaExperience = { parishContext, liturgicalDay, yearProgress };
+  window.KoinoniaExperience = { parishContext, liturgicalDay, yearProgress, compactFasting };
 })();

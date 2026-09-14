@@ -34,12 +34,6 @@
 .koinonia-landing-page #todayChips > .cal-saint-chip::after { content: ''; position: absolute; inset: -8px 0; }
 .koinonia-landing-page #todayChips > .cal-saint-chip:hover { background: #294e67; }
 .koinonia-landing-page :is(a,button):focus-visible { outline: 2px solid #9a7837; outline-offset: 3px; }
-.koinonia-year { margin: 0 -27px; padding: 12px 27px; border-top: 1px solid #c2cdd2; background: #e3ebef; }
-.koinonia-year-heading,.koinonia-year-ends { display: flex; justify-content: space-between; gap: 8px; color: #687983; font: 400 10px/1.4 'DM Sans',sans-serif; }
-.koinonia-year-heading strong { font-size: 9px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #806532; }
-.koinonia-year-track { height: 4px; background: #cbd6da; border-radius: 4px; position: relative; margin: 12px 0 10px; }
-.koinonia-year-track > span { display: block; width: var(--year-progress,0%); height: 100%; background: #aa8844; border-radius: inherit; }
-.koinonia-year-track > i { position: absolute; left: var(--year-progress,0%); top: 50%; transform: translate(-50%,-50%); width: 9px; height: 9px; border: 2px solid #fffdf8; border-radius: 50%; background: #aa8844; }
 .koinonia-shortcuts { display: grid; grid-template-columns: repeat(var(--shortcut-count,5),minmax(0,1fr)); gap: 4px; border-bottom: 1px solid #e1d9cb; margin: 0 0 22px; }
 .koinonia-shortcuts a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 2px; font-size: 11px; color: #18354b; text-decoration: none; min-width: 0; }
 .koinonia-shortcuts svg { width: 20px; height: 20px; fill: none; stroke: #9a7837; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -97,3 +91,11 @@
 
 .koinonia-landing-page #todayChips > :is(span,button) { white-space:nowrap; height:28px; }
 .koinonia-landing-page #todayChips > span::before { display:none; }
+/* Match the home page pledge tracker's navy panel and gold progress bar. */
+.koinonia-year { margin:0 -27px; padding:16px 27px; background:linear-gradient(145deg,#061522,#0b2130); color:#f6f1e8; border-top:1px solid rgba(200,162,74,.22); }
+.koinonia-year-heading { gap:8px; }
+.koinonia-year-heading [data-year-day] { color:#e8c56a; font-size:10px; }
+.koinonia-year-track > .pledge-bar-fill { display:block; width:var(--year-progress,0%); }
+.koinonia-year-ends { gap:8px; }
+@media(max-width:700px) { .koinonia-year { margin:0 -18px; padding:14px 18px; } }
+@media(prefers-reduced-motion:reduce) { .koinonia-year .pledge-bar-fill { transition:none; } }
