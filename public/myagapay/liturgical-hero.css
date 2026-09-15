@@ -21,7 +21,7 @@
 :is(.koinonia-landing-page, .koinonia-design-page).donor-mobile-page .refined-liturgical-hero #todayChips > .cal-saint-chip b { font-size:11px; }
 :is(.koinonia-landing-page, .koinonia-design-page).donor-mobile-page .refined-liturgical-hero:has(.cal-date-badge:not([hidden])) #koinoniaChurchDate { display:none; }
 :is(.koinonia-landing-page, .koinonia-design-page).donor-mobile-page .refined-liturgical-hero {
-  background: linear-gradient(145deg, #1c3d52 0%, #163348 50%, #10283b 100%);
+  background: linear-gradient(145deg, #061522, #0B2130);
   border-color: #355165;
   color: #f5f2eb;
 }
