@@ -192,6 +192,16 @@
 .app-header-actions:empty {
   display: none;
 }
+.app-header-body:has(.app-header-description) .app-header-title-row {
+  margin-bottom: 6px;
+}
+.app-header-description {
+  margin: 0 0 18px;
+  color: #687983;
+  font:
+    400 12px/1.5 'DM Sans',
+    sans-serif;
+}
 .app-shared-header-page .app-page-header .koinonia-mobile-menu {
   position: absolute;
   z-index: 40;

@@ -168,6 +168,15 @@
     header.querySelector('[data-app-page-title]').textContent = titles[key];
     main.prepend(header);
 
+    if (key === 'library') {
+      const description = main.querySelector('.library-page-heading p');
+      if (description) {
+        description.classList.add('app-header-description');
+        header.querySelector('.app-header-body').append(description);
+        main.querySelector('.library-page-heading').classList.add('app-header-replaced');
+      }
+    }
+
     const actions = header.querySelector('.app-header-actions');
     const actionSelectors =
       key === 'bookstore'
