@@ -130,7 +130,6 @@
       { id: "prayers", href: "/myagapay/prayer-requests", label: "Prayer Requests", short: "Pray for one another", icon: icons.prayers, parishFeature: "prayerRequestsEnabled" },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
       { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
-      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }
     ];
     return items;
   }
@@ -168,12 +167,12 @@
         ? feature
         : byId.get(fallbackId);
     };
-    const libraryOrLearn = featureOrFallback("library", "learn");
+    const libraryOrHistory = featureOrFallback("library", "history");
     return [
       byId.get("giving"),
       featureOrFallback("bookstore", "settings"),
       byId.get("parish-life"),
-      libraryOrLearn,
+      libraryOrHistory,
       byId.get("commemorations"),
     ].filter(Boolean);
   }
@@ -444,7 +443,6 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
-        <a href="/myagapay/learn" role="menuitem">Learn <small>Best on desktop</small></a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
@@ -605,7 +603,8 @@
         const current = item.id === active;
         return `<a href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`;
       }).join("");
-    return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === "account" ? ' aria-current="page"' : ""}>${icons.account}<span>Account Settings</span></a>`;
+    const sharedExtras = document.body.classList.contains("app-shared-header-page") ? `<a href="/myagapay/giving/calendar">${icons.history}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>` : "";
+    return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === "account" ? ' aria-current="page"' : ""}>${icons.account}<span>Account Settings</span></a>${sharedExtras}`;
   }
 
   function closeMobileAppMenus(except = null) {
@@ -769,6 +768,7 @@
       if (handleUnauthorized(response)) return;
       if (!response.ok) throw new Error("Unable to load parish features");
       const payload = await response.json();
+      window.dispatchEvent(new CustomEvent("myagapay:parish-context", { detail: payload.parish || null }));
       setParishCapabilities(payload.parish || null, { persist: true, authoritative: true });
       if (parishCapabilities.parishLifeAvailable && !window.location.pathname.startsWith("/myagapay/parish-life")) {
         await Promise.all([
@@ -968,6 +968,8 @@
 
   window.MyAgapayShell = {
     activeProduct,
+    initializeMobileAppMenus,
+    openSupportDialog,
     authHeaders,
     clearSession,
     handleUnauthorized,

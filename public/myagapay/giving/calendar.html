@@ -13,8 +13,8 @@
   <script src="/liturgical-calendar.js"></script>
   <script src="/pwa-register.js" defer></script>
   <script src="/donor/session.js?v=efeba05c646552d3"></script>
-  <script src="/myagapay-shell.js?v=5509ae115f54c4c3"></script>
-  <script src="/donor/controllers/calendar.js?v=b7e4aa7beb3b5ae4" defer></script>
+  <script src="/myagapay-shell.js?v=e44be41cf0780220"></script>
+  <script src="/donor/controllers/calendar.js?v=81f609227638ac24" defer></script>
   <script src="/donor/controllers/history.js?v=a19335584ba4ded8" defer></script>
   <script src="/donor/controllers/sacraments.js?v=a70f198649e067b5" defer></script>
   <script src="/donor/app.js?v=21918d61a3bc3579" defer></script>
@@ -28,6 +28,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="stylesheet" href="/myagapay/koinonia-subpages.css?v=2770ac979c51f0f6" />
   <script src="/myagapay/church-year.js?v=cdb027d76cc79f97" defer></script>
+  <link rel="stylesheet" href="/myagapay/liturgical-hero.css?v=dd69fbb19103aac1" />
+<link rel="stylesheet" href="/myagapay/app-header.css?v=6f47b81f04594d98" />
+<script src="/myagapay/app-header.js?v=4ed0c5c6620d1ead" defer></script>
 </head>
 <body class="koinonia-design-page donor-mobile-page donor-calendar-page">
   <div class="app">
@@ -41,28 +44,30 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg> Back</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">Liturgical Calendar</div><div class="topbar-actions"><span class="status-pill" id="calendarModePill">Parish calendar</span><a class="btn btn-gold btn-sm" href="/myagapay/giving/give">Feast offering</a></div></div>
+      <div class="topbar"><div class="topbar-title">Liturgical Calendar</div><div class="topbar-actions"><span class="status-pill" id="calendarModePill">Parish calendar</span><a class="btn btn-gold btn-sm" id="todayGiveLink" href="/myagapay/giving/give">Feast offering</a></div></div>
       <div class="page cal-page">
         <div class="layout-main">
           <div>
             <!-- TODAY HERO -->
-            <section class="cal-hero calendar-liturgical-hero" aria-label="Today in the Church">
+            <section class="cal-hero parish-life-liturgical-hero refined-liturgical-hero calendar-liturgical-hero" aria-label="Today in the Church">
               <div class="cal-hero-inner">
-                <div class="cal-hero-eyebrow" id="todayCivilDateEyebrow">Today’s civil date</div>
-                <div class="cal-today-row">
-                  <div class="cal-date-badge">
+                <div class="cal-date-heading-row">
+                  <div class="cal-date-badge" id="todayChurchDateBadge">
                     <div class="cal-date-weekday" id="todayWeekday">Today</div>
                     <div class="cal-date-day" id="todayMonthDay">--</div>
                     <div class="cal-date-my" id="todayYear">--</div>
+                    <div class="cal-date-calendar" id="todayChurchDateCalendar">Julian</div>
                   </div>
+                  <div class="cal-date-heading-copy">
+                    <div class="cal-hero-eyebrow" id="todayCivilDateEyebrow">Today’s civil date</div>
+                  </div>
+                </div>
+                <div class="cal-today-row">
                   <div class="cal-today-main">
-                    <div class="cal-today-kicker" id="todayCalendarLabel">Church calendar</div>
                     <h1 class="cal-today-title" id="todayFeastTitle">Loading today in the Church…</h1>
                     <p class="cal-today-note" id="todayFeastNote">AGAPAY is preparing today's feast and fasting context.</p>
                     <div class="cal-chip-row" id="todayChips"></div>
-                    <div class="cal-hero-actions">
-                      <a class="cal-btn cal-btn-gold" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a>
-                    </div>
+
                   </div>
                 </div>
               </div>

@@ -607,6 +607,7 @@ function closeBookstoreScanner() {
 }
 
 function renderBookstoreParishContext(parish = null) {
+  window.dispatchEvent(new CustomEvent("myagapay:parish-context", { detail: parish }));
   const parishId = parish?.id || "";
   const parishName = parish?.name || "";
   const place = [parish?.city, parish?.state].filter(Boolean).join(", ");

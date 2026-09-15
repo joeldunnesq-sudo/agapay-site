@@ -1,0 +1,310 @@
+/* Use the existing Koinonia frame, typefaces, surfaces, and controls. */
+.donor-groups-page.is-group-thread-open .app-page-header {
+  display: none;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .app-header-title-row,
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .app-header-description {
+  display: none;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .app-header-body {
+  padding-bottom: 20px;
+}
+.donor-groups-page.app-shared-header-page:not(.is-group-thread-open) .ministry-home-back-row > a {
+  display: none;
+}
+.donor-groups-page.is-ministry-open .groups-list-panel,
+.donor-groups-page.is-ministry-open .push-notification-card,
+.donor-groups-page.is-ministry-open .groups-page-shell > .koinonia-page-heading {
+  display: none;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .groups-layout {
+  display: block;
+  height: auto;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-panel {
+  display: block;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-signups-workspace {
+  overflow: visible;
+  padding: 24px 0;
+  background: transparent;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid var(--k-border);
+  border-radius: 16px;
+  background: var(--k-surface);
+}
+.ministry-home-back-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.page .ministry-home-back-row [data-parish-life-back] {
+  margin: 0;
+}
+.ministry-home-back-row .group-thread-back {
+  min-height: 44px;
+  font-size: 12px;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-back span {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-identity {
+  align-items: flex-start;
+  gap: 16px;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-identity h2 {
+  margin: 6px 0 8px;
+  font:
+    500 34px/1.1 'Cormorant Garamond',
+    'Playfair Display',
+    Georgia,
+    serif;
+  letter-spacing: -0.025em;
+  color: var(--k-text);
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-identity p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open)
+  .group-thread-actions:has([hidden]):not(:has(button:not([hidden]))) {
+  display: none;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-workspace-tabs {
+  flex-wrap: wrap;
+  overflow: visible;
+  padding: 16px 0;
+  background: transparent;
+  gap: 8px;
+}
+.donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-workspace-tabs button {
+  min-height: 44px;
+  font-size: 12px;
+}
+.donor-groups-page.is-group-thread-open .ministry-home-back-row {
+  display: contents;
+}
+.donor-groups-page.is-group-thread-open .ministry-home-back-row > a {
+  display: none;
+}
+.donor-groups-page.is-group-thread-open .groups-page-shell {
+  display: block;
+}
+.donor-groups-page.is-group-thread-open .groups-page-shell > .groups-layout {
+  margin: 0;
+}
+.ministry-home-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 28px;
+}
+.ministry-home-grid > * {
+  min-width: 0;
+}
+.ministry-home-grid :is(h3, h4, p, strong, small) {
+  overflow-wrap: anywhere;
+}
+.ministry-home-grid h3 {
+  margin: 0 0 14px;
+  color: var(--k-text);
+  font:
+    500 26px/1.15 'Cormorant Garamond',
+    'Playfair Display',
+    Georgia,
+    serif;
+}
+.ministry-home-grid h4 {
+  margin: 0 0 8px;
+  color: var(--k-text);
+  font-size: 14px;
+}
+.ministry-home-grid p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ministry-home-grid .eyebrow {
+  display: block;
+  margin-bottom: 8px;
+}
+.ministry-home-muted,
+.ministry-home-note small {
+  color: var(--k-muted);
+}
+.ministry-home-next {
+  margin-bottom: 28px;
+  border: 1px solid var(--k-border);
+  border-radius: 12px;
+  padding: 24px;
+  background: var(--k-surface);
+}
+.ministry-home-next h3 {
+  font-size: 30px;
+}
+.ministry-home-grid :is(.koinonia-page-action, .groups-refresh) {
+  min-height: 44px;
+  height: auto;
+  line-height: 1.35;
+  padding: 10px 14px;
+  white-space: normal;
+  text-decoration: none;
+}
+.ministry-home-grid .groups-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ministry-home-section {
+  margin-bottom: 28px;
+}
+.ministry-home-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ministry-home-section-head h3 {
+  margin-bottom: 0;
+}
+.ministry-home-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--k-divider);
+  color: var(--k-text);
+  text-decoration: none;
+}
+.ministry-home-row:hover {
+  color: var(--k-gold-hover);
+}
+.ministry-home-row strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.ministry-home-row > span > span {
+  display: block;
+  font-size: 12px;
+  color: var(--k-muted);
+}
+.ministry-home-row > small {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--k-gold-hover);
+}
+.ministry-home-note {
+  border-left: 3px solid var(--k-gold);
+  padding: 4px 0 4px 16px;
+  margin: 16px 0;
+}
+.ministry-home-note p,
+.ministry-home-description {
+  white-space: pre-line;
+}
+.ministry-home-note small {
+  font-size: 11px;
+}
+.ministry-home-need,
+.ministry-home-coverage {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--k-divider);
+}
+.ministry-home-need > strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.ministry-home-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 12px;
+}
+.ministry-home-avatars span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--k-surface);
+  border: 1px solid var(--k-border);
+  color: var(--k-gold-hover);
+  font-size: 11px;
+}
+.ministry-home-resource {
+  padding: 12px 0;
+}
+.ministry-home-footer {
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--k-divider);
+  color: var(--k-muted);
+  font-size: 12px;
+}
+.ministry-home-grid :is(a, button):focus-visible {
+  outline: 3px solid var(--k-gold);
+  outline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .ministry-home-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+@media (max-width: 700px) {
+  .donor-groups-page.is-ministry-open:not(.is-group-thread-open) .groups-page-shell > .groups-layout {
+    margin: 0;
+  }
+  .donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-head {
+    border-width: 0 0 1px;
+    border-radius: 0;
+  }
+  .donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-identity h2 {
+    font-size: 32px;
+  }
+  .donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-thread-identity .ministry-group-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    flex: 0 0 auto;
+  }
+  .donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-workspace-tabs {
+    padding: 16px 20px;
+  }
+  .donor-groups-page.is-ministry-open:not(.is-group-thread-open) .group-signups-workspace {
+    padding: 24px 20px;
+  }
+  .ministry-home-next {
+    padding: 20px;
+  }
+  .ministry-home-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

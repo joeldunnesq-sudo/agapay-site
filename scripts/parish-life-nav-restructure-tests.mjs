@@ -67,7 +67,7 @@ assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-co
 assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/, "Community Tool cards should remain compact");
 assert.match(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tool cards should remain in one row on mobile");
 
-assert.match(landing, /class="cal-hero parish-life-liturgical-hero"/);
+assert.match(landing, /class="cal-hero parish-life-liturgical-hero(?: [^"]+)?"/);
 assert.match(landing, /class="cal-date-heading-row"/);
 assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);

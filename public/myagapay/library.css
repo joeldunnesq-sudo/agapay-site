@@ -4,7 +4,8 @@
 .library-page-heading{margin:0}
 .library-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,250px);gap:9px;margin:0;border:1px solid rgba(6,21,34,.09);border-radius:15px;padding:10px;background:rgba(255,253,248,.86)}
 .library-search{display:flex;align-items:center;gap:9px;border:1px solid var(--library-line);border-radius:11px;padding:0 12px;background:#fff}
-.library-search svg{width:20px;fill:none;stroke:#7c704f;stroke-width:1.8}
+.library-search svg{width:20px;height:20px;flex:0 0 20px;fill:none;stroke:#7c704f;stroke-width:1.8}
+.donor-library-page .library-tools .library-search input{min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font:500 13px/1.4 "DM Sans",sans-serif}
 .library-search input,.library-tools select{width:100%;min-height:44px;border:0;background:transparent;color:#1b2833;font:500 13px "DM Sans",sans-serif;outline:0}
 .library-tools select{border:1px solid var(--library-line);border-radius:11px;padding:0 12px;background:#fff}
 .library-search:focus-within,.library-tools select:focus{border-color:#aa8439;box-shadow:0 0 0 3px rgba(170,132,57,.13)}
