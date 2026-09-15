@@ -8318,8 +8318,6 @@ textarea {
   .parish-life-recording-row { grid-template-columns: 38px minmax(0, 1fr); }
   .parish-life-recording-row > em { grid-column: 2; }
   .parish-life-ministry-tile { min-height: 120px; }
-  .parish-life-back-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .parish-life-back-link { width: 36px; justify-content: center; padding: 0; }
 }
 
 /* Inner-page cards and controls. */
@@ -9491,7 +9489,6 @@ textarea {
   padding: 0;
 }
 .donor-groups-page.is-group-thread-open .koinonia-screen-head,
-.donor-groups-page.is-group-thread-open .koinonia-page-back,
 .donor-groups-page.is-group-thread-open .push-notification-card,
 .donor-groups-page.is-group-thread-open .groups-list-panel { display: none; }
 .donor-groups-page.is-group-thread-open .groups-layout { display: block; height: 100%; min-height: 0; }
@@ -10266,4 +10263,35 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
   .prayer-request-card footer > div { gap:5px; }
   .prayer-dialog form { padding:24px 18px 19px; }
   .prayer-dialog-actions { display:grid; grid-template-columns:1fr 1fr; }
+}
+
+/* Keep the return to Koinonia explicit and easy to tap on every subpage. */
+.page [data-parish-life-back] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 8px;
+  width: fit-content;
+  min-height: 44px;
+  margin: 0 0 14px;
+  border: 1px solid #c5b58f;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #fffaf0;
+  color: #594218;
+  font: 700 14px/1.3 "DM Sans", "Inter", sans-serif;
+  text-decoration: none;
+}
+.page [data-parish-life-back]:hover { background: #f3ead5; border-color: #8a6a2c; }
+.page [data-parish-life-back]:focus-visible { outline: 3px solid #8a6a2c; outline-offset: 3px; }
+.page [data-parish-life-back] svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
