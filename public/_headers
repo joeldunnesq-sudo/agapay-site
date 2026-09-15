@@ -119,3 +119,12 @@
 
 /myagapay/church-year.js
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/liturgical-hero.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/app-header.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/app-header.js
+  Cache-Control: public, max-age=31536000, immutable

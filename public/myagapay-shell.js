@@ -605,7 +605,8 @@
         const current = item.id === active;
         return `<a href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`;
       }).join("");
-    return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === "account" ? ' aria-current="page"' : ""}>${icons.account}<span>Account Settings</span></a>`;
+    const sharedExtras = document.body.classList.contains("app-shared-header-page") ? `<a href="/myagapay/giving/calendar">${icons.history}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>` : "";
+    return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === "account" ? ' aria-current="page"' : ""}>${icons.account}<span>Account Settings</span></a>${sharedExtras}`;
   }
 
   function closeMobileAppMenus(except = null) {
@@ -769,6 +770,7 @@
       if (handleUnauthorized(response)) return;
       if (!response.ok) throw new Error("Unable to load parish features");
       const payload = await response.json();
+      window.dispatchEvent(new CustomEvent("myagapay:parish-context", { detail: payload.parish || null }));
       setParishCapabilities(payload.parish || null, { persist: true, authoritative: true });
       if (parishCapabilities.parishLifeAvailable && !window.location.pathname.startsWith("/myagapay/parish-life")) {
         await Promise.all([
@@ -968,6 +970,8 @@
 
   window.MyAgapayShell = {
     activeProduct,
+    initializeMobileAppMenus,
+    openSupportDialog,
     authHeaders,
     clearSession,
     handleUnauthorized,

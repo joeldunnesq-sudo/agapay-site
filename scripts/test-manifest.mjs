@@ -147,6 +147,7 @@ const accounting = [
 
 const productUi = [
   'scripts/myagapay-calendar-browser-tests.mjs',
+  'scripts/app-header-browser-tests.mjs',
   'scripts/parish-dashboard-browser-tests.mjs',
   'scripts/parish-onboarding-browser-tests.mjs',
   'scripts/parish-campaign-browser-tests.mjs',
