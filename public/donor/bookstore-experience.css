@@ -432,8 +432,17 @@
   content: '';
   position: absolute;
   inset: 5px;
-  border: 1px solid #b49a63;
-  border-radius: 4px;
+  /* Quarter-circle scallops turn inward while the gold stroke stays crisp at any card size. */
+  background:
+    radial-gradient(circle at 0 0, transparent 9px, #b49a63 9px 10px, transparent 10px) top left / 10px 10px,
+    radial-gradient(circle at 100% 0, transparent 9px, #b49a63 9px 10px, transparent 10px) top right / 10px 10px,
+    radial-gradient(circle at 0 100%, transparent 9px, #b49a63 9px 10px, transparent 10px) bottom left / 10px 10px,
+    radial-gradient(circle at 100% 100%, transparent 9px, #b49a63 9px 10px, transparent 10px) bottom right / 10px 10px,
+    linear-gradient(#b49a63, #b49a63) top center / calc(100% - 20px) 1px,
+    linear-gradient(#b49a63, #b49a63) bottom center / calc(100% - 20px) 1px,
+    linear-gradient(#b49a63, #b49a63) center left / 1px calc(100% - 20px),
+    linear-gradient(#b49a63, #b49a63) center right / 1px calc(100% - 20px);
+  background-repeat: no-repeat;
   pointer-events: none;
 }
 .boutique-arch {
