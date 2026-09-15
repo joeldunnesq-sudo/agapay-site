@@ -1,3 +1,4 @@
+import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -96,8 +97,8 @@ const [handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminS
 ].map((file) => readFileSync(path.join(root, file), "utf8"));
 assert.match(worker, /handleDonorParishLibrary/);
 assert.match(worker, /handleParishLibrary/);
-assert.match(shell, /const libraryOrLearn = featureOrFallback/);
-assert.match(shell, /libraryOrLearn,[\s\S]*byId.get\("commemorations"\)/);
+assert.match(shell, /const libraryOrHistory = featureOrFallback/);
+assert.match(shell, /libraryOrHistory,[\s\S]*byId.get\("commemorations"\)/);
 assert.match(shell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts\(\)/);
 assert.match(shell, /function mobileAppMenuLinks\(\)[\s\S]*const links = hamburgerProducts\(\)/);
 assert.match(shell, /mobileLabel: "Library"/);
@@ -108,7 +109,7 @@ assert.match(donorPage, /class="page koinonia-inner-shell library-page"/);
 assert.match(donorPage, /class="koinonia-page-heading library-page-heading"/);
 assert.doesNotMatch(donorPage, /library-hero/, "Library should use the shared app heading instead of a marketing-style hero");
 assert.match(donorPage, /koinonia-inner\.css\?v=20260915spacing1/);
-assert.match(donorPage, /library\.css\?v=20260827libraryapp1/);
+assert.ok(donorPage.includes(appAssetUrl('/myagapay/library.css')), 'Library must load its current versioned stylesheet');
 assert.match(donorPage, /myagapay-shell\.js\?v=[a-f0-9]{16}/);
 assert.match(parishLifePage, /myagapay-shell\.js\?v=[a-f0-9]{16}/);
 assert.match(donorScript, /fetch\("\/api\/donor\/library"/);

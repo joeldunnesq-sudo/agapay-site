@@ -2,6 +2,14 @@
 
 AGAPAY production changes land through a pull request to `main`. The repository's `main` protection requires the `Quality` and `Test` checks, blocks force pushes and deletion, and keeps production deployment restricted to the protected branch.
 
+## Verify the production baseline before publishing
+
+Do not assume that `main` contains every change currently live on Cloudflare. Before a release, inspect the active Worker version and recent deployment messages, then compare the live app's HTML and versioned asset contents with the intended baseline. In particular, preserve the shared app header, liturgical hero, and Bookstore presentation assets.
+
+If production contains a newer direct deployment, reconcile that complete production build into the branch before adding or publishing changes. A clean checkout is isolation, not evidence that it matches production. Keep unrelated workspace changes intact. Never deploy an older baseline simply because its checks pass.
+
+On September 15, 2026, production version `acd30f35-bab2-4418-bee2-7628a0bfd13f` contained header, liturgical hero, library, and Bookstore refinements absent from `main`. Release #167 replaced them. Recovery restored that version, verified its assets and health, and reconciled its complete public asset tree into the repository. The recovered backend, configuration, and migration files matched `main`; no data rollback was required. The reconciled release adds the ministry homepage and reapplies the navigation, spacing, and hagiography fixes to that recovered frontend.
+
 ## CI checks
 
 `Quality` runs `npm run quality`, which enforces:

@@ -419,6 +419,7 @@
   background: #fffefb;
 }
 .boutique-editorial {
+  position: relative;
   display: flex;
   gap: 28px;
   align-items: center;
@@ -426,6 +427,23 @@
   border-radius: 6px;
   margin: 24px 0;
   padding: 28px 30px;
+}
+.boutique-editorial::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  /* Quarter-circle scallops turn inward while the gold stroke stays crisp at any card size. */
+  background:
+    radial-gradient(circle at 0 0, transparent 9px, #b49a63 9px 10px, transparent 10px) top left / 10px 10px,
+    radial-gradient(circle at 100% 0, transparent 9px, #b49a63 9px 10px, transparent 10px) top right / 10px 10px,
+    radial-gradient(circle at 0 100%, transparent 9px, #b49a63 9px 10px, transparent 10px) bottom left / 10px 10px,
+    radial-gradient(circle at 100% 100%, transparent 9px, #b49a63 9px 10px, transparent 10px) bottom right / 10px 10px,
+    linear-gradient(#b49a63, #b49a63) top center / calc(100% - 20px) 1px,
+    linear-gradient(#b49a63, #b49a63) bottom center / calc(100% - 20px) 1px,
+    linear-gradient(#b49a63, #b49a63) center left / 1px calc(100% - 20px),
+    linear-gradient(#b49a63, #b49a63) center right / 1px calc(100% - 20px);
+  background-repeat: no-repeat;
+  pointer-events: none;
 }
 .boutique-arch {
   display: grid;
@@ -453,6 +471,9 @@
   color: #657682;
   max-width: 470px;
 }
+.boutique-editorial .boutique-prayer-quote { margin:12px 0 10px; padding:0; border:0; background:transparent; }
+.boutique-editorial .boutique-prayer-quote p { margin:0; font-style:italic; }
+.boutique-prayer-quote footer { margin-top:6px; color:#826a38; font:500 10px/1.5 'DM Sans',sans-serif; }
 .boutique-editorial button {
   border: 0;
   border-bottom: 1px solid #b49a63;
@@ -466,6 +487,12 @@
 }
 .boutique-editorial button span {
   margin-left: 25px;
+}
+#bookstoreDetail,
+#bookstoreCategoryDialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
 }
 #bookstoreDetail {
   border: 0;

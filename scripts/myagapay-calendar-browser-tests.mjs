@@ -93,6 +93,12 @@ try {
   await page.goto('https://agapay.test/myagapay/parish-life');
   await assertReadings();
   assert.equal(await page.locator('#calendarChurchYear').count(), 0);
+  const heroColors = await page.locator('.parish-life-liturgical-hero').evaluate(element => ({
+    background: getComputedStyle(element).backgroundImage,
+    title: getComputedStyle(element.querySelector('.cal-today-title')).color,
+  }));
+  assert.match(heroColors.background, /linear-gradient.*rgb\(6, 21, 34\).*rgb\(11, 33, 48\)/, 'Koinonia must retain the dark calendar hero');
+  assert.equal(heroColors.title, 'rgb(245, 242, 235)', 'The dark hero must retain its readable cream title');
   await page.locator('#saintPreviewCard').click();
   await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /A test saint life/);
@@ -143,6 +149,24 @@ try {
   await page.waitForURL('**/myagapay/calendar');
   await assertReadings();
   errors.assertClean();
+
+  const fullTitle = 'Martyr Mamas of Caesarea; St John the Faster; St Eleazar';
+  today.primarySaintTitle = fullTitle;
+  today.saintStories.push({ name: 'St John the Faster', storyText: 'The second saint life.' });
+  await page.goto('https://agapay.test/myagapay/parish-life');
+  await assertReadings();
+  assert.equal(await page.locator('#todayFeastTitle').textContent(), 'Martyr Mamas of Caesarea, and others');
+  await page.locator('#saintPreviewCard').click();
+  await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
+  await page.goto('https://agapay.test/myagapay/calendar');
+  await assertReadings();
+  assert.equal(await page.locator('#todayFeastTitle').textContent(), fullTitle);
+  today.primarySaintTitle = 'Holy Martyrs Faith, Hope, and Love';
+  today.saintStories.splice(1);
+  await page.goto('https://agapay.test/myagapay/parish-life');
+  await assertReadings();
+  assert.equal(await page.locator('#todayFeastTitle').textContent(), today.primarySaintTitle);
 
   expireSession = true;
   await page.reload();

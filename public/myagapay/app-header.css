@@ -1,0 +1,418 @@
+/* Shared app chrome; the main Give dashboard does not opt in. */
+.app-shared-header-page .app-header-replaced {
+  display: none !important;
+}
+.app-shared-header-page .app-page-header {
+  position: relative;
+  z-index: 30;
+  grid-column: 1 / -1;
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  background: #f3eee4;
+  color: #18354b;
+  font-family: 'DM Sans', sans-serif;
+}
+.app-shared-header-page .app-header-bar {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 16px 20px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: #f5f1e8;
+  background: linear-gradient(135deg, #061522, #0a2035);
+}
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  font:
+    500 15px/1.2 'Cormorant Garamond',
+    Georgia,
+    serif;
+  letter-spacing: 0.14em;
+}
+.app-header-brand img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  padding: 4px;
+  border: 1px solid #84929b;
+  border-radius: 50%;
+}
+.app-shared-header-page .app-header-menu-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  flex: 0 0 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff12;
+  color: #f5f1e8;
+  cursor: pointer;
+}
+.app-header-menu-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.app-header-body {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: 16px 20px 0;
+}
+.app-page-header :is(a, button):focus-visible {
+  outline: 2px solid #c8a24a;
+  outline-offset: 2px;
+}
+.app-shared-header-page .settings-hero {
+  display: none;
+}
+.app-header-parish {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.app-header-parish > svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  fill: none;
+  stroke: #9a7837;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app-header-parish-copy {
+  flex: 1;
+  min-width: 0;
+}
+[data-app-church-name] {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font:
+    500 14px/1.4 'DM Sans',
+    sans-serif;
+}
+[data-app-church-location] {
+  margin-top: 3px;
+  color: #687983;
+  font:
+    400 11px/1.4 'DM Sans',
+    sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-header-switch {
+  flex: 0 0 40px;
+}
+.app-shared-header-page .app-header-switch :is([data-app-switch-church], .bookstore-parish-trigger) {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d9cba9;
+  border-radius: 10px;
+  padding: 9px;
+  background: #fffdf8;
+  color: #9a7837;
+  box-shadow: none;
+  cursor: pointer;
+}
+.app-header-switch svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.app-header-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 20px;
+}
+.app-shared-header-page [data-app-page-title] {
+  margin: 0;
+  color: #18354b;
+  font:
+    500 32px/1.05 'Cormorant Garamond',
+    Georgia,
+    serif;
+  letter-spacing: -0.4px;
+}
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.app-shared-header-page .app-header-actions > :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #bc963e;
+  border-radius: 999px;
+  background: #c8a24a;
+  color: #18354b;
+  font:
+    500 11px/1.2 'DM Sans',
+    sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: none;
+}
+.app-header-actions svg {
+  width: 18px;
+  height: 18px;
+}
+.app-header-actions:empty {
+  display: none;
+}
+.app-header-body:has(.app-header-description) .app-header-title-row {
+  margin-bottom: 8px;
+}
+.app-header-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid #c5b58f;
+  border-radius: 10px;
+  background: #fffaf0;
+  color: #594218;
+  font:
+    600 13px/1.4 'DM Sans',
+    sans-serif;
+  text-decoration: none;
+}
+.app-header-back + .app-header-title-row {
+  margin-top: 16px;
+}
+.app-header-description {
+  margin: 0 0 18px;
+  color: #687983;
+  font:
+    400 12px/1.5 'DM Sans',
+    sans-serif;
+}
+.app-shared-header-page .app-page-header .koinonia-mobile-menu {
+  position: absolute;
+  z-index: 40;
+  top: 68px;
+  right: 14px;
+  width: min(310px, calc(100% - 28px));
+  max-height: min(72dvh, 640px);
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid #d9cba9;
+  border-radius: 14px;
+  background: #fffdf8;
+  color: #18354b;
+  box-shadow: 0 18px 40px #06152233;
+}
+.app-shared-header-page .app-page-header .koinonia-mobile-menu[hidden] {
+  display: none;
+}
+.app-shared-header-page .app-page-header .koinonia-mobile-menu :is(a, button) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #18354b;
+  font:
+    500 13px/1.3 'DM Sans',
+    sans-serif;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.app-shared-header-page .app-page-header .koinonia-mobile-menu [aria-current='page'] {
+  background: #18354b;
+  color: #fffdf8;
+}
+.app-shared-header-page .app-page-header .koinonia-mobile-menu :is(a, button):hover {
+  background: #e8eef1;
+  color: #18354b;
+}
+.app-page-header .koinonia-mobile-menu svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.app-page-header .koinonia-mobile-menu-divider {
+  display: block;
+  height: 1px;
+  margin: 8px 12px;
+  background: #e1d9cb;
+}
+.app-shared-header-page .app-header-old-heading {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+.app-shared-header-page .app-header-old-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shared-header-page .app-header-old-heading :is(.koinonia-page-title-row, .prayer-page-title-row) {
+  margin: 0;
+}
+.app-shared-header-page .app-header-switch .bookstore-parish-menu {
+  position: absolute;
+  top: 130px;
+  right: 20px;
+  bottom: auto;
+  left: auto;
+  width: min(360px, calc(100vw - 40px));
+  max-height: calc(100dvh - 230px);
+  overflow-y: auto;
+}
+.app-page-header:has(.bookstore-parish-menu:not([hidden])) {
+  z-index: 1001;
+}
+.app-shared-header-page .app-header-switch .bookstore-parish-switcher {
+  position: static;
+}
+.app-shared-header-page .app-church-dialog {
+  width: min(480px, calc(100% - 28px));
+  max-height: 80dvh;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #ddd4c5;
+  border-radius: 16px;
+  color: #18354b;
+  background: #fffdf8;
+  font:
+    400 14px/1.5 'DM Sans',
+    sans-serif;
+}
+.app-church-dialog::backdrop {
+  background: #06152288;
+}
+.app-church-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.app-church-dialog h2 {
+  font:
+    500 30px/1.1 'Cormorant Garamond',
+    Georgia,
+    serif;
+  margin: 0;
+}
+.app-church-dialog-heading button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #e8eef1;
+  color: #18354b;
+  font-size: 24px;
+  cursor: pointer;
+}
+.app-church-dialog label {
+  display: block;
+}
+.app-church-dialog input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #d9cba9;
+  border-radius: 8px;
+  font:
+    400 16px 'DM Sans',
+    sans-serif;
+}
+.app-church-option {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid #e1d9cb;
+  background: transparent;
+  text-align: left;
+  color: #18354b;
+  cursor: pointer;
+}
+.app-church-option[aria-current] {
+  background: #e8eef1;
+}
+.app-church-option span {
+  color: #687983;
+}
+.app-church-option:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@media (max-width: 700px) {
+  .app-shared-header-page :is(main.content, main.directory-main) {
+    padding-top: 0 !important;
+  }
+  .app-shared-header-page .app-page-header {
+    max-width: 480px;
+    margin-inline: auto;
+  }
+  .app-shared-header-page .app-header-body {
+    padding-inline: 20px;
+  }
+  .app-shared-header-page main > .page {
+    padding-top: 0 !important;
+  }
+  .app-shared-header-page .koinonia-inner-shell {
+    padding-top: 0 !important;
+  }
+  .app-shared-header-page .app-header-title-row {
+    align-items: center;
+  }
+  .app-shared-header-page.donor-directory-page .app-page-header {
+    width: calc(100% + 32px);
+    max-width: none;
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+}

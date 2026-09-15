@@ -301,8 +301,8 @@ assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, "claim d
 assert.doesNotMatch(sources.signupsClient, /window\.prompt/, "coverage requests must not use a browser prompt");
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);
 assert.match(sources.parishLife, /Signup ·/);
-assert.match(sources.groups, /\["overview","Overview"\]/);
-assert.match(sources.groups, /\["messages","Messages"\]/);
+assert.match(sources.groups, /\["overview","Home"\]/);
+assert.match(sources.groups, /\["messages","Conversation"\]/);
 assert.match(sources.groups, /\["signups","Signups"\]/);
 assert.match(sources.groups, /\["schedule","Schedule"\]/);
 assert.match(sources.groups, /\["members","Members"\]/);

@@ -260,15 +260,16 @@ assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('labe
 assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Sacraments & Services"'), "shared My AGAPAY shell should define the merged Sacraments & Services product tab");
 assert.ok(myAgapayShell.includes('id: "parish-life"') && myAgapayShell.includes('communicationsEnabled ? "Koinonia" : "Today"'), "shared My AGAPAY shell should define one tier-aware parish landing product tab");
 assert.ok(myAgapayShell.includes('id: "directory"') && myAgapayShell.includes('label: "Directory"'), "shared My AGAPAY shell should define Directory as a standard product tab");
-assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"') && myAgapayShell.includes("visibleProducts()"), "shared My AGAPAY shell should keep Learn available in the desktop product nav");
+assert.ok(myAgapayShell.includes('id: "library"') && myAgapayShell.includes('label: "Parish Library"') && myAgapayShell.includes("visibleProducts()"), "shared My AGAPAY shell should keep Parish Library available in the desktop product nav");
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should define the canonical Bookstore product tab");
 assert.ok(
   myAgapayShell.indexOf('id: "giving"') < myAgapayShell.indexOf('id: "parish-life"') &&
   myAgapayShell.indexOf('id: "parish-life"') < myAgapayShell.indexOf('id: "commemorations"') &&
   myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "directory"') &&
   myAgapayShell.indexOf('id: "directory"') < myAgapayShell.indexOf('id: "bookstore"') &&
-  myAgapayShell.indexOf('id: "bookstore"') < myAgapayShell.indexOf('id: "learn"'),
-  "shared My AGAPAY shell should order product tabs as Give, tier-aware parish landing, Prayer, Directory, Bookstore, Learn"
+  myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "library"') &&
+  myAgapayShell.indexOf('id: "library"') < myAgapayShell.indexOf('id: "directory"'),
+  "shared My AGAPAY shell should order the main products as Give, parish landing, Services, Library, Directory, and Bookstore"
 );
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
@@ -280,7 +281,7 @@ assert.ok(worker.includes("sacramentsEnabled: true") && worker.includes("ordinar
 assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && worker.includes('/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
 assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.includes("ready to serve"), "the parish dashboard should notify leaders about donor service interest");
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
-assert.ok(myAgapayShell.includes('mobileFallbackFor: "directoryEnabled"') && myAgapayShell.includes('label: "Learn"'), "Learn should replace unavailable Directory in the bottom nav");
+assert.ok(myAgapayShell.includes('featureOrFallback("library", "history")') && myAgapayShell.includes('label: "History"'), "History should replace unavailable Library in the bottom nav");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(siteChrome.includes("/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
@@ -306,7 +307,7 @@ assert.ok(
 assert.ok(myAgapayShell.includes("myagapay-menu-trigger") && myAgapayShell.includes("myagapay-menu-icon") && myAgapayShell.includes("Open My AGAPAY menu"), "shared My AGAPAY headers should use an obvious hamburger menu trigger");
 const sharedHamburgerMenu = myAgapayShell.match(/menu\.innerHTML = `([\s\S]*?)`;/)?.[1] || "";
 assert.ok(!sharedHamburgerMenu.includes("/myagapay/parish-life"), "the shared My AGAPAY hamburger menu should not duplicate Koinonia navigation");
-assert.ok(sharedHamburgerMenu.includes('/myagapay/learn') && sharedHamburgerMenu.includes("Best on desktop"), "the shared My AGAPAY hamburger menu should make Learn discoverable while setting a desktop expectation");
+assert.ok(!sharedHamburgerMenu.includes('/myagapay/learn'), "the shared My AGAPAY hamburger menu should preserve the recovered parish-focused navigation");
 assert.ok(
   myAgapayShell.includes("Report a problem / Request a feature")
     && myAgapayShell.includes('id = "myAgapaySupportDialog"')

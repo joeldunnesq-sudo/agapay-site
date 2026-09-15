@@ -223,8 +223,8 @@ function renderGroupThread(group, messages) {
   const activeTab = ministryGroupsState.activeTab;
   const messagesOpen = activeTab === "messages";
   panel.innerHTML = `
-    <div class="group-thread-head"><button type="button" class="group-thread-back" onclick="closeMinistryGroup()" aria-label="Back to ministry groups"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>Groups</span></button><div class="group-thread-identity">${ministryGroupAvatar(group, "header")}<div><span class="eyebrow">Ministry workspace</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages and service coordination for this ministry.")}</p></div></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" data-message-action onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false"${messagesOpen ? "" : " hidden"}>Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" data-message-action onclick="openMinistryGroup('${groupsEscape(group.id)}')"${messagesOpen ? "" : " hidden"}>Refresh messages</button></div></div>
-    <nav class="group-workspace-tabs" aria-label="${groupsEscape(group.name)} tools">${[["overview","Overview"],["messages","Messages"],["signups","Signups"],["schedule","Schedule"],["commerce","Meals & Events"],["members","Members"],["resources","Resources"]].map(([tab,label])=>`<button type="button" data-group-tab="${tab}" class="${activeTab===tab?"is-active":""}" onclick="switchGroupWorkspace('${tab}')" aria-selected="${activeTab===tab}">${label}</button>`).join("")}</nav>
+    <div class="group-thread-head"><div class="ministry-home-back-row"><a class="koinonia-page-back" href="/myagapay/parish-life" data-parish-life-back>← Back to Koinonia</a><button type="button" class="group-thread-back" onclick="closeMinistryGroup()" aria-label="Back to ministry groups"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>All ministries</span></button></div><div class="group-thread-identity">${ministryGroupAvatar(group, "header")}<div><span class="eyebrow">Serving together</span><h2>${groupsEscape(group.name)}</h2><p>${groupsEscape(group.description || "Messages and service coordination for this ministry.")}</p></div></div><div class="group-thread-actions">${group.role === "leader" ? `<button type="button" class="groups-refresh" data-message-action onclick="toggleGroupCatchUp('${groupsEscape(group.id)}',this)" aria-expanded="false"${messagesOpen ? "" : " hidden"}>Who’s caught up</button>` : ""}<button type="button" class="groups-refresh" data-message-action onclick="openMinistryGroup('${groupsEscape(group.id)}')"${messagesOpen ? "" : " hidden"}>Refresh messages</button></div></div>
+    <nav class="group-workspace-tabs" aria-label="${groupsEscape(group.name)} tools">${[["overview","Home"],["schedule","Schedule"],["messages","Conversation"],["signups","Signups"],["commerce","Meals & Events"],["members","Members"],["resources","Resources"]].map(([tab,label])=>`<button type="button" data-group-tab="${tab}" class="${activeTab===tab?"is-active":""}" onclick="switchGroupWorkspace('${tab}')" aria-pressed="${activeTab===tab}">${label}</button>`).join("")}</nav>
     <div class="group-message-list" id="groupMessageList" data-group-workspace="messages"${messagesOpen ? "" : " hidden"}>${messages.length ? messages.map(message => `
       <article class="group-message ${message.mine ? "is-outgoing" : "is-incoming"} is-${groupsEscape(message.messageType || "text")}${message.read ? "" : " is-unread"}"><div><strong>${message.mine ? "You" : groupsEscape(message.authorName)}</strong><time>${groupsEscape(groupMessageTime(message.createdAt))}</time></div>${renderGroupMessageContent(message)}</article>
     `).join("") : '<div class="group-thread-empty"><strong>No messages yet</strong><p>Start the conversation for your ministry.</p></div>'}</div>
@@ -274,21 +274,37 @@ function groupSignupDisplayDate(value) {
 async function switchGroupWorkspace(tab) {
   if (!['overview','messages','signups','schedule','commerce','members','resources'].includes(tab)) return;
   ministryGroupsState.activeTab = tab;
-  document.querySelectorAll('[data-group-workspace]').forEach((element) => { element.hidden = element.dataset.groupWorkspace !== tab; });
+  setGroupThreadMode(Boolean(ministryGroupsState.activeGroupId));
+  window.scrollTo(0, 0);
+  document.querySelectorAll('[data-group-workspace]').forEach((element) => { element.hidden = element.classList.contains('group-catch-up') || element.dataset.groupWorkspace !== tab; });
   document.querySelectorAll('[data-group-tab]').forEach((button) => {
     const active = button.dataset.groupTab === tab;
     button.classList.toggle('is-active', active);
-    button.setAttribute('aria-selected', String(active));
+    button.setAttribute('aria-pressed', String(active));
   });
   document.querySelectorAll('[data-message-action]').forEach((button) => { button.hidden = tab !== 'messages'; });
   if (tab !== 'messages') await loadActiveGroupWorkspace(tab);
+  else { const list = document.getElementById('groupMessageList'); if (list) list.scrollTop = list.scrollHeight; }
 }
 
 async function loadActiveGroupWorkspace(tab) {
   if(tab==='signups') return loadGroupSignupManager();
   const id=ministryGroupsState.activeGroupId; const target=document.querySelector(`[data-group-workspace="${tab}"]`); if(!id||!target)return;
   try {
-    if(tab==='overview'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/overview`);target.innerHTML=`<div class="ministry-overview-hero"><span class="eyebrow">At a glance</span><h3>Your ministry today</h3><p>Everything that needs attention, gathered in one place.</p></div><div class="ministry-overview-grid"><button onclick="switchGroupWorkspace('schedule')"><span>Next event</span><strong>${groupsEscape(d.event?.title||'Nothing scheduled')}</strong><small>${d.event?groupsEscape(groupSignupDisplayDate(d.event.starts_at)):'Create a ministry event'}</small></button><button onclick="switchGroupWorkspace('signups')"><span>Open need</span><strong>${groupsEscape(d.signup?.title||'No open signup')}</strong><small>${d.signup?`${Number(d.signup.openings)} openings`:'Create a signup form'}</small></button><button onclick="switchGroupWorkspace('messages')"><span>Latest message</span><strong>${groupsEscape((d.latestMessage?.body||'No messages yet').slice(0,80))}</strong><small>Open conversation</small></button><button onclick="switchGroupWorkspace('resources')"><span>Latest resource</span><strong>${groupsEscape(d.resource?.title||'No resources yet')}</strong><small>Open shared library</small></button></div>${(d.coverageRequests||[]).length?`<section class="ministry-coverage"><span class="eyebrow">Help requested</span><h3>Can you cover?</h3>${d.coverageRequests.map(request=>`<article><span><strong>${groupsEscape(request.requester_name||'A teammate')} needs coverage</strong><small>${groupsEscape(request.title)} · ${groupsEscape(request.label)} · ${groupsEscape(groupSignupDisplayDate(request.slot_date))}</small>${request.note?`<p>${groupsEscape(request.note)}</p>`:''}</span><button type="button" onclick="acceptMinistryCoverage('${groupsEscape(request.id)}')">I can cover</button></article>`).join('')}</section>`:''}<section class="ministry-my-commitments"><h3>My commitments</h3>${(d.myCommitments||[]).length?(d.myCommitments||[]).map(c=>`<a href="/myagapay/signups?sheet=${encodeURIComponent(c.sheetId||c.sheet_id||'')}"><strong>${groupsEscape(c.title)}</strong><span>${groupsEscape(c.label)} · ${groupsEscape(groupSignupDisplayDate(c.slot_date))}</span></a>`).join(''):'<p>You have no upcoming commitments for this ministry.</p>'}</section>`;}
+    if (tab === 'overview') {
+      const [data, people] = await Promise.all([
+        groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/overview`),
+        groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/members`).catch(() => null),
+      ]);
+      if (ministryGroupsState.activeGroupId !== id || !target.isConnected) return;
+      window.MinistryHome.render(target, data, {
+        group: ministryGroupsState.groups.find(group => group.id === id) || { name: 'Your ministry' },
+        members: people?.members || null,
+        messages: ministryGroupsState.messages,
+        escape: groupsEscape,
+        formatDate: groupSignupDisplayDate,
+      });
+    }
     if(tab==='schedule'){const [d,m]=await Promise.all([groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/schedule`),groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/members`)]);renderMinistrySchedule(target,d.events||[],m.members||[],ministryGroupsState.groups.find(group=>group.id===id));}
     if(tab==='commerce'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/commerce`);renderMinistryCommerce(target,d.items||[],d.parishId||'');}
     if(tab==='members'){const d=await groupsFetch(`/api/donor/groups/${encodeURIComponent(id)}/members`);renderMinistryMembers(target,d.members||[]);}
@@ -672,7 +688,8 @@ async function showGroupSignupHistory(sheetId){const d=await groupsFetch(`/api/d
 async function completeGroupSignupEntry(entryId){await groupsFetch(`/api/donor/koinonia/signups/entries/${encodeURIComponent(entryId)}/complete`,{method:"PATCH",body:JSON.stringify({attended:true,sendThanks:true})});await openGroupSignup(ministryGroupsState.activeSignup.sheet.id);groupStatus("Service marked complete and a thank-you was sent.");}
 
 function setGroupThreadMode(open) {
-  document.body.classList.toggle("is-group-thread-open", Boolean(open));
+  document.body.classList.toggle("is-ministry-open", Boolean(open));
+  document.body.classList.toggle("is-group-thread-open", Boolean(open) && ministryGroupsState.activeTab === "messages");
 }
 
 function syncGroupThreadUrl(groupId = "") {

@@ -85,6 +85,12 @@ try {
     }
   });
   const page = await context.newPage();
+  const assertCentered = async (selector) => {
+    const bounds = await page.locator(selector).boundingBox();
+    const viewport = page.viewportSize();
+    assert.ok(bounds && Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2) < 2, `${selector} horizontally centered`);
+    assert.ok(Math.abs(bounds.y + bounds.height / 2 - viewport.height / 2) < 2, `${selector} vertically centered`);
+  };
   page.setDefaultTimeout(15000);
   const errors = [];
   page.on('pageerror', (error) => {
@@ -109,12 +115,14 @@ try {
   assert.equal(await catalog.locator('.is-unavailable button.bookstore-product-add').isDisabled(), true);
   await page.screenshot({ path: 'output/bookstore-integrated-sale.png', fullPage: true });
   await page.locator('.bookstore-category-toggle').click();
+  await assertCentered('#bookstoreCategoryDialog');
   await page.locator('#bookstoreCategoryFilters').getByRole('button', { name: /Sale/ }).click();
   assert.equal(await catalog.locator('article').count(), 1);
   await catalog.getByRole('button', { name: 'View details for Daily Prayers' }).click();
   const detail = page.locator('#bookstoreDetail');
+  await assertCentered('#bookstoreDetail');
   assert.match(await detail.textContent(), /Sale · 25% off/);
-  await detail.getByRole('button', { name: 'Add to your bag' }).click();
+  await detail.getByRole('button', { name: 'Add to your cart' }).click();
   assert.equal(await page.locator('#bookstoreBagCount').textContent(), '1');
   assert.equal(await page.locator('#bookstoreCartTotal').textContent(), '$18.00');
   await page.locator('#bookstorePickupNote').fill('After Sunday Liturgy');
@@ -148,7 +156,8 @@ try {
   await page.screenshot({ path: 'output/bookstore-integrated-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await catalog.getByRole('button', { name: 'View details for Daily Prayers' }).click();
-  await detail.getByRole('button', { name: 'Add to your bag' }).click();
+  await assertCentered('#bookstoreDetail');
+  await detail.getByRole('button', { name: 'Add to your cart' }).click();
   await page.locator('#bookstoreMobileCartBar').click();
   assert.equal(await page.locator('#bookstoreCartPanel').evaluate((el) => el.inert), false);
   await page.getByRole('button', { name: 'Close cart', exact: true }).first().click();

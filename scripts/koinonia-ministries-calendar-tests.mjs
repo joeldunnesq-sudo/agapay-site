@@ -345,7 +345,7 @@ assert.doesNotMatch(
   /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/,
   'the full calendar must not show the Next Feast, Pascha, or Calendar summary cards'
 );
-assert.match(donorCalendar, /class="cal-hero calendar-liturgical-hero"/);
+assert.match(donorCalendar, /class="cal-hero parish-life-liturgical-hero refined-liturgical-hero calendar-liturgical-hero"/);
 assert.match(donorCalendar, /id="todayCivilDateEyebrow"/);
 assert.match(
   donorStyles,
