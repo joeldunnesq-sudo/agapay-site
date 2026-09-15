@@ -113,7 +113,7 @@ function openBookstoreDetail(index) {
       <p>${escapeHtml(product.description || 'Available from your parish bookstore.')}</p>
       ${product.onSale ? `<span class="boutique-sale-label">Sale · ${Number(product.savingsPercent)}% off</span>` : ''}
       <p class="bookstore-detail-price">${product.onSale ? `<del>${formatCentsAsDollars(product.regularPriceCents)}</del> ` : ''}<strong>${formatCentsAsDollars(product.priceCents)}</strong></p>
-      <button type="button" class="btn btn-gold" onclick="addBookstoreDetailToCart(${index})" ${available ? '' : 'disabled'}>${available ? 'Add to your bag' : 'Out of stock'}</button>
+      <button type="button" class="btn btn-gold" onclick="addBookstoreDetailToCart(${index})" ${available ? '' : 'disabled'}>${available ? 'Add to your cart' : 'Out of stock'}</button>
       <p class="bookstore-detail-note">${product.fulfillmentType === 'physical_pickup' ? 'Pickup details are confirmed at checkout.' : 'Fulfillment details are confirmed at checkout.'}</p>
     </div>`;
   dialog.showModal();
@@ -128,7 +128,7 @@ function addBookstoreDetailToCart(index) {
 
 function openBookstoreBag() {
   if (!bookstoreCart.length) {
-    setDonorStatus('Your bag is empty. Explore the collection below.', 'info');
+    setDonorStatus('Your cart is empty. Explore the collection below.', 'info');
     return;
   }
   if (window.matchMedia('(max-width: 700px)').matches) setBookstoreMobileCartOpen(true);

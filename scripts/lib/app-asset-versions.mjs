@@ -25,6 +25,7 @@ export const appAssets = Object.freeze([
   '/myagapay/koinonia-subpages.css',
   '/myagapay/church-year.js',
   '/myagapay/liturgical-hero.css',
+  '/myagapay/library.css',
   '/myagapay/app-header.css',
   '/myagapay/app-header.js',
 ]);

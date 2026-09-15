@@ -22,6 +22,27 @@
     'giving/calendar': 'Calendar',
     'giving/give': 'Make a Gift',
   };
+  const descriptions = {
+    account: 'Manage your profile and preferences.',
+    bookstore: 'Books, icons, and gifts from your parish.',
+    directory: 'Connect with your parish community.',
+    events: 'Gather for meals and parish events.',
+    exchange: 'Share useful items with your parish community.',
+    feed: 'Updates and announcements from your parish.',
+    groups: 'Find fellowship in your parish groups.',
+    library: 'Resources chosen for your parish community.',
+    media: 'Explore videos shared by your parish.',
+    news: 'Stay connected with news from your parish.',
+    'parish-life': 'Prayer, fellowship, and parish life together.',
+    'prayer-requests': 'Share a prayer request and pray for others.',
+    sacraments: 'Request sacraments, services, and prayers.',
+    signups: 'Find opportunities to serve your parish.',
+    teaching: 'Listen to teachings shared by your parish.',
+    watch: 'Watch services and videos from your parish.',
+    'giving/history': 'View your gifts and giving statements.',
+    'giving/calendar': 'Services, feast days, and parish events.',
+    'giving/give': 'Support the life and work of your parish.',
+  };
   const route = location.pathname
     .replace(/^\/myagapay\/?/, '')
     .replace(/\.html$/, '')
@@ -168,14 +189,11 @@
     header.querySelector('[data-app-page-title]').textContent = titles[key];
     main.prepend(header);
 
-    if (key === 'library') {
-      const description = main.querySelector('.library-page-heading p');
-      if (description) {
-        description.classList.add('app-header-description');
-        header.querySelector('.app-header-body').append(description);
-        main.querySelector('.library-page-heading').classList.add('app-header-replaced');
-      }
-    }
+    const description = document.createElement('p');
+    description.className = 'app-header-description';
+    description.textContent = descriptions[key];
+    header.querySelector('.app-header-body').append(description);
+    if (key === 'library') main.querySelector('.library-page-heading')?.classList.add('app-header-replaced');
 
     const actions = header.querySelector('.app-header-actions');
     const actionSelectors =

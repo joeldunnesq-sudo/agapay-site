@@ -114,7 +114,7 @@ try {
   await catalog.getByRole('button', { name: 'View details for Daily Prayers' }).click();
   const detail = page.locator('#bookstoreDetail');
   assert.match(await detail.textContent(), /Sale · 25% off/);
-  await detail.getByRole('button', { name: 'Add to your bag' }).click();
+  await detail.getByRole('button', { name: 'Add to your cart' }).click();
   assert.equal(await page.locator('#bookstoreBagCount').textContent(), '1');
   assert.equal(await page.locator('#bookstoreCartTotal').textContent(), '$18.00');
   await page.locator('#bookstorePickupNote').fill('After Sunday Liturgy');
@@ -148,7 +148,7 @@ try {
   await page.screenshot({ path: 'output/bookstore-integrated-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await catalog.getByRole('button', { name: 'View details for Daily Prayers' }).click();
-  await detail.getByRole('button', { name: 'Add to your bag' }).click();
+  await detail.getByRole('button', { name: 'Add to your cart' }).click();
   await page.locator('#bookstoreMobileCartBar').click();
   assert.equal(await page.locator('#bookstoreCartPanel').evaluate((el) => el.inert), false);
   await page.getByRole('button', { name: 'Close cart', exact: true }).first().click();
