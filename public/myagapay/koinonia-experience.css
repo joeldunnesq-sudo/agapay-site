@@ -19,7 +19,20 @@
 .koinonia-landing-page .parish-life-liturgical-hero::after { display: none; }
 .koinonia-landing-page .parish-life-liturgical-hero .cal-hero-inner { display: block; padding: 23px 27px 0; }
 .koinonia-landing-page .parish-life-liturgical-hero .cal-date-heading-row { padding: 0; margin: 0 0 12px; }
-.koinonia-landing-page .parish-life-liturgical-hero .cal-date-badge { display: none; }
+/* Inset Julian marker; keep the Koinonia hero and saint-life pill styling. */
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-badge {
+  display: block; top: 10px; right: 10px; width: 70px; padding: 9px 5px 10px;
+  border: 1px solid rgba(200,162,74,.5); border-radius: 10px;
+  background: #18354b; color: #f6f1e8;
+}
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-day { display: block; min-height: 0; margin: 1px 0; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-weekday { line-height: normal; }
+.koinonia-landing-page .parish-life-liturgical-hero .cal-date-my { line-height: normal; }
+.koinonia-landing-page .parish-life-liturgical-hero:has(.cal-date-badge:not([hidden])) :is(.cal-date-heading-row,.cal-today-title) { padding-right: 70px; }
+.koinonia-landing-page .parish-life-liturgical-hero:has(.cal-date-badge:not([hidden])) #koinoniaChurchDate { display: none; }
+@media(max-width:700px) {
+  .koinonia-landing-page .parish-life-liturgical-hero .cal-date-badge { width: 62px; padding: 7px 4px 8px; }
+}
 .koinonia-landing-page .parish-life-liturgical-hero .cal-date-heading-copy { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .koinonia-landing-page .parish-life-liturgical-hero .cal-hero-eyebrow { color: #806532; background: transparent; padding: 0; border: 0; font: 500 11px/1.5 'DM Sans',sans-serif; letter-spacing: .3px; }
 #koinoniaChurchDate { font-size: 10px; color: #687983; }
