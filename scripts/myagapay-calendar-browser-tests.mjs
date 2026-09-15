@@ -96,6 +96,29 @@ try {
   await page.locator('#saintPreviewCard').click();
   await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /A test saint life/);
+  // Long saint lives must remain readable in portrait and short landscape views.
+  for (const viewport of [{ width: 412, height: 915 }, { width: 844, height: 390 }]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => {
+      const paragraphs = Array.from({ length: 40 }, (_, index) => '<p>Saint life paragraph ' + index + '. A life of prayer and service to the community.</p>').join('');
+      window.showDonorSaintModal('Life of the Saint', 'Today’s commemoration', '<article class="donor-saint-story">' + paragraphs + '<p id="saintLifeEnd">End of the saint life.</p></article>');
+    });
+    const body = page.locator('#donorSaintModalBody');
+    await body.hover();
+    await page.mouse.wheel(0, 400);
+    await page.waitForFunction(() => document.getElementById('donorSaintModalBody').scrollTop > 0);
+    await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    assert.ok(await page.locator('#saintLifeEnd').evaluate((element) => {
+      const text = element.getBoundingClientRect();
+      const body = document.getElementById('donorSaintModalBody').getBoundingClientRect();
+      return text.top >= body.top && text.bottom <= body.bottom;
+    }), 'The final saint-life paragraph must be reachable');
+    assert.ok(await page.getByRole('button', { name: 'Close saint life', exact: true }).evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+    }), 'The close control must remain within the viewport');
+  }
+  await page.setViewportSize({ width: 412, height: 915 });
   await page.getByRole('button', { name: 'Close saint life', exact: true }).click();
   await page.locator('#donorSaintModal').waitFor({ state: 'hidden' });
   await page.evaluate(() => {

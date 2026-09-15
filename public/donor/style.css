@@ -1711,10 +1711,11 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 }
 
 .donor-saint-modal-card {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   width: min(720px, 100%);
-  max-height: min(86vh, 780px);
+  height: min(86dvh, 780px);
+  max-height: calc(100dvh - 2rem);
   overflow: hidden;
   border: 1px solid rgba(184, 144, 47, 0.28);
   border-radius: var(--rlg);
@@ -1755,7 +1756,11 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
   cursor: pointer;
 }
 
+.donor-saint-modal-head, .donor-saint-modal-foot { flex: 0 0 auto; }
+
 .donor-saint-modal-body {
+  flex: 1 1 0;
+  touch-action: pan-y pinch-zoom;
   display: grid;
   align-content: start;
   gap: 1rem;
@@ -1889,7 +1894,8 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
   }
 
   .donor-saint-modal-card {
-    max-height: 88vh;
+    height: 88dvh;
+    max-height: calc(100dvh - 1.3rem);
     border-radius: var(--r);
   }
 
