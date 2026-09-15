@@ -244,7 +244,7 @@ function renderDonorTodayInChurch(parish, payload) {
       !window.KoinoniaExperience && nameDays.length ? `${nameDays.length} name day${nameDays.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
     const saintChip = saintCount && !dedicatedSaintCard
-      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today">${window.KoinoniaExperience ? "Hagiography" : `${saintCount} saint${saintCount === 1 ? "" : "s"}`}<b aria-hidden="true">↗</b></button>`
+      ? `<button class="cal-saint-chip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="${escapeHtml(date)}" data-calendar="${escapeHtml(calendar)}" data-saint-title="${escapeHtml(saintTitle)}" aria-label="Open ${saintCount} saint${saintCount === 1 ? "" : "s"} commemorated today">${document.querySelector(".refined-liturgical-hero") || window.KoinoniaExperience ? "Hagiography" : `${saintCount} saint${saintCount === 1 ? "" : "s"}`}<b aria-hidden="true">↗</b></button>`
       : "";
     chips.innerHTML = standardChips + saintChip;
     window.KoinoniaExperience?.compactFasting(chips, fastingRule);
