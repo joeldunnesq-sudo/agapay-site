@@ -419,6 +419,7 @@
   background: #fffefb;
 }
 .boutique-editorial {
+  position: relative;
   display: flex;
   gap: 28px;
   align-items: center;
@@ -426,6 +427,14 @@
   border-radius: 6px;
   margin: 24px 0;
   padding: 28px 30px;
+}
+.boutique-editorial::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid #b49a63;
+  border-radius: 4px;
+  pointer-events: none;
 }
 .boutique-arch {
   display: grid;
