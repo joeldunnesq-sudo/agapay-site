@@ -121,6 +121,24 @@ try {
   await assertReadings();
   errors.assertClean();
 
+  const fullTitle = 'Martyr Mamas of Caesarea; St John the Faster; St Eleazar';
+  today.primarySaintTitle = fullTitle;
+  today.saintStories.push({ name: 'St John the Faster', storyText: 'The second saint life.' });
+  await page.goto('https://agapay.test/myagapay/parish-life');
+  await assertReadings();
+  assert.equal(await page.locator('#todayFeastTitle').textContent(), 'Martyr Mamas of Caesarea, and others');
+  await page.locator('#saintPreviewCard').click();
+  await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
+  assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
+  await page.goto('https://agapay.test/myagapay/calendar');
+  await assertReadings();
+  assert.equal(await page.locator('#todayFeastTitle').textContent(), fullTitle);
+  today.primarySaintTitle = 'Holy Martyrs Faith, Hope, and Love';
+  today.saintStories.splice(1);
+  await page.goto('https://agapay.test/myagapay/parish-life');
+  await assertReadings();
+  assert.equal(await page.locator('#todayFeastTitle').textContent(), today.primarySaintTitle);
+
   expireSession = true;
   await page.reload();
   await page.waitForURL('**/myagapay/login?**');

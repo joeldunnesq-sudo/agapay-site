@@ -134,6 +134,15 @@ function saintStoryModalHtml(saints = [], unavailableMessage = "") {
   }).join("");
 }
 
+function koinoniaHeroTitle(title, saintCount) {
+  // Semicolons separate commemorations; commas and “and” can belong to one name or feast.
+  const commemorations = String(title).split(/\s*;\s*/).filter(Boolean);
+  const first = commemorations[0] || title;
+  return (saintCount > 1 || commemorations.length > 1) && !/\band others\.?$/i.test(first)
+    ? `${first.replace(/[.,;]\s*$/, "")}, and others`
+    : first;
+}
+
 function liturgicalReadingRows(today = {}) {
   const appointments = Array.isArray(today.readingAppointments) && today.readingAppointments.length
     ? today.readingAppointments
@@ -205,7 +214,9 @@ function renderDonorTodayInChurch(parish, payload) {
   if (churchDateBadge) churchDateBadge.hidden = !usesJulianCalendar;
   const dateHeadingRow = document.querySelector(".parish-life-liturgical-hero .cal-date-heading-row");
   if (dateHeadingRow) dateHeadingRow.classList.toggle("is-civil-only", !usesJulianCalendar);
-  setText("todayFeastTitle", feastTitle);
+  setText("todayFeastTitle", document.body.classList.contains("koinonia-landing-page")
+    ? koinoniaHeroTitle(feastTitle, Math.max(stories.length, saintNames.length))
+    : feastTitle);
   const feastNote = document.getElementById("todayFeastNote");
   if (feastNote) {
     const unavailableNote = "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar.";
