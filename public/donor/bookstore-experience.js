@@ -59,7 +59,7 @@ function setBookstoreView(view = 'shop') {
     el.hidden = view === 'orders' || (view === 'saved' && !el.classList.contains('bookstore-app-collection'));
   });
   const title = document.getElementById('bookstoreCollectionTitle');
-  if (title) title.textContent = bookstoreSavedOnly ? 'Saved items' : 'Parish bookstore';
+  if (title) title.textContent = bookstoreSavedOnly ? 'Saved items' : 'Shop the shelves';
   renderBookstoreProducts(bookstoreProducts);
   if (view === 'orders') document.getElementById('bookstorePopularItems').hidden = true;
 }
