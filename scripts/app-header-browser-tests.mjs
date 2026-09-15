@@ -156,7 +156,8 @@ try {
     const toggle = page.locator('.app-header-menu-button');
     await toggle.click();
     await page.locator('.app-page-header [data-myagapay-app-menu]').waitFor({ state: 'visible' });
-    assert.ok((await page.locator('.app-page-header [data-myagapay-app-menu] a').count()) >= 5, route);
+    assert.ok((await page.locator('.app-page-header [data-myagapay-app-menu] a').count()) >= 4, route);
+    assert.equal(await page.locator('.app-page-header [data-myagapay-app-menu] a[href="/myagapay/learn"]').count(), 0, route);
     await page.keyboard.press('Escape');
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false', route);
     const headerFits = await page.locator('.app-page-header').evaluate((el) => el.scrollWidth <= innerWidth);

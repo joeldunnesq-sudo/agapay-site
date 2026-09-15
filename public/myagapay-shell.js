@@ -130,7 +130,6 @@
       { id: "prayers", href: "/myagapay/prayer-requests", label: "Prayer Requests", short: "Pray for one another", icon: icons.prayers, parishFeature: "prayerRequestsEnabled" },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore, parishFeature: "bookstoreEnabled" },
       { id: "settings", href: "/myagapay/account", label: "Settings", short: "Account settings", icon: icons.account, mobileFallbackFor: "bookstoreEnabled", desktopHidden: true },
-      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn, mobileFallbackFor: "directoryEnabled" }
     ];
     return items;
   }
@@ -168,12 +167,12 @@
         ? feature
         : byId.get(fallbackId);
     };
-    const libraryOrLearn = featureOrFallback("library", "learn");
+    const libraryOrHistory = featureOrFallback("library", "history");
     return [
       byId.get("giving"),
       featureOrFallback("bookstore", "settings"),
       byId.get("parish-life"),
-      libraryOrLearn,
+      libraryOrHistory,
       byId.get("commemorations"),
     ].filter(Boolean);
   }
@@ -444,7 +443,6 @@
         ${icons.menu}
       </button>
       <div class="donor-home-account-dropdown" role="menu" hidden>
-        <a href="/myagapay/learn" role="menuitem">Learn <small>Best on desktop</small></a>
         <a href="/myagapay/giving/history" role="menuitem">History</a>
         <a href="/myagapay/account" role="menuitem">Account Settings</a>
         <button type="button" data-donor-logout role="menuitem">Log out</button>
