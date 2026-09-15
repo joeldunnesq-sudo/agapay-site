@@ -107,7 +107,7 @@ assert.match(donorPage, /class="koinonia-mobile-appbar"/);
 assert.match(donorPage, /class="page koinonia-inner-shell library-page"/);
 assert.match(donorPage, /class="koinonia-page-heading library-page-heading"/);
 assert.doesNotMatch(donorPage, /library-hero/, "Library should use the shared app heading instead of a marketing-style hero");
-assert.match(donorPage, /koinonia-inner\.css\?v=20260817bookstoreprayer1/);
+assert.match(donorPage, /koinonia-inner\.css\?v=20260915spacing1/);
 assert.match(donorPage, /library\.css\?v=20260827libraryapp1/);
 assert.match(donorPage, /myagapay-shell\.js\?v=[a-f0-9]{16}/);
 assert.match(parishLifePage, /myagapay-shell\.js\?v=[a-f0-9]{16}/);
