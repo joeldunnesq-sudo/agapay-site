@@ -99,7 +99,10 @@ const ACCOUNTING_REPORT_LIBRARY = [
   },
 ];
 
+let accountingReportDateRange = null;
+
 function accountingReportPeriod() {
+  if (accountingReportDateRange) return accountingReportDateRange;
   const fiscal = accountingData.setup?.currentFiscalYear || {};
   const now = new Date(),
     today = now.toISOString().slice(0, 10);
@@ -515,7 +518,7 @@ function renderAccountingReports(pane) {
       return;
     }
     const report = accountingCustomReport;
-    pane.innerHTML = `<div class="acct-report-head"><div><button class="acct-link" onclick="setAccountingReportView('library')">← All reports</button><h2>${escapeHtml(report.title)}</h2><p>${escapeHtml(report.subtitle || '')}</p></div><div class="acct-report-actions">${report.comparativeSupported ? `<button class="acct-refresh" onclick="toggleAccountingDepthComparative()">${accountingDepthComparative ? 'Hide' : 'Show'} prior period</button>` : ''}<button class="acct-refresh" onclick="printAccountingReport()">Print</button><button class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr>${report.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((row) => `<tr>${report.columns.map((column) => `<td>${column.money ? accountingMoney(row[column.key]) : escapeHtml(row[column.key] ?? '')}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${report.columns.length}">No posted activity for this report.</td></tr>`}</tbody></table></div>${report.disclaimer ? `<p class="acct-report-disclaimer">${escapeHtml(report.disclaimer)}</p>` : ''}`;
+    pane.innerHTML = `<div class="acct-report-head"><div><button class="acct-link" onclick="setAccountingReportView('library')">← All reports</button><h2>${escapeHtml(report.title)}</h2><p>${escapeHtml(report.subtitle || '')}</p></div><div class="acct-report-actions">${report.comparativeSupported ? `<button class="acct-refresh" onclick="toggleAccountingDepthComparative()">${accountingDepthComparative ? 'Hide' : 'Show'} prior period</button>` : ''}<button class="acct-refresh" onclick="printAccountingReport()">Print</button><button class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>${report.serverPath ? accountingReportDateForm() : ''}<div class="acct-table-wrap"><table class="acct-table"><thead><tr>${report.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((row) => `<tr>${report.columns.map((column) => `<td>${column.money ? accountingMoney(row[column.key]) : escapeHtml(row[column.key] ?? '')}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${report.columns.length}">No posted activity for this report.</td></tr>`}</tbody></table></div>${report.disclaimer ? `<p class="acct-report-disclaimer">${escapeHtml(report.disclaimer)}</p>` : ''}`;
     return;
   }
   const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
@@ -723,4 +726,27 @@ async function printAccountingLedger() {
     win.close();
     alert(error.message || 'Unable to open the printable ledger.');
   }
+}
+
+function accountingReportDateForm() {
+  const period = accountingReportPeriod();
+  return (
+    '<form class="acct-phase-form" onsubmit="applyAccountingReportDates(event)"><div class="acct-form-grid"><label>Report start<input name="start" type="date" value="' +
+    escapeAttr(period.start) +
+    '" required></label><label>Report end<input name="end" type="date" value="' +
+    escapeAttr(period.end) +
+    '" required></label></div><button class="acct-primary">Apply report dates</button><span class="acct-form-status" role="status"></span></form>'
+  );
+}
+
+async function applyAccountingReportDates(event) {
+  event.preventDefault();
+  const form = event.currentTarget,
+    values = Object.fromEntries(new FormData(form));
+  if (!values.start || !values.end || values.start > values.end) {
+    form.querySelector('.acct-form-status').textContent = 'Choose a start date on or before the end date.';
+    return;
+  }
+  accountingReportDateRange = { start: values.start, end: values.end };
+  await loadAccountingDepthReport(accountingReportView);
 }
