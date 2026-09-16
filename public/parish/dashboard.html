@@ -404,6 +404,7 @@
               <span class="sw-suite-eyebrow">Giving clarity · included in every plan</span>
               <h1 class="sw-suite-heading">Monthly reconciliation</h1>
               <p class="sw-suite-subhead">One clear record of your payouts, your funds, and your bank check.</p>
+              <p class="sw-tool-card-desc">This checks Stripe deposits against your bank statement. If you use Accounting, also reconcile your full bank account there. Saving this review does not post another entry or change the balances in Stewardship Health.</p>
             </div>
             <div class="sw-suite-hero-status"><span class="fr-state" id="pdxRcStatusPill">Choose a month</span></div>
           </header>
@@ -1017,6 +1018,7 @@
           </div>
           <div class="sw-tool-card-header-row sw-report-card-header">
             <strong class="sw-tool-card-title">Stewardship Reports</strong>
+            <label>Report month <input type="month" id="stewardshipReportMonth" min="2000-01" max="2100-12" onchange="setStewardshipReportMonth(this.value)"></label>
             <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyReport()">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5.5 8.5h5M5.5 10.5h5M5.5 12h3"/></svg>
               Generate Monthly Stewardship Report
@@ -1040,6 +1042,7 @@
           </div>
           <div class="sw-tool-card-header-row sw-report-card-header">
             <strong class="sw-tool-card-title">Financial Snapshots</strong>
+            <label>Report month <input type="month" id="financialReportMonth" min="2000-01" max="2100-12" onchange="setStewardshipReportMonth(this.value)"></label>
             <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyFinancialReport()">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5 11.5l2-2 1.5 1.5L11.5 8"/></svg>
               Generate Monthly Financial Report

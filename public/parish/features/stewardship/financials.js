@@ -1,7 +1,7 @@
 'use strict';
 
 /* global currentParish, isParishTier, stewardshipApi, authHeaders, escapeHtml, accountingMoney, escapeAttr,
-  parishSessionStorageKey, givingMetricsState */
+  parishSessionStorageKey, selectedStewardshipReportMonth */
 /* exported importAccountingFinancialSnapshot, openStewardshipMonthlyFinancialReport */
 
 // Financial snapshot loading, presentation, accounting imports, and reports.
@@ -126,6 +126,10 @@ async function loadFinancialSnapshotsPanel(year) {
     } else if (accounting.reason === 'not_provisioned') {
       pane.innerHTML =
         '<p class="muted">Your accounting setup is still being finalized. Manual financial snapshots remain available.</p>' +
+        renderFinancialSnapshots(data);
+    } else if (accounting.reason === 'unavailable' || accounting.reason === 'fetch_failed') {
+      pane.innerHTML =
+        '<p class="muted">Live Accounting balances are temporarily unavailable. Retry before using current figures for council. The saved snapshots below are historical copies.</p>' +
         renderFinancialSnapshots(data);
     } else {
       // Stewardship-tier and legacy subscribers keep the existing manual
@@ -424,16 +428,15 @@ function swFinKpi(label, value, sub, type, yoyBadge) {
 function stewardshipMonthlyFinancialReportUrl() {
   const token =
     document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
-  const year = financialsState.year || givingMetricsState.year || new Date().getFullYear();
-  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const month = selectedStewardshipReportMonth();
   const url = new URL(
     '/api/parish/dashboard/' +
       encodeURIComponent(currentParish?.parishId || '') +
       '/stewardship/report/monthly-financial',
     window.location.origin
   );
-  url.searchParams.set('year', String(year));
-  url.searchParams.set('month', String(year) + '-' + month);
+  url.searchParams.set('year', month.slice(0, 4));
+  url.searchParams.set('month', month);
   url.searchParams.set('t', token);
   return url.pathname + url.search;
 }

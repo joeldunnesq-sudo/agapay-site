@@ -280,10 +280,6 @@ function toggleAccountingAdvancedNav() {
 function renderAccountingPane() {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
-  const reconcileWorkspace = document.getElementById('reconcileWorkspace');
-  const reconcileParking = document.getElementById('tab-reconcile');
-  if (reconcileWorkspace && reconcileParking && reconcileWorkspace.parentElement !== reconcileParking)
-    reconcileParking.append(reconcileWorkspace);
   syncAccountingExperienceChrome();
   document
     .querySelectorAll('[data-accounting-view]')

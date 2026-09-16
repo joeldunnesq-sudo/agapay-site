@@ -536,6 +536,9 @@ try {
           notes: '',
         },
       ]);
+      await page.locator('#financialReportMonth').fill(`${year - 1}-12`);
+      await page.locator('#financialReportMonth').dispatchEvent('change');
+      assert.equal(await page.locator('#stewardshipReportMonth').inputValue(), `${year - 1}-12`);
       const report = new URL(await page.evaluate(() => stewardshipMonthlyFinancialReportUrl()), origin);
       assert.equal(report.searchParams.get('year'), String(year - 1));
       assert.equal(report.searchParams.get('t'), 'synthetic-session-token');
@@ -670,8 +673,15 @@ try {
       failMetrics = false;
       await page.evaluate((y) => loadGivingMetricsPanel(y), year - 1);
       assert.equal(await page.locator('#givingMetricsPane .sw-kpi-grid').count(), 1);
+      await page.locator('#stewardshipReportMonth').fill(`${year - 1}-07`);
+      await page.locator('#stewardshipReportMonth').dispatchEvent('change');
+      assert.equal(await page.locator('#financialReportMonth').inputValue(), `${year - 1}-07`);
       const report = new URL(await page.evaluate(() => stewardshipMonthlyReportUrl()), origin);
       assert.equal(report.searchParams.get('year'), String(year - 1));
+      assert.equal(report.searchParams.get('month'), `${year - 1}-07`);
+      const financialReport = new URL(await page.evaluate(() => stewardshipMonthlyFinancialReportUrl()), origin);
+      assert.equal(financialReport.searchParams.get('month'), `${year - 1}-07`);
+      assert.equal(financialReport.searchParams.get('year'), String(year - 1));
       await page.locator('#nav-givers').click();
       await page.locator('#nudgeBtn').click();
       await page.locator('.sw-nudge-email').waitFor();

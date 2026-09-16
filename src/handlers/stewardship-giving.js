@@ -1,4 +1,5 @@
 import { stewardshipGivingSummary } from '../lib/stewardship-summary.js';
+import { manualIncomeTotalCents } from '../lib/stewardship-income.js';
 import {
   d1All,
   getBearerToken,
