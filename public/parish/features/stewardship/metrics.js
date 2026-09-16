@@ -5,7 +5,7 @@
 /* exported loadGivingMetricsPanel, loadStewardshipHealthScorePanel, loadDonorConcentrationPanel,
   loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
   saveStewardshipAttendance, saveAttendanceDelegate, syncAttendanceEntryFromWeek,
-  openStewardshipMonthlyReport */
+  openStewardshipMonthlyReport, setStewardshipReportMonth, selectedStewardshipReportMonth */
 
 // Giving metrics, health, concentration, recurring gifts, and monthly reports.
 // Read shared parish identity and authentication only when actions run.
@@ -631,6 +631,25 @@ function renderRecurringGiving(d) {
   );
 }
 
+let stewardshipReportMonth = '';
+
+function selectedStewardshipReportMonth() {
+  if (!stewardshipReportMonth) {
+    const now = new Date();
+    stewardshipReportMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  return stewardshipReportMonth;
+}
+
+function setStewardshipReportMonth(value = selectedStewardshipReportMonth()) {
+  if (!/^(20\d{2}|2100)-(0[1-9]|1[0-2])$/.test(value)) value = selectedStewardshipReportMonth();
+  stewardshipReportMonth = value;
+  for (const id of ['stewardshipReportMonth', 'financialReportMonth']) {
+    const input = document.getElementById(id);
+    if (input) input.value = value;
+  }
+}
+
 function stewardshipMonthlyReportUrl() {
   const token =
     document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
@@ -638,7 +657,9 @@ function stewardshipMonthlyReportUrl() {
     '/api/parish/dashboard/' + encodeURIComponent(currentParish?.parishId || '') + '/stewardship/report/monthly',
     window.location.origin
   );
-  url.searchParams.set('year', String(givingMetricsState.year || new Date().getFullYear()));
+  const month = selectedStewardshipReportMonth();
+  url.searchParams.set('year', month.slice(0, 4));
+  url.searchParams.set('month', month);
   url.searchParams.set('t', token);
   return url.pathname + url.search;
 }

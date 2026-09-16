@@ -79,6 +79,31 @@ async function download(page, name) {
 }
 
 try {
+  await scenario('Accounting renders and refreshes never remove the Monthly reconciliation workspace', async (page) => {
+    await openReport(page);
+    await page.evaluate(() => {
+      accountingView = 'banking';
+      accountingReconciliationView = 'giving';
+      renderAccountingPane();
+    });
+    assert.equal(await page.locator('#tab-reconcile > #reconcileWorkspace').count(), 1);
+    assert.equal(await page.locator('#accountingPane #reconcileWorkspace').count(), 0);
+    assert.equal(
+      await page.getByRole('button', { name: 'Open Monthly reconciliation', includeHidden: true }).count(),
+      1
+    );
+    await page.evaluate(() => {
+      accountingData.banking = { accounts: [], sessions: [] };
+      setAccountingReconciliationView('bank');
+      setAccountingReconciliationView('giving');
+      renderAccountingPane();
+    });
+    await page.locator('#nav-giving').click();
+    await openReport(page);
+    assert.equal(await page.locator('#reconcileDeposited').innerText(), '$12,848.54');
+    assert.equal(await page.locator('#reconcileWorkspace').count(), 1);
+    assert.equal(await page.locator('#reconcileSaveButton').isEnabled(), false);
+  });
   await scenario(
     'Give has monthly navigation, weekly entry, blank bank check, save and reopen',
     async (page, finance) => {

@@ -4,7 +4,7 @@
   renderParishPlusMeetingsPane, authHeaders, updateStewardshipBadges, loadStewardshipHealthScorePanel,
   loadGivingMetricsPanel, loadFinancialSnapshotsPanel, loadManualIncomePanel, loadDonorConcentrationPanel,
   loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
-  loadDiocesanStatisticsPreview, ensureDiocesanStatisticsCard, escapeHtml, setStatus */
+  loadDiocesanStatisticsPreview, ensureDiocesanStatisticsCard, escapeHtml, setStatus, setStewardshipReportMonth */
 /* exported dismissStewardshipCompNotice, startStewardshipSubscription, openStewardshipBilling */
 
 // Plan status, lifecycle, billing, and founding-parish notices.
@@ -69,6 +69,7 @@ async function loadStewardshipPanel(force = false) {
 }
 
 function loadStewardshipEssentialPanels() {
+  setStewardshipReportMonth();
   loadStewardshipAttendancePanel();
   loadDiocesanStatisticsPreview();
   loadStewardshipHealthScorePanel();

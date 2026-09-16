@@ -32,10 +32,9 @@ function renderAccountingBanking(pane) {
     pane.insertAdjacentHTML('afterbegin', tabs);
     return;
   }
-  pane.innerHTML = `${tabs}<div class="acct-reconcile-intro"><span class="acct-kicker">Stripe payout review</span><p>Review Stripe payouts, fund allocations, fees, refunds, and exceptions here. Then use Bank reconciliation to match the parish bank statement to the accounting ledger.</p></div>`;
-  const workspace = document.getElementById('reconcileWorkspace');
-  if (workspace) pane.append(workspace);
-  loadReconciliation();
+  // Keep the shared payout workspace in its own tab. Moving it into this
+  // replaceable pane destroys it when an async Accounting refresh clears HTML.
+  pane.innerHTML = `${tabs}<div class="acct-reconcile-intro"><span class="acct-kicker">Stripe payout review</span><p>Monthly reconciliation shows Stripe payouts, fund allocations, fees, refunds, and exceptions. Then use Bank reconciliation here to match the full parish bank statement to the accounting ledger.</p><button type="button" class="acct-primary" onclick="switchTab('reconcile')">Open Monthly reconciliation</button></div>`;
 }
 
 function setAccountingReconciliationView(view) {
