@@ -16,10 +16,10 @@ function renderAccountingBankStatements(pane) {
     )
     .join('');
   pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Double-entry bank reconciliation</span><h2>Match statements to the ledger</h2><p>Use this after reviewing Giving and Stripe activity for the same period.</p></div></div>
-      <div class="acct-kpis"><div><span>Bank accounts</span><strong>${data.accounts.length}</strong></div><div><span>Open reconciliations</span><strong>${data.sessions.filter((s) => s.status !== 'completed').length}</strong></div><div><span>Completed</span><strong>${data.sessions.filter((s) => s.status === 'completed').length}</strong></div></div>
+      <div class="acct-kpis"><div><span>Bank accounts</span><strong>${data.accounts.length}</strong></div><div><span>Open reconciliations</span><strong>${data.sessions.filter((s) => ['in_progress', 'reopened'].includes(s.status)).length}</strong></div><div><span>Completed</span><strong>${data.sessions.filter((s) => s.status === 'completed').length}</strong></div></div>
       <div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Statement import</span><h2>Import bank activity</h2>${data.accounts.length ? `<form class="acct-phase-form" onsubmit="previewAccountingBankCsv(event)"><label>Bank account<select name="bankAccountId" required>${accountOptions}</select></label><label>CSV statement<input name="statement" type="file" accept=".csv,text/csv" required></label><button class="acct-primary">Preview import</button><span class="acct-form-status"></span></form>` : '<p>Add a bank account before importing a statement.</p>'}${accountingBankPreview ? `<div class="acct-import-preview"><strong>${accountingBankPreview.validRows} ready</strong><span>${accountingBankPreview.invalidRows} need review · ${accountingMoney(accountingBankPreview.totalCredits)} credits · ${accountingMoney(accountingBankPreview.totalDebits)} debits</span><button class="acct-primary" onclick="commitAccountingBankCsv()">Import transactions</button></div>` : ''}</section>
       <section class="acct-card"><span class="acct-kicker">New statement period</span><h2>Start reconciliation</h2>${data.accounts.length ? `<form class="acct-phase-form" onsubmit="createAccountingReconciliation(event)"><label>Bank account<select name="bankAccountId" required>${accountOptions}</select></label><div class="acct-form-grid"><label>Start<input name="startDate" type="date" required></label><label>End<input name="endDate" type="date" required></label><label>Beginning balance<input name="beginningBalance" type="number" step="0.01" required></label><label>Ending balance<input name="endingBalance" type="number" step="0.01" required></label></div><button class="acct-primary">Start reconciliation</button><span class="acct-form-status"></span></form>` : `<p>Create a bank account by linking an asset account in Accounting Setup.</p><button class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button>`}</section></div>
-      <div class="acct-list-head"><div><span class="acct-kicker">Statement history</span><h2>Reconciliation sessions</h2></div>${data.accounts.length ? '<button class="acct-refresh" onclick="showAccountingBankAccountForm()">Add bank account</button>' : ''}</div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${data.accounts.map((a) => `<article class="acct-budget-card"><div><span>Bank account</span><h3>${escapeHtml(a.name)}</h3><p>${escapeHtml(a.institutionName || 'Institution not set')} ${a.maskedLast4 ? `· •••• ${escapeHtml(a.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(a.id)}')">Edit bank account</button></div></article>`).join('')}${data.sessions.map((s) => `<article class="acct-budget-card"><div><span>${accountingDate(s.startDate)} – ${accountingDate(s.endDate)}</span><h3>${escapeHtml(s.bankAccountName)}</h3><p>Statement ending ${accountingMoney(s.endingBalance)} · Difference ${accountingMoney(s.difference)}</p></div><span class="acct-status ${escapeAttr(s.status)}">${escapeHtml(s.status)}</span><div class="acct-row-actions"><button onclick="downloadAccountingFile(accountingApi('/bank/reconciliations/${escapeAttr(s.id)}.csv'),'agapay-bank-reconciliation.csv')">Export</button><button onclick="showAccountingEligibleItems('${escapeAttr(s.id)}')">Eligible ledger items</button>${s.status !== 'completed' ? `<button onclick="showAccountingReconciliationAdjustment('${escapeAttr(s.id)}')">Add adjustment</button>` : ''}${s.status !== 'completed' && Number(s.difference) === 0 ? `<button onclick="completeAccountingReconciliation('${escapeAttr(s.id)}',${s.version})">Complete</button>` : ''}</div></article>`).join('') || accountingEmpty('No reconciliations yet', 'Import a statement and begin the first period.')}</div>`;
+      <div class="acct-list-head"><div><span class="acct-kicker">Statement history</span><h2>Reconciliation sessions</h2></div>${data.accounts.length ? '<button class="acct-refresh" onclick="showAccountingBankAccountForm()">Add bank account</button>' : ''}</div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${data.accounts.map((a) => `<article class="acct-budget-card"><div><span>Bank account</span><h3>${escapeHtml(a.name)}</h3><p>${escapeHtml(a.institutionName || 'Institution not set')} ${a.maskedLast4 ? `· •••• ${escapeHtml(a.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(a.id)}')">Edit bank account</button></div></article>`).join('')}${data.sessions.map((s) => `<article class="acct-budget-card"><div><span>${accountingDate(s.startDate)} – ${accountingDate(s.endDate)}</span><h3>${escapeHtml(s.bankAccountName)}</h3><p>Statement ending ${accountingMoney(s.endingBalance)} · Difference ${accountingMoney(s.difference)}</p></div><span class="acct-status ${escapeAttr(s.status)}">${escapeHtml(s.status)}</span><div class="acct-row-actions"><button onclick="downloadAccountingFile(accountingApi('/bank/reconciliations/${escapeAttr(s.id)}.csv'),'agapay-bank-reconciliation.csv')">Export</button><button onclick="showAccountingEligibleItems('${escapeAttr(s.id)}')">Eligible ledger items</button>${['in_progress', 'reopened'].includes(s.status) ? `<button onclick="showAccountingMatchSuggestions('${escapeAttr(s.id)}')">Review matches</button>` : ''}${['in_progress', 'reopened'].includes(s.status) ? `<button onclick="showAccountingReconciliationAdjustment('${escapeAttr(s.id)}')">Add adjustment</button>` : ''}${['in_progress', 'reopened'].includes(s.status) && Number(s.difference) === 0 ? `<button onclick="completeAccountingReconciliation('${escapeAttr(s.id)}',${s.version})">Complete</button>` : ''}</div></article>`).join('') || accountingEmpty('No reconciliations yet', 'Import a statement and begin the first period.')}</div>`;
 }
 
 function renderAccountingBanking(pane) {
@@ -100,7 +100,17 @@ async function loadAccountingPhaseE() {
     const failed = responses.findIndex((res) => !res.ok);
     if (failed >= 0)
       throw new Error(payloads[failed].message || payloads[failed].error || 'Connected accounting is unavailable.');
-    accountingData.banking = { accounts: payloads[0].accounts || [], sessions: payloads[1].sessions || [] };
+    const sessions = payloads[1].sessions || [];
+    for (const session of sessions.filter((item) => ['in_progress', 'reopened'].includes(item.status))) {
+      const response = await fetch(accountingApi('/bank/reconciliations/' + encodeURIComponent(session.id)), {
+        headers: authHeaders(),
+      });
+      const detail = await response.json().catch(() => ({}));
+      if (!response.ok || !detail.reconciliation)
+        throw new Error(detail.message || detail.error || 'Unable to validate reconciliation totals.');
+      Object.assign(session, detail.reconciliation);
+    }
+    accountingData.banking = { accounts: payloads[0].accounts || [], sessions };
     accountingData.integrations = {
       settings: payloads[2].settings || {},
       give: payloads[3].overview || {},
@@ -260,5 +270,79 @@ async function saveAccountingIntegrationSettings() {
   if (payload) {
     accountingData.integrations.settings = payload.settings;
     renderAccountingPane();
+  }
+}
+
+let accountingMatchSuggestions = [];
+
+async function showAccountingMatchSuggestions(id) {
+  const holder = document.getElementById('accountingPhaseEForm');
+  holder.innerHTML = '<p class="sw-tool-loading">Checking bank matches…</p>';
+  try {
+    const response = await fetch(accountingApi('/bank/reconciliations/' + encodeURIComponent(id) + '/suggestions'), {
+      headers: authHeaders(),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to load matches.');
+    accountingMatchSuggestions = payload.suggestions || [];
+    const itemsResponse = await fetch(
+      accountingApi('/bank/reconciliations/' + encodeURIComponent(id) + '/eligible-items'),
+      {
+        headers: authHeaders(),
+      }
+    );
+    const itemsPayload = await itemsResponse.json().catch(() => ({}));
+    if (!itemsResponse.ok)
+      throw new Error(itemsPayload.message || itemsPayload.error || 'Unable to load ledger details.');
+    const ledgerItems = new Map((itemsPayload.items || []).map((item) => [item.journalLineId, item]));
+    holder.innerHTML =
+      '<section class="acct-card"><h2>Review suggested matches</h2><p>Confirm that each statement transaction corresponds to the ledger entry before matching.</p><div class="acct-form-status" role="status"></div>' +
+      accountingMatchSuggestions
+        .map(
+          (item, index) =>
+            '<div class="acct-budget-card"><strong>' +
+            accountingMoney(item.amount) +
+            '</strong><p>' +
+            escapeHtml(item.reasons.join(' · ')) +
+            '</p><p>' +
+            escapeHtml(ledgerItems.get(item.journalLineId)?.description || '') +
+            '</p><small>' +
+            escapeHtml(ledgerItems.get(item.journalLineId)?.postingDate || '') +
+            ' · ' +
+            escapeHtml(ledgerItems.get(item.journalLineId)?.entryNumber || item.journalEntryId) +
+            '</small><button type="button" class="acct-primary" data-reconciliation="' +
+            escapeAttr(id) +
+            '" onclick="confirmAccountingSuggestedMatch(this.dataset.reconciliation,' +
+            index +
+            ',this)">Confirm match</button></div>'
+        )
+        .join('') +
+      (accountingMatchSuggestions.length ? '' : '<p>No suggested matches remain.</p>') +
+      '</section>';
+    holder.scrollIntoView({ block: 'nearest' });
+  } catch (error) {
+    holder.innerHTML = accountingEmpty('Matches unavailable', error.message);
+  }
+}
+
+async function confirmAccountingSuggestedMatch(id, index, button) {
+  const match = accountingMatchSuggestions[index];
+  if (!match) return;
+  button.disabled = true;
+  try {
+    const result = await phaseEMutation('/bank/reconciliations/' + encodeURIComponent(id) + '/matches', {
+      bankTransactionIds: [match.bankTransactionId],
+      journalLineIds: [match.journalLineId],
+    });
+    if (result) {
+      accountingData.banking = null;
+      await loadAccountingPhaseE();
+      await showAccountingMatchSuggestions(id);
+    }
+  } catch (error) {
+    const status = document.querySelector('#accountingPhaseEForm .acct-form-status');
+    if (status) status.textContent = error.message || 'Unable to confirm the match. Please try again.';
+  } finally {
+    button.disabled = false;
   }
 }
