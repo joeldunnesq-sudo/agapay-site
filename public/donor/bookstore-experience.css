@@ -423,12 +423,11 @@
   display: flex;
   gap: 28px;
   align-items: center;
-  background: linear-gradient(145deg, #061522, #0b2130);
+  background: #e8eef1;
   border-radius: 6px;
   margin: 24px 0;
   padding: 28px 30px;
 }
-.boutique-editorial .boutique-eyebrow { color: #e1c47e; }
 .boutique-editorial::before {
   content: '';
   position: absolute;
@@ -452,10 +451,10 @@
   flex: 0 0 90px;
   height: 120px;
   border-radius: 60px 60px 0 0;
-  background: #42647b;
+  background: #d7e2e8;
   border: 1px solid #b4c4ce;
-  box-shadow: inset 0 0 0 7px #0b2130;
-  color: #c8a24a;
+  box-shadow: inset 0 0 0 7px #e3ebef;
+  color: #a08449;
   font-size: 48px;
 }
 .boutique-editorial h2 {
@@ -463,22 +462,22 @@
     500 32px/1.1 'Cormorant Garamond',
     Georgia,
     serif;
-  color: #fff9ee;
+  color: #061522;
   margin: 0;
 }
 .boutique-editorial p:not(.boutique-eyebrow) {
   font-size: 12px;
   line-height: 1.8;
-  color: #b8c9d3;
+  color: #657682;
   max-width: 470px;
 }
 .boutique-editorial .boutique-prayer-quote { margin:12px 0 10px; padding:0; border:0; background:transparent; }
 .boutique-editorial .boutique-prayer-quote p { margin:0; font-style:italic; }
-.boutique-prayer-quote footer { margin-top:6px; color:#e1c47e; font:500 10px/1.5 'DM Sans',sans-serif; }
+.boutique-prayer-quote footer { margin-top:6px; color:#826a38; font:500 10px/1.5 'DM Sans',sans-serif; }
 .boutique-editorial button {
   border: 0;
   border-bottom: 1px solid #b49a63;
-  color: #fff9ee;
+  color: #18354b;
   background: none;
   font:
     500 11px 'DM Sans',
