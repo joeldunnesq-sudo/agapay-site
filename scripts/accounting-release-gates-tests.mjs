@@ -96,3 +96,56 @@ assert.match(signoff, /not complete/i);
 console.log("PASS - evidence workflow, post-deploy smoke, and human sign-off record are wired");
 
 console.log("accounting-release-gates-tests.mjs OK");
+
+// RFC 6238 SHA-1 vector, truncated to the application's six digits.
+const { completeGateMfa, gateTotp, gateMfaSecretName, encryptGateCredential } = await import('./lib/release-gate-mfa.mjs');
+const { generateKeyPairSync, privateDecrypt, createDecipheriv } = await import('node:crypto');
+const testSecret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+assert.equal(gateTotp(testSecret, 59000), '287082');
+assert.throws(() => gateTotp('not-a-secret'), /Invalid/);
+assert.equal(gateMfaSecretName('USER', 'a@example.test', { ACCOUNTING_GATE_USER_A_EMAIL: 'a@example.test' }), 'ACCOUNTING_GATE_USER_A_TOTP_SECRET');
+assert.throws(() => gateMfaSecretName('USER', 'unknown', {}), /outside/);
+const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+const envelope = encryptGateCredential(publicKey, { secret: testSecret, recoveryCodes: ['synthetic-code'] });
+assert.ok(!JSON.stringify(envelope).includes(testSecret));
+const encryptedKey = privateDecrypt({ key: privateKey, oaepHash: 'sha256' }, Buffer.from(envelope.key, 'base64'));
+const decipher = createDecipheriv('aes-256-gcm', encryptedKey, Buffer.from(envelope.iv, 'base64'));
+decipher.setAuthTag(Buffer.from(envelope.tag, 'base64'));
+const recovered = JSON.parse(Buffer.concat([decipher.update(Buffer.from(envelope.ciphertext, 'base64')), decipher.final()]).toString());
+assert.equal(recovered.secret, testSecret);
+const mfaArgs = {
+  baseUrl: 'https://agapay-site-staging.joeldunnesq.workers.dev',
+  payload: { mfaRequired: true, pendingToken: 'synthetic-pending' },
+  secretName: 'ACCOUNTING_GATE_USER_A_TOTP_SECRET',
+  env: { ACCOUNTING_GATE_USER_A_TOTP_SECRET: testSecret },
+};
+let calls = 0;
+const completed = await completeGateMfa({ ...mfaArgs, fetchImpl: async (url, options) => {
+  calls += 1;
+  assert.ok(url.endsWith('/api/mfa/verify'));
+  const body = JSON.parse(options.body);
+  assert.equal(body.pendingToken, 'synthetic-pending');
+  assert.match(body.code, /^\d{6}$/);
+  assert.equal(options.redirect, 'error');
+  return Response.json({ token: 'synthetic-session', recoveryCodes: ['do-not-return'] });
+} });
+assert.equal(completed.token, 'synthetic-session');
+assert.equal(completed.recoveryCodes, undefined);
+assert.equal(calls, 1);
+await assert.rejects(completeGateMfa({ ...mfaArgs, baseUrl: 'https://agapay.app' }), /restricted/);
+await assert.rejects(completeGateMfa({ ...mfaArgs, env: {} }), /protected secret/);
+await assert.rejects(completeGateMfa({ ...mfaArgs, payload: { mfaRequired: true, enrollmentRequired: true }, env: {} }), /public key first/);
+console.log('PASS - release-gate MFA uses valid TOTP, encrypts retained credentials, and refuses production or missing factors');
+const { loginGateParish } = await import('./lib/release-gate-mfa.mjs');
+const namedEnv = { ...mfaArgs.env, ACCOUNTING_GATE_USE_NAMED_STAFF: 'true', ACCOUNTING_GATE_PARISH_A_ID: 'synthetic-parish', ACCOUNTING_GATE_USER_A_EMAIL: 'a@example.test', ACCOUNTING_GATE_USER_A_PASSWORD: 'synthetic-password' };
+const namedSession = await loginGateParish({ baseUrl: mfaArgs.baseUrl, parishId: 'synthetic-parish', env: namedEnv, fetchImpl: async (url, options) => {
+  if (url.endsWith('/api/identity/login')) {
+    assert.deepEqual(JSON.parse(options.body), { parishId: 'synthetic-parish', email: 'a@example.test', password: 'synthetic-password' });
+    return Response.json(mfaArgs.payload);
+  }
+  assert.ok(url.endsWith('/api/mfa/verify'));
+  return Response.json({ token: 'named-identity-session', parishToken: 'parish-dashboard-session' });
+} });
+assert.equal(namedSession.payload.token, 'parish-dashboard-session');
+await assert.rejects(loginGateParish({ baseUrl: 'https://untrusted.example', parishId: 'synthetic-parish', env: namedEnv }), /dedicated staging/);
+console.log('PASS - named-staff MFA produces a real parish session and rejects untrusted destinations before sending credentials');
