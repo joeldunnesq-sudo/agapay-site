@@ -662,10 +662,10 @@ assert.ok(
   "the giving box should remain organization-neutral without duplicating host-site identity or ownership claims"
 );
 assert.ok(
-  giveEmbedCss.includes("--navy: #071a2a")
-    && giveEmbedCss.includes("--gold: #c8a24a")
+  giveEmbedCss.includes("--navy: var(--agapay-giving-primary, #071a2a)")
+    && giveEmbedCss.includes("--gold: var(--agapay-giving-accent, #c8a24a)")
     && giveEmbedHtml.includes("Powered by <strong>AGAPAY</strong>"),
-  "the giving box should retain AGAPAY navy, gold, and a visible but restrained platform brand"
+  "the giving box should retain AGAPAY navy and gold defaults while allowing parish CSS themes and preserving platform branding"
 );
 assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('const staticGivePages = new Set(["request-demo", "embed"])'), "the Worker should serve clean /give/embed/:parish URLs");
 assert.ok(localServerSource.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && localServerSource.includes('pathname = "/give/embed.html"'), "the local server should preview clean giving-box URLs");
