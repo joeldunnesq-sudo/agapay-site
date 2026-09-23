@@ -131,11 +131,12 @@ assert.match(worker, /handleStewardshipMonthlyFinancialReport/);
 assert.match(worker, /stewardship\/report\/monthly-financial/);
 assert.match(worker, /Ending balance = opening balance \+ contributions received/);
 
-assert.match(dashboard, /Record outside-AGAPAY giving/);
+assert.match(dashboard, /stewardshipOutsideGivingMount/);
+assert.match(app, /Record a collection total/);
 assert.match(dashboard, /One authoritative fiscal-year view/);
 assert.match(dashboard, /Generate Monthly Financial Report/);
 assert.doesNotMatch(dashboard, />Other Income</);
-assert.match(app, /Fund\/designation/);
+assert.match(app, /Fund \/ designation/);
 assert.match(app, /Deposit or batch reference/);
 assert.match(app, /AGAPAY contributions/);
 assert.match(app, /Outside-AGAPAY contributions/);
@@ -160,9 +161,8 @@ assert.match(
   /sw-report-card-header[\s\S]*openStewardshipMonthlyFinancialReport\(\)[\s\S]*sw-financials-secondary-actions/
 );
 assert.ok(
-  dashboard.indexOf('openFinancialsEditor()') < dashboard.indexOf('id="financialsYearSelect"') &&
-    dashboard.indexOf('id="financialsYearSelect"') < dashboard.indexOf('openOutsideAgapayGiving()'),
-  'Financial snapshot secondary controls should appear below the report action in edit, year, outside-AGAPAY order'
+  dashboard.indexOf('openFinancialsEditor()') < dashboard.indexOf('id="financialsYearSelect"'),
+  'Financial snapshot secondary controls should retain edit and year order'
 );
 
 console.log('PASS - outside giving classification and authoritative fiscal-year snapshot lifecycle');

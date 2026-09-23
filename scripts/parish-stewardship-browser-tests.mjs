@@ -43,7 +43,7 @@ const defaults = {
   '/api/tax-exemption/state-guidance': { body: {} },
   '/stewardship': { body: { stewardship: activeStatus, meetings: [] } },
   '/stewardship/giving/summary': {
-    body: { total_actual_cents: 25000, total_pledged_cents: 100000, run_rate_cents: 50000 },
+    body: { total_actual_cents: 25000, manual_income_cents: 5000, total_pledged_cents: 100000, run_rate_cents: 50000 },
   },
   '/stewardship/giving/funds': { body: { funds: [{ fund_name: 'Building <fund>', total_cents: 25000 }] } },
   '/stewardship/giving/health-score': { body: { score: 75, components: [] } },
@@ -645,8 +645,10 @@ try {
     'outside giving validation, retry, refreshed listing, and deletion',
     async (page) => {
       await settled(page);
-      await page.getByRole('button', { name: /Record outside.*giving/i }).click();
+      await page.getByRole('button', { name: /Record a collection total/i }).click();
       const form = page.locator('.sw-income-form');
+      assert.equal(await form.locator('[name="fundCode"]').inputValue(), 'General Fund');
+      assert.equal(await form.locator('details').getAttribute('open'), null);
       await form.getByRole('button', { name: 'Record contribution' }).click();
       assert.equal(incomeAttempts.length, 0);
       await form.locator('[name="source"]').selectOption('other_giving_platform');
@@ -658,6 +660,8 @@ try {
       assert.equal(await form.locator('[name="amountCents"]').inputValue(), '12.34');
       await form.getByRole('button', { name: 'Record contribution' }).click();
       await page.locator('.sw-income-row').waitFor();
+      assert.match(await page.locator('.sw-income-row').textContent(), /12\.34/);
+      assert.match(await page.locator('.sw-income-form-status').textContent(), /Contribution recorded/);
       assert.deepEqual(incomeAttempts[0], incomeAttempts[1]);
       assert.equal(incomeAttempts[1].amountCents, 1234);
       assert.equal(incomeAttempts[1].sourceLabel, 'Synthetic platform');

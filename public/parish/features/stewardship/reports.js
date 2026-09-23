@@ -65,6 +65,22 @@ function swReportFunds(f) {
     ${content}<p class="sw-chart-note">Recorded AGAPAY gifts by fund. Outside giving is included in the overall collected total, but not this breakdown.</p></section>`;
 }
 
+function swGivingSourceComparison(summary, year) {
+  const total = summary.total_actual_cents;
+  const outside = summary.manual_income_cents;
+  if (!Number.isSafeInteger(total) || !Number.isSafeInteger(outside) || outside < 0 || total < outside)
+    return '<section class="sw-giving-comparison"><h3>In-app and outside-app giving</h3><p class="sw-chart-note">The giving-source comparison is not available yet.</p></section>';
+  const inside = total - outside;
+  const money = (value) => (value / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const rows = [
+    ['In AGAPAY', inside, 'green'],
+    ['Outside AGAPAY', outside, 'gold'],
+  ];
+  return `<figure class="sw-giving-comparison"><figcaption><span class="sw-attendance-eyebrow">${Number(year)} · Giving sources</span><h3>In-app and outside-app contributions</h3><p>${money(total)} recorded across both sources</p></figcaption>
+    ${total ? rows.map(([label, amount, tone]) => `<div class="sw-source-row"><div><strong>${label}</strong><span>${money(amount)} · ${((amount / total) * 100).toFixed(1)}%</span></div><div class="sw-source-track" aria-hidden="true"><i class="sw-chart-${tone}" style="width:${(amount / total) * 100}%"></i></div></div>`).join('') : '<p>No contributions recorded for this year yet. Record an outside gift above to get started.</p>'}
+    <p class="sw-chart-note">Outside giving includes recorded donor gifts and collection totals. This comparison uses Budget Pace gift amounts; AGAPAY fee-covering additions are excluded. Record each gift only once.</p></figure>`;
+}
+
 function renderGivingMetrics(s, f, year) {
   const label = year < new Date().getFullYear() ? 'Collected in ' + year : year + ' collected to date';
   const prior =
@@ -73,7 +89,7 @@ function renderGivingMetrics(s, f, year) {
       : '';
   return `<div class="sw-report-overview"><div class="sw-report-collected"><span class="sw-report-eyebrow">${escapeHtml(label)}</span><strong>${swReportAmount(s.total_actual_cents)}</strong><span>${swNumber(s.active_donors)} active donors · includes qualified outside giving</span></div>
     <div class="sw-kpi-grid sw-report-kpis">${gmKpi('Annual pledges', swReportAmount(s.total_pledged_cents), swNumber(s.pledging_donors) + ' pledging households')}${gmKpi('Projected year-end', swReportAmount(s.run_rate_cents), 'at the current giving pace')}${gmKpi('Average per donor', swReportAmount(s.avg_per_donor_cents), 'recorded giving per active donor')}</div></div>
-    <div class="sw-report-chart-grid">${swReportBudget(s, year)}${swReportFunds(f)}</div>${prior}`;
+    ${swGivingSourceComparison(s, year)}<div class="sw-report-chart-grid">${swReportBudget(s, year)}${swReportFunds(f)}</div>${prior}`;
 }
 
 function diocesanStatisticsApi(year) {

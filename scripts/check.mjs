@@ -954,7 +954,7 @@ assert.ok(hasWorkerRoute("/stewardship/giving/concentration") && hasWorkerRoute(
 assert.ok(hasWorkerRoute("/stewardship/report/monthly"), "worker should route the monthly stewardship report endpoint");
 assert.ok(!parishDashboardHtml.includes('id="swGivingFullLink"'), "standalone Full metrics report link should be retired -- combined into the Monthly Stewardship Report instead");
 assert.ok(/handleStewardshipGivingFunds\(withYear\(['"]funds['"]\)/.test(worker), "monthly report should include the Giving by Fund breakdown that used to be exclusive to the standalone report");
-assert.ok(parishDashboardHtml.includes('id="stewardshipManualIncomePane"') && parishDashboardHtml.includes("Record outside-AGAPAY giving"), "Financial Snapshots should include compact outside-AGAPAY contribution intake");
+assert.ok(parishDashboardHtml.includes('id="stewardshipOutsideGivingMount"') && parishAppJs.includes("Record a collection total"), "Stewardship Health should provide a dedicated outside-giving entry card");
 assert.ok(parishAppJs.includes("function loadManualIncomePanel") && parishAppJs.includes("function submitManualIncomeEntry") && parishAppJs.includes("function deleteManualIncomeEntry"), "app.js should define the manual income entry functions");
 assert.ok(worker.includes("manual_income_entries"), "worker should reference the manual_income_entries table");
 assert.ok(worker.includes("manualIncomeTotalCents") && worker.includes("contribution_eligible = 1"), "only contribution-qualified outside giving should fold into Budget Pace and Stewardship Health");

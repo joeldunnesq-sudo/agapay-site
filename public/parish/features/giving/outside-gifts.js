@@ -269,7 +269,9 @@ async function submitOutsideGift(event) {
     if (currentParish?.parishId !== parishId) return;
     document.getElementById('outsideGiftDialog').close();
     outsideGivingState.year = payload.entryDate.slice(0, 4);
-    document.getElementById('outsideGivingYear').value = outsideGivingState.year;
+    const yearInput = document.getElementById('outsideGivingYear');
+    if (yearInput) yearInput.value = outsideGivingState.year;
+    document.dispatchEvent(new Event('agapay:outside-gift-saved'));
     await Promise.all([loadOutsideGiving(), loadGivingHistory()]);
   } catch (error) {
     outsideText('outsideGiftStatus', error.message);

@@ -211,7 +211,7 @@ function renderAccountingOverview(pane) {
         accountingOverviewFundRank(a.fund) - accountingOverviewFundRank(b.fund) ||
         String(a.fund.name || '').localeCompare(String(b.fund.name || ''))
     );
-  pane.innerHTML = `${accountingOverviewHero()}<div class="acct-suite-stats">
+  pane.innerHTML = `${accountingOverviewHero()}<div class="acct-report-quick"><button type="button" onclick="openAccountingIncomeReport()">Generate revenue minus expenses report</button></div><div class="acct-suite-stats">
       <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
       <div class="acct-suite-stat"><span>Total net assets</span><strong>${accountingMoney(netAssets)}</strong><small>${position.validation?.status === 'validated' ? 'Financial position is balanced' : 'Review the financial position'}</small></div>
       <div class="acct-suite-stat"><span>Current activity</span><strong>${accountingMoney(activity)}</strong><small>${posted.length} posted entries · ${drafts} draft${drafts === 1 ? '' : 's'}</small></div>
