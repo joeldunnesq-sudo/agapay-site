@@ -19,7 +19,24 @@ const givingThemeDefaults = {
   'heading-font': '"Cormorant Garamond", Georgia, serif',
 };
 
+function ensureGivingEmbedThemeDialog() {
+  if (document.getElementById('givingThemeDialog')) return;
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    `<dialog id="givingThemeDialog" aria-labelledby="givingThemeHeading" style="width:min(1000px,calc(100% - 24px));max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:24px">
+  <form method="dialog" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><h2 id="givingThemeHeading">Customize your giving card</h2><button class="btn btn-ghost" aria-label="Close giving card customizer">Close</button></form>
+  <p>Match your parish website with CSS colors and fonts. Edit the declarations, preview, then copy the styled embed code to your website. Changes are saved in the copied code.</p>
+  <p>Primary colors style selected amounts; accent colors style the main button and labels. Use font stacks available on visitors’ devices, or the included DM Sans and Cormorant Garamond. Fonts loaded only by your website are not available inside the card.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+    <div style="flex:1 1 320px;min-width:0"><label for="givingThemeCss">Card CSS declarations</label><textarea id="givingThemeCss" spellcheck="false" rows="16" style="display:block;width:100%;font:13px/1.6 monospace" aria-describedby="givingThemeStatus"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-ghost" onclick="previewGivingEmbedTheme()">Update preview</button><button type="button" class="btn btn-gold" onclick="copyStyledGivingEmbed()">Copy styled embed code</button></div><p id="givingThemeStatus" role="status" aria-live="polite"></p></div>
+    <iframe id="givingThemePreview" title="Customized giving card preview" style="flex:1 1 320px;width:100%;min-width:0;height:720px;border:0"></iframe>
+  </div>
+</dialog>`
+  );
+}
+
 function openGivingEmbedTheme() {
+  ensureGivingEmbedThemeDialog();
   if (!dedicatedGivingEmbedUrl()) return setStatus('Load a parish first.', 'error');
   const editor = document.getElementById('givingThemeCss');
   editor.value = Object.entries(givingThemeDefaults)

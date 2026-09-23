@@ -73,8 +73,8 @@ try {
 
   // Exercise the actual dashboard dialog and copied snippet without backend fixtures.
   const dashboard = await readFile(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
-  const dialog = dashboard.match(/<dialog id="givingThemeDialog"[\s\S]*?<\/dialog>/)[0];
-  await page.setContent(dialog);
+  assert.match(dashboard, /openGivingEmbedTheme\(\)/);
+  await page.setContent('<main></main>');
   for (const file of ['style.css', 'redesign.css']) {
     await page.addStyleTag({ content: await readFile(new URL(`../public/parish/${file}`, import.meta.url), 'utf8') });
   }
