@@ -2,9 +2,10 @@
 
 /* global financialsState, currentParish, isParishTier, renderGivingMetricsUpgrade, givingMetricsState,
   stewardshipApi, authHeaders, escapeHtml, escapeAttr, loadGivingMetricsPanel,
-  loadStewardshipHealthScorePanel, loadFinancialSnapshotsPanel */
+  loadStewardshipHealthScorePanel, loadFinancialSnapshotsPanel, outsideRequest,
+  resetOutsideParish, outsideGivingState, outsideGiftAction */
 /* exported openOutsideAgapayGiving, closeOutsideAgapayGiving, submitManualIncomeEntry,
-  deleteManualIncomeEntry, ensureOutsideGivingCard */
+  deleteManualIncomeEntry, ensureOutsideGivingCard, reviewCollectionAccounting */
 
 // Outside-AGAPAY contribution entry, deletion, and dependent panel refreshes.
 // Read shared parish identity and authentication only when actions run.
@@ -84,6 +85,13 @@ async function loadManualIncomePanel(year, message = '') {
 function renderManualIncome(d, year, message = '') {
   const fmt = (c) => (Number(c || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   const entries = d.entries || [];
+  const funds = (currentParish.funds || []).filter((fund) => fund.enabled !== false && fund.active !== false);
+  const fundOptions = funds
+    .map(
+      (fund) =>
+        `<option value="${escapeAttr(fund.id || fund.code)}">${escapeHtml(fund.name || fund.id || fund.code)}</option>`
+    )
+    .join('');
   const now = new Date();
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: currentParish.timezone || 'UTC',
@@ -95,7 +103,7 @@ function renderManualIncome(d, year, message = '') {
   const rows = entries
     .map(
       (e) =>
-        `<tr class="sw-income-row"><td>${escapeHtml(e.entryDate)}</td><td>${escapeHtml(e.sourceLabel || manualIncomeSourceLabels[e.source] || '')}</td><td>${escapeHtml(e.fundCode || '')}</td><td class="sw-td-right">${fmt(e.amountCents)}</td><td class="sw-income-notes">${escapeHtml([e.batchReference, e.notes].filter(Boolean).join(' · '))}</td><td>${e.id.startsWith('outside_') ? 'Manage in Givers' : `<button type="button" class="sw-income-delete-btn" onclick="deleteManualIncomeEntry('${escapeAttr(e.id)}')" title="Delete entry" aria-label="Delete entry for ${escapeAttr(e.entryDate)}">&times;</button>`}</td></tr>`
+        `<tr class="sw-income-row"><td>${escapeHtml(e.entryDate)}</td><td>${escapeHtml(e.sourceLabel || manualIncomeSourceLabels[e.source] || '')}</td><td>${escapeHtml(e.fundCode || '')}</td><td class="sw-td-right">${fmt(e.amountCents)}</td><td class="sw-income-notes">${escapeHtml([e.batchReference, e.notes].filter(Boolean).join(' · '))}</td><td>${e.id.startsWith('outside_') ? `<button type="button" class="sw-action-btn" onclick="reviewCollectionAccounting('${escapeAttr(e.id)}')">Review / link Accounting</button><span>Corrections in Givers</span>` : `<button type="button" class="sw-income-delete-btn" onclick="deleteManualIncomeEntry('${escapeAttr(e.id)}')" title="Delete entry" aria-label="Delete entry for ${escapeAttr(e.entryDate)}">&times;</button>`}</td></tr>`
     )
     .join('');
   const total = entries.reduce((sum, e) => sum + Number(e.amountCents || 0), 0);
@@ -109,16 +117,19 @@ function renderManualIncome(d, year, message = '') {
         )
           .map(([key, label]) => `<option value="${key}">${label}</option>`)
           .join('')}</select></label>
-        <label>Fund / designation<input type="text" name="fundCode" value="General Fund" placeholder="e.g. Building Fund" maxlength="60" required /></label>
+        <label>Fund / designation<select name="fundId" required><option value="">Choose a fund from Funds &amp; Alms</option>${fundOptions}</select></label>
         <label class="sw-income-source-label-field" hidden>Platform name<input type="text" name="sourceLabel" placeholder="e.g. Venmo" maxlength="60" /></label>
       </div>
       <details class="sw-income-details"><summary>Add a deposit reference or note (optional)</summary><div class="sw-income-form-row"><label>Deposit or batch reference<input type="text" name="batchReference" placeholder="e.g. Deposit 1042" maxlength="120" /></label><label>Note<input type="text" name="notes" placeholder="e.g. Sunday collection" maxlength="200" /></label></div></details>
-      <button type="submit" class="sw-report-generate-btn sw-income-submit-btn">Record contribution</button>
+      <p class="sw-chart-note">Funds are shared with Funds &amp; Alms and Accounting. ${funds.length ? 'Choose the fund this collection belongs to.' : 'Add an active fund in Funds &amp; Alms before recording a collection.'}</p>
+      <label class="sw-income-confirm"><input type="checkbox" name="confirmedNotDuplicate" required />This collection is not already recorded as individual gifts or another batch.</label>
+      <label class="sw-income-duplicate" hidden>Why is this a separate collection?<input name="duplicateReason" maxlength="500" placeholder="Explain why this collection has identical details" /></label>
+      <button type="submit" class="sw-report-generate-btn sw-income-submit-btn" ${funds.length ? '' : 'disabled'}>Record contribution</button>
       <div class="sw-income-form-status ${message ? 'sw-income-form-status--ok' : ''}" role="status" aria-live="polite">${escapeHtml(message)}</div>
     </form>
     <div class="sw-outside-history-head"><div><h3>Recorded outside giving</h3><p>${fmt(total)} across ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} in ${year}</p></div><label>View year<input aria-label="Outside giving year" type="number" min="2000" max="${now.getFullYear()}" value="${year}" onchange="if(this.reportValidity()) loadManualIncomePanel(+this.value)"></label></div>
     <div class="sw-fin-table-wrap"><table class="sw-fin-table sw-income-table"><thead><tr><th>Date</th><th>Source</th><th>Fund</th><th class="sw-th-right">Amount</th><th>Reference / note</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6">No contributions recorded for this year. Add your first collection above.</td></tr>'}</tbody></table></div>
-    <p class="sw-chart-note">These entries update Budget Pace, Stewardship Health, and stewardship reports. When Accounting is active, financial statements use posted ledger entries.</p>`;
+    <p class="sw-chart-note">These entries update Budget Pace, Stewardship Health, and stewardship reports. Record the deposit once in Accounting, then use Review / link Accounting to match the contribution to the same fund. Unlinked collections are not posted ledger income. Older collection entries can be reviewed in Accounting separately.</p>`;
 }
 
 async function submitManualIncomeEntry(event) {
@@ -136,10 +147,15 @@ async function submitManualIncomeEntry(event) {
     source: fd.get('source'),
     sourceLabel: fd.get('sourceLabel') || '',
     amountCents: Math.round((amountDollars || 0) * 100),
-    fundCode: fd.get('fundCode') || '',
+    fundId: fd.get('fundId') || '',
     batchReference: fd.get('batchReference') || '',
     notes: fd.get('notes') || '',
   };
+  const inputKey = JSON.stringify(payload);
+  if (form.dataset.inputKey !== inputKey) {
+    form.dataset.requestKey = crypto.randomUUID();
+    form.dataset.inputKey = inputKey;
+  }
   form.dataset.saving = 'true';
   if (status) {
     status.textContent = 'Saving…';
@@ -147,14 +163,17 @@ async function submitManualIncomeEntry(event) {
   }
   if (submitBtn) submitBtn.disabled = true;
   try {
-    const res = await fetch(stewardshipApi('/income/manual'), {
-      method: 'POST',
-      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
-      body: JSON.stringify(payload),
+    await outsideRequest('', {
+      ...payload,
+      source: payload.source === 'cash_and_checks' ? 'cash' : payload.source,
+      reference: payload.batchReference,
+      givingKind: 'other',
+      giverReferenceId: '',
+      confirmedNotDuplicate: fd.get('confirmedNotDuplicate') === 'on',
+      duplicateReason: fd.get('duplicateReason') || '',
+      requestKey: form.dataset.requestKey,
     });
-    const data = await res.json();
     if (currentParish?.parishId !== parishId) return;
-    if (!res.ok || data.error) throw new Error(data.error || 'Could not save entry.');
     if (status) {
       status.textContent = 'Saved.';
       status.className = 'sw-income-form-status sw-income-form-status--ok';
@@ -170,7 +189,7 @@ async function submitManualIncomeEntry(event) {
     if (currentParish?.parishId !== parishId) return;
     const nextForm = document.querySelector('#stewardshipManualIncomePane .sw-income-form');
     if (nextForm) {
-      for (const key of ['entryDate', 'source', 'sourceLabel', 'fundCode']) nextForm.elements[key].value = payload[key];
+      for (const key of ['entryDate', 'source', 'sourceLabel', 'fundId']) nextForm.elements[key].value = payload[key];
       nextForm.querySelector('.sw-income-source-label-field').hidden = payload.source !== 'other_giving_platform';
       nextForm.elements.sourceLabel.required = payload.source === 'other_giving_platform';
       nextForm.elements.amountCents.focus({ preventScroll: true });
@@ -181,6 +200,7 @@ async function submitManualIncomeEntry(event) {
     loadStewardshipHealthScorePanel();
     loadFinancialSnapshotsPanel();
   } catch (e) {
+    if (e.code === 'outside_gift_duplicate') form.querySelector('.sw-income-duplicate').hidden = false;
     if (status) {
       status.textContent = e.message;
       status.className = 'sw-income-form-status sw-income-form-status--error';
@@ -188,6 +208,20 @@ async function submitManualIncomeEntry(event) {
   } finally {
     delete form.dataset.saving;
     if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+async function reviewCollectionAccounting(id) {
+  const parishId = currentParish?.parishId;
+  const status = document.querySelector('.sw-income-form-status');
+  try {
+    resetOutsideParish();
+    const data = await outsideRequest('/' + encodeURIComponent(id));
+    if (currentParish?.parishId !== parishId) return;
+    outsideGivingState.rows = outsideGivingState.rows.filter((gift) => gift.id !== id).concat(data.gift);
+    await outsideGiftAction(id, 'accounting');
+  } catch (error) {
+    if (currentParish?.parishId === parishId && status) status.textContent = error.message;
   }
 }
 

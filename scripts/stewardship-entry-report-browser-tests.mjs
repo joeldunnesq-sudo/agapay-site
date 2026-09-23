@@ -25,7 +25,11 @@ try {
         (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]
       );
     window.escapeAttr = escapeHtml;
-    window.currentParish = { parishId: 'test', timezone: 'America/Chicago' };
+    window.currentParish = {
+      parishId: 'test',
+      timezone: 'America/Chicago',
+      funds: [{ id: 'general', name: 'General Fund' }],
+    };
     window.accountingMoney = (value) => (value / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     window.accountingData = {
       tier: 'advanced_operations',
@@ -82,7 +86,8 @@ try {
     pane.hidden = false;
     pane.innerHTML = renderManualIncome({ entries: [] }, new Date().getFullYear());
   });
-  assert.equal(await page.locator('[name="fundCode"]').inputValue(), 'General Fund');
+  assert.equal(await page.locator('[name="fundId"]').inputValue(), '');
+  await page.locator('[name="fundId"]').selectOption('general');
   assert.equal(await page.locator('[name="sourceLabel"]').isVisible(), false);
   await page.locator('[name="source"]').selectOption('other_giving_platform');
   assert.equal(await page.locator('[name="sourceLabel"]').isVisible(), true);

@@ -43,6 +43,20 @@
 .sw-income-details {
   margin: 18px 0;
 }
+.sw-outside-card .sw-income-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.sw-outside-card .sw-income-confirm input {
+  width: 18px;
+  flex: 0 0 18px;
+  margin: 2px 0 0;
+}
 .sw-income-details summary {
   cursor: pointer;
   color: #405849;
