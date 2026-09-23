@@ -1,0 +1,16 @@
+.campaign-embed-editor { width:min(1160px,calc(100% - 24px)); max-height:92vh; overflow:auto; border:1px solid #d9d4c9; border-radius:16px; padding:24px; background:#fffdf8; color:#102434; font:14px/1.6 system-ui,sans-serif; }
+.campaign-embed-editor::backdrop { background:#071a2aaa; }
+.campaign-embed-editor header { display:flex; justify-content:space-between; align-items:start; gap:16px; }
+.campaign-embed-editor h2 { margin:0; font:600 29px/1.2 Georgia,serif; }
+.campaign-embed-editor header p { margin:0 0 8px; color:#876623; font-size:12px; text-transform:uppercase; letter-spacing:.1em; }
+.campaign-embed-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:24px; }
+.campaign-embed-editor label { display:grid; gap:6px; margin:14px 0; font-weight:600; }
+.campaign-embed-editor input,.campaign-embed-editor textarea,.campaign-embed-editor select { width:100%; min-width:0; padding:10px; background:white; color:#102434; border:1px solid #bac5cc; border-radius:6px; font:inherit; }
+.campaign-embed-editor input[type=color] { height:42px; padding:4px; }
+.campaign-embed-colors { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.campaign-embed-help { color:#546774; font-size:12px; line-height:1.6; }
+.campaign-embed-editor button { padding:11px 16px; border:0; border-radius:7px; background:#102434; color:#fff; font:600 13px system-ui,sans-serif; cursor:pointer; }
+.campaign-embed-editor [data-copy] { background:#c8a24a; color:#102434; }
+.campaign-embed-editor iframe { display:block; width:100%; height:780px; border:1px solid #ddd1bd; border-radius:8px; }
+#campaignEmbedCode { font:12px/1.5 monospace; }
+@media(max-width:740px) { .campaign-embed-grid { grid-template-columns:1fr; } .campaign-embed-editor { padding:18px; } }

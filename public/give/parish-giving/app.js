@@ -42,6 +42,7 @@
   function parseParams() {
     const url   = new URL(window.location.href);
     const parts = url.pathname.split("/").filter(Boolean);
+    if (parts[0] === "give" && parts[1] === "campaign-embed" && parts.length === 4) return { parishId: decodeURIComponent(parts[2]), slug: decodeURIComponent(parts[3]).replace(/-campaign$/, "") };
     const isCanonicalCampaign = parts[0] === "give" && parts.length >= 3 && parts[2].endsWith("-campaign");
     const slug = isCanonicalCampaign
       ? decodeURIComponent(parts[2]).replace(/-campaign$/, "")
@@ -239,6 +240,8 @@
     status.textContent = "";
     status.className = "campaign-checkout-status";
 
+    const checkoutWindow = window.AGAPAYCampaignEmbed ? window.open('about:blank', '_blank') : null;
+    if (checkoutWindow) checkoutWindow.opener = null;
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -258,18 +261,30 @@
           publicAnonymous,
           publicComment,
           source: "campaign_page",
-          returnPath: window.location.pathname + window.location.search,
+          returnPath: window.AGAPAYCampaignEmbed ? new URL(activeCanonicalUrl).pathname : window.location.pathname + window.location.search,
           ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
         })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.detail || result.error || "Unable to start checkout");
       if (result.url) {
+        if (window.AGAPAYCampaignEmbed) {
+          const checkoutUrl = new URL(result.url);
+          if (checkoutUrl.protocol !== 'https:' || checkoutUrl.hostname !== 'checkout.stripe.com') throw new Error('Invalid secure checkout address. Please try again.');
+          if (checkoutWindow && !checkoutWindow.closed) checkoutWindow.location.href = checkoutUrl.href;
+          else {
+            const link = document.createElement('a');
+            link.href = checkoutUrl.href; link.target = '_blank'; link.rel = 'noopener';
+            link.textContent = 'Open secure Stripe checkout'; status.replaceChildren(link);
+          }
+          return;
+        }
         window.location.href = result.url;
         return;
       }
       throw new Error(result.message || "Stripe checkout did not return a link.");
     } catch (err) {
+      if (checkoutWindow && !checkoutWindow.closed) checkoutWindow.close();
       status.textContent = err.message || "Checkout failed. Please try again.";
       status.className = "campaign-checkout-status error";
     } finally {
@@ -392,13 +407,13 @@
       renderThermometer(campaign);
 
       el("topbarGiveBtn").href  = "#campaignCheckoutForm";
-      if (campaign.status === "completed") {
-        el("giveBtn").textContent      = "Campaign Completed — Thank You";
+      if (["completed", "paused"].includes(campaign.status)) {
+        el("giveBtn").textContent      = campaign.status === "paused" ? "Campaign Paused" : "Campaign Completed — Thank You";
         el("giveBtn").style.background = "var(--stone)";
         el("giveBtn").disabled = true;
       }
       renderDeadline(campaign.endsAt);
-      wireShareButtons(canonicalUrl, campaign.name + " — " + parish.name);
+      wireShareButtons(window.AGAPAYCampaignEmbed?.shareUrl || canonicalUrl, campaign.name + " — " + parish.name);
 
       el("loadingState").hidden    = true;
       el("campaignContent").hidden = false;

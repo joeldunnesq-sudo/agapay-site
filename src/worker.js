@@ -235,7 +235,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/events/index.html";
     return new Request(url, request);
   }
-  if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname)) {
+  if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname) || /^\/give\/campaign-embed\/[^/]+\/[^/]+\/?$/.test(url.pathname)) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
