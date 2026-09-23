@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
 import { openParishFixture, parish, origin } from './lib/parish-browser-fixture.mjs';
+import { accountingCouncilReport, councilReportPeriod } from '../src/stewardship/council-reports.js';
 
 /* global loadDashboard, loadGivingMetricsPanel,
   stewardshipMonthlyReportUrl, stewardshipMonthlyFinancialReportUrl */
@@ -165,6 +166,36 @@ function body(request, method = 'POST') {
 }
 
 try {
+  await scenario('financial report Back preserves the open Stewardship Health dashboard', async (page) => {
+    await settled(page);
+    const month = `${year - 1}-07`;
+    await page.locator('#financialReportMonth').fill(month);
+    await page.locator('#financialReportMonth').dispatchEvent('change');
+    const dashboardUrl = page.url();
+    let dashboardNavigations = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) dashboardNavigations++;
+    });
+    await page.context().route('**/stewardship/report/monthly-financial?**', async (route) => {
+      const period = councilReportPeriod(new URL(route.request().url()));
+      const totals = { totalIncomeCents: 10000, totalExpenseCents: 2500, netCents: 7500, restrictedFunds: [] };
+      const response = accountingCouncilReport('Synthetic Test Parish', period, totals, totals);
+      await route.fulfill({ contentType: 'text/html', body: await response.text() });
+    });
+    const opened = page.waitForEvent('popup');
+    await page.getByRole('button', { name: 'Generate Monthly Financial Report', exact: true }).click();
+    const report = await opened;
+    await report.getByRole('heading', { name: 'Monthly Financial Report', exact: true }).waitFor();
+    const closed = report.waitForEvent('close', { timeout: 5000 });
+    await report.getByRole('link', { name: '← Back', exact: true }).click();
+    await closed;
+    assert.equal(page.url(), dashboardUrl);
+    assert.equal(dashboardNavigations, 0, 'Back must not reload the original dashboard');
+    assert.equal(await page.locator('#financialReportMonth').inputValue(), month);
+    assert.equal(await page.locator('#stewardshipReportMonth').inputValue(), month);
+    assert.equal(await page.locator('#stewardshipFinancialsPane').isVisible(), true);
+  });
+
   await scenario(
     'weekly attendance trend, missing Sundays, staff correction, delegation, and responsive layout',
     async (page) => {
