@@ -1677,9 +1677,7 @@
           : `<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, 'subscriptionTierUpgrade')">${demoEligible?'Start free 30-day demo':'Start tier checkout'}</button>`}
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
-      <div class="section-divider"><span>Data portability</span></div>
-      <p class="section-note">Your parish records should remain accessible when you leave. For ownership protection, exports and account closure require the primary parish login created at signup; invited staff logins cannot perform these actions. Downloading alone never deletes data, and exporting does not cancel billing.</p>
-      <div class="btn-row"><button type="button" class="btn btn-ghost" onclick="openParishPortability()">Data portability &amp; closure</button></div>
+      <div id="parishBackupCard"></div>
       <div class="section-divider"><span>Stripe account</span></div>
       <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
       <div class="btn-row">
@@ -1707,6 +1705,7 @@
         <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
         <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
       </div>`;
+    window.ParishBackup?.mount({ element: document.getElementById('parishBackupCard'), parishId: p.parishId, headers: authHeaders });
     syncParishHouseholdPricing('subscriptionTierUpgrade','subscriptionHouseholdBandUpgrade','subscriptionHouseholdBandGroup','subscriptionHouseholdBandPrice');
     syncSubscriptionAddOnVisibility('subscriptionTierUpgrade','subscriptionAddOnUpgradeGroup');
     syncPatronalFeastOptionsFromSettings();
