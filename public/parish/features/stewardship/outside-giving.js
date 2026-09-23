@@ -167,6 +167,7 @@ async function submitManualIncomeEntry(event) {
       Number(payload.entryDate.slice(0, 4)),
       'Contribution recorded. You can add another collection.'
     );
+    if (currentParish?.parishId !== parishId) return;
     const nextForm = document.querySelector('#stewardshipManualIncomePane .sw-income-form');
     if (nextForm) {
       for (const key of ['entryDate', 'source', 'sourceLabel', 'fundCode']) nextForm.elements[key].value = payload[key];
