@@ -121,11 +121,12 @@ export async function buildGivingStatementPdf({ parish = {}, donor = {}, fiscalY
 
   const sortedGifts = [...gifts].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
   for (const gift of sortedGifts) {
-    const willBreak = y - 30 < MARGIN + 60;
-    newPageIfNeeded(30);
-    if (willBreak) tableHeader();
-    const labelLines = wrapText(gift.label || "Gift", regular, 10, colAmount - colLabel - 14);
+    const detail = `${gift.label || "Gift"}${gift.feeCoverageCents ? ` (${gift.refundedCents ? "original" : "includes a"} ${formatUsd(gift.feeCoverageCents)} fee-covering addition)` : ""}${gift.refundedCents ? `; ${formatUsd(gift.refundedCents)} refunded` : ""}`;
+    const labelLines = wrapText(detail, regular, 10, colAmount - colLabel - 14);
     const rowHeight = Math.max(14, labelLines.length * 13);
+    const willBreak = y - rowHeight - 24 < MARGIN + 60;
+    newPageIfNeeded(rowHeight + 24);
+    if (willBreak) tableHeader();
     page.drawText(formatDate(gift.date), { x: colDate, y, size: 10, font: regular, color: INK });
     labelLines.forEach((line, i) => {
       page.drawText(line, { x: colLabel, y: y - i * 13, size: 10, font: regular, color: INK });
@@ -134,6 +135,7 @@ export async function buildGivingStatementPdf({ parish = {}, donor = {}, fiscalY
     y -= rowHeight + 6;
   }
 
+  newPageIfNeeded(64);
   y -= 4;
   page.drawLine({ start: { x: MARGIN, y }, end: { x: pageW - MARGIN, y }, thickness: 1, color: LINE });
   y -= 20;
@@ -142,7 +144,13 @@ export async function buildGivingStatementPdf({ parish = {}, donor = {}, fiscalY
   y -= 34;
 
   // ── IRS compliance language ─────────────────────────────────────────────
-  newPageIfNeeded(90);
+  newPageIfNeeded(125);
+  if (gifts.some((gift) => gift.feeCoverageCents > 0)) {
+    for (const line of wrapText("Total contributions include voluntary fee-covering additions, with recorded refunds deducted. The parish's processing expenses do not reduce your contribution.", regular, 9, contentW)) {
+      draw(line, { size: 9, color: MUTED, gap: 3 });
+    }
+    y -= 8;
+  }
   const disclosure = "No goods or services were provided in exchange for these contributions, "
     + "except intangible religious benefits. Please retain this statement for your tax records "
     + "and consult your tax advisor regarding the deductibility of these contributions.";

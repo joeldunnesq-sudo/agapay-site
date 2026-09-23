@@ -1,7 +1,7 @@
 'use strict';
 
 /* global currentParish, stewardshipApi, authHeaders, checkNudgeEligibility, escapeHtml,
-  parishSessionStorageKey, renderGivingMetrics */
+  parishSessionStorageKey, renderGivingMetrics, renderStewardshipFees */
 /* exported loadGivingMetricsPanel, loadStewardshipHealthScorePanel, loadDonorConcentrationPanel,
   loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
   saveStewardshipAttendance, saveAttendanceDelegate, syncAttendanceEntryFromWeek,
@@ -402,7 +402,7 @@ async function loadStewardshipHealthScorePanel(year) {
       pane.innerHTML = renderGivingMetricsUpgrade();
       return;
     }
-    pane.innerHTML = renderStewardshipHealthScore(data);
+    pane.innerHTML = renderStewardshipHealthScore(data) + renderStewardshipFees(data.processing_fees);
   } catch (e) {
     pane.innerHTML =
       '<p class="muted">Stewardship health score unavailable' +

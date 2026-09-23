@@ -36,6 +36,7 @@ import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer }
 import { offeringLabel } from "./donor.js";
 import { givingFeatureAccess } from "../lib/entitlements.js";
 import { outsideGiftsForGiving } from "../lib/outside-gifts.js";
+import { givingContribution } from "../lib/giving-contributions.js";
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 
@@ -72,10 +73,7 @@ function parishTaxProfile(registration = {}) {
 /**
  * Returns every donor with at least one completed gift to this parish in
  * the given calendar year, each with their itemized gift list and total.
- * Mirrors the WHERE-clause shape used in
- * src/handlers/stewardship.js handleStewardshipManualIncomeCreate's sibling
- * giving-summary queries (payment_status IN ('paid','succeeded'), created_at
- * BETWEEN year bounds).
+ * Uses completed gift dates, gross contributions, and recorded refunds.
  */
 export async function computeParishDonorYearGiving(env, parishId, fiscalYear) {
   if (!d1(env)) return [];
@@ -84,19 +82,24 @@ export async function computeParishDonorYearGiving(env, parishId, fiscalYear) {
   const rows = await d1All(
     env,
     `SELECT donor_email, created_at, data FROM donor_offerings
-     WHERE parish_id = ? AND payment_status IN ('paid','succeeded')
-       AND created_at BETWEEN ? AND ?
+     WHERE parish_id = ? AND payment_status IN ('paid','succeeded','partially_refunded','refunded')
+       AND COALESCE(NULLIF(json_extract(data, '$.completedAt'), ''), created_at) >= ?
+       AND COALESCE(NULLIF(json_extract(data, '$.completedAt'), ''), created_at) < ?
      ORDER BY donor_email, created_at ASC`,
-    parishId, yearStart, yearEnd
+    parishId, yearStart, `${Number(fiscalYear) + 1}-01-01`
   );
 
   const byDonor = new Map();
   for (const row of rows) {
     let data;
     try { data = JSON.parse(row.data || "{}"); } catch { data = {}; }
+    if (String(data.currency || "USD").toUpperCase() !== "USD") continue;
     const email = normalizeEmail(row.donor_email);
     if (!email) continue;
-    const amountCents = Number(data.giftAmountCents ?? data.amountCents ?? 0);
+    const contribution = givingContribution(data);
+    // A later-year refund must not silently rewrite an earlier year's receipt.
+    const refundAfterYear = String(data.refundedAt || '') > yearEnd;
+    const amountCents = refundAfterYear ? contribution.grossContributionCents : contribution.contributionCents;
     if (!Number.isFinite(amountCents) || amountCents <= 0) continue;
 
     if (!byDonor.has(email)) {
@@ -118,6 +121,8 @@ export async function computeParishDonorYearGiving(env, parishId, fiscalYear) {
     entry.gifts.push({
       date: data.completedAt || data.createdAt || row.created_at,
       amountCents,
+      feeCoverageCents: contribution.feeCoverageCents,
+      refundedCents: refundAfterYear ? 0 : contribution.refundedCents,
       label: offeringLabel(data),
     });
   }

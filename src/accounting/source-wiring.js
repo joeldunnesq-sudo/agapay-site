@@ -1,3 +1,4 @@
+import { recognizeGivingStripeFee } from './integrations/processor-fees.js';
 import {
   createD1DatabaseFacade,
   ingestAccountingSourceEvent,
@@ -10,6 +11,7 @@ import {
   resolveCloudflareD1Adapter
 } from "./index.js";
 import { d1All, d1First } from "../lib/core.js";
+import { recognizeGivingFeeCoverage } from "./integrations/fee-coverage.js";
 
 const actor = (capability) => ({ id: "agapay_operational_sync", type: "system", capabilities: [capability] });
 const text = (value) => String(value || "").trim();
@@ -182,26 +184,11 @@ export async function wireGivingOfferingToAccounting(env, offering = {}) {
     entitlementTier: "parish",
     sourceEventId: event.id
   });
+  await recognizeGivingFeeCoverage(db, { actor: actor("accounting.integrations.post"), entitlementTier: "parish", offering, originalEventId: event.id });
   await db.prepare(`INSERT OR IGNORE INTO accounting_accounts
     (id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund)
     VALUES('acct_5850','5850','AGAPAY Platform Fees','type_expense','debit',1,1,1)`).run();
-  const fee = cents(offering.stripeFeeCents);
-  if (fee) {
-    const feeEvent = await ingestAccountingSourceEvent(db, {
-      actor: actor("accounting.integrations.post"),
-      entitlementTier: "parish",
-      event: {
-        sourceSystem: "stripe", sourceType: "stripe_fee_assessed",
-        sourceEventId: `give:${donationId}:stripe_fee`, sourceObjectId: donationId,
-        occurredAt, currency: text(offering.currency) || "USD", feeAmount: fee,
-        donationId, paymentIntentId, balanceTransactionId: text(offering.stripeBalanceTransactionId),
-        designatedFundId: fundId
-      }
-    });
-    await processAccountingSourceEvent(db, {
-      actor: actor("accounting.integrations.post"), entitlementTier: "parish", sourceEventId: feeEvent.id
-    });
-  }
+  await recognizeGivingStripeFee(db, { actor: actor("accounting.integrations.post"), entitlementTier: "parish", offering, donationId, fundId, occurredAt });
   const agapayFee = cents(offering.agapayFeeCents);
   if (agapayFee) {
     const agapayFeeEvent = await ingestAccountingSourceEvent(db, {

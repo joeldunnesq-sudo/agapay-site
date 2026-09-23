@@ -48,7 +48,7 @@ function renderAccountingIntegrationsBase(pane) {
     pane.innerHTML = '<p class="sw-tool-loading">Loading Give & Commerce...</p>';
     return;
   }
-  const give = data.give || {},
+  const give = data.give?.totals || data.give || {},
     settings = data.settings || {},
     commerce = data.commerce;
   pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Automated posting</span><h2>Give & Stripe accounting</h2><p>Donation charges, Stripe fees, refunds, and payouts flow into the ledger with traceable source records.</p></div></div><div class="acct-kpis"><div><span>Source events</span><strong>${give.events || 0}</strong></div><div><span>Gross contributions</span><strong>${accountingMoney(give.grossContributions)}</strong></div><div><span>Stripe fees</span><strong>${accountingMoney(give.stripeFees)}</strong></div></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Posting policy</span><h2>Integration settings</h2><label>Posting mode<select id="accountingIntegrationMode"><option value="automatic" ${settings.postingMode === 'automatic' ? 'selected' : ''}>Automatic</option><option value="review" ${settings.postingMode === 'review' ? 'selected' : ''}>Review before posting</option></select></label><button class="acct-primary" onclick="saveAccountingIntegrationSettings()">Save policy</button></section><section class="acct-card"><span class="acct-kicker">Stripe clearing</span><h2>${accountingMoney(data.clearing?.calculatedBalance)} expected balance</h2><p>${data.clearing?.balanced === false ? 'Review the difference against Stripe before closing the period.' : 'Charges, fees, refunds, and payouts are aligned for this period.'}</p></section></div>${accountingData.tier !== 'advanced_operations' ? accountingParishOnly() : `<div class="acct-list-head"><div><span class="acct-kicker">Parish Commerce</span><h2>Commerce accounting</h2><p>Bookstore and Meals &amp; Events sales, refunds, fees, inventory cost, and sales-tax liability post into one traceable ledger workflow.</p></div><button class="acct-refresh" onclick="downloadAccountingFile(accountingApi('/commerce/sales-tax.csv'),'agapay-commerce-sales-tax.csv')">Export tax report</button></div><div class="acct-kpis"><div><span>Net sales</span><strong>${accountingMoney(commerce?.netSales)}</strong></div><div><span>Sales tax collected</span><strong>${accountingMoney(commerce?.salesTaxCollected)}</strong></div><div><span>Needs review</span><strong>${(commerce?.unposted || 0) + (commerce?.exceptions || 0)}</strong></div></div>`}`;
@@ -56,6 +56,7 @@ function renderAccountingIntegrationsBase(pane) {
 
 function renderAccountingIntegrations(pane) {
   renderAccountingIntegrationsBase(pane);
+  if (accountingData.integrations) renderAccountingFeeCoverageRepair(pane);
   if (accountingData.tier !== 'advanced_operations' || !accountingData.integrations) return;
   pane.insertAdjacentHTML(
     'beforeend',
@@ -343,5 +344,64 @@ async function confirmAccountingSuggestedMatch(id, index, button) {
     if (status) status.textContent = error.message || 'Unable to confirm the match. Please try again.';
   } finally {
     button.disabled = false;
+  }
+}
+
+function renderAccountingFeeCoverageRepair(pane) {
+  const card = document.createElement('section');
+  card.className = 'acct-card acct-settings';
+  card.innerHTML =
+    '<span class="acct-kicker">Contribution accuracy</span><h2>Donor fee-covering gifts</h2><p>Recognize voluntary additions omitted from older giving imports. Preview a batch before applying it. Posted journals stay intact; missing additions create linked contribution entries under your posting policy.</p><label>Calendar year<input data-fee-repair-year type="number" min="2000" max="2200" value="' +
+    new Date().getFullYear() +
+    '"></label><button class="acct-primary" type="button" onclick="previewAccountingFeeCoverage(this)">Preview historical gifts</button><div data-fee-repair-output role="status" aria-live="polite"></div>';
+  pane.append(card);
+}
+
+async function previewAccountingFeeCoverage(button, apply = false, next = false) {
+  const card = button.closest('.acct-card');
+  const box = card.querySelector('[data-fee-repair-output]');
+  const year = Number(card.querySelector('[data-fee-repair-year]').value);
+  const prior = card.feeCoveragePreview;
+  const afterId = next ? prior?.nextCursor || '' : apply ? prior?.afterId || '' : '';
+  if (apply && (!prior || prior.year !== year)) {
+    box.textContent = 'Preview this year before applying additions.';
+    return;
+  }
+  const body = { year, afterId, apply, expectedAdditions: apply ? prior.additions : [] };
+  card.querySelectorAll('button').forEach((item) => {
+    item.disabled = true;
+  });
+  box.textContent = apply ? 'Recognizing reviewed contributions…' : 'Reviewing historical gifts…';
+  try {
+    const response = await fetch(accountingApi('/integrations/give-stripe/fee-coverage-backfill'), {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to review fee-covering gifts.');
+    const result = payload.feeCoverage;
+    card.feeCoveragePreview = { ...result, afterId };
+    const posted = result.additions.filter((item) => item.status === 'posted').length;
+    box.innerHTML =
+      '<p><strong>' +
+      (apply
+        ? posted + ' additions posted; ' + (result.additions.length - posted) + ' require review.'
+        : result.additions.length + ' missing additions · ' + accountingMoney(result.totalCents)) +
+      '</strong><br>' +
+      result.scanned +
+      ' gifts reviewed in this batch.</p>' +
+      (!apply && result.additions.length
+        ? '<button type="button" class="acct-primary" onclick="previewAccountingFeeCoverage(this,true)">Recognize reviewed additions</button>'
+        : '') +
+      (result.nextCursor
+        ? '<button type="button" class="acct-refresh" onclick="previewAccountingFeeCoverage(this,false,true)">Preview next batch</button>'
+        : '<p>End of this year’s history.</p>');
+  } catch (error) {
+    box.textContent = error.message;
+  } finally {
+    card.querySelectorAll('button').forEach((item) => {
+      item.disabled = false;
+    });
   }
 }

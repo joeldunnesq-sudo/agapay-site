@@ -1,4 +1,5 @@
 import { stewardshipGivingSummary } from '../lib/stewardship-summary.js';
+import { readGivingFeeReport } from '../lib/giving-fee-report.js';
 import { manualIncomeTotalCents } from '../lib/stewardship-income.js';
 import {
   d1All,
@@ -514,6 +515,7 @@ export async function handleStewardshipGivingHealthScore(request, env, parishId)
 
   const url = new URL(request.url);
   const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
+  if (!Number.isInteger(year) || year < 2000 || year > 2200) return json({ error: 'Choose a valid reporting year.' }, { status: 422 });
   const summaryRes = await handleStewardshipGivingSummary(
     new Request(`${url.origin}${url.pathname.replace(/\/health-score$/, '/summary')}?year=${year}`, request),
     env,
@@ -557,6 +559,7 @@ export async function handleStewardshipGivingHealthScore(request, env, parishId)
     score,
     status,
     components: components.map((c) => ({ key: c.key, label: c.label, score: Math.round(c.score) })),
+    processing_fees: await readGivingFeeReport(env, parishId, year),
   });
 }
 

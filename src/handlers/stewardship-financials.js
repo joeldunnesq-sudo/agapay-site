@@ -1,3 +1,4 @@
+import { GIVING_GROSS_CENTS_SQL } from '../lib/giving-contributions.js';
 // src/handlers/stewardship-financials.js
 // Authoritative stewardship financial snapshots and compatibility handling.
 
@@ -165,7 +166,7 @@ async function automaticRestrictedFunds(
       `SELECT
         COALESCE(json_extract(data, '$.giftType'), json_extract(data, '$.fund'), '') AS fund_key,
         COUNT(*) AS transaction_count,
-        COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total_cents
+        COALESCE(SUM(${GIVING_GROSS_CENTS_SQL}), 0) AS total_cents
       FROM donor_offerings
       WHERE parish_id = ? AND payment_status IN ('paid','succeeded')
         AND created_at BETWEEN ? AND ?
@@ -232,7 +233,7 @@ async function authoritativeContributionTotals(env, parishId, year) {
   const [agapay, outside] = await Promise.all([
     d1First(
       env,
-      `SELECT COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total
+      `SELECT COALESCE(SUM(${GIVING_GROSS_CENTS_SQL}), 0) AS total
       FROM donor_offerings
       WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded') AND created_at BETWEEN ? AND ?`,
       parishId,

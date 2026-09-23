@@ -353,14 +353,14 @@ export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, 
     charge?.application_fee_amount ?? metadata.agapay_fee_cents ?? fallback.agapayFeeCents
   );
   const balanceFeeCents = numericCents(balanceTransaction?.fee);
-  const stripeFeeCents = balanceFeeCents
+  const stripeFeeCents = balanceTransaction
     ? Math.max(0, balanceFeeCents - agapayFeeCents)
     : numericCents(fallback.stripeFeeCents ?? fallback.estimatedStripeFeeCents);
-  const totalFeeCents = numericCents(balanceFeeCents || stripeFeeCents + agapayFeeCents);
+  const totalFeeCents = balanceTransaction ? balanceFeeCents : numericCents(stripeFeeCents + agapayFeeCents);
   const coverFees = booleanFromStripeMetadata(metadata.cover_fees, fallback.coverFees);
   const donorCoveredFeeCents = coverFees ? Math.max(0, chargeCents - giftAmountCents) : 0;
   const balanceNetCents = numericCents(balanceTransaction?.net);
-  const parishNetCents = balanceNetCents || Math.max(0, chargeCents - totalFeeCents);
+  const parishNetCents = balanceTransaction ? balanceNetCents : Math.max(0, chargeCents - totalFeeCents);
   const paymentMethod = charge?.payment_method_details?.type || fallback.paymentMethod || '';
 
   return {

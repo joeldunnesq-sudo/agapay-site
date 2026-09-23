@@ -1,3 +1,4 @@
+import { givingFeeCoverageBackfill } from '../accounting/integrations/fee-coverage.js';
 import { json } from "../lib/core.js";
 import { commitBankImport, commerceOverview, commerceReportCsv, completeReconciliation, configureCommerceItem, confirmReconciliationMatch, createBankAccount, createReconciliation, eligibleLedgerItems, getIntegrationSettings, integrationOverview, listBankAccounts, postReconciliationAdjustment, previewBankCsv, previewCommerceBackfill, previewIntegrationBackfill, reconciliationCsv, reopenReconciliation, salesTaxLiabilityReport, stripeClearingValidation, suggestMatches, updateBankAccount, updateIntegrationSettings, validateReconciliation } from "../accounting/index.js";
 import { accountingContext } from "./accounting-ledger.js";
@@ -52,6 +53,7 @@ export async function handleAccountingReconciliationCommerce(request,env,parishI
     if(request.method==="PATCH"&&path==="/integrations/give-stripe/settings")return reply({ok:true,settings:await updateIntegrationSettings(ctx.db,{actor:ctx.actor,entitlementTier:tier,expectedVersion:body.expectedVersion,patch:body.patch})});
     if(request.method==="GET"&&path==="/integrations/give-stripe/overview")return reply({ok:true,overview:await integrationOverview(ctx.db,{actor:ctx.actor,entitlementTier:tier})});
     if(request.method==="GET"&&path==="/integrations/give-stripe/clearing")return reply({ok:true,clearing:await stripeClearingValidation(ctx.db,{actor:ctx.actor,entitlementTier:tier,startDate:url.searchParams.get("startDate")||yearStart(),endDate:url.searchParams.get("endDate")||today()})});
+    if(request.method==="POST"&&path==="/integrations/give-stripe/fee-coverage-backfill")return reply({ok:true,feeCoverage:await givingFeeCoverageBackfill(env,ctx.db,{actor:ctx.actor,entitlementTier:tier,parishId,year:body.year,afterId:body.afterId,apply:body.apply===true,expectedAdditions:body.expectedAdditions})});
     if(request.method==="POST"&&path==="/integrations/give-stripe/backfill-preview")return reply({ok:true,preview:await previewIntegrationBackfill(ctx.db,{actor:ctx.actor,entitlementTier:tier,...body})});
     if(request.method==="GET"&&path==="/commerce/overview")return reply({ok:true,overview:await commerceOverview(ctx.db,{actor:ctx.actor,entitlementTier:tier,startDate:url.searchParams.get("startDate")||yearStart(),endDate:url.searchParams.get("endDate")||today()})});
     if(request.method==="POST"&&path==="/commerce/items")return reply({ok:true,item:await configureCommerceItem(ctx.db,{actor:ctx.actor,entitlementTier:tier,input:body})},201);
