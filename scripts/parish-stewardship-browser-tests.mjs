@@ -647,14 +647,15 @@ try {
       await settled(page);
       await page.getByRole('button', { name: /Record a collection total/i }).click();
       const form = page.locator('.sw-income-form');
-      assert.equal(await form.locator('[name="fundCode"]').inputValue(), 'General Fund');
+      assert.equal(await form.locator('[name="fundId"]').inputValue(), '');
       assert.equal(await form.locator('details').getAttribute('open'), null);
       await form.getByRole('button', { name: 'Record contribution' }).click();
       assert.equal(incomeAttempts.length, 0);
       await form.locator('[name="source"]').selectOption('other_giving_platform');
       await form.locator('[name="sourceLabel"]').fill('Synthetic platform');
       await form.locator('[name="amountCents"]').fill('12.34');
-      await form.locator('[name="fundCode"]').fill('Building');
+      await form.locator('[name="fundId"]').selectOption('general');
+      await form.locator('[name="confirmedNotDuplicate"]').check();
       await form.getByRole('button', { name: 'Record contribution' }).click();
       await page.getByText('Synthetic contribution unavailable', { exact: true }).waitFor();
       assert.equal(await form.locator('[name="amountCents"]').inputValue(), '12.34');
@@ -665,6 +666,7 @@ try {
       assert.deepEqual(incomeAttempts[0], incomeAttempts[1]);
       assert.equal(incomeAttempts[1].amountCents, 1234);
       assert.equal(incomeAttempts[1].sourceLabel, 'Synthetic platform');
+      assert.equal(incomeAttempts[1].fundId, 'general');
       page.once('dialog', (dialog) => dialog.accept());
       await page.getByTitle('Delete entry', { exact: true }).click();
       await page.locator('.sw-income-row').waitFor({ state: 'detached' });
@@ -672,7 +674,11 @@ try {
     },
     {
       '/stewardship/income/manual': (request) => {
-        if (request.method() === 'GET') return { body: { entries } };
+        assert.equal(request.method(), 'GET');
+        return { body: { entries } };
+      },
+      '/outside-gifts': (request) => {
+        if (request.method() === 'GET') return { body: { gifts: [] } };
         const payload = body(request);
         incomeAttempts.push(payload);
         if (incomeAttempts.length === 1) return { status: 503, body: { error: 'Synthetic contribution unavailable' } };

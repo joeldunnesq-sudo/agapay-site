@@ -30,8 +30,17 @@ try {
           '/stewardship/giving/recurring',
         ].map((path) => [path, { status: 503, body: { error: 'Report temporarily unavailable in this fixture' } }])
       ),
+      '/stewardship': { body: { stewardship: { status: 'included', active: true, includedInParishTier: true } } },
     });
     const { page } = fixture;
+    await page.route('**/stewardship/income/manual?*', async (route) => {
+      const entries = finance.db
+        .prepare(
+          'SELECT id,entry_date entryDate,amount_cents amountCents,fund_code fundCode,source,source_label sourceLabel FROM manual_income_entries WHERE contribution_eligible=1'
+        )
+        .all();
+      await route.fulfill({ json: { entries } });
+    });
     await page.setViewportSize({ width, height: 900 });
     await page.route('**/api/parish/dashboard/*/outside-gifts**', async (route) => {
       const request = route.request(),
@@ -57,8 +66,13 @@ try {
       await page.locator('body.dashboard-ready').waitFor();
       if (width === 1280) {
         await page.evaluate(() => {
+          return prefetchStewardshipBadge();
+        });
+        await page.evaluate(() => {
+          if (!stewardshipState.loaded || !isParishTier() || isParishPlusActive()) {
+            throw new Error('Expected preloaded, tier-included Stewardship without the legacy add-on');
+          }
           switchTab('stewardship');
-          ensureOutsideGivingCard();
         });
         await page.getByRole('button', { name: 'Record a donor’s gift', exact: true }).click();
       } else {
@@ -94,6 +108,36 @@ try {
       await page.locator('.og-record summary').click();
       await page.getByRole('button', { name: 'View audit trail', exact: true }).click();
       await page.getByText('Revision 2 · corrected', { exact: true }).waitFor();
+      if (width === 1280) {
+        await page.locator('#nav-stewardship').click();
+        await page.getByRole('button', { name: 'Record a collection total', exact: true }).click();
+        const batch = page.locator('.sw-income-form');
+        await batch.locator('[name="amountCents"]').fill('250.25');
+        assert.equal(await batch.locator('[name="fundId"]').inputValue(), '');
+        await batch.locator('[name="fundId"]').selectOption('building');
+        await batch.locator('[name="confirmedNotDuplicate"]').check();
+        await batch.getByRole('button', { name: 'Record contribution', exact: true }).click();
+        await page.getByText('Contribution recorded. You can add another collection.', { exact: true }).waitFor();
+        const saved = finance.db
+          .prepare(
+            'SELECT m.id,d.fund_id,d.giver_reference_id,m.amount_cents FROM manual_income_entries m JOIN outside_gift_details d ON d.gift_id=m.id WHERE m.amount_cents=25025'
+          )
+          .get();
+        assert.equal(saved.fund_id, 'building');
+        assert.equal(saved.giver_reference_id, null);
+        assert.equal(await batch.locator('[name="fundId"]').inputValue(), 'building');
+        await page.route('**/outside-gifts/*/accounting', (route) =>
+          route.fulfill({ json: { lines: [], note: 'Record a posted deposit for this fund first.' } })
+        );
+        await page
+          .locator('.sw-income-row')
+          .filter({ hasText: '250.25' })
+          .getByRole('button', { name: 'Review / link Accounting', exact: true })
+          .click();
+        await page.getByText('Record a posted deposit for this fund first.', { exact: true }).waitFor();
+        assert.match(await page.locator('#outsideAccountingContext').textContent(), /Building & Restoration/);
+        await page.getByRole('button', { name: 'Close Accounting link', exact: true }).click();
+      }
       assert.equal(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         true,

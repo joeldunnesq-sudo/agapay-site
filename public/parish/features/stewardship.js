@@ -2,7 +2,7 @@
 
 /* global currentParish, isStarterTier, isParishTier, isParishPlusActive, syncDashboardPaywall,
   renderParishPlusMeetingsPane, authHeaders, updateStewardshipBadges, loadStewardshipHealthScorePanel,
-  loadGivingMetricsPanel, loadFinancialSnapshotsPanel, loadManualIncomePanel, loadDonorConcentrationPanel,
+  loadGivingMetricsPanel, loadFinancialSnapshotsPanel, loadDonorConcentrationPanel,
   loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
   loadDiocesanStatisticsPreview, ensureDiocesanStatisticsCard, escapeHtml, setStatus, setStewardshipReportMonth */
 /* exported dismissStewardshipCompNotice, startStewardshipSubscription, openStewardshipBilling */
@@ -35,8 +35,7 @@ async function loadStewardshipPanel(force = false) {
     renderStewardshipPanel();
     renderParishPlusMeetingsPane(document.getElementById('parishPlusMeetingsPane'), isParishPlusActive());
     // Always reload metrics/financials when switching to the tab
-    const _active = isParishPlusActive();
-    if (_active) loadStewardshipEssentialPanels();
+    loadStewardshipEssentialPanels();
     return;
   }
   if (status) status.textContent = 'Loading…';
@@ -76,7 +75,6 @@ function loadStewardshipEssentialPanels() {
   loadGivingIntelligencePanels();
   setTimeout(() => loadGivingMetricsPanel(), 300);
   setTimeout(() => loadFinancialSnapshotsPanel(), 600);
-  setTimeout(() => loadManualIncomePanel(), 900);
   setTimeout(() => loadDonorConcentrationPanel(), 1200);
   setTimeout(() => loadRecurringGivingPanel(), 1500);
 }
