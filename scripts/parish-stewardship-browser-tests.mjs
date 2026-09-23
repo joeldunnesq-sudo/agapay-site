@@ -154,7 +154,7 @@ async function settled(page) {
   await page.locator('#stewardshipRecurringPane .sw-recurring-kpi-grid').waitFor();
   await page.locator('#givingMetricsPane .sw-kpi-grid').waitFor();
   await page.locator('#stewardshipFinancialsPane .sw-fin-kpi-grid').waitFor();
-  await page.locator('.sw-income-form').waitFor({ state: 'attached' });
+  await page.locator('#swOutsideTitle').waitFor({ state: 'attached' });
   await page.locator('#diocesanStatisticsPane .sw-report-overview').waitFor();
 }
 
