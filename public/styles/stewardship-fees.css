@@ -1,0 +1,31 @@
+.sw-fees { margin-top: 28px; border: 1px solid #e1d9c9; border-radius: 18px; overflow: hidden; background: #fffdf8; color: #172c36; font-family: "DM Sans", system-ui, sans-serif; }
+.sw-fees-heading { padding: 25px 28px 20px; display: flex; align-items: start; justify-content: space-between; gap: 20px; background: #0d2933; color: #fffdf8; }
+.sw-fees-eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #e2c585; }
+.sw-fees-heading h3 { margin: 6px 0; font: 500 29px/1.15 Georgia, serif; color: inherit; }
+.sw-fees-heading p { margin: 0; font-size: 12px; line-height: 1.6; color: #d0dddd; }
+.sw-fees-year { padding: 5px 10px; border: 1px solid #47606a; border-radius: 20px; color: #e2c585; font-size: 12px; }
+.sw-fees-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 24px 28px; gap: 20px; }
+.sw-fees-kpis > div { display: grid; gap: 8px; }
+.sw-fees-kpis span { font-size: 11px; color: #5c6c71; }
+.sw-fees-kpis strong { font-size: clamp(20px, 2vw, 30px); letter-spacing: -.04em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sw-fees-kpis small { font-size: 10px; color: #5c6c71; }
+.sw-fees-kpis > div:nth-child(2) strong, .sw-fees-donor { color: #28674f; }
+.sw-fees-coverage { margin: 0 28px 22px; padding: 15px 18px; border-radius: 10px; background: #edf3ed; }
+.sw-fees-coverage > div:first-child { display: flex; align-items: baseline; gap: 10px; color: #28674f; }
+.sw-fees-coverage strong { font-size: 21px; }
+.sw-fees-coverage span { font-size: 11px; }
+.sw-fees-bar { height: 7px; margin-top: 12px; border-radius: 5px; background: #c8aa70; overflow: hidden; }
+.sw-fees-bar i { display: block; height: 100%; background: #39785e; }
+.sw-fees-tabs { display: flex; gap: 5px; margin: 0 28px 14px; }
+.sw-fees-tabs button { border: 1px solid #d8d4c8; background: transparent; border-radius: 7px; padding: 7px 13px; font: 600 11px system-ui, sans-serif; color: #40545b; cursor: pointer; }
+.sw-fees-tabs button[aria-pressed="true"] { background: #0d2933; border-color: #0d2933; color: #fff; }
+.sw-fees-tabs button:focus-visible { outline: 2px solid #967126; outline-offset: 3px; }
+.sw-fees-scroll { overflow-x: auto; margin: 0 28px; }
+.sw-fees-table { border-collapse: collapse; width: 100%; font-size: 11px; font-variant-numeric: tabular-nums; }
+.sw-fees-table th, .sw-fees-table td { text-align: right; padding: 11px 10px; border-bottom: 1px solid #e7e2d8; white-space: nowrap; }
+.sw-fees-table th:first-child { text-align: left; padding-left: 0; }
+.sw-fees-table thead th { color: #5c6c71; font-size: 10px; font-weight: 500; }
+.sw-fees-note { margin: 18px 28px 22px; color: #5c6c71; font-size: 11px; line-height: 1.75; }
+.sw-fees [hidden] { display: none !important; }
+@media (max-width: 600px) { .sw-fees-heading, .sw-fees-kpis { padding: 20px 16px; } .sw-fees-kpis { grid-template-columns: 1fr; gap: 18px; } .sw-fees-kpis > div { gap: 4px; } .sw-fees-kpis strong { font-size: 28px; } .sw-fees-scroll, .sw-fees-coverage, .sw-fees-tabs, .sw-fees-note { margin-left: 16px; margin-right: 16px; } }
+@media print { .sw-fees { break-inside: avoid; box-shadow: none; } .sw-fees-heading { background: #fff; color: #172c36; border-bottom: 2px solid #c8aa70; } .sw-fees-heading p { color: #5c6c71; } .sw-fees-scroll { overflow: visible; } }

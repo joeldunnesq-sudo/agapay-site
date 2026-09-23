@@ -41,22 +41,32 @@ try {
   const defaults = page.frameLocator('iframe').nth(1);
   await custom.locator('#continueButton').waitFor();
   await defaults.locator('#continueButton').waitFor();
-  const css = (locator, property) => locator.evaluate((node, prop) => getComputedStyle(node)[prop], property);
-  assert.equal(await css(custom.locator('.giving-box'), 'backgroundColor'), 'rgb(24, 32, 40)');
-  assert.equal(await css(custom.locator('[data-amount="50"]'), 'backgroundColor'), 'rgb(52, 86, 120)');
-  assert.equal(await css(custom.locator('#continueButton'), 'backgroundColor'), 'rgb(170, 187, 204)');
-  assert.equal(await css(custom.locator('#customAmount'), 'fontFamily'), 'Arial, sans-serif');
-  assert.equal(await css(defaults.locator('[data-amount="50"]'), 'backgroundColor'), 'rgb(7, 26, 42)');
+  // Theme messages and CSS transitions complete asynchronously, especially in CI.
+  const assertCss = async (locator, property, expected) => {
+    const deadline = Date.now() + 5000;
+    let actual;
+    do {
+      actual = await locator.evaluate((node, prop) => getComputedStyle(node)[prop], property);
+      if (actual === expected) return;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } while (Date.now() < deadline);
+    assert.equal(actual, expected, `Expected final ${property}`);
+  };
+  await assertCss(custom.locator('.giving-box'), 'backgroundColor', 'rgb(24, 32, 40)');
+  await assertCss(custom.locator('[data-amount="50"]'), 'backgroundColor', 'rgb(52, 86, 120)');
+  await assertCss(custom.locator('#continueButton'), 'backgroundColor', 'rgb(170, 187, 204)');
+  await assertCss(custom.locator('#customAmount'), 'fontFamily', 'Arial, sans-serif');
+  await assertCss(defaults.locator('[data-amount="50"]'), 'backgroundColor', 'rgb(7, 26, 42)');
   await custom.locator('#continueButton').click();
   await custom.locator('#firstName').waitFor();
-  assert.equal(await css(custom.locator('#firstName'), 'backgroundColor'), 'rgb(40, 48, 56)');
-  assert.equal(await css(custom.locator('#detailsStepTitle'), 'fontFamily'), 'Georgia, serif');
+  await assertCss(custom.locator('#firstName'), 'backgroundColor', 'rgb(40, 48, 56)');
+  await assertCss(custom.locator('#detailsStepTitle'), 'fontFamily', 'Georgia, serif');
   await page.evaluate(() => {
     document.querySelector('.custom').style.setProperty('--agapay-giving-primary', '#123456');
     window.AGAPAYGivingBox.refreshTheme();
   });
   await custom.locator('#backButton').click();
-  assert.equal(await css(custom.locator('[data-amount="50"]'), 'backgroundColor'), 'rgb(18, 52, 86)');
+  await assertCss(custom.locator('[data-amount="50"]'), 'backgroundColor', 'rgb(18, 52, 86)');
   // Invalid color values cannot introduce arbitrary CSS; unlisted properties are ignored.
   await page.evaluate(() =>
     document.querySelector('iframe').contentWindow.postMessage(
@@ -68,7 +78,7 @@ try {
     )
   );
   await custom.locator('#continueButton').click();
-  assert.equal(await css(custom.locator('#detailsStepTitle'), 'color'), 'rgb(7, 26, 42)');
+  await assertCss(custom.locator('#detailsStepTitle'), 'color', 'rgb(7, 26, 42)');
   assert.equal(await custom.locator('#donorForm').isVisible(), true);
 
   // Exercise the actual dashboard dialog and copied snippet without backend fixtures.
