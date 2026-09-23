@@ -1,4 +1,5 @@
 import { stewardshipToolAccess } from '../lib/entitlements.js';
+import { saveStatisticalTotals, validateStatisticalTotals } from '../reports/diocesan-statistical-totals.js';
 import {
   aggregateDiocesanStatistics,
   buildDiocesanStatisticsPdf,
@@ -38,7 +39,7 @@ async function requireReportContext(request, env, parishId) {
 }
 
 export async function handleDiocesanStatisticsReport(request, env, parishId) {
-  if (request.method !== 'GET' && request.method !== 'POST') {
+  if (!['GET', 'POST', 'PUT'].includes(request.method)) {
     return json({ error: 'Method not allowed' }, { status: 405 });
   }
 
@@ -47,14 +48,27 @@ export async function handleDiocesanStatisticsReport(request, env, parishId) {
 
   const url = new URL(request.url);
   const requestedYear = url.searchParams.get('year');
-  const parsedYear = Number.parseInt(requestedYear, 10);
-  if (requestedYear && (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100)) {
+  const parsedYear = Number(requestedYear);
+  if (
+    (requestedYear !== null || request.method === 'PUT') &&
+    (!requestedYear || !Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100)
+  ) {
     return json({ error: 'Choose a reporting year between 2000 and 2100.' }, { status: 400 });
   }
   const year = normalizeDiocesanStatisticsYear(requestedYear);
+  if (request.method === 'PUT') {
+    let totals;
+    try {
+      const body = await request.json();
+      totals = validateStatisticalTotals(body?.totals);
+    } catch (error) {
+      return json({ error: error.message || 'Provide valid annual totals.' }, { status: 400 });
+    }
+    await saveStatisticalTotals(env, parishId, year, totals);
+  }
   const report = await aggregateDiocesanStatistics(env, { parishId, year });
 
-  if (request.method === 'GET') return json({ report });
+  if (request.method !== 'POST') return json({ report });
 
   const pdfBytes = await buildDiocesanStatisticsPdf({
     parish: parishReportProfile(context.registration),

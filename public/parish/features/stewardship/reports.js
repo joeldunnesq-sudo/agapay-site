@@ -1,8 +1,8 @@
 'use strict';
 
-/* global currentParish, authHeaders, escapeHtml, fmtDollars, swNumber, gmKpi */
+/* global currentParish, authHeaders, escapeHtml, escapeAttr, fmtDollars, swNumber, gmKpi */
 /* exported renderGivingMetrics, ensureDiocesanStatisticsCard, loadDiocesanStatisticsPreview,
-  downloadDiocesanStatisticsReport */
+  downloadDiocesanStatisticsReport, saveDiocesanStatisticsTotals */
 
 // Visual report summary. All amounts come from the existing giving APIs.
 function swReportAmount(value) {
@@ -124,7 +124,58 @@ function renderDiocesanStatisticsPreview(report) {
       : 'No attendance reported';
   return `<div class="sw-report-overview"><div class="sw-report-collected"><span class="sw-report-eyebrow">${escapeHtml(String(report.year))} diocesan snapshot</span><strong>${escapeHtml(attendanceValue)}</strong><span>average weekly attendance · ${escapeHtml(attendanceDetail)}</span></div>
     <div class="sw-kpi-grid sw-report-kpis">${gmKpi('Directory membership', swNumber(report.membership?.people), swNumber(report.membership?.households) + ' active households · ' + swNumber(report.membership?.catechumensMade) + ' catechumens made')}${gmKpi('Completed sacraments', swNumber(report.sacraments?.total), 'baptisms, chrismations, weddings, funerals')}${gmKpi('Recorded giving', fmtDollars(report.giving?.totalActualCents || 0), swNumber(report.giving?.activeDonors) + ' active donors')}</div></div>
-    <p class="sw-chart-note">Membership is the current active Directory snapshot. Sacraments, attendance, and giving use the selected calendar year.</p>`;
+    <p class="sw-chart-note">Membership uses the current active Directory snapshot. Sacraments, attendance, and giving use the selected calendar year. Report totals combine AGAPAY records with your additional manual counts.</p>
+    <form onsubmit="saveDiocesanStatisticsTotals(event, ${Number(report.year)})" oninput="this.dataset.dirty = 'true'; this.querySelector('[data-statistics-save-status]').textContent = 'Unsaved changes. Save additional counts before downloading the PDF.';">
+      <h4>Additional counts for ${escapeHtml(String(report.year))}</h4>
+      <p class="sw-chart-note">Enter only events and people not already recorded in AGAPAY. These counts are added to the records from Sacraments &amp; Services and the Directory. Leave blank or enter 0 when there is nothing to add. If you later record an event in AGAPAY, reduce its manual count here to avoid counting it twice.</p>
+      <div class="acct-form-grid">${[
+        ['baptism', 'Baptisms'],
+        ['chrismation', 'Chrismations'],
+        ['wedding', 'Weddings'],
+        ['funeral', 'Funerals'],
+        ['catechumensMade', 'Catechumens made'],
+        ['people', 'Active people'],
+        ['households', 'Active households'],
+      ]
+        .map(
+          ([field, label]) =>
+            `<div><label>${label}<input type="number" name="${field}" min="0" max="1000000" step="1" value="${escapeAttr(String(report.manualAdditions?.[field] ?? ''))}" placeholder="Additional count"></label><small>AGAPAY: ${swNumber(report.automaticTotals?.[field] ?? report.sacraments?.[field] ?? report.membership?.[field] ?? 0)} · Report total: ${swNumber(report.sacraments?.[field] ?? report.membership?.[field] ?? 0)}</small></div>`
+        )
+        .join('')}</div>
+      <button class="sw-action-btn" type="submit">Save additional counts</button>
+      <span data-statistics-save-status role="status"></span>
+    </form>`;
+}
+
+async function saveDiocesanStatisticsTotals(event, year) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  const status = form.querySelector('[data-statistics-save-status]');
+  const totals = Object.fromEntries(
+    Array.from(new FormData(form), ([key, value]) => [key, value === '' ? null : Number(value)])
+  );
+  button.disabled = true;
+  status.textContent = 'Saving…';
+  try {
+    const response = await fetch(diocesanStatisticsApi(year), {
+      method: 'PUT',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ totals }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Unable to save additional counts.');
+    if (diocesanStatisticsSelectedYear() === year && form.isConnected) {
+      const pane = document.getElementById('diocesanStatisticsPane');
+      pane.innerHTML = renderDiocesanStatisticsPreview(data.report);
+      pane.querySelector('[data-statistics-save-status]').textContent =
+        'Additional counts saved. The PDF will include the combined totals.';
+    }
+  } catch (error) {
+    status.textContent = error.message || 'Unable to save additional counts.';
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function loadDiocesanStatisticsPreview(year) {
@@ -138,6 +189,7 @@ async function loadDiocesanStatisticsPreview(year) {
     const response = await fetch(diocesanStatisticsApi(selectedYear), { headers: authHeaders() });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Unable to load the annual statistical summary.');
+    if (diocesanStatisticsSelectedYear() !== selectedYear) return;
     pane.innerHTML = renderDiocesanStatisticsPreview(data.report || {});
   } catch (error) {
     pane.innerHTML = `<p class="sw-chart-empty">${escapeHtml(error.message || 'Unable to load the annual statistical summary.')}</p><button type="button" class="sw-action-btn" onclick="loadDiocesanStatisticsPreview(${selectedYear})">Try again</button>`;
@@ -146,6 +198,13 @@ async function loadDiocesanStatisticsPreview(year) {
 
 async function downloadDiocesanStatisticsReport(button) {
   if (!currentParish) return;
+  const unsaved = document.querySelector('#diocesanStatisticsPane form[data-dirty="true"]');
+  if (unsaved) {
+    unsaved.querySelector('[data-statistics-save-status]').textContent =
+      'Save additional counts before downloading the PDF.';
+    unsaved.querySelector('button[type="submit"]').focus();
+    return;
+  }
   const year = diocesanStatisticsSelectedYear();
   const original = button?.innerHTML;
   if (button) {

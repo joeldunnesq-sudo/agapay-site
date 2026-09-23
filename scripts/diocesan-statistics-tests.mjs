@@ -3,6 +3,9 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { aggregateDiocesanStatistics, buildDiocesanStatisticsPdf } from '../src/reports/diocesan-statistics.js';
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
+import { saveStatisticalTotals, validateStatisticalTotals } from '../src/reports/diocesan-statistical-totals.js';
+import { handleDiocesanStatisticsReport } from '../src/handlers/diocesan-statistics.js';
+import { hashSessionToken } from '../src/lib/core.js';
 
 function d1Binding(db) {
   return {
@@ -34,6 +37,7 @@ const giving = async (_env, _parishId, year) => ({
 
 const db = new DatabaseSync(':memory:');
 try {
+  db.exec(readFileSync(new URL('../migrations/0126_diocesan_statistical_totals.sql', import.meta.url), 'utf8'));
   db.exec(`
     CREATE TABLE parish_weekly_headcounts (
       id TEXT PRIMARY KEY, parish_id TEXT NOT NULL, week_of TEXT NOT NULL, headcount INTEGER NOT NULL
@@ -84,6 +88,49 @@ try {
   `);
 
   const env = { AGAPAY_DB: d1Binding(db) };
+  const registration = {
+    parishId: 'full',
+    communityType: 'Parish',
+    subscriptionTier: 'giving',
+    subscriptionStatus: 'active',
+    parishDashboardSessions: [
+      {
+        id: 'test',
+        tokenHash: await hashSessionToken('test-token', 'test-salt'),
+        sessionSalt: 'test-salt',
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      },
+    ],
+  };
+  const handlerEnv = {
+    AGAPAY_DB: {
+      prepare(sql) {
+        if (sql.includes('FROM registrations'))
+          return { bind: () => ({ first: async () => ({ reference: 'test', data: JSON.stringify(registration) }) }) };
+        throw new Error('Invalid or unauthorized requests must not reach report storage');
+      },
+    },
+  };
+  const request = (yearValue, totals, token = 'test-token') =>
+    new Request(`https://parish.test/api/parish/dashboard/full/reports/diocesan-statistics?year=${yearValue}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ totals }),
+    });
+  assert.equal(
+    (await handleDiocesanStatisticsReport(request('2025', { baptism: 1 }, 'wrong'), handlerEnv, 'full')).status,
+    401
+  );
+  assert.equal(
+    (await handleDiocesanStatisticsReport(request('2025x', { baptism: 1 }), handlerEnv, 'full')).status,
+    400
+  );
+  assert.equal(
+    (await handleDiocesanStatisticsReport(request('2025', { baptism: -1 }), handlerEnv, 'full')).status,
+    400
+  );
+  registration.subscriptionTier = 'starter';
+  assert.equal((await handleDiocesanStatisticsReport(request('2025', { baptism: 1 }), handlerEnv, 'full')).status, 403);
   const full = await aggregateDiocesanStatistics(env, {
     parishId: 'full',
     year: 2025,
@@ -99,6 +146,43 @@ try {
   assert.deepEqual(full.sacraments, { baptism: 1, chrismation: 1, wedding: 1, funeral: 1, total: 4 });
   assert.equal(full.giving.totalActualCents, 2500000);
 
+  await saveStatisticalTotals(env, 'full', 2025, { baptism: 12, funeral: 0, catechumensMade: 8, households: 20 });
+  const manual = await aggregateDiocesanStatistics(env, { parishId: 'full', year: 2025, givingSummaryLoader: giving });
+  assert.equal(manual.sacraments.baptism, 13);
+  assert.equal(manual.sacraments.funeral, 1, 'manual zero must preserve automatic counts');
+  assert.equal(manual.sacraments.total, 16, 'manual counts supplement recorded events');
+  assert.equal(manual.membership.catechumensMade, 10);
+  assert.equal(manual.membership.households, 22);
+  assert.equal(manual.automaticTotals.baptism, 1);
+  const otherYear = await aggregateDiocesanStatistics(env, {
+    parishId: 'full',
+    year: 2024,
+    givingSummaryLoader: giving,
+  });
+  assert.equal(otherYear.sacraments.baptism, 1);
+  assert.deepEqual(otherYear.manualAdditions, {});
+  const manualPdf = await buildDiocesanStatisticsPdf({ report: manual });
+  assert.equal(Buffer.from(manualPdf).subarray(0, 5).toString(), '%PDF-');
+  await saveStatisticalTotals(env, 'full', 2025, { baptism: null });
+  const restored = await aggregateDiocesanStatistics(env, {
+    parishId: 'full',
+    year: 2025,
+    givingSummaryLoader: giving,
+  });
+  assert.equal(restored.sacraments.baptism, 1);
+  assert.deepEqual(restored.manualAdditions, {});
+  for (const input of [
+    null,
+    [],
+    { baptism: -1 },
+    { wedding: 1.5 },
+    { funeral: '3' },
+    { people: 1000001 },
+    { unknown: 1 },
+  ]) {
+    assert.throws(() => validateStatisticalTotals(input));
+  }
+
   const empty = await aggregateDiocesanStatistics(env, {
     parishId: 'empty',
     year: 2025,
@@ -108,6 +192,7 @@ try {
   assert.equal(empty.attendance.message, 'No attendance reported');
   assert.equal(empty.attendance.averageWeeklyAttendance, null);
   assert.equal(empty.attendance.weeksReported, 0);
+  assert.deepEqual(empty.manualAdditions, {}, 'manual totals must stay within their parish');
 
   const fullPdf = await buildDiocesanStatisticsPdf({ parish: { parishName: 'St. Fiacre' }, report: full });
   const emptyPdf = await buildDiocesanStatisticsPdf({ parish: { parishName: 'Empty Parish' }, report: empty });

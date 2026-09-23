@@ -166,6 +166,59 @@ function body(request, method = 'POST') {
 }
 
 try {
+  const savedAnnualTotals = new Map();
+  await scenario(
+    'annual statistical totals save, reload, clear, and stay scoped to the year',
+    async (page) => {
+      await settled(page);
+      const card = page.locator('#diocesanStatisticsCard');
+      await card.getByLabel('Baptisms', { exact: true }).fill('12');
+      await card.getByLabel('Funerals', { exact: true }).fill('0');
+      await card.getByLabel('Catechumens made', { exact: true }).fill('8');
+      await card.getByRole('button', { name: 'Save additional counts', exact: true }).click();
+      await card
+        .getByText('Additional counts saved. The PDF will include the combined totals.', { exact: true })
+        .waitFor();
+      assert.equal(savedAnnualTotals.get(String(year)).baptism, 12);
+      assert.equal(savedAnnualTotals.get(String(year)).funeral, 0);
+      assert.ok((await card.textContent()).includes('14 catechumens made'));
+      await card.locator('#diocesanStatisticsYear').selectOption(String(year - 1));
+      await card.getByRole('heading', { name: `Additional counts for ${year - 1}`, exact: true }).waitFor();
+      assert.equal(await card.getByLabel('Baptisms', { exact: true }).inputValue(), '');
+      await card.locator('#diocesanStatisticsYear').selectOption(String(year));
+      await card.getByRole('heading', { name: `Additional counts for ${year}`, exact: true }).waitFor();
+      assert.equal(await card.getByLabel('Baptisms', { exact: true }).inputValue(), '12');
+      await card.getByLabel('Baptisms', { exact: true }).fill('');
+      await card.getByRole('button', { name: 'Save additional counts', exact: true }).click();
+      await card
+        .getByText('Additional counts saved. The PDF will include the combined totals.', { exact: true })
+        .waitFor();
+      assert.equal(savedAnnualTotals.get(String(year)).baptism, undefined);
+      await page.setViewportSize({ width: 390, height: 844 });
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    },
+    {
+      '/reports/diocesan-statistics': (request) => {
+        const selectedYear = new URL(request.url()).searchParams.get('year');
+        if (request.method() === 'PUT') {
+          const { totals } = body(request, 'PUT');
+          savedAnnualTotals.set(
+            selectedYear,
+            Object.fromEntries(Object.entries(totals).filter(([, value]) => value !== null))
+          );
+        }
+        const manualAdditions = savedAnnualTotals.get(selectedYear) || {};
+        const report = structuredClone(defaults['/reports/diocesan-statistics'].body.report);
+        report.year = Number(selectedYear);
+        report.manualAdditions = manualAdditions;
+        for (const [field, value] of Object.entries(manualAdditions)) {
+          (Object.hasOwn(report.sacraments, field) ? report.sacraments : report.membership)[field] += value;
+        }
+        return { body: { report } };
+      },
+    }
+  );
+
   await scenario('financial report Back preserves the open Stewardship Health dashboard', async (page) => {
     await settled(page);
     const month = `${year - 1}-07`;
