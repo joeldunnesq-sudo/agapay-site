@@ -69,7 +69,10 @@ function renderCampaignList(parish) {
         ((c.giftCount || 0) !== 1 ? 's' : '') +
         '</span></div>' +
         '</div>' +
-        '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:12px;">' +
+        '<button type="button" class="btn btn-ghost btn-sm" data-campaign-embed="' +
+        escCamp(c.id) +
+        '">Website embed</button>' +
         '<a href="' +
         pageUrl +
         '" target="_blank" class="btn btn-ghost btn-sm" title="View public page">&#8599; View</a>' +

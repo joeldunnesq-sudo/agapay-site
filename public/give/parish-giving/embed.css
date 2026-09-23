@@ -1,0 +1,19 @@
+.campaign-embedded { --embed-primary:#0b1f30; --embed-primary-text:#fff; --embed-accent:#b18a3e; --embed-accent-text:#102434; --embed-background:#ece5d8; --embed-background-text:#102434; }
+.campaign-embedded body { background:var(--embed-background); }
+.campaign-embedded .campaign-topbar { display:none; }
+.campaign-embedded .campaign-heading h1, .campaign-embedded .campaign-heading .campaign-eyebrow, .campaign-embedded .campaign-heading .organizer-label, .campaign-embedded #parishLocationLabel, .campaign-embedded .campaign-organizer strong { color:var(--embed-background-text); }
+.campaign-embedded .campaign-submit { background:var(--embed-primary); color:var(--embed-primary-text); }
+.campaign-embedded .quick-amount.active { background:var(--embed-primary); color:var(--embed-primary-text); border-color:var(--embed-primary); }
+.campaign-embedded #thermoFill { background:var(--embed-accent); }
+.campaign-embedded .campaign-donate-card { position:static; }
+.campaign-embedded .campaign-story { background:#fffdf8; padding:24px; border-radius:8px; }
+.campaign-embedded .campaign-footer { background:#fffdf8; }
+/* Branding deliberately uses fixed colors and fonts, outside the theme tokens. */
+.agapay-campaign-brand { position:sticky; top:0; z-index:40; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 20px; background:#071a2a; color:#fffdf8; border-bottom:4px solid #c8a24a; font:700 13px/1.4 system-ui,sans-serif; }
+.agapay-campaign-brand a { display:flex; align-items:center; gap:12px; color:#fffdf8; text-decoration:none; }
+.agapay-campaign-brand img { width:42px; height:42px; object-fit:contain; }
+.agapay-campaign-brand strong { display:block; font:800 23px/1.1 system-ui,sans-serif; letter-spacing:.12em; }
+.agapay-campaign-brand small { display:block; margin-top:4px; color:#e8cf90; font:500 11px/1.4 system-ui,sans-serif; }
+.agapay-campaign-checkout-brand { padding:12px; margin:0 0 16px; border-radius:8px; background:#071a2a; color:#fffdf8; font:600 12px/1.6 system-ui,sans-serif; }
+.campaign-embedded #campaignCheckoutForm { scroll-margin-top:90px; }
+@media(max-width:540px) { .agapay-campaign-brand { padding:12px; } .agapay-campaign-brand > span { display:none; } .campaign-embedded .campaign-hero { height:240px; } }

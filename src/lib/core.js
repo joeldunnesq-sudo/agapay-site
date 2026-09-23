@@ -298,11 +298,12 @@ export const SECURITY_HEADERS = {
 
 export function applyGivingEmbedHeaders(request, response) {
   const pathname = new URL(request.url).pathname;
-  if (!(pathname === "/give/embed" || pathname === "/give/embed.html" || /^\/give\/embed\/[^/]+\/?$/.test(pathname))) return response;
+  const campaignEmbed = /^\/give\/campaign-embed\/[^/]+\/[^/]+\/?$/.test(pathname);
+  if (!(campaignEmbed || pathname === "/give/embed" || pathname === "/give/embed.html" || /^\/give\/embed\/[^/]+\/?$/.test(pathname))) return response;
   const headers = new Headers(response.headers);
   headers.delete("X-Frame-Options");
   headers.set("Content-Security-Policy", "frame-ancestors *");
-  headers.set("X-Robots-Tag", "noindex, nofollow");
+  headers.set("X-Robots-Tag", campaignEmbed ? "noindex, indexifembedded" : "noindex, nofollow");
   headers.set("Cache-Control", "no-store");
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
