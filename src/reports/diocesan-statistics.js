@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { stewardshipGivingSummary } from '../lib/stewardship-summary.js';
+import { applyStatisticalTotals } from './diocesan-statistical-totals.js';
 
 const LETTER = [612, 792];
 const MARGIN = 48;
@@ -144,7 +145,7 @@ export async function aggregateDiocesanStatistics(
     affiliationStatuses[row.status] = number(row.total);
   }
 
-  return {
+  return applyStatisticalTotals(env, parishId, {
     schemaVersion: 1,
     year: reportingYear,
     period: { start: yearStart, end: yearEnd },
@@ -176,7 +177,7 @@ export async function aggregateDiocesanStatistics(
       fulfillmentRatePct: typeof giving?.fulfillment_rate_pct === 'number' ? giving.fulfillment_rate_pct : null,
       manualIncomeCents: number(giving?.manual_income_cents),
     },
-  };
+  });
 }
 
 export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
@@ -270,7 +271,7 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
   );
   y -= 82;
 
-  sectionTitle('Directory Membership', 'Current active Directory affiliations as of report generation');
+  sectionTitle('Parish Membership', 'Directory records plus additional manual counts');
   const leftStart = y;
   row('Active people', report.membership.people, MARGIN, MARGIN + 135);
   row('Active households', report.membership.households, MARGIN, MARGIN + 135);
@@ -286,7 +287,7 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
   );
   y = Math.min(y, leftStart - 54) - 4;
 
-  sectionTitle('Sacramental Life', `Completed in ${report.year}; funeral is reported as a count only`);
+  sectionTitle('Sacramental Life', `${report.year}: AGAPAY records plus additional manual counts`);
   const sacramentY = y;
   row('Baptisms', report.sacraments.baptism, MARGIN, MARGIN + 105);
   row('Chrismations', report.sacraments.chrismation, MARGIN, MARGIN + 105);
@@ -350,13 +351,16 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     thickness: 0.7,
     color: LINE,
   });
-  page.drawText(`Generated ${new Date().toLocaleDateString('en-US')} via AGAPAY`, {
-    x: MARGIN,
-    y: footerY,
-    size: 7.5,
-    font: italic,
-    color: MUTED,
-  });
+  page.drawText(
+    `Generated ${new Date().toLocaleDateString('en-US')} via AGAPAY${Object.keys(report.manualAdditions || {}).length ? ' | Includes additional manual counts' : ''}`,
+    {
+      x: MARGIN,
+      y: footerY,
+      size: 7.5,
+      font: italic,
+      color: MUTED,
+    }
+  );
   page.drawText(`Page 1 of 1`, { x: pageWidth - MARGIN - 45, y: footerY, size: 7.5, font: regular, color: MUTED });
 
   return pdf.save();
