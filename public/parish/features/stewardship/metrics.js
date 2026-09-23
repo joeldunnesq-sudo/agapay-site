@@ -1,7 +1,7 @@
 'use strict';
 
 /* global currentParish, stewardshipApi, authHeaders, checkNudgeEligibility, escapeHtml,
-  parishSessionStorageKey, renderGivingMetrics, renderStewardshipFees */
+  parishSessionStorageKey, renderGivingMetrics, renderStewardshipFees, ensureOutsideGivingCard */
 /* exported loadGivingMetricsPanel, loadStewardshipHealthScorePanel, loadDonorConcentrationPanel,
   loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
   saveStewardshipAttendance, saveAttendanceDelegate, syncAttendanceEntryFromWeek,
@@ -390,6 +390,7 @@ function renderGivingMetricsUpgrade() {
 
 // page of disconnected numbers.
 async function loadStewardshipHealthScorePanel(year) {
+  ensureOutsideGivingCard();
   const pane = document.getElementById('stewardshipHealthScorePane');
   if (!pane || !currentParish) return;
   if (!pane.querySelector('.sw-health-score-row')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';

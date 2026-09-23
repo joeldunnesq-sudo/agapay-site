@@ -8,8 +8,28 @@ const browser = await chromium.launch({ headless: true });
 try {
   for (const width of [1280, 390]) {
     const finance = await createOutsideGiftsFixture();
+    if (width === 1280) finance.registration.subscriptionTier = 'giving';
     const fixture = await openParishFixture(browser, () => ({ parish: finance.dashboard() }), {
       '/settlement-profiles': { body: { profiles: [] } },
+      ...Object.fromEntries(
+        [
+          '/library/settings',
+          '/bookstore/products/low-stock',
+          '/stewardship',
+          '/stewardship/attendance',
+          '/reports/diocesan-statistics',
+          '/stewardship/giving/health-score',
+          '/stewardship/giving/distribution',
+          '/stewardship/giving/retention',
+          '/stewardship/giving/summary',
+          '/stewardship/giving/funds',
+          '/stewardship/financials',
+          '/stewardship/financials/accounting-summary',
+          '/stewardship/income/manual',
+          '/stewardship/giving/concentration',
+          '/stewardship/giving/recurring',
+        ].map((path) => [path, { status: 503, body: { error: 'Report temporarily unavailable in this fixture' } }])
+      ),
     });
     const { page } = fixture;
     await page.setViewportSize({ width, height: 900 });
@@ -35,8 +55,16 @@ try {
     try {
       await fixture.open();
       await page.locator('body.dashboard-ready').waitFor();
-      await page.locator(width < 600 ? '.mobile-tab-link[data-nav-tab="givers"]' : '#nav-givers').click();
-      await page.getByRole('button', { name: '＋ Record outside gift', exact: true }).click();
+      if (width === 1280) {
+        await page.evaluate(() => {
+          switchTab('stewardship');
+          ensureOutsideGivingCard();
+        });
+        await page.getByRole('button', { name: 'Record a donor’s gift', exact: true }).click();
+      } else {
+        await page.locator('.mobile-tab-link[data-nav-tab="givers"]').click();
+        await page.getByRole('button', { name: '＋ Record outside gift', exact: true }).click();
+      }
       await page
         .getByRole('combobox', { name: 'Attach to giver', exact: true })
         .selectOption({ label: 'Anna Martin · giver0@example.test' });
@@ -51,6 +79,7 @@ try {
       await page.locator('[name="confirmedNotDuplicate"]').check();
       await page.getByRole('button', { name: 'Record gift', exact: true }).click();
       await page.locator('#outsideGiftDialog').waitFor({ state: 'hidden' });
+      if (width === 1280) await page.locator('#nav-givers').click();
       await page.getByText('1 contribution recorded for ' + new Date().getFullYear(), { exact: false }).waitFor();
       assert.match(await page.locator('.og-record summary').innerText(), /Anna Martin[\s\S]*Pledge[\s\S]*\$125\.50/);
       assert.match(await page.locator('#giversPane').innerText(), /outside/);

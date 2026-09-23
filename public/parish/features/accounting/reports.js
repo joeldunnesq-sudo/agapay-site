@@ -8,7 +8,7 @@ const ACCOUNTING_REPORT_LIBRARY = [
     id: 'activities',
     title: 'Income Statement',
     group: 'Income statements',
-    copy: 'Revenue, expenses, and change in net assets for the current period.',
+    copy: 'Income Statement: total revenue less expenses, showing the parish’s surplus or deficit.',
   },
   {
     id: 'comparativePeriods',
@@ -275,7 +275,7 @@ function accountingTabularReport(id) {
 
 function renderAccountingReportLibrary(pane) {
   const groups = [...new Set(ACCOUNTING_REPORT_LIBRARY.map((report) => report.group))];
-  pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Financial reporting</span><h2>Reports</h2><p>Create clear parish financial statements, fund views, comparisons, and budget reports.</p></div><label>Search reports<input type="search" placeholder="Search by report name" oninput="filterAccountingReportLibrary(this.value)"></label></section><div class="acct-report-quick"><span>Quick access</span><button onclick="openAccountingReport('position')">Balance Sheet</button><button onclick="openAccountingReport('activities')">Income Statement</button><button onclick="openAccountingReport('expenses')">Expense Report</button><button onclick="openAccountingReport('budgetActual')">Budget to Actual</button></div><div class="acct-report-library">${groups
+  pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Financial reporting</span><h2>Reports</h2><p>Create clear parish financial statements, fund views, comparisons, and budget reports.</p></div><label>Search reports<input type="search" placeholder="Search by report name" oninput="filterAccountingReportLibrary(this.value)"></label></section><div class="acct-report-quick"><span>Quick access</span><button onclick="openAccountingReport('position')">Balance Sheet</button><button onclick="openAccountingReport('activities')">Revenue minus expenses</button><button onclick="openAccountingReport('expenses')">Expense Report</button><button onclick="openAccountingReport('budgetActual')">Budget to Actual</button></div><div class="acct-report-library">${groups
     .map(
       (group) =>
         `<section><div class="acct-report-library-section"><div><strong>${escapeHtml(group)}</strong><small>${ACCOUNTING_REPORT_LIBRARY.filter((report) => report.group === group).length} reports</small></div><span>⌄</span></div><div class="acct-report-library-grid">${ACCOUNTING_REPORT_LIBRARY.filter(
@@ -542,7 +542,29 @@ function renderAccountingReports(pane) {
   }
   const rows = report.rows || [],
     amount = (row) => row.amount ?? Number(row.endingDebit || 0) - Number(row.endingCredit || 0);
-  pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id, label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
+  pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id, label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>${accountingReportView === 'activities' ? accountingIncomeSummary(report) : ''}<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
+}
+
+function openAccountingIncomeReport() {
+  accountingReportView = 'activities';
+  accountingCustomReport = null;
+  setAccountingView('reports');
+}
+
+function accountingIncomeSummary(report, printable = false) {
+  const totals = report.totals;
+  if (!totals || !Number.isFinite(totals.revenue) || !Number.isFinite(totals.expenses))
+    return '<p>Revenue and expense totals are unavailable. Refresh Accounting to try again.</p>';
+  const net = totals.revenue - totals.expenses;
+  const label = net > 0 ? 'Net surplus' : net < 0 ? 'Net deficit' : 'Break-even';
+  const heading = `<h2>Revenue minus expenses</h2><p>Income Statement · ${escapeHtml(report.startDate || '')} through ${escapeHtml(report.endDate || '')}. Posted ledger activity.</p>`;
+  const cells = `<div><span>Total revenue</span><strong>${accountingMoney(totals.revenue)}</strong></div><div><span>Total expenses</span><strong>${accountingMoney(totals.expenses)}</strong></div><div><span>${label}</span><strong>${accountingMoney(net)}</strong></div>`;
+  if (printable)
+    return (
+      heading +
+      `<p><strong>Total revenue:</strong> ${accountingMoney(totals.revenue)} &nbsp; − &nbsp; <strong>Total expenses:</strong> ${accountingMoney(totals.expenses)} &nbsp; = &nbsp; <strong>${label}:</strong> ${accountingMoney(net)}</p>`
+    );
+  return `<section class="acct-income-summary">${heading}<div class="acct-income-equation">${cells}</div></section>`;
 }
 
 function setAccountingReportView(view) {
@@ -673,7 +695,7 @@ function printAccountingReport() {
     )
     .join('');
   win.document.write(
-    `<!doctype html><html><head><meta charset="utf-8"><title>${titles[accountingReportView]}</title><style>body{margin:40px;color:#061522;font:13px Arial,sans-serif}h1{font:32px Georgia,serif}p{color:#68716d}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d9d5ca;text-align:left}th{font-size:10px;text-transform:uppercase}@media print{button{display:none}}</style></head><body><h1>${titles[accountingReportView]}</h1><p>${escapeHtml(report.startDate || '')}${report.endDate ? ` through ${escapeHtml(report.endDate)}` : report.asOfDate ? `As of ${escapeHtml(report.asOfDate)}` : ''}</p><button onclick="print()">Print</button><table><thead><tr><th>Number</th><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No posted activity.</td></tr>'}</tbody></table></body></html>`
+    `<!doctype html><html><head><meta charset="utf-8"><title>${titles[accountingReportView]}</title><style>body{margin:40px;color:#061522;font:13px Arial,sans-serif}h1{font:32px Georgia,serif}p{color:#68716d}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d9d5ca;text-align:left}th{font-size:10px;text-transform:uppercase}@media print{button{display:none}}</style></head><body><h1>${titles[accountingReportView]}</h1><p>${escapeHtml(report.startDate || '')}${report.endDate ? ` through ${escapeHtml(report.endDate)}` : report.asOfDate ? `As of ${escapeHtml(report.asOfDate)}` : ''}</p><button onclick="print()">Print</button>${accountingReportView === 'activities' ? accountingIncomeSummary(report, true) : ''}<table><thead><tr><th>Number</th><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No posted activity.</td></tr>'}</tbody></table></body></html>`
   );
   win.document.close();
   win.focus();
