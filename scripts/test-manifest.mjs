@@ -155,6 +155,7 @@ const productUi = [
   'scripts/parish-campaign-browser-tests.mjs',
   'scripts/parish-stewardship-browser-tests.mjs',
   'scripts/parish-giving-browser-tests.mjs',
+  'scripts/giving-embed-theme-browser-tests.mjs',
   'scripts/fund-reconciliation-browser-tests.mjs',
   'scripts/outside-gifts-browser-tests.mjs',
   'scripts/parish-dashboard-modules-tests.mjs',

@@ -1,6 +1,29 @@
 (function () {
   'use strict';
 
+  // Only presentation tokens cross the iframe boundary; never inject a stylesheet.
+  const themeKeys = ['primary', 'primary-text', 'accent', 'accent-text', 'background', 'surface', 'text', 'muted', 'border', 'success', 'danger', 'font', 'heading-font'];
+  function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    for (const key of themeKeys) {
+      const value = typeof theme[key] === 'string' ? theme[key].trim() : '';
+      const property = `--agapay-giving-${key}`;
+      const type = key.includes('font') ? 'font-family' : 'color';
+      if (value.length <= 200 && !/[;{}<>\\]/.test(value) && !/url\s*\(|var\s*\(|env\s*\(|inherit|initial|unset|revert/i.test(value) && CSS.supports(type, value)) {
+        document.documentElement.style.setProperty(property, value);
+      } else {
+        document.documentElement.style.removeProperty(property);
+      }
+    }
+  }
+  const themeParams = new URLSearchParams(window.location.search);
+  applyTheme(Object.fromEntries(themeKeys.map((key) => [key, themeParams.get(`theme.${key}`)])));
+  window.addEventListener('message', (event) => {
+    if (window.parent !== window && event.source === window.parent && event.data?.type === 'agapay:giving-box-theme') {
+      applyTheme(event.data.theme);
+    }
+  });
+
   const state = {
     organization: null,
     organizationId: '',

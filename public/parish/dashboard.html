@@ -204,6 +204,7 @@
                 <span class="pdx-hero-qr-hint pdx-hero-qr-actions"><a href="#" onclick="copyGivingLink(); return false;">Copy link</a> · <a href="#" onclick="downloadQrPng(); return false;">QR PNG</a> · <a href="#" onclick="downloadQrSvg(); return false;">QR SVG</a></span>
                 <span class="pdx-hero-qr-hint pdx-hero-bulletin-actions"><a href="#" onclick="downloadBulletinPng(); return false;">Download bulletin PNG</a> · <a href="#" onclick="downloadBulletinSvg(); return false;">Download bulletin SVG</a></span>
                 <span class="pdx-hero-qr-hint pdx-hero-embed-actions"><a href="#" title="Copy two lines of website code" onclick="copyGivingEmbedCode(); return false;">Copy embed code</a> · <a id="givingEmbedPreviewLink" href="/give/embed" target="_blank" rel="noopener">Preview box</a></span>
+                <span class="pdx-hero-qr-hint"><a href="#" onclick="openGivingEmbedTheme(); return false;">Customize CSS</a></span>
               </div>
             </div>
           </div>
@@ -1932,6 +1933,15 @@
 </nav>
 
 <div class="toast-container" id="toastContainer"></div>
+<dialog id="givingThemeDialog" aria-labelledby="givingThemeHeading" style="width:min(1000px,calc(100% - 24px));max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:24px">
+  <form method="dialog" style="display:flex;justify-content:space-between;align-items:center;gap:16px"><h2 id="givingThemeHeading">Customize your giving card</h2><button class="btn btn-ghost" aria-label="Close giving card customizer">Close</button></form>
+  <p>Match your parish website with CSS colors and fonts. Edit the declarations, preview, then copy the styled embed code to your website. Changes are saved in the copied code.</p>
+  <p>Primary colors style selected amounts; accent colors style the main button and labels. Use font stacks available on visitors’ devices, or the included DM Sans and Cormorant Garamond. Fonts loaded only by your website are not available inside the card.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+    <div style="flex:1 1 320px;min-width:0"><label for="givingThemeCss">Card CSS declarations</label><textarea id="givingThemeCss" spellcheck="false" rows="16" style="display:block;width:100%;font:13px/1.6 monospace" aria-describedby="givingThemeStatus"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn btn-ghost" onclick="previewGivingEmbedTheme()">Update preview</button><button type="button" class="btn btn-gold" onclick="copyStyledGivingEmbed()">Copy styled embed code</button></div><p id="givingThemeStatus" role="status" aria-live="polite"></p></div>
+    <iframe id="givingThemePreview" title="Customized giving card preview" style="flex:1 1 320px;width:100%;min-width:0;height:720px;border:0"></iframe>
+  </div>
+</dialog>
 <dialog id="parishSupportDialog" style="width:min(560px,calc(100% - 32px));border:0;border-radius:16px;padding:0;box-shadow:0 24px 70px rgba(6,21,34,.3)">
   <form method="dialog" style="padding:22px;display:grid;gap:14px">
     <div style="display:flex;justify-content:space-between;gap:16px;align-items:start"><div><div style="color:#a97c25;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">AGAPAY Support</div><h2 style="margin:4px 0 0;font-family:Georgia,serif;font-size:25px;color:#061522">How can we help?</h2><p style="margin:6px 0 0;color:#62717c;font-size:13px;line-height:1.45">Your message becomes a support ticket and is emailed to the AGAPAY team.</p></div><button type="button" class="btn btn-ghost btn-sm" onclick="closeParishSupportTicket()">Close</button></div>
@@ -2023,6 +2033,7 @@
   <script src="/parish/features/giving/reconciliation.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/recurring.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/sharing.js?v=20260902embed2"></script>
+  <script src="/parish/features/giving/embed-theme.js?v=20260923theme1"></script>
   <script src="/parish/features/giving/statements.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/transfers.js?v=20260831outside1"></script>
   <script src="/parish/features/giving.js?v=20260902access1"></script>
