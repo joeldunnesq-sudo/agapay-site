@@ -36,6 +36,7 @@ const background = {
   '/giving-statements/jobs': { jobs: [] },
   '/stewardship/nudge': {},
   '/memberships': { memberships: [], invitations: [] },
+  '/portability/backup-status': { enabled: true, cloud: { status: 'unavailable', backedUpAt: null } },
 };
 
 // Fulfill every request locally, including real checked-in HTML, JS, and CSS.
