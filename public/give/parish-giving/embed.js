@@ -28,10 +28,6 @@
   if (params.get('font') === 'sans') root.setProperty('--campaign-serif', '"Mulish", system-ui, sans-serif');
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('campaignCanonicalUrl')?.remove();
-    const banner = document.createElement('div');
-    banner.className = 'agapay-campaign-brand';
-    banner.innerHTML = '<a href="https://agapay.app/give" target="_blank" rel="noopener"><img src="/mark.png" alt=""><span><strong>AGAPAY</strong><small>Parish campaigns &amp; secure giving</small></span></a><span>Powered by AGAPAY</span>';
-    document.body.prepend(banner);
     const note = document.createElement('p'); note.className = 'agapay-campaign-checkout-brand';
     note.textContent = 'Powered by AGAPAY · Secure Stripe checkout opens in a new tab. Your parish page stays open.';
     document.getElementById('campaignCheckoutForm')?.prepend(note);
