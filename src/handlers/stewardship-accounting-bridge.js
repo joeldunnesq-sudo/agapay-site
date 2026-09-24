@@ -1,3 +1,4 @@
+import { postServiceInvoices } from '../accounting/service-costs.js';
 import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, unauthorized } from '../lib/core.js';
 import { accountingEnabledFor, stewardshipToolAccess } from '../lib/entitlements.js';
 import { fundActivity, statementOfActivities } from '../accounting/index.js';
@@ -12,6 +13,7 @@ export const STEWARDSHIP_ACCOUNTING_READER = Object.freeze({
 });
 
 const defaultDependencies = Object.freeze({
+  postServiceInvoices,
   accountingEnabledFor,
   findRegistrationByParishId,
   fundActivity,
@@ -45,6 +47,7 @@ export function accountingFinancialSnapshot(statement, funds, { startDate, endDa
     totalIncomeCents: Number(statement.totals.revenue || 0),
     totalExpenseCents: Number(statement.totals.expenses || 0),
     netCents: Number(statement.totals.changeInNetAssets || 0),
+    expenseLines: (statement.rows || []).filter(row => row.category === 'expense'),
     restrictedFunds: Object.freeze(
       (funds.rows || [])
         .filter((row) => row.restrictionType !== 'unrestricted')
@@ -89,6 +92,7 @@ async function accountingAvailability(env, parishId, registration, dependencies)
 async function readAccountingSnapshot(env, parishId, registration, period, dependencies) {
   const availability = await accountingAvailability(env, parishId, registration, dependencies);
   if (!availability.available) return availability;
+  await dependencies.postServiceInvoices(env, availability.db, parishId);
   const [statement, funds] = await Promise.all([
     dependencies.statementOfActivities(availability.db, {
       actor: STEWARDSHIP_ACCOUNTING_READER,

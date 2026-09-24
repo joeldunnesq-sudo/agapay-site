@@ -2,7 +2,7 @@ import { AccountingDatabaseError, ValidationError } from "../errors.js";
 import { createJournalDraft, postJournalEntry } from "../ledger/service.js";
 import { DONATION_ACCOUNTING_SOURCE_TYPES } from "../../payments/classification.js";
 
-export const GIVE_STRIPE_SOURCE_TYPES = DONATION_ACCOUNTING_SOURCE_TYPES;
+export const GIVE_STRIPE_SOURCE_TYPES = Object.freeze([...DONATION_ACCOUNTING_SOURCE_TYPES, 'agapay_subscription_paid']);
 
 const POSTABLE = new Set(GIVE_STRIPE_SOURCE_TYPES.filter((type) => !["stripe_payout_failed", "stripe_payout_canceled"].includes(type)));
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -123,6 +123,7 @@ async function resolveMapping(db, event, settings) {
 function proposalFor(event,mapping) {
   const fundId=mapping.fundId, description=`${event.source_type.replaceAll("_"," ")} · ${event.source_object_id}`;
   let lines=[];
+  if(event.source_type==='agapay_subscription_paid') return {sourceEventId:event.id,postingDate:event.occurred_at.slice(0,10),description:`AGAPAY service subscription · ${event.donation_type || 'As invoiced'} · ${event.source_object_id}`,sourceType:'integration.agapay_subscription_paid',sourceId:event.id,externalReference:event.source_object_id,lines:[{accountId:'acct_5860',fundId:'fund_general',debitAmount:Number(event.fee_amount)},{accountId:'acct_2180',fundId:'fund_general',creditAmount:Number(event.fee_amount)}],mappingsUsed:['service_subscription'],idempotencyKey:`agapay_billing:${event.source_object_id}:paid`};
   if(event.source_type==="donation_succeeded") lines=[{accountId:mapping.clearingAccountId,fundId,debitAmount:Number(event.gross_amount)},{accountId:mapping.revenueAccountId,fundId,creditAmount:Number(event.gross_amount)}];
   else if(event.source_type==="stripe_fee_assessed"||event.source_type==="stripe_chargeback_fee"||event.source_type==="agapay_fee_assessed") lines=[{accountId:event.source_type==="agapay_fee_assessed"?"acct_5850":mapping.feeExpenseAccountId,fundId,debitAmount:Number(event.fee_amount||event.dispute_amount)},{accountId:mapping.clearingAccountId,fundId,creditAmount:Number(event.fee_amount||event.dispute_amount)}];
   else if(event.source_type==="stripe_fee_refunded") lines=[{accountId:mapping.clearingAccountId,fundId,debitAmount:Number(event.fee_amount)},{accountId:mapping.feeExpenseAccountId,fundId,creditAmount:Number(event.fee_amount)}];
@@ -146,13 +147,15 @@ export async function processAccountingSourceEvent(db,{actor,entitlementTier,sou
   const settings=await first(db,"SELECT * FROM accounting_integration_settings WHERE id='give_stripe'");
   const ledgerSettings=await first(db,"SELECT base_currency FROM accounting_settings WHERE id='primary'");
   if((event.source_system==="agapay_give"&&!settings.give_posting_enabled)||(event.source_system==="stripe"&&!settings.stripe_posting_enabled)) return exception(db,event,"integration_disabled","Posting is disabled for this source system.");
-  if(ledgerSettings?.base_currency&&event.currency!==ledgerSettings.base_currency) return exception(db,event,"currency_mismatch","Source currency does not match the parish ledger currency.");
+  if(event.currency!==(ledgerSettings?.base_currency || "USD")) return exception(db,event,"currency_mismatch","Source currency does not match the parish ledger currency.");
   if(settings.integration_start_date && event.occurred_at.slice(0,10)<settings.integration_start_date) return exception(db,event,"before_integration_start","Source event predates the accounting integration start date.");
   if(!POSTABLE.has(event.source_type)) { await run(db,"UPDATE accounting_integration_source_events SET status='ignored',posting_status='ignored',ignored_reason='No ledger movement occurred',updated_at=datetime('now') WHERE id=?",event.id); return sourceDto(await first(db,"SELECT * FROM accounting_integration_source_events WHERE id=?",event.id)); }
   if(event.source_type==="stripe_fee_assessed"&&!event.balance_transaction_id) { await run(db,"UPDATE accounting_integration_source_events SET status='waiting_for_source',exception_code='balance_transaction_missing',updated_at=datetime('now') WHERE id=?",event.id); return sourceDto(await first(db,"SELECT * FROM accounting_integration_source_events WHERE id=?",event.id)); }
   const mapping=await resolveMapping(db,event,settings);
   if(event.donor_restricted&&!mapping.fundId) return exception(db,event,"restricted_fund_unmapped","A donor-restricted gift requires its original designated fund.");
-  const requirements=[await eligibleAccount(db,mapping.clearingAccountId,"asset")];
+  const requirements=event.source_type==='agapay_subscription_paid'
+    ? [await eligibleAccount(db,'acct_2180','liability'),await eligibleAccount(db,'acct_5860','expense')]
+    : [await eligibleAccount(db,mapping.clearingAccountId,"asset")];
   if(event.source_type==="donation_succeeded"||event.source_type.includes("refund")||event.source_type.includes("dispute")) requirements.push(await eligibleAccount(db,mapping.revenueAccountId,"revenue"));
   if(event.source_type.includes("fee")) requirements.push(await eligibleAccount(db,event.source_type==="agapay_fee_assessed"?"acct_5850":mapping.feeExpenseAccountId,"expense"));
   if(event.source_type.includes("payout")) requirements.push(await eligibleAccount(db,mapping.bankAccountId,"asset"));
@@ -165,7 +168,8 @@ export async function processAccountingSourceEvent(db,{actor,entitlementTier,sou
   await run(db,"UPDATE accounting_integration_source_events SET status='posting',mapping_status='resolved',posting_status='posting',proposal_json=?,updated_at=datetime('now') WHERE id=?",JSON.stringify(proposal),event.id);
   try {
     const elevated={...actor,capabilities:[...new Set([...actor.capabilities,"accounting.journals.create","accounting.journals.post"])]};
-    const draft=await createJournalDraft(db,{actor:elevated,entryDate:proposal.postingDate,description:proposal.description,sourceType:proposal.sourceType,sourceId:proposal.sourceId,lines:proposal.lines,correlationId:event.correlation_id||""});
+    const existingDraft=event.source_type==='agapay_subscription_paid' && await first(db,'SELECT id FROM accounting_journal_entries WHERE source_type=? AND source_id=?',proposal.sourceType,proposal.sourceId);
+    const draft=existingDraft || await createJournalDraft(db,{actor:elevated,entryDate:proposal.postingDate,description:proposal.description,sourceType:proposal.sourceType,sourceId:proposal.sourceId,lines:proposal.lines,correlationId:event.correlation_id||""});
     const posted=await postJournalEntry(db,{actor:elevated,journalEntryId:draft.id,idempotencyKey:proposal.idempotencyKey,requestHash:proposalHash,expectedVersion:1,correlationId:event.correlation_id||""});
     await run(db,"INSERT OR IGNORE INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?,?,?,?)",id("link"),posted.id,event.source_system,event.source_object_id,"accounting_source");
     await run(db,"UPDATE accounting_integration_source_events SET status='posted',posting_status='posted',journal_entry_id=?,exception_code=NULL,exception_message=NULL,updated_at=datetime('now') WHERE id=?",posted.id,event.id);
@@ -182,7 +186,8 @@ export async function integrationOverview(db,{actor,entitlementTier}) {
     COALESCE(SUM(CASE WHEN status='posted' AND source_type LIKE 'donation_%refunded' THEN refund_amount ELSE 0 END),0) refunds,
     COALESCE(SUM(CASE WHEN status='posted' AND source_type='stripe_payout_paid' THEN net_amount ELSE 0 END),0) payouts,
     SUM(CASE WHEN status='exception' THEN 1 ELSE 0 END) exceptions,SUM(CASE WHEN status NOT IN('posted','ignored') THEN 1 ELSE 0 END) unposted FROM accounting_integration_source_events`);
-  return Object.freeze({tier:entitlementTier,coreGiveIntegrationIncluded:true,settings:settingsDto(await first(db,"SELECT * FROM accounting_integration_settings WHERE id='give_stripe'")),
+  const serviceInvoices=await all(db,"SELECT id,source_object_id invoiceId,occurred_at paidAt,donation_type planLabel,fee_amount amountCents,currency,status,exception_message message FROM accounting_integration_source_events WHERE source_type='agapay_subscription_paid' ORDER BY CASE WHEN status='posted' THEN 1 ELSE 0 END,occurred_at DESC LIMIT 100");
+  return Object.freeze({tier:entitlementTier,serviceInvoices,coreGiveIntegrationIncluded:true,settings:settingsDto(await first(db,"SELECT * FROM accounting_integration_settings WHERE id='give_stripe'")),
     totals:Object.freeze({events:Number(totals.events),grossContributions:Number(totals.gross_contributions),stripeFees:Number(totals.stripe_fees),agapayFees:Number(totals.agapay_fees),refunds:Number(totals.refunds),payouts:Number(totals.payouts),exceptions:Number(totals.exceptions),unposted:Number(totals.unposted)})});
 }
 

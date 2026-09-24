@@ -155,7 +155,16 @@ function renderAccountingFinancialSnapshot(accounting, manual) {
         `<tr><td><strong>${escapeHtml(fund.fundName)}</strong></td><td>${fmt(fund.beginningBalanceCents)}</td><td>${fmt(fund.totalReceivedCents)}</td><td>${fmt(fund.totalDisbursedCents)}</td><td>${fmt(fund.endingBalanceCents)}</td></tr>`
     )
     .join('');
-  return `<section class="acct-card"><div class="acct-list-head"><div><span class="acct-kicker">Live from Accounting</span><h2>${accounting.startDate} through ${accounting.endDate}</h2><p>Posted ledger activity. Importing freezes a copy for the selected meeting packet.</p></div><div class="acct-report-actions"><select id="stewardshipAccountingImportMeeting"><option value="">Create a new ${financialsState.year} snapshot</option>${meetingOptions}</select><button class="acct-primary" onclick="importAccountingFinancialSnapshot()">Import into meeting packet</button></div></div><div class="acct-kpis"><div><span>Total income</span><strong>${fmt(accounting.totalIncomeCents)}</strong></div><div><span>Total expenses</span><strong>${fmt(accounting.totalExpenseCents)}</strong></div><div><span>Net</span><strong>${fmt(accounting.netCents)}</strong></div></div>${funds ? `<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Restricted fund</th><th>Beginning</th><th>Received</th><th>Disbursed</th><th>Ending</th></tr></thead><tbody>${funds}</tbody></table></div>` : '<p class="muted">No restricted funds have activity in this period.</p>'}<p id="stewardshipAccountingImportStatus" class="muted"></p></section>`;
+  const expenseLines = (accounting.expenseLines || [])
+    .map(
+      (row) =>
+        `<tr><td>${escapeHtml(row.accountNumber)} · ${escapeHtml(row.accountName)}</td><td>${fmt(row.amount)}</td></tr>`
+    )
+    .join('');
+  const expenseTable = expenseLines
+    ? `<h3>Expense detail</h3><table class="acct-table"><thead><tr><th>Account</th><th>Posted expense</th></tr></thead><tbody>${expenseLines}</tbody></table><p class="muted">Processing fees and AGAPAY service subscriptions are separate expense accounts, included in the total above.</p>`
+    : '';
+  return `<section class="acct-card"><div class="acct-list-head"><div><span class="acct-kicker">Live from Accounting</span><h2>${accounting.startDate} through ${accounting.endDate}</h2><p>Posted ledger activity. Importing freezes a copy for the selected meeting packet.</p></div><div class="acct-report-actions"><select id="stewardshipAccountingImportMeeting"><option value="">Create a new ${financialsState.year} snapshot</option>${meetingOptions}</select><button class="acct-primary" onclick="importAccountingFinancialSnapshot()">Import into meeting packet</button></div></div><div class="acct-kpis"><div><span>Total income</span><strong>${fmt(accounting.totalIncomeCents)}</strong></div><div><span>Total expenses</span><strong>${fmt(accounting.totalExpenseCents)}</strong></div><div><span>Net</span><strong>${fmt(accounting.netCents)}</strong></div></div>${expenseTable}${funds ? `<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Restricted fund</th><th>Beginning</th><th>Received</th><th>Disbursed</th><th>Ending</th></tr></thead><tbody>${funds}</tbody></table></div>` : '<p class="muted">No restricted funds have activity in this period.</p>'}<p id="stewardshipAccountingImportStatus" class="muted"></p></section>`;
 }
 
 async function importAccountingFinancialSnapshot() {
@@ -368,7 +377,19 @@ function renderFinancialSnapshots(data) {
       escapeHtml(new Date(snapshot.updatedAt).toLocaleString()) +
       '</span></div>'
     : '';
-  return statusHtml + summaryHtml + automaticFundsHtml + externalAssetsHtml + revisionHtml;
+  const costs = data.platformCosts;
+  const costHtml = costs
+    ? '<section class="acct-card"><span class="acct-kicker">Processing &amp; platform costs</span><h2>Clear costs. Complete records.</h2><div class="acct-kpis"><div><span>Confirmed Stripe processing</span><strong>' +
+      fmt(costs.processing.annual.actualStripeFeeCents) +
+      '</strong></div><div><span>AGAPAY service subscription</span><strong>' +
+      fmt(costs.service.totalCents) +
+      '</strong></div></div><p>' +
+      (data.automaticCostsIncluded
+        ? 'Included automatically in total expenses. Enter other parish expenses separately.'
+        : 'Your saved expenses use an all-in total. Review that it includes these costs; they are not added twice.') +
+      '</p><p class="muted">Service costs follow paid invoices and the billed plan. Prior invoices, refunds and credit notes require reconciliation. Donor-covered processing remains a parish expense with a matching contribution. Accounting reports use posted ledger entries.</p></section>'
+    : '';
+  return statusHtml + summaryHtml + costHtml + automaticFundsHtml + externalAssetsHtml + revisionHtml;
 }
 
 // Builds a "▲ 8% vs 2025" badge comparing current to prior-year value.

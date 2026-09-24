@@ -51,17 +51,46 @@ function renderAccountingIntegrationsBase(pane) {
   const give = data.give?.totals || data.give || {},
     settings = data.settings || {},
     commerce = data.commerce;
-  pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Automated posting</span><h2>Give & Stripe accounting</h2><p>Donation charges, Stripe fees, refunds, and payouts flow into the ledger with traceable source records.</p></div></div><div class="acct-kpis"><div><span>Source events</span><strong>${give.events || 0}</strong></div><div><span>Gross contributions</span><strong>${accountingMoney(give.grossContributions)}</strong></div><div><span>Stripe fees</span><strong>${accountingMoney(give.stripeFees)}</strong></div></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Posting policy</span><h2>Integration settings</h2><label>Posting mode<select id="accountingIntegrationMode"><option value="automatic" ${settings.postingMode === 'automatic' ? 'selected' : ''}>Automatic</option><option value="review" ${settings.postingMode === 'review' ? 'selected' : ''}>Review before posting</option></select></label><button class="acct-primary" onclick="saveAccountingIntegrationSettings()">Save policy</button></section><section class="acct-card"><span class="acct-kicker">Stripe clearing</span><h2>${accountingMoney(data.clearing?.calculatedBalance)} expected balance</h2><p>${data.clearing?.balanced === false ? 'Review the difference against Stripe before closing the period.' : 'Charges, fees, refunds, and payouts are aligned for this period.'}</p></section></div>${accountingData.tier !== 'advanced_operations' ? accountingParishOnly() : `<div class="acct-list-head"><div><span class="acct-kicker">Parish Commerce</span><h2>Commerce accounting</h2><p>Bookstore and Meals &amp; Events sales, refunds, fees, inventory cost, and sales-tax liability post into one traceable ledger workflow.</p></div><button class="acct-refresh" onclick="downloadAccountingFile(accountingApi('/commerce/sales-tax.csv'),'agapay-commerce-sales-tax.csv')">Export tax report</button></div><div class="acct-kpis"><div><span>Net sales</span><strong>${accountingMoney(commerce?.netSales)}</strong></div><div><span>Sales tax collected</span><strong>${accountingMoney(commerce?.salesTaxCollected)}</strong></div><div><span>Needs review</span><strong>${(commerce?.unposted || 0) + (commerce?.exceptions || 0)}</strong></div></div>`}`;
+  pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Automated posting</span><h2>Give & Stripe accounting</h2><p>Donation charges, Stripe fees, refunds, and payouts flow into the ledger with traceable source records.</p></div></div><div class="acct-kpis"><div><span>Source events</span><strong>${give.events || 0}</strong></div><div><span>Gross contributions</span><strong>${accountingMoney(give.grossContributions)}</strong></div><div><span>Stripe fees</span><strong>${accountingMoney(give.stripeFees)}</strong></div></div><div class="acct-setup-grid"><section class="acct-card acct-settings"><span class="acct-kicker">Posting policy</span><h2>Integration settings</h2><label>Posting mode<select id="accountingIntegrationMode"><option value="automatic" ${settings.postingMode === 'automatic' ? 'selected' : ''}>Automatic</option><option value="review_required" ${settings.postingMode === 'review_required' ? 'selected' : ''}>Review before posting</option></select></label><button class="acct-primary" onclick="saveAccountingIntegrationSettings()">Save policy</button></section><section class="acct-card"><span class="acct-kicker">Stripe clearing</span><h2>${accountingMoney(data.clearing?.calculatedBalance)} expected balance</h2><p>${data.clearing?.balanced === false ? 'Review the difference against Stripe before closing the period.' : 'Charges, fees, refunds, and payouts are aligned for this period.'}</p></section></div>${accountingData.tier !== 'advanced_operations' ? accountingParishOnly() : `<div class="acct-list-head"><div><span class="acct-kicker">Parish Commerce</span><h2>Commerce accounting</h2><p>Bookstore and Meals &amp; Events sales, refunds, fees, inventory cost, and sales-tax liability post into one traceable ledger workflow.</p></div><button class="acct-refresh" onclick="downloadAccountingFile(accountingApi('/commerce/sales-tax.csv'),'agapay-commerce-sales-tax.csv')">Export tax report</button></div><div class="acct-kpis"><div><span>Net sales</span><strong>${accountingMoney(commerce?.netSales)}</strong></div><div><span>Sales tax collected</span><strong>${accountingMoney(commerce?.salesTaxCollected)}</strong></div><div><span>Needs review</span><strong>${(commerce?.unposted || 0) + (commerce?.exceptions || 0)}</strong></div></div>`}`;
 }
 
 function renderAccountingIntegrations(pane) {
   renderAccountingIntegrationsBase(pane);
-  if (accountingData.integrations) renderAccountingFeeCoverageRepair(pane);
+  if (accountingData.integrations) {
+    renderAccountingServiceInvoices(pane);
+    renderAccountingFeeCoverageRepair(pane);
+  }
   if (accountingData.tier !== 'advanced_operations' || !accountingData.integrations) return;
   pane.insertAdjacentHTML(
     'beforeend',
     `<div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Commerce item mapping</span><h2>Configure an item</h2><form class="acct-phase-form" onsubmit="configureAccountingCommerceItem(event)"><label>Operational item ID<input name="operationalItemId" required></label><label>Name<input name="name" required></label><label>Revenue account<select name="defaultRevenueAccountId">${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Default fund<select name="defaultFundId">${accountingData.funds.map((f) => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><button class="acct-primary">Save commerce item</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Commerce backfill preview</span><h2>Review historical orders</h2><form class="acct-phase-form" onsubmit="previewAccountingCommerceBackfill(event)"><label>Start<input name="startDate" type="date" required></label><label>End<input name="endDate" type="date" required></label><button class="acct-primary">Preview backfill</button><span class="acct-form-status"></span></form><div id="accountingCommerceBackfillPreview"></div></section></div>`
   );
+}
+
+function renderAccountingServiceInvoices(pane) {
+  const invoices = accountingData.integrations.give?.serviceInvoices || [];
+  const rows = invoices
+    .map(
+      (row) =>
+        `<tr><td>${escapeHtml(String(row.paidAt).slice(0, 10))}</td><td>${escapeHtml(row.planLabel)}<br><small>${escapeHtml(row.invoiceId)}</small></td><td>${escapeHtml(row.currency)} ${(Number(row.amountCents) / 100).toFixed(2)}</td><td>${escapeHtml(row.status.replaceAll('_', ' '))}${row.message ? `<br><small>${escapeHtml(row.message)}</small>` : ''}</td><td>${row.status !== 'posted' ? `<button type="button" class="acct-refresh" data-source-id="${escapeAttr(row.id)}" onclick="postAccountingServiceInvoice(this)">Review &amp; post</button>` : ''}</td></tr>`
+    )
+    .join('');
+  pane.insertAdjacentHTML(
+    'beforeend',
+    `<section class="acct-card"><span class="acct-kicker">AGAPAY service billing</span><h2>Your plan. Your actual costs.</h2><p>Service subscriptions are recorded separately from Stripe processing and AGAPAY transaction fees. Each entry follows the paid invoice and its billed plan.</p>${rows ? `<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Paid</th><th>Plan / invoice</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p>No paid service invoices have been captured yet.</p>'}<p class="muted">Up to 100 invoices, with unposted items first. Automatic posting follows your posting policy and open accounting periods. Expense account 5860 holds service costs; match the bank or card payment to AGAPAY Billing Clearing (2180), without booking the expense again. Earlier invoices, refunds and credit notes require reconciliation.</p></section>`
+  );
+}
+
+async function postAccountingServiceInvoice(button) {
+  const id = button.dataset.sourceId;
+  if (!id) return;
+  button.disabled = true;
+  try {
+    const payload = await phaseEMutation(`/integrations/service-invoices/${encodeURIComponent(id)}/post`, {});
+    if (payload) await loadAccountingPhaseE();
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function configureAccountingCommerceItem(event) {

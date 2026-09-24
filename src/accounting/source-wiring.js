@@ -187,7 +187,7 @@ export async function wireGivingOfferingToAccounting(env, offering = {}) {
   await recognizeGivingFeeCoverage(db, { actor: actor("accounting.integrations.post"), entitlementTier: "parish", offering, originalEventId: event.id });
   await db.prepare(`INSERT OR IGNORE INTO accounting_accounts
     (id,account_number,name,account_type_id,normal_balance,is_posting_account,is_system,requires_fund)
-    VALUES('acct_5850','5850','AGAPAY Platform Fees','type_expense','debit',1,1,1)`).run();
+    VALUES('acct_5850','5850','AGAPAY Transaction Fees','type_expense','debit',1,1,1)`).run();
   await recognizeGivingStripeFee(db, { actor: actor("accounting.integrations.post"), entitlementTier: "parish", offering, donationId, fundId, occurredAt });
   const agapayFee = cents(offering.agapayFeeCents);
   if (agapayFee) {

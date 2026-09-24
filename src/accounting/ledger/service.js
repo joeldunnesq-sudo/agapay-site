@@ -24,7 +24,7 @@ const DEFAULT_ACCOUNTS = Object.freeze([
   ["acct_5600","5600","Hospitality and Fellowship","type_expense",1,0],["acct_5700","5700","Bookstore Cost of Goods Sold","type_expense",1,0],
   ["acct_5800","5800","Professional and Administrative","type_expense",0,0],["acct_5810","5810","Accounting","type_expense",1,0],
   ["acct_5830","5830","Software and Technology","type_expense",1,0],["acct_5840","5840","Bank and Payment Processing Fees","type_expense",1,0],
-  ["acct_5850","5850","AGAPAY Platform Fees","type_expense",1,1]
+  ["acct_5850","5850","AGAPAY Transaction Fees","type_expense",1,1]
 ]);
 
 function id(prefix) { return `${prefix}_${crypto.randomUUID()}`; }

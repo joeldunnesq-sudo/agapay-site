@@ -1,5 +1,6 @@
 // Reviewed schema boundary for portability. New tables/columns require explicit review.
 export const PORTABILITY_SCHEMA = Object.freeze({
+  "agapay_service_invoices": ["invoice_id","parish_id","subscription_id","customer_id","paid_at","currency","amount_cents","plan_label","price_ids_json","accounting_status","accounting_message","created_at"],
   "parish_diocesan_statistical_totals": ["parish_id","reporting_year","totals_json","updated_at"],
   "donation_receipt_deliveries": ["id","parish_id","status","message","first_attempt_at","lease_until","lease_token","provider_id","sent_at","detail","created_at"],
   "outside_gift_details": ["gift_id","parish_id","giver_reference_id","giver_name","giver_email","fund_id","giving_kind","pledge_year","record_state","revision","request_key","request_hash","content_hash","duplicate_reason","accounting_entity_id","accounting_entry_id","accounting_line_id","accounting_linked_by","accounting_linked_at","updated_by","void_reason","voided_at"],
@@ -213,7 +214,7 @@ export const PORTABILITY_SCHEMA = Object.freeze({
   "sms_keywords": ["created_at","destination_id","destination_type","fund_id","id","is_active","keyword","label","parish_id","updated_at"],
   "stewardship_agenda_items": ["annual_meeting_id","created_at","description","duration_minutes","id","sort_order","title"],
   "stewardship_annual_meetings": ["address","created_at","created_by","fiscal_year","id","jurisdiction","location","meeting_date","meeting_time","note_line_count","parish_id","parish_name_override","signature_line_count","status","title","updated_at"],
-  "stewardship_authoritative_financial_snapshots": ["agapay_contributions_cents","created_at","created_by","external_assets_json","fiscal_year","id","net_cents","notes","other_revenue_cents","outside_contributions_cents","parish_id","restricted_fund_adjustments_json","restricted_fund_balances_json","restricted_funds_json","title","total_expense_cents","total_income_cents","updated_at","updated_by","version"],
+  "stewardship_authoritative_financial_snapshots": ["automatic_costs_excluded","entered_expense_cents","agapay_contributions_cents","created_at","created_by","external_assets_json","fiscal_year","id","net_cents","notes","other_revenue_cents","outside_contributions_cents","parish_id","restricted_fund_adjustments_json","restricted_fund_balances_json","restricted_funds_json","title","total_expense_cents","total_income_cents","updated_at","updated_by","version"],
   "stewardship_financial_snapshot_revisions": ["agapay_contributions_cents","changed_by","created_at","external_assets_json","fiscal_year","id","net_cents","notes","other_revenue_cents","outside_contributions_cents","parish_id","restricted_fund_adjustments_json","restricted_fund_balances_json","restricted_funds_json","snapshot_id","title","total_expense_cents","total_income_cents","version"],
   "stewardship_financial_summaries": ["annual_meeting_id","created_at","id","imported_from_accounting_at","net_cents","notes","snapshot_taken_at","total_expense_cents","total_income_cents","updated_at"],
   "stewardship_generated_packets": ["annual_meeting_id","generated_at","generated_by","id","storage_key"],

@@ -1,0 +1,15 @@
+# Processing and AGAPAY service costs
+
+The standard expense accounts distinguish payment processing (5840), AGAPAY transaction fees (5850), and the AGAPAY service subscription (5860). Donor contributions toward processing remain contribution income. They do not reduce the full processor expense.
+
+Platform `invoice.paid` and `invoice.payment_succeeded` events capture the actual amount paid, payment date, invoice, customer, subscription, and historical price identifiers. Both event names share one invoice identity. Connected-account invoices and donor subscriptions are excluded. Known invoice prices supply the plan label; an unknown historical price is labeled “Subscription as invoiced,” without guessing from the current tier. Free invoices create no journal entry.
+
+This is payment-date recognition of service costs. Discounts, prorations, and plan changes follow the actual paid invoice rather than a scheduled catalog-price estimate. Capture starts with this release; prior invoices, credit notes, and refunds require reconciliation. No historical expenses are invented or automatically duplicated against existing manually entered charges.
+
+Paid invoices are retained centrally even when Accounting has not yet been activated. Once Accounting is available, up to 100 outstanding invoices are synchronized on a subsequent Accounting request or accounting-backed financial report. Posting follows the existing automatic/review policy, integration start date, currency, open-period, and integrity controls. Review held entries under Accounting’s Give & Stripe integrations. An authorized treasurer can use “Review & post”; opening a period also allows a held invoice to retry without creating a second journal.
+
+The journal debits 5860 and credits **AGAPAY Billing Clearing (2180)** in the general operating fund. It never uses the parish’s Stripe giving clearing account. Reconcile the bank or card charge by debiting 2180 and crediting the actual bank or card account. Do not expense that payment again. Billing clearing is an intermediary reconciliation balance, not a statement that the already-paid invoice remains owed to AGAPAY.
+
+Accounting financial reports show posted expense lines and include them once in total expenses. The council report displays processing, transaction, and service fees separately for the month and year to date. Custom fee-account mappings remain in the expense detail and total; the standard-account subtotal explicitly identifies its scope.
+
+Without live Accounting, new Stewardship financial snapshots default to adding confirmed USD giving-processing fees and captured paid USD service invoices. The editor's entered expenses must exclude those automatic amounts when this option is checked. Existing snapshots retain their all-in basis until the treasurer reviews it, preventing duplicate expenses. Saved totals and revision history freeze the amounts at save time; live snapshot views recalculate automatic amounts from current captured records. Previously finalized meeting packets remain historical copies. Commerce processing and non-USD costs are outside this manual-snapshot automatic subtotal.

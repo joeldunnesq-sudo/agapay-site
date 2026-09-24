@@ -1,3 +1,5 @@
+import { recordServiceInvoice, postServiceInvoices } from '../accounting/service-costs.js';
+import { resolveOperationalAccountingDatabase } from '../accounting/source-wiring.js';
 import { subscriptionSetupUpdates, invoiceDonationMetadata, invoicePaymentIntentId, invoiceSubscriptionId } from '../payments/donation-events.js';
 import {
   claimStripeEvent,
@@ -693,6 +695,17 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "invoice.payment_succeeded" || event.type === "invoice.paid") {
+    if (!event.account && !invoiceDonationMetadata(object).donor_email && invoiceSubscriptionId(object)) {
+      const billed = await findRegistrationByStripeSubscriptionId(env, invoiceSubscriptionId(object));
+      const reference = invoiceDonationMetadata(object).agapay_reference;
+      if (!billed && reference && await loadRegistrationByReference(env, reference))
+        throw new Error('Subscription invoice is awaiting its parish checkout link; retry delivery.');
+      const facts = billed && await recordServiceInvoice(env, object, billed.registration);
+      if (facts) {
+        const db = await resolveOperationalAccountingDatabase(env, facts.parishId);
+        if (db) await postServiceInvoices(env, db, facts.parishId);
+      }
+    }
     const metadata = invoiceDonationMetadata(object);
     if (metadata.donor_email) {
       let paymentIntentId = invoicePaymentIntentId(object);
