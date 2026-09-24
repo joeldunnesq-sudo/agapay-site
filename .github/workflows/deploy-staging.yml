@@ -101,3 +101,14 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
           command: deploy --env staging
+
+      - name: Verify deployed staging health including MFA
+        run: |
+          node --input-type=module -e '
+            const response = await fetch("https://agapay-site-staging.joeldunnesq.workers.dev/api/health");
+            const health = await response.json();
+            if (!response.ok || !health.ok || !health.checks?.mfa?.ok) {
+              throw new Error(`Staging health failed: HTTP ${response.status}; MFA ${health.checks?.mfa?.error || "not ready"}`);
+            }
+            console.log("PASS - deployed staging Worker, storage, and MFA health");
+          '

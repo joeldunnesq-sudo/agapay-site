@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { completeGateMfa, gateMfaSecretName, gateTotp } from './release-gate-mfa.mjs';
 
 export const ACCOUNTING_HANDLER_FILES = Object.freeze([
   "accounting-ledger.js",
@@ -105,7 +106,9 @@ export async function loginPlatformUser(page, { baseUrl, email, password }) {
   if (!response.ok()) {
     throw new Error(`Platform-user login failed with HTTP ${response.status()}.`);
   }
-  const payload = await response.json();
+  const payload = await completeGateMfa({
+    baseUrl, payload: await response.json(), secretName: gateMfaSecretName('USER', email),
+  });
   const token = String(payload?.token || "");
   if (!token) throw new Error("Platform-user login succeeded without a session token.");
   const headers = {
@@ -123,9 +126,31 @@ export async function loginParishAccounting(page, {
   baseUrl, parishId, parishPassword, profileId = "", profileName = "", pin
 }) {
   await page.goto(`${baseUrl}/give/login`, { waitUntil: "domcontentloaded" });
-  await page.locator("#parishId").fill(parishId);
-  await page.locator("#parishToken").fill(parishPassword);
-  await page.getByRole("button", { name: /^log in$/i }).click();
+  const named = process.env.ACCOUNTING_GATE_USE_NAMED_STAFF === 'true';
+  const side = ['A', 'B'].find((value) => process.env[`ACCOUNTING_GATE_PARISH_${value}_ID`] === parishId);
+  const email = process.env[`ACCOUNTING_GATE_USER_${side}_EMAIL`];
+  if (named) {
+    await page.getByRole('button', { name: 'Staff sign in', exact: true }).click();
+    await page.locator('#parishStaffId').fill(parishId);
+    await page.locator('#parishStaffEmail').fill(email);
+    await page.locator('#parishStaffPassword').fill(process.env[`ACCOUNTING_GATE_USER_${side}_PASSWORD`]);
+  } else {
+    await page.locator("#parishId").fill(parishId);
+    await page.locator("#parishToken").fill(parishPassword);
+  }
+  const loginPath = named ? '/api/identity/login' : `/api/parish/dashboard/${encodeURIComponent(parishId)}/session`;
+  const loginResponse = page.waitForResponse((response) => response.url().endsWith(loginPath) && response.request().method() === 'POST');
+  await page.getByRole("button", { name: named ? /^sign in$/i : /^log in$/i }).click();
+  const loginPayload = await (await loginResponse).json();
+  if (loginPayload.mfaRequired) {
+    const secretName = gateMfaSecretName(named ? 'USER' : 'PARISH', named ? email : parishId);
+    if (loginPayload.enrollmentRequired || !process.env[secretName]) {
+      throw new Error(`Complete the staging MFA bootstrap and configure ${secretName} before browser acceptance.`);
+    }
+    await page.locator('[data-mfa-action="totp"]').click();
+    await page.locator('#agapayMfaCode').fill(gateTotp(process.env[secretName]));
+    await page.getByRole('button', { name: 'Verify and continue', exact: true }).click();
+  }
   await page.waitForURL((url) => url.pathname === "/parish/dashboard");
   await page.waitForFunction(() => {
     const name = document.getElementById("sidebarParishName")?.textContent?.trim();
