@@ -38,6 +38,7 @@ const background = {
   '/giving-statements/jobs': { jobs: [] },
   '/stewardship/nudge': {},
   '/memberships': { memberships: [], invitations: [] },
+  '/portability/recovery': { enabled: false, snapshots: [], operation: null },
   '/portability/backup-status': { enabled: true, cloud: { status: 'unavailable', backedUpAt: null } },
 };
 

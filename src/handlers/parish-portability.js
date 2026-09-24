@@ -4,6 +4,8 @@ import { stripeGetRequest } from '../lib/stripe-connect.js';
 import { POLICY_VERSION, PortabilityError } from '../portability/catalog.js';
 import { closureReadiness } from '../portability/closure.js';
 import { retentionDisclosure } from '../portability/policy.js';
+import { downloadRecoverySnapshot } from '../recovery/archive.js';
+import { recoveryStatus, startRecovery, advanceRecovery } from '../recovery/service.js';
 import { cloudBackupStatus } from '../portability/cloud-backup.js';
 import { actorFingerprint, cancelExport, confirmClosure, downloadExport, getJob, jobReceipt, publicJob, requirePortability, retryExport, startExport, JOB_SELECTION } from '../portability/service.js';
 
@@ -81,12 +83,24 @@ export async function handleParishPortability(request, env, parishId, suffix = '
     if (request.method === 'GET' && suffix === '/backup-status') {
       return reply({ ok: true, enabled: env.PARISH_PORTABILITY_ENABLED === 'true' && !!env.PARISH_EXPORTS, cloud: await cloudBackupStatus(env) });
     }
+    if (request.method === 'GET' && suffix === '/recovery') return reply({ ok: true, ...await recoveryStatus(env, parishId, new URL(request.url).searchParams.get('scope') || 'parish') });
+    // A confirmed operation may outlive its initial MFA window. Its original,
+    // still-authenticated primary session may resume or recover that fixed
+    // operation without needing credential writes while its data is frozen.
+    // New backups/restores and a different session still require fresh step-up.
+    const continuation = request.method === 'POST' && suffix.match(/^\/recovery\/([a-f0-9-]{36})\/(advance|cancel|rollback)$/);
+    const continuingOwner = continuation && env.PARISH_RECOVERY_ENABLED === 'true' && await env.AGAPAY_DB.prepare("SELECT 1 FROM parish_recovery_operations WHERE id=? AND parish_id=? AND actor_hash=? AND status IN ('running','paused')").bind(continuation[1], parishId, actorHash).first();
     const verified = Date.parse(session.mfaVerifiedAt || '');
-    if (!Number.isFinite(verified) || verified > Date.now() || Date.now() - verified > 15 * 60000) return reply({ error: 'Confirm your identity before accessing parish data.', code: 'mfa_step_up_required', principalType: 'parish_admin', principalId: parishId }, 428);
+    if (!continuingOwner && (!Number.isFinite(verified) || verified > Date.now() || Date.now() - verified > 15 * 60000)) return reply({ error: 'Confirm your identity before accessing parish data.', code: 'mfa_step_up_required', principalType: 'parish_admin', principalId: parishId }, 428);
     if (request.method === 'GET' && suffix === '') {
       const enabled = env.PARISH_PORTABILITY_ENABLED === 'true' && !!env.PARISH_EXPORTS;
       const jobs = enabled ? (await env.AGAPAY_DB.prepare(`SELECT ${JOB_SELECTION} FROM parish_portability_jobs j WHERE parish_id=? ORDER BY created_at DESC LIMIT 10`).bind(parishId).all()).results : [];
       return reply({ ok: true, enabled, policyVersion: POLICY_VERSION, disclosure: retentionDisclosure(env), closure: closureReadiness(env, null), jobs: jobs.map(job => publicJob(env, job)) });
+    }
+    const recoveryDownload = suffix.match(/^\/recovery\/([a-f0-9-]{36})\/download$/);
+    if (request.method === 'GET' && recoveryDownload) {
+      const archive = await downloadRecoverySnapshot(env, parishId, recoveryDownload[1], new URL(request.url).searchParams.get('scope') || 'parish');
+      return new Response(archive, { headers: { ...headers, 'Content-Type': 'application/zip', 'Content-Disposition': `attachment; filename="AGAPAY-recovery-${recoveryDownload[1]}.zip"` } });
     }
     requirePortability(env);
     if (request.method === 'GET' && item) {
@@ -100,9 +114,12 @@ export async function handleParishPortability(request, env, parishId, suffix = '
     if (request.method !== 'POST') return reply({ error: 'Not found' }, 404);
     const origin = request.headers.get('Origin');
     if (origin && origin !== new URL(env.AGAPAY_APP_URL || request.url).origin) return reply({ error: 'Invalid origin' }, 403);
-    const limited = await rateLimit(request, env, `parish-portability:${parishId}`, { limit: 20, windowSeconds: 300 });
+    const limited = await rateLimit(request, env, `parish-portability:${parishId}`, { limit: suffix.startsWith('/recovery') ? 100 : 20, windowSeconds: 300 });
     if (limited) return limited;
     const body = await requestBody(request);
+    if (suffix === '/recovery') return reply({ ok: true, operation: await startRecovery(env, parishId, actorHash, body) }, 202);
+    const recoveryItem = suffix.match(/^\/recovery\/([a-f0-9-]{36})\/(advance|cancel|rollback)$/);
+    if (recoveryItem) return reply({ ok: true, operation: await advanceRecovery(env, parishId, recoveryItem[1], recoveryItem[2]) });
     let job;
     if (suffix === '') {
       if (body.mode === 'close') await requireCancelledBilling(env, registration);
@@ -118,6 +135,6 @@ export async function handleParishPortability(request, env, parishId, suffix = '
     if (error instanceof PortabilityError) return reply({ error: error.message, code: error.code }, error.status);
     // Export records, raw provider errors and credentials must never appear in logs.
     console.error('parish_portability_request_failed');
-    return reply({ error: 'Parish portability could not complete this request. No successful deletion is being reported.', code: 'portability_failed' }, 503);
+    return reply({ error: suffix.startsWith('/recovery') ? 'Recovery did not complete this step. Recheck its status before retrying; any active write lock remains in place.' : 'Parish portability could not complete this request. No successful deletion is being reported.', code: 'portability_failed' }, 503);
   }
 }

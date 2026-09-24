@@ -67,7 +67,7 @@ export function scopeParent(name) { return JOIN_SCOPES[name] || null; }
 // Exact provider-owned names only; unknown application tables still block export.
 // workerd/src/workerd/util/sqlite-metadata.h documents the protected metadata table.
 export const D1_SYSTEM_TABLES = new Set(['d1_migrations', '_cf_KV', '_cf_METADATA']);
-export const SYSTEM_TABLES = new Set([...D1_SYSTEM_TABLES, 'parish_portability_jobs', 'parish_portability_steps', 'parish_portability_leases', 'parish_data_closures', 'parish_portability_objects', 'parish_portability_storage_operations', 'parish_portability_retention', 'parish_portability_inventory_reviews', 'parish_portability_legacy_keys']);
+export const SYSTEM_TABLES = new Set([...D1_SYSTEM_TABLES, 'parish_recovery_retention', 'parish_recovery_snapshots', 'parish_recovery_operations', 'parish_recovery_locks', 'parish_portability_jobs', 'parish_portability_steps', 'parish_portability_leases', 'parish_data_closures', 'parish_portability_objects', 'parish_portability_storage_operations', 'parish_portability_retention', 'parish_portability_inventory_reviews', 'parish_portability_legacy_keys']);
 
 export function quoted(name) {
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) throw new PortabilityError('invalid_identifier', 'Invalid storage identifier.');

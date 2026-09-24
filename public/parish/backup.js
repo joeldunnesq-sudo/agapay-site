@@ -1,10 +1,11 @@
 (function () {
   'use strict';
-  let dispose = () => {};
+  const mounts = new WeakMap();
   window.ParishBackup = {
     mount({ element, parishId, headers }) {
-      dispose();
       if (!element || !parishId) return;
+      mounts.get(element)?.();
+      let dispose = () => {};
       element.innerHTML = `<div class="section-divider"><span>Parish backups</span></div><p class="section-note">Save your parish records as a ZIP with JSON, spreadsheet-ready CSV files, uploaded files, and a checksum manifest. Login credentials and independent personal accounts are excluded. External media is listed by link. Keep your downloaded copy in a secure location.</p>
         <p class="section-note"><strong>Last verified AGAPAY cloud backup · central database</strong><br><span data-cloud role="status">Checking cloud backup…</span></p>
         <p class="section-note">Cloud status refreshes every 30 seconds while these settings are visible. This timestamp covers the central database; separate accounting databases and uploaded files are not certified by this timestamp.</p>
@@ -165,6 +166,10 @@
         clearTimeout(jobTimer);
         document.removeEventListener('visibilitychange', visibleRefresh);
       };
+      mounts.set(element, dispose);
+      const recovery = document.createElement('div');
+      element.append(recovery);
+      window.ParishRecovery?.mount({ element: recovery, parishId, headers, scope: 'parish' });
       void refresh();
     },
   };

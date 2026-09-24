@@ -15,6 +15,7 @@
     "count": 292
   },
   "workerScheduledTaskOrder": [
+    "parish_recovery_jobs",
     "parish_portability_jobs",
     "daily_pastoral_care_digest",
     "scheduled_accounting_recurring",
