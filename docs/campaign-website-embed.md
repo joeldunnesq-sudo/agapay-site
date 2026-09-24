@@ -13,7 +13,7 @@ Elementor documents HTML, CSS, and JavaScript support in its [HTML widget](https
 
 ## Branding and customization
 
-An AGAPAY logo/wordmark banner with a fixed navy/gold/white palette appears above the campaign. A second fixed-color AGAPAY notice appears at the donation form; the existing branded footer remains. Controls cannot remove or recolor these notices. Only validated hex colors and the two supplied heading fonts are accepted. Button text and headings automatically use contrasting text colors.
+The embedded campaign has no top branding bar. The existing AGAPAY logo and wordmark remain in the footer, and the secure-checkout notice remains at the donation form. Customization controls do not remove this branding. Only validated hex colors and the two supplied heading fonts are accepted. Button text and headings automatically use contrasting text colors.
 
 The campaign lives in a cross-origin iframe, so ordinary parish/Elementor styles do not override its branding or form. A website owner still controls their own page and can remove or crop an iframe; this is not a technical guarantee against deliberate concealment.
 

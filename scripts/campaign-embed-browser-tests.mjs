@@ -31,9 +31,10 @@ try {
   await page.evaluate(() => { document.getElementById('widget').innerHTML = '<div data-agapay-campaign="roof" data-parish="test" data-primary="#733c43" data-background="#faf7f0"></div>'; });
   const frame = page.frameLocator('#widget iframe');
   await frame.locator('#campaignContent').waitFor({ state: 'visible' });
-  assert.equal(await frame.locator('.agapay-campaign-brand strong').textContent(), 'AGAPAY');
+  assert.equal(await frame.locator('.agapay-campaign-brand').count(), 0);
+  assert.equal(await frame.locator('.campaign-footer strong').textContent(), 'AGAPAY');
+  assert.equal(await frame.locator('.campaign-footer img').isVisible(), true);
   assert.match(await frame.locator('#shareFacebook').getAttribute('href'), /parish-website.test%2Frestore-our-church/);
-  assert.equal(await frame.locator('.agapay-campaign-brand').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(7, 26, 42)');
   assert.equal(await frame.locator('#giveBtn').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(115, 60, 67)');
   await page.waitForFunction(() => parseInt(document.querySelector('#widget iframe').style.height) > 1100);
   const height = await page.locator('#widget iframe').evaluate(node => node.style.height);
