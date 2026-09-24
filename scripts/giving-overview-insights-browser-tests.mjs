@@ -47,17 +47,24 @@ const fixture = await openParishFixture(
 );
 try {
   const { page } = fixture;
+  await page.setViewportSize({ width: 1280, height: 1000 });
   await fixture.open();
   await page.locator('#givingOverviewFees .sw-fees').waitFor();
   assert.equal(await page.locator('#tab-giving .sw-giving-comparison').count(), 1);
   assert.match(await page.locator('#givingOverviewComparison').textContent(), /\$750\.00 · 75\.0%/);
   assert.equal(await page.locator('#tab-stewardship .sw-giving-comparison, #tab-stewardship .sw-fees').count(), 0);
+  const sourceBox = await page.locator('#givingOverviewComparison').boundingBox();
+  const feeBox = await page.locator('#givingOverviewFees').boundingBox();
+  assert.equal(sourceBox.y, feeBox.y, 'Desktop cards must share a top edge');
+  assert.ok(feeBox.x > sourceBox.x + sourceBox.width, 'Desktop cards must sit side by side');
+  assert.ok(Math.abs(sourceBox.height - feeBox.height) < 2, 'Desktop cards must have matching heights');
   await page.locator('#givingOverviewInsightYear').fill(String(year - 1));
   await page.locator('#givingOverviewInsightYear').press('Tab');
   await page.waitForFunction(
     (y) => document.querySelector('#givingOverviewFees .sw-fees-year')?.textContent === String(y),
     year - 1
   );
+  await page.getByText('Explore fee breakdown', { exact: true }).click();
   await page.getByRole('button', { name: 'Monthly', exact: true }).click();
   assert.equal(await page.locator('[data-fee-period="monthly"]').isVisible(), true);
   assert.match(await page.locator('[data-fee-period="monthly"]').textContent(), /January/);
@@ -75,6 +82,11 @@ try {
   });
   assert.equal(await page.locator('#tab-stewardship .sw-giving-comparison, #tab-stewardship .sw-fees').count(), 0);
   await page.setViewportSize({ width: 390, height: 844 });
+  const mobileSource = await page.locator('#givingOverviewComparison').boundingBox();
+  const mobileFees = await page.locator('#givingOverviewFees').boundingBox();
+  assert.ok(mobileFees.y >= mobileSource.y + mobileSource.height, 'Mobile cards must stack');
+  await page.getByText('Explore fee breakdown', { exact: true }).click();
+  await page.getByRole('button', { name: 'Monthly', exact: true }).click();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   fixture.assertClean();
   console.log(

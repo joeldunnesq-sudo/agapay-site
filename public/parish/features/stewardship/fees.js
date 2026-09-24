@@ -13,7 +13,7 @@ function selectStewardshipFeePeriod(button, period) {
   });
 }
 
-function renderStewardshipFees(report) {
+function renderStewardshipFees(report, compact = false) {
   if (!report?.annual) return '<p class="sw-chart-note">Processing fee details are not available yet.</p>';
   const money = (value) =>
     (Number(value || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: report.currency || 'USD' });
@@ -29,11 +29,13 @@ function renderStewardshipFees(report) {
     ['monthly', report.monthly],
   ];
   return `<section class="sw-fees" aria-label="Stripe processing fees">
-    <div class="sw-fees-heading"><div><span class="sw-fees-eyebrow">The cost of giving</span><h3>Every gift. Every fee.</h3><p>How donor generosity offsets the parish’s Stripe processing costs.</p></div><span class="sw-fees-year">${escapeHtml(String(report.year))}</span></div>
+    <div class="sw-fees-heading"><div><span class="sw-fees-eyebrow">The cost of giving</span><h3>${compact ? 'Processing costs' : 'Every gift. Every fee.'}</h3><p>${compact ? 'Stripe fees and the donors who help cover them.' : 'How donor generosity offsets the parish’s Stripe processing costs.'}</p></div><span class="sw-fees-year">${escapeHtml(String(report.year))}</span></div>
     <div class="sw-fees-kpis"><div><span>Confirmed Stripe fees</span><strong>${money(a.actualStripeFeeCents)}</strong><small>${a.confirmedCount} reconciled gifts</small></div><div><span>Funded by donors</span><strong>${money(a.donorFundedStripeFeeCents)}</strong><small>From voluntary additional gifts</small></div><div><span>Funded by the parish</span><strong>${money(a.parishFundedStripeFeeCents)}</strong><small>Remaining processing cost</small></div></div>
     ${coverage === null ? '<p class="sw-fees-note">No confirmed Stripe processing costs for this year yet.</p>' : `<div class="sw-fees-coverage"><div><strong>${coverage}%</strong><span>of confirmed processing costs funded by donors</span></div><div class="sw-fees-bar" role="img" aria-label="Donors funded ${coverage}% of confirmed Stripe fees"><i style="width:${coverage}%"></i></div></div>`}
+    ${compact ? '<details class="gi-details"><summary>Explore fee breakdown</summary>' : ''}
     <div class="sw-fees-tabs" role="group" aria-label="Fee reporting period">${panels.map(([key]) => `<button type="button" data-fee-tab="${key}" aria-pressed="${key === 'yearly'}" onclick="selectStewardshipFeePeriod(this, '${key}')">${key[0].toUpperCase() + key.slice(1)}</button>`).join('')}</div>
     ${panels.map(([key, rows]) => `<div data-fee-period="${key}" ${key === 'yearly' ? '' : 'hidden'}>${table(rows || [])}</div>`).join('')}
     <p class="sw-fees-note">Donors contributed <strong>${money(a.donorFeeContributionCents)}</strong> toward processing costs. ${a.excessCoverageCents ? `${money(a.excessCoverageCents)} of retained coverage exceeds confirmed fees and remains a contribution. ` : ''}${a.pendingCount ? `<strong>${a.pendingCount} gifts await reconciliation</strong> (${money(a.estimatedStripeFeeCents)} estimated fees, excluded from confirmed totals). ` : ''}${a.refundedCents ? `${money(a.refundedCents)} in recorded refunds; returned coverage is allocated to the parish share. ` : ''}Fee totals cover AGAPAY giving in USD, grouped by gift date; they exclude Commerce, subscription charges, and separate Stripe adjustments.${report.excludedCurrencyCount ? ` ${report.excludedCurrencyCount} non-USD gifts are excluded.` : ''}</p>
+    ${compact ? '</details>' : ''}
   </section>`;
 }
