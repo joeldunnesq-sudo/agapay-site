@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css?v=20260902access1" />
   <link rel="stylesheet" href="/styles/stewardship-intelligence.css?v=20260831fonts1" />
-  <link rel="stylesheet" href="/styles/stewardship-entry.css?v=20260923visibility2" />
+  <link rel="stylesheet" href="/styles/stewardship-entry.css?v=20260923overview1" />
   <link rel="stylesheet" href="/styles/stewardship-fees.css?v=20260923fees1" />
   <link rel="stylesheet" href="/parish/accounting-activation.css?v=20260831logo3" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -256,6 +256,12 @@
             <div class="pdx-kpi-meta" id="pdxKpiGiftCountMeta"><span style="opacity:0.7;">Awaiting data</span></div>
             <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           </div>
+        </section>
+
+        <section id="givingOverviewInsights" class="sw-reports-intelligence" aria-label="Giving sources and processing fees" hidden>
+          <div class="sw-outside-history-head"><h2>Giving sources &amp; processing costs</h2><label>Reporting year<input id="givingOverviewInsightYear" type="number" min="2000" step="1" required onchange="loadGivingOverviewInsights()" /></label></div>
+          <div id="givingOverviewComparison" aria-live="polite"></div>
+          <div id="givingOverviewFees" aria-live="polite"></div>
         </section>
 
         <section class="fr-card sw-reports-intelligence fr-weekly" id="weeklyFundsCard">
@@ -1970,14 +1976,14 @@
   <script src="/parish/directory-import.js?v=20260828import1"></script>
   <link rel="stylesheet" href="/parish/portability.css?v=20260923backup1" />
   <script src="/parish/portability.js?v=20260828portability1"></script>
-  <script src="/parish/backup.js?v=20260923visibility2"></script>
-  <script src="/parish/feature-registry.js?v=20260923visibility2"></script>
-  <script src="/parish/features/staff-access.js?v=20260923visibility2"></script>
-  <script src="/parish/features/directory.js?v=20260923visibility2"></script>
-  <script src="/parish/features/library.js?v=20260923visibility2"></script>
-  <script src="/parish/features/sacraments/pastoral-followup.js?v=20260923visibility2"></script>
-  <script src="/parish/features/sacraments/preparation.js?v=20260923visibility2"></script>
-  <script src="/parish/features/sacraments.js?v=20260923visibility2"></script>
+  <script src="/parish/backup.js?v=20260923overview1"></script>
+  <script src="/parish/feature-registry.js?v=20260923overview1"></script>
+  <script src="/parish/features/staff-access.js?v=20260923overview1"></script>
+  <script src="/parish/features/directory.js?v=20260923overview1"></script>
+  <script src="/parish/features/library.js?v=20260923overview1"></script>
+  <script src="/parish/features/sacraments/pastoral-followup.js?v=20260923overview1"></script>
+  <script src="/parish/features/sacraments/preparation.js?v=20260923overview1"></script>
+  <script src="/parish/features/sacraments.js?v=20260923overview1"></script>
   <script src="/parish/features/accounting/workspace.js?v=20260831outside1"></script>
   <script src="/parish/features/accounting/treasurer.js?v=20260923entry1"></script>
   <script src="/parish/features/accounting/ledger.js?v=20260831outside1"></script>
@@ -2002,25 +2008,25 @@
   <script src="/parish/features/koinonia/prayers.js?v=20260831outside1"></script>
   <script src="/parish/features/koinonia/media.js?v=20260831outside1"></script>
   <script src="/parish/features/koinonia.js?v=20260831outside1"></script>
-  <script src="/parish/features/onboarding.js?v=20260923visibility2"></script>
-  <script src="/parish/features/campaigns/website-embed.js?v=20260923visibility2"></script>
-  <script src="/parish/features/campaigns.js?v=20260923visibility2"></script>
-  <script src="/parish/features/stewardship/reports.js?v=20260923entry1"></script>
+  <script src="/parish/features/onboarding.js?v=20260923overview1"></script>
+  <script src="/parish/features/campaigns/website-embed.js?v=20260923overview1"></script>
+  <script src="/parish/features/campaigns.js?v=20260923overview1"></script>
+  <script src="/parish/features/stewardship/reports.js?v=20260923overview1"></script>
   <script src="/parish/features/stewardship/fees.js?v=20260923fees1"></script>
-  <script src="/parish/features/stewardship/metrics.js?v=20260923entry1"></script>
+  <script src="/parish/features/stewardship/metrics.js?v=20260923overview1"></script>
   <script src="/parish/features/stewardship/financials.js?v=20260831outside1"></script>
   <script src="/parish/features/stewardship/financials-editor.js?v=20260831outside1"></script>
-  <script src="/parish/features/stewardship/outside-giving.js?v=20260923visibility2"></script>
+  <script src="/parish/features/stewardship/outside-giving.js?v=20260923overview1"></script>
   <script src="/parish/features/stewardship/nudges.js?v=20260831outside1"></script>
   <script src="/parish/features/stewardship/meetings.js?v=20260831outside1"></script>
-  <script src="/parish/features/stewardship.js?v=20260923visibility2"></script>
+  <script src="/parish/features/stewardship.js?v=20260923overview1"></script>
   <script src="/parish/features/giving/commemorations.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/feasts.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/givers.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/outside-gifts.js?v=20260923entry1"></script>
   <script src="/parish/features/giving/history.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/options.js?v=20260831outside1"></script>
-  <script src="/parish/features/giving/overview.js?v=20260831outside1"></script>
+  <script src="/parish/features/giving/overview.js?v=20260923overview1"></script>
   <script src="/parish/features/giving/weekly-funds.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/reconciliation-reports.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/reconciliation.js?v=20260831outside1"></script>
@@ -2029,9 +2035,10 @@
   <script src="/parish/features/giving/embed-theme.js?v=20260923theme1"></script>
   <script src="/parish/features/giving/statements.js?v=20260831outside1"></script>
   <script src="/parish/features/giving/transfers.js?v=20260831outside1"></script>
-  <script src="/parish/features/giving.js?v=20260923visibility2"></script>
+  <script src="/parish/features/giving/insights.js?v=20260923overview1"></script>
+  <script src="/parish/features/giving.js?v=20260923overview1"></script>
   <script src="/parish/diagnostics.js?v=20260831debug1"></script>
-  <script src="/parish/dashboard-runtime.js?v=20260923visibility2"></script>
-  <script src="/parish/app.js?v=20260923visibility2"></script>
+  <script src="/parish/dashboard-runtime.js?v=20260923overview1"></script>
+  <script src="/parish/app.js?v=20260923overview1"></script>
 </body>
 </html>

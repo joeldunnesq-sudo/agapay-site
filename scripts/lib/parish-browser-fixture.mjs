@@ -23,6 +23,8 @@ export const parish = {
 };
 const base = '/api/parish/dashboard/synthetic-parish';
 const background = {
+  '/stewardship/giving/summary': {},
+  '/stewardship/giving/health-score': {},
   '/tax-exemption': {},
   '/giving-summary': { summary: {} },
   '/recurring-health': { health: {} },

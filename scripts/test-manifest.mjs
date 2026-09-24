@@ -160,6 +160,7 @@ const productUi = [
   'scripts/parish-stewardship-browser-tests.mjs',
   'scripts/giving-fee-report-browser-tests.mjs',
   'scripts/stewardship-entry-report-browser-tests.mjs',
+  'scripts/giving-overview-insights-browser-tests.mjs',
   'scripts/parish-giving-browser-tests.mjs',
   'scripts/giving-embed-theme-browser-tests.mjs',
   'scripts/fund-reconciliation-browser-tests.mjs',
