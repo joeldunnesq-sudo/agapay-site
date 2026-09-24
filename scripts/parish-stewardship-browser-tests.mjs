@@ -23,6 +23,8 @@ const entitled = {
 const activeStatus = { status: 'active', active: true, includedInParishTier: true };
 const financialData = {
   snapshot: null,
+  automaticCostsIncluded: true,
+  platformCosts: { processing: { annual: { actualStripeFeeCents: 330 } }, service: { totalCents: 7900 } },
   contributionTotals: { agapayContributionsCents: 20000, outsideContributionsCents: 5000 },
   agapayRestrictedFunds: [
     {
@@ -588,6 +590,7 @@ try {
       await form.locator('[name="title"]').fill('Synthetic snapshot');
       await form.locator('[name="otherRevenueDollars"]').fill('123.45');
       await form.locator('[name="totalExpenseDollars"]').fill('678.90');
+      assert.equal(await form.locator('[name="automaticCostsExcluded"]').isChecked(), true);
       const fund = form.locator('.sw-fin-restricted-adjustment-row');
       await fund.locator('[data-field="openingBalance"]').fill('10.25');
       await fund.locator('[data-field="deductions"]').fill('300.50');
@@ -608,6 +611,7 @@ try {
       assert.equal(financialAttempts[1].fiscalYear, year - 1);
       assert.equal(financialAttempts[1].otherRevenueCents, 12345);
       assert.equal(financialAttempts[1].totalExpenseCents, 67890);
+      assert.equal(financialAttempts[1].automaticCostsExcluded, true);
       assert.deepEqual(financialAttempts[1].restrictedFundAdjustments, [
         { fundId: 'building', openingBalanceCents: 1025, deductionsCents: 30050, notes: 'Restricted expenses' },
       ]);

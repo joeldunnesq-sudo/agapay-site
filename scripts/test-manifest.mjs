@@ -106,6 +106,7 @@ const core = [
 ];
 
 const accounting = [
+  'scripts/service-cost-accounting-tests.mjs',
   'scripts/organization-authorization-adoption-tests.mjs',
   'scripts/payment-classification-tests.mjs',
   'scripts/accounting-activation-tests.mjs',

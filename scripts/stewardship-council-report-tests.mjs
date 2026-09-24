@@ -35,6 +35,7 @@ try {
     '0049_authoritative_stewardship_financial_snapshots.sql',
     '0050_financial_snapshot_external_assets.sql',
     '0052_restricted_fund_snapshot_adjustments.sql',
+    '0127_agapay_service_costs.sql',
   ]) {
     f.db.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
   }

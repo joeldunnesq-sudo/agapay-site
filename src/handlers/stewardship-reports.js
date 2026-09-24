@@ -1,3 +1,4 @@
+import { platformCostTable } from '../stewardship/platform-costs.js';
 import { GIVING_GROSS_CENTS_SQL } from '../lib/giving-contributions.js';
 import { readGivingFeeReport } from '../lib/giving-fee-report.js';
 import { givingFeeReportHtml, appendGivingFeeReport } from '../stewardship/giving-fee-presentation.js';
@@ -490,6 +491,7 @@ export async function handleStewardshipMonthlyFinancialReport(
         <div class="kpi"><span>Net ${Number(totals.netCents || 0) >= 0 ? 'Surplus' : 'Deficit'}</span><strong class="${Number(totals.netCents || 0) >= 0 ? 'positive' : 'negative'}">${fmt(totals.netCents)}</strong></div>
       </div>
     </section>
+    ${platformCostTable(financials.platformCosts, { included: financials.automaticCostsIncluded })}
     <section class="section">
       <h2>Restricted Fund Balances</h2>
       ${

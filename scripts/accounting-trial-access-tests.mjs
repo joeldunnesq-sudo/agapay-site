@@ -14,6 +14,8 @@ import {
 import { createAccountingStaffProfile, verifyAccountingStaffPin } from '../src/lib/accounting-staff.js';
 
 const sqlite = new DatabaseSync(':memory:');
+sqlite.exec('CREATE TABLE stewardship_authoritative_financial_snapshots(id TEXT)');
+sqlite.exec(readFileSync(new URL('../migrations/0127_agapay_service_costs.sql', import.meta.url), 'utf8'));
 for (const migration of ['0021_accounting_control_plane.sql', '0037_accounting_staff_profiles.sql']) {
   sqlite.exec(readFileSync(new URL(`../migrations/${migration}`, import.meta.url), 'utf8'));
 }

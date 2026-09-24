@@ -1,3 +1,4 @@
+import { readPlatformCosts } from '../stewardship/platform-costs.js';
 import { GIVING_GROSS_CENTS_SQL } from '../lib/giving-contributions.js';
 // src/handlers/stewardship-financials.js
 // Authoritative stewardship financial snapshots and compatibility handling.
@@ -256,12 +257,15 @@ async function authoritativeContributionTotals(env, parishId, year) {
   };
 }
 
-function authoritativeSnapshotDto(row, liveContributions) {
+function authoritativeSnapshotDto(row, liveContributions, automaticCosts = 0) {
   if (!row) return null;
   const agapay = Number(liveContributions?.agapayContributionsCents ?? row.agapay_contributions_cents ?? 0);
   const outside = Number(liveContributions?.outsideContributionsCents ?? row.outside_contributions_cents ?? 0);
   const other = Number(row.other_revenue_cents || 0);
-  const expenses = Number(row.total_expense_cents || 0);
+  const enteredExpenses = Number(row.entered_expense_cents ?? row.total_expense_cents ?? 0);
+  const expenses = row.automatic_costs_excluded
+    ? enteredExpenses + automaticCosts
+    : Number(row.total_expense_cents || 0);
   const income = agapay + outside + other;
   return {
     id: row.id,
@@ -272,6 +276,8 @@ function authoritativeSnapshotDto(row, liveContributions) {
     otherRevenueCents: other,
     totalIncomeCents: income,
     totalExpenseCents: expenses,
+    enteredExpenseCents: enteredExpenses,
+    automaticCostsExcluded: Boolean(row.automatic_costs_excluded),
     netCents: income - expenses,
     externalAssets: normalizeExternalAssets(row.external_assets_json || row.restricted_funds_json),
     restrictedFundAdjustments: normalizeRestrictedFundAdjustments(row.restricted_fund_adjustments_json),
@@ -322,8 +328,13 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       row?.restricted_fund_adjustments_json || [],
       priorRow?.restricted_fund_balances_json || []
     );
-    const snapshot = authoritativeSnapshotDto(row, contributions);
-    const priorYear = authoritativeSnapshotDto(priorRow, priorContributions);
+    const platformCosts = await readPlatformCosts(env, parishId, requestedYear);
+    const snapshot = authoritativeSnapshotDto(row, contributions, platformCosts.totalCents);
+    const priorYear = authoritativeSnapshotDto(
+      priorRow,
+      priorContributions,
+      priorRow?.automatic_costs_excluded ? (await readPlatformCosts(env, parishId, requestedYear - 1)).totalCents : 0
+    );
     const revisions = row
       ? await d1All(
           env,
@@ -338,6 +349,8 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       year: requestedYear,
       snapshot,
       contributionTotals: contributions,
+      platformCosts,
+      automaticCostsIncluded: !row || Boolean(row.automatic_costs_excluded),
       totals: snapshot
         ? {
             totalIncomeCents: snapshot.totalIncomeCents,
@@ -346,8 +359,8 @@ export async function handleStewardshipFinancials(request, env, parishId) {
           }
         : {
             totalIncomeCents: provisionalIncome,
-            totalExpenseCents: 0,
-            netCents: provisionalIncome,
+            totalExpenseCents: platformCosts.totalCents,
+            netCents: provisionalIncome - platformCosts.totalCents,
           },
       agapayRestrictedFunds: automaticFunds,
       agapayRestrictedInflowsTotalCents: automaticFunds.reduce((sum, fund) => sum + fund.receivedCents, 0),
@@ -381,7 +394,10 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   }
   const contributions = await authoritativeContributionTotals(env, parishId, fiscalYear);
   const totalIncome = contributions.agapayContributionsCents + contributions.outsideContributionsCents + otherRevenue;
-  const net = totalIncome - expenses;
+  const automaticCostsExcluded = body.automaticCostsExcluded === true;
+  const platformCosts = await readPlatformCosts(env, parishId, fiscalYear);
+  const totalExpenses = expenses + (automaticCostsExcluded ? platformCosts.totalCents : 0);
+  const net = totalIncome - totalExpenses;
   const externalAssets = normalizeExternalAssets(body.externalAssets);
   const externalAssetsJson = JSON.stringify(externalAssets);
   const restrictedFundAdjustments = normalizeRestrictedFundAdjustments(body.restrictedFundAdjustments);
@@ -417,20 +433,22 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       title=?,agapay_contributions_cents=?,outside_contributions_cents=?,other_revenue_cents=?,
       total_income_cents=?,total_expense_cents=?,net_cents=?,restricted_funds_json=?,notes=?,
       external_assets_json=?,restricted_fund_adjustments_json=?,restricted_fund_balances_json=?,
-      version=version+1,updated_by='parish_dashboard',updated_at=?
+      automatic_costs_excluded=?,entered_expense_cents=?,version=version+1,updated_by='parish_dashboard',updated_at=?
       WHERE id=?`,
       title,
       contributions.agapayContributionsCents,
       contributions.outsideContributionsCents,
       otherRevenue,
       totalIncome,
-      expenses,
+      totalExpenses,
       net,
       '[]',
       notes || null,
       externalAssetsJson,
       restrictedFundAdjustmentsJson,
       restrictedFundBalancesJson,
+      Number(automaticCostsExcluded),
+      expenses,
       now,
       row.id
     );
@@ -442,8 +460,8 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       (id,parish_id,fiscal_year,title,agapay_contributions_cents,outside_contributions_cents,
        other_revenue_cents,total_income_cents,total_expense_cents,net_cents,restricted_funds_json,
        notes,external_assets_json,restricted_fund_adjustments_json,restricted_fund_balances_json,
-       version,created_by,updated_by,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'parish_dashboard','parish_dashboard',?,?)`,
+       automatic_costs_excluded,entered_expense_cents,version,created_by,updated_by,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'parish_dashboard','parish_dashboard',?,?)`,
       id,
       parishId,
       fiscalYear,
@@ -452,13 +470,15 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       contributions.outsideContributionsCents,
       otherRevenue,
       totalIncome,
-      expenses,
+      totalExpenses,
       net,
       '[]',
       notes || null,
       externalAssetsJson,
       restrictedFundAdjustmentsJson,
       restrictedFundBalancesJson,
+      Number(automaticCostsExcluded),
+      expenses,
       now,
       now
     );
@@ -492,7 +512,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
     'parish_dashboard',
     now
   );
-  return json({ ok: true, snapshot: authoritativeSnapshotDto(row, contributions) });
+  return json({ ok: true, snapshot: authoritativeSnapshotDto(row, contributions, platformCosts.totalCents) });
 }
 
 // Legacy packet-summary handler retained only for historical route behavior.

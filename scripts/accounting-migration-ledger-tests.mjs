@@ -122,8 +122,8 @@ for (const migration of manifest.migrations.filter(
 }
 assert.equal(
   legacyCanary.prepare(`SELECT COUNT(*) count FROM "${ACCOUNTING_MIGRATION_TABLE}"`).get().count,
-  25,
-  'the legacy Phase G canary must safely converge through migration 0025'
+  manifest.migrations.length,
+  'the legacy Phase G canary must safely converge through the current migration manifest'
 );
 assert.equal(
   legacyCanary.prepare("SELECT COUNT(*) count FROM accounting_accounts WHERE id='acct_5850'").get().count,

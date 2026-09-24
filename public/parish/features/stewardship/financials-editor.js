@@ -72,9 +72,12 @@ function openFinancialsEditor() {
     '<label>Other revenue ($)<input name="otherRevenueDollars" type="number" step="0.01" min="0" value="' +
     fmt100(fs.otherRevenueCents) +
     '" placeholder="0.00" /><small>Bookstore, retreat, rental, grant, and other non-contribution revenue.</small></label>' +
-    '<label>Total expenses ($)<input name="totalExpenseDollars" type="number" step="0.01" min="0" value="' +
-    fmt100(fs.totalExpenseCents) +
+    '<label>Entered parish expenses ($)<input name="totalExpenseDollars" type="number" step="0.01" min="0" value="' +
+    fmt100(fs.enteredExpenseCents ?? fs.totalExpenseCents) +
     '" placeholder="0.00" /></label>' +
+    '<label style="grid-column:1/-1"><input type="checkbox" name="automaticCostsExcluded" ' +
+    (!fs.id || fs.automaticCostsExcluded ? 'checked' : '') +
+    ' /> Add confirmed processing and paid AGAPAY service costs automatically</label><p>When checked, enter other parish expenses only. Leave unchecked if your entered total already includes these costs. Existing snapshots retain their all-in basis until you review them.</p>' +
     '<label style="grid-column:1/-1">Notes<textarea name="notes" rows="3" placeholder="Budget notes, audit status, carryover details\u2026">' +
     escapeHtml(fs.notes || '') +
     '</textarea></label>' +
@@ -255,6 +258,7 @@ async function saveFinancialsSnapshot(event) {
   const payload = {
     otherRevenueCents,
     totalExpenseCents,
+    automaticCostsExcluded: fd.get('automaticCostsExcluded') === 'on',
     notes: fd.get('notes') || '',
     fiscalYear: parseInt(fd.get('fiscalYear') || financialsState.year, 10),
     title: fd.get('title') || '',

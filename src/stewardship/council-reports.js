@@ -1,3 +1,4 @@
+import { ledgerCostTable } from './platform-costs.js';
 import { htmlEscape } from '../lib/format.js';
 
 export function councilReportPeriod(url, now = new Date()) {
@@ -36,6 +37,7 @@ export function accountingCouncilReport(parishName, period, monthly, yearToDate)
   <header><span class="eyebrow">AGAPAY · Parish council finances</span><h1>Monthly Financial Report</h1><p>${esc(parishName)} · ${esc(period.monthLabel)}</p><span class="source">Live from Accounting · Posted entries only</span></header>
   <section><h2>${esc(period.monthLabel)} activity</h2><p class="note">${esc(period.monthStart)} through ${esc(period.monthEnd)}</p>${totals(monthly)}</section>
   <section><h2>Year-to-date activity</h2><p class="note">January 1 through ${esc(period.monthEnd)}. These are activity totals, not bank balances.</p>${totals(yearToDate)}</section>
+  ${ledgerCostTable(monthly, yearToDate, money)}
   <section><h2>Restricted fund balances</h2><p class="note">Balances and changes during ${esc(period.monthLabel)}. Funds with no balance or activity are omitted.</p>${funds.length ? `<div class="table-wrap"><table><thead><tr><th>Fund</th><th>Beginning</th><th>Received / transfers in</th><th>Used / transfers out</th><th>Ending</th></tr></thead><tbody>${funds.map((f) => `<tr><td>${esc(f.fundName)}</td><td>${money(f.beginningBalanceCents / 100)}</td><td>${money(f.totalReceivedCents / 100)}</td><td>${money(f.totalDisbursedCents / 100)}</td><td>${money(f.endingBalanceCents / 100)}</td></tr>`).join('')}</tbody></table></div>` : '<p>No restricted fund balances or activity for this month.</p>'}<p class="note">Ending balance = beginning balance + received and transfers in − used and transfers out.</p></section>
   <section><h2>Reporting basis</h2><p>This report reads completed Accounting entries for the selected dates. Drafts and saved meeting snapshots are not included. Giving already recorded in Accounting is counted once.</p><p>Income less expenses is different from cash movement. Include the Accounting balance sheet, cash-flow report, and budget comparison when needed for council review.</p><p>Saved meeting packets remain separate historical copies. Generating this report does not change them.</p></section><footer>Generated ${esc(new Date().toISOString().slice(0, 10))} · AGAPAY · Review before council distribution</footer></main></body></html>`;
   return new Response(html, {

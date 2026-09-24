@@ -1,3 +1,4 @@
+import { processAccountingSourceEvent } from '../accounting/integrations/service.js';
 import { givingFeeCoverageBackfill } from '../accounting/integrations/fee-coverage.js';
 import { json } from "../lib/core.js";
 import { commitBankImport, commerceOverview, commerceReportCsv, completeReconciliation, configureCommerceItem, confirmReconciliationMatch, createBankAccount, createReconciliation, eligibleLedgerItems, getIntegrationSettings, integrationOverview, listBankAccounts, postReconciliationAdjustment, previewBankCsv, previewCommerceBackfill, previewIntegrationBackfill, reconciliationCsv, reopenReconciliation, salesTaxLiabilityReport, stripeClearingValidation, suggestMatches, updateBankAccount, updateIntegrationSettings, validateReconciliation } from "../accounting/index.js";
@@ -11,6 +12,7 @@ const yearStart=()=>`${new Date().getUTCFullYear()}-01-01`;
 const rows=async(db,sql,...params)=>(await db.prepare(sql).bind(...params).all()).results||[];
 
 function capability(path,method){
+  if(path.startsWith("/integrations/service-invoices/") && method!=="GET") return "accounting.integrations.review";
   if(path.startsWith("/bank/accounts")) return method==="GET"?"accounting.bank_accounts.view":"accounting.bank_accounts.manage";
   if(path.startsWith("/bank/imports")) return "accounting.bank_imports.manage";
   if(path.endsWith("/complete")) return "accounting.reconciliation.complete";
@@ -31,6 +33,14 @@ export async function handleAccountingReconciliationCommerce(request,env,parishI
   let path=url.pathname.slice(base.length),csv=false;if(path.endsWith(".csv")){csv=true;path=path.slice(0,-4);} if(!path.startsWith("/bank")&&!path.startsWith("/integrations")&&!path.startsWith("/commerce"))return null;
   try{
     const ctx=await accountingContext(request,env,parishId,capability(path,request.method));if(!ctx)return reply({error:"Unauthorized"},401);if(ctx.error)return ctx.error;
+    const invoiceMatch=path.match(/^\/integrations\/service-invoices\/([^/]+)\/post$/);
+    if(request.method==='POST' && invoiceMatch){
+      const sourceId=decodeURIComponent(invoiceMatch[1]);
+      const source=await ctx.db.prepare("SELECT id FROM accounting_integration_source_events WHERE id=? AND source_type='agapay_subscription_paid'").bind(sourceId).first();
+      if(!source)return reply({error:'Invoice not found'},404);
+      const result=await processAccountingSourceEvent(ctx.db,{actor:ctx.actor,entitlementTier:serviceTier(ctx.tier),sourceEventId:sourceId,approve:true});
+      return reply({ok:result.status==='posted',invoice:result,message:result.exceptionMessage},result.status==='posted'?200:409);
+    }
     const tier=serviceTier(ctx.tier),body=request.method==="GET"?{}:await request.json().catch(()=>({}));
     if(request.method==="GET"&&path==="/bank/accounts")return reply({ok:true,accounts:await listBankAccounts(ctx.db,{actor:ctx.actor,entitlementTier:tier})});
     if(request.method==="POST"&&path==="/bank/accounts")return reply({ok:true,account:await createBankAccount(ctx.db,{actor:ctx.actor,entitlementTier:tier,input:body})},201);

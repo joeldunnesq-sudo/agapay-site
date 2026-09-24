@@ -1,3 +1,4 @@
+import { postServiceInvoices } from '../accounting/service-costs.js';
 import { json } from '../lib/core.js';
 import { authorize } from '../lib/authorization.js';
 import { requireAccountingStaffProfile } from '../lib/accounting-staff.js';
@@ -119,6 +120,7 @@ export async function accountingContext(request, env, parishId, capability, depe
       ),
     };
   if (!db) return { error: reply({ error: 'Accounting database is unavailable.' }, 503) };
+  await (dependencies.postServiceInvoices || postServiceInvoices)(env, db, tenantParishId);
   return {
     db,
     entityId: entity.id,

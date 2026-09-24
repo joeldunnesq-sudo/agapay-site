@@ -24,6 +24,7 @@ import sql21 from '../../../accounting-migrations/0022_pledge_comparison_account
 import sql22 from '../../../accounting-migrations/0023_migration_import_sessions.sql';
 import sql23 from '../../../accounting-migrations/0024_recurring_vendor_bills.sql';
 import sql24 from '../../../accounting-migrations/0025_in_kind_contributions_account.sql';
+import sql25 from '../../../accounting-migrations/0026_service_subscription_costs.sql';
 export const provisioningMigrations = [
   { name: '0001_accounting_database_foundation.sql', sha256: '2dd980d1cffdce1897b6d59268d5de3b2dd24b988417d58f1b1ebb1771d8b95b', sql: sql0 },
   { name: '0002_core_ledger.sql', sha256: 'e4230b127331afa52e06b5280d6a4621af57955006bc30e53f6674c2fd3f2d9e', sql: sql1 },
@@ -50,4 +51,5 @@ export const provisioningMigrations = [
   { name: '0023_migration_import_sessions.sql', sha256: 'a6bade97274e7b366a70d21bdc743623e15f24a1fca6f75c3fa5bd0cc6437e0b', sql: sql22 },
   { name: '0024_recurring_vendor_bills.sql', sha256: '172ad76ec5c2950488e10de26a2a8e7d32ab265c9c4d3bff76b7a62f9ebf47f8', sql: sql23 },
   { name: '0025_in_kind_contributions_account.sql', sha256: '31bd9e298f74f962411819caa8fc3ba3bae90f56efe57b26dcbe337a92666f68', sql: sql24 },
+  { name: '0026_service_subscription_costs.sql', sha256: 'c5e730d7719c95f87af7c0aed81268a6b428c5734f4af4e9fa5be8f361608631', sql: sql25 },
 ];
