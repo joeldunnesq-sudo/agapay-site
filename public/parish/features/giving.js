@@ -2,11 +2,12 @@
 
 /* global activeTab, currentParish, allGifts, loadGivingHistory, renderGiversPanel,
   renderGivingOptionsEditor, loadSettlementProfilesPanel, loadReconciliation, statusLabel,
-  loadGivingSummary, loadWeeklyFunds, loadOutsideGiving, loadRecurringHealth, renderQrCode, loadCommemorations, initReconciliationMonths */
+  loadGivingSummary, loadGivingOverviewInsights, loadWeeklyFunds, loadOutsideGiving, loadRecurringHealth, renderQrCode, loadCommemorations, initReconciliationMonths */
 
 // Giving owns its tab workflows and delayed dashboard refresh work.
 // Authentication, settings saves, and shared catalog state remain in core.
 function loadGivingTab(tab = activeTab) {
+  if (tab === 'giving') loadGivingOverviewInsights();
   if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length)
     loadGivingHistory();
   if (tab === 'givers' && allGifts.length) renderGiversPanel();

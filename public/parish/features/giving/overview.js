@@ -1,6 +1,6 @@
 'use strict';
 
-/* global currentParish, authHeaders, loadStripeVolume, escapeHtml, money, shortDate */
+/* global currentParish, authHeaders, loadStripeVolume, escapeHtml, money, shortDate, loadGivingOverviewInsights */
 /* exported loadGivingSummary */
 
 // Giving overview; read shared identity and catalog state only when actions run.
@@ -9,6 +9,7 @@
 async function loadGivingSummary(btn) {
   const pane = document.getElementById('givingSummaryPane');
   if (!currentParish || !pane) return;
+  loadGivingOverviewInsights();
   const status = document.getElementById('givingSummaryStatus');
   if (btn) {
     btn.classList.add('loading');

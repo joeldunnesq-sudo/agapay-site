@@ -53,7 +53,7 @@ try {
       renderAccountingPane();
     };
   });
-  for (const file of ['stewardship/outside-giving', 'stewardship/reports', 'accounting/reports'])
+  for (const file of ['stewardship/outside-giving', 'stewardship/reports', 'giving/insights', 'accounting/reports'])
     await page.addScriptTag({
       content: await readFile(new URL('../public/parish/features/' + file + '.js', import.meta.url), 'utf8'),
     });
