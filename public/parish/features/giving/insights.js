@@ -9,6 +9,8 @@ let givingOverviewInsightParish = '';
 async function loadGivingOverviewInsights() {
   const section = document.getElementById('givingOverviewInsights');
   if (!section) return;
+  if (!section.children.length)
+    section.innerHTML = `<div class="sw-outside-history-head"><h2>Giving sources &amp; processing costs</h2><label>Reporting year<input id="givingOverviewInsightYear" type="number" min="2000" step="1" required onchange="loadGivingOverviewInsights()" /></label></div><div id="givingOverviewComparison" aria-live="polite"></div><div id="givingOverviewFees" aria-live="polite"></div>`;
   const request = ++givingOverviewInsightRequest;
   const parishId = currentParish?.parishId;
   section.hidden = !parishId || (!isParishTier() && !isParishPlusActive());
