@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
+import { stagingParishSession } from './lib/staging-parish-session.mjs';
 import { baseUrlFrom, requiredEnvironment, writeArtifact } from './lib/accounting-release-gates.mjs';
 
 const baseUrl = baseUrlFrom();
 assert.equal(new URL(baseUrl).origin, 'https://agapay-site-staging.joeldunnesq.workers.dev');
 const credentials = requiredEnvironment([
   'ACCOUNTING_GATE_PARISH_A_ID',
-  'ACCOUNTING_GATE_PARISH_A_PASSWORD',
+  'ACCOUNTING_GATE_USER_A_EMAIL',
+  'ACCOUNTING_GATE_USER_A_PASSWORD',
   'ACCOUNTING_GATE_PARISH_B_ID',
-  'ACCOUNTING_GATE_PARISH_B_PASSWORD',
+  'ACCOUNTING_GATE_USER_B_EMAIL',
+  'ACCOUNTING_GATE_USER_B_PASSWORD',
 ]);
 const parishA = credentials.ACCOUNTING_GATE_PARISH_A_ID;
 const parishB = credentials.ACCOUNTING_GATE_PARISH_B_ID;
@@ -21,19 +24,22 @@ async function request(path, { token, method = 'GET', body, headers = {} } = {})
     signal: AbortSignal.timeout(30000),
   });
 }
-async function login(parish, password) {
-  const response = await request(`${prefix(parish)}/session`, {
-    method: 'POST',
-    body: JSON.stringify({ password }),
-    headers: { 'content-type': 'application/json' },
-  });
-  assert.equal(response.status, 200, 'Staging parish login');
-  const { token } = await response.json();
-  assert.ok(token, 'Staging parish session token');
-  return token;
-}
-const tokenA = await login(parishA, credentials.ACCOUNTING_GATE_PARISH_A_PASSWORD);
-const tokenB = await login(parishB, credentials.ACCOUNTING_GATE_PARISH_B_PASSWORD);
+const tokenA = await stagingParishSession({
+  baseUrl,
+  parishId: parishA,
+  email: credentials.ACCOUNTING_GATE_USER_A_EMAIL,
+  password: credentials.ACCOUNTING_GATE_USER_A_PASSWORD,
+  totpSecret: process.env.ACCOUNTING_GATE_USER_A_TOTP_SECRET,
+  label: 'Staging parish A',
+});
+const tokenB = await stagingParishSession({
+  baseUrl,
+  parishId: parishB,
+  email: credentials.ACCOUNTING_GATE_USER_B_EMAIL,
+  password: credentials.ACCOUNTING_GATE_USER_B_PASSWORD,
+  totpSecret: process.env.ACCOUNTING_GATE_USER_B_TOTP_SECRET,
+  label: 'Staging parish B',
+});
 const preparation = (parish) => `${prefix(parish)}/sacraments/preparation`;
 const templatesResponse = await request(`${preparation(parishA)}/templates`, { token: tokenA });
 assert.equal(templatesResponse.status, 200, 'Preparation templates');

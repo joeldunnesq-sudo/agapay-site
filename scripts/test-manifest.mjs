@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/staging-parish-session-tests.mjs',
   'scripts/browser-typescript-tests.mjs',
   'scripts/browser-typescript-browser-tests.mjs',
   'scripts/server-typescript-tests.mjs',
