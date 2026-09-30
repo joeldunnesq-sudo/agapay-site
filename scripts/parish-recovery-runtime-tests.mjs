@@ -53,7 +53,9 @@ const hosted = process.env.RECOVERY_HOSTED_DRILL_CONFIG;
 const mf = hosted ? await hostedRecoveryBindings(hosted) : new Miniflare(options),
   f = await portabilityFixture({ barriers: false });
 const quoted = (s) => '"' + s.replaceAll('"', '""') + '"';
+let managedBooks = false;
 async function call(body, expectedFailure) {
+  body = { ...body, managedBooks };
   const started = Date.now();
   for (let attempt = 0; ; attempt++) {
     const r = await mf.dispatchFetch('http://local.test/', {
@@ -301,6 +303,7 @@ try {
   assert.equal(JSON.parse(await legacy.get('parish-feature-requests:parish-a')).note, 'Original request');
   assert.equal(JSON.parse(await legacy.get('parish-feature-requests:parish-b')).note, 'Original request');
   const beforeAccount = await nativeBooks.prepare("SELECT name FROM accounting_accounts WHERE id='acct_1010'").first();
+  managedBooks = true;
   await finish(
     await call({ action: 'start', input: { kind: 'backup', scope: 'accounting', requestKey: crypto.randomUUID() } })
   );
@@ -329,7 +332,9 @@ try {
     'Keep parish edit'
   );
   assert.equal((await nativeBooks.prepare('SELECT COUNT(*) n FROM recovery_lock').first()).n, 0);
-  console.log('PASS - native accounting-only restore with all accounting migrations preserves central parish edits');
+  console.log(
+    'PASS - managed-service accounting-only restore with all accounting migrations preserves central parish edits'
+  );
   console.log(
     'PASS - native workerd D1/R2/KV restoration, sacrament files, other-parish isolation and trigger reinstatement, with isolated synthetic resources'
   );

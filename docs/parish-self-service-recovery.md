@@ -130,6 +130,10 @@ hashes. It reruns the audit, rejects changed hashes, pending writes and ownershi
 reassignment, updates control records only, and verifies full readback. It does not
 change parish records, ledger entries, file bodies, or feature flags. Recovery and
 storage guards must remain disabled until this result is verified.
+Accounting resolution includes databases created by the onboarding provisioner,
+with parish identity verified before access. Managed-service queries share the
+invocation work budget. The cloud rehearsal also verifies D1 HTTP batch rollback
+on a disposable database, matching the provisioner's transaction transport.
 
 Run the following from the repository root:
 

@@ -17,6 +17,11 @@ export function portabilityBudget(env) {
     state.spent += count;
   };
   const wrapped = {...raw,[BUDGET]:state};
+  if (raw.ACCOUNTING_PROVISIONER) wrapped.ACCOUNTING_PROVISIONER = new Proxy(raw.ACCOUNTING_PROVISIONER, { get(target,key) {
+    if (key === 'resolve') return (...args) => { charge(); return target.resolve(...args); };
+    if (key === 'query') return (name, items) => { charge(items.length); return target.query(name, items); };
+    const value=target[key]; return typeof value==='function'?value.bind(target):value;
+  }});
   let mapping;
   try { mapping=JSON.parse(raw.ACCOUNTING_DATABASE_BINDINGS || '{}'); } catch { mapping={}; }
   const statements = new WeakMap(), bindings = new Map();

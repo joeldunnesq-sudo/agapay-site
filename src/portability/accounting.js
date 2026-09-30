@@ -1,6 +1,6 @@
 import { loadAccountingDatabaseProviderRecord } from '../accounting/control-plane.js';
 import { detectAccountingEnvironment } from '../accounting/environment.js';
-import { createBoundD1ProvisioningAdapter, createD1DatabaseFacade } from '../accounting/provisioning/adapters.js';
+import { resolveScheduledAccountingDatabase } from '../accounting/provisioning/adapters.js';
 import { PORTABILITY_SCHEMA } from './accounting-schema.js';
 import { PortabilityError, quoted, exportRow, MAX_TABLE_ROWS, MAX_EXPORT_BYTES, D1_SYSTEM_TABLES, schemaMetadata } from './catalog.js';
 import { accountingLegacyColumns } from './accounting-legacy.js';
@@ -10,10 +10,8 @@ export async function resolvePortabilityBooks(env, parishId, entities) {
   if (entities.length !== 1 || entities[0].parish_id !== parishId) throw new PortabilityError('accounting_owner_mismatch', 'Accounting ownership must be reconciled before export.');
   const provider = await loadAccountingDatabaseProviderRecord(env, entities[0].id, detectAccountingEnvironment(env));
   if (!provider) throw new PortabilityError('accounting_unavailable', 'The parish accounting registry is incomplete.', 503);
-  const adapter = createBoundD1ProvisioningAdapter(env);
-  const physical = await adapter.findByName(provider.databaseIdentifier);
-  if (!physical) throw new PortabilityError('accounting_unavailable', 'The parish accounting database must be bound to the exporter.', 503);
-  const db = createD1DatabaseFacade(adapter, physical.providerId);
+  const db = await resolveScheduledAccountingDatabase(env, provider.databaseIdentifier);
+  if (!db) throw new PortabilityError('accounting_unavailable', 'The parish accounting database must be available through its verified binding or provisioning service.', 503);
   const identity = await db.prepare("SELECT value FROM accounting_database_metadata WHERE key = 'parish_id'").first();
   if (identity?.value !== parishId) throw new PortabilityError('accounting_owner_mismatch', 'Accounting database identity does not match this parish.');
   return db;

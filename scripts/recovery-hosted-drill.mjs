@@ -123,6 +123,33 @@ try {
     state.d1.push({ binding, database_name, database_id: created.uuid });
     save(journalPath, state);
   }
+  // Newly provisioned books use the private service's D1 HTTP batch path.
+  // Verify its rollback semantics against this run's empty disposable database.
+  const probePath = '/d1/database/' + state.d1.find((r) => r.binding === 'DRILL_BOOKS').database_id + '/query';
+  await api('POST', probePath, {
+    batch: [
+      { sql: 'CREATE TABLE recovery_atomic_probe (id INTEGER PRIMARY KEY, value INTEGER)', params: [] },
+      { sql: 'INSERT INTO recovery_atomic_probe VALUES(1,0)', params: [] },
+    ],
+  });
+  const failedResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}${probePath}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      batch: [
+        { sql: 'UPDATE recovery_atomic_probe SET value=1 WHERE id=1', params: [] },
+        { sql: 'INSERT INTO recovery_probe_missing_table VALUES(1)', params: [] },
+      ],
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+  const failedBatch = await failedResponse.json();
+  assert.ok(failedBatch.success === false || failedBatch.result?.some((r) => r.success === false));
+  assert.match(JSON.stringify(failedBatch), /no such table|SQLITE_ERROR/i);
+  const probe = await api('POST', probePath, { sql: 'SELECT value FROM recovery_atomic_probe WHERE id=1', params: [] });
+  assert.equal(probe[0].results[0].value, 0, 'Provider batch must roll back every earlier statement');
+  await api('POST', probePath, { sql: 'DROP TABLE recovery_atomic_probe', params: [] });
+  console.log('PASS - disposable D1 HTTP batch rolls back an earlier write when a later statement fails');
   for (const [binding, suffix] of [
     ['PARISH_EXPORTS', 'exports'],
     ['PARISH_RETAINED_DATA', 'retained'],
@@ -199,6 +226,7 @@ try {
     syntheticDataOnly: true,
     productionStoresBound: false,
     hostedInvocations: true,
+    providerBatchRollbackVerified: true,
     completedAt: new Date().toISOString(),
     cleanupComplete: false,
   });
