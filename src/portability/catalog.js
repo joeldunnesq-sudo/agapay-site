@@ -60,14 +60,14 @@ const JOIN_SCOPES = {
   tax_exemption_notes: ['tax_exemption_id', 'tax_exemptions', 'id'],
   tax_exemption_stripe_syncs: ['registration_reference', 'registrations', 'reference'],
 };
-const INDEPENDENT = new Set(`academic_years account_deletion_requests accounting_schema_versions app_settings consumer_passkey_accounts consumer_passkey_transactions consumer_webauthn_credentials courses directory_person_links donor_custom_news_feeds donor_external_feed_subscriptions donor_news_source_subscriptions donor_podcast_preferences donor_podcast_progress donor_podcast_subscriptions donors grades_and_progress legal_terms_versions platform_users stripe_events`.split(' '));
+const INDEPENDENT = new Set(`contact_leads academic_years account_deletion_requests accounting_schema_versions app_settings consumer_passkey_accounts consumer_passkey_transactions consumer_webauthn_credentials courses directory_person_links donor_custom_news_feeds donor_external_feed_subscriptions donor_news_source_subscriptions donor_podcast_preferences donor_podcast_progress donor_podcast_subscriptions donors grades_and_progress legal_terms_versions platform_users stripe_events`.split(' '));
 const SECRET_TABLES = new Set(['parish_email_credentials', 'accounting_staff_sessions', 'directory_import_leases', 'privileged_mfa_profiles', 'privileged_mfa_transactions', 'privileged_webauthn_credentials', 'push_subscriptions']);
 export function scopeParent(name) { return JOIN_SCOPES[name] || null; }
 
 // Exact provider-owned names only; unknown application tables still block export.
 // workerd/src/workerd/util/sqlite-metadata.h documents the protected metadata table.
 export const D1_SYSTEM_TABLES = new Set(['d1_migrations', '_cf_KV', '_cf_METADATA']);
-export const SYSTEM_TABLES = new Set([...D1_SYSTEM_TABLES, 'parish_portability_jobs', 'parish_portability_steps', 'parish_portability_leases', 'parish_data_closures', 'parish_portability_objects', 'parish_portability_storage_operations', 'parish_portability_retention', 'parish_portability_inventory_reviews', 'parish_portability_legacy_keys']);
+export const SYSTEM_TABLES = new Set([...D1_SYSTEM_TABLES, 'parish_recovery_retention', 'parish_recovery_snapshots', 'parish_recovery_operations', 'parish_recovery_locks', 'parish_portability_jobs', 'parish_portability_steps', 'parish_portability_leases', 'parish_data_closures', 'parish_portability_objects', 'parish_portability_storage_operations', 'parish_portability_retention', 'parish_portability_inventory_reviews', 'parish_portability_legacy_keys']);
 
 export function quoted(name) {
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) throw new PortabilityError('invalid_identifier', 'Invalid storage identifier.');

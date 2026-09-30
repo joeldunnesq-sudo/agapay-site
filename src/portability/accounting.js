@@ -19,14 +19,14 @@ export async function resolvePortabilityBooks(env, parishId, entities) {
   return db;
 }
 
-async function inspectBooks(db) {
+export async function inspectBooks(db) {
   const names = (await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results;
-  const reviewed = names.filter(({name}) => !D1_SYSTEM_TABLES.has(name) && !['accounting_portability_lock','accounting_portability_secrets'].includes(name));
+  const reviewed = names.filter(({name}) => !D1_SYSTEM_TABLES.has(name) && !['accounting_portability_lock','accounting_portability_secrets','recovery_lock'].includes(name));
   for (const {name} of reviewed) if (!PORTABILITY_SCHEMA[name] && !accountingLegacyColumns(name)) throw new PortabilityError('accounting_schema_unknown', `Accounting export needs a storage review for ${name}.`);
   const metadata = await schemaMetadata(db, reviewed.map(t=>t.name));
   const tables = [], emptyLegacyTables = [];
   for (const { name } of names) {
-    if (D1_SYSTEM_TABLES.has(name) || name === 'accounting_portability_lock' || name === 'accounting_portability_secrets') continue;
+    if (name === 'recovery_lock' || D1_SYSTEM_TABLES.has(name) || name === 'accounting_portability_lock' || name === 'accounting_portability_secrets') continue;
     const legacyColumns = accountingLegacyColumns(name);
     const known = PORTABILITY_SCHEMA[name] || legacyColumns;
     if (!known) throw new PortabilityError('accounting_schema_unknown', `Accounting export needs a storage review for ${name}.`);

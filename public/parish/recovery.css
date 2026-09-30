@@ -1,0 +1,41 @@
+.parish-recovery-dialog {
+  box-sizing: border-box;
+  width: min(680px, calc(100vw - 32px));
+  max-height: 85vh;
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid #b18a3e;
+  border-radius: 12px;
+  color: #102434;
+  background: #fffdf8;
+  font:
+    15px/1.6 system-ui,
+    sans-serif;
+}
+.parish-recovery-dialog::backdrop {
+  background: rgb(7 26 42 / 65%);
+}
+.parish-recovery-dialog label {
+  display: block;
+  margin: 16px 0;
+}
+.parish-recovery-dialog select,
+.parish-recovery-dialog input:not([type='checkbox']) {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #b7bec2;
+  border-radius: 6px;
+  background: white;
+  color: #102434;
+}
+.parish-recovery-dialog .btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.parish-recovery-dialog [data-error] {
+  color: #a22c35;
+}

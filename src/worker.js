@@ -24,6 +24,7 @@ import { parishLifeAvailableFor } from "./lib/parish-life-access.js";
 import { runScheduledAccountingIntegrity } from "./accounting/integrity/scheduler.js";
 import { sweepAccountingBackupRetention } from "./accounting/backup-retention.js";
 import { handleParishPortability } from "./handlers/parish-portability.js";
+import { runRecoveryJobs } from "./recovery/maintenance.js";
 import { runPortabilityJobs } from "./portability/service.js";
 import { assertRestoreSafe } from "./portability/suppression.js";
 import { protectFileStorage } from "./portability/storage.js";
@@ -326,6 +327,7 @@ export default withRequestDiagnostics({
     await assertRestoreSafe(env);
     env = protectLegacyStorage(protectFileStorage(env));
     if (event.cron === "*/5 * * * *") {
+      ctx.waitUntil(observeScheduledTask("parish_recovery_jobs", runRecoveryJobs(env), env, event));
       ctx.waitUntil(observeScheduledTask("parish_portability_jobs", runPortabilityJobs(env), env, event));
       return;
     }
