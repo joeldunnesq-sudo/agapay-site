@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { runAccountingHealth } from './accounting-health-live.mjs';
 import { ACCOUNTING_READ_SMOKE_PATHS } from './lib/accounting-release-gates.mjs';
 import { readFile } from 'node:fs/promises';
+import { accountingHealthTotp } from './lib/accounting-health-totp.mjs';
 
 const root = '/api/parish/dashboard/test-lubbock';
 const env = {
@@ -20,13 +21,13 @@ async function run({ credentials = env, override = () => undefined } = {}) {
       const parsed = new URL(url);
       assert.equal(parsed.origin, 'https://agapay.app');
       const path = parsed.pathname;
-      assert.ok(path === '/api/health' || path.startsWith(`${root}/`));
+      assert.ok(path === '/api/health' || path === '/api/mfa/verify' || path.startsWith(`${root}/`));
       assert.equal(options.redirect, 'error', 'Do not follow a redirect with credentials.');
       requests.push({ path, method: options.method });
       if (options.method !== 'GET') {
         assert.equal(options.method, 'POST');
         assert.ok(
-          [`${root}/session`, `${root}/accounting-access/verify`].includes(path),
+          [`${root}/session`, `${root}/accounting-access/verify`, '/api/mfa/verify'].includes(path),
           'Only authentication can write.'
         );
       }
@@ -70,6 +71,7 @@ async function run({ credentials = env, override = () => undefined } = {}) {
     'private-staff-token',
     'private@example.test',
     '19000',
+    credentials.TEST_LUBBOCK_TOTP_SECRET || 'never-print-totp',
   ])
     assert.ok(!serialized.includes(secret), 'Evidence must not contain credentials or financial records.');
   return { evidence, requests };
@@ -125,6 +127,36 @@ const mfa = await run({
 });
 assert.equal(mfa.evidence.status, 'blocked_parish_mfa');
 assert.equal(mfa.requests.length, 2, 'Never bypass MFA.');
+// RFC 6238 SHA-1 vector at 59 seconds, truncated to AGAPAY's six digits.
+const setupKey = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+assert.equal(accountingHealthTotp(setupKey, 59_000), '287082');
+assert.throws(() => accountingHealthTotp('not-a-setup-key'), /Invalid/);
+const mfaCredentials = { ...env, TEST_LUBBOCK_TOTP_SECRET: setupKey };
+const challenge = { mfaRequired: true, pendingToken: 'private-pending-mfa-token', methods: ['totp'] };
+const mfaSuccess = await run({
+  credentials: mfaCredentials,
+  override: (path, options) => {
+    if (path.endsWith('/session')) return Response.json(challenge);
+    if (path === '/api/mfa/verify') {
+      const body = JSON.parse(options.body);
+      assert.equal(body.pendingToken, challenge.pendingToken);
+      assert.equal(body.method, 'totp');
+      assert.match(body.code, /^\d{6}$/);
+      return Response.json({ token: 'private-parish-token' });
+    }
+  },
+});
+assert.equal(mfaSuccess.evidence.status, 'passed');
+assert.equal(mfaSuccess.evidence.authentication, 'password_and_totp');
+const mfaRejected = await run({
+  credentials: mfaCredentials,
+  override: (path) => {
+    if (path.endsWith('/session')) return Response.json(challenge);
+    if (path === '/api/mfa/verify') return Response.json({ error: 'Invalid code' }, { status: 401 });
+  },
+});
+assert.equal(mfaRejected.evidence.status, 'blocked_parish_mfa');
+assert.equal(mfaRejected.requests.length, 3, 'Rejected MFA stops before reading financial data, without retrying.');
 const sessionCredentials = {
   ...env,
   TEST_LUBBOCK_PARISH_PASSWORD: '',

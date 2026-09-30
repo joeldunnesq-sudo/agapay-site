@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { ACCOUNTING_READ_SMOKE_PATHS } from './lib/accounting-release-gates.mjs';
+import { accountingHealthTotp } from './lib/accounting-health-totp.mjs';
 
 // Deliberately separate from staging's mutating release gates. Only login and
 // PIN verification may POST; all financial requests are GETs to this parish.
@@ -34,7 +35,8 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
   let staffHeaders = {};
   let attachmentPath = null;
   async function request(path, body) {
-    const login = path === `${root}/session` || path === `${root}/accounting-access/verify`;
+    const login =
+      path === `${root}/session` || path === `${root}/accounting-access/verify` || path === '/api/mfa/verify';
     const reconciliation = new RegExp(`^${root}/reconciliation\\?month=\\d{4}-(0[1-9]|1[0-2])(&detail=full)?$`).test(
       path
     );
@@ -97,10 +99,12 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
     );
     if (!session) return { ...evidence, status: 'blocked_parish_session' };
   } else {
-    const login = await check(
+    let login = await check(
       'parish-login',
       `${root}/session`,
-      (p) => p?.mfaRequired !== true && typeof p?.token === 'string' && p.token.length > 0,
+      (p) =>
+        (p?.mfaRequired === true && typeof p.pendingToken === 'string') ||
+        (typeof p?.token === 'string' && p.token.length > 0),
       { password: env.TEST_LUBBOCK_PARISH_PASSWORD }
     );
     if (!login)
@@ -108,6 +112,25 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
         ...evidence,
         status: evidence.checks.at(-1)?.reason === 'mfa_required' ? 'blocked_parish_mfa' : 'blocked_parish_login',
       };
+    if (login.mfaRequired === true) {
+      const secret = String(env.TEST_LUBBOCK_TOTP_SECRET || '').trim();
+      if (!secret || login.enrollmentRequired || !login.methods?.includes('totp'))
+        return { ...evidence, status: 'blocked_parish_mfa' };
+      let code;
+      try {
+        code = accountingHealthTotp(secret);
+      } catch {
+        return { ...evidence, status: 'blocked_mfa_configuration' };
+      }
+      login = await check(
+        'parish-mfa',
+        '/api/mfa/verify',
+        (p) => p?.mfaRequired !== true && typeof p?.token === 'string' && p.token.length > 0,
+        { pendingToken: login.pendingToken, method: 'totp', code }
+      );
+      if (!login) return { ...evidence, status: 'blocked_parish_mfa' };
+      evidence.authentication = 'password_and_totp';
+    }
     token = login.token;
   }
 
