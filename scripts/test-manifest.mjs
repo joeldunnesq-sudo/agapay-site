@@ -77,6 +77,8 @@ const core = [
   'scripts/admin-usability-tests.mjs',
   'scripts/admin-navigation-browser-tests.mjs',
   'scripts/admin-overview-metrics-tests.mjs',
+  'scripts/parish-relationships-tests.mjs',
+  'scripts/parish-relationships-browser-tests.mjs',
   'scripts/terms-substantive-review-tests.mjs',
   'scripts/worker-hardening-tests.mjs',
   'scripts/giving-box-tests.mjs',

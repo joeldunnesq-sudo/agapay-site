@@ -1,3 +1,4 @@
+import { runParishMilestones } from './operations/parish-milestones.js';
 import { withRequestDiagnostics } from './lib/request-diagnostics.js';
 export { RateLimiter } from './operations/rate-limiter.js';
 import { routeAdminRequest } from "./routes/admin.js";
@@ -326,6 +327,7 @@ export default withRequestDiagnostics({
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     await assertRestoreSafe(env);
     env = protectLegacyStorage(protectFileStorage(env));
+    if (event.cron === "15 * * * *") return ctx.waitUntil(observeScheduledTask("parish_milestones", runParishMilestones(env, event.scheduledTime), env, event));
     if (event.cron === "*/5 * * * *") {
       ctx.waitUntil(observeScheduledTask("parish_recovery_jobs", runRecoveryJobs(env), env, event));
       ctx.waitUntil(observeScheduledTask("parish_portability_jobs", runPortabilityJobs(env), env, event));

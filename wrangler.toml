@@ -70,7 +70,7 @@ service = "agapay-accounting-provisioner"
 entrypoint = "AccountingProvisionerService"
 
 [triggers]
-crons = ["0 8 * * *", "0 14 * * *", "0 14 * * 6", "*/5 * * * *"]
+crons = ["15 * * * *", "0 8 * * *", "0 14 * * *", "0 14 * * 6", "*/5 * * * *"]
 
 [assets]
 directory = "./public"

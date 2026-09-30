@@ -14,6 +14,7 @@
     ['settings', 'Settings', 'Manage security and platform configuration.', 'System', 'password mfa authentication'],
     ['developer', 'Developer tools', 'Access maintenance and manual platform tools.', 'System', 'technical diagnostics'],
     ['overview', 'Deployment health', 'Check live platform services and release flags.', 'Insights', 'diagnostics status system', 'deploymentHealthCard'],
+    ['overview', 'Parish relationships', 'Review retention and configure anniversary and patronal feast emails.', 'Your work', 'retention anniversary patronal feast milestones emails', 'parishCare'],
     ['overview', 'Platform emails', 'Review recent email delivery activity.', 'Insights', 'notifications history sent', 'overviewEmailLogCard'],
     ['overview', 'Growth and revenue', 'See registrations, giving volume, and platform revenue.', 'Insights', 'reports analytics financial metrics', 'platformGrowthCard'],
   ];
