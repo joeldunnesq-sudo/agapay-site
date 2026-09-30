@@ -339,8 +339,8 @@ async function openDonorSaintOfDay(button) {
     const saints = Array.isArray(day.saintStories) ? day.saintStories : [];
     const saintNames = Array.isArray(day.saints) ? day.saints : [];
     showDonorSaintModal(
-      saintDisplayTitle(day),
-      `Saint of the Day · ${shortDate(date)}`,
+      "Lives of the Saints",
+      shortDate(date),
       saintStoryModalHtml(saints, day.sourceConnected === false ? "Lives of the Saints are unavailable right now. Please try again later." : (!saints.length && saintNames.length ? saintNames.join("; ") : ""))
     );
   } catch (error) {
