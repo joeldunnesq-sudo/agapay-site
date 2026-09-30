@@ -111,6 +111,16 @@ Both sources compile to their existing public script paths, retain global names 
 
 Stage 5 first-batch validation on September 30, 2026: quality, all four precheck commands, and all 238 main test commands passed. Focused desktop/mobile navigation, overview metrics, and parish relationships browser tests passed. Normalized executable JavaScript matched the previous implementations for both converted modules. Main Worker packaging and local workerd startup passed. Thirteen runtime modules now have authoritative TypeScript sources. This batch is a local checkpoint and has not been deployed; hosted staging acceptance remains required before release.
 
+### Stage 5 batch 2: Admin contact inbox
+
+`src/browser/admin/controllers/contact-leads.ts` is now the authoritative source for the contact inbox. The generated classic script retains `loadContactLeads`, the shared authenticated fetch path, required DOM elements, and its position before the Admin application script. Its asset now receives a content hash through the existing page-asset manifest.
+
+Readonly response contracts cover contact records, optional attribution, nullable pagination, and numeric retry/review concurrency tokens. Delivery review only accepts `delivered` or `confirmed_not_delivered`. Notification status remains an open string for compatibility. The existing server's truthy `reviewRequired` expression can return a number or null, and the browser contract preserves that fact rather than assuming a boolean. Compile-only fixtures reject invalid actions, string concurrency tokens, mutable response records, and non-string headers.
+
+JSON and caught-error assertions explicitly describe the existing unvalidated boundary; they do not establish runtime trust or change error handling. Normalized executable output matches the previous implementation. Browser regression coverage includes literal rendering of submitted HTML, authenticated requests, encoded cursors and reference IDs, append/replace pagination, empty and failed loads, retry-button recovery, cancelled confirmations, both review payloads, and stale-review recovery. API responses and delivery actions are mocked in browser tests, so these checks send no real notifications.
+
+Stage 5 batch 2 validation on September 30, 2026: quality, all four prechecks, and all 238 main test commands passed. The focused contact recovery tests and expanded Chromium inbox tests passed, as did generated-artifact checks and normalized executable comparison. Main Worker packaging and local workerd startup passed. Fourteen runtime modules now have authoritative TypeScript sources. This batch has not been deployed; hosted staging acceptance remains a release requirement.
+
 ## Release and rollback
 
 The release branch is integrated with `main` at `52e7d22c`, retaining its newer recovery functionality, Wrangler/Miniflare versions, browser assets, and expanded test manifest. Main has independently retired the orphaned Learn support bundle; this migration does not restore it. The stage validation counts above record the original checkpoints, while the integrated release requires all 238 current test commands. Staging now installs lockfile dependencies explicitly before running custom asset builds.

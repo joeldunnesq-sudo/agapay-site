@@ -1,16 +1,55 @@
-// Generated from src/browser/admin/controllers/contact-leads.ts by npm run build:browser. Do not edit.
-let contactLeadsCursor = null;
-async function loadContactLeads(more = false) {
-  const container = document.getElementById('contactLeads');
-  const status = document.getElementById('contactLeadsStatus');
-  const next = document.getElementById('contactLeadsMore');
+// These describe the existing API contract; JSON assertions do not validate external data.
+interface AdminContactLead {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly topic?: string | null;
+  readonly submittedAt?: string | null;
+  readonly email?: string | null;
+  readonly organization?: string | null;
+  readonly message?: string | null;
+  readonly notificationStatus: string;
+  readonly attempts: number;
+  readonly generation: number;
+  readonly providerId?: string | null;
+  readonly lastError?: string | null;
+  readonly attribution?: {
+    readonly firstTouch?: { readonly category?: string | null } | null;
+    readonly lastTouch?: { readonly category?: string | null } | null;
+  } | null;
+  readonly retryAvailable: boolean;
+  // The legacy server expression may return a timestamp/null rather than a boolean.
+  readonly reviewRequired?: boolean | number | null;
+}
+interface AdminContactListResponse {
+  readonly error?: string;
+  readonly leads: readonly AdminContactLead[];
+  readonly nextCursor: string | null;
+}
+interface AdminContactRetryResponse {
+  readonly error?: string;
+  readonly lead: AdminContactLead;
+}
+type AdminContactResolution = 'delivered' | 'confirmed_not_delivered';
+interface AdminContactResolutionRequest {
+  readonly resolution: AdminContactResolution;
+  readonly attempts: number;
+  readonly generation: number;
+}
+declare function authHeaders(extra?: Readonly<Record<string, string>>): Record<string, string>;
+
+// Uses the existing Admin session and MFA-aware fetch wrapper.
+let contactLeadsCursor: string | null = null;
+async function loadContactLeads(more = false): Promise<void> {
+  const container = document.getElementById('contactLeads')!;
+  const status = document.getElementById('contactLeadsStatus')!;
+  const next = document.getElementById('contactLeadsMore')!;
   status.textContent = 'Loading contact submissions…';
   try {
     const response = await fetch(
       `/api/admin/contact-leads${more && contactLeadsCursor ? `?before=${encodeURIComponent(contactLeadsCursor)}` : ''}`,
       { headers: authHeaders() }
     );
-    const body = await response.json();
+    const body = (await response.json()) as AdminContactListResponse;
     if (!response.ok) throw new Error(body.error || 'Unable to load contacts.');
     if (!more) container.replaceChildren();
     for (const lead of body.leads) {
@@ -22,16 +61,7 @@ async function loadContactLeads(more = false) {
       details.className = 'section-body';
       const content = document.createElement('pre');
       content.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;font:inherit';
-      content.textContent = `Reference: ${lead.id}
-Submitted: ${lead.submittedAt || ''}
-Email: ${lead.email || ''}
-Organization: ${lead.organization || ''}
-Provider ID: ${lead.providerId || '—'}
-Last error: ${lead.lastError || '—'}
-First touch: ${lead.attribution?.firstTouch?.category || '—'}
-Last touch: ${lead.attribution?.lastTouch?.category || '—'}
-
-${lead.message || ''}`;
+      content.textContent = `Reference: ${lead.id}\nSubmitted: ${lead.submittedAt || ''}\nEmail: ${lead.email || ''}\nOrganization: ${lead.organization || ''}\nProvider ID: ${lead.providerId || '—'}\nLast error: ${lead.lastError || '—'}\nFirst touch: ${lead.attribution?.firstTouch?.category || '—'}\nLast touch: ${lead.attribution?.lastTouch?.category || '—'}\n\n${lead.message || ''}`;
       details.append(content);
       if (lead.retryAvailable) {
         const retry = document.createElement('button');
@@ -45,12 +75,12 @@ ${lead.message || ''}`;
               method: 'POST',
               headers: authHeaders(),
             });
-            const payload = await result.json();
+            const payload = (await result.json()) as AdminContactRetryResponse;
             if (!result.ok) throw new Error(payload.error || 'Retry failed.');
             await loadContactLeads();
             status.textContent = `Notification ${payload.lead.notificationStatus}. Reference: ${lead.id}`;
           } catch (error) {
-            status.textContent = error.message;
+            status.textContent = (error as Error).message;
             retry.disabled = false;
           }
         };
@@ -64,7 +94,7 @@ ${lead.message || ''}`;
           for (const [resolution, label] of [
             ['delivered', 'Confirmed delivered'],
             ['confirmed_not_delivered', 'Confirmed not delivered — enable retry'],
-          ]) {
+          ] satisfies ReadonlyArray<readonly [AdminContactResolution, string]>) {
             const resolve = document.createElement('button');
             resolve.className = 'secondary btn-sm';
             resolve.textContent = label;
@@ -80,13 +110,13 @@ ${lead.message || ''}`;
                     resolution,
                     attempts: lead.attempts,
                     generation: lead.generation,
-                  }),
+                  } satisfies AdminContactResolutionRequest),
                 });
-                const payload = await result.json();
+                const payload = (await result.json()) as { readonly error?: string };
                 if (!result.ok) throw new Error(payload.error || 'Unable to resolve delivery.');
                 await loadContactLeads();
               } catch (error) {
-                status.textContent = error.message;
+                status.textContent = (error as Error).message;
                 resolve.disabled = false;
               }
             };
@@ -101,6 +131,6 @@ ${lead.message || ''}`;
     next.hidden = !contactLeadsCursor;
     status.textContent = body.leads.length ? 'Contact submissions loaded.' : 'No contact submissions found.';
   } catch (error) {
-    status.textContent = error.message;
+    status.textContent = (error as Error).message;
   }
 }

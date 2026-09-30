@@ -7,6 +7,7 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/admin/controllers/contact-leads.ts', output: 'public/admin/controllers/contact-leads.js' },
   { source: 'src/browser/admin/navigation.ts', output: 'public/admin/navigation.js' },
   { source: 'src/browser/admin/metrics.ts', output: 'public/admin/metrics.js' },
   { source: 'src/browser/admin/presentation.ts', output: 'public/admin/presentation.js' },
