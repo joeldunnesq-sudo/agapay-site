@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { adminAppScriptPaths, readAdminAppSource } from './lib/admin-dashboard-source.mjs';
@@ -93,7 +94,7 @@ function assertPresentationLoadsBeforeApp(file) {
   const appIndex = html.indexOf('/admin/app.js');
   assert.ok(presentationIndex >= 0, `${file} must load the extracted presentation boundary`);
   assert.ok(appIndex > presentationIndex, `${file} must load presentation.js before app.js`);
-  assert.match(html, /\/admin\/presentation\.js\?v=20260904-refactor1/);
+  assert.ok(html.includes(appAssetUrl('/admin/presentation.js')));
   assert.match(html, /\/admin\/app\.js\?v=[\w-]+/);
 }
 

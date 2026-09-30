@@ -1,6 +1,6 @@
+// Generated from src/organizations/verification-policies.ts by npm run build:server. Do not edit.
 import { ORGANIZATION_TYPES, classifyCommunityType, organizationClassificationForRegistration } from './types.js';
-
-export const VERIFICATION_POLICIES = Object.freeze({
+const VERIFICATION_POLICIES = Object.freeze({
   CANONICAL_CHURCH: 'canonical_church',
   CANONICAL_MONASTERY: 'canonical_monastery',
   DIOCESAN_AUTHORITY: 'diocesan_authority',
@@ -11,7 +11,6 @@ export const VERIFICATION_POLICIES = Object.freeze({
   ORTHODOX_VALUES_REVIEW: 'orthodox_values_review',
   UNSUPPORTED: 'unsupported',
 });
-
 function freezePolicy(policy) {
   const onboardingRequirements = policy.onboardingRequirements || RESERVED_ONBOARDING_REQUIREMENTS;
   return Object.freeze({
@@ -25,23 +24,19 @@ function freezePolicy(policy) {
     }),
   });
 }
-
 const NO_REQUIREMENTS = Object.freeze({
   jurisdiction: false,
   valuesReview: false,
   website: false,
   organizationDescription: false,
 });
-
 const CANONICAL_EVIDENCE_FIELDS = Object.freeze([
   'reviewedBy',
   'verificationSource',
   'bishopOrAuthority',
   'dioceseOrDeanery',
 ]);
-
-export const VERIFICATION_ONBOARDING_MANUAL_CHECKS = Object.freeze(['authorizedRepresentative']);
-
+const VERIFICATION_ONBOARDING_MANUAL_CHECKS = Object.freeze(['authorizedRepresentative']);
 const CANONICAL_ONBOARDING_REQUIREMENTS = Object.freeze({
   activation: 'active',
   verifiedStatus: 'verified',
@@ -69,7 +64,6 @@ const CANONICAL_ONBOARDING_REQUIREMENTS = Object.freeze({
     }),
   ]),
 });
-
 const RESERVED_ONBOARDING_REQUIREMENTS = Object.freeze({
   activation: 'reserved',
   verifiedStatus: 'verified',
@@ -86,7 +80,6 @@ const RESERVED_ONBOARDING_REQUIREMENTS = Object.freeze({
     }),
   ]),
 });
-
 const POLICY_BY_TYPE = Object.freeze({
   [ORGANIZATION_TYPES.CHURCH]: freezePolicy({
     id: VERIFICATION_POLICIES.CANONICAL_CHURCH,
@@ -153,35 +146,28 @@ const POLICY_BY_TYPE = Object.freeze({
     },
   }),
 });
-
 const UNSUPPORTED_POLICY = freezePolicy({
   id: VERIFICATION_POLICIES.UNSUPPORTED,
   activeForRegistration: false,
   registrationRequirements: NO_REQUIREMENTS,
 });
-
-export function verificationPolicyForOrganizationType(organizationType) {
+function verificationPolicyForOrganizationType(organizationType) {
   return POLICY_BY_TYPE[organizationType] || UNSUPPORTED_POLICY;
 }
-
-export function verificationPolicyForCommunityType(communityType) {
+function verificationPolicyForCommunityType(communityType) {
   return verificationPolicyForOrganizationType(classifyCommunityType(communityType).organizationType);
 }
-
-export function verificationPolicyForRegistration(registration = {}) {
+function verificationPolicyForRegistration(registration = {}) {
   const classification = organizationClassificationForRegistration(registration);
   return verificationPolicyForOrganizationType(classification.organizationType);
 }
-
-export function registrationRequirementsForCommunityType(communityType) {
+function registrationRequirementsForCommunityType(communityType) {
   return verificationPolicyForCommunityType(communityType).registrationRequirements;
 }
-
 function nonEmpty(value) {
   return Boolean(String(value || '').trim());
 }
-
-export function evaluateOnboardingVerification(registration = {}) {
+function evaluateOnboardingVerification(registration = {}) {
   const policy = verificationPolicyForRegistration(registration);
   const requirements = policy.onboardingRequirements;
   const active = requirements.activation === 'active';
@@ -198,8 +184,7 @@ export function evaluateOnboardingVerification(registration = {}) {
     incompleteMessage: requirements.incompleteMessage,
   });
 }
-
-export function verificationOnboardingSteps(registration = {}, checks = {}) {
+function verificationOnboardingSteps(registration = {}, checks = {}) {
   const policy = verificationPolicyForRegistration(registration);
   const evaluation = evaluateOnboardingVerification(registration);
   return Object.freeze(
@@ -228,3 +213,13 @@ export function verificationOnboardingSteps(registration = {}, checks = {}) {
     })
   );
 }
+export {
+  VERIFICATION_ONBOARDING_MANUAL_CHECKS,
+  VERIFICATION_POLICIES,
+  evaluateOnboardingVerification,
+  registrationRequirementsForCommunityType,
+  verificationOnboardingSteps,
+  verificationPolicyForCommunityType,
+  verificationPolicyForOrganizationType,
+  verificationPolicyForRegistration,
+};

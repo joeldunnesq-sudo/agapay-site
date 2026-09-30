@@ -15,6 +15,9 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/browser-typescript-tests.mjs',
+  'scripts/browser-typescript-browser-tests.mjs',
+  'scripts/server-typescript-tests.mjs',
   'scripts/rate-limit-clock-tests.mjs',
   'scripts/learn-legacy-planner-browser-tests.mjs',
   'scripts/test-selection-tests.mjs',
@@ -285,6 +288,11 @@ export const testGroups = Object.freeze({
   security: core.filter((test) => /security|hardening|identity|mfa|legal|tax|launch-controls/.test(test)),
   'release-gates': releaseGates,
   critical,
-  precheck: ['scripts/privileged-mfa-tests.mjs', 'scripts/consumer-passkey-tests.mjs'],
+  precheck: [
+    'scripts/build-browser-typescript.mjs --check',
+    'scripts/build-server-typescript.mjs --check',
+    'scripts/privileged-mfa-tests.mjs',
+    'scripts/consumer-passkey-tests.mjs',
+  ],
   all: unique(smoke, core, accounting, productUi, directory, releaseGates, critical),
 });

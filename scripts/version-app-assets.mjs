@@ -1,10 +1,14 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { appAssets, appAssetUrl, versionAppAssetReferences } from './lib/app-asset-versions.mjs';
+import { appAssets, pageAssets, appAssetUrl, versionAppAssetReferences } from './lib/app-asset-versions.mjs';
 import { htmlFilesUnder, repoRoot } from './lib/browser-composed-source.mjs';
+import { synchronizeBrowserTypeScript } from './lib/browser-typescript.mjs';
+
+// Never publish hashes for stale generated browser code.
+await synchronizeBrowserTypeScript();
 
 const check = process.argv.includes('--check');
-const urls = new Map(appAssets.map((asset) => [asset, appAssetUrl(asset)]));
+const urls = new Map([...appAssets, ...pageAssets].map((asset) => [asset, appAssetUrl(asset)]));
 const changed = [];
 for (const file of htmlFilesUnder('public')) {
   const filename = path.join(repoRoot, file);

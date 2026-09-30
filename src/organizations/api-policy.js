@@ -1,20 +1,17 @@
+// Generated from src/organizations/api-policy.ts by npm run build:server. Do not edit.
 import { ORGANIZATION_TYPES } from './types.js';
-
-export const ORGANIZATION_API_VERSION = 'v1';
-
-export const ORGANIZATION_API_ACCESS_REASONS = Object.freeze({
+const ORGANIZATION_API_VERSION = 'v1';
+const ORGANIZATION_API_ACCESS_REASONS = Object.freeze({
   ALLOWED: 'allowed',
   CONTEXT_MISSING: 'organization_context_missing',
   VERSION_UNSUPPORTED: 'organization_api_version_unsupported',
   ORGANIZATION_TYPE_UNAVAILABLE: 'organization_type_unavailable',
 });
-
 const ACTIVE_ORGANIZATION_TYPES = Object.freeze([
   ORGANIZATION_TYPES.CHURCH,
   ORGANIZATION_TYPES.MONASTERY,
   ORGANIZATION_TYPES.DIOCESE,
 ]);
-
 function decision(organization, version, reason) {
   return Object.freeze({
     allowed: reason === ORGANIZATION_API_ACCESS_REASONS.ALLOWED,
@@ -24,8 +21,7 @@ function decision(organization, version, reason) {
     reason,
   });
 }
-
-export function evaluateOrganizationApiAccess(organization, version = ORGANIZATION_API_VERSION) {
+function evaluateOrganizationApiAccess(organization, version = ORGANIZATION_API_VERSION) {
   if (!organization) {
     return decision(null, version, ORGANIZATION_API_ACCESS_REASONS.CONTEXT_MISSING);
   }
@@ -41,8 +37,7 @@ export function evaluateOrganizationApiAccess(organization, version = ORGANIZATI
   }
   return decision(organization, version, ORGANIZATION_API_ACCESS_REASONS.ALLOWED);
 }
-
-export function organizationApiDescriptor(organization) {
+function organizationApiDescriptor(organization) {
   if (!organization) return null;
   return Object.freeze({
     apiVersion: ORGANIZATION_API_VERSION,
@@ -60,3 +55,9 @@ export function organizationApiDescriptor(organization) {
     }),
   });
 }
+export {
+  ORGANIZATION_API_ACCESS_REASONS,
+  ORGANIZATION_API_VERSION,
+  evaluateOrganizationApiAccess,
+  organizationApiDescriptor,
+};

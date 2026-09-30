@@ -67,6 +67,9 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Install release tooling (deterministic)
+        run: npm ci
+
       - name: Validate Cloudflare authentication
         uses: cloudflare/wrangler-action@v4
         with:
