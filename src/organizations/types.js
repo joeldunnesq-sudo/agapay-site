@@ -1,4 +1,5 @@
-export const ORGANIZATION_TYPES = Object.freeze({
+// Generated from src/organizations/types.ts by npm run build:server. Do not edit.
+const ORGANIZATION_TYPES = Object.freeze({
   CHURCH: 'church',
   MONASTERY: 'monastery',
   DIOCESE: 'diocese',
@@ -9,8 +10,7 @@ export const ORGANIZATION_TYPES = Object.freeze({
   OTHER: 'other',
   UNKNOWN: 'unknown',
 });
-
-export const ORGANIZATION_SUBTYPES = Object.freeze({
+const ORGANIZATION_SUBTYPES = Object.freeze({
   MISSION: 'mission',
   PARISH: 'parish',
   CATHEDRAL: 'cathedral',
@@ -19,7 +19,6 @@ export const ORGANIZATION_SUBTYPES = Object.freeze({
   ACADEMY: 'academy',
   UNSPECIFIED: 'unspecified',
 });
-
 const CLASSIFICATIONS = Object.freeze({
   mission: Object.freeze({
     organizationType: ORGANIZATION_TYPES.CHURCH,
@@ -98,15 +97,13 @@ const CLASSIFICATIONS = Object.freeze({
     organizationSubtype: ORGANIZATION_SUBTYPES.UNSPECIFIED,
   }),
 });
-
-export function normalizeCommunityType(value) {
+function normalizeCommunityType(value) {
   return String(value || '')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, ' ');
 }
-
-export function classifyCommunityType(value) {
+function classifyCommunityType(value) {
   const normalizedCommunityType = normalizeCommunityType(value);
   const matched = CLASSIFICATIONS[normalizedCommunityType];
   if (!matched) {
@@ -119,13 +116,11 @@ export function classifyCommunityType(value) {
   }
   return Object.freeze({ ...matched, normalizedCommunityType, recognized: true });
 }
-
-export function organizationClassificationForRegistration(registration = {}) {
+function organizationClassificationForRegistration(registration = {}) {
   const rawCommunityType = String(registration?.communityType || registration?.parishType || '').trim();
   return rawCommunityType ? classifyCommunityType(rawCommunityType) : legacyParishClassification();
 }
-
-export function legacyParishClassification() {
+function legacyParishClassification() {
   return Object.freeze({
     organizationType: ORGANIZATION_TYPES.CHURCH,
     organizationSubtype: ORGANIZATION_SUBTYPES.PARISH,
@@ -134,3 +129,11 @@ export function legacyParishClassification() {
     legacyDefault: true,
   });
 }
+export {
+  ORGANIZATION_SUBTYPES,
+  ORGANIZATION_TYPES,
+  classifyCommunityType,
+  legacyParishClassification,
+  normalizeCommunityType,
+  organizationClassificationForRegistration,
+};

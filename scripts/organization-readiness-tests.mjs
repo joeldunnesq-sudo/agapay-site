@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readServerModuleSource } from './lib/server-typescript.mjs';
 import {
   ORGANIZATION_ACCESS_REASONS,
   ORGANIZATION_MODULES,
@@ -289,6 +290,7 @@ await test('resolver uses an injected repository lookup and rejects tenant misma
 await test('organization boundary stays independent from handlers, bindings, and entitlements', async () => {
   const files = [
     'access.js',
+    'api-policy.js',
     'context.js',
     'module-access.js',
     'module-profiles.js',
@@ -297,7 +299,7 @@ await test('organization boundary stays independent from handlers, bindings, and
     'verification-policies.js',
   ];
   for (const file of files) {
-    const source = await readFile(new URL(`../src/organizations/${file}`, import.meta.url), 'utf8');
+    const source = await readServerModuleSource(`src/organizations/${file}`);
     assert.doesNotMatch(source, /from ['"]\.\.\/handlers\//, `${file} must not import a handler`);
     assert.doesNotMatch(source, /AGAPAY_DB|AGAPAY_REGISTRATIONS/, `${file} must not reach bindings directly`);
     assert.doesNotMatch(source, /from ['"].*subscriptions\.js/, `${file} must not infer type from subscriptions`);

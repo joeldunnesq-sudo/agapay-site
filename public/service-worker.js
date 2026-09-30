@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v37";
+const AGAPAY_CACHE = "agapay-static-v38";
 
 const STATIC_ASSETS = [
   "/learn/legacy-planner.js",
@@ -40,7 +40,7 @@ const STATIC_ASSETS = [
   "/images/app/shortcuts/directory-v2.png",
   "/images/app/shortcuts/bookstore-v2.png",
   "/images/app/listen-icon-192.png",
-  "/listen.html",
+  "/listen/index.html",
   "/listen/app.js",
   "/listen/player.js",
   "/listen/db.js",
@@ -146,7 +146,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(AGAPAY_CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || (url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html") : caches.match("/donor/login.html"))))
+        .catch(() => caches.match(request).then((cached) => cached || (url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html") : url.pathname.startsWith("/listen") ? caches.match("/listen/index.html") : caches.match("/donor/login.html"))))
     );
     return;
   }

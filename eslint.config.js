@@ -1,11 +1,39 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 const handwrittenIgnores = ['node_modules/**', 'public/vendor/**', 'tmp/**', 'tmp-*/**', '.tmp-*/**', 'artifacts/**'];
 const recommendedRules = js.configs.recommended.rules;
 
 export default [
   { ignores: handwrittenIgnores },
+  ...tseslint.configs.recommended.map((config) => ({ ...config, files: ['src/**/*.ts', 'scripts/**/*.ts'] })),
+  {
+    files: ['src/**/*.ts', 'scripts/**/*.ts'],
+    rules: {
+      'no-unreachable': 'error',
+      'no-constant-binary-expression': 'error',
+      'max-lines': ['warn', { max: 1200, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: ['src/browser/admin/presentation.ts'],
+    // Window is an ambient interface merge; the legacy fee helper accepts an unused argument.
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^Window$' }],
+      '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'with-single-extends' }],
+    },
+  },
+  {
+    // Classic lexical globals are consumed by later scripts, not by this file.
+    files: ['src/browser/donor/bookstore-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(BOOKSTORE_CATEGORY_LABELS|BOOKSTORE_STATUS_LABELS|formatCentsAsDollars)$' },
+      ],
+    },
+  },
   {
     files: ['src/**/*.js', 'public/**/*.js', 'scripts/**/*.mjs', 'server.mjs'],
     languageOptions: {
@@ -33,6 +61,13 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/typecheck.mjs',
+      'scripts/build-server-typescript.mjs',
+      'scripts/build-browser-typescript.mjs',
+      'scripts/lib/browser-typescript.mjs',
+      'scripts/browser-typescript-tests.mjs',
+      'scripts/lib/server-typescript.mjs',
+      'scripts/server-typescript-tests.mjs',
       'scripts/lint.mjs',
       'scripts/lint-warning-baseline-tests.mjs',
       'scripts/parish-diagnostics-tests.mjs',
@@ -69,6 +104,7 @@ export default [
   {
     files: [
       'scripts/parish-dashboard-browser-tests.mjs',
+      'scripts/browser-typescript-browser-tests.mjs',
       'scripts/parish-onboarding-browser-tests.mjs',
       'scripts/parish-campaign-browser-tests.mjs',
       'scripts/parish-stewardship-browser-tests.mjs',

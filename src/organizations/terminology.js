@@ -1,10 +1,9 @@
+// Generated from src/organizations/terminology.ts by npm run build:server. Do not edit.
 import { ORGANIZATION_SUBTYPES, ORGANIZATION_TYPES } from './types.js';
-
 function freezeTerms(terms) {
   return Object.freeze({ ...terms });
 }
-
-export const TERMINOLOGY_PROFILES = Object.freeze({
+const TERMINOLOGY_PROFILES = Object.freeze({
   parish: freezeTerms({
     id: 'parish',
     organization: 'parish',
@@ -72,8 +71,7 @@ export const TERMINOLOGY_PROFILES = Object.freeze({
     donation: 'contribution',
   }),
 });
-
-export function terminologyProfileForClassification(classification = {}) {
+function terminologyProfileForClassification(classification = {}) {
   if (classification.organizationType === ORGANIZATION_TYPES.MONASTERY) return TERMINOLOGY_PROFILES.monastery;
   if (classification.organizationType === ORGANIZATION_TYPES.DIOCESE) return TERMINOLOGY_PROFILES.diocese;
   if (classification.organizationType !== ORGANIZATION_TYPES.CHURCH) return TERMINOLOGY_PROFILES.organization;
@@ -81,3 +79,4 @@ export function terminologyProfileForClassification(classification = {}) {
   if (classification.organizationSubtype === ORGANIZATION_SUBTYPES.CATHEDRAL) return TERMINOLOGY_PROFILES.cathedral;
   return TERMINOLOGY_PROFILES.parish;
 }
+export { TERMINOLOGY_PROFILES, terminologyProfileForClassification };
