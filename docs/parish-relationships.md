@@ -8,7 +8,7 @@ The hourly `15 * * * *` job records the first daily UTC snapshot of current pari
 
 ## Annual emails
 
-New preferences default to preview mode. Admins open **Manage annual emails → Review & configure**, preview, confirm recipients and IANA time zone, then enable each message independently. No email is sent when saving or previewing. The hourly job sends at 09:15 local time on the occasion date, to verified parishes except canceled/cancelled or unpaid subscriptions. Defaults use the treasurer for the financial report and priest for the greeting, with fallback to the other contact. Disable either checkbox to honor a reply requesting opt-out.
+New preferences default to preview mode. Admins open **Manage annual emails → Review & configure**, preview, confirm recipients and IANA time zone, then enable each message independently. No email is sent when saving or previewing. The hourly job sends during the 09:00 local hour on the occasion date, to verified parishes except canceled/cancelled or unpaid subscriptions. Defaults use the treasurer for the financial report and priest for the greeting, with fallback to the other contact. Disable either checkbox to honor a reply requesting opt-out.
 
 Signup anniversaries use the original registration date. February 29 anniversaries use February 28 in non-leap years. Explicit patronal observed dates are civil MM-DD dates; known feast IDs otherwise use the parish's liturgical calendar, including movable feasts. Unknown dates do not produce greetings.
 
