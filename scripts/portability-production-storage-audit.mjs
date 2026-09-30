@@ -82,9 +82,9 @@ for (const [binding, base] of Object.entries(workerPublicBases)) {
 assert.match(productionConfig, new RegExp(`^PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED = "${publicMediaPolicyVersion}"$`, 'm'));
 assert.match(productionConfig, new RegExp(`^PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED = "${publicMediaPolicyVersion}"$`, 'm'));
 // Export availability is independent of this read-only ownership audit.
-for (const flag of ['PARISH_STORAGE_GUARDS_ENABLED', 'PARISH_AUTOMATIC_CLOSURE_ENABLED']) {
-  assert.match(productionConfig, new RegExp(`^${flag} = "false"$`, 'm'));
-}
+assert.match(productionConfig, /^PARISH_AUTOMATIC_CLOSURE_ENABLED = "false"$/m);
+assert.match(productionConfig, /^PARISH_STORAGE_GUARDS_ENABLED = "(?:true|false)"$/m);
+const storageGuardsEnabled = /^PARISH_STORAGE_GUARDS_ENABLED = "true"$/m.test(productionConfig);
 
 function wrangler(commandArgs) {
   let result;
@@ -357,10 +357,25 @@ const legacyRegistryCore = legacyRegistry.slice().sort((a, b) => a.objectKey.loc
 const legacyRegistrySha256 = await sha256(JSON.stringify(legacyRegistryCore));
 const issueKeySetSha256 = await sha256(JSON.stringify(issues.map(issue => issue.type + ':' + issue.binding + ':' + issue.key).sort()));
 const physicalKeySetSha256 = await sha256(JSON.stringify(physical.map(object => object.binding + ':' + object.key + ':' + object.etag).sort()));
-const status = issues.length ? 'blocked_reconciliation_issues' : kvUnclassified.length ? 'blocked_unclassified_legacy_kv' : Number(central[15][0]?.n || 0) ? 'blocked_unmapped_stewardship_packets' : 'verified_ready_for_registry_review';
+// A post-guard audit must also prove the authoritative registry matches the live stores.
+// Re-read after inventory collection; a concurrent change fails closed and can be re-audited.
+const [currentObjects,currentLegacy] = d1Read(centralDatabase,[
+  'SELECT binding,object_key,parish_id,disposition,state,etag FROM parish_portability_objects LIMIT 10001',
+  'SELECT object_key,parish_id,source_hash,state FROM parish_portability_legacy_keys LIMIT 10001'
+]);
+const registryConsistency = {
+  objectsMatch: !currentObjects.some(r=>r.state==='pending') &&
+    currentObjects.filter(r=>r.state==='stored').length===registryCore.length &&
+    registryCore.every(p=>currentObjects.some(r=>r.binding===p.binding && r.object_key===p.objectKey && r.parish_id===p.parishId && r.state==='stored' && r.etag===p.etag && r.disposition===p.disposition)),
+  legacyKeysMatch: !currentLegacy.some(r=>r.state==='pending') &&
+    currentLegacy.filter(r=>r.state==='stored').length===legacyRegistryCore.length &&
+    legacyRegistryCore.every(p=>currentLegacy.some(r=>r.object_key===p.objectKey && r.parish_id===p.parishId && r.state==='stored' && r.source_hash===p.sourceHash))
+};
+const status = issues.length ? 'blocked_reconciliation_issues' : kvUnclassified.length ? 'blocked_unclassified_legacy_kv' : Number(central[15][0]?.n || 0) ? 'blocked_unmapped_stewardship_packets' : storageGuardsEnabled && (!registryConsistency.objectsMatch || !registryConsistency.legacyKeysMatch) ? 'blocked_registry_out_of_sync' : 'verified_ready_for_registry_review';
 const checkedAt = new Date().toISOString();
 const report = {
   checkedAt, readOnly: true, status, providerWrites: false, objectBodiesRead: false,
+  storageGuardsEnabled, registryConsistency,
   physicalObjects: physical.length, references: references.size, countsByBinding,
   knownParishCount: knownParishes.size,
   accountingDatabaseCount: accountingNames.size,
