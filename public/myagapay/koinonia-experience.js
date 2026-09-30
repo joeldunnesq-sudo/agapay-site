@@ -38,12 +38,12 @@
     const pill = [...chips.querySelectorAll('span')].find((item) => item.textContent === rule);
     if (!pill) return;
     const full = String(rule || '').trim();
-    const short = full.replace(/\s*\([^)]*\)/g, '').trim();
+    const short = full.replace(/^fast\s*[-–—:]\s*/i, '').trim();
     pill.textContent = /\bno fast(?:ing)?\b|\bfast[- ]free\b/i.test(full)
       ? 'No fast'
-      : short.length <= 18
-        ? short
-        : 'Fast';
+      : /^(strict )?fast(?: day)?$/i.test(full)
+        ? 'Plant foods · no oil/wine'
+        : short;
     pill.title = full;
     pill.setAttribute('aria-label', full);
     pill.classList.add('koinonia-fasting-pill');
