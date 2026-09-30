@@ -60,7 +60,7 @@ const JOIN_SCOPES = {
   tax_exemption_notes: ['tax_exemption_id', 'tax_exemptions', 'id'],
   tax_exemption_stripe_syncs: ['registration_reference', 'registrations', 'reference'],
 };
-const INDEPENDENT = new Set(`academic_years account_deletion_requests accounting_schema_versions app_settings consumer_passkey_accounts consumer_passkey_transactions consumer_webauthn_credentials courses directory_person_links donor_custom_news_feeds donor_external_feed_subscriptions donor_news_source_subscriptions donor_podcast_preferences donor_podcast_progress donor_podcast_subscriptions donors grades_and_progress legal_terms_versions platform_users stripe_events`.split(' '));
+const INDEPENDENT = new Set(`contact_leads academic_years account_deletion_requests accounting_schema_versions app_settings consumer_passkey_accounts consumer_passkey_transactions consumer_webauthn_credentials courses directory_person_links donor_custom_news_feeds donor_external_feed_subscriptions donor_news_source_subscriptions donor_podcast_preferences donor_podcast_progress donor_podcast_subscriptions donors grades_and_progress legal_terms_versions platform_users stripe_events`.split(' '));
 const SECRET_TABLES = new Set(['parish_email_credentials', 'accounting_staff_sessions', 'directory_import_leases', 'privileged_mfa_profiles', 'privileged_mfa_transactions', 'privileged_webauthn_credentials', 'push_subscriptions']);
 export function scopeParent(name) { return JOIN_SCOPES[name] || null; }
 

@@ -79,6 +79,9 @@ Self-service bounds are 10,000 rows per table, 12 MB per stored component, 10,00
 objects per physical inventory, and a bounded single-database replacement transaction
 (at most 900 prepared statements). Large archives still respect the existing 24 MB
 ZIP export limit. Bounds fail explicitly; no partial backup is labeled successful.
+Each invocation also enforces an 800-operation work budget, including individual
+statements in batches and object-store requests, with a reserved allowance for
+saving a paused checkpoint and releasing the execution lease.
 External media remains external. Original pre-feature exports are not restore points.
 
 ## Release gate — not enabled on production
@@ -127,6 +130,17 @@ node scripts/parish-backup-browser-tests.mjs
 node scripts/parish-portability-tests.mjs
 ```
 
-The accounting suite uses every checked-in accounting migration. The native runtime
-drill uses local workerd/D1/R2 with network egress forbidden. UI screenshots are
+The native runtime drill uses the complete reviewed central schema plus later
+migrations and every checked-in accounting migration. Its default is local
+workerd/D1/R2/KV with network egress forbidden. It verifies both restore scopes,
+interrupted file replacement, fenced writes, safety rollback, financial retention,
+and unrelated-parish isolation. Platform contact leads remain independent.
+
+The manual `self-service-recovery-qualification.yml` workflow runs the same drill
+on fresh disposable hosted stores through a private service-only Worker. It uses
+synthetic data, verifies private bucket settings, and removes its own run-scoped
+resources in an always-run cleanup step. Both `passed` and `cleanupComplete` must
+be true in its aggregate evidence artifact. Production bindings are rejected.
+This workflow must run from protected main and does not enable parish recovery.
+UI screenshots are
 written to `artifacts/parish-recovery/` using synthetic data.

@@ -1,3 +1,4 @@
+import { portabilityBudget, recoveryBudget } from '../portability/budget.js';
 import { retainFinancialEvidence } from './retention.js';
 import { syncConfigurationMirrors } from './configuration.js';
 import { sha256 } from '../portability/archive.js';
@@ -37,6 +38,7 @@ const publicOp = (o) =>
     : null;
 
 export async function recoveryStatus(env, parishId, scope) {
+  env = portabilityBudget(env);
   if (!['parish', 'accounting'].includes(scope)) fail('invalid_scope', 'Choose parish or accounting recovery.');
   const disclosure =
     scope === 'accounting'
@@ -86,6 +88,7 @@ async function snapshot(env, parishId, id, scope, pinned = false) {
 }
 
 export async function startRecovery(env, parishId, actorHash, body) {
+  env = portabilityBudget(env);
   await requireRecovery(env, parishId);
   const { scope, kind, requestKey } = body;
   if (
@@ -210,6 +213,7 @@ async function validateAll(env, op, books, target, safety) {
 }
 
 export async function advanceRecovery(env, parishId, id, action = 'advance') {
+  env = portabilityBudget(env);
   await requireRecovery(env, parishId);
   if (!idPattern.test(id || '')) fail('recovery_not_found', 'Recovery operation not found.');
   let op = await query(
@@ -388,21 +392,31 @@ export async function advanceRecovery(env, parishId, id, action = 'advance') {
       }
     }
   } catch (error) {
-    await query(
-      env.AGAPAY_DB,
-      "UPDATE parish_recovery_operations SET status='paused',error_code=?,updated_at=? WHERE id=?",
-      error.code || 'recovery_step_failed',
-      Date.now(),
-      id
-    ).run();
+    const reset = recoveryBudget(env);
+    try {
+      await query(
+        env.AGAPAY_DB,
+        "UPDATE parish_recovery_operations SET status='paused',error_code=?,updated_at=? WHERE id=?",
+        error.code || 'recovery_step_failed',
+        Date.now(),
+        id
+      ).run();
+    } finally {
+      reset();
+    }
     throw error;
   } finally {
-    await query(
-      env.AGAPAY_DB,
-      'UPDATE parish_recovery_operations SET lease_until=0,lease_token=NULL WHERE id=? AND lease_token=?',
-      id,
-      token
-    ).run();
+    const reset = recoveryBudget(env);
+    try {
+      await query(
+        env.AGAPAY_DB,
+        'UPDATE parish_recovery_operations SET lease_until=0,lease_token=NULL WHERE id=? AND lease_token=?',
+        id,
+        token
+      ).run();
+    } finally {
+      reset();
+    }
   }
   op = await query(env.AGAPAY_DB, 'SELECT * FROM parish_recovery_operations WHERE id=?', id).first();
   return publicOp(op);

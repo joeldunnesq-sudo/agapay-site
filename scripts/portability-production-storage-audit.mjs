@@ -8,6 +8,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getPlatformProxy } from 'wrangler';
+import { DatabaseSync } from 'node:sqlite';
+import { inventory } from '../src/recovery/storage.js';
 import { sha256 } from '../src/portability/archive.js';
 import { classifyLegacyRecord } from '../src/portability/legacy.js';
 import { FILE_BINDINGS, canonicalBinding } from '../src/portability/storage.js';
@@ -161,6 +163,17 @@ const centralStatements = [
   "SELECT count(*) n FROM stewardship_generated_packets WHERE storage_key IS NOT NULL AND storage_key<>''",
   "SELECT parish_id,storage_key object_key FROM sacrament_preparation_documents WHERE storage_key IS NOT NULL AND storage_key<>'' AND deleted_at IS NULL LIMIT 10000"
 ];
+async function reviewSchema(database, kind) {
+  const ddl = d1Read(database, ["SELECT name,sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name<>'d1_migrations' ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 ELSE 2 END,name"])[0];
+  const db = new DatabaseSync(':memory:');
+  try {
+    for (const row of ddl) { assert.match(row.sql, /^CREATE\s/i); db.exec(row.sql); }
+    const binding = { prepare(sql) { return { args: [], bind(...args) { this.args=args;return this; }, async all() { return {results:db.prepare(sql).all(...this.args)}; }, async first() { return db.prepare(sql).get(...this.args)||null; } }; } };
+    const tables = await inventory(binding, kind);
+    return {kind, reviewedTables:tables.length, schemaSha256:await sha256(JSON.stringify(ddl)), dataCopied:false};
+  } finally { db.close(); }
+}
+const schemaReviews = [await reviewSchema(centralDatabase, 'central')];
 const central = d1Read(centralDatabase, centralStatements);
 const knownParishes = new Set(central[0].map(row => row.parish_id));
 const accounting = [];
@@ -170,6 +183,7 @@ for (const record of central[14]) {
   assert.match(record.database_identifier, /^agapay-acct-production-[a-z0-9-]+$/);
   assert.ok(!accountingNames.has(record.database_identifier), 'Accounting database has conflicting owners');
   accountingNames.add(record.database_identifier);
+  schemaReviews.push(await reviewSchema(record.database_identifier, 'books'));
   const rows = d1Read(record.database_identifier, [
     "SELECT value FROM accounting_database_metadata WHERE key='parish_id'",
     "SELECT storage_key object_key FROM accounting_attachments WHERE storage_key IS NOT NULL AND storage_key<>'' LIMIT 10000"
@@ -336,6 +350,7 @@ const report = {
   physicalObjects: physical.length, references: references.size, countsByBinding,
   knownParishCount: knownParishes.size,
   accountingDatabaseCount: accountingNames.size,
+  schemaReviews,
   kv: { keysScanned: kvKeysScanned, classifiedParishKeys: kvClassifiedKeys, unclassifiedKeys: kvUnclassified.length, unclassifiedKeySetSha256: await sha256(JSON.stringify(kvUnclassified.map(item => item.key).sort())), rawValuesPersisted: false },
   unmappedStewardshipPacketReferences: Number(central[15][0]?.n || 0),
   publicCacheByBinding, issues: issueCounts, issueCount: issues.length,

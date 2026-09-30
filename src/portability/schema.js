@@ -1,5 +1,6 @@
 // Reviewed schema boundary for portability. New tables/columns require explicit review.
 export const PORTABILITY_SCHEMA = Object.freeze({
+  "contact_leads": ["id","submission_key","payload_hash","data","created_at","notification_status","attempts","generation","provider_id","last_error","first_attempt_at","last_attempt_at","sent_at","lease_token","lease_until","notification_json"],
   "agapay_service_invoices": ["invoice_id","parish_id","subscription_id","customer_id","paid_at","currency","amount_cents","plan_label","price_ids_json","accounting_status","accounting_message","created_at"],
   "parish_diocesan_statistical_totals": ["parish_id","reporting_year","totals_json","updated_at"],
   "donation_receipt_deliveries": ["id","parish_id","status","message","first_attempt_at","lease_until","lease_token","provider_id","sent_at","detail","created_at"],

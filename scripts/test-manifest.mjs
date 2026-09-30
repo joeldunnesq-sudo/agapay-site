@@ -27,6 +27,7 @@ const core = [
   'scripts/parish-recovery-failure-tests.mjs',
   'scripts/accounting-recovery-tests.mjs',
   'scripts/parish-recovery-runtime-tests.mjs',
+  'scripts/recovery-hosted-safety-tests.mjs',
   'scripts/parish-recovery-browser-tests.mjs',
   'scripts/campaign-embed-tests.mjs',
   'scripts/require-node-22.mjs',

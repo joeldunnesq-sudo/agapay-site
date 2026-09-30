@@ -1,0 +1,40 @@
+name: Self-service recovery qualification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: agapay-self-service-recovery-qualification
+  cancel-in-progress: false
+jobs:
+  hosted-rehearsal:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Rehearse both restore scopes on disposable hosted resources
+        timeout-minutes: 25
+        run: node scripts/recovery-hosted-drill.mjs --run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+      - name: Remove only this run's disposable resources
+        if: always()
+        timeout-minutes: 10
+        run: node scripts/recovery-hosted-drill.mjs --cleanup
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: hosted-recovery-qualification-${{ github.run_id }}
+          path: artifacts/recovery-hosted/result.json
+          if-no-files-found: warn
+          retention-days: 14
