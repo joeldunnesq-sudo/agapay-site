@@ -912,6 +912,7 @@ export async function processStripeWebhookEvent(env, event) {
           ? "active"
       : subscriptionStatusFromStripe(object.status);
     const trialUpdates = {
+      subscriptionCancelAtPeriodEnd: Boolean(object.cancel_at_period_end),
       ...(object.status === "canceled" && object.canceled_at ? { subscriptionCancelledAt: new Date(object.canceled_at * 1000).toISOString() } : {}),
       subscriptionTrialStartedAt: object.trial_start ? new Date(object.trial_start * 1000).toISOString() : "",
       subscriptionTrialEndsAt: object.trial_end ? new Date(object.trial_end * 1000).toISOString() : ""

@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin/style.css?v=20260930-navigation1" />
+  <link rel="stylesheet" href="/admin/relationships.css?v=20260930-care1" />
   <link rel="stylesheet" href="/admin/navigation.css?v=20260930-tiers1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20260826mfa1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -142,7 +143,7 @@
             </div>
           </section>
 
-          <section class="admin-metrics-card" aria-labelledby="adminMetricsTitle" id="adminMetricsCard" aria-busy="true">
+                    <section class="admin-metrics-card" aria-labelledby="adminMetricsTitle" id="adminMetricsCard" aria-busy="true">
             <div class="admin-metrics-heading"><div><h2 id="adminMetricsTitle">Parish metrics</h2><p id="adminMetricsPeriod">This week · Monday to now (UTC)</p></div><button class="secondary btn-sm" type="button" onclick="loadPlatformSummary(this)">Refresh metrics</button></div>
             <dl class="admin-metrics-grid">
               <div><dt>New signups this week</dt><dd id="weeklySignups">—</dd><small>Parish registrations</small></div>
@@ -158,7 +159,10 @@
               <div class="admin-tier-detail"><h3 id="adminTierTitle">Parishes by tier</h3><p>All registered parishes, including trials and canceled subscriptions.</p><ul id="adminTierLegend" aria-label="Parish counts by tier"></ul><p id="adminTierStatus" role="status">Loading tier breakdown…</p></div>
             </section>
             <p class="admin-metrics-note" id="adminMetricsNote" role="status">Loading parish metrics…</p>
+            <div id="parishRetention" class="relationship-retention" aria-live="polite"></div>
           </section>
+<section id="parishCare" class="parish-care" aria-labelledby="parishCareTitle"><div class="care-heading"><div><span class="care-eyebrow">GROW TOGETHER</span><h2 id="parishCareTitle">Parish relationships</h2><p>Notice the needs. Celebrate the milestones.</p></div><button type="button" class="secondary btn-sm" id="careRefresh">Refresh</button></div><p id="careStatus" role="status">Loading parish relationships…</p><div id="careContent"></div></section>
+
 
           <section class="admin-today-grid" aria-labelledby="adminStartHereTitle">
             <article class="admin-today-card admin-today-primary">
@@ -1022,7 +1026,8 @@
   <script src="/admin/controllers/tax-exemptions.js?v=20260904-controllers1"></script>
   <script src="/admin/controllers/contact-leads.js"></script>
   <script src="/admin/metrics.js?v=20260930-tiers1"></script>
-  <script src="/admin/app.js?v=20260930-metrics1"></script>
+  <script src="/admin/relationships.js?v=20260930-care1"></script>
+  <script src="/admin/app.js?v=20260930-care1"></script>
   <script src="/admin/navigation.js?v=20260930-metrics1"></script>
   <script src="/admin/pwa.js"></script>
 </body>

@@ -1266,6 +1266,7 @@ let selectedReference = '';
     }
 
     async function loadPlatformSummary(btn) {
+      window.loadParishRelationships?.();
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       document.getElementById('adminMetricsCard')?.setAttribute('aria-busy', 'true');
       renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));

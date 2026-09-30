@@ -11,10 +11,11 @@
     "parish"
   ],
   "workerRouteActions": {
-    "sha256": "93c3f658efda11ec7dd00d9585ff07a4d20f0dabb11e2ad15dbe576f81c010ee",
-    "count": 293
+    "sha256": "59c410720b33be799df1cf60d5594e77b44f2eb6524c5992171815614774f2eb",
+    "count": 294
   },
   "workerScheduledTaskOrder": [
+    "parish_milestones",
     "parish_recovery_jobs",
     "parish_portability_jobs",
     "daily_pastoral_care_digest",
