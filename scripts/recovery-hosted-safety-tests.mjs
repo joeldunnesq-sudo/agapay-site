@@ -1,8 +1,31 @@
 import assert from 'node:assert/strict';
+import { accountingAuditOwner } from './lib/recovery-accounting-owners.mjs';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { validateHostedRecoveryConfig } from './lib/recovery-hosted-bindings.mjs';
 
 const context = { CI: 'true', GITHUB_RUN_ID: '12345', GITHUB_RUN_ATTEMPT: '1' };
+const production = readFileSync('wrangler.toml', 'utf8').split(/^\[env\.staging\]/m)[0];
+const canary = {
+  parish_id: 'agapay-phase-g-canary',
+  database_identifier: 'agapay-acct-production-e4601e1d985ec8dcb9fe',
+};
+assert.equal(accountingAuditOwner(canary, new Set(), production), 'technical-canary');
+assert.throws(() => accountingAuditOwner({ ...canary, parish_id: 'unknown' }, new Set(), production));
+assert.throws(() =>
+  accountingAuditOwner({ ...canary, database_identifier: 'agapay-acct-production-other' }, new Set(), production)
+);
+assert.throws(() =>
+  accountingAuditOwner(canary, new Set(), production.replace('0b55d572-7dbc-4f6d-97a5-826841f4bbb8', 'wrong'))
+);
+assert.equal(
+  accountingAuditOwner(
+    { parish_id: 'real', database_identifier: 'agapay-acct-production-real' },
+    new Set(['real']),
+    production
+  ),
+  'parish'
+);
 const prefix = 'agapay-restore-drill-12345-1';
 const state = {
   prefix,
