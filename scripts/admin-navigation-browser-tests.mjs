@@ -17,13 +17,21 @@ try {
       if (url.hostname !== 'admin.test') return route.abort();
       if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: html });
       if (url.pathname === '/admin/app.js') return route.fulfill({ contentType: 'text/javascript', body: `let activeTab = 'overview'; function loadParishSupportTickets() {} ${navigation}` });
-      if (url.pathname.endsWith('.js') && url.pathname !== '/admin/navigation.js') return route.fulfill({ contentType: 'text/javascript', body: '' });
+      if (url.pathname.endsWith('.js') && !['/admin/navigation.js', '/admin/metrics.js'].includes(url.pathname)) return route.fulfill({ contentType: 'text/javascript', body: '' });
       try {
         return route.fulfill({ contentType: url.pathname.endsWith('.css') ? 'text/css' : url.pathname.endsWith('.js') ? 'text/javascript' : 'image/png', body: readFileSync(`public${url.pathname}`) });
       } catch { return route.fulfill({ status: 404, body: '' }); }
     });
     await page.goto('https://admin.test');
-    assert.equal(await page.locator('#adminWorkspaceLinks button').count(), 15);
+    assert.equal(await page.locator('#adminWorkspaceLinks').count(), 0);
+    assert.equal(await page.locator('.sidebar-toolbox').evaluate(el => el.open), false);
+    await page.evaluate(() => renderAdminOverviewMetrics({
+      complete: true, weekStart: '2026-09-28T00:00:00Z', generatedAt: '2026-09-30T12:00:00Z',
+      newRegistrations: 3, cancellations: 1, undatedCancellations: 0, unknownPriceSubscriptions: 0,
+      monthlyRecurringCents: 23800, annualRecurringCents: 285600, activePaidSubscriptions: 2,
+    }));
+    assert.equal(await page.locator('#weeklySignups').textContent(), '3');
+    assert.equal(await page.locator('#monthlyRecurringRevenue').textContent(), '$238.00');
     assert.equal(await page.locator('#nav-overview').getAttribute('aria-current'), 'page');
     const trigger = page.locator('.admin-find-button');
     await trigger.click();
@@ -51,8 +59,14 @@ try {
     await page.locator('#adminFinderClose').click();
     assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
     await page.evaluate(() => switchTab('overview'));
+    await page.locator('.admin-secondary-workspace').evaluate(el => { el.open = false; });
+    await page.evaluate(() => window.scrollTo(0, 0));
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'page must fit the viewport');
     await page.screenshot({ path: `artifacts/admin-navigation-${width}.png`, fullPage: true });
+    await page.evaluate(() => renderAdminOverviewMetrics(null));
+    assert.equal(await page.locator('#weeklySignups').textContent(), '—');
+    assert.match(await page.locator('#adminMetricsNote').textContent(), /unavailable/);
+    assert.equal(await page.locator('#adminMetricsCard').getAttribute('aria-busy'), 'false');
     assert.deepEqual(errors, []);
     await page.close();
   }
