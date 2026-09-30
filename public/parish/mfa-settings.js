@@ -1,14 +1,14 @@
 (function () {
   'use strict';
-  const mount = document.getElementById('parishAuthenticatorSettings');
-  if (mount) mount.innerHTML = `        <section class="section">
+  const mount = document.getElementById('tab-settings');
+  if (mount) mount.insertAdjacentHTML('beforeend', `        <section class="section">
           <div class="section-body">
             <h2>Authenticator app</h2>
             <p class="section-note">Add an authenticator app to your primary parish login. Windows Hello and other existing passkeys continue to work. You will verify your identity before setup.</p>
             <button type="button" class="btn btn-ghost" onclick="addParishAuthenticator(this)">Add authenticator app</button>
             <p class="section-note" id="parishAuthenticatorStatus" role="status" aria-live="polite"></p>
           </div>
-        </section>`; 
+        </section>`);
   window.addParishAuthenticator = async function (button) {
     const status = document.getElementById('parishAuthenticatorStatus');
     const parishId = document.getElementById('parishId')?.value.trim();
