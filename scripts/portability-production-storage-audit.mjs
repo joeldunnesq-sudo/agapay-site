@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { getPlatformProxy } from 'wrangler';
 import { sha256 } from '../src/portability/archive.js';
 import { classifyLegacyRecord } from '../src/portability/legacy.js';
+import { FILE_BINDINGS, canonicalBinding } from '../src/portability/storage.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const artifactDir = path.join(root, 'artifacts/portability-staging');
@@ -18,8 +19,6 @@ const manifestPath = path.join(artifactDir, 'production-storage-registry-proposa
 const proxyConfigPath = path.join(artifactDir, 'production-storage-inventory-wrangler.json');
 const accountId = '9198ae5ea8adc59e5dedd1b09c9478b9';
 const centralDatabase = 'agapay-production';
-const accountingDatabase = 'agapay-acct-production-4ab22bac06dca8b80e70';
-const accountingParishId = 'st-fiacre';
 const kvBinding = 'AGAPAY_REGISTRATIONS';
 const kvId = 'c0c630d2699a4d42a72db927c6341707';
 const publicBases = Object.freeze({
@@ -44,8 +43,11 @@ const buckets = Object.freeze({
   TAX_EXEMPTION_DOCS: 'agapay-tax-exemption-docs',
   NONPROFIT_PRICING_DOCS: 'agapay-nonprofit-pricing-docs',
   GIVING_STATEMENTS: 'agapay-giving-statements',
-  ACCOUNTING_ATTACHMENTS: 'agapay-accounting-attachments'
+  ACCOUNTING_ATTACHMENTS: 'agapay-accounting-attachments',
+  SACRAMENT_DOCUMENTS: 'agapay-sacrament-documents'
 });
+assert.deepEqual(Object.keys(buckets).sort(), [...new Set(FILE_BINDINGS.map(canonicalBinding))].sort(),
+  'Ownership audit must include every current physical parish file binding');
 const financial = new Set(['TAX_EXEMPTION_DOCS', 'NONPROFIT_PRICING_DOCS', 'GIVING_STATEMENTS', 'ACCOUNTING_ATTACHMENTS']);
 const args = process.argv.slice(2);
 mkdirSync(artifactDir, { recursive: true });
@@ -54,7 +56,7 @@ if (!args.length) {
   console.log(JSON.stringify({
     mode: 'plan',
     command: 'node scripts/portability-production-storage-audit.mjs --read-only',
-    scope: { physicalBuckets: Object.keys(buckets).length, centralDatabase, accountingDatabase, legacyKv: kvBinding },
+    scope: { physicalBuckets: Object.keys(buckets).length, centralDatabase, accountingDatabases: 'all registered production books', legacyKv: kvBinding },
     safeguards: ['metadata-only R2 listing', 'fixed read-only D1 statements', 'KV values parsed in memory only', 'no object bodies', 'no raw keys or parish IDs printed', 'no provider writes'],
     defaultWrites: false
   }, null, 2));
@@ -75,7 +77,8 @@ for (const [binding, base] of Object.entries(workerPublicBases)) {
 }
 assert.match(productionConfig, new RegExp(`^PARISH_PUBLIC_MEDIA_DELIVERY_ENABLED = "${publicMediaPolicyVersion}"$`, 'm'));
 assert.match(productionConfig, new RegExp(`^PARISH_R2_DEV_PUBLIC_ACCESS_DISABLED = "${publicMediaPolicyVersion}"$`, 'm'));
-for (const flag of ['PARISH_PORTABILITY_ENABLED', 'PARISH_STORAGE_GUARDS_ENABLED', 'PARISH_AUTOMATIC_CLOSURE_ENABLED']) {
+// Export availability is independent of this read-only ownership audit.
+for (const flag of ['PARISH_STORAGE_GUARDS_ENABLED', 'PARISH_AUTOMATIC_CLOSURE_ENABLED']) {
   assert.match(productionConfig, new RegExp(`^${flag} = "false"$`, 'm'));
 }
 
@@ -154,19 +157,26 @@ const centralStatements = [
   "SELECT d.storage_key object_key,t.parish_id direct_parish_id,r.parish_id registration_parish_id FROM tax_exemption_documents d JOIN tax_exemptions t ON t.id=d.tax_exemption_id LEFT JOIN registrations r ON r.reference=d.registration_reference WHERE d.storage_key IS NOT NULL AND d.storage_key<>'' LIMIT 10000",
   "SELECT a.parish_id,d.storage_key object_key FROM nonprofit_pricing_documents d JOIN nonprofit_pricing_applications a ON a.id=d.application_id WHERE d.storage_key IS NOT NULL AND d.storage_key<>'' LIMIT 10000",
   "SELECT parish_id,storage_key object_key FROM giving_statements WHERE storage_key IS NOT NULL AND storage_key<>'' LIMIT 10000",
-  "SELECT m.value parish_id,d.database_identifier FROM accounting_entities e JOIN accounting_databases d ON d.accounting_entity_id=e.id JOIN (SELECT 'st-fiacre' value) m WHERE d.database_identifier='agapay-acct-production-4ab22bac06dca8b80e70' AND d.environment='production' AND e.parish_id=m.value LIMIT 2",
-  "SELECT count(*) n FROM stewardship_generated_packets WHERE storage_key IS NOT NULL AND storage_key<>''"
+  "SELECT e.parish_id,d.database_identifier,d.provisioning_status FROM accounting_entities e JOIN accounting_databases d ON d.accounting_entity_id=e.id WHERE d.environment='production' ORDER BY e.parish_id LIMIT 10000",
+  "SELECT count(*) n FROM stewardship_generated_packets WHERE storage_key IS NOT NULL AND storage_key<>''",
+  "SELECT parish_id,storage_key object_key FROM sacrament_preparation_documents WHERE storage_key IS NOT NULL AND storage_key<>'' AND deleted_at IS NULL LIMIT 10000"
 ];
 const central = d1Read(centralDatabase, centralStatements);
 const knownParishes = new Set(central[0].map(row => row.parish_id));
-assert.ok(knownParishes.has(accountingParishId), 'Accounting parish is absent from the production parish registry');
-assert.equal(central[14].length, 1, 'Production accounting attachment owner mapping is ambiguous');
-
-const accounting = d1Read(accountingDatabase, [
-  "SELECT value FROM accounting_database_metadata WHERE key='parish_id'",
-  "SELECT storage_key object_key FROM accounting_attachments WHERE storage_key IS NOT NULL AND storage_key<>'' LIMIT 10000"
-]);
-assert.deepEqual(accounting[0], [{ value: accountingParishId }], 'Accounting database identity readback failed');
+const accounting = [];
+const accountingNames = new Set();
+for (const record of central[14]) {
+  assert.ok(knownParishes.has(record.parish_id), 'Accounting parish is absent from the production parish registry');
+  assert.match(record.database_identifier, /^agapay-acct-production-[a-z0-9-]+$/);
+  assert.ok(!accountingNames.has(record.database_identifier), 'Accounting database has conflicting owners');
+  accountingNames.add(record.database_identifier);
+  const rows = d1Read(record.database_identifier, [
+    "SELECT value FROM accounting_database_metadata WHERE key='parish_id'",
+    "SELECT storage_key object_key FROM accounting_attachments WHERE storage_key IS NOT NULL AND storage_key<>'' LIMIT 10000"
+  ]);
+  assert.deepEqual(rows[0], [{ value: record.parish_id }], 'Accounting database identity readback failed');
+  accounting.push(...rows[1].map(row => ({ ...row, parish_id: record.parish_id })));
+}
 
 const references = new Map();
 const referenceConflicts = [];
@@ -199,7 +209,8 @@ for (const row of central[11]) {
 }
 for (const row of central[12]) addReference('NONPROFIT_PRICING_DOCS', row.object_key, row.parish_id, 'nonprofit_pricing');
 for (const row of central[13]) addReference('GIVING_STATEMENTS', row.object_key, row.parish_id, 'giving_statement');
-for (const row of accounting[1]) addReference('ACCOUNTING_ATTACHMENTS', row.object_key, accountingParishId, 'accounting_attachment');
+for (const row of accounting) addReference('ACCOUNTING_ATTACHMENTS', row.object_key, row.parish_id, 'accounting_attachment');
+for (const row of central[16]) addReference('SACRAMENT_DOCUMENTS', row.object_key, row.parish_id, 'sacrament_document');
 
 writeFileSync(proxyConfigPath, JSON.stringify({
   name: 'agapay-portability-production-storage-inventory', account_id: accountId,
@@ -324,6 +335,7 @@ const report = {
   checkedAt, readOnly: true, status, providerWrites: false, objectBodiesRead: false,
   physicalObjects: physical.length, references: references.size, countsByBinding,
   knownParishCount: knownParishes.size,
+  accountingDatabaseCount: accountingNames.size,
   kv: { keysScanned: kvKeysScanned, classifiedParishKeys: kvClassifiedKeys, unclassifiedKeys: kvUnclassified.length, unclassifiedKeySetSha256: await sha256(JSON.stringify(kvUnclassified.map(item => item.key).sort())), rawValuesPersisted: false },
   unmappedStewardshipPacketReferences: Number(central[15][0]?.n || 0),
   publicCacheByBinding, issues: issueCounts, issueCount: issues.length,

@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '17 9 1 * *'
   workflow_dispatch:
+    inputs:
+      ownership_audit_only:
+        description: Read-only file and legacy ownership qualification; no restore or resource creation
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,7 +18,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  ownership-audit:
+    if: github.event_name == 'workflow_dispatch' && inputs.ownership_audit_only
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Audit current production file and legacy ownership without writes
+        run: node scripts/portability-production-storage-audit.mjs --read-only
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Upload aggregate qualification evidence only
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: recovery-ownership-audit-${{ github.run_id }}
+          path: artifacts/portability-staging/production-storage-ownership.json
+          if-no-files-found: warn
+          retention-days: 14
+
   recovery-drill:
+    if: github.event_name != 'workflow_dispatch' || !inputs.ownership_audit_only
     name: Restore latest stored backup into disposable D1
     runs-on: ubuntu-latest
     environment: production

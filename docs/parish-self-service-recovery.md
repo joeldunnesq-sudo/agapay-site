@@ -106,6 +106,14 @@ must not enable a destructive feature merely because its UI or unit tests passed
 
 ## Verification
 
+The September 30 qualification updates the read-only ownership audit to cover
+all registered production accounting databases and sacrament documents. The audit
+asserts that its physical bucket list matches the application's file bindings.
+Run the existing recovery-drill workflow with `ownership_audit_only: true` for
+an aggregate report using protected provider credentials. This option does not
+run the restore drill, write registries, or enable recovery. An audit report must
+say `verified_ready_for_registry_review`; a completed job alone is not readiness.
+
 Run the following from the repository root:
 
 ```text
