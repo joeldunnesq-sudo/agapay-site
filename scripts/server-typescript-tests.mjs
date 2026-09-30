@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { once } from 'node:events';
+import ts from 'typescript';
 import {
   readServerModuleSource,
   repoRoot,
@@ -76,6 +77,32 @@ try {
 
 const fixtureRoot = await mkdtemp(join(tmpdir(), 'agapay-server-typescript-'));
 try {
+  // Linux Wrangler declarations can import the legacy entrypoint. That must not
+  // expand the migrated TS project to every unconverted JavaScript dependency.
+  const workerReference = join(fixtureRoot, 'worker-reference.d.ts');
+  await writeFile(
+    workerReference,
+    `declare namespace MigrationScopeProbe { type Worker = typeof import(${JSON.stringify(resolve(repoRoot, 'src/worker.js').replaceAll('\\', '/'))}); }\n`
+  );
+  const config = ts.readConfigFile(join(repoRoot, 'tsconfig.worker.json'), ts.sys.readFile);
+  assert.equal(config.error, undefined);
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, repoRoot);
+  assert.deepEqual(parsed.errors, []);
+  assert.equal(parsed.options.strict, true);
+  const program = ts.createProgram([...parsed.fileNames, workerReference], parsed.options);
+  assert.deepEqual(
+    program
+      .getSourceFiles()
+      .filter((file) => /\.jsx?$/.test(file.fileName))
+      .map((file) => file.fileName),
+    []
+  );
+  assert.deepEqual(
+    ts
+      .getPreEmitDiagnostics(program)
+      .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')),
+    []
+  );
   await writeFile(join(fixtureRoot, 'package.json'), '{"type":"module"}\n');
   await writeFile(join(fixtureRoot, '.prettierrc.json'), await readFile(join(repoRoot, '.prettierrc.json')));
   for (const source of serverTypeScriptSources) {
