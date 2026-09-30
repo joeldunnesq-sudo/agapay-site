@@ -88,9 +88,11 @@ registration mirrors against a conservative per-phase allowance. Oversized resto
 remain cancellable and leave current records and files unchanged.
 External media remains external. Original pre-feature exports are not restore points.
 
-## Release gate — not enabled on production
+## Production activation and release gates
 
-`PARISH_RECOVERY_ENABLED` defaults to false. Keep it false until:
+The production activation configuration sets `PARISH_RECOVERY_ENABLED="true"`
+after storage guards are deployed and verified. Keep recovery disabled in any new
+environment until the following checks pass:
 
 1. Apply the recovery migration and verify schema/guard compatibility on a disposable
    deployment with the current central and accounting schemas.
@@ -108,8 +110,13 @@ External media remains external. Original pre-feature exports are not restore po
 5. Enable the verified storage guards, then enable recovery. Create fresh restore
    points before inviting parish users to rely on the Restore controls.
 
-No production snapshot or restore is run by this implementation's tests. A release
-must not enable a destructive feature merely because its UI or unit tests passed.
+Local and hosted rehearsals use isolated synthetic data. A release must not enable
+a destructive feature merely because its UI or unit tests passed.
+The manual `recovery-live-backup.yml` workflow creates fresh accounting and parish
+restore points in Test Lubbock using normal password/TOTP authentication. It checks
+that both points are verified and the workspace is released. It cannot restore,
+download parish data, or continue a pre-existing operation; it can cancel only the
+backup it just created. Its artifact contains aggregate verification results only.
 
 ### September 30 storage-guard rollout evidence
 
@@ -122,6 +129,14 @@ must not enable a destructive feature merely because its UI or unit tests passed
   updated control metadata only and verified exact readback of all 26 files and 18 keys.
 - This stage enables storage guards while leaving recovery disabled. Post-deployment
   health and another read-only consistency audit are required before recovery activation.
+- [Updated hosted rehearsal](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36764250828)
+  also passed with the onboarding provisioner's migration-history table, including
+  both restore scopes and complete cleanup.
+
+The subsequent activation exposes whole-parish backup and restore in Settings and
+accounting-only backup and restore in Accounting. A first manual backup is required
+before Restore has a selectable point. Points expire after seven days; ordinary
+platform backups and older export ZIPs are not selectable self-service restore points.
 
 ## Verification
 

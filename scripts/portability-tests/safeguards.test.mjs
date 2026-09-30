@@ -21,6 +21,7 @@ const retentionDisclosureDraft = readFileSync(new URL('../../docs/data-portabili
 const productionConfig = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8').split(/^\[env\.staging\]/m)[0];
 assert.match(productionConfig, /^PARISH_PORTABILITY_ENABLED = "true"$/m);
 assert.match(productionConfig, /^PARISH_STORAGE_GUARDS_ENABLED = "true"$/m);
+assert.match(productionConfig, /^PARISH_RECOVERY_ENABLED = "true"$/m);
 for (const flag of ['PARISH_AUTOMATIC_CLOSURE_ENABLED', 'ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED']) {
   assert.match(productionConfig, new RegExp(`^${flag} = "false"$`, 'm'), `${flag} is not authorized by recovery activation`);
 }
