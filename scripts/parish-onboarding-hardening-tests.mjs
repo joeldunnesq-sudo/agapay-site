@@ -235,6 +235,57 @@ globalThis.fetch = async (input, init) => {
 try {
   {
     const { env, db } = makeD1Env();
+    const churches = [];
+    for (const [index, tier] of ['starter', 'giving', 'parish'].entries()) {
+      let registration = baseRegistration({
+        reference: `AGP-FIRST-${index}`, parishId: `first-church-${index}`,
+        parishName: `First Church ${index}`, taxLegalName: `First Church ${index}`,
+        priestEmail: `priest-${index}@example.test`, treasurerEmail: `treasurer-${index}@example.test`,
+        stripeAccountId: `acct_first_${index}`, subscriptionTier: tier,
+        subscriptionTierLabel: tier, parishHouseholdBand: 'under_50',
+      });
+      const beforeAccounting = await buildParishOnboardingWorkflow(registration, { appUrl: env.AGAPAY_APP_URL });
+      assert.equal(beforeAccounting.accountingSetupRequired, tier === 'parish');
+      if (tier === 'parish') {
+        assert.equal(beforeAccounting.canGoLive, false, 'full Parish setup requires the accounting fund mapping');
+        // Accounting activation is covered in its dedicated suite. This fixture
+        // represents the reviewed catalog returned after that setup completes.
+        registration = { ...registration, funds: registration.funds.map(fund => ({ ...fund, accountingFundId: 'fund_general' })) };
+      }
+      const session = await issueParishDashboardSession(registration);
+      await saveRegistrationRecord(env, registration.reference, session.registration);
+      churches.push({ env, registration: session.registration, dashboardToken: session.token });
+    }
+    for (const [index, church] of churches.entries()) {
+      const workflow = await buildParishOnboardingWorkflow(church.registration, await workflowOptions(church));
+      assert.equal(workflow.canGoLive, true, `${church.registration.subscriptionTier} trial can finish setup: ${JSON.stringify(workflow.blockers)}`);
+      const wrongToken = { ...church, dashboardToken: churches[(index + 1) % churches.length].dashboardToken };
+      assert.equal((await worker.fetch(dashboardRequest(wrongToken, signoffBody(workflow.materialVersion)), env)).status, 401);
+      nextStripeResponse = stripeAccount({ id: church.registration.stripeAccountId, payouts_enabled: false });
+      const blocked = await worker.fetch(dashboardRequest(church, signoffBody(workflow.materialVersion)), env);
+      assert.equal(blocked.status, 409, 'a live provider readiness regression blocks launch');
+      assert.equal((await loadRegistrationByReference(env, church.registration.reference)).givingStatus, 'hidden');
+      nextStripeResponse = stripeAccount({ id: church.registration.stripeAccountId });
+      const refreshed = await refreshStripeStatusForRegistration(env, church.registration.reference,
+        await loadRegistrationByReference(env, church.registration.reference));
+      assert.equal(refreshed.ok, true);
+      const currentReview = await buildParishOnboardingWorkflow(refreshed.registration, await workflowOptions(church));
+      const launched = await worker.fetch(dashboardRequest(church, signoffBody(currentReview.materialVersion)), env);
+      assert.equal(launched.status, 200, JSON.stringify(await launched.clone().json()));
+      const stored = await loadRegistrationByReference(env, church.registration.reference);
+      assert.equal(stored.treasurerSignoff.signerEmail, church.registration.treasurerEmail);
+      assert.equal(stored.stripeAccountId, church.registration.stripeAccountId);
+      assert.equal(stored.givingStatus, 'active');
+      for (const pending of churches.slice(index + 1)) {
+        assert.equal((await loadRegistrationByReference(env, pending.registration.reference)).givingStatus, 'hidden');
+      }
+    }
+    db.close();
+    nextStripeResponse = stripeAccount();
+    console.log('PASS - three churches on distinct trial tiers launch independently; foreign sessions and incomplete payouts cannot publish');
+  }
+  {
+    const { env, db } = makeD1Env();
     db.exec(readFileSync(path.join(root, 'migrations', '0088_legal_acceptances.sql'), 'utf8'));
     db.exec(readFileSync(path.join(root, 'migrations', '0113_portability_legal_notices.sql'), 'utf8'));
     const body = {

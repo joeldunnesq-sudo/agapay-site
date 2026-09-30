@@ -103,6 +103,11 @@ try {
   assert.match(email.subject, /Getting started with AGAPAY/);
   assert.match(email.subject, /St\. Test Parish/);
   assert.match(email.html, /https:\/\/example\.test/);
+  for (const copy of [email.html, email.text]) {
+    assert.match(copy, /No card is required for the demo/);
+    assert.match(copy, /treasurer signoff before publishing/);
+    assert.doesNotMatch(copy, /complete billing|billing first|Once billing is active/);
+  }
   assert.equal(email.attachments?.[0]?.filename, 'AGAPAY-Parish-Onboarding-Guide.pdf');
 
   await notifications.sendRegistrationConfirmation({ RESEND_API_KEY: 'test-key' }, 'https://example.test', {

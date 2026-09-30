@@ -131,6 +131,36 @@ try {
   );
 
   await scenario(
+    'full Parish plan explains the accounting prerequisite without a giving-review dead end',
+    () => ({
+      parish: {
+        ...setup,
+        subscriptionTier: 'parish',
+        subscriptionTierLabel: 'Parish',
+        accountingAvailable: true,
+        entitlements: { modules: { accounting: { included: true } } },
+        onboarding: { ...setup.onboarding, accountingSetupRequired: true, blockers: [{ key: 'generalFund' }] },
+      },
+    }),
+    async (page) => {
+      const action = page.getByRole('button', { name: 'Open Accounting setup', exact: true });
+      assert.equal(await action.isVisible(), true);
+      assert.equal(await page.getByRole('button', { name: 'Review giving setup', exact: true }).isVisible(), true);
+      assert.equal(await page.getByRole('button', { name: 'Go Live', exact: true }).count(), 0);
+      assert.ok(
+        (await page.locator('#setupWizardPane').textContent()).includes('return here to review and save giving setup')
+      );
+      await action.click();
+      await page.getByRole('heading', { name: 'Your books. Beautifully organized.', exact: true }).waitFor();
+      assert.equal(
+        await page.getByRole('button', { name: 'Create my parish’s books', exact: false }).isEnabled(),
+        true
+      );
+    },
+    { '/accounting-access/activation': { body: { status: 'not_started', available: true, completed: false } } }
+  );
+
+  await scenario(
     'mobile wizard keeps keyboard focus inside and rejects reserved or colliding destinations',
     () => ({ parish: setup }),
     async (page) => {
