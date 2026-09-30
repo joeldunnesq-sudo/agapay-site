@@ -2,6 +2,11 @@ name: Production Accounting Health - Test Lubbock
 
 on:
   workflow_dispatch:
+    inputs:
+      use_recovery_code:
+        description: Consume one owner-provided recovery code for a one-time check
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,10 +28,12 @@ jobs:
       - name: Verify production health-check safety
         run: node scripts/accounting-health-live-tests.mjs
       - name: Read Test Lubbock accounting and Stripe health
-        run: node scripts/accounting-health-live.mjs
+        run: node scripts/accounting-health-live.mjs ${{ inputs.use_recovery_code && '--use-recovery-code' || '' }}
         env:
           TEST_LUBBOCK_PARISH_SESSION: ${{ secrets.TEST_LUBBOCK_PARISH_SESSION }}
           TEST_LUBBOCK_PARISH_PASSWORD: ${{ secrets.TEST_LUBBOCK_PARISH_PASSWORD }}
+          TEST_LUBBOCK_TOTP_SECRET: ${{ secrets.TEST_LUBBOCK_TOTP_SECRET }}
+          TEST_LUBBOCK_RECOVERY_CODE: ${{ inputs.use_recovery_code && secrets.TEST_LUBBOCK_RECOVERY_CODE || '' }}
           TEST_LUBBOCK_STAFF_PROFILE_ID: ${{ secrets.TEST_LUBBOCK_STAFF_PROFILE_ID }}
           TEST_LUBBOCK_STAFF_PIN: ${{ secrets.TEST_LUBBOCK_STAFF_PIN }}
       - name: Upload sanitized health evidence
