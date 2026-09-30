@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { getPlatformProxy } from 'wrangler';
 import { DatabaseSync } from 'node:sqlite';
 import { inventory } from '../src/recovery/storage.js';
+import { accountingAuditOwner } from './lib/recovery-accounting-owners.mjs';
 import { sha256 } from '../src/portability/archive.js';
 import { classifyLegacyRecord } from '../src/portability/legacy.js';
 import { FILE_BINDINGS, canonicalBinding } from '../src/portability/storage.js';
@@ -181,9 +182,9 @@ const central = d1Read(centralDatabase, centralStatements);
 const knownParishes = new Set(central[0].map(row => row.parish_id));
 const accounting = [];
 const accountingNames = new Set();
+let technicalAccountingDatabases = 0;
 for (const record of central[14]) {
-  assert.ok(knownParishes.has(record.parish_id), 'Accounting parish is absent from the production parish registry');
-  assert.match(record.database_identifier, /^agapay-acct-production-[a-z0-9-]+$/);
+  const ownerKind = accountingAuditOwner(record, knownParishes, productionConfig);
   assert.ok(!accountingNames.has(record.database_identifier), 'Accounting database has conflicting owners');
   accountingNames.add(record.database_identifier);
   schemaReviews.push(await reviewSchema(record.database_identifier, 'books'));
@@ -191,7 +192,14 @@ for (const record of central[14]) {
     "SELECT value FROM accounting_database_metadata WHERE key='parish_id'",
     "SELECT storage_key object_key FROM accounting_attachments WHERE storage_key IS NOT NULL AND storage_key<>'' LIMIT 10000"
   ]);
-  assert.deepEqual(rows[0], [{ value: record.parish_id }], 'Accounting database identity readback failed');
+  if (ownerKind === 'technical-canary' && !rows[0].length) {
+    // A pre-identity canary can qualify only when it owns no uploaded attachments.
+    assert.equal(rows[1].length, 0, 'Unidentified technical canary attachments require reconciliation');
+  } else assert.deepEqual(rows[0], [{ value: record.parish_id }], 'Accounting database identity readback failed');
+  if (ownerKind === 'technical-canary') {
+    technicalAccountingDatabases++;
+    knownParishes.add(record.parish_id);
+  }
   accounting.push(...rows[1].map(row => ({ ...row, parish_id: record.parish_id })));
 }
 
@@ -353,6 +361,7 @@ const report = {
   physicalObjects: physical.length, references: references.size, countsByBinding,
   knownParishCount: knownParishes.size,
   accountingDatabaseCount: accountingNames.size,
+  technicalAccountingDatabases,
   schemaReviews,
   kv: { keysScanned: kvKeysScanned, classifiedParishKeys: kvClassifiedKeys, unclassifiedKeys: kvUnclassified.length, unclassifiedKeySetSha256: await sha256(JSON.stringify(kvUnclassified.map(item => item.key).sort())), rawValuesPersisted: false },
   unmappedStewardshipPacketReferences: Number(central[15][0]?.n || 0),

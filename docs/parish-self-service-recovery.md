@@ -120,6 +120,16 @@ Run the existing recovery-drill workflow with `ownership_audit_only: true` for
 an aggregate report using protected provider credentials. This option does not
 run the restore drill, write registries, or enable recovery. An audit report must
 say `verified_ready_for_registry_review`; a completed job alone is not readiness.
+The reviewed Phase G technical canary is recognized only by its exact documented
+parish/database/binding identity. An unidentified canary cannot contribute uploaded
+attachments to the audit. Any other unregistered accounting owner still blocks it.
+
+Once the complete ownership audit passes, the same workflow can reconcile ownership
+metadata with `reconcile_ownership_registry: true` and both exact reviewed registry
+hashes. It reruns the audit, rejects changed hashes, pending writes and ownership
+reassignment, updates control records only, and verifies full readback. It does not
+change parish records, ledger entries, file bodies, or feature flags. Recovery and
+storage guards must remain disabled until this result is verified.
 
 Run the following from the repository root:
 
