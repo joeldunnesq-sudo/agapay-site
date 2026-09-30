@@ -86,12 +86,15 @@ async function finish(op) {
   return op;
 }
 try {
-  // The reviewed central baseline includes migrations through 0118. Apply all later migrations.
+  // The historical baseline omits four migrations within 0111-0118. Apply
+  // those explicit gaps as well as every later migration.
   // Only synthetic fixture rows are copied; no production data is used.
   const full = new DatabaseSync(':memory:');
   full.exec(readFileSync(new URL('./fixtures/portability-central-schema.sql', import.meta.url), 'utf8'));
   for (const name of readdirSync(new URL('../migrations/', import.meta.url))
-    .filter((n) => /^\d{4}_.*\.sql$/.test(n) && n >= '0119')
+    .filter(
+      (n) => /^\d{4}_.*\.sql$/.test(n) && (n >= '0119' || ['0111', '0112', '0114', '0115'].includes(n.slice(0, 4)))
+    )
     .sort())
     full.exec(readFileSync(new URL('../migrations/' + name, import.meta.url), 'utf8'));
   full.exec('BEGIN; PRAGMA defer_foreign_keys=ON');
@@ -183,6 +186,11 @@ try {
           .bind(...Object.values(row))
       );
   await db.batch(seed);
+  await db
+    .prepare(
+      "INSERT INTO operational_job_heartbeats(job_name,cron,status,run_id,started_at) VALUES('drill','synthetic','completed','before','2026-09-30')"
+    )
+    .run();
   const documents = await mf.getR2Bucket('SACRAMENT_DOCUMENTS');
   const legacy = await mf.getKVNamespace('AGAPAY_REGISTRATIONS');
   async function legacyWrite(parish, note) {
@@ -214,6 +222,7 @@ try {
     await call({ action: 'start', input: { kind: 'backup', scope: 'parish', requestKey: crypto.randomUUID() } })
   );
   const point = (await call({ action: 'status' })).snapshots[0];
+  await db.prepare("UPDATE operational_job_heartbeats SET run_id='keep-current' WHERE job_name='drill'").run();
   await db.prepare("UPDATE directory_people SET preferred_name='Native D1 mistake' WHERE id='a'").run();
   const changedFile = await documents.put('parish-a/guide.txt', 'Mistaken replacement');
   await db
@@ -272,6 +281,10 @@ try {
     'Alpha'
   );
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM parish_recovery_locks').first()).n, 0);
+  assert.equal(
+    (await db.prepare("SELECT run_id FROM operational_job_heartbeats WHERE job_name='drill'").first()).run_id,
+    'keep-current'
+  );
   assert.equal(await (await documents.get('parish-a/guide.txt')).text(), 'Original guide for parish-a');
   assert.equal(await (await documents.get('parish-b/guide.txt')).text(), 'Original guide for parish-b');
   assert.equal(JSON.parse(await legacy.get('parish-feature-requests:parish-a')).note, 'Original request');
