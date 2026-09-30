@@ -63,12 +63,21 @@ try {
   assert.equal(await amount.inputValue(), '25.50', 'Loading settings preserves pledge cents');
   assert.equal(await amount.evaluate((input) => input.validity.valid), true, 'Existing pledge can be submitted');
   await page.locator('#settingsName').fill('Updated Member');
+  await page.evaluate(() => {
+    const save = window.saveDonorSettings;
+    window.saveDonorSettings = async (...args) => {
+      window.accountSettingsSaveComplete = false;
+      await save(...args);
+      window.accountSettingsSaveComplete = true;
+    };
+  });
   const saveSettings = async () => {
     const response = page.waitForResponse(
       (res) => res.url().endsWith('/api/donor/dashboard') && res.request().method() === 'PATCH'
     );
     await page.getByRole('button', { name: 'Save settings', exact: true }).click();
     await response;
+    await page.waitForFunction(() => window.accountSettingsSaveComplete === true);
     await page.waitForFunction(() => document.getElementById('settingsName')?.value === 'Updated Member');
   };
   await saveSettings();

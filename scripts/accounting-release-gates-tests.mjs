@@ -74,7 +74,10 @@ assert.match(gate1, /ACCOUNTING_GATE_PARISH_B_ID/);
 assert.doesNotMatch(gate1, /ACCOUNTING_GATE_PARISH_A_ID/);
 console.log("PASS - gate 1 drives the real UI and preserves layout, reprint, and void evidence");
 
-assert.match(deploy, /accounting-smoke-live\.mjs/);
+assert.match(deploy, /accounting-health-live\.mjs/);
+assert.doesNotMatch(deploy, /--allow-unconfigured/);
+assert.match(deploy, /post-deploy-accounting-smoke:[\s\S]*environment: production/);
+assert.match(deploy, /TEST_LUBBOCK_TOTP_SECRET/);
 assert.match(deploy, /post-deploy-accounting-smoke/);
 assert.match(workflow, /accounting-release-gate-1-check-print\.mjs/);
 assert.match(workflow, /accounting-release-gate-2-sw-lifecycle\.mjs/);

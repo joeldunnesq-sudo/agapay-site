@@ -1,5 +1,33 @@
 # Accounting release-gate sign-off
 
+## September 30 production coverage correction
+
+The production owner confirms Test Lubbock is the only test parish with connected
+Stripe accounting data; St. Fiacre is a demo parish. Production post-deploy checks
+therefore use the existing read-only Test Lubbock health runner. The two-parish,
+two-authentication-path isolation matrix remains a separate staging gate.
+
+The production smoke job must select the `production` GitHub environment and
+must not silently pass when authentication is unconfigured. Its protected secrets
+are `TEST_LUBBOCK_PARISH_PASSWORD`, `TEST_LUBBOCK_STAFF_PROFILE_ID`, and
+`TEST_LUBBOCK_STAFF_PIN`. For an enrolled authenticator, set
+`TEST_LUBBOCK_TOTP_SECRET` to the original Base32 setup key, not a recovery code
+or rotating six-digit code. The runner uses the ordinary `/api/mfa/verify` route,
+never enrolls or resets MFA, and makes only one verification attempt. Alternatively,
+`TEST_LUBBOCK_PARISH_SESSION` accepts a current MFA-authenticated session, which
+expires and is not a durable unattended setup.
+
+For an owner-authorized one-time check, the manual health workflow accepts
+`use_recovery_code: true` and the protected `TEST_LUBBOCK_RECOVERY_CODE` secret.
+Only that explicit manual option allows consumption; deployments never receive
+the recovery code. Remove the secret after the attempt. This proves one run,
+not unattended readiness.
+
+The September 30 preflight accepted the password but stopped at MFA:
+[run 36744266212](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36744266212).
+Do not treat the historical Gate 4 sign-off below as current automated coverage.
+The new wiring requires a passing authenticated run before this gap is closed.
+
 ## Current release decision — updated 2026-09-04
 
 The product owner has accepted Accounting as ready for controlled onboarding of real churches. Automated Gates 1–3 passed in the authenticated non-production run linked below, including the complete 356-direction tenant-isolation matrix. This decision supersedes the pre-completion release conclusions in reports 132 and 133 without altering their historical evidence.
