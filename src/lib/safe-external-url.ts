@@ -1,5 +1,10 @@
-// Generated from src/lib/safe-external-url.ts by npm run build:server. Do not edit.
-function isUnsafeHostname(hostname) {
+export interface SafeExternalUrlOptions {
+  readonly base?: string | URL;
+  readonly invalidMessage?: string;
+  readonly unsafeMessage?: string;
+}
+
+export function isUnsafeHostname(hostname: unknown): boolean {
   const host = String(hostname || '')
     .toLowerCase()
     .replace(/^\[|\]$/g, '');
@@ -25,15 +30,16 @@ function isUnsafeHostname(hostname) {
     parts[0] >= 224
   );
 }
-function validateSafeExternalUrl(
-  value,
+
+export function validateSafeExternalUrl(
+  value: unknown,
   {
-    base = void 0,
+    base = undefined,
     invalidMessage = 'Enter a valid HTTPS address.',
     unsafeMessage = 'The URL must use a public HTTPS address.',
-  } = {}
-) {
-  let parsed;
+  }: SafeExternalUrlOptions = {}
+): string {
+  let parsed: URL;
   try {
     parsed = new URL(String(value || '').trim(), base);
   } catch {
@@ -45,4 +51,3 @@ function validateSafeExternalUrl(
   parsed.hash = '';
   return parsed.toString();
 }
-export { isUnsafeHostname, validateSafeExternalUrl };

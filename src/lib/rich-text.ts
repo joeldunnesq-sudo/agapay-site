@@ -1,5 +1,4 @@
-// Generated from src/lib/rich-text.ts by npm run build:server. Do not edit.
-function escapeRichTextHtml(value) {
+function escapeRichTextHtml(value: unknown): string {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -7,8 +6,10 @@ function escapeRichTextHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 }
-const SUPPORTED_TAGS = /* @__PURE__ */ new Set(['strong', 'em', 'a', 'ul', 'li', 'br']);
-function stripAuthoredHtml(value, allowedTags = []) {
+
+const SUPPORTED_TAGS = new Set(['strong', 'em', 'a', 'ul', 'li', 'br']);
+
+export function stripAuthoredHtml(value: unknown, allowedTags: readonly string[] = []): string {
   for (const tag of allowedTags) {
     if (!SUPPORTED_TAGS.has(String(tag || '').toLowerCase())) {
       throw new Error(`Unsupported authored rich-text tag: ${tag}`);
@@ -38,7 +39,8 @@ function stripAuthoredHtml(value, allowedTags = []) {
   }
   return output;
 }
-function safeRichTextHref(value) {
+
+function safeRichTextHref(value: unknown): string {
   const href = String(value || '').trim();
   if (href.startsWith('/') && !href.startsWith('//')) return href;
   try {
@@ -48,13 +50,14 @@ function safeRichTextHref(value) {
     return '';
   }
 }
-function renderInline(value, allowedTags) {
+
+function renderInline(value: unknown, allowedTags: readonly string[] | undefined): string {
   const allowed = new Set(allowedTags);
   const source = stripAuthoredHtml(value, allowedTags);
   const linkPattern = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
   let cursor = 0;
   let html = '';
-  const renderEmphasis = (text) => {
+  const renderEmphasis = (text: string) => {
     let rendered = escapeRichTextHtml(text);
     if (allowed.has('strong')) rendered = rendered.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
     if (allowed.has('em')) rendered = rendered.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
@@ -73,13 +76,14 @@ function renderInline(value, allowedTags) {
   }
   return html + renderEmphasis(source.slice(cursor));
 }
-function renderBoundedRichText(value, allowedTags) {
+
+export function renderBoundedRichText(value: unknown, allowedTags?: readonly string[]): string {
   const allowed = new Set(allowedTags);
   const lines = String(value ?? '')
     .replace(/\r\n?/g, '\n')
     .split('\n');
-  const blocks = [];
-  let listItems = [];
+  const blocks: string[] = [];
+  let listItems: string[] = [];
   const flushList = () => {
     if (!listItems.length) return;
     if (allowed.has('ul') && allowed.has('li')) {
@@ -103,4 +107,3 @@ function renderBoundedRichText(value, allowedTags) {
   flushList();
   return blocks.join(allowed.has('br') ? '<br>' : '\n');
 }
-export { renderBoundedRichText, stripAuthoredHtml };

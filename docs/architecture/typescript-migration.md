@@ -11,7 +11,7 @@ Plan for seven major stages, with multiple independently tested batches inside t
 3. Service and data contracts: first batch completed; additional services remain.
 4. Browser compilation and asset/cache protection: foundation and first batch completed.
 5. Browser controllers and UI data contracts: underway; expand from small controllers to larger shells in bounded batches.
-6. Broader backend adoption: continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
+6. Broader backend adoption: underway with content services; continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
 7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
 
 The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. Eleven runtime modules were deployed at the stage 4 release; the first stage 5 batch adds two more. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
@@ -120,6 +120,24 @@ Readonly response contracts cover contact records, optional attribution, nullabl
 JSON and caught-error assertions explicitly describe the existing unvalidated boundary; they do not establish runtime trust or change error handling. Normalized executable output matches the previous implementation. Browser regression coverage includes literal rendering of submitted HTML, authenticated requests, encoded cursors and reference IDs, append/replace pagination, empty and failed loads, retry-button recovery, cancelled confirmations, both review payloads, and stale-review recovery. API responses and delivery actions are mocked in browser tests, so these checks send no real notifications.
 
 Stage 5 batch 2 validation on September 30, 2026: quality, all four prechecks, and all 238 main test commands passed. The focused contact recovery tests and expanded Chromium inbox tests passed, as did generated-artifact checks and normalized executable comparison. Main Worker packaging and local workerd startup passed. Fourteen runtime modules now have authoritative TypeScript sources. This batch has not been deployed; hosted staging acceptance remains a release requirement.
+
+## Stage 6: broader backend adoption
+
+Stage 6 starts while stage 5 retains additional browser batches. Stage numbers describe workstreams, not claims that every earlier JavaScript module has been converted.
+
+The first backend batch adds three authoritative sources:
+
+- `src/lib/safe-external-url.ts`: hostname checks, URL normalization, and readonly base/error-message options.
+- `src/lib/koinonia-calendar.ts`: the calendar fetch transport, response-stream handling, and asynchronous text result.
+- `src/lib/rich-text.ts`: authored-text stripping and bounded rendering with readonly tag lists.
+
+Input values remain `unknown` where the existing runtime deliberately coerces them to strings. Tag names remain strings because unsupported tags still fail through the existing runtime check. Calendar fetch injection requires a Promise of a Worker-compatible Response; compile-only fixtures reject decoded-text or synchronous substitutes, invalid URL options, and malformed tag collections. No assertions, explicit `any`, or suppression directives were added to implementation files.
+
+Generated modules retain their existing exports and `.js` import paths. The calendar still follows redirects manually, validates each destination, keeps its timeout and byte cap, cancels an oversized stream, and decodes chunked UTF-8. Rich-text escaping, permitted link schemes, fallback rendering, and runtime rejection of unsupported tags remain unchanged. URL validation preserves existing checks; this migration adds no DNS-resolution check or broader network-safety guarantee.
+
+Focused tests exercise exact and excessive byte limits, cancellation, split multibyte characters, relative and excessive redirects, absent/failed responses, transport failures, hostname rejection, and rendering boundaries. Existing calendar and teaching feature tests also run against the generated modules. Normalized executable output matches all three pre-conversion implementations. Seventeen runtime modules now have TypeScript sources across the migration; local coverage does not imply that unconverted callers are checked.
+
+Stage 6 first-batch validation on September 30, 2026: quality, all four prechecks, and all 239 main test commands passed. Main Worker packaging and local workerd startup passed; private accounting Worker dry-run packaging also passed. This is a local checkpoint on top of the stage 5 batches, not a deployed release. Hosted staging acceptance remains required before deployment.
 
 ## Release and rollback
 

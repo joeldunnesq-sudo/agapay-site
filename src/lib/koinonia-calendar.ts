@@ -1,8 +1,12 @@
-// Generated from src/lib/koinonia-calendar.ts by npm run build:server. Do not edit.
 import { validateSafeExternalUrl } from './safe-external-url.js';
-const KOINONIA_CALENDAR_MAX_BYTES = 2e6;
-const GOOGLE_CALENDAR_HOSTS = /* @__PURE__ */ new Set(['calendar.google.com', 'www.google.com']);
-function normalizeKoinoniaCalendarUrl(value, base = void 0) {
+
+// The injected transport has the same response contract as the Worker fetch API.
+export type CalendarFetcher = (url: string, options?: RequestInit) => Promise<Response>;
+
+const KOINONIA_CALENDAR_MAX_BYTES = 2_000_000;
+const GOOGLE_CALENDAR_HOSTS = new Set(['calendar.google.com', 'www.google.com']);
+
+export function normalizeKoinoniaCalendarUrl(value: unknown, base: string | URL | undefined = undefined): string {
   const safeUrl = validateSafeExternalUrl(value, {
     base,
     invalidMessage: 'Enter a valid public calendar iCal/ICS link.',
@@ -15,16 +19,19 @@ function normalizeKoinoniaCalendarUrl(value, base = void 0) {
     parsed.pathname.startsWith('/calendar/') &&
     !parsed.pathname.startsWith('/calendar/ical/') &&
     calendarId;
+
   if (!isGoogleSubscriptionLink) return safeUrl;
   if (calendarId.length > 512 || /[\u0000-\u001f\u007f]/.test(calendarId)) {
     throw new Error('Enter a valid Google Calendar link.');
   }
   return `https://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`;
 }
-async function readCalendarText(response) {
+
+async function readCalendarText(response: Response): Promise<string> {
   const declaredLength = Number(response.headers.get('Content-Length') || 0);
   if (declaredLength > KOINONIA_CALENDAR_MAX_BYTES) throw new Error('Calendar too large');
   if (!response.body) return '';
+
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let receivedBytes = 0;
@@ -41,10 +48,13 @@ async function readCalendarText(response) {
   }
   return text + decoder.decode();
 }
-async function fetchKoinoniaCalendarIcs(sourceUrl, fetcher = fetch) {
+
+export async function fetchKoinoniaCalendarIcs(sourceUrl: unknown, fetcher: CalendarFetcher = fetch): Promise<string> {
   const signal =
-    typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(8e3) : void 0;
-  const fetchUrl = async (url, redirects = 0) => {
+    typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+      ? AbortSignal.timeout(8000)
+      : undefined;
+  const fetchUrl = async (url: unknown, redirects = 0): Promise<string> => {
     const safeUrl = normalizeKoinoniaCalendarUrl(url);
     const response = await fetcher(safeUrl, { headers: { Accept: 'text/calendar' }, redirect: 'manual', signal });
     if ([301, 302, 303, 307, 308].includes(response.status) && response.headers.get('location')) {
@@ -58,4 +68,3 @@ async function fetchKoinoniaCalendarIcs(sourceUrl, fetcher = fetch) {
   };
   return fetchUrl(sourceUrl);
 }
-export { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl };

@@ -17,6 +17,9 @@ export const serverTypeScriptSources = Object.freeze([
   'src/organizations/api-policy.ts',
   'src/lib/xml-text.ts',
   'src/lib/content-reads.ts',
+  'src/lib/safe-external-url.ts',
+  'src/lib/koinonia-calendar.ts',
+  'src/lib/rich-text.ts',
 ]);
 
 export function serverSourcePath(runtimePath) {
