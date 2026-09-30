@@ -77,7 +77,7 @@ vm.runInContext(
   reports
 );
 let loaded = false;
-reports.loadAccountingDepthReport = async () => {
+reports.openAccountingReport = async () => {
   loaded = true;
 };
 reports.accountingReportView = 'cashFlows';

@@ -5,6 +5,12 @@
 
 const ACCOUNTING_REPORT_LIBRARY = [
   {
+    id: 'generalLedger',
+    title: 'General Ledger',
+    group: 'Accounting detail',
+    copy: 'Posted transactions by account, with opening balances, debits, credits, and running balances.',
+  },
+  {
     id: 'activities',
     title: 'Income Statement',
     group: 'Income statements',
@@ -113,7 +119,11 @@ function accountingReportPeriod() {
 }
 
 function accountingReportLedgerRows(startDate = '0001-01-01', endDate = '9999-12-31') {
-  const accounts = new Map(accountingData.accounts.map((account) => [String(account.accountNumber || ''), account]));
+  const accounts = new Map(
+    (accountingData.accountCatalog?.length ? accountingData.accountCatalog : accountingData.accounts || []).map(
+      (account) => [String(account.accountNumber || ''), account]
+    )
+  );
   return accountingData.ledger
     .filter((row) => {
       const date = String(row.postingDate || row.entryDate || row.date || '');
@@ -137,6 +147,7 @@ function accountingReportLedgerRows(startDate = '0001-01-01', endDate = '9999-12
 }
 
 function accountingTabularReport(id) {
+  if (id === 'generalLedger') return accountingGeneralLedgerReport();
   const period = accountingReportPeriod(),
     current = accountingReportLedgerRows(period.start, period.end);
   const moneyColumn = (key, label) => ({ key, label, money: true });
@@ -228,12 +239,11 @@ function accountingTabularReport(id) {
     add(accountingReportLedgerRows(rightStart, rightEnd), 'right');
     return {
       title,
-      subtitle: `${leftLabel} compared with ${rightLabel}`,
+      subtitle: `${leftStart} through ${leftEnd} compared with ${rightStart} through ${rightEnd}`,
       columns: [
         { key: 'account', label: 'Account' },
-        { key: 'category', label: 'Category' },
-        moneyColumn('left', leftLabel),
-        moneyColumn('right', rightLabel),
+        moneyColumn('left', `${leftLabel} (${leftStart} to ${leftEnd})`),
+        moneyColumn('right', `${rightLabel} (${rightStart} to ${rightEnd})`),
         moneyColumn('change', 'Change'),
       ],
       rows: [...groups.values()]
@@ -253,13 +263,13 @@ function accountingTabularReport(id) {
       priorStart.toISOString().slice(0, 10),
       priorEnd.toISOString().slice(0, 10),
       'Comparative Income Statement Periods',
-      'Current month',
-      'Prior month'
+      'Month to date',
+      'Prior full month'
     );
   }
   if (id === 'comparativeIncome') {
-    const priorStart = String(Number(period.start.slice(0, 4)) - 1) + period.start.slice(4),
-      priorEnd = String(Number(period.end.slice(0, 4)) - 1) + period.end.slice(4);
+    const priorStart = accountingPriorYear(period.start),
+      priorEnd = accountingPriorYear(period.end);
     return accountComparison(
       period.start,
       period.end,
@@ -309,7 +319,7 @@ async function openAccountingReport(id) {
   accountingReportView = id;
   accountingCustomReport = null;
   if (['activities', 'position', 'trialBalance', 'expenses'].includes(id)) {
-    renderAccountingPane();
+    await loadAccountingCoreReport(id);
     return;
   }
   if (['cashFlows', 'functionalExpenses', 'netAssetRollforward'].includes(id)) {
@@ -328,8 +338,8 @@ async function loadAccountingDepthReport(id) {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Preparing accountant report…</p>';
   const period = accountingReportPeriod(),
-    priorStart = String(Number(period.start.slice(0, 4)) - 1) + period.start.slice(4),
-    priorEnd = String(Number(period.end.slice(0, 4)) - 1) + period.end.slice(4);
+    priorStart = accountingPriorYear(period.start),
+    priorEnd = accountingPriorYear(period.end);
   const paths = {
       cashFlows: 'statement-of-cash-flows',
       functionalExpenses: 'statement-of-functional-expenses',
@@ -356,10 +366,9 @@ async function loadAccountingDepthReport(id) {
         title: 'Statement of Cash Flows',
         subtitle: `${period.start} through ${period.end} · indirect method${current.validation?.status === 'warning' ? ' · reconciliation warning' : ''}`,
         columns: [
-          { key: 'section', label: 'Section' },
           { key: 'label', label: 'Cash-flow line' },
           moneyColumn('amount', 'Current period'),
-          ...(prior ? [moneyColumn('priorAmount', 'Prior period')] : []),
+          ...(prior ? [moneyColumn('priorAmount', `Prior (${priorStart} to ${priorEnd})`)] : []),
         ],
         rows: (current.rows || []).map((row) => ({ ...row, priorAmount: priorByLabel.get(row.label)?.amount || 0 })),
         serverPath: paths[id],
@@ -396,13 +405,31 @@ async function loadAccountingDepthReport(id) {
           moneyColumn('beginningBalance', 'Beginning'),
           moneyColumn('additions', 'Additions'),
           moneyColumn('reductions', 'Reductions'),
+          moneyColumn('otherChanges', 'Transfers / other changes'),
           moneyColumn('endingBalance', 'Ending'),
         ],
-        rows: (current.rows || []).map((row) => ({ ...row, restrictionType: restrictionLabel(row.restrictionType) })),
+        rows: ['without', 'with'].map((restriction) => {
+          const rows = (current.rows || []).filter(
+            (row) => /^donor_restricted/.test(row.restrictionType) === (restriction === 'with')
+          );
+          const sum = (key) => rows.reduce((total, row) => total + Number(row[key] || 0), 0);
+          const beginningBalance = sum('beginningBalance'),
+            additions = sum('additions'),
+            reductions = sum('reductions'),
+            endingBalance = sum('endingBalance');
+          return {
+            restrictionType: restriction === 'with' ? 'With donor restrictions' : 'Without donor restrictions',
+            beginningBalance,
+            additions,
+            reductions,
+            endingBalance,
+            otherChanges: endingBalance - beginningBalance - additions + reductions,
+          };
+        }),
         serverPath: paths[id],
         comparativeSupported: false,
         disclaimer:
-          'Restriction releases are not separately identifiable because ordinary fund-transfer journals carry no release classification.',
+          'Transfers / other changes reconcile beginning net assets and activity to ending net assets. They are not automatically classified as releases from donor restrictions; review the underlying journals.',
       };
     renderAccountingPane();
   } catch (error) {
@@ -429,9 +456,7 @@ async function loadAccountingBudgetLibraryReport(id) {
       reports = [];
     for (const budget of selected) {
       const response = await fetch(
-          accountingApi(
-            `/budgets/${encodeURIComponent(budget.id)}/variance?throughMonth=${new Date().getUTCMonth() + 1}`
-          ),
+          accountingApi(`/budgets/${encodeURIComponent(budget.id)}/variance?throughMonth=12`),
           { headers: authHeaders() }
         ),
         payload = await response.json().catch(() => ({}));
@@ -444,11 +469,12 @@ async function loadAccountingBudgetLibraryReport(id) {
       for (const row of reports[0].rows || []) {
         const fund = accountingData.funds.find((item) => item.id === row.fundId),
           name = fund?.name || 'Unassigned',
-          item = groups.get(name) || { name, budget: 0, actual: 0, variance: 0 };
+          groupKey = name + ':' + row.category,
+          item = groups.get(groupKey) || { name, category: row.category, budget: 0, actual: 0, variance: 0 };
         item.budget += Number(row.budget || 0);
         item.actual += Number(row.actual || 0);
         item.variance += Number(row.variance || 0);
-        groups.set(name, item);
+        groups.set(groupKey, item);
       }
       accountingCustomReport = {
         title: 'Budget by Fund',
@@ -462,7 +488,8 @@ async function loadAccountingBudgetLibraryReport(id) {
         rows: [...groups.values()],
       };
     } else if (id === 'comparativeBudget') {
-      const prior = new Map((reports[1]?.rows || []).map((row) => [row.accountId, row]));
+      if (!reports[1]) throw new Error('Create a second budget before running a comparative budget report.');
+      const prior = new Map((reports[1]?.rows || []).map((row) => [row.accountId + ':' + row.fundId, row]));
       accountingCustomReport = {
         title: 'Comparative Budget to Actual',
         subtitle: `${reports[0].budget?.name || 'Current budget'}${reports[1] ? ` compared with ${reports[1].budget?.name}` : ''}`,
@@ -470,14 +497,25 @@ async function loadAccountingBudgetLibraryReport(id) {
           { key: 'account', label: 'Account' },
           moneyColumn('budget', 'Current budget'),
           moneyColumn('actual', 'Current actual'),
-          moneyColumn('priorBudget', 'Prior budget'),
+          moneyColumn('priorBudget', `Prior budget (through ${reports[1].throughDate})`),
           moneyColumn('variance', 'Variance'),
         ],
-        rows: (reports[0].rows || []).map((row) => ({
-          account: `${row.accountNumber} · ${row.account}`,
+        rows: [
+          ...(reports[0].rows || []),
+          ...(reports[1].rows || [])
+            .filter(
+              (row) =>
+                !(reports[0].rows || []).some(
+                  (current) => current.accountId === row.accountId && current.fundId === row.fundId
+                )
+            )
+            .map((row) => ({ ...row, budget: 0, actual: 0, variance: 0 })),
+        ].map((row) => ({
+          account: `${row.accountNumber} · ${row.account} (${accountingData.funds.find((fund) => fund.id === row.fundId)?.name || 'Unassigned'})`,
+          category: row.category,
           budget: row.budget,
           actual: row.actual,
-          priorBudget: prior.get(row.accountId)?.budget || 0,
+          priorBudget: prior.get(row.accountId + ':' + row.fundId)?.budget || 0,
           variance: row.variance,
         })),
       };
@@ -494,12 +532,18 @@ async function loadAccountingBudgetLibraryReport(id) {
         ],
         rows: (reports[0].rows || []).map((row) => ({
           account: `${row.accountNumber} · ${row.account}`,
+          category: row.category,
           budget: row.budget,
           actual: row.actual,
           variance: row.variance,
           assessment: row.varianceLabel,
         })),
       };
+    accountingCustomReport.subtitle += ' | Fiscal year through ' + reports[0].throughDate;
+    accountingCustomReport.disclaimer =
+      'Full fiscal-year budget compared with posted actuals through ' +
+      reports[0].throughDate +
+      '. Variance is actual less budget; positive revenue variance is favorable and positive expense variance is unfavorable.';
     renderAccountingPane();
   } catch (error) {
     accountingCustomReport = { error: error.message || 'Unable to create this report.' };
@@ -512,37 +556,40 @@ function renderAccountingReports(pane) {
     renderAccountingReportLibrary(pane);
     return;
   }
-  if (accountingCustomReport) {
-    if (accountingCustomReport.error) {
-      pane.innerHTML = `<div class="acct-list-head"><button class="acct-refresh" onclick="setAccountingReportView('library')">← All reports</button></div>${accountingEmpty('Report unavailable', accountingCustomReport.error)}`;
-      return;
+  if (accountingCustomReport?.error) {
+    pane.innerHTML =
+      '<button class="acct-refresh" onclick="setAccountingReportView(&quot;library&quot;)">← All reports</button>' +
+      accountingEmpty('Report unavailable', accountingCustomReport.error);
+    return;
+  }
+  try {
+    const report = accountingStatementDocument();
+    let insights = '';
+    if (accountingReportView === 'expenses') {
+      const holder = { innerHTML: '' };
+      renderAccountingExpenses(holder, accountingData.reports.activities, []);
+      insights =
+        '<details><summary>Expense insights and current plan</summary>' +
+        holder.innerHTML.slice(holder.innerHTML.indexOf('<section class="acct-expense-hero"')) +
+        '</details>';
     }
-    const report = accountingCustomReport;
-    pane.innerHTML = `<div class="acct-report-head"><div><button class="acct-link" onclick="setAccountingReportView('library')">← All reports</button><h2>${escapeHtml(report.title)}</h2><p>${escapeHtml(report.subtitle || '')}</p></div><div class="acct-report-actions">${report.comparativeSupported ? `<button class="acct-refresh" onclick="toggleAccountingDepthComparative()">${accountingDepthComparative ? 'Hide' : 'Show'} prior period</button>` : ''}<button class="acct-refresh" onclick="printAccountingReport()">Print</button><button class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>${report.serverPath ? accountingReportDateForm() : ''}<div class="acct-table-wrap"><table class="acct-table"><thead><tr>${report.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((row) => `<tr>${report.columns.map((column) => `<td>${column.money ? accountingMoney(row[column.key]) : escapeHtml(row[column.key] ?? '')}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${report.columns.length}">No posted activity for this report.</td></tr>`}</tbody></table></div>${report.disclaimer ? `<p class="acct-report-disclaimer">${escapeHtml(report.disclaimer)}</p>` : ''}`;
-    return;
+    const comparison = accountingCustomReport?.comparativeSupported
+      ? '<button class="acct-refresh" onclick="toggleAccountingDepthComparative()">' +
+        (accountingDepthComparative ? 'Hide' : 'Show') +
+        ' prior period</button>'
+      : '';
+    pane.innerHTML =
+      '<div class="acct-report-head"><button class="acct-link" onclick="setAccountingReportView(&quot;library&quot;)">← All reports</button><div class="acct-report-actions">' +
+      comparison +
+      accountingStatementActions() +
+      '</div></div>' +
+      (accountingReportView.toLowerCase().includes('budget') ? '' : accountingReportDateForm()) +
+      (accountingReportView === 'activities' ? accountingIncomeSummary(accountingData.reports.activities) : '') +
+      accountingStatementHtml(report) +
+      insights;
+  } catch (error) {
+    pane.innerHTML = accountingEmpty('Report unavailable', error.message);
   }
-  const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
-  if (!report) {
-    pane.innerHTML = accountingEmpty(
-      'No report available yet',
-      'Initialize Accounting, then refresh to prepare financial statements.'
-    );
-    return;
-  }
-  const reportTabs = [
-    ['library', 'All reports'],
-    ['trialBalance', 'Trial Balance'],
-    ['activities', 'Income Statement'],
-    ['expenses', 'Expenses'],
-    ['position', 'Balance Sheet'],
-  ];
-  if (accountingReportView === 'expenses') {
-    renderAccountingExpenses(pane, report, reportTabs);
-    return;
-  }
-  const rows = report.rows || [],
-    amount = (row) => row.amount ?? Number(row.endingDebit || 0) - Number(row.endingCredit || 0);
-  pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id, label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>${accountingReportView === 'activities' ? accountingIncomeSummary(report) : ''}<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${escapeHtml(row.accountNumber || '')}</strong> ${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(amount(row))}</td></tr>`).join('') || '<tr><td colspan="3">No posted activity in this period.</td></tr>'}</tbody></table></div>`;
 }
 
 function openAccountingIncomeReport() {
@@ -558,11 +605,12 @@ function accountingIncomeSummary(report, printable = false) {
   const net = totals.revenue - totals.expenses;
   const label = net > 0 ? 'Net surplus' : net < 0 ? 'Net deficit' : 'Break-even';
   const heading = `<h2>Revenue minus expenses</h2><p>Income Statement · ${escapeHtml(report.startDate || '')} through ${escapeHtml(report.endDate || '')}. Posted ledger activity.</p>`;
-  const cells = `<div><span>Total revenue</span><strong>${accountingMoney(totals.revenue)}</strong></div><div><span>Total expenses</span><strong>${accountingMoney(totals.expenses)}</strong></div><div><span>${label}</span><strong>${accountingMoney(net)}</strong></div>`;
+  const summaryMoney = (value) => (value < 0 ? `(${accountingMoney(-value)})` : accountingMoney(value));
+  const cells = `<div><span>Total revenue</span><strong>${accountingMoney(totals.revenue)}</strong></div><div><span>Total expenses</span><strong>${accountingMoney(totals.expenses)}</strong></div><div><span>${label}</span><strong>${summaryMoney(net)}</strong></div>`;
   if (printable)
     return (
       heading +
-      `<p><strong>Total revenue:</strong> ${accountingMoney(totals.revenue)} &nbsp; − &nbsp; <strong>Total expenses:</strong> ${accountingMoney(totals.expenses)} &nbsp; = &nbsp; <strong>${label}:</strong> ${accountingMoney(net)}</p>`
+      `<p><strong>Total revenue:</strong> ${accountingMoney(totals.revenue)} &nbsp; − &nbsp; <strong>Total expenses:</strong> ${accountingMoney(totals.expenses)} &nbsp; = &nbsp; <strong>${label}:</strong> ${summaryMoney(net)}</p>`
     );
   return `<section class="acct-income-summary">${heading}<div class="acct-income-equation">${cells}</div></section>`;
 }
@@ -573,129 +621,55 @@ function setAccountingReportView(view) {
   renderAccountingPane();
 }
 
-function renderAccountingExpenses(pane, report, reportTabs) {
-  const grouped = new Map();
-  for (const row of (report.rows || []).filter((item) => item.category === 'expense' && Number(item.amount) !== 0)) {
-    const key = row.accountId || row.accountNumber || row.accountName;
-    const current = grouped.get(key) || { ...row, amount: 0 };
-    current.amount += Number(row.amount || 0);
-    grouped.set(key, current);
-  }
-  const expenses = [...grouped.values()].filter((row) => row.amount > 0).sort((a, b) => b.amount - a.amount);
-  const total = expenses.reduce((sum, row) => sum + row.amount, 0);
-  const palette = ['#c8a24a', '#315f71', '#7d5d91', '#4f7c59', '#ba6d46', '#587fa5', '#9a7b3f', '#6b7280'];
-  let cursor = 0;
-  const stops = expenses.map((row, index) => {
-    const start = cursor;
-    cursor += total ? (row.amount / total) * 100 : 0;
-    return `${palette[index % palette.length]} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
-  });
-  const agapay = expenses.find(
-    (row) => row.accountId === 'acct_5850' || /agapay platform fees/i.test(row.accountName || '')
-  );
-  const subscriptionMonthlyCents = currentParish?.subscriptionMonthlyCents;
-  const hasPublishedSubscriptionPrice =
-    subscriptionMonthlyCents !== null &&
-    subscriptionMonthlyCents !== undefined &&
-    Number.isFinite(Number(subscriptionMonthlyCents));
-  const subscriptionPrice = hasPublishedSubscriptionPrice
-    ? accountingMoney(Number(subscriptionMonthlyCents))
-    : 'Custom';
-  const subscriptionTier = currentParish?.subscriptionTierLabel || currentParish?.subscriptionTier || 'Current';
-  const postedAgapayExpense = Number(agapay?.amount || 0);
-  pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id, label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>
-      <section class="acct-expense-hero"><div><span class="acct-kicker">Statement of activities · expenses</span><h2>What is costing the parish?</h2><p>Posted expenses for ${accountingDate(report.startDate)} through ${accountingDate(report.endDate)}. The current AGAPAY subscription rate is shown separately from posted ledger expenses.</p></div><div class="acct-expense-total"><span>Total expenses</span><strong>${accountingMoney(total)}</strong><small>${expenses.length} active expense categor${expenses.length === 1 ? 'y' : 'ies'}</small></div></section>
-      <div class="acct-expense-layout"><section class="acct-expense-chart-card"><div class="acct-expense-pie" style="background:${stops.length ? `conic-gradient(${stops.join(',')})` : 'rgba(6,21,34,.08)'}"><div><strong>${accountingMoney(total)}</strong><span>total</span></div></div><div class="acct-expense-legend">${expenses.map((row, index) => `<div><i style="background:${palette[index % palette.length]}"></i><span><strong>${escapeHtml(row.accountName || row.name)}</strong><small>${total ? Math.round((row.amount / total) * 100) : 0}% of expenses</small></span><b>${accountingMoney(row.amount)}</b></div>`).join('') || '<p>No posted expenses for this period.</p>'}</div></section>
-      <aside class="acct-expense-insights"><article class="acct-card"><span class="acct-kicker">Largest cost</span><h2>${escapeHtml(expenses[0]?.accountName || 'No expenses yet')}</h2><strong>${accountingMoney(expenses[0]?.amount || 0)}</strong><p>${total && expenses[0] ? `${Math.round((expenses[0].amount / total) * 100)}% of posted expenses for this period.` : 'Expense entries will appear automatically after posting.'}</p></article><article class="acct-card agapay-fee"><span class="acct-kicker">Current plan</span><h2>AGAPAY Subscription</h2><strong>${subscriptionPrice}${hasPublishedSubscriptionPrice ? '<small>/month</small>' : ''}</strong><p>${escapeHtml(subscriptionTier)} tier. ${postedAgapayExpense > 0 ? `${accountingMoney(postedAgapayExpense)} is posted to the ledger for this period.` : 'No subscription payment has been posted to the ledger for this period.'}</p></article></aside></div>`;
-}
-
 function downloadAccountingReport() {
-  if (accountingCustomReport) {
-    if (accountingCustomReport.serverPath) {
-      const period = accountingReportPeriod(),
-        priorStart = String(Number(period.start.slice(0, 4)) - 1) + period.start.slice(4),
-        priorEnd = String(Number(period.end.slice(0, 4)) - 1) + period.end.slice(4),
-        query = new URLSearchParams({ from: period.start, to: period.end });
-      if (accountingCustomReport.comparativeSupported && accountingDepthComparative) {
-        query.set('priorFrom', priorStart);
-        query.set('priorTo', priorEnd);
-      }
-      downloadAccountingFile(
-        accountingApi(`/reports/${accountingCustomReport.serverPath}.csv?${query}`),
-        `agapay-${accountingCustomReport.serverPath}.csv`
-      );
-      return;
-    }
-    const quote = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+  try {
+    const report = accountingStatementDocument();
+    const quote = (value) => {
+      let text = String(value ?? '');
+      if (/^[=+@\t\r]/.test(text) || /^-\D/.test(text)) text = "'" + text;
+      return '"' + text.replaceAll('"', '""') + '"';
+    };
     const lines = [
-      accountingCustomReport.columns.map((column) => quote(column.label)).join(','),
-      ...accountingCustomReport.rows.map((row) =>
-        accountingCustomReport.columns
-          .map((column) => quote(column.money ? (Number(row[column.key] || 0) / 100).toFixed(2) : row[column.key]))
-          .join(',')
+      [report.parish],
+      [report.title],
+      [report.period],
+      [report.basis, report.currency],
+      report.columns.map((col) => col.label),
+      ...report.rows.map((row) =>
+        report.columns.map((col, i) =>
+          row.kind === 'section'
+            ? i === 0
+              ? row.cells[0]
+              : ''
+            : col.money
+              ? (Number(row.cells[i] || 0) / 100).toFixed(2)
+              : (row.cells[i] ?? '')
+        )
       ),
+      ...report.notes.map((note) => [note]),
     ];
     downloadBlob(
-      `agapay-${accountingReportView.replaceAll(/([A-Z])/g, '-$1').toLowerCase()}.csv`,
-      new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })
+      'agapay-' + accountingReportView + '.csv',
+      new Blob([lines.map((row) => row.map(quote).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' })
     );
-    return;
+  } catch (error) {
+    alert(error.message);
   }
-  const paths = {
-    trialBalance: 'trial-balance',
-    activities: 'statement-of-activities',
-    expenses: 'statement-of-activities',
-    position: 'statement-of-financial-position',
-  };
-  downloadAccountingFile(
-    accountingApi(`/reports/${paths[accountingReportView]}.csv`),
-    `agapay-${paths[accountingReportView]}.csv`
-  );
 }
 
 function printAccountingReport() {
-  if (accountingCustomReport) {
-    const report = accountingCustomReport,
-      win = window.open('about:blank', '_blank');
-    if (!win) {
-      alert('Allow pop-ups for AGAPAY to open the printable report.');
-      return;
-    }
-    const headings = report.columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('');
-    const rows = report.rows
-      .map(
-        (row) =>
-          `<tr>${report.columns.map((column) => `<td>${column.money ? accountingMoney(row[column.key]) : escapeHtml(row[column.key] ?? '')}</td>`).join('')}</tr>`
-      )
-      .join('');
-    win.document.write(
-      `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(report.title)}</title><style>body{margin:40px;color:#061522;font:13px Arial,sans-serif}h1{font:32px Georgia,serif}p{color:#68716d}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d9d5ca;text-align:left}th{font-size:10px;text-transform:uppercase}@media print{button{display:none}}</style></head><body><h1>${escapeHtml(report.title)}</h1><p>${escapeHtml(report.subtitle || '')}</p><button onclick="print()">Print</button><table><thead><tr>${headings}</tr></thead><tbody>${rows || `<tr><td colspan="${report.columns.length}">No posted activity.</td></tr>`}</tbody></table></body></html>`
-    );
-    win.document.close();
-    win.focus();
-    return;
-  }
-  const report = accountingData.reports[accountingReportView === 'expenses' ? 'activities' : accountingReportView];
-  if (!report) return;
-  const titles = {
-    trialBalance: 'Trial Balance',
-    activities: 'Statement of Activities',
-    expenses: 'Expense Breakdown',
-    position: 'Statement of Financial Position',
-  };
+  const report = accountingStatementDocument();
   const win = window.open('about:blank', '_blank');
   if (!win) {
     alert('Allow pop-ups for AGAPAY to open the printable report.');
     return;
   }
-  const rows = (report.rows || [])
-    .map(
-      (row) =>
-        `<tr><td>${escapeHtml(row.accountNumber || '')}</td><td>${escapeHtml(row.accountName || row.name || '')}</td><td>${escapeHtml(row.category || row.accountType || '')}</td><td>${accountingMoney(row.amount ?? Number(row.endingDebit || 0) - Number(row.endingCredit || 0))}</td></tr>`
-    )
-    .join('');
   win.document.write(
-    `<!doctype html><html><head><meta charset="utf-8"><title>${titles[accountingReportView]}</title><style>body{margin:40px;color:#061522;font:13px Arial,sans-serif}h1{font:32px Georgia,serif}p{color:#68716d}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #d9d5ca;text-align:left}th{font-size:10px;text-transform:uppercase}@media print{button{display:none}}</style></head><body><h1>${titles[accountingReportView]}</h1><p>${escapeHtml(report.startDate || '')}${report.endDate ? ` through ${escapeHtml(report.endDate)}` : report.asOfDate ? `As of ${escapeHtml(report.asOfDate)}` : ''}</p><button onclick="print()">Print</button>${accountingReportView === 'activities' ? accountingIncomeSummary(report, true) : ''}<table><thead><tr><th>Number</th><th>Account</th><th>Category</th><th>Amount</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No posted activity.</td></tr>'}</tbody></table></body></html>`
+    '<!doctype html><html><head><meta charset="utf-8"><title>' +
+      escapeHtml(report.title) +
+      '</title><link rel="stylesheet" href="/parish/accounting-reports.css?v=20260930reports1"></head><body><button onclick="print()">Print</button>' +
+      accountingStatementHtml(report) +
+      '</body></html>'
   );
   win.document.close();
   win.focus();
@@ -770,5 +744,41 @@ async function applyAccountingReportDates(event) {
     return;
   }
   accountingReportDateRange = { start: values.start, end: values.end };
-  await loadAccountingDepthReport(accountingReportView);
+  await openAccountingReport(accountingReportView);
+}
+
+function renderAccountingExpenses(pane, report, reportTabs) {
+  const grouped = new Map();
+  for (const row of (report.rows || []).filter((item) => item.category === 'expense' && Number(item.amount) !== 0)) {
+    const key = row.accountId || row.accountNumber || row.accountName;
+    const current = grouped.get(key) || { ...row, amount: 0 };
+    current.amount += Number(row.amount || 0);
+    grouped.set(key, current);
+  }
+  const expenses = [...grouped.values()].filter((row) => row.amount > 0).sort((a, b) => b.amount - a.amount);
+  const total = expenses.reduce((sum, row) => sum + row.amount, 0);
+  const palette = ['#c8a24a', '#315f71', '#7d5d91', '#4f7c59', '#ba6d46', '#587fa5', '#9a7b3f', '#6b7280'];
+  let cursor = 0;
+  const stops = expenses.map((row, index) => {
+    const start = cursor;
+    cursor += total ? (row.amount / total) * 100 : 0;
+    return `${palette[index % palette.length]} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+  });
+  const agapay = expenses.find(
+    (row) => row.accountId === 'acct_5850' || /agapay platform fees/i.test(row.accountName || '')
+  );
+  const subscriptionMonthlyCents = currentParish?.subscriptionMonthlyCents;
+  const hasPublishedSubscriptionPrice =
+    subscriptionMonthlyCents !== null &&
+    subscriptionMonthlyCents !== undefined &&
+    Number.isFinite(Number(subscriptionMonthlyCents));
+  const subscriptionPrice = hasPublishedSubscriptionPrice
+    ? accountingMoney(Number(subscriptionMonthlyCents))
+    : 'Custom';
+  const subscriptionTier = currentParish?.subscriptionTierLabel || currentParish?.subscriptionTier || 'Current';
+  const postedAgapayExpense = Number(agapay?.amount || 0);
+  pane.innerHTML = `<div class="acct-report-head"><div class="acct-view-switch">${reportTabs.map(([id, label]) => `<button type="button" class="${accountingReportView === id ? 'active' : ''}" onclick="setAccountingReportView('${id}')">${label}</button>`).join('')}</div><div class="acct-report-actions"><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button></div></div>
+      <section class="acct-expense-hero"><div><span class="acct-kicker">Statement of activities · expenses</span><h2>What is costing the parish?</h2><p>Posted expenses for ${accountingDate(report.startDate)} through ${accountingDate(report.endDate)}. The current AGAPAY subscription rate is shown separately from posted ledger expenses.</p></div><div class="acct-expense-total"><span>Total expenses</span><strong>${accountingMoney(total)}</strong><small>${expenses.length} active expense categor${expenses.length === 1 ? 'y' : 'ies'}</small></div></section>
+      <div class="acct-expense-layout"><section class="acct-expense-chart-card"><div class="acct-expense-pie" style="background:${stops.length ? `conic-gradient(${stops.join(',')})` : 'rgba(6,21,34,.08)'}"><div><strong>${accountingMoney(total)}</strong><span>total</span></div></div><div class="acct-expense-legend">${expenses.map((row, index) => `<div><i style="background:${palette[index % palette.length]}"></i><span><strong>${escapeHtml(row.accountName || row.name)}</strong><small>${total ? Math.round((row.amount / total) * 100) : 0}% of expenses</small></span><b>${accountingMoney(row.amount)}</b></div>`).join('') || '<p>No posted expenses for this period.</p>'}</div></section>
+      <aside class="acct-expense-insights"><article class="acct-card"><span class="acct-kicker">Largest cost</span><h2>${escapeHtml(expenses[0]?.accountName || 'No expenses yet')}</h2><strong>${accountingMoney(expenses[0]?.amount || 0)}</strong><p>${total && expenses[0] ? `${Math.round((expenses[0].amount / total) * 100)}% of posted expenses for this period.` : 'Expense entries will appear automatically after posting.'}</p></article><article class="acct-card agapay-fee"><span class="acct-kicker">Current plan</span><h2>AGAPAY Subscription</h2><strong>${subscriptionPrice}${hasPublishedSubscriptionPrice ? '<small>/month</small>' : ''}</strong><p>${escapeHtml(subscriptionTier)} tier. ${postedAgapayExpense > 0 ? `${accountingMoney(postedAgapayExpense)} is posted to the ledger for this period.` : 'No subscription payment has been posted to the ledger for this period.'}</p></article></aside></div>`;
 }

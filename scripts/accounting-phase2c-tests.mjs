@@ -17,3 +17,16 @@ assert.equal(consolidatedPosition.rows.filter(row=>row.accountId==="acct_1010").
 assert.equal(consolidatedPosition.rows.find(row=>row.accountId==="acct_1010").amount,15500);
 assert.equal(consolidatedPosition.totals.difference,0);
 console.log("PASS - financial position consolidates one account across fund restriction classes");
+
+// Contra accounts reduce their financial-statement category rather than being
+// added simply because their configured normal balance is credit.
+s.prepare("INSERT INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,is_posting_account,is_active) SELECT 'contra_asset','1599','Accumulated depreciation',account_type_id,'credit',1,1 FROM accounting_accounts WHERE id='acct_1010'").run();
+const depreciation = await createJournalDraft(db,{actor,entryDate:'2026-07-22',description:'Depreciation',lines:[{accountId:'acct_5100',fundId:'fund_general',debitAmount:1500},{accountId:'contra_asset',fundId:'fund_general',creditAmount:1500}]});
+await postJournalEntry(db,{actor,journalEntryId:depreciation.id,idempotencyKey:'depreciation-report',requestHash:'depreciation-report',expectedVersion:1});
+const depreciated = await statementOfFinancialPosition(db,{actor,asOfDate:'2026-07-31'});
+assert.equal(depreciated.rows.find(row=>row.accountId==='contra_asset').amount,-1500);
+assert.equal(depreciated.totals.assets,14000);
+assert.equal(depreciated.totals.difference,0);
+assert.equal(depreciated.netAssetsByRestriction.withDonorRestrictions,2500);
+assert.equal(depreciated.netAssetsByRestriction.withoutDonorRestrictions,11500);
+console.log('PASS - contra assets reduce assets and net assets reconcile across the two donor-restriction classes');
