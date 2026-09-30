@@ -49,7 +49,7 @@ async function finalizeMfa(env, request, result) {
   const metadata = transaction.metadata || {};
   let payload = { ok: true, mfaVerifiedAt: verifiedAt, recoveryCodes };
 
-  if (transaction.purpose === "step_up") {
+  if (transaction.purpose === "step_up" || transaction.purpose === "manage") {
     if (transaction.principal_type === "platform_admin") {
       if (!(await markAdminSessionMfaVerified(env, metadata.sessionId, verifiedAt))) throw new Error("Admin session expired during verification.");
     } else if (transaction.principal_type === "parish_admin") {
@@ -210,6 +210,30 @@ export async function handleMfaStatus(request, env) {
   const principalId = String(body.principalId || "");
   if (!(await rawStepUpContext(request, env, principalType, principalId))) return unauthorized();
   return json({ ok: true, status: await mfaStatus(env, principalType, principalId) });
+}
+
+export async function handleParishAuthenticatorSetup(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "mfa-parish-authenticator", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
+  const body = await bodyJson(request);
+  const parishId = String(body?.parishId || "");
+  const found = parishId && await findRegistrationByParishId(env, parishId);
+  const session = found && await resolveParishDashboardSession(found.registration, getBearerToken(request));
+  if (!session || session.accessType !== "primary_parish") return unauthorized();
+  if (!freshMfaAt(session.mfaVerifiedAt)) return stepUpRequired("parish_admin", parishId);
+  try {
+    const status = await mfaStatus(env, "parish_admin", parishId);
+    if (status.methods.includes("totp"))
+      return json({ error: "An authenticator is already configured. This action cannot replace it." }, { status: 409 });
+    const flow = await beginMfaAuthentication(env, request, {
+      principalType: "parish_admin", principalId: parishId, purpose: "manage",
+      metadata: { sessionId: session.id, enrollmentMethod: "totp" },
+    });
+    return json({ ...flow, enrollmentRequired: true, methods: ["totp"] });
+  } catch (error) {
+    return mfaError(error, "parish_authenticator_setup");
+  }
 }
 
 function stepUpRequired(principalType, principalId) {
