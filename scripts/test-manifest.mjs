@@ -49,6 +49,7 @@ const core = [
   'scripts/content-services-typescript-tests.mjs',
   'scripts/private-document-storage-tests.mjs',
   'scripts/certificate-storage-typescript-tests.mjs',
+  'scripts/sacrament-upload-service-tests.mjs',
   'scripts/koinonia-directory-milestones-tests.mjs',
   'scripts/koinonia-household-verification-tests.mjs',
   'scripts/koinonia-signups-exchange-tests.mjs',

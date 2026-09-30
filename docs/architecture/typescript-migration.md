@@ -159,6 +159,16 @@ Regression tests exercise all three adapters: awaited storage writes, random key
 
 Stage 6 batch 3 validation on September 30, 2026: quality, all four prechecks, and all 241 main test commands passed. Focused certificate storage, tax-exemption route, and nonprofit workflow tests passed. Main Worker packaging and local startup passed, as did private accounting Worker dry-run packaging. This batch remains a local checkpoint; no deployment or remote document mutation was performed. Hosted staging acceptance remains required before release.
 
+### Stage 6 batch 4: sacrament upload service
+
+`src/sacraments/document-upload.ts` extracts the existing multipart reader and storage/record orchestration from the sacrament preparation handler. Both parish and donor routes retain their existing authorization, limits, routing, auditing, and responses, and call the service through two small compatibility wrappers. The existing JSON responder and metadata writer are explicit dependencies; their runtime implementations remain unchanged.
+
+The multipart reader has a success/error union with validated bytes, MIME type, filename, hash, and form fields available only on success. One local File assertion preserves the original `arrayBuffer` method check without changing runtime behavior; tests cover both missing and text-only form entries. Persistence input describes the document role, actor, ownership metadata, and bytes. Its generic writer contract preserves the caller's environment and extra metadata, requires a Promise of the document ID, and checks the calls into the migrated storage helpers. The legacy database writer itself remains JavaScript and is not claimed as type-checked.
+
+The existing failure ordering remains intact: storage must succeed before the record write, a rejected record write triggers cleanup of that new object, and cleanup failure cannot replace the original error. Tests use actual multipart Requests and Responses, in-memory storage, and the real metadata writer against SQLite with foreign-key constraints. They cover pre-parse header rejection, malformed forms, missing/text/invalid files, successful metadata, failure ordering, cleanup errors, and removal of only the newly uploaded object after a failed insert. The extracted executable function bodies match the originals. Twenty-three runtime modules now have authoritative TypeScript sources.
+
+Stage 6 batch 4 validation on September 30, 2026: quality, all four prechecks, and all 242 main test commands passed. Focused multipart/storage/SQLite service tests, sacrament preparation tests, and route-registry checks passed. Main Worker packaging and local startup passed, along with private accounting Worker dry-run packaging. This batch remains a local checkpoint with hosted staging acceptance required before deployment.
+
 ## Release and rollback
 
 The release branch is integrated with `main` at `52e7d22c`, retaining its newer recovery functionality, Wrangler/Miniflare versions, browser assets, and expanded test manifest. Main has independently retired the orphaned Learn support bundle; this migration does not restore it. The stage validation counts above record the original checkpoints, while the integrated release requires all 238 current test commands. Staging now installs lockfile dependencies explicitly before running custom asset builds.

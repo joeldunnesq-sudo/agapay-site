@@ -25,6 +25,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/tax-exemption-storage.ts',
   'src/lib/nonprofit-pricing-storage.ts',
   'src/lib/accounting-attachment-storage.ts',
+  'src/sacraments/document-upload.ts',
 ]);
 
 export function serverSourcePath(runtimePath) {
