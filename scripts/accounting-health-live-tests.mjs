@@ -12,11 +12,12 @@ const env = {
 };
 const now = new Date('2026-08-31T12:00:00Z');
 
-async function run({ credentials = env, override = () => undefined } = {}) {
+async function run({ credentials = env, override = () => undefined, allowRecovery = false } = {}) {
   const requests = [];
   const evidence = await runAccountingHealth({
     env: credentials,
     now,
+    allowRecovery,
     fetchImpl: async (url, options) => {
       const parsed = new URL(url);
       assert.equal(parsed.origin, 'https://agapay.app');
@@ -72,6 +73,7 @@ async function run({ credentials = env, override = () => undefined } = {}) {
     'private@example.test',
     '19000',
     credentials.TEST_LUBBOCK_TOTP_SECRET || 'never-print-totp',
+    credentials.TEST_LUBBOCK_RECOVERY_CODE || 'never-print-recovery-code',
   ])
     assert.ok(!serialized.includes(secret), 'Evidence must not contain credentials or financial records.');
   return { evidence, requests };
@@ -162,6 +164,23 @@ const sessionCredentials = {
   TEST_LUBBOCK_PARISH_PASSWORD: '',
   TEST_LUBBOCK_PARISH_SESSION: 'private-mfa-session',
 };
+const recoveryCredentials = { ...env, TEST_LUBBOCK_RECOVERY_CODE: 'single-use-fixture-recovery-code' };
+const recoveryOverride = (path, options) => {
+  if (path.endsWith('/session')) return Response.json({ ...challenge, methods: ['recovery'] });
+  if (path === '/api/mfa/verify') {
+    const body = JSON.parse(options.body);
+    assert.equal(body.method, 'recovery');
+    assert.equal(body.code, recoveryCredentials.TEST_LUBBOCK_RECOVERY_CODE);
+    return Response.json({ token: 'private-parish-token' });
+  }
+};
+const noRecoveryOptIn = await run({ credentials: recoveryCredentials, override: recoveryOverride });
+assert.equal(noRecoveryOptIn.evidence.status, 'blocked_parish_mfa');
+assert.equal(noRecoveryOptIn.requests.length, 2, 'Recovery codes must never be consumed automatically.');
+const recovery = await run({ credentials: recoveryCredentials, override: recoveryOverride, allowRecovery: true });
+assert.equal(recovery.evidence.status, 'passed');
+assert.equal(recovery.evidence.authentication, 'password_and_recovery');
+assert.equal(recovery.requests.filter((r) => r.path === '/api/mfa/verify').length, 1);
 const session = await run({ credentials: sessionCredentials });
 assert.equal(session.evidence.status, 'passed');
 assert.equal(session.evidence.authentication, 'existing_mfa_session');

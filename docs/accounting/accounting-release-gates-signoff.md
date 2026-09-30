@@ -17,6 +17,12 @@ never enrolls or resets MFA, and makes only one verification attempt. Alternativ
 `TEST_LUBBOCK_PARISH_SESSION` accepts a current MFA-authenticated session, which
 expires and is not a durable unattended setup.
 
+For an owner-authorized one-time check, the manual health workflow accepts
+`use_recovery_code: true` and the protected `TEST_LUBBOCK_RECOVERY_CODE` secret.
+Only that explicit manual option allows consumption; deployments never receive
+the recovery code. Remove the secret after the attempt. This proves one run,
+not unattended readiness.
+
 The September 30 preflight accepted the password but stopped at MFA:
 [run 36744266212](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36744266212).
 Do not treat the historical Gate 4 sign-off below as current automated coverage.

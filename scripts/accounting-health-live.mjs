@@ -17,7 +17,12 @@ const reads = new Set([
   ...ACCOUNTING_READ_SMOKE_PATHS.map(([, suffix]) => `${root}/accounting${suffix}`),
 ]);
 
-export async function runAccountingHealth({ env = process.env, fetchImpl = fetch, now = new Date() } = {}) {
+export async function runAccountingHealth({
+  env = process.env,
+  fetchImpl = fetch,
+  now = new Date(),
+  allowRecovery = false,
+} = {}) {
   const suppliedSession = String(env.TEST_LUBBOCK_PARISH_SESSION || '').trim();
   const required = suppliedSession ? secretNames : ['TEST_LUBBOCK_PARISH_PASSWORD', ...secretNames];
   const evidence = {
@@ -114,11 +119,13 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
       };
     if (login.mfaRequired === true) {
       const secret = String(env.TEST_LUBBOCK_TOTP_SECRET || '').trim();
-      if (!secret || login.enrollmentRequired || !login.methods?.includes('totp'))
+      const recoveryCode = allowRecovery ? String(env.TEST_LUBBOCK_RECOVERY_CODE || '').trim() : '';
+      const method = secret ? 'totp' : recoveryCode ? 'recovery' : '';
+      if (!method || login.enrollmentRequired || !login.methods?.includes(method))
         return { ...evidence, status: 'blocked_parish_mfa' };
       let code;
       try {
-        code = accountingHealthTotp(secret);
+        code = method === 'totp' ? accountingHealthTotp(secret) : recoveryCode;
       } catch {
         return { ...evidence, status: 'blocked_mfa_configuration' };
       }
@@ -126,10 +133,10 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
         'parish-mfa',
         '/api/mfa/verify',
         (p) => p?.mfaRequired !== true && typeof p?.token === 'string' && p.token.length > 0,
-        { pendingToken: login.pendingToken, method: 'totp', code }
+        { pendingToken: login.pendingToken, method, code }
       );
       if (!login) return { ...evidence, status: 'blocked_parish_mfa' };
-      evidence.authentication = 'password_and_totp';
+      evidence.authentication = `password_and_${method}`;
     }
     token = login.token;
   }
@@ -241,7 +248,7 @@ export async function runAccountingHealth({ env = process.env, fetchImpl = fetch
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const evidence = await runAccountingHealth();
+  const evidence = await runAccountingHealth({ allowRecovery: process.argv.includes('--use-recovery-code') });
   await mkdir('artifacts/accounting-health', { recursive: true });
   await writeFile('artifacts/accounting-health/test-lubbock.json', `${JSON.stringify(evidence, null, 2)}\n`);
   for (const check of evidence.checks)
