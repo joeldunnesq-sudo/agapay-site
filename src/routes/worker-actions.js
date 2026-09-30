@@ -1,3 +1,4 @@
+import { handleAdminRelationships } from '../handlers/admin-relationships.js';
 import { handleContact, handleAdminContactLeads } from '../handlers/contact.js';
 import { getBearerToken, handleSecurityConfig, json, unauthorized, corsJson } from '../lib/core.js';
 import {
@@ -329,6 +330,7 @@ import {
 import { handleHealth, handleLearnOdysseyActivate } from '../handlers/platform-actions.js';
 
 export const ROUTE_ACTIONS = Object.freeze({
+  handleAdminRelationships,
   handleContact,
   handleAdminContactLeads,
   addCorsHeaders,
