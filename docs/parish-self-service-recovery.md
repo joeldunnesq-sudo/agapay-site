@@ -76,12 +76,16 @@ unclassified data, or incoming references outside the rollback also block it.
   restricted retention process.
 
 Self-service bounds are 10,000 rows per table, 12 MB per stored component, 10,000
-objects per physical inventory, and a bounded single-database replacement transaction
+objects per physical inventory, 200 distinct files/legacy keys across the selected
+and safety points, and a bounded single-database replacement transaction
 (at most 900 prepared statements). Large archives still respect the existing 24 MB
 ZIP export limit. Bounds fail explicitly; no partial backup is labeled successful.
 Each invocation also enforces an 800-operation work budget, including individual
 statements in batches and object-store requests, with a reserved allowance for
 saving a paused checkpoint and releasing the execution lease.
+Before replacement, the planner checks the database work plus its transaction and
+registration mirrors against a conservative per-phase allowance. Oversized restores
+remain cancellable and leave current records and files unchanged.
 External media remains external. Original pre-feature exports are not restore points.
 
 ## Release gate — not enabled on production

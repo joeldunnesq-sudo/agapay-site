@@ -171,6 +171,9 @@ async function reviewSchema(database, kind) {
     const binding = { prepare(sql) { return { args: [], bind(...args) { this.args=args;return this; }, async all() { return {results:db.prepare(sql).all(...this.args)}; }, async first() { return db.prepare(sql).get(...this.args)||null; } }; } };
     const tables = await inventory(binding, kind);
     return {kind, reviewedTables:tables.length, schemaSha256:await sha256(JSON.stringify(ddl)), dataCopied:false};
+  } catch (error) {
+    writeFileSync(evidencePath, JSON.stringify({checkedAt:new Date().toISOString(),readOnly:true,providerWrites:false,status:'blocked_schema_review',kind,errorCode:error.code||'schema_review_failed',detail:error.message},null,2)+'\n');
+    throw error;
   } finally { db.close(); }
 }
 const schemaReviews = [await reviewSchema(centralDatabase, 'central')];

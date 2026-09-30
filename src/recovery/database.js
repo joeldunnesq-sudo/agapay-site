@@ -162,7 +162,18 @@ export async function planDatabase(db, kind, parishId, target) {
       'recovery_transaction_too_large',
       'This restore exceeds the self-service transaction limit. Contact support; no records have been replaced.'
     );
-  return { changes: sorted, schema: target.schema };
+  const affected = new Set(sorted.map((t) => t.name));
+  const triggers = (
+    await rows(db, "SELECT tbl_name FROM sqlite_master WHERE type='trigger' AND sql IS NOT NULL")
+  ).filter((t) => affected.has(t.tbl_name));
+  const statementCount =
+    1 +
+    2 * triggers.length +
+    sorted.reduce((sum, t) => {
+      const current = new Map(t.current.map((r) => [identity(t, r), r]));
+      return sum + t.removed.length + t.rows.filter((r) => !equal(r, current.get(identity(t, r)))).length;
+    }, 0);
+  return { changes: sorted, schema: target.schema, statementCount };
 }
 
 export async function applyDatabase(db, kind, op, target, plan) {

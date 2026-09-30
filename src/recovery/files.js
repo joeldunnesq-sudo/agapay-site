@@ -4,6 +4,21 @@ import { sha256 } from '../portability/archive.js';
 import { query, fail, MAX_BYTES } from './storage.js';
 
 const skipLegacy = (r) => ['registration', 'index', 'calendar_credentials', 'legal_acceptance'].includes(r.kind);
+export const MAX_RECOVERY_FILE_ITEMS = 200;
+function checkFileWork(...sets) {
+  const items = new Set(
+    sets.flatMap((value) => [
+      ...value.files.map((item) => item.binding + ':' + item.key),
+      ...value.legacy.map((item) => 'KV:' + item.key),
+      ...(value.mirrors || []).map((key) => 'MIRROR:' + key),
+    ])
+  );
+  if (items.size > MAX_RECOVERY_FILE_ITEMS)
+    fail(
+      'recovery_files_too_large',
+      'This restore exceeds the self-service file limit. Contact support for assisted recovery; no replacement has started.'
+    );
+}
 const encode = (bytes) => {
   let s = '';
   for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode(...bytes.subarray(i, i + 8192));
@@ -48,10 +63,14 @@ export async function captureFiles(env, parishId, scope) {
         fail('recovery_files_too_large', 'The legacy records exceed the self-service snapshot limit.');
       legacy.push({ key: item.key, kind: item.kind, disposition: item.disposition, body, hash: item.sourceHash });
     }
-  return { files, legacy, mirrors };
+  const result = { files, legacy, mirrors };
+  checkFileWork(result);
+  return result;
 }
 
 export async function validateFiles(env, parishId, scope, target, current) {
+  // Bound both forward replacement and safety rollback before the first write.
+  checkFileWork(target, current);
   const seen = new Set();
   for (const item of target.files) {
     if (scope === 'accounting' && item.binding !== 'ACCOUNTING_ATTACHMENTS')
