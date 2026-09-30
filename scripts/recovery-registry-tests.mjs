@@ -2,8 +2,14 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { portabilityFixture } from './portability-tests/fixtures.mjs';
 import { registryPlan } from './lib/recovery-registry-plan.mjs';
+import { fileOwnerEvidence } from './lib/recovery-file-owner.mjs';
 import { FILE_BINDINGS, canonicalBinding } from '../src/portability/storage.js';
 const f = await portabilityFixture();
+const oldOwner = { state: 'stored', etag: 'unchanged', parish_id: 'parish-a' };
+assert.equal(fileOwnerEvidence({ etag: 'unchanged' }, null, oldOwner).parishId, 'parish-a');
+assert.equal(fileOwnerEvidence({ etag: 'changed' }, null, oldOwner).parishId, '');
+assert.equal(fileOwnerEvidence({ etag: 'unchanged', metadataOwner: 'parish-b' }, null, oldOwner).conflict, true);
+assert.equal(fileOwnerEvidence({ etag: 'unchanged' }, null, { ...oldOwner, state: 'pending' }).unsettled, true);
 const proposal = {
   checkedAt: new Date().toISOString(),
   physicalKeySetSha256: 'a'.repeat(64),

@@ -11,6 +11,7 @@ import { getPlatformProxy } from 'wrangler';
 import { DatabaseSync } from 'node:sqlite';
 import { inventory } from '../src/recovery/storage.js';
 import { accountingAuditOwner } from './lib/recovery-accounting-owners.mjs';
+import { fileOwnerEvidence } from './lib/recovery-file-owner.mjs';
 import { sha256 } from '../src/portability/archive.js';
 import { classifyLegacyRecord } from '../src/portability/legacy.js';
 import { FILE_BINDINGS, canonicalBinding } from '../src/portability/storage.js';
@@ -179,6 +180,7 @@ async function reviewSchema(database, kind) {
 }
 const schemaReviews = [await reviewSchema(centralDatabase, 'central')];
 const central = d1Read(centralDatabase, centralStatements);
+const registeredObjects = new Map(d1Read(centralDatabase,["SELECT binding,object_key,parish_id,state,etag FROM parish_portability_objects LIMIT 10001"])[0].map(row=>[row.binding+'\u0000'+row.object_key,row]));
 const knownParishes = new Set(central[0].map(row => row.parish_id));
 const accounting = [];
 const accountingNames = new Set();
@@ -315,16 +317,17 @@ const missingPhysicalReferences = [...references.entries()].filter(([id]) => !ph
 const proposed = [], issues = [];
 for (const object of physical) {
   const ref = references.get(object.binding + '\u0000' + object.key);
-  const evidenceOwners = new Set([object.metadataOwner, ref?.parishId].filter(Boolean));
-  if (evidenceOwners.size > 1) issues.push({ type: 'owner_conflict', binding: object.binding, key: object.key });
-  const parishId = [...evidenceOwners][0] || '';
+  const owner = fileOwnerEvidence(object,ref,registeredObjects.get(object.binding+'\u0000'+object.key));
+  if (owner.conflict) issues.push({ type: 'owner_conflict', binding: object.binding, key: object.key });
+  if (owner.unsettled) issues.push({ type: 'registry_pending', binding: object.binding, key: object.key });
+  const parishId = owner.parishId;
   if (!parishId) issues.push({ type: 'owner_unknown', binding: object.binding, key: object.key });
   else if (!knownParishes.has(parishId)) issues.push({ type: 'owner_not_in_registry', binding: object.binding, key: object.key });
   if (!object.etag) issues.push({ type: 'etag_missing', binding: object.binding, key: object.key });
   proposed.push({
     binding: object.binding, objectKey: object.key, parishId,
     disposition: financial.has(object.binding) ? 'financial' : 'delete', state: 'stored', etag: object.etag,
-    evidence: [...new Set([...(object.metadataOwner ? ['r2_custom_metadata'] : []), ...(ref ? [...ref.sources] : [])])].sort()
+    evidence: owner.evidence
   });
 }
 for (const conflict of referenceConflicts) issues.push({ type: 'reference_conflict', binding: conflict.binding, key: conflict.key });
