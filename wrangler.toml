@@ -49,7 +49,7 @@ PRIVILEGED_MFA_REQUIRED = "true"
 # Ordinary downloadable exports are active. Closure remains separately gated.
 PARISH_PORTABILITY_ENABLED = "true"
 # Requires the recovery migration and qualified storage write guards.
-PARISH_RECOVERY_ENABLED = "false"
+PARISH_RECOVERY_ENABLED = "true"
 PARISH_STORAGE_GUARDS_ENABLED = "true"
 # Enable guards with automatic closure only after the remaining manual-copy and
 # retention-disclosure approvals; ordinary exports do not require them.
