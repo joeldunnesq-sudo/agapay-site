@@ -5,6 +5,8 @@ import { portabilityFixture, sqliteBinding } from './portability-tests/fixtures.
 import { startRecovery, advanceRecovery, recoveryStatus } from '../src/recovery/service.js';
 import { initializeLedger, createJournalDraft, postJournalEntry } from '../src/accounting/index.js';
 import { downloadRecoverySnapshot } from '../src/recovery/archive.js';
+import { booksFor } from '../src/recovery/storage.js';
+import { portabilityBudget, portabilityBudgetUsage } from '../src/portability/budget.js';
 
 const f = await portabilityFixture({ barriers: false }),
   books = new DatabaseSync(':memory:');
@@ -45,6 +47,21 @@ const db = f.env.TEST_BOOKS,
       'accounting.journals.reverse',
     ],
   };
+f.env.ACCOUNTING_DATABASE_BINDINGS = '{}';
+f.env.ACCOUNTING_PROVISIONER = {
+  async resolve(name) {
+    return name === 'test-books-a' ? { providerId: name, name } : null;
+  },
+  async query(name, statements) {
+    assert.equal(name, 'test-books-a');
+    return db.batch(
+      statements.map((s) => {
+        const statement = db.prepare(s.sql).bind(...s.params);
+        return { run: () => (/^\s*(SELECT|WITH|PRAGMA)/i.test(s.sql) ? statement.all() : statement.run()) };
+      })
+    );
+  },
+};
 const begin = (body) =>
   startRecovery(f.env, 'parish-a', 'actor-a', { scope: 'accounting', requestKey: crypto.randomUUID(), ...body });
 const finish = async (op) => {
@@ -152,6 +169,14 @@ try {
   await assert.rejects(finish(external), /external-source records changed/);
   assert.ok(books.prepare("SELECT id FROM accounting_integration_source_events WHERE id='real-source'").get());
   await advanceRecovery(f.env, 'parish-a', external.id, 'cancel');
+  const budget = portabilityBudget(f.env);
+  await booksFor(budget, 'parish-a');
+  assert.ok(
+    portabilityBudgetUsage(budget).operations >= 4,
+    'Managed resolve and SQL calls count toward the work budget'
+  );
+  books.prepare("UPDATE accounting_database_metadata SET value='parish-b' WHERE key='parish_id'").run();
+  await assert.rejects(booksFor(portabilityBudget(f.env), 'parish-a'), /identity does not match/);
   console.log(
     'PASS - full accounting schema, posted journal preservation, mistaken draft recovery, primary parish isolation, credential-safe ZIP, write fences and immutable triggers'
   );

@@ -2,6 +2,22 @@ import { portabilityBudget, portabilityBudgetUsage } from '../../src/portability
 import { startRecovery, advanceRecovery, recoveryStatus } from '../../src/recovery/service.js';
 
 export async function executeRecoveryDrill(env, body) {
+  if (body.managedBooks) {
+    const db = env.DRILL_BOOKS;
+    env = {
+      ...env,
+      ACCOUNTING_DATABASE_BINDINGS: '{}',
+      ACCOUNTING_PROVISIONER: {
+        async resolve(name) {
+          return name === 'test-books-a' ? { providerId: name, name } : null;
+        },
+        async query(name, statements) {
+          if (name !== 'test-books-a') throw new Error('Wrong synthetic accounting owner');
+          return db.batch(statements.map((s) => db.prepare(s.sql).bind(...s.params)));
+        },
+      },
+    };
+  }
   // Fault injection exists only in this synthetic rehearsal entrypoint.
   if (body.failFileWrite) {
     const bucket = env.SACRAMENT_DOCUMENTS;
