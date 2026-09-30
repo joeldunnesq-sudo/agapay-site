@@ -1,21 +1,23 @@
-// Generated from src/lib/format.ts by npm run build:server. Do not edit.
-function absoluteWebsiteUrl(value) {
+export function absoluteWebsiteUrl(value: unknown): string {
   const website = String(value || '').trim();
   if (!website) return '';
   if (/^https?:\/\//i.test(website)) return website;
   return `https://${website}`;
 }
-function htmlEscape(value) {
+
+export function htmlEscape(value: unknown): string {
   return String(value || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
-function monthLabel(index) {
+
+export function monthLabel(index: number): string {
   return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index] || '';
 }
-function slugify(value) {
+
+export function slugify(value: unknown): string {
   return String(value || '')
     .toLowerCase()
     .replace(/&/g, ' and ')
@@ -23,7 +25,8 @@ function slugify(value) {
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
 }
-function parishSlug(parishName, city = '') {
+
+export function parishSlug(parishName: unknown, city: unknown = ''): string {
   const name = String(parishName || '')
     .replace(/\b(?:greek|russian|antiochian|serbian|romanian|bulgarian|ukrainian|american)?\s*orthodox\b.*$/i, '')
     .replace(/\b(?:church|parish|mission|cathedral|monastery|skete)\b.*$/i, '')
@@ -33,4 +36,3 @@ function parishSlug(parishName, city = '') {
   if (!citySlug || nameSlug === citySlug || nameSlug.endsWith(`-${citySlug}`)) return nameSlug;
   return `${nameSlug}-${citySlug}`.slice(0, 80).replace(/-+$/g, '');
 }
-export { absoluteWebsiteUrl, htmlEscape, monthLabel, parishSlug, slugify };
