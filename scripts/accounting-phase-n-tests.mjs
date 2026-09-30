@@ -83,6 +83,8 @@ insertEntry("phase_n_payment", "2026-03-15", "Pay software invoice", [{ accountI
 const cashFlow = await statementOfCashFlows(db, { actor, startDate: "2026-01-01", endDate: "2026-12-31" });
 assert.equal(cashFlow.totals.netCashChange, 7000);
 assert.equal(cashFlow.totals.actualCashChange, 7000);
+assert.equal(cashFlow.totals.beginningCash, 0);
+assert.equal(cashFlow.totals.endingCash, 7000);
 assert.equal(cashFlow.validation.status, "validated", "worked cash-flow example must reconcile");
 const functional = await statementOfFunctionalExpenses(db, { actor, startDate: "2026-01-01", endDate: "2026-12-31" });
 assert.equal(functional.totals.program, 3000);

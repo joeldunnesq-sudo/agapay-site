@@ -53,7 +53,7 @@ try {
       renderAccountingPane();
     };
   });
-  for (const file of ['stewardship/outside-giving', 'stewardship/reports', 'giving/insights', 'accounting/reports'])
+  for (const file of ['stewardship/outside-giving', 'stewardship/reports', 'giving/insights', 'accounting/report-documents', 'accounting/report-loaders', 'accounting/reports'])
     await page.addScriptTag({
       content: await readFile(new URL('../public/parish/features/' + file + '.js', import.meta.url), 'utf8'),
     });
@@ -104,6 +104,7 @@ try {
   );
   await page.evaluate(() => {
     accountingData.reports.activities.totals.expenses = 130075;
+    accountingData.reports.activities.rows[1].amount = 130075;
     renderAccountingPane();
     window.printedReport = '';
     window.open = () => ({
@@ -117,8 +118,8 @@ try {
     });
     printAccountingReport();
   });
-  assert.match(await page.locator('.acct-income-summary').textContent(), /Net deficit.*-\$100\.25/s);
-  assert.match(await page.evaluate(() => printedReport), /Net deficit.*-\$100\.25/s);
+  assert.match(await page.locator('.acct-income-summary').textContent(), /Net deficit.*\(\$100\.25\)/s);
+  assert.match(await page.evaluate(() => printedReport), /Change in net assets[\s\S]*\(100\.25\)/);
   await page.evaluate(() => {
     document.getElementById('comparison').innerHTML = swGivingSourceComparison(
       { total_actual_cents: 0, manual_income_cents: 0 },
