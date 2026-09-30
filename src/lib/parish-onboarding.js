@@ -418,6 +418,8 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     completedSteps: workflowSteps.filter((item) => item.passed).length,
     totalSteps: workflowSteps.length,
     blockers,
+    accountingSetupRequired: Boolean(accountingEnabledFor(registration) && generalFund.fund
+      && text(generalFund.fund.accountingFundId, 160) !== GENERAL_ACCOUNTING_FUND_ID),
     canGoLive,
     signedCurrentSnapshot,
     materialVersion,

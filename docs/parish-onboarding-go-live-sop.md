@@ -38,15 +38,15 @@ This SOP covers:
 
 It does not authorize an operator to bypass Stripe requirements, edit production records directly, accept bank details by email, or substitute an AGAPAY employee's judgment for the parish treasurer's signoff.
 
-### 2.1 Parish-facing 10-minute setup
+### 2.1 Parish-facing setup
 
 The detailed controls in this SOP belong to AGAPAY Operations. The parish-facing experience must expose only three stages:
 
-1. **Accept access:** each invited person opens a private, one-use link and creates their own password.
-2. **Connect payments:** the parish confirms its plan and the treasurer completes Stripe onboarding.
-3. **Review and launch:** the treasurer reviews the locked configuration, completes the eight P1-3 affirmations, and clicks **Go Live**.
+1. **Secure parish access:** use the parish ID and temporary password in the welcome email, then replace the temporary password. The secured shared parish session authorizes initial setup and launch. Personal paid-account invitations are a separate flow.
+2. **Connect payments:** confirm the plan and start the free 30-day demo if eligible, with no card required. The treasurer completes Stripe's organization and payout-bank verification separately from AGAPAY billing.
+3. **Review and launch:** review and save giving setup. If the selected plan includes Accounting and the general fund is not linked, complete Accounting setup first, then return and save the giving review. The treasurer reviews the locked configuration, completes the eight P1-3 affirmations, and clicks **Go Live**.
 
-The parish must not be asked to understand manual gates, evidence fields, internal test runs, workflow-state names, a parish ID, or a shared temporary credential. AGAPAY records invite acceptance and access readiness automatically.
+Keep operator evidence fields, internal test runs, and workflow-state names out of the parish-facing instructions. AGAPAY records credential and setup readiness; do not promise a fixed completion time for external verification.
 
 ## 3. Roles and authority
 

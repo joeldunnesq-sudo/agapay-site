@@ -185,7 +185,7 @@ export async function sendDashboardInvite(env, appUrl, registration) {
           <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
           <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> invited you to its AGAPAY dashboard as ${htmlEscape(person.label)}.</p>
           <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px;margin:0 0 22px;">
-            <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">10-minute parish setup</p>
+            <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Parish setup</p>
             <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;">Open your secure link and create your own password. No parish ID or temporary password is required.</p>
           </div>
           <p style="margin:0 0 24px;"><a href="${htmlEscape(accessUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Create my access</a></p>
@@ -254,7 +254,7 @@ export async function sendDashboardInvite(env, appUrl, registration) {
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AGAPAY. You can now begin the setup process for your parish giving page, AGAPAY billing, and Stripe onboarding.</p>
       <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px 18px;margin:0 0 22px;">
         <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Next step</p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Open your dashboard with the Parish ID and temporary password from your welcome email.</strong> Then choose your AGAPAY tier and complete billing. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Open your dashboard with the Parish ID and temporary password from your welcome email.</strong> Secure your password, confirm your AGAPAY tier, and start the free 30-day demo if eligible. No card is required for the demo. Then connect Stripe for parish donations; Stripe will ask for the parish's organization and payout-bank details.</p>
       </div>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
@@ -263,7 +263,7 @@ export async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> Use the password from your welcome email.</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password from your welcome email. The setup card will walk you through billing first, then Stripe onboarding.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">Follow the setup card to review giving options and complete treasurer signoff before publishing. Add AGAPAY billing information only if you choose to continue after the demo; returning parishes can activate their subscription from the dashboard.</p>
       <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">If you cannot find the welcome email, use the “Forgot password” link on the parish login page or reply to this email.</p>
     `),
     text: [
@@ -271,13 +271,13 @@ export async function sendDashboardInvite(env, appUrl, registration) {
       "",
       `${registration.parishName || "Your parish"} has been verified for AGAPAY.`,
       "Open your dashboard with the Parish ID and temporary password from your welcome email.",
-      "Then choose your AGAPAY tier and complete billing. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
+      "Secure your password, confirm your AGAPAY tier, and start the free 30-day demo if eligible. No card is required for the demo. Then connect Stripe for parish donations; Stripe will ask for the parish's organization and payout-bank details.",
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
       "Temporary password: Use the password from your welcome email.",
       "",
-      "After opening the dashboard, enter the parish ID and temporary password from your welcome email. The setup card will walk you through billing first, then Stripe onboarding.",
+      "Follow the setup card to review giving options and complete treasurer signoff before publishing. Add AGAPAY billing information only if you choose to continue after the demo; returning parishes can activate their subscription from the dashboard.",
       "",
       "If you cannot find the welcome email, use the Forgot password link on the parish login page or reply to this email.",
       "The Parish Onboarding Guide is attached for reference."
