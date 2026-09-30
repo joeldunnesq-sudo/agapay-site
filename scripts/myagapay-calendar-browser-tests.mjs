@@ -159,9 +159,16 @@ try {
   await page.locator('#saintPreviewCard').click();
   await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
+  assert.equal(await page.locator('#donorSaintModalTitle').textContent(), 'Lives of the Saints');
+  assert.ok(await page.locator('.donor-saint-modal-head').evaluate(element => element.getBoundingClientRect().height < 150),
+    'The list of saints must not consume the fixed modal header');
   await page.goto('https://agapay.test/myagapay/calendar');
   await assertReadings();
   assert.equal(await page.locator('#todayFeastTitle').textContent(), fullTitle);
+  await page.locator('#saintPreviewCard').click();
+  await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#donorSaintModalTitle').textContent(), 'Lives of the Saints');
+  assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
   today.primarySaintTitle = 'Holy Martyrs Faith, Hope, and Love';
   today.saintStories.splice(1);
   await page.goto('https://agapay.test/myagapay/parish-life');
