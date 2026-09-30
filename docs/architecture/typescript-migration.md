@@ -139,6 +139,16 @@ Focused tests exercise exact and excessive byte limits, cancellation, split mult
 
 Stage 6 first-batch validation on September 30, 2026: quality, all four prechecks, and all 239 main test commands passed. Main Worker packaging and local workerd startup passed; private accounting Worker dry-run packaging also passed. This is a local checkpoint on top of the stage 5 batches, not a deployed release. Hosted staging acceptance remains required before deployment.
 
+### Stage 6 batch 2: private document storage
+
+`src/lib/giving-statement-storage.ts` and `src/lib/sacrament-document-storage.ts` now own their existing JavaScript runtime paths. Binding types are derived from Wrangler's generated `Env` and remain optional at the helper boundary so existing missing-configuration behavior stays checked. Input contracts describe ownership metadata, binary document data, storage keys, and download options. Sacrament upload validation returns a discriminated success/error union, allowing callers to access a validated MIME type only after checking `ok`.
+
+The helpers preserve random object-key generation, metadata, direct response streaming, private cache headers, ETags where already supported, deletion guards, and error propagation. Existing filename coercion and sanitization are preserved. Authorization remains the caller's responsibility; these helpers do not prove ownership or validate arbitrary API payloads. The upload validators continue to enforce the existing MIME, extension, signature, and size rules at runtime. No storage schemas, buckets, permissions, or business rules change.
+
+The dedicated regression test checks both storage adapters with in-memory bindings and real response streams: missing bindings and objects, awaited writes, ownership metadata, headers and content, deletion no-ops, and propagated storage failures. It also checks PDF/JPEG/PNG recognition, exact/oversize limits, missing or mismatched upload data, and SHA-256 output. Compile-only fixtures reject missing ownership metadata, text in place of bytes, incompatible bindings, invalid download options, and access to validation-result fields without narrowing. Normalized executable output matches both previous implementations. Nineteen runtime modules now have authoritative TypeScript sources.
+
+Stage 6 batch 2 validation on September 30, 2026: quality, all four prechecks, and all 240 main test commands passed. Focused private storage and sacrament preparation tests passed. Main Worker packaging and local workerd startup passed, and private accounting Worker dry-run packaging passed. This batch is a local checkpoint; no remote objects were written or deleted and no deployment was performed. Hosted staging acceptance remains required before release.
+
 ## Release and rollback
 
 The release branch is integrated with `main` at `52e7d22c`, retaining its newer recovery functionality, Wrangler/Miniflare versions, browser assets, and expanded test manifest. Main has independently retired the orphaned Learn support bundle; this migration does not restore it. The stage validation counts above record the original checkpoints, while the integrated release requires all 238 current test commands. Staging now installs lockfile dependencies explicitly before running custom asset builds.

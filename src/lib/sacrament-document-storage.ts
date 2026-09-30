@@ -1,25 +1,53 @@
-// Generated from src/lib/sacrament-document-storage.ts by npm run build:server. Do not edit.
-const ALLOWED_MIME_TYPES = /* @__PURE__ */ new Set(['application/pdf', 'image/jpeg', 'image/png']);
-const ALLOWED_EXTENSIONS = /* @__PURE__ */ new Set(['pdf', 'jpg', 'jpeg', 'png']);
+export type SacramentDocumentStorageEnv = Partial<Pick<Env, 'SACRAMENT_DOCUMENTS'>>;
+export type SacramentDocumentMime = 'application/pdf' | 'image/jpeg' | 'image/png';
+export interface SacramentDocumentUploadInput {
+  readonly filename?: unknown;
+  readonly declaredMimeType?: unknown;
+  readonly arrayBuffer?: ArrayBuffer | null;
+}
+export type SacramentDocumentUploadResult =
+  { readonly ok: true; readonly mimeType: SacramentDocumentMime } | { readonly ok: false; readonly error: string };
+export interface SacramentDocumentPutInput {
+  readonly parishId: unknown;
+  readonly arrayBuffer: ArrayBuffer;
+  readonly mimeType: string;
+}
+export interface SacramentDocumentStreamInput {
+  readonly storageKey: string;
+  readonly mimeType?: string | null;
+  readonly filename?: unknown;
+  readonly download?: boolean;
+}
+
+// Private Wedding/Baptism preparation documents. Objects never receive a
+// public URL; authenticated Worker routes stream them after an ownership
+// check. Only metadata is persisted in D1.
+
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const MAX_MULTIPART_BODY_BYTES = MAX_FILE_SIZE_BYTES + 1024 * 1024;
-const SIGNATURES = [
-  { mime: 'application/pdf', bytes: [37, 80, 68, 70] },
-  { mime: 'image/jpeg', bytes: [255, 216, 255] },
-  { mime: 'image/png', bytes: [137, 80, 78, 71, 13, 10, 26, 10] },
+export const MAX_MULTIPART_BODY_BYTES = MAX_FILE_SIZE_BYTES + 1024 * 1024;
+
+const SIGNATURES: readonly { readonly mime: SacramentDocumentMime; readonly bytes: readonly number[] }[] = [
+  { mime: 'application/pdf', bytes: [0x25, 0x50, 0x44, 0x46] },
+  { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
+  { mime: 'image/png', bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
 ];
-function extensionFromFilename(filename) {
+
+function extensionFromFilename(filename: unknown): string {
   const match = /\.([a-zA-Z0-9]+)$/.exec(String(filename || ''));
   return match ? match[1].toLowerCase() : '';
 }
-function sniffSignature(bytes) {
+
+function sniffSignature(bytes: Uint8Array): SacramentDocumentMime | '' {
   for (const signature of SIGNATURES) {
     if (bytes.length >= signature.bytes.length && signature.bytes.every((byte, index) => bytes[index] === byte))
       return signature.mime;
   }
   return '';
 }
-function sanitizeSacramentDocumentFilename(filename) {
+
+export function sanitizeSacramentDocumentFilename(filename: unknown): string {
   return (
     String(filename || 'document')
       .replace(/[\\/]/g, '_')
@@ -29,17 +57,24 @@ function sanitizeSacramentDocumentFilename(filename) {
       .slice(0, 180) || 'document'
   );
 }
-function generateSacramentDocumentStorageKey() {
+
+export function generateSacramentDocumentStorageKey(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   const token = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   return `sacdoc/${token}`;
 }
-async function sacramentDocumentSha256(arrayBuffer) {
+
+export async function sacramentDocumentSha256(arrayBuffer: BufferSource): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', arrayBuffer);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
-function validateSacramentDocumentUpload({ filename, declaredMimeType, arrayBuffer }) {
+
+export function validateSacramentDocumentUpload({
+  filename,
+  declaredMimeType,
+  arrayBuffer,
+}: SacramentDocumentUploadInput): SacramentDocumentUploadResult {
   if (!arrayBuffer?.byteLength) return { ok: false, error: 'The uploaded file is empty.' };
   if (arrayBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
     return { ok: false, error: 'The uploaded file exceeds the 10 MB limit.' };
@@ -56,7 +91,11 @@ function validateSacramentDocumentUpload({ filename, declaredMimeType, arrayBuff
   }
   return { ok: true, mimeType: sniffed };
 }
-async function putSacramentDocument(env, { parishId, arrayBuffer, mimeType }) {
+
+export async function putSacramentDocument(
+  env: SacramentDocumentStorageEnv,
+  { parishId, arrayBuffer, mimeType }: SacramentDocumentPutInput
+): Promise<string> {
   if (!env.SACRAMENT_DOCUMENTS) throw new Error('Sacrament document storage is not configured.');
   const storageKey = generateSacramentDocumentStorageKey();
   await env.SACRAMENT_DOCUMENTS.put(storageKey, arrayBuffer, {
@@ -65,7 +104,11 @@ async function putSacramentDocument(env, { parishId, arrayBuffer, mimeType }) {
   });
   return storageKey;
 }
-async function streamSacramentDocument(env, { storageKey, mimeType, filename, download = false }) {
+
+export async function streamSacramentDocument(
+  env: SacramentDocumentStorageEnv,
+  { storageKey, mimeType, filename, download = false }: SacramentDocumentStreamInput
+): Promise<Response> {
   if (!env.SACRAMENT_DOCUMENTS) return new Response('Storage not configured', { status: 500 });
   const object = await env.SACRAMENT_DOCUMENTS.get(storageKey);
   if (!object || !object.body) return new Response('Document not found', { status: 404 });
@@ -80,22 +123,16 @@ async function streamSacramentDocument(env, { storageKey, mimeType, filename, do
   if (object.httpEtag) headers.set('ETag', object.httpEtag);
   return new Response(object.body, { status: 200, headers });
 }
-async function deleteSacramentDocumentObject(env, storageKey) {
+
+export async function deleteSacramentDocumentObject(
+  env: SacramentDocumentStorageEnv,
+  storageKey: string | null | undefined
+): Promise<void> {
   if (env.SACRAMENT_DOCUMENTS && storageKey) await env.SACRAMENT_DOCUMENTS.delete(storageKey);
 }
-const SACRAMENT_DOCUMENT_UPLOAD_LIMITS = {
+
+export const SACRAMENT_DOCUMENT_UPLOAD_LIMITS = {
   maxFileSizeBytes: MAX_FILE_SIZE_BYTES,
   allowedMimeTypes: [...ALLOWED_MIME_TYPES],
   allowedExtensions: [...ALLOWED_EXTENSIONS],
-};
-export {
-  MAX_MULTIPART_BODY_BYTES,
-  SACRAMENT_DOCUMENT_UPLOAD_LIMITS,
-  deleteSacramentDocumentObject,
-  generateSacramentDocumentStorageKey,
-  putSacramentDocument,
-  sacramentDocumentSha256,
-  sanitizeSacramentDocumentFilename,
-  streamSacramentDocument,
-  validateSacramentDocumentUpload,
 };
