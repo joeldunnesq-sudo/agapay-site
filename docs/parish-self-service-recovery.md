@@ -95,8 +95,8 @@ External media remains external. Original pre-feature exports are not restore po
 1. Apply the recovery migration and verify schema/guard compatibility on a disposable
    deployment with the current central and accounting schemas.
 2. Qualify **all** current file/KV writers and ownership registries, including orphan
-   files and sacrament documents. Production currently has
-   `PARISH_STORAGE_GUARDS_ENABLED="false"`; enabling it without this qualification
+   files and sacrament documents. The staged rollout sets
+   `PARISH_STORAGE_GUARDS_ENABLED="true"`; enabling it without this qualification
    can disrupt existing uploads. Old ownership-audit scripts predate current storage
    bindings and must not be treated as complete evidence without updating their scope.
 3. Verify private `PARISH_EXPORTS`, `PARISH_RETAINED_DATA`, and original independent
@@ -110,6 +110,18 @@ External media remains external. Original pre-feature exports are not restore po
 
 No production snapshot or restore is run by this implementation's tests. A release
 must not enable a destructive feature merely because its UI or unit tests passed.
+
+### September 30 storage-guard rollout evidence
+
+- [Hosted qualification](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36762488404)
+  passed both restore scopes and the D1 HTTP transaction rollback probe, with complete cleanup.
+- [Production read-only audit](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36764246962)
+  reviewed all ten file buckets, all three accounting databases, 26 files and 18 parish legacy keys:
+  zero unresolved owners, matching authoritative registries, and verified private recovery storage.
+- [Ownership verification reconciliation](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36764512395)
+  updated control metadata only and verified exact readback of all 26 files and 18 keys.
+- This stage enables storage guards while leaving recovery disabled. Post-deployment
+  health and another read-only consistency audit are required before recovery activation.
 
 ## Verification
 
