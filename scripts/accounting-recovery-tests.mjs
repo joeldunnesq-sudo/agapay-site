@@ -16,10 +16,14 @@ f.db.exec(
   "INSERT INTO accounting_entities(id,parish_id) VALUES('entity-a','parish-a'); INSERT INTO accounting_databases(id,accounting_entity_id,environment,database_identifier) VALUES('books-a','entity-a','test','test-books-a');"
 );
 const directory = new URL('../accounting-migrations/', import.meta.url);
+books.exec(
+  'CREATE TABLE _agapay_d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)'
+);
 for (const name of readdirSync(directory)
   .filter((n) => /^\d+.*\.sql$/.test(n))
   .sort()) {
   books.exec(readFileSync(new URL(name, directory), 'utf8'));
+  books.prepare('INSERT INTO _agapay_d1_migrations(name) VALUES(?)').run(name);
   if (name === '0002_core_ledger.sql')
     await initializeLedger(sqliteBinding(books), {
       actor: { id: 'setup', type: 'platform_user', capabilities: ['accounting.configure'] },
@@ -89,6 +93,7 @@ try {
   });
   await finish(await begin({ kind: 'backup' }));
   const target = (await recoveryStatus(f.env, 'parish-a', 'accounting')).snapshots[0].id;
+  books.prepare("INSERT INTO _agapay_d1_migrations(name) VALUES('synthetic-system-ledger-marker')").run();
   const archive = await downloadRecoverySnapshot(f.env, 'parish-a', target, 'accounting');
   assert.equal(new TextDecoder().decode(archive).includes('never-download-me'), false);
   const extra = await createJournalDraft(db, {
@@ -118,6 +123,10 @@ try {
   assert.throws(() => books.prepare("UPDATE accounting_funds SET name='Blocked'").run(), /RECOVERY_WRITE_BLOCKED/);
   f.db.prepare("UPDATE directory_people SET notes='still writable' WHERE id='a'").run();
   await finish(restore);
+  assert.ok(
+    books.prepare("SELECT 1 FROM _agapay_d1_migrations WHERE name='synthetic-system-ledger-marker'").get(),
+    'Recovery preserves the current provisioner migration ledger'
+  );
   assert.equal(books.prepare('SELECT id FROM accounting_journal_entries WHERE id=?').get(extra.id), undefined);
   assert.equal(
     books.prepare('SELECT status FROM accounting_journal_entries WHERE id=?').get(journal.id).status,
