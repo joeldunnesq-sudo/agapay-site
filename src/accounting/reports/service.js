@@ -32,7 +32,9 @@ function dates(startDate, endDate) {
   return { startDate, endDate };
 }
 function normal(row, raw) {
-  return row.normal_balance === "debit" ? raw : -raw;
+  // Financial statements use the category's sign, not an individual contra
+  // account's normal balance (e.g. accumulated depreciation reduces assets).
+  return ["asset", "expense"].includes(row.category) ? raw : -raw;
 }
 const money = (n) => Number(n || 0);
 const dayBefore = (date) => new Date(Date.parse(`${date}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
@@ -242,12 +244,18 @@ export async function statementOfFinancialPosition(
     liabilities = sum("liability"),
     netAssets = sum("net_asset") + rows.filter((r) => r.category === "revenue").reduce((s, r) => s + normal(r, money(r.raw_balance)), 0) - rows.filter((r) => r.category === "expense").reduce((s, r) => s + normal(r, money(r.raw_balance)), 0),
     difference = assets - liabilities - netAssets;
+  const restrictionBalances = restrictionPositions(await activityRows(db, { startDate: "0001-01-01", endDate: asOfDate, fundId }));
+  const netAssetsByRestriction = { withoutDonorRestrictions: 0, withDonorRestrictions: 0 };
+  for (const [restriction, amount] of restrictionBalances) {
+    netAssetsByRestriction[restriction.startsWith("donor_restricted") ? "withDonorRestrictions" : "withoutDonorRestrictions"] += amount;
+  }
   return Object.freeze({
     code: "financial_position",
     basis: "posting_date",
     asOfDate,
     rows: Object.freeze(mapped),
     totals: Object.freeze({ assets, liabilities, netAssets, difference }),
+    netAssetsByRestriction: Object.freeze(netAssetsByRestriction),
     validation: Object.freeze({
       status: difference === 0 ? "validated" : "warning",
       reasonCodes:
@@ -343,6 +351,8 @@ async function cashFlowPeriod(db, { actor, startDate, endDate, fundId }) {
   const financingCashFlow = financing.reduce((sum, row) => sum + cashEffect(row), 0);
   const netCashChange = activities.totals.changeInNetAssets + operatingAdjustments + investingCashFlow + financingCashFlow;
   const actualCashChange = changes.filter(isCash).reduce((sum, row) => sum + row.change, 0);
+  const beginningCash = [...beginning.values()].filter(isCash).reduce((sum, row) => sum + row.amount, 0);
+  const endingCash = [...ending.values()].filter(isCash).reduce((sum, row) => sum + row.amount, 0);
   const difference = netCashChange - actualCashChange;
   const rows = [
     { section: "operating", label: "Change in net assets", amount: activities.totals.changeInNetAssets },
@@ -351,6 +361,8 @@ async function cashFlowPeriod(db, { actor, startDate, endDate, fundId }) {
     ...financing.map((row) => ({ section: "financing", label: `Change in ${row.accountName}`, accountId: row.accountId, amount: cashEffect(row) })),
     { section: "reconciliation", label: "Net change in cash", amount: netCashChange },
     { section: "reconciliation", label: "Actual change in cash accounts", amount: actualCashChange },
+    { section: "reconciliation", label: "Cash at beginning of period", amount: beginningCash },
+    { section: "reconciliation", label: "Cash at end of period", amount: endingCash },
   ];
   return Object.freeze({
     code: "cash_flows",
@@ -359,7 +371,7 @@ async function cashFlowPeriod(db, { actor, startDate, endDate, fundId }) {
     startDate,
     endDate,
     rows: Object.freeze(rows.map(Object.freeze)),
-    totals: Object.freeze({ changeInNetAssets: activities.totals.changeInNetAssets, operatingAdjustments, investingCashFlow, financingCashFlow, netCashChange, actualCashChange, difference }),
+    totals: Object.freeze({ changeInNetAssets: activities.totals.changeInNetAssets, operatingAdjustments, investingCashFlow, financingCashFlow, netCashChange, actualCashChange, beginningCash, endingCash, difference }),
     validation: Object.freeze({ status: difference === 0 ? "validated" : "warning", reasonCodes: difference === 0 ? [] : ["cash_flow_reconciliation_difference"] }),
   });
 }

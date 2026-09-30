@@ -150,6 +150,7 @@ const accounting = [
   'scripts/accounting-giving-catalog-tests.mjs',
   'scripts/accounting-route-ui-tests.mjs',
   'scripts/accounting-demo-ui-tests.mjs',
+  'scripts/accounting-report-pdf-browser-tests.mjs',
   'scripts/accounting-trial-access-tests.mjs',
   'scripts/accounting-phase-i-tests.mjs',
   'scripts/accounting-phase-j-tests.mjs',
