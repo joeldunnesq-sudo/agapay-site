@@ -92,12 +92,16 @@ export async function collectLegacyRecords(env, parishId) {
 export function protectLegacyStorage(env) {
   if (!storageGuardsEnabled(env) || !env.AGAPAY_REGISTRATIONS) return env;
   const kv = rawStorageEnv(env).AGAPAY_REGISTRATIONS;
-  const owner = (key, value) => classifyLegacyRecord(key, value, target => kv.get(target));
+  // Only confirmed writes in this request may bridge KV propagation delays when
+  // creating a dependent index. Snapshot reads still verify the physical store.
+  const confirmed = new Map();
+  const readForOwnership = key => confirmed.has(key) ? confirmed.get(key) : kv.get(key);
+  const owner = (key, value) => classifyLegacyRecord(key, value, readForOwnership);
   const wrapped = new Proxy(kv, { get(target, property) {
     if (property === 'getWithMetadata') return () => { throw new PortabilityError('legacy_read_not_supported', 'Legacy metadata reads require a reviewed closure guard.'); };
     if (property === 'put') return async (key, value, options) => {
       if (typeof value !== 'string') throw new PortabilityError('legacy_value_invalid', 'Legacy writes must be classifiable JSON or a declared index.');
-      const next = await owner(key, value), previous = await owner(key, await target.get(key));
+      const next = await owner(key, value), previous = await owner(key, await readForOwnership(key));
       if (previous && (!next || previous.parishId !== next.parishId)) throw new PortabilityError('legacy_owner_conflict', 'A legacy record cannot change parish ownership.');
       if (!next) return target.put(key, value, options);
       return withStorageOperation(env, { parishId: next.parishId, binding: 'AGAPAY_REGISTRATIONS', key, operation: 'put' }, async () => {
@@ -105,14 +109,16 @@ export function protectLegacyStorage(env) {
         if (registered.meta?.changes !== 1) throw new PortabilityError('legacy_owner_conflict', 'A legacy key is registered to another parish.');
         await target.put(key,value,options);
         await env.AGAPAY_DB.prepare("UPDATE parish_portability_legacy_keys SET state='stored',updated_at=? WHERE object_key=?").bind(Date.now(),key).run();
+        confirmed.set(key,value);
       });
     };
     if (property === 'delete') return async key => {
-      const record = await owner(key, await target.get(key));
+      const record = await owner(key, await readForOwnership(key));
       if (!record) return target.delete(key);
       return withStorageOperation(env, { parishId: record.parishId, binding: 'AGAPAY_REGISTRATIONS', key, operation: 'delete' }, async () => {
         await target.delete(key);
         await env.AGAPAY_DB.prepare("INSERT INTO parish_portability_legacy_keys(object_key,parish_id,source_hash,state,updated_at) VALUES(?,?,?,'deleted',?) ON CONFLICT(object_key) DO UPDATE SET state='deleted',updated_at=excluded.updated_at WHERE parish_id=excluded.parish_id").bind(key,record.parishId,await sha256(JSON.stringify(record.data)),Date.now()).run();
+        confirmed.set(key,null);
       });
     };
     if (property === 'get') return async (key, options) => {

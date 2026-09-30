@@ -20,8 +20,9 @@ import { portabilityFixture as fixture, memoryBucket, zipEntries as entries, dec
 const retentionDisclosureDraft = readFileSync(new URL('../../docs/data-portability/retention-disclosure-draft.md', import.meta.url), 'utf8');
 const productionConfig = readFileSync(new URL('../../wrangler.toml', import.meta.url), 'utf8').split(/^\[env\.staging\]/m)[0];
 assert.match(productionConfig, /^PARISH_PORTABILITY_ENABLED = "true"$/m);
-for (const flag of ['PARISH_STORAGE_GUARDS_ENABLED', 'PARISH_AUTOMATIC_CLOSURE_ENABLED', 'ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED']) {
-  assert.match(productionConfig, new RegExp(`^${flag} = "false"$`, 'm'), `${flag} must remain false during export-only activation`);
+assert.match(productionConfig, /^PARISH_STORAGE_GUARDS_ENABLED = "true"$/m);
+for (const flag of ['PARISH_AUTOMATIC_CLOSURE_ENABLED', 'ACCOUNTING_BACKUP_STRICT_EXPIRY_ENABLED']) {
+  assert.match(productionConfig, new RegExp(`^${flag} = "false"$`, 'm'), `${flag} is not authorized by recovery activation`);
 }
 assert.ok(retentionDisclosureDraft.includes(`**Disclosure version:** \`${RETENTION_DISCLOSURE_VERSION}\``));
 assert.match(retentionDisclosureDraft, /Status:\*\* Draft pending formal approval/);
@@ -142,7 +143,12 @@ assert.equal(text(entries(standardZip)['hello.txt']), 'Portable parish records')
   await guarded.AGAPAY_REGISTRATIONS.put('legacy-a',JSON.stringify({parishId:'parish-a',parishName:'Alpha',password:'secret'}));
   await guarded.AGAPAY_REGISTRATIONS.put('legacy-b',JSON.stringify({parishId:'parish-b',parishName:'Beta'}));
   await guarded.AGAPAY_REGISTRATIONS.put('__agapay_donor__shared',JSON.stringify({email:'shared@example.test',parishId:'parish-a'}));
+  const consistentGet = kv.get;
+  kv.get=async key=>key==='legacy-a'?null:consistentGet(key);
   await guarded.AGAPAY_REGISTRATIONS.put('__agapay_index_parish_id__parish-a','legacy-a');
+  await assert.rejects(collectLegacyRecords(f.env,'parish-a'),/changed|converged/,'snapshot reads must not mistake confirmed request writes for physical KV convergence');
+  await assert.rejects(guarded.AGAPAY_REGISTRATIONS.put('__agapay_index_parish_id__parish-b','legacy-a'),/conflicts/,'confirmed writes never permit cross-parish index ownership');
+  kv.get=consistentGet;
   stale.set('legacy-a',JSON.stringify({parishId:'parish-a',parishName:'old'}));
   await assert.rejects(collectLegacyRecords(f.env,'parish-a'),/not converged/);
   stale.clear();
