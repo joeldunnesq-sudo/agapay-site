@@ -134,11 +134,15 @@ try {
     "INSERT INTO accounting_entities(id,parish_id) VALUES('entity-a','parish-a'); INSERT INTO accounting_databases(id,accounting_entity_id,environment,database_identifier) VALUES('books-a','entity-a','test','test-books-a');"
   );
   const bookFixture = new DatabaseSync(':memory:');
+  bookFixture.exec(
+    'CREATE TABLE _agapay_d1_migrations(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL UNIQUE,applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)'
+  );
   const migrationDir = new URL('../accounting-migrations/', import.meta.url);
   for (const name of readdirSync(migrationDir)
     .filter((n) => /^\d+.*\.sql$/.test(n))
     .sort()) {
     bookFixture.exec(readFileSync(new URL(name, migrationDir), 'utf8'));
+    bookFixture.prepare('INSERT INTO _agapay_d1_migrations(name) VALUES(?)').run(name);
     if (name === '0002_core_ledger.sql')
       await initializeLedger(sqliteBinding(bookFixture), {
         actor: { id: 'setup', type: 'platform_user', capabilities: ['accounting.configure'] },
