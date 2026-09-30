@@ -167,6 +167,11 @@ jobs:
     needs: deploy
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    concurrency:
+      group: accounting-health-test-lubbock
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
 
@@ -176,34 +181,26 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npx playwright install chromium --with-deps
 
       - name: Run production route and health smoke
         run: npm run prelaunch
         env:
           AGAPAY_BASE_URL: https://agapay.app
 
-      - name: Run public and authenticated accounting smoke
-        run: node scripts/accounting-smoke-live.mjs https://agapay.app --allow-unconfigured
+      - name: Run Test Lubbock authenticated accounting and Stripe health
+        run: node scripts/accounting-health-live.mjs
         env:
-          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
-          ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
-          ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
-          ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
-          ACCOUNTING_GATE_USER_B_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_B_EMAIL }}
-          ACCOUNTING_GATE_USER_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_B_PASSWORD }}
-          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
-          ACCOUNTING_GATE_PARISH_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_B_PASSWORD }}
-          ACCOUNTING_GATE_STAFF_A_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PROFILE_ID }}
-          ACCOUNTING_GATE_STAFF_A_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PIN }}
-          ACCOUNTING_GATE_STAFF_B_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PROFILE_ID }}
-          ACCOUNTING_GATE_STAFF_B_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PIN }}
+          TEST_LUBBOCK_PARISH_SESSION: ${{ secrets.TEST_LUBBOCK_PARISH_SESSION }}
+          TEST_LUBBOCK_PARISH_PASSWORD: ${{ secrets.TEST_LUBBOCK_PARISH_PASSWORD }}
+          TEST_LUBBOCK_TOTP_SECRET: ${{ secrets.TEST_LUBBOCK_TOTP_SECRET }}
+          TEST_LUBBOCK_STAFF_PROFILE_ID: ${{ secrets.TEST_LUBBOCK_STAFF_PROFILE_ID }}
+          TEST_LUBBOCK_STAFF_PIN: ${{ secrets.TEST_LUBBOCK_STAFF_PIN }}
 
       - name: Upload post-deploy accounting smoke evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: post-deploy-accounting-smoke-${{ github.sha }}
-          path: artifacts/accounting-release-gates/
+          path: artifacts/accounting-health/
           if-no-files-found: error
           retention-days: 30
