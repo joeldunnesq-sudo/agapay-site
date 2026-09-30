@@ -27,7 +27,8 @@ const options = convertV4MiniflareOptions({
   port: 0,
   cf: false,
   d1Databases: ['AGAPAY_DB'],
-  r2Buckets: ['PARISH_EXPORTS', 'PARISH_CLOSURE_LEDGER', 'PARISH_RETAINED_DATA'],
+  r2Buckets: ['PARISH_EXPORTS', 'PARISH_CLOSURE_LEDGER', 'PARISH_RETAINED_DATA', 'SACRAMENT_DOCUMENTS'],
+  kvNamespaces: ['AGAPAY_REGISTRATIONS'],
   bindings: {
     RECOVERY_LOCAL_DRILL: 'true',
     DRILL_TOKEN: token,
@@ -82,6 +83,21 @@ try {
           .bind(...Object.values(row))
       );
   await db.batch(seed);
+  const documents = await mf.getR2Bucket('SACRAMENT_DOCUMENTS');
+  const legacy = await mf.getKVNamespace('AGAPAY_REGISTRATIONS');
+  for (const parish of ['parish-a', 'parish-b']) {
+    const file = await documents.put(parish + '/guide.txt', 'Original guide for ' + parish);
+    await db
+      .prepare(
+        "INSERT INTO parish_portability_objects(binding,object_key,parish_id,disposition,state,etag,updated_at) VALUES('SACRAMENT_DOCUMENTS',?,?,'delete','stored',?,?)"
+      )
+      .bind(parish + '/guide.txt', parish, file.etag, Date.now())
+      .run();
+    await legacy.put(
+      'parish-feature-requests:' + parish,
+      JSON.stringify({ parishId: parish, note: 'Original request' })
+    );
+  }
   await (
     await mf.getR2Bucket('PARISH_CLOSURE_LEDGER')
   ).put('authority.json', JSON.stringify({ id: 'test-ledger', policyVersion: POLICY_VERSION }));
@@ -90,6 +106,14 @@ try {
   );
   const point = (await call({ action: 'status' })).snapshots[0];
   await db.prepare("UPDATE directory_people SET preferred_name='Native D1 mistake' WHERE id='a'").run();
+  const changedFile = await documents.put('parish-a/guide.txt', 'Mistaken replacement');
+  await db
+    .prepare(
+      "UPDATE parish_portability_objects SET etag=? WHERE binding='SACRAMENT_DOCUMENTS' AND object_key='parish-a/guide.txt'"
+    )
+    .bind(changedFile.etag)
+    .run();
+  await legacy.put('parish-feature-requests:parish-a', JSON.stringify({ parishId: 'parish-a', note: 'Mistaken edit' }));
   await finish(
     await call({
       action: 'start',
@@ -108,8 +132,12 @@ try {
     'Alpha'
   );
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM parish_recovery_locks').first()).n, 0);
+  assert.equal(await (await documents.get('parish-a/guide.txt')).text(), 'Original guide for parish-a');
+  assert.equal(await (await documents.get('parish-b/guide.txt')).text(), 'Original guide for parish-b');
+  assert.equal(JSON.parse(await legacy.get('parish-feature-requests:parish-a')).note, 'Original request');
+  assert.equal(JSON.parse(await legacy.get('parish-feature-requests:parish-b')).note, 'Original request');
   console.log(
-    'PASS - native workerd D1/R2 snapshot, transactional restoration and trigger reinstatement, with network egress forbidden'
+    'PASS - native workerd D1/R2/KV restoration, sacrament files, other-parish isolation and trigger reinstatement, with network egress forbidden'
   );
 } finally {
   f.db.close();
