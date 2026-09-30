@@ -1,11 +1,35 @@
-// Generated from src/browser/admin/metrics.ts by npm run build:browser. Do not edit.
-function renderAdminOverviewMetrics(metrics) {
+interface AdminTierCount {
+  readonly id: string;
+  readonly label: string;
+  readonly count: number;
+}
+interface AdminTierMetrics {
+  readonly totalRegistered: number;
+  readonly tierBreakdown: readonly AdminTierCount[];
+}
+interface AdminOverviewMetrics extends AdminTierMetrics {
+  readonly complete: true;
+  readonly weekStart: string;
+  readonly generatedAt: string;
+  readonly newRegistrations: number;
+  readonly cancellations: number;
+  readonly undatedCancellations: number;
+  readonly monthlyRecurringCents: number;
+  readonly annualRecurringCents: number;
+  readonly unknownPriceSubscriptions: number;
+  readonly activePaidSubscriptions: number;
+}
+// Missing/incomplete results are deliberately rendered as unavailable, never as zero.
+type AdminOverviewMetricsInput = AdminOverviewMetrics | { readonly complete?: false } | null | undefined;
+
+/* exported renderAdminOverviewMetrics */
+function renderAdminOverviewMetrics(metrics: AdminOverviewMetricsInput): void {
   const card = document.getElementById('adminMetricsCard');
   if (!card) return;
   card.setAttribute('aria-busy', 'false');
   renderAdminTierBreakdown(metrics?.complete ? metrics : null);
-  const text = (id, value) => {
-    document.getElementById(id).textContent = value;
+  const text = (id: string, value: string) => {
+    document.getElementById(id)!.textContent = value;
   };
   if (!metrics || !metrics.complete) {
     for (const id of ['weeklySignups', 'weeklyCancellations', 'monthlyRecurringRevenue', 'annualRecurringRevenue'])
@@ -19,7 +43,7 @@ function renderAdminOverviewMetrics(metrics) {
     );
     return;
   }
-  const currency = (cents) =>
+  const currency = (cents: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(
       cents / 100
     );
@@ -55,7 +79,8 @@ function renderAdminOverviewMetrics(metrics) {
     );
   text('adminMetricsNote', notes.join(' '));
 }
-function renderAdminTierBreakdown(metrics) {
+
+function renderAdminTierBreakdown(metrics: AdminTierMetrics | null | undefined): void {
   const chart = document.getElementById('adminTierChart');
   const legend = document.getElementById('adminTierLegend');
   const total = document.getElementById('totalParishesSignedUp');
@@ -63,7 +88,7 @@ function renderAdminTierBreakdown(metrics) {
   if (!chart || !legend || !total || !status) return;
   chart.replaceChildren();
   legend.replaceChildren();
-  const circle = (color, count = 100, offset2 = 0) => {
+  const circle = (color: string, count = 100, offset = 0) => {
     const element = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     for (const [name, value] of Object.entries({
       cx: 60,
@@ -74,7 +99,7 @@ function renderAdminTierBreakdown(metrics) {
       'stroke-width': 14,
       pathLength: 100,
       'stroke-dasharray': `${count} ${100 - count}`,
-      'stroke-dashoffset': -offset2,
+      'stroke-dashoffset': -offset,
       transform: 'rotate(-90 60 60)',
     }))
       element.setAttribute(name, String(value));
@@ -94,7 +119,7 @@ function renderAdminTierBreakdown(metrics) {
     `${metrics.totalRegistered} parishes signed up. Counts and percentages by tier are listed alongside this chart.`
   );
   status.textContent = metrics.totalRegistered ? '' : 'No parish registrations yet.';
-  const colors = {
+  const colors: Readonly<Record<string, string>> = {
     starter: '#b4832b',
     giving: '#244c67',
     parish: '#428477',
@@ -114,6 +139,7 @@ function renderAdminTierBreakdown(metrics) {
       slice.append(title);
       offset += share;
     }
+    // Show published tiers even at zero; disclose missing/legacy tiers when present.
     if (!tier.count && ['unassigned', 'other'].includes(tier.id)) continue;
     const row = document.createElement('li');
     const swatch = document.createElement('span');

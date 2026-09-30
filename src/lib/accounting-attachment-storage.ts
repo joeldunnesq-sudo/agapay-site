@@ -1,30 +1,46 @@
-// Generated from src/lib/accounting-attachment-storage.ts by npm run build:server. Do not edit.
+export type AccountingAttachmentStorageEnv = Partial<Pick<Env, 'ACCOUNTING_ATTACHMENTS'>>;
+import type {
+  ExemptionUploadInput,
+  ExemptionUploadResult,
+  ExemptionDocumentPutInput,
+  ExemptionDocumentStreamInput,
+  ExemptionDocumentMime,
+} from './tax-exemption-storage.js';
 import { sanitizeFilename, sha256Hex } from './tax-exemption-storage.js';
-const ALLOWED_MIME_TYPES = /* @__PURE__ */ new Set(['application/pdf', 'image/jpeg', 'image/png']);
-const ALLOWED_EXTENSIONS = /* @__PURE__ */ new Set(['pdf', 'jpg', 'jpeg', 'png']);
+
+const ALLOWED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
-const SIGNATURES = [
-  { mime: 'application/pdf', bytes: [37, 80, 68, 70] },
-  { mime: 'image/jpeg', bytes: [255, 216, 255] },
-  { mime: 'image/png', bytes: [137, 80, 78, 71, 13, 10, 26, 10] },
+const SIGNATURES: readonly { readonly mime: ExemptionDocumentMime; readonly bytes: readonly number[] }[] = [
+  { mime: 'application/pdf', bytes: [0x25, 0x50, 0x44, 0x46] },
+  { mime: 'image/jpeg', bytes: [0xff, 0xd8, 0xff] },
+  { mime: 'image/png', bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
 ];
-function extensionFromFilename(filename) {
+
+function extensionFromFilename(filename: unknown): string {
   const match = /\.([a-zA-Z0-9]+)$/.exec(String(filename || ''));
   return match ? match[1].toLowerCase() : '';
 }
-function sniffSignature(bytes) {
+
+function sniffSignature(bytes: Uint8Array): ExemptionDocumentMime | '' {
   for (const signature of SIGNATURES) {
     if (bytes.length >= signature.bytes.length && signature.bytes.every((byte, index) => bytes[index] === byte))
       return signature.mime;
   }
   return '';
 }
-function generateStorageKey() {
+
+export function generateStorageKey(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return `acctdoc/${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
-async function validateAccountingAttachmentUpload({ filename, declaredMimeType, arrayBuffer }) {
+
+export async function validateAccountingAttachmentUpload({
+  filename,
+  declaredMimeType,
+  arrayBuffer,
+}: ExemptionUploadInput): Promise<ExemptionUploadResult> {
   if (!arrayBuffer || arrayBuffer.byteLength === 0) return { ok: false, error: 'The uploaded file is empty.' };
   if (arrayBuffer.byteLength > MAX_FILE_SIZE_BYTES)
     return { ok: false, error: 'The uploaded file exceeds the 10 MB limit.' };
@@ -38,7 +54,11 @@ async function validateAccountingAttachmentUpload({ filename, declaredMimeType, 
   if (sniffed !== extensionImpliesMime) return { ok: false, error: "The file's contents don't match its extension." };
   return { ok: true, mimeType: sniffed };
 }
-async function putAccountingAttachment(env, { parishId, arrayBuffer, mimeType }) {
+
+export async function putAccountingAttachment(
+  env: AccountingAttachmentStorageEnv,
+  { parishId, arrayBuffer, mimeType }: ExemptionDocumentPutInput
+): Promise<string> {
   if (!env.ACCOUNTING_ATTACHMENTS) throw new Error('ACCOUNTING_ATTACHMENTS R2 binding is not configured');
   const storageKey = generateStorageKey();
   await env.ACCOUNTING_ATTACHMENTS.put(storageKey, arrayBuffer, {
@@ -47,7 +67,11 @@ async function putAccountingAttachment(env, { parishId, arrayBuffer, mimeType })
   });
   return storageKey;
 }
-async function streamAccountingAttachment(env, { storageKey, mimeType, sanitizedFilename, mode = 'inline' }) {
+
+export async function streamAccountingAttachment(
+  env: AccountingAttachmentStorageEnv,
+  { storageKey, mimeType, sanitizedFilename, mode = 'inline' }: ExemptionDocumentStreamInput
+): Promise<Response> {
   if (!env.ACCOUNTING_ATTACHMENTS) return new Response('Storage not configured', { status: 500 });
   const object = await env.ACCOUNTING_ATTACHMENTS.get(storageKey);
   if (!object) return new Response('Document not found', { status: 404 });
@@ -64,22 +88,18 @@ async function streamAccountingAttachment(env, { storageKey, mimeType, sanitized
     },
   });
 }
-async function deleteAccountingAttachment(env, storageKey) {
+
+export async function deleteAccountingAttachment(
+  env: AccountingAttachmentStorageEnv,
+  storageKey: string
+): Promise<void> {
   if (!env.ACCOUNTING_ATTACHMENTS) return;
   await env.ACCOUNTING_ATTACHMENTS.delete(storageKey);
 }
-const ACCOUNTING_ATTACHMENT_UPLOAD_LIMITS = Object.freeze({
+
+export { sanitizeFilename, sha256Hex };
+export const ACCOUNTING_ATTACHMENT_UPLOAD_LIMITS = Object.freeze({
   maxFileSizeBytes: MAX_FILE_SIZE_BYTES,
   allowedMimeTypes: Object.freeze(Array.from(ALLOWED_MIME_TYPES)),
   allowedExtensions: Object.freeze(Array.from(ALLOWED_EXTENSIONS)),
 });
-export {
-  ACCOUNTING_ATTACHMENT_UPLOAD_LIMITS,
-  deleteAccountingAttachment,
-  generateStorageKey,
-  putAccountingAttachment,
-  sanitizeFilename,
-  sha256Hex,
-  streamAccountingAttachment,
-  validateAccountingAttachmentUpload,
-};

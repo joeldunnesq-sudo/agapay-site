@@ -1,15 +1,29 @@
-// Generated from src/lib/nonprofit-pricing-storage.ts by npm run build:server. Do not edit.
+export type NonprofitPricingStorageEnv = Partial<Pick<Env, 'NONPROFIT_PRICING_DOCS'>>;
+import type {
+  ExemptionUploadInput,
+  ExemptionUploadResult,
+  ExemptionDocumentPutInput,
+  ExemptionDocumentStreamInput,
+} from './tax-exemption-storage.js';
 import { sanitizeFilename, sha256Hex, validateExemptionUpload } from './tax-exemption-storage.js';
-async function validateNonprofitPricingUpload(input) {
+
+export { sanitizeFilename, sha256Hex };
+
+export async function validateNonprofitPricingUpload(input: ExemptionUploadInput): Promise<ExemptionUploadResult> {
   return validateExemptionUpload(input);
 }
-function generateNonprofitPricingStorageKey() {
+
+export function generateNonprofitPricingStorageKey(): string {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   return `nonprofit-pricing/${hex}`;
 }
-async function putNonprofitPricingDocument(env, { parishId, arrayBuffer, mimeType }) {
+
+export async function putNonprofitPricingDocument(
+  env: NonprofitPricingStorageEnv,
+  { parishId, arrayBuffer, mimeType }: ExemptionDocumentPutInput
+): Promise<string> {
   if (!env.NONPROFIT_PRICING_DOCS) {
     throw new Error('NONPROFIT_PRICING_DOCS R2 binding is not configured');
   }
@@ -20,7 +34,11 @@ async function putNonprofitPricingDocument(env, { parishId, arrayBuffer, mimeTyp
   });
   return storageKey;
 }
-async function streamNonprofitPricingDocument(env, { storageKey, mimeType, sanitizedFilename, mode = 'inline' }) {
+
+export async function streamNonprofitPricingDocument(
+  env: NonprofitPricingStorageEnv,
+  { storageKey, mimeType, sanitizedFilename, mode = 'inline' }: ExemptionDocumentStreamInput
+): Promise<Response> {
   if (!env.NONPROFIT_PRICING_DOCS) {
     return new Response('Storage not configured', { status: 500 });
   }
@@ -38,11 +56,3 @@ async function streamNonprofitPricingDocument(env, { storageKey, mimeType, sanit
     },
   });
 }
-export {
-  generateNonprofitPricingStorageKey,
-  putNonprofitPricingDocument,
-  sanitizeFilename,
-  sha256Hex,
-  streamNonprofitPricingDocument,
-  validateNonprofitPricingUpload,
-};

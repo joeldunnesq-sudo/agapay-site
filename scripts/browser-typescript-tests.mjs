@@ -56,7 +56,7 @@ try {
   await assert.rejects(synchronizeBrowserTypeScript({ root: fixtureRoot }), /Stale or missing/);
   await synchronizeBrowserTypeScript({ root: fixtureRoot, check: false });
   await synchronizeBrowserTypeScript({ root: fixtureRoot });
-  const entry = browserTypeScriptEntries[1];
+  const entry = browserTypeScriptEntries.find(({ output }) => output === 'public/donor/bookstore-presentation.js');
   const outputPath = join(fixtureRoot, entry.output);
   const generated = await readFile(outputPath, 'utf8');
   await writeFile(outputPath, generated.replaceAll('\n', '\r\n'));

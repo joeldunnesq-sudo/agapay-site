@@ -2,6 +2,20 @@
 
 The migration adds checked contracts while preserving the platform's runtime behavior. Each stage is independently reviewable and releasable. Existing route, export, browser-global, script-order, storage, and payment contracts remain in force; see [legacy module refactor guardrails](legacy-module-refactor-guardrails.md).
 
+## Roadmap and completion criteria
+
+Plan for seven major stages, with multiple independently tested batches inside the expansion stages. A completed pilot establishes a safe migration pattern; it does not mean every module in that area is converted.
+
+1. Type-checking foundation: completed.
+2. Core server utilities and reproducible server output: first batch completed.
+3. Service and data contracts: first batch completed; additional services remain.
+4. Browser compilation and asset/cache protection: foundation and first batch completed.
+5. Browser controllers and UI data contracts: underway; expand from small controllers to larger shells in bounded batches.
+6. Broader backend adoption: underway with content services; continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
+7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
+
+The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. Eleven runtime modules were deployed at the stage 4 release; the first stage 5 batch adds two more. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
+
 ## Stage 1: strict checking without changing execution
 
 Stage 1 introduced `npm run typecheck`. This generates Worker runtime and binding declarations from the current Wrangler configuration into ignored `.wrangler/types/worker.d.ts`, then checks two separate TypeScript projects without emitting application files:
@@ -87,9 +101,83 @@ This verification exposed a pre-existing failed precache request for absent `/li
 
 Stage 4 batch validation on September 30, 2026: quality passed; all four precheck commands and 208 main test commands passed. Normalized executable JavaScript matched the previous implementation for both converted helpers. The real-browser service-worker test also passed its Listen offline-shell check. Main Worker packaging and local workerd startup passed, and the private accounting Worker passed dry-run packaging. Eleven runtime modules now have authoritative TypeScript sources, including these two browser entries. No remote staging or production deployment was performed; staging journeys remain a release requirement, and unconverted JavaScript callers are not yet type-checked.
 
+## Stage 5: browser controllers and UI read models
+
+The first batch converts `src/browser/admin/navigation.ts` and `src/browser/admin/metrics.ts`. The tool finder has readonly, named tuple fields with closed tab, group, and section identifiers. Its existing `switchTab` dependency stays a classic global. DOM assertions describe required elements in the actual Admin page; desktop and mobile browser tests verify their presence, keyboard interaction, dialog dismissal, focus restoration, and section navigation.
+
+Overview metrics distinguish complete results from incomplete or missing results. Complete results require the dates, numeric cent amounts, counters, total registrations, and readonly tier breakdown. Incomplete results retain the existing unavailable display rather than presenting false zeroes. Tier identifiers stay open strings to preserve the existing fallback for future or unknown tiers. These contracts describe rendering inputs; they do not replace runtime validation at a future typed API boundary.
+
+Both sources compile to their existing public script paths, retain global names and script timing, and use content versions in `public/admin.html`. Neither adds runtime validation, freezes data, nor changes rendering or event behavior. Compile-only fixtures reject nonexistent navigation destinations, incomplete success payloads, string monetary/count values, and mutations of readonly inputs. The standard artifact gates cover both new entries automatically.
+
+Stage 5 first-batch validation on September 30, 2026: quality, all four precheck commands, and all 238 main test commands passed. Focused desktop/mobile navigation, overview metrics, and parish relationships browser tests passed. Normalized executable JavaScript matched the previous implementations for both converted modules. Main Worker packaging and local workerd startup passed. Thirteen runtime modules now have authoritative TypeScript sources. This batch is a local checkpoint and has not been deployed; hosted staging acceptance remains required before release.
+
+### Stage 5 batch 2: Admin contact inbox
+
+`src/browser/admin/controllers/contact-leads.ts` is now the authoritative source for the contact inbox. The generated classic script retains `loadContactLeads`, the shared authenticated fetch path, required DOM elements, and its position before the Admin application script. Its asset now receives a content hash through the existing page-asset manifest.
+
+Readonly response contracts cover contact records, optional attribution, nullable pagination, and numeric retry/review concurrency tokens. Delivery review only accepts `delivered` or `confirmed_not_delivered`. Notification status remains an open string for compatibility. The existing server's truthy `reviewRequired` expression can return a number or null, and the browser contract preserves that fact rather than assuming a boolean. Compile-only fixtures reject invalid actions, string concurrency tokens, mutable response records, and non-string headers.
+
+JSON and caught-error assertions explicitly describe the existing unvalidated boundary; they do not establish runtime trust or change error handling. Normalized executable output matches the previous implementation. Browser regression coverage includes literal rendering of submitted HTML, authenticated requests, encoded cursors and reference IDs, append/replace pagination, empty and failed loads, retry-button recovery, cancelled confirmations, both review payloads, and stale-review recovery. API responses and delivery actions are mocked in browser tests, so these checks send no real notifications.
+
+Stage 5 batch 2 validation on September 30, 2026: quality, all four prechecks, and all 238 main test commands passed. The focused contact recovery tests and expanded Chromium inbox tests passed, as did generated-artifact checks and normalized executable comparison. Main Worker packaging and local workerd startup passed. Fourteen runtime modules now have authoritative TypeScript sources. This batch has not been deployed; hosted staging acceptance remains a release requirement.
+
+## Stage 6: broader backend adoption
+
+Stage 6 starts while stage 5 retains additional browser batches. Stage numbers describe workstreams, not claims that every earlier JavaScript module has been converted.
+
+The first backend batch adds three authoritative sources:
+
+- `src/lib/safe-external-url.ts`: hostname checks, URL normalization, and readonly base/error-message options.
+- `src/lib/koinonia-calendar.ts`: the calendar fetch transport, response-stream handling, and asynchronous text result.
+- `src/lib/rich-text.ts`: authored-text stripping and bounded rendering with readonly tag lists.
+
+Input values remain `unknown` where the existing runtime deliberately coerces them to strings. Tag names remain strings because unsupported tags still fail through the existing runtime check. Calendar fetch injection requires a Promise of a Worker-compatible Response; compile-only fixtures reject decoded-text or synchronous substitutes, invalid URL options, and malformed tag collections. No assertions, explicit `any`, or suppression directives were added to implementation files.
+
+Generated modules retain their existing exports and `.js` import paths. The calendar still follows redirects manually, validates each destination, keeps its timeout and byte cap, cancels an oversized stream, and decodes chunked UTF-8. Rich-text escaping, permitted link schemes, fallback rendering, and runtime rejection of unsupported tags remain unchanged. URL validation preserves existing checks; this migration adds no DNS-resolution check or broader network-safety guarantee.
+
+Focused tests exercise exact and excessive byte limits, cancellation, split multibyte characters, relative and excessive redirects, absent/failed responses, transport failures, hostname rejection, and rendering boundaries. Existing calendar and teaching feature tests also run against the generated modules. Normalized executable output matches all three pre-conversion implementations. Seventeen runtime modules now have TypeScript sources across the migration; local coverage does not imply that unconverted callers are checked.
+
+Stage 6 first-batch validation on September 30, 2026: quality, all four prechecks, and all 239 main test commands passed. Main Worker packaging and local workerd startup passed; private accounting Worker dry-run packaging also passed. This is a local checkpoint on top of the stage 5 batches, not a deployed release. Hosted staging acceptance remains required before deployment.
+
+### Stage 6 batch 2: private document storage
+
+`src/lib/giving-statement-storage.ts` and `src/lib/sacrament-document-storage.ts` now own their existing JavaScript runtime paths. Binding types are derived from Wrangler's generated `Env` and remain optional at the helper boundary so existing missing-configuration behavior stays checked. Input contracts describe ownership metadata, binary document data, storage keys, and download options. Sacrament upload validation returns a discriminated success/error union, allowing callers to access a validated MIME type only after checking `ok`.
+
+The helpers preserve random object-key generation, metadata, direct response streaming, private cache headers, ETags where already supported, deletion guards, and error propagation. Existing filename coercion and sanitization are preserved. Authorization remains the caller's responsibility; these helpers do not prove ownership or validate arbitrary API payloads. The upload validators continue to enforce the existing MIME, extension, signature, and size rules at runtime. No storage schemas, buckets, permissions, or business rules change.
+
+The dedicated regression test checks both storage adapters with in-memory bindings and real response streams: missing bindings and objects, awaited writes, ownership metadata, headers and content, deletion no-ops, and propagated storage failures. It also checks PDF/JPEG/PNG recognition, exact/oversize limits, missing or mismatched upload data, and SHA-256 output. Compile-only fixtures reject missing ownership metadata, text in place of bytes, incompatible bindings, invalid download options, and access to validation-result fields without narrowing. Normalized executable output matches both previous implementations. Nineteen runtime modules now have authoritative TypeScript sources.
+
+Stage 6 batch 2 validation on September 30, 2026: quality, all four prechecks, and all 240 main test commands passed. Focused private storage and sacrament preparation tests passed. Main Worker packaging and local workerd startup passed, and private accounting Worker dry-run packaging passed. This batch is a local checkpoint; no remote objects were written or deleted and no deployment was performed. Hosted staging acceptance remains required before release.
+
+### Stage 6 batch 3: certificate and attachment storage
+
+`src/lib/tax-exemption-storage.ts`, `src/lib/nonprofit-pricing-storage.ts`, and `src/lib/accounting-attachment-storage.ts` now own their existing runtime paths. The tax-exemption module exports shared upload, validation-result, write, and stream types. Nonprofit and accounting storage import those types without adding runtime dependencies. Their existing filename/hash re-exports remain the same function references, and each optional binding type is derived from the generated Worker `Env`.
+
+Upload validators retain their asynchronous result contract and return a discriminated success/error union. The existing policy accepts a declared MIME type from the supported set, then checks the detected signature against the extension; it does not require the declaration itself to equal the detected type. This differs from the sacrament validator and is intentionally preserved and tested. Typed display modes are inline or attachment; legacy JavaScript values still receive the existing inline fallback. Tax-exemption and accounting deletion also retain their existing empty-key forwarding behavior when storage is configured.
+
+Regression tests exercise all three adapters: awaited storage writes, random key prefixes, unchanged ownership metadata, private streamed responses, sanitized names, missing storage/objects, propagated failures, shared helper identity, and upload size/type boundaries. Negative compile-time fixtures reject missing ownership metadata, text upload bodies, incompatible bindings, invalid display modes, and validation results used without awaiting or narrowing. Normalized executable output matches all three previous implementations. Twenty-two runtime modules now have authoritative TypeScript sources. This batch adds storage contracts; authorization and business decisions remain in the existing calling routes.
+
+Stage 6 batch 3 validation on September 30, 2026: quality, all four prechecks, and all 241 main test commands passed. Focused certificate storage, tax-exemption route, and nonprofit workflow tests passed. Main Worker packaging and local startup passed, as did private accounting Worker dry-run packaging. This batch remains a local checkpoint; no deployment or remote document mutation was performed. Hosted staging acceptance remains required before release.
+
+### Stage 6 batch 4: sacrament upload service
+
+`src/sacraments/document-upload.ts` extracts the existing multipart reader and storage/record orchestration from the sacrament preparation handler. Both parish and donor routes retain their existing authorization, limits, routing, auditing, and responses, and call the service through two small compatibility wrappers. The existing JSON responder and metadata writer are explicit dependencies; their runtime implementations remain unchanged.
+
+The multipart reader has a success/error union with validated bytes, MIME type, filename, hash, and form fields available only on success. One local File assertion preserves the original `arrayBuffer` method check without changing runtime behavior; tests cover both missing and text-only form entries. Persistence input describes the document role, actor, ownership metadata, and bytes. Its generic writer contract preserves the caller's environment and extra metadata, requires a Promise of the document ID, and checks the calls into the migrated storage helpers. The legacy database writer itself remains JavaScript and is not claimed as type-checked.
+
+The existing failure ordering remains intact: storage must succeed before the record write, a rejected record write triggers cleanup of that new object, and cleanup failure cannot replace the original error. Tests use actual multipart Requests and Responses, in-memory storage, and the real metadata writer against SQLite with foreign-key constraints. They cover pre-parse header rejection, malformed forms, missing/text/invalid files, successful metadata, failure ordering, cleanup errors, and removal of only the newly uploaded object after a failed insert. The extracted executable function bodies match the originals. Twenty-three runtime modules now have authoritative TypeScript sources.
+
+Stage 6 batch 4 validation on September 30, 2026: quality, all four prechecks, and all 242 main test commands passed. Focused multipart/storage/SQLite service tests, sacrament preparation tests, and route-registry checks passed. Main Worker packaging and local startup passed, along with private accounting Worker dry-run packaging. This batch remains a local checkpoint with hosted staging acceptance required before deployment.
+
 ## Release and rollback
 
 The release branch is integrated with `main` at `52e7d22c`, retaining its newer recovery functionality, Wrangler/Miniflare versions, browser assets, and expanded test manifest. Main has independently retired the orphaned Learn support bundle; this migration does not restore it. The stage validation counts above record the original checkpoints, while the integrated release requires all 238 current test commands. Staging now installs lockfile dependencies explicitly before running custom asset builds.
+
+Stages 1–4 shipped through [PR #207](https://github.com/joeldunnesq-sudo/agapay-site/pull/207) as commit `b8ee4e1b93f9a24ee9a3e5319420a80ee7e8e7c8`. [Staging](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36773852306) and [production deployment](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36774685595) passed, including the production authenticated accounting smoke. Production health reported that exact commit at `2026-09-30T20:50:19Z`. Hosted acceptance verified exact compiled assets, page versions, Admin login globals, service-worker installation, and warm offline asset fetching. Bookstore/cart and giving-history journeys passed against hosted assets with mocked application APIs; they created no real payments.
+
+The deployed Worker version is `1426451a-fc07-44c0-8ea7-946861906e85` and the private provisioner version is `a5518bf7-df11-4337-86f5-edca05a71512`. The preceding known-good versions are `85ac4bf9-531a-4bf8-806f-e2a99a8ea9d1` and `f14b2bca-46e7-4271-aa89-ee63ad91cce0`, respectively. Stage 5 starts separately from the verified production commit.
+
+Release CI also exposed Linux-specific Wrangler declarations importing the legacy Worker entrypoint. The Worker project now checks TypeScript sources without `allowJs`/`checkJs`, and a declaration-import regression prevents incidental expansion into the unconverted JavaScript graph. Strict checking of migrated sources remains enabled; the separate quality job generates the runtime declarations and checks all TypeScript diagnostics.
 
 Each stage must pass its focused tests, `npm run quality`, and `npm run check`. Runtime conversions also require Worker packaging/startup checks and relevant staging browser journeys. Keep database schema changes, dependency upgrades unrelated to typing, UI redesigns, and business-rule changes separate. Retain a known-good Worker and asset release for rollback and check affected user flows after release.
 

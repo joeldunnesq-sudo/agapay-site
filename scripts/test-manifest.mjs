@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/staging-parish-session-tests.mjs',
   'scripts/browser-typescript-tests.mjs',
   'scripts/browser-typescript-browser-tests.mjs',
   'scripts/server-typescript-tests.mjs',
@@ -46,6 +47,10 @@ const core = [
   'scripts/check-learn.mjs',
   'scripts/learn-html-sanitization-tests.mjs',
   'scripts/koinonia-ministries-calendar-tests.mjs',
+  'scripts/content-services-typescript-tests.mjs',
+  'scripts/private-document-storage-tests.mjs',
+  'scripts/certificate-storage-typescript-tests.mjs',
+  'scripts/sacrament-upload-service-tests.mjs',
   'scripts/koinonia-directory-milestones-tests.mjs',
   'scripts/koinonia-household-verification-tests.mjs',
   'scripts/koinonia-signups-exchange-tests.mjs',

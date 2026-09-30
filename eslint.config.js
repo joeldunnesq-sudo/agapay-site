@@ -17,6 +17,22 @@ export default [
     },
   },
   {
+    files: ['src/browser/admin/controllers/contact-leads.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadContactLeads$' }],
+    },
+  },
+  {
+    // Public classic-script functions are called by the existing Admin app.
+    files: ['src/browser/admin/metrics.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(renderAdminOverviewMetrics|renderAdminTierBreakdown)$' },
+      ],
+    },
+  },
+  {
     files: ['src/browser/admin/presentation.ts'],
     // Window is an ambient interface merge; the legacy fee helper accepts an unused argument.
     rules: {
