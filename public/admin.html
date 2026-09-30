@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin/style.css?v=20260930-navigation1" />
-  <link rel="stylesheet" href="/admin/navigation.css?v=20260930-metrics1" />
+  <link rel="stylesheet" href="/admin/navigation.css?v=20260930-tiers1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20260826mfa1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/admin/manifest.webmanifest" />
@@ -150,6 +150,13 @@
               <div><dt>Monthly recurring revenue</dt><dd id="monthlyRecurringRevenue">—</dd><small id="metricsPaidSubscriptions">Active paid subscriptions · USD</small></div>
               <div><dt>Annual revenue run rate</dt><dd id="annualRecurringRevenue">—</dd><small>Monthly estimate × 12 · USD</small></div>
             </dl>
+            <section class="admin-tier-breakdown" aria-labelledby="adminTierTitle">
+              <div class="admin-tier-chart-wrap">
+                <svg id="adminTierChart" viewBox="0 0 120 120" role="img" aria-label="Parish tier breakdown loading"></svg>
+                <div class="admin-tier-total"><strong id="totalParishesSignedUp">—</strong><span>Total parishes<br />signed up</span></div>
+              </div>
+              <div class="admin-tier-detail"><h3 id="adminTierTitle">Parishes by tier</h3><p>All registered parishes, including trials and canceled subscriptions.</p><ul id="adminTierLegend" aria-label="Parish counts by tier"></ul><p id="adminTierStatus" role="status">Loading tier breakdown…</p></div>
+            </section>
             <p class="admin-metrics-note" id="adminMetricsNote" role="status">Loading parish metrics…</p>
           </section>
 
@@ -1014,7 +1021,7 @@
   <script src="/admin/presentation.js?v=20260904-refactor1"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=20260904-controllers1"></script>
   <script src="/admin/controllers/contact-leads.js"></script>
-  <script src="/admin/metrics.js?v=20260930-metrics1"></script>
+  <script src="/admin/metrics.js?v=20260930-tiers1"></script>
   <script src="/admin/app.js?v=20260930-metrics1"></script>
   <script src="/admin/navigation.js?v=20260930-metrics1"></script>
   <script src="/admin/pwa.js"></script>
