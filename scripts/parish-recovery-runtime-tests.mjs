@@ -54,6 +54,7 @@ const mf = hosted ? await hostedRecoveryBindings(hosted) : new Miniflare(options
   f = await portabilityFixture({ barriers: false });
 const quoted = (s) => '"' + s.replaceAll('"', '""') + '"';
 async function call(body, expectedFailure) {
+  const started = Date.now();
   for (let attempt = 0; ; attempt++) {
     const r = await mf.dispatchFetch('http://local.test/', {
       method: 'POST',
@@ -77,6 +78,14 @@ async function call(body, expectedFailure) {
     }
     assert.equal(r.status, 200, JSON.stringify(payload));
     assert.ok(Number(r.headers.get('x-drill-operations')) <= 800, 'Each phase must leave provider headroom');
+    if (hosted)
+      console.log(
+        'Hosted recovery phase',
+        body.action,
+        payload.phase || body.scope || 'status',
+        Date.now() - started,
+        'ms'
+      );
     return payload;
   }
 }
@@ -136,12 +145,13 @@ try {
   }
   bookFixture.exec("INSERT INTO accounting_database_metadata(key,value) VALUES('parish_id','parish-a')");
   const nativeBooks = await mf.getD1Database('DRILL_BOOKS');
-  for (const { sql } of bookFixture
+  const bookSchema = bookFixture
     .prepare(
       "SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 ELSE 2 END,name"
     )
-    .all())
-    await nativeBooks.prepare(sql).run();
+    .all();
+  for (let i = 0; i < bookSchema.length; i += 40)
+    await nativeBooks.batch(bookSchema.slice(i, i + 40).map((row) => nativeBooks.prepare(row.sql)));
   const bookSeeds = [nativeBooks.prepare('PRAGMA defer_foreign_keys=ON')];
   for (const { name } of bookFixture
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
@@ -186,6 +196,7 @@ try {
           .bind(...Object.values(row))
       );
   await db.batch(seed);
+  if (hosted) console.log('Hosted synthetic schemas and seed records initialized');
   await db
     .prepare(
       "INSERT INTO operational_job_heartbeats(job_name,cron,status,run_id,started_at) VALUES('drill','synthetic','completed','before','2026-09-30')"
