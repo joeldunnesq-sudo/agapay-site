@@ -2,6 +2,20 @@
 
 The migration adds checked contracts while preserving the platform's runtime behavior. Each stage is independently reviewable and releasable. Existing route, export, browser-global, script-order, storage, and payment contracts remain in force; see [legacy module refactor guardrails](legacy-module-refactor-guardrails.md).
 
+## Roadmap and completion criteria
+
+Plan for seven major stages, with multiple independently tested batches inside the expansion stages. A completed pilot establishes a safe migration pattern; it does not mean every module in that area is converted.
+
+1. Type-checking foundation: completed.
+2. Core server utilities and reproducible server output: first batch completed.
+3. Service and data contracts: first batch completed; additional services remain.
+4. Browser compilation and asset/cache protection: foundation and first batch completed.
+5. Browser controllers and UI data contracts: underway; expand from small controllers to larger shells in bounded batches.
+6. Broader backend adoption: continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
+7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
+
+The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. Eleven runtime modules were deployed at the stage 4 release; the first stage 5 batch adds two more. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
+
 ## Stage 1: strict checking without changing execution
 
 Stage 1 introduced `npm run typecheck`. This generates Worker runtime and binding declarations from the current Wrangler configuration into ignored `.wrangler/types/worker.d.ts`, then checks two separate TypeScript projects without emitting application files:
@@ -87,9 +101,25 @@ This verification exposed a pre-existing failed precache request for absent `/li
 
 Stage 4 batch validation on September 30, 2026: quality passed; all four precheck commands and 208 main test commands passed. Normalized executable JavaScript matched the previous implementation for both converted helpers. The real-browser service-worker test also passed its Listen offline-shell check. Main Worker packaging and local workerd startup passed, and the private accounting Worker passed dry-run packaging. Eleven runtime modules now have authoritative TypeScript sources, including these two browser entries. No remote staging or production deployment was performed; staging journeys remain a release requirement, and unconverted JavaScript callers are not yet type-checked.
 
+## Stage 5: browser controllers and UI read models
+
+The first batch converts `src/browser/admin/navigation.ts` and `src/browser/admin/metrics.ts`. The tool finder has readonly, named tuple fields with closed tab, group, and section identifiers. Its existing `switchTab` dependency stays a classic global. DOM assertions describe required elements in the actual Admin page; desktop and mobile browser tests verify their presence, keyboard interaction, dialog dismissal, focus restoration, and section navigation.
+
+Overview metrics distinguish complete results from incomplete or missing results. Complete results require the dates, numeric cent amounts, counters, total registrations, and readonly tier breakdown. Incomplete results retain the existing unavailable display rather than presenting false zeroes. Tier identifiers stay open strings to preserve the existing fallback for future or unknown tiers. These contracts describe rendering inputs; they do not replace runtime validation at a future typed API boundary.
+
+Both sources compile to their existing public script paths, retain global names and script timing, and use content versions in `public/admin.html`. Neither adds runtime validation, freezes data, nor changes rendering or event behavior. Compile-only fixtures reject nonexistent navigation destinations, incomplete success payloads, string monetary/count values, and mutations of readonly inputs. The standard artifact gates cover both new entries automatically.
+
+Stage 5 first-batch validation on September 30, 2026: quality, all four precheck commands, and all 238 main test commands passed. Focused desktop/mobile navigation, overview metrics, and parish relationships browser tests passed. Normalized executable JavaScript matched the previous implementations for both converted modules. Main Worker packaging and local workerd startup passed. Thirteen runtime modules now have authoritative TypeScript sources. This batch is a local checkpoint and has not been deployed; hosted staging acceptance remains required before release.
+
 ## Release and rollback
 
 The release branch is integrated with `main` at `52e7d22c`, retaining its newer recovery functionality, Wrangler/Miniflare versions, browser assets, and expanded test manifest. Main has independently retired the orphaned Learn support bundle; this migration does not restore it. The stage validation counts above record the original checkpoints, while the integrated release requires all 238 current test commands. Staging now installs lockfile dependencies explicitly before running custom asset builds.
+
+Stages 1–4 shipped through [PR #207](https://github.com/joeldunnesq-sudo/agapay-site/pull/207) as commit `b8ee4e1b93f9a24ee9a3e5319420a80ee7e8e7c8`. [Staging](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36773852306) and [production deployment](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36774685595) passed, including the production authenticated accounting smoke. Production health reported that exact commit at `2026-09-30T20:50:19Z`. Hosted acceptance verified exact compiled assets, page versions, Admin login globals, service-worker installation, and warm offline asset fetching. Bookstore/cart and giving-history journeys passed against hosted assets with mocked application APIs; they created no real payments.
+
+The deployed Worker version is `1426451a-fc07-44c0-8ea7-946861906e85` and the private provisioner version is `a5518bf7-df11-4337-86f5-edca05a71512`. The preceding known-good versions are `85ac4bf9-531a-4bf8-806f-e2a99a8ea9d1` and `f14b2bca-46e7-4271-aa89-ee63ad91cce0`, respectively. Stage 5 starts separately from the verified production commit.
+
+Release CI also exposed Linux-specific Wrangler declarations importing the legacy Worker entrypoint. The Worker project now checks TypeScript sources without `allowJs`/`checkJs`, and a declaration-import regression prevents incidental expansion into the unconverted JavaScript graph. Strict checking of migrated sources remains enabled; the separate quality job generates the runtime declarations and checks all TypeScript diagnostics.
 
 Each stage must pass its focused tests, `npm run quality`, and `npm run check`. Runtime conversions also require Worker packaging/startup checks and relevant staging browser journeys. Keep database schema changes, dependency upgrades unrelated to typing, UI redesigns, and business-rule changes separate. Retain a known-good Worker and asset release for rollback and check affected user flows after release.
 

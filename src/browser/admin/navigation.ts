@@ -1,6 +1,32 @@
-// Generated from src/browser/admin/navigation.ts by npm run build:browser. Do not edit.
+// Classic Admin navigation contract. The existing app installs switchTab.
+type AdminNavigationTab =
+  | 'overview'
+  | 'giving'
+  | 'support'
+  | 'taxexemptions'
+  | 'nonprofitpricing'
+  | 'learn'
+  | 'marketplace'
+  | 'directory'
+  | 'accountingops'
+  | 'auditlog'
+  | 'settings'
+  | 'developer';
+type AdminNavigationGroup = 'Your work' | 'Reviews' | 'Products' | 'System' | 'Insights';
+type AdminNavigationSection =
+  'contactLeadsCard' | 'deploymentHealthCard' | 'parishCare' | 'overviewEmailLogCard' | 'platformGrowthCard';
+type AdminNavigationTool = readonly [
+  tab: AdminNavigationTab,
+  title: string,
+  description: string,
+  group: AdminNavigationGroup,
+  keywords: string,
+  section?: AdminNavigationSection,
+];
+declare function switchTab(tab: AdminNavigationTab): void;
+
 (() => {
-  const tools = [
+  const tools: readonly AdminNavigationTool[] = [
     ['overview', 'Today', 'See priorities and the next parish actions.', 'Your work', 'home dashboard queues'],
     [
       'giving',
@@ -108,24 +134,27 @@
       'platformGrowthCard',
     ],
   ];
-  const dialog = document.getElementById('adminToolFinder');
-  const search = document.getElementById('adminToolSearch');
-  const results = document.getElementById('adminFinderResults');
-  function navigate(tool) {
+  // Required elements belong to admin.html and are covered by desktop/mobile browser tests.
+  const dialog = document.getElementById('adminToolFinder') as HTMLDialogElement;
+  const search = document.getElementById('adminToolSearch') as HTMLInputElement;
+  const results = document.getElementById('adminFinderResults')!;
+
+  function navigate(tool: AdminNavigationTool) {
     dialog.close();
     switchTab(tool[0]);
     const target = document.getElementById(tool[5] || `tab-${tool[0]}`);
     if (!target) return;
     let ancestor = target.parentElement;
     while (ancestor) {
-      if (ancestor.tagName === 'DETAILS') ancestor.open = true;
+      if (ancestor.tagName === 'DETAILS') (ancestor as HTMLDetailsElement).open = true;
       ancestor = ancestor.parentElement;
     }
     target.setAttribute('tabindex', '-1');
     target.focus({ preventScroll: true });
     if (tool[5]) target.scrollIntoView({ block: 'start' });
   }
-  function toolButton(tool) {
+
+  function toolButton(tool: AdminNavigationTool) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'admin-tool-link';
@@ -137,17 +166,19 @@
     button.addEventListener('click', () => navigate(tool));
     return button;
   }
+
   function renderResults() {
     const terms = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const matches = tools.filter((tool) =>
       terms.every((term) => tool.slice(1, 5).join(' ').toLowerCase().includes(term))
     );
     results.replaceChildren();
-    document.getElementById('adminFinderCount').textContent = matches.length
+    document.getElementById('adminFinderCount')!.textContent = matches.length
       ? `${matches.length} ${matches.length === 1 ? 'tool' : 'tools'} available. Tab to choose a result.`
       : 'No tools found. Try “support”, “tax”, or “parish”.';
     for (const tool of matches) results.append(toolButton(tool));
   }
+
   function openFinder() {
     if (dialog.open) return;
     search.value = '';
@@ -155,10 +186,11 @@
     dialog.showModal();
     search.focus();
   }
+
   document
     .querySelectorAll('[data-open-admin-finder]')
     .forEach((button) => button.addEventListener('click', openFinder));
-  document.getElementById('adminFinderClose').addEventListener('click', () => dialog.close());
+  document.getElementById('adminFinderClose')!.addEventListener('click', () => dialog.close());
   search.addEventListener('input', renderResults);
   dialog.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
@@ -186,7 +218,8 @@
       openFinder();
     }
   });
-  if (/Mac|iPhone|iPad/.test(navigator.platform)) document.querySelector('.admin-find-button kbd').textContent = '⌘ K';
+  if (/Mac|iPhone|iPad/.test(navigator.platform)) document.querySelector('.admin-find-button kbd')!.textContent = '⌘ K';
+
   function updateCurrentNavigation() {
     document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach((button) => {
       if (button.classList.contains('active') && button.id !== 'mobileMoreButton')
