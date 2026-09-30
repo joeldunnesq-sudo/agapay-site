@@ -43,7 +43,7 @@ import {
   unauthorized,
 } from "../lib/core.js";
 import { beginMfaAuthentication } from "../lib/mfa.js";
-
+import { buildAdminOverviewMetrics } from "../lib/admin-overview-metrics.js";
 import { loadAdminRegistrationPage } from "../lib/registrations.js";
 
 import {
@@ -119,7 +119,6 @@ export {
 export { handleAdminEmailDiagnostics } from "./admin-email-diagnostics.js";
 
 // src/handlers/admin.js
-// Admin registrations, platform summary, password, and management handlers.
 
 function emptySubscriptionProduct(id, label) {
   return {
@@ -476,6 +475,7 @@ export async function handleAdminPlatformSummary(request, env) {
     summary: {
       year,
       generatedAt: now.toISOString(),
+      overviewMetrics: buildAdminOverviewMetrics(revenueRegistrations, now, totalRegistered),
       totalRegistered,
       totalVerified,
       connectedStripeAccounts,
