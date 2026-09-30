@@ -6,6 +6,7 @@ import { annualGivingReport, runParishMilestones, buildMilestoneMessage } from '
 import { handleAdminRelationships } from '../src/handlers/admin-relationships.js';
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { issueAdminSession } from '../src/lib/core.js';
+import { classification, tableScope } from '../src/portability/catalog.js';
 
 const retained = retentionFromSnapshots({ a: { paid: true, cents: 100 }, b: { paid: true, cents: 100 } }, { a: { paid: true, cents: 150 }, c: { paid: true, cents: 100 } });
 assert.deepEqual(retained, { opening: 2, retained: 1, lost: 1, rate: 50, revenueRate: 75, openingCents: 200, retainedCents: 150, newPaid: 1, changeCents: 50 });
@@ -18,6 +19,10 @@ assert.equal(parishOccasions({ patronalFeast: 'pascha', liturgicalCalendar: 'jul
 assert.equal(parishAttention({ status: 'verified', stripeAccountId: 'acct', stripeAccountStatus: 'charges_enabled' }), null);
 
 const db = new DatabaseSync(':memory:');
+assert.equal(classification('parish_milestone_preferences'), 'parish');
+assert.match(tableScope('parish_milestone_preferences'), /registrations/);
+assert.equal(classification('parish_milestone_deliveries'), 'independent', 'Email send tombstones must survive parish restores');
+assert.equal(classification('parish_relationship_snapshots'), 'independent', 'Cross-parish analytics never enter a parish export');
 db.exec(readFileSync('migrations/0001_production_records.sql', 'utf8'));
 db.exec(readFileSync('migrations/0129_parish_relationships.sql', 'utf8'));
 const env = { AGAPAY_TEST_MODE: '1', AGAPAY_RATE_LIMITER: memoryRateLimiter(), RESEND_API_KEY: 'mock-only', AGAPAY_DB: {
