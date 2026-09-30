@@ -13,7 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/admin/style.css?v=20260831-admin-simple1" />
+  <link rel="stylesheet" href="/admin/style.css?v=20260930-navigation1" />
+  <link rel="stylesheet" href="/admin/navigation.css?v=20260930-navigation1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20260826mfa1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/admin/manifest.webmanifest" />
@@ -60,7 +61,7 @@
             <svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M5 7h14"/><path d="M7 17h10"/><circle cx="12" cy="12" r="9"/></svg>
             <span>Nonprofit pricing</span>
           </button>
-          <details class="sidebar-toolbox">
+          <details class="sidebar-toolbox" open>
             <summary><span>More tools</span><small>Products &amp; system</small></summary>
             <div class="sidebar-toolbox-body">
               <div class="sidebar-nav-group-label">Products</div>
@@ -106,6 +107,7 @@
           <div class="topbar-description" id="topbarDescription">What needs your attention today.</div>
         </div>
         <div class="topbar-actions">
+          <button class="secondary btn-sm admin-find-button" type="button" data-open-admin-finder>Find a tool <kbd>Ctrl K</kbd></button>
           <div class="topbar-meta">
             <span class="topbar-ref" id="dataAsOf">Data as of —</span>
             <label class="auto-refresh-toggle" for="autoRefreshToggle">
@@ -130,8 +132,8 @@
           <section class="admin-focus-hero" aria-labelledby="adminTodayTitle">
             <div class="admin-focus-copy">
               <div class="admin-kicker">Today</div>
-              <h1 id="adminTodayTitle">A calm view of what needs you.</h1>
-              <p>Work the short list first. Product reporting and system detail stay out of the way until you open them.</p>
+              <h1 id="adminTodayTitle">Your admin workspace.</h1>
+              <p>Review parish onboarding, answer questions, and keep AGAPAY running. Start with the next action below or find a tool by name.</p>
               <button class="gold" type="button" onclick="switchTab('giving')">Open parish onboarding</button>
             </div>
             <div class="admin-focus-score" aria-label="Admin queue health">
@@ -163,6 +165,11 @@
               <button type="button" class="admin-shortcut" onclick="switchTab('taxexemptions')"><span>Tax exemptions <em id="overviewTaxExemptionCount" hidden>0</em></span><small>Certificates that need a decision</small><b>Open →</b></button>
               <button type="button" class="admin-shortcut" onclick="switchTab('accountingops')"><span>Accounting health</span><small>Integrity and recovery controls</small><b>Open →</b></button>
             </article>
+          </section>
+
+          <section class="admin-workspace-directory" aria-labelledby="workspaceDirectoryTitle">
+            <div class="admin-directory-heading"><div><div class="admin-kicker">Explore your workspace</div><h2 id="workspaceDirectoryTitle">What do you need to do?</h2></div><button class="secondary btn-sm" type="button" data-open-admin-finder>Find a tool</button></div>
+            <div id="adminWorkspaceLinks" class="admin-workspace-links"></div>
           </section>
 
           <section class="admin-health-overview" id="onboardingHealthCard">
@@ -956,7 +963,7 @@
   <nav class="mobile-tabbar" aria-label="Admin dashboard sections">
     <button class="mobile-tab-link active" type="button" data-nav-tab="overview" onclick="switchTab('overview')">
       <svg viewBox="0 0 38 38" aria-hidden="true"><path d="M19 4.5 8.5 13v18h21V13L19 4.5Z"/><path d="M14.5 31V20.5h9V31"/><path d="M5.5 31h27"/><path d="M19 9v6"/><path d="M16.2 12h5.6"/></svg>
-      <span>Overview</span>
+      <span>Today</span>
     </button>
     <button class="mobile-tab-link" type="button" data-nav-tab="giving" onclick="switchTab('giving')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7.5 5.5h13v17h-13z"/><path d="M10.5 10h7"/><path d="M10.5 14h7"/><path d="M10.5 18h5"/><path d="M19 3.5v4h4"/></svg>
@@ -989,11 +996,21 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
+  <dialog id="adminToolFinder" class="admin-tool-finder" aria-labelledby="adminFinderTitle" aria-describedby="adminFinderHelp">
+    <div class="admin-finder-heading"><h2 id="adminFinderTitle">Find an admin tool</h2><button class="secondary btn-sm" type="button" id="adminFinderClose">Close</button></div>
+    <p id="adminFinderHelp">Search tools and sections, such as onboarding, contacts, or billing. This does not search individual records.</p>
+    <label for="adminToolSearch">Tool or task</label>
+    <input id="adminToolSearch" type="search" placeholder="What do you need to do?" autocomplete="off" />
+    <p id="adminFinderCount" role="status" aria-live="polite"></p>
+    <div id="adminFinderResults" class="admin-finder-results"></div>
+  </dialog>
+
   <script src="/scripts/privileged-mfa.js?v=20260930mfa2"></script>
   <script src="/admin/presentation.js?v=20260904-refactor1"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=20260904-controllers1"></script>
   <script src="/admin/controllers/contact-leads.js"></script>
   <script src="/admin/app.js?v=20260904-controllers1"></script>
+  <script src="/admin/navigation.js?v=20260930-navigation1"></script>
   <script src="/admin/pwa.js"></script>
 </body>
 </html>
