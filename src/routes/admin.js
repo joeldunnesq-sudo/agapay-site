@@ -5,6 +5,7 @@ const SIMPLE_ROUTES = new Map([
   ['/api/mfa/verify', 'handleMfaVerify'],
   ['/api/mfa/step-up', 'handleMfaStepUp'],
   ['/api/mfa/status', 'handleMfaStatus'],
+  ['/api/mfa/parish-authenticator', 'handleParishAuthenticatorSetup'],
   ['/api/identity/login', 'handleIdentityLogin'],
   ['/api/identity/session', 'handleIdentitySession'],
   ['/api/identity/logout', 'handleIdentityLogout'],

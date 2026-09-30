@@ -230,6 +230,7 @@ const releaseGates = [
   'scripts/portability-operator-safety-tests.mjs',
   'scripts/portability-browser-gate.mjs --static-only',
   'scripts/parish-backup-browser-tests.mjs',
+  'scripts/parish-mfa-browser-tests.mjs',
   'scripts/public-media-delivery-tests.mjs',
   'scripts/accounting-migration-import-tests.mjs',
   'scripts/accounting-release-gate-2-sw-lifecycle.mjs --static-only',
