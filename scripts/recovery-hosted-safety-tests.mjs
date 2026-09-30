@@ -75,6 +75,12 @@ const plan = spawnSync(process.execPath, ['scripts/recovery-hosted-drill.mjs'], 
 });
 assert.equal(plan.status, 0, plan.stderr);
 assert.match(plan.stdout, /Synthetic data only/);
+const privatePlan = spawnSync(process.execPath, ['scripts/recovery-production-storage-check.mjs'], {
+  encoding: 'utf8',
+  env: { ...process.env, CLOUDFLARE_API_TOKEN: '' },
+});
+assert.equal(privatePlan.status, 0, privatePlan.stderr);
+assert.match(privatePlan.stdout, /No provider writes/);
 console.log(
   'PASS - hosted rehearsal defaults to a plan and rejects production bindings, public routes, unrecorded resources and wrong run identities'
 );

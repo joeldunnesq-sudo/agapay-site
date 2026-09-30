@@ -54,6 +54,7 @@ const mf = hosted ? await hostedRecoveryBindings(hosted) : new Miniflare(options
   f = await portabilityFixture({ barriers: false });
 const quoted = (s) => '"' + s.replaceAll('"', '""') + '"';
 async function call(body, expectedFailure) {
+  const started = Date.now();
   for (let attempt = 0; ; attempt++) {
     const r = await mf.dispatchFetch('http://local.test/', {
       method: 'POST',
@@ -77,6 +78,14 @@ async function call(body, expectedFailure) {
     }
     assert.equal(r.status, 200, JSON.stringify(payload));
     assert.ok(Number(r.headers.get('x-drill-operations')) <= 800, 'Each phase must leave provider headroom');
+    if (hosted)
+      console.log(
+        'Hosted recovery phase',
+        body.action,
+        payload.phase || body.scope || 'status',
+        Date.now() - started,
+        'ms'
+      );
     return payload;
   }
 }
@@ -86,12 +95,15 @@ async function finish(op) {
   return op;
 }
 try {
-  // The reviewed central baseline includes migrations through 0118. Apply all later migrations.
+  // The historical baseline omits four migrations within 0111-0118. Apply
+  // those explicit gaps as well as every later migration.
   // Only synthetic fixture rows are copied; no production data is used.
   const full = new DatabaseSync(':memory:');
   full.exec(readFileSync(new URL('./fixtures/portability-central-schema.sql', import.meta.url), 'utf8'));
   for (const name of readdirSync(new URL('../migrations/', import.meta.url))
-    .filter((n) => /^\d{4}_.*\.sql$/.test(n) && n >= '0119')
+    .filter(
+      (n) => /^\d{4}_.*\.sql$/.test(n) && (n >= '0119' || ['0111', '0112', '0114', '0115'].includes(n.slice(0, 4)))
+    )
     .sort())
     full.exec(readFileSync(new URL('../migrations/' + name, import.meta.url), 'utf8'));
   full.exec('BEGIN; PRAGMA defer_foreign_keys=ON');
@@ -133,12 +145,13 @@ try {
   }
   bookFixture.exec("INSERT INTO accounting_database_metadata(key,value) VALUES('parish_id','parish-a')");
   const nativeBooks = await mf.getD1Database('DRILL_BOOKS');
-  for (const { sql } of bookFixture
+  const bookSchema = bookFixture
     .prepare(
       "SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 ELSE 2 END,name"
     )
-    .all())
-    await nativeBooks.prepare(sql).run();
+    .all();
+  for (let i = 0; i < bookSchema.length; i += 40)
+    await nativeBooks.batch(bookSchema.slice(i, i + 40).map((row) => nativeBooks.prepare(row.sql)));
   const bookSeeds = [nativeBooks.prepare('PRAGMA defer_foreign_keys=ON')];
   for (const { name } of bookFixture
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
@@ -183,6 +196,12 @@ try {
           .bind(...Object.values(row))
       );
   await db.batch(seed);
+  if (hosted) console.log('Hosted synthetic schemas and seed records initialized');
+  await db
+    .prepare(
+      "INSERT INTO operational_job_heartbeats(job_name,cron,status,run_id,started_at) VALUES('drill','synthetic','completed','before','2026-09-30')"
+    )
+    .run();
   const documents = await mf.getR2Bucket('SACRAMENT_DOCUMENTS');
   const legacy = await mf.getKVNamespace('AGAPAY_REGISTRATIONS');
   async function legacyWrite(parish, note) {
@@ -214,6 +233,7 @@ try {
     await call({ action: 'start', input: { kind: 'backup', scope: 'parish', requestKey: crypto.randomUUID() } })
   );
   const point = (await call({ action: 'status' })).snapshots[0];
+  await db.prepare("UPDATE operational_job_heartbeats SET run_id='keep-current' WHERE job_name='drill'").run();
   await db.prepare("UPDATE directory_people SET preferred_name='Native D1 mistake' WHERE id='a'").run();
   const changedFile = await documents.put('parish-a/guide.txt', 'Mistaken replacement');
   await db
@@ -272,6 +292,10 @@ try {
     'Alpha'
   );
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM parish_recovery_locks').first()).n, 0);
+  assert.equal(
+    (await db.prepare("SELECT run_id FROM operational_job_heartbeats WHERE job_name='drill'").first()).run_id,
+    'keep-current'
+  );
   assert.equal(await (await documents.get('parish-a/guide.txt')).text(), 'Original guide for parish-a');
   assert.equal(await (await documents.get('parish-b/guide.txt')).text(), 'Original guide for parish-b');
   assert.equal(JSON.parse(await legacy.get('parish-feature-requests:parish-a')).note, 'Original request');

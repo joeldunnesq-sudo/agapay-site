@@ -1,4 +1,4 @@
-import { portabilityBudget, recoveryBudget } from '../portability/budget.js';
+import { portabilityBudget, portabilityBudgetUsage, recoveryBudget } from '../portability/budget.js';
 import { retainFinancialEvidence } from './retention.js';
 import { syncConfigurationMirrors } from './configuration.js';
 import { sha256 } from '../portability/archive.js';
@@ -207,9 +207,22 @@ async function validateAll(env, op, books, target, safety) {
   const central = await readPart(env, target, 'central'),
     bookData = await readPart(env, target, 'books'),
     files = await readPart(env, target, 'files');
-  if (op.scope === 'parish') await planDatabase(env.AGAPAY_DB, 'central', op.parish_id, central);
-  await planDatabase(books, 'books', op.parish_id, bookData);
-  await validateFiles(env, op.parish_id, op.scope, files, await readPart(env, safety, 'files'));
+  const currentFiles = await readPart(env, safety, 'files');
+  for (const [db, kind, data] of [
+    ...(op.scope === 'parish' ? [[env.AGAPAY_DB, 'central', central]] : []),
+    [books, 'books', bookData],
+  ]) {
+    const before = portabilityBudgetUsage(env).operations;
+    const plan = await planDatabase(db, kind, op.parish_id, data);
+    const work = portabilityBudgetUsage(env).operations - before + (plan?.statementCount || 0);
+    const mirrors = kind === 'central' ? 5 * (currentFiles.mirrors || []).length : 0;
+    if (work + mirrors > 650)
+      fail(
+        'recovery_transaction_too_large',
+        'This restore exceeds the per-step self-service limit. Contact support; no records or files have been replaced.'
+      );
+  }
+  await validateFiles(env, op.parish_id, op.scope, files, currentFiles);
 }
 
 export async function advanceRecovery(env, parishId, id, action = 'advance') {
