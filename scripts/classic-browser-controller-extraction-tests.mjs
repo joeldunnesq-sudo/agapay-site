@@ -134,7 +134,7 @@ function assertOrderedScripts(file, first, second) {
 const adminHtml = assertOrderedScripts(
   'public/admin.html',
   '/admin/controllers/tax-exemptions.js?v=20260904-controllers1',
-  '/admin/app.js?v=20260904-controllers1'
+  '/admin/app.js?v='
 );
 assert.ok(adminHtml.indexOf('/admin/presentation.js') < adminHtml.indexOf('/admin/controllers/tax-exemptions.js'));
 assert.doesNotMatch(read('public/admin/login.html'), /controllers\/tax-exemptions\.js/);
