@@ -18,7 +18,7 @@ import {
   verifyMfaEnrollment,
 } from "../src/lib/mfa.js";
 import { issueAdminSession, issueParishDashboardSession } from "../src/lib/core.js";
-import { enforcePrivilegedMfa, handleMfaEnrollmentOptions } from "../src/handlers/mfa.js";
+import { enforcePrivilegedMfa, handleMfaEnrollmentOptions, handleMfaEnrollmentVerify, handleParishAuthenticatorSetup } from "../src/handlers/mfa.js";
 import worker from "../src/worker.js";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,10 +28,15 @@ function makeD1Env() {
   const db = new DatabaseSync(":memory:");
   db.exec(readFileSync(path.join(root, "migrations", "0020_platform_identity.sql"), "utf8"));
   db.exec(readFileSync(path.join(root, "migrations", "0106_privileged_mfa.sql"), "utf8"));
+  db.exec(readFileSync(path.join(root, "migrations", "0014_audit_log.sql"), "utf8"));
   db.exec("CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)");
   db.exec(`CREATE TABLE registrations (
     reference TEXT PRIMARY KEY,
     parish_id TEXT,
+    parish_name TEXT,
+    community_type TEXT,
+    stripe_account_id TEXT,
+    stripe_subscription_id TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
     received_at TEXT,
     updated_at TEXT NOT NULL,
@@ -294,6 +299,46 @@ await test("step-up assurance expires after fifteen minutes", async () => {
   assert.equal(freshMfaAt(new Date(now - 14 * 60_000).toISOString(), now), true);
   assert.equal(freshMfaAt(new Date(now - 16 * 60_000).toISOString(), now), false);
   assert.equal(freshMfaAt("", now), false);
+});
+
+await test("adding an authenticator requires the primary parish's fresh MFA and preserves passkeys and recovery codes", async () => {
+  const { env, db } = makeD1Env();
+  const parishId = "authenticator-test";
+  db.exec("INSERT INTO privileged_webauthn_credentials(credential_id,principal_type,principal_id,credential_public_key) VALUES('c2F2ZWQ','parish_admin','authenticator-test','saved-public-key')");
+  db.exec(`INSERT INTO privileged_mfa_profiles(principal_type,principal_id,recovery_code_hashes_json) VALUES('parish_admin','authenticator-test','["saved-hash"]')`);
+  async function issue(options) {
+    const issued = await issueParishDashboardSession({ parishId }, options);
+    db.prepare("INSERT OR REPLACE INTO registrations(reference,parish_id,updated_at,data) VALUES(?,?,?,?)")
+      .run('authenticator-registration', parishId, new Date().toISOString(), JSON.stringify(issued.registration));
+    return issued.token;
+  }
+  const request = (token, id = parishId) => new Request('https://agapay.app/api/mfa/parish-authenticator', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parishId: id }),
+  });
+  assert.equal((await handleParishAuthenticatorSetup(request('invalid'), env)).status, 401);
+  const stale = await issue({ mfaVerifiedAt: new Date(Date.now() - 16 * 60_000).toISOString() });
+  assert.equal((await handleParishAuthenticatorSetup(request(stale), env)).status, 428);
+  const staff = await issue({ mfaVerifiedAt: new Date().toISOString(), accessType: 'staff' });
+  assert.equal((await handleParishAuthenticatorSetup(request(staff), env)).status, 401);
+  const fresh = await issue({ mfaVerifiedAt: new Date().toISOString() });
+  assert.equal((await handleParishAuthenticatorSetup(request(fresh, 'another-parish'), env)).status, 401);
+  const response = await handleParishAuthenticatorSetup(request(fresh), env);
+  assert.equal(response.status, 200);
+  const flow = await response.json();
+  await assert.rejects(beginMfaEnrollment(env, request(fresh), flow.pendingToken, { method: 'passkey' }), /different method/);
+  const setup = await beginMfaEnrollment(env, request(fresh), flow.pendingToken, { method: 'totp' });
+  const completed = await handleMfaEnrollmentVerify(new Request('https://agapay.app/api/mfa/enrollment/verify', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pendingToken: flow.pendingToken, method: 'totp', code: currentTotp(setup.secret) }),
+  }), env);
+  assert.equal(completed.status, 200);
+  const verified = await completed.json();
+  assert.equal(verified.token, undefined, 'adding an authenticator preserves the current session');
+  assert.deepEqual(verified.recoveryCodes, []);
+  assert.equal(db.prepare('SELECT count(*) n FROM privileged_webauthn_credentials').get().n, 1);
+  assert.equal(db.prepare('SELECT recovery_code_hashes_json FROM privileged_mfa_profiles').get().recovery_code_hashes_json, '["saved-hash"]');
+  assert.equal((await handleParishAuthenticatorSetup(request(fresh), env)).status, 409);
 });
 
 await test("the Worker gate rejects legacy privileged sessions and steps up stale ones", async () => {
