@@ -242,7 +242,13 @@ try {
     const report = await opened;
     await report.getByRole('heading', { name: 'Monthly Financial Report', exact: true }).waitFor();
     const closed = report.waitForEvent('close', { timeout: 5000 });
-    await report.getByRole('link', { name: '← Back', exact: true }).click();
+    await report
+      .getByRole('link', { name: '← Back', exact: true })
+      .click()
+      .catch((error) => {
+        // The handler intentionally closes this popup before Playwright's click acknowledgement.
+        if (!report.isClosed() || !/Target page, context or browser has been closed/.test(error.message)) throw error;
+      });
     await closed;
     assert.equal(page.url(), dashboardUrl);
     assert.equal(dashboardNavigations, 0, 'Back must not reload the original dashboard');

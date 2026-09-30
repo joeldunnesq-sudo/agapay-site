@@ -130,6 +130,9 @@ hashes. It reruns the audit, rejects changed hashes, pending writes and ownershi
 reassignment, updates control records only, and verifies full readback. It does not
 change parish records, ledger entries, file bodies, or feature flags. Recovery and
 storage guards must remain disabled until this result is verified.
+After deploying storage guards, rerun the read-only ownership audit before enabling
+recovery. Both registry consistency checks must pass; any concurrent storage change
+requires another audit, and any unresolved mismatch keeps recovery disabled.
 Accounting resolution includes databases created by the onboarding provisioner,
 with parish identity verified before access. Managed-service queries share the
 invocation work budget. The cloud rehearsal also verifies D1 HTTP batch rollback
