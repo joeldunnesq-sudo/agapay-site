@@ -1,4 +1,4 @@
-import { subscriptionTier, subscriptionAddOnsFor, subscriptionAddOnPricing } from './subscriptions.js';
+import { subscriptionTier, subscriptionTiers, subscriptionAddOnsFor, subscriptionAddOnPricing } from './subscriptions.js';
 
 const canceled = value => ['cancelled', 'canceled'].includes(String(value || '').toLowerCase());
 
@@ -12,12 +12,19 @@ export function buildAdminOverviewMetrics(registrations, now = new Date(), total
     return Number.isFinite(time) && time >= weekStart.getTime() && time <= now.getTime();
   };
   const result = {
+    totalRegistered: total,
+    tierBreakdown: [...subscriptionTiers.map(tier => ({ id: tier.id, label: tier.label, count: 0 })),
+      { id: 'unassigned', label: 'Not assigned', count: 0 }, { id: 'other', label: 'Other / legacy', count: 0 }],
     weekStart: weekStart.toISOString(), generatedAt: now.toISOString(), timeZone: 'UTC',
     newRegistrations: 0, cancellations: 0, undatedCancellations: 0,
     activePaidSubscriptions: 0, monthlyRecurringCents: 0, annualRecurringCents: 0,
     unknownPriceSubscriptions: 0, complete: registrations.length === total,
   };
   for (const registration of registrations) {
+    const selected = String(registration.subscriptionTier || registration.tier || '').trim().toLowerCase();
+    const tierId = selected === 'mission' ? 'starter' : selected || 'unassigned';
+    const bucket = result.tierBreakdown.find(tier => tier.id === tierId) || result.tierBreakdown.find(tier => tier.id === 'other');
+    bucket.count++;
     if (inWeek(registration.receivedAt)) result.newRegistrations++;
     const history = Array.isArray(registration.subscriptionStatusHistory) ? registration.subscriptionStatusHistory : [];
     const dates = history.filter(item => canceled(item.status)).map(item => item.at);

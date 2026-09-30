@@ -3,6 +3,7 @@ function renderAdminOverviewMetrics(metrics) {
   const card = document.getElementById('adminMetricsCard');
   if (!card) return;
   card.setAttribute('aria-busy', 'false');
+  renderAdminTierBreakdown(metrics?.complete ? metrics : null);
   const text = (id, value) => { document.getElementById(id).textContent = value; };
   if (!metrics || !metrics.complete) {
     for (const id of ['weeklySignups', 'weeklyCancellations', 'monthlyRecurringRevenue', 'annualRecurringRevenue']) text(id, '—');
@@ -22,4 +23,58 @@ function renderAdminOverviewMetrics(metrics) {
   if (metrics.undatedCancellations) notes.push(`${metrics.undatedCancellations} canceled ${metrics.undatedCancellations === 1 ? 'subscription has' : 'subscriptions have'} no recorded cancellation date; the weekly count may be higher.`);
   if (metrics.unknownPriceSubscriptions) notes.push(`${metrics.unknownPriceSubscriptions} active ${metrics.unknownPriceSubscriptions === 1 ? 'subscription has' : 'subscriptions have'} no recorded price and ${metrics.unknownPriceSubscriptions === 1 ? 'is' : 'are'} excluded from revenue.`);
   text('adminMetricsNote', notes.join(' '));
+}
+
+function renderAdminTierBreakdown(metrics) {
+  const chart = document.getElementById('adminTierChart');
+  const legend = document.getElementById('adminTierLegend');
+  const total = document.getElementById('totalParishesSignedUp');
+  const status = document.getElementById('adminTierStatus');
+  if (!chart || !legend || !total || !status) return;
+  chart.replaceChildren();
+  legend.replaceChildren();
+  const circle = (color, count = 100, offset = 0) => {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    for (const [name, value] of Object.entries({ cx: 60, cy: 60, r: 49, fill: 'none', stroke: color, 'stroke-width': 14, pathLength: 100, 'stroke-dasharray': `${count} ${100 - count}`, 'stroke-dashoffset': -offset, transform: 'rotate(-90 60 60)' })) element.setAttribute(name, String(value));
+    chart.append(element);
+    return element;
+  };
+  circle('#e8e3d9');
+  if (!metrics || !Array.isArray(metrics.tierBreakdown) || !Number.isFinite(metrics.totalRegistered)) {
+    total.textContent = '—';
+    status.textContent = 'Tier breakdown unavailable. Refresh metrics to try again.';
+    chart.setAttribute('aria-label', 'Parish tier breakdown unavailable');
+    return;
+  }
+  total.textContent = metrics.totalRegistered.toLocaleString();
+  chart.setAttribute('aria-label', `${metrics.totalRegistered} parishes signed up. Counts and percentages by tier are listed alongside this chart.`);
+  status.textContent = metrics.totalRegistered ? '' : 'No parish registrations yet.';
+  const colors = { starter: '#b4832b', giving: '#244c67', parish: '#428477', diocese: '#79659a', monastery_free: '#b66b51', unassigned: '#929ba2', other: '#5b6065' };
+  let offset = 0;
+  for (const tier of metrics.tierBreakdown) {
+    const color = colors[tier.id] || colors.other;
+    const share = metrics.totalRegistered ? tier.count / metrics.totalRegistered * 100 : 0;
+    if (tier.count > 0) {
+      const slice = circle(color, share, offset);
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = `${tier.label}: ${tier.count} (${share.toFixed(1)}%)`;
+      slice.append(title);
+      offset += share;
+    }
+    // Show published tiers even at zero; disclose missing/legacy tiers when present.
+    if (!tier.count && ['unassigned', 'other'].includes(tier.id)) continue;
+    const row = document.createElement('li');
+    const swatch = document.createElement('span');
+    swatch.className = 'admin-tier-swatch';
+    swatch.style.backgroundColor = color;
+    swatch.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.textContent = tier.label;
+    const count = document.createElement('strong');
+    count.textContent = tier.count.toLocaleString();
+    const percentage = document.createElement('small');
+    percentage.textContent = `${share.toFixed(1)}%`;
+    row.append(swatch, label, count, percentage);
+    legend.append(row);
+  }
 }

@@ -29,9 +29,18 @@ try {
       complete: true, weekStart: '2026-09-28T00:00:00Z', generatedAt: '2026-09-30T12:00:00Z',
       newRegistrations: 3, cancellations: 1, undatedCancellations: 0, unknownPriceSubscriptions: 0,
       monthlyRecurringCents: 23800, annualRecurringCents: 285600, activePaidSubscriptions: 2,
+      totalRegistered: 4, tierBreakdown: [
+        { id: 'starter', label: 'Give', count: 0 }, { id: 'giving', label: 'Give +', count: 1 },
+        { id: 'parish', label: 'Parish', count: 2 }, { id: 'diocese', label: 'Cathedral / Diocese', count: 0 },
+        { id: 'monastery_free', label: 'Monastery / Skete', count: 0 }, { id: 'unassigned', label: 'Not assigned', count: 1 },
+      ],
     }));
     assert.equal(await page.locator('#weeklySignups').textContent(), '3');
     assert.equal(await page.locator('#monthlyRecurringRevenue').textContent(), '$238.00');
+    assert.equal(await page.locator('#totalParishesSignedUp').textContent(), '4');
+    assert.equal(await page.locator('#adminTierChart circle').count(), 4, 'One track and three nonempty tier slices');
+    assert.match(await page.locator('#adminTierLegend').textContent(), /Parish250.0%/);
+    assert.match(await page.locator('#adminTierLegend').textContent(), /Not assigned125.0%/);
     assert.equal(await page.locator('#nav-overview').getAttribute('aria-current'), 'page');
     const trigger = page.locator('.admin-find-button');
     await trigger.click();
@@ -62,11 +71,17 @@ try {
     await page.locator('.admin-secondary-workspace').evaluate(el => { el.open = false; });
     await page.evaluate(() => window.scrollTo(0, 0));
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'page must fit the viewport');
-    await page.screenshot({ path: `artifacts/admin-navigation-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `artifacts/admin-navigation-${width}.png`, fullPage: true, animations: 'disabled' });
     await page.evaluate(() => renderAdminOverviewMetrics(null));
     assert.equal(await page.locator('#weeklySignups').textContent(), '—');
     assert.match(await page.locator('#adminMetricsNote').textContent(), /unavailable/);
     assert.equal(await page.locator('#adminMetricsCard').getAttribute('aria-busy'), 'false');
+    assert.equal(await page.locator('#totalParishesSignedUp').textContent(), '—');
+    assert.equal(await page.locator('#adminTierLegend li').count(), 0, 'Failed refresh clears stale tier counts');
+    await page.evaluate(() => renderAdminTierBreakdown({ totalRegistered: 0, tierBreakdown: [{ id: 'starter', label: 'Give', count: 0 }] }));
+    assert.equal(await page.locator('#totalParishesSignedUp').textContent(), '0');
+    assert.match(await page.locator('#adminTierStatus').textContent(), /No parish registrations/);
+    assert.equal(await page.locator('#adminTierChart circle').count(), 1, 'Zero registrations draw an empty track');
     assert.deepEqual(errors, []);
     await page.close();
   }

@@ -19,6 +19,19 @@ const rows = [
 ];
 const result = buildAdminOverviewMetrics(rows, now);
 assert.equal(result.weekStart, '2026-09-28T00:00:00.000Z');
+assert.equal(result.totalRegistered, rows.length);
+assert.equal(result.tierBreakdown.reduce((sum, tier) => sum + tier.count, 0), rows.length);
+const breakdown = buildAdminOverviewMetrics([
+  { subscriptionTier: 'mission' }, { subscriptionTier: 'starter' },
+  { subscriptionTier: 'giving', subscriptionStatus: 'trialing' },
+  { subscriptionTier: 'parish', subscriptionStatus: 'canceled' },
+  { tier: 'diocese' }, { subscriptionTier: 'monastery_free' },
+  {}, { subscriptionTier: 'retired-plan' },
+], now);
+assert.deepEqual(Object.fromEntries(breakdown.tierBreakdown.map(tier => [tier.id, tier.count])), {
+  starter: 2, giving: 1, parish: 1, diocese: 1, monastery_free: 1, unassigned: 1, other: 1,
+}, 'All registrations count once; legacy aliases normalize without inventing a tier for unassigned records');
+assert.equal(buildAdminOverviewMetrics([], now).totalRegistered, 0);
 assert.equal(result.newRegistrations, 2, 'Monday inclusive; previous Sunday and future dates excluded');
 assert.equal(result.cancellations, 1, 'Count each parish once even with a timestamp and a history entry');
 assert.equal(result.undatedCancellations, 1, 'Never use a generic edit timestamp as a cancellation date');
@@ -63,5 +76,7 @@ assert.equal(response.status, 200);
 const payload = await response.json();
 assert.equal(payload.summary.overviewMetrics.newRegistrations, 1);
 assert.equal(payload.summary.overviewMetrics.complete, true);
+assert.equal(payload.summary.overviewMetrics.totalRegistered, 1);
+assert.equal(payload.summary.overviewMetrics.tierBreakdown.find(tier => tier.id === 'unassigned').count, 1);
 assert.equal(payload.summary.overviewMetrics.monthlyRecurringCents, 0);
 console.log('PASS - Authenticated summary API and replay-safe Stripe cancellation timestamp');
