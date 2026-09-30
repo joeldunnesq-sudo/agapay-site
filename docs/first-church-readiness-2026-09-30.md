@@ -1,7 +1,8 @@
 # First three churches: onboarding readiness
 
 Reviewed September 30, 2026 against main `566c3ac8`, with the fixes in
-`codex/first-church-readiness`. These fixes are local and have not been deployed.
+`codex/first-church-readiness`. These fixes were merged to main as `60b55bf8`
+and deployed successfully on September 30.
 
 ## Assessment
 
@@ -13,7 +14,23 @@ connection, or public launch was created during this review.
 
 This supports a supervised first onboarding. It does not establish delivery to
 a church's mailbox or that Stripe has approved that church's payout account.
-Deploy the fixes and complete the per-church checks before public launch.
+The owner confirms prior successful Stripe and Resend tests. Complete the
+per-church checks before public launch.
+
+## Launch follow-up
+
+- The [onboarding release](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/36741924604)
+  passed Quality, Test, deployment, and public post-deploy health checks.
+- Authenticated accounting smoke was **skipped**, because its two-parish fixture
+  credentials are not configured in GitHub Actions. Configure dedicated test
+  fixtures and run this gate before relying on unattended accounting releases.
+  A green workflow currently does not establish authenticated accounting coverage.
+- The latest [recovery drill](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33517852415)
+  passed on September 1. The workflow restores a stored platform D1 backup into
+  a disposable database and checks schema and row counts; it runs monthly.
+  This is separate from parish self-service recovery.
+- Self-service Restore remains unfinished and undeployed. Do not present it as
+  available for the first churches.
 
 ## Fixes
 
