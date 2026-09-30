@@ -92,7 +92,8 @@
     dialog.setAttribute('aria-labelledby', 'agapayMfaTitle');
     dialog.innerHTML = '<div class="agapay-mfa-card"><div class="agapay-mfa-mark"><img src="/mark.png" alt=""></div><div id="agapayMfaBody"></div></div>';
     dialog.addEventListener('cancel', event => {
-      if (activeFlow?.required) event.preventDefault();
+      event.preventDefault();
+      if (!activeFlow?.required) cancelFlow();
     });
     document.body.appendChild(dialog);
     return dialog;
@@ -116,8 +117,16 @@
     if (dialog?.open) dialog.close();
   }
 
+  function cancelFlow() {
+    if (activeFlow?.verifying) return;
+    const flow = activeFlow;
+    activeFlow = null;
+    closeDialog();
+    flow?.reject(new Error('Authenticator setup cancelled.'));
+  }
+
   function methodButtons(flow) {
-    const passkey = window.PublicKeyCredential && navigator.credentials && (flow.enrollmentRequired || flow.methods.includes('passkey'));
+    const passkey = flow.enrollmentMethod !== 'totp' && window.PublicKeyCredential && navigator.credentials && (flow.enrollmentRequired || flow.methods.includes('passkey'));
     const totp = flow.enrollmentRequired || flow.methods.includes('totp');
     return `<div class="agapay-mfa-methods">
       ${passkey ? '<button type="button" class="agapay-mfa-primary" data-mfa-action="passkey">Use a passkey<span>Face ID, fingerprint, device PIN, or security key</span></button>' : ''}
@@ -128,10 +137,13 @@
 
   function renderChoice(flow) {
     setBody(`<div class="agapay-mfa-eyebrow">Protected administrator access</div>
-      <h2 id="agapayMfaTitle">${flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
-      <p>${flow.enrollmentRequired ? 'Administrator accounts require multi-factor authentication. A passkey is the fastest and strongest option.' : 'Use a registered second factor to finish signing in or approve this sensitive action.'}</p>
+      <h2 id="agapayMfaTitle">${flow.enrollmentMethod === 'totp' ? 'Add an authenticator app' : flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
+      <p>${flow.enrollmentMethod === 'totp' ? 'Add a six-digit authenticator code while keeping your existing sign-in methods.' : flow.enrollmentRequired ? 'Administrator accounts require multi-factor authentication. A passkey is the fastest and strongest option.' : 'Use a registered second factor to finish signing in or approve this sensitive action.'}</p>
       ${methodButtons(flow)}
+      ${!flow.required ? '<button type="button" id="agapayMfaCancel">Cancel setup</button>' : ''}
       <div id="agapayMfaMessage" class="agapay-mfa-message"></div>`);
+    const cancel = document.getElementById('agapayMfaCancel');
+    if (cancel) cancel.onclick = cancelFlow;
     document.querySelectorAll('[data-mfa-action]').forEach(button => {
       button.addEventListener('click', () => chooseMethod(button.dataset.mfaAction));
     });
@@ -153,6 +165,7 @@
       }
       renderCodeEntry('recovery');
     } catch (error) {
+      if (!activeFlow) return;
       renderChoice(activeFlow);
       setMessage(error.message, 'error');
     }
@@ -188,11 +201,13 @@
   }
 
   async function beginTotpEnrollment() {
+    const flow = activeFlow;
     const started = await api('/api/mfa/enrollment/options', {
       pendingToken: activeFlow.pendingToken,
       method: 'totp',
       displayName: activeFlow.displayName || 'AGAPAY administrator',
     });
+    if (activeFlow !== flow) return;
     setBody(`<div class="agapay-mfa-eyebrow">Authenticator app</div>
       <h2 id="agapayMfaTitle">Add AGAPAY to your app</h2>
       <p>Open your authenticator app, add an account, and enter this setup key. On a phone, the button may open your authenticator automatically.</p>
@@ -206,6 +221,11 @@
       setMessage('Setup key copied.', 'success');
     };
     document.getElementById('agapayMfaBack').onclick = () => renderChoice(activeFlow);
+    if (!activeFlow.required) {
+      const back = document.getElementById('agapayMfaBack');
+      back.textContent = 'Cancel setup';
+      back.onclick = cancelFlow;
+    }
     document.getElementById('agapayMfaCodeForm').onsubmit = event => submitCode(event, 'totp', true);
   }
 
@@ -226,6 +246,7 @@
     const code = document.getElementById('agapayMfaCode').value.trim();
     const button = event.submitter;
     button.disabled = true;
+    activeFlow.verifying = true;
     setMessage('Verifying…');
     try {
       const completed = await api(enrollment ? '/api/mfa/enrollment/verify' : '/api/mfa/verify', {
@@ -236,6 +257,7 @@
       finishFlow(completed);
     } catch (error) {
       setMessage(error.message, 'error');
+      if (activeFlow) activeFlow.verifying = false;
       button.disabled = false;
       document.getElementById('agapayMfaCode')?.focus();
     }
@@ -277,8 +299,9 @@
     if (!flow?.mfaRequired) return Promise.resolve(flow);
     if (activeFlow) return Promise.reject(new Error('Another security verification is already open.'));
     return new Promise((resolve, reject) => {
-      activeFlow = { ...flow, displayName: options.displayName || '', required: true, resolve, reject };
+      activeFlow = { ...flow, displayName: options.displayName || '', required: options.required !== false, enrollmentMethod: options.enrollmentMethod, resolve, reject };
       renderChoice(activeFlow);
+      if (options.enrollmentMethod === 'totp' && activeFlow.enrollmentRequired) chooseMethod('totp');
     });
   }
 

@@ -347,6 +347,9 @@ export async function beginMfaEnrollment(env, request, pendingToken, {
   if (currentStatus.enrolled && transaction.purpose !== "manage") {
     throw new Error("Verify an existing MFA method before adding another one.");
   }
+  if (transaction.purpose === "manage" &&
+      (transaction.metadata?.enrollmentMethod !== method || (method === "totp" && currentStatus.methods.includes("totp"))))
+    throw new Error("This setup cannot replace an existing authenticator or add a different method.");
   if (method === "totp") {
     const secret = base32Encode(randomBytes(20));
     const encrypted = await encryptTotpSecret(env, secret);
@@ -453,7 +456,11 @@ async function ensureRecoveryCodes(env, principalType, principalId) {
 export async function verifyMfaEnrollment(env, request, pendingToken, { method, code, credential } = {}) {
   const transaction = await loadMfaTransaction(env, pendingToken, { consumeAttempt: true });
   if (!transaction) throw new Error("MFA setup expired. Please sign in again.");
+  if (transaction.purpose === "manage" && transaction.metadata?.enrollmentMethod !== method)
+    throw new Error("This setup cannot add a different method.");
   const currentStatus = await mfaStatus(env, transaction.principal_type, transaction.principal_id);
+  if (transaction.purpose === "manage" && method === "totp" && currentStatus.methods.includes("totp"))
+    throw new Error("This setup cannot replace an existing authenticator.");
   if (currentStatus.enrolled && transaction.purpose !== "manage") {
     throw new Error("Verify an existing MFA method before adding another one.");
   }

@@ -288,6 +288,7 @@ import {
 } from '../handlers/identity.js';
 import {
   handleMfaEnrollmentOptions,
+  handleParishAuthenticatorSetup,
   handleMfaEnrollmentVerify,
   handleMfaStatus,
   handleMfaStepUp,
@@ -573,6 +574,7 @@ export const ROUTE_ACTIONS = Object.freeze({
   handleTaxExemptionStateGuidance,
   handleWaitlist,
   handleMfaEnrollmentOptions,
+  handleParishAuthenticatorSetup,
   handleMfaEnrollmentVerify,
   handleMfaStatus,
   handleMfaStepUp,
