@@ -1,0 +1,32 @@
+name: Verify Test Lubbock restore-ready backups
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: accounting-health-test-lubbock
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Verify backup-only operator safeguards
+        run: node scripts/recovery-live-backup-tests.mjs
+      - name: Create and verify fresh accounting and parish backups
+        run: node scripts/recovery-live-backup.mjs --run
+        env:
+          TEST_LUBBOCK_PARISH_PASSWORD: ${{ secrets.TEST_LUBBOCK_PARISH_PASSWORD }}
+          TEST_LUBBOCK_TOTP_SECRET: ${{ secrets.TEST_LUBBOCK_TOTP_SECRET }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: recovery-live-backup-${{ github.run_id }}
+          path: artifacts/recovery-live/result.json
+          if-no-files-found: error
+          retention-days: 30
