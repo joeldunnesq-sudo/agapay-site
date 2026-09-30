@@ -20,7 +20,6 @@
   const dialog = document.getElementById('adminToolFinder');
   const search = document.getElementById('adminToolSearch');
   const results = document.getElementById('adminFinderResults');
-  const directory = document.getElementById('adminWorkspaceLinks');
 
   function navigate(tool) {
     dialog.close();
@@ -68,14 +67,6 @@
     search.focus();
   }
 
-  for (const group of ['Your work', 'Reviews', 'Products', 'System', 'Insights']) {
-    const section = document.createElement('section');
-    const heading = document.createElement('h3');
-    heading.textContent = group;
-    section.append(heading);
-    for (const tool of tools.filter(tool => tool[3] === group && tool[1] !== 'Today')) section.append(toolButton(tool));
-    directory.append(section);
-  }
   document.querySelectorAll('[data-open-admin-finder]').forEach(button => button.addEventListener('click', openFinder));
   document.getElementById('adminFinderClose').addEventListener('click', () => dialog.close());
   search.addEventListener('input', renderResults);

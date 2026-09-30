@@ -68,6 +68,7 @@ const core = [
   'scripts/launch-controls-tests.mjs',
   'scripts/admin-usability-tests.mjs',
   'scripts/admin-navigation-browser-tests.mjs',
+  'scripts/admin-overview-metrics-tests.mjs',
   'scripts/terms-substantive-review-tests.mjs',
   'scripts/worker-hardening-tests.mjs',
   'scripts/giving-box-tests.mjs',

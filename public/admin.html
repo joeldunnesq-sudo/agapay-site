@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin/style.css?v=20260930-navigation1" />
-  <link rel="stylesheet" href="/admin/navigation.css?v=20260930-navigation1" />
+  <link rel="stylesheet" href="/admin/navigation.css?v=20260930-metrics1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20260826mfa1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/admin/manifest.webmanifest" />
@@ -61,7 +61,7 @@
             <svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M5 7h14"/><path d="M7 17h10"/><circle cx="12" cy="12" r="9"/></svg>
             <span>Nonprofit pricing</span>
           </button>
-          <details class="sidebar-toolbox" open>
+          <details class="sidebar-toolbox">
             <summary><span>More tools</span><small>Products &amp; system</small></summary>
             <div class="sidebar-toolbox-body">
               <div class="sidebar-nav-group-label">Products</div>
@@ -142,11 +142,15 @@
             </div>
           </section>
 
-          <section class="admin-summary-strip" aria-label="Parish onboarding summary">
-            <article><strong id="metricPending">0</strong><span>Need review</span></article>
-            <article><strong id="metricVerified">0</strong><span>Verified</span></article>
-            <article><strong id="metricStripeReady">0</strong><span>Stripe ready</span></article>
-            <article><strong id="metricTotal">0</strong><span>Total parishes</span></article>
+          <section class="admin-metrics-card" aria-labelledby="adminMetricsTitle" id="adminMetricsCard" aria-busy="true">
+            <div class="admin-metrics-heading"><div><h2 id="adminMetricsTitle">Parish metrics</h2><p id="adminMetricsPeriod">This week · Monday to now (UTC)</p></div><button class="secondary btn-sm" type="button" onclick="loadPlatformSummary(this)">Refresh metrics</button></div>
+            <dl class="admin-metrics-grid">
+              <div><dt>New signups this week</dt><dd id="weeklySignups">—</dd><small>Parish registrations</small></div>
+              <div><dt>Cancellations this week</dt><dd id="weeklyCancellations">—</dd><small>Parish subscriptions</small></div>
+              <div><dt>Monthly recurring revenue</dt><dd id="monthlyRecurringRevenue">—</dd><small id="metricsPaidSubscriptions">Active paid subscriptions · USD</small></div>
+              <div><dt>Annual revenue run rate</dt><dd id="annualRecurringRevenue">—</dd><small>Monthly estimate × 12 · USD</small></div>
+            </dl>
+            <p class="admin-metrics-note" id="adminMetricsNote" role="status">Loading parish metrics…</p>
           </section>
 
           <section class="admin-today-grid" aria-labelledby="adminStartHereTitle">
@@ -165,11 +169,6 @@
               <button type="button" class="admin-shortcut" onclick="switchTab('taxexemptions')"><span>Tax exemptions <em id="overviewTaxExemptionCount" hidden>0</em></span><small>Certificates that need a decision</small><b>Open →</b></button>
               <button type="button" class="admin-shortcut" onclick="switchTab('accountingops')"><span>Accounting health</span><small>Integrity and recovery controls</small><b>Open →</b></button>
             </article>
-          </section>
-
-          <section class="admin-workspace-directory" aria-labelledby="workspaceDirectoryTitle">
-            <div class="admin-directory-heading"><div><div class="admin-kicker">Explore your workspace</div><h2 id="workspaceDirectoryTitle">What do you need to do?</h2></div><button class="secondary btn-sm" type="button" data-open-admin-finder>Find a tool</button></div>
-            <div id="adminWorkspaceLinks" class="admin-workspace-links"></div>
           </section>
 
           <section class="admin-health-overview" id="onboardingHealthCard">
@@ -195,6 +194,12 @@
           <details class="admin-secondary-workspace">
             <summary><span>Insights &amp; system detail</span><small>Product activity, deployment health, email history, growth, and revenue</small></summary>
             <div class="admin-secondary-workspace-body">
+              <section class="admin-summary-strip" aria-label="Parish onboarding summary">
+                <article><strong id="metricPending">0</strong><span>Need review</span></article>
+                <article><strong id="metricVerified">0</strong><span>Verified</span></article>
+                <article><strong id="metricStripeReady">0</strong><span>Stripe ready</span></article>
+                <article><strong id="metricTotal">0</strong><span>Total parishes</span></article>
+              </section>
               <section class="health-card" id="deploymentHealthCard">
                 <div class="health-header">
                   <div><div class="health-title">Deployment &amp; Health</div><div class="health-subtitle">Live platform checks and release flags.</div></div>
@@ -1009,8 +1014,9 @@
   <script src="/admin/presentation.js?v=20260904-refactor1"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=20260904-controllers1"></script>
   <script src="/admin/controllers/contact-leads.js"></script>
-  <script src="/admin/app.js?v=20260904-controllers1"></script>
-  <script src="/admin/navigation.js?v=20260930-navigation1"></script>
+  <script src="/admin/metrics.js?v=20260930-metrics1"></script>
+  <script src="/admin/app.js?v=20260930-metrics1"></script>
+  <script src="/admin/navigation.js?v=20260930-metrics1"></script>
   <script src="/admin/pwa.js"></script>
 </body>
 </html>

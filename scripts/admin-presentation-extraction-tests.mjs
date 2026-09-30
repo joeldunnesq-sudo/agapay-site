@@ -94,7 +94,7 @@ function assertPresentationLoadsBeforeApp(file) {
   assert.ok(presentationIndex >= 0, `${file} must load the extracted presentation boundary`);
   assert.ok(appIndex > presentationIndex, `${file} must load presentation.js before app.js`);
   assert.match(html, /\/admin\/presentation\.js\?v=20260904-refactor1/);
-  assert.match(html, /\/admin\/app\.js\?v=20260904-controllers1/);
+  assert.match(html, /\/admin\/app\.js\?v=[\w-]+/);
 }
 
 assertPresentationLoadsBeforeApp('public/admin.html');

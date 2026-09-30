@@ -312,6 +312,7 @@ let selectedReference = '';
     }
 
     function renderPlatformGrowth(summary) {
+      if (summary?.overviewMetrics) renderAdminOverviewMetrics(summary.overviewMetrics);
       latestPlatformSummary = summary || null;
       renderProductOverview();
       const pane = document.getElementById('platformGrowthPane');
@@ -1266,20 +1267,17 @@ let selectedReference = '';
 
     async function loadPlatformSummary(btn) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      if (!registrationsCache.length) {
-        renderPlatformGrowth(computeLocalPlatformSummary([]));
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-        return;
-      }
-
+      document.getElementById('adminMetricsCard')?.setAttribute('aria-busy', 'true');
       renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));
       try {
         const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
         const result = await response.json();
         if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to load platform summary');
+        if (!result.summary?.overviewMetrics) renderAdminOverviewMetrics(null);
         renderPlatformGrowth(result.summary);
       } catch (err) {
+        renderAdminOverviewMetrics(null);
         const localSummary = computeLocalPlatformSummary(registrationsCache);
         localSummary.donationDataSource = 'local_only';
         renderPlatformGrowth(localSummary);
