@@ -211,7 +211,9 @@
     "public/parish/features/giving/recurring.js",
     "scripts/lib/browser-typescript.mjs",
     "scripts/lib/app-asset-versions.mjs",
-    "scripts/parish-recurring-typescript-browser-tests.mjs"
+    "scripts/parish-recurring-typescript-browser-tests.mjs",
+    "public/parish/features/giving/overview.js",
+    "scripts/parish-overview-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -456,6 +458,8 @@
     "public/parish/features/giving/recurring.js",
     "scripts/lib/browser-typescript.mjs",
     "scripts/lib/app-asset-versions.mjs",
-    "scripts/parish-recurring-typescript-browser-tests.mjs"
+    "scripts/parish-recurring-typescript-browser-tests.mjs",
+    "public/parish/features/giving/overview.js",
+    "scripts/parish-overview-typescript-browser-tests.mjs"
   ]
 }

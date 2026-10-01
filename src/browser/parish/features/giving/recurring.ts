@@ -17,7 +17,6 @@ declare let currentParish: { readonly parishId: string } | null;
 declare function authHeaders(): Record<string, string>;
 declare function escapeHtml(value: unknown): string;
 declare function money(cents: unknown): string;
-declare function pdxAnimateCount(element: HTMLElement, target: number): void;
 
 // Giving recurring; read shared identity and catalog state only when actions run.
 

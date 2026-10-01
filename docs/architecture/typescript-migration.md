@@ -357,6 +357,16 @@ New desktop/mobile browser regressions verify current identity lookup, encoded p
 
 Next: extend the same explicit browser contracts into an adjacent giving summary flow, then group the reader and browser batches into a hosted release checkpoint with authenticated staging and production acceptance. The historical inventory below is not a current converted-file count.
 
+### Stage 6 batch 25: parish giving summary and chart helpers
+
+Giving summary loading/rendering, count-up animation and SVG sparklines now have authoritative TypeScript sources. Explicit response, date, monthly-row, optional button, nullable element and animation contracts preserve the current classic-script behavior. Recurring health now consumes the typed count-up implementation instead of a duplicate ambient declaration. Existing Admin date-negative fixtures remain enforced. Numeric style assertions preserve browser coercion, and normalized executable parity confirms unchanged emitted behavior.
+
+The summary script retains its URL and dashboard load order, with a generated content hash. Local coverage reaches 60 generated runtime modules (53 server, seven browser). Batches 23–25 form one connected giving reader/browser release candidate; production remains at the verified batch-22 release until hosted gates pass.
+
+Focused desktop/mobile regressions cover scoped requests, count-up completion, flat SVG charts, fee coverage clamping, escaped server errors, retained totals on failure, button restoration, malformed-JSON fallback, disconnected state and missing DOM. Strict compile fixtures cover buttons, monthly rows and animation options. Validation passed: strict quality, four prechecks and all 264 main test commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging. Generated asset versions and classic-script globals passed the existing coverage checks. The batch is committed locally; hosted acceptance and deployment have not yet been performed.
+
+Release assessment: stop expanding this candidate after batch 25. Push it through the established staging deployment, authenticated giving/report and private-document gates, then production acceptance before beginning unrelated migrations. Local browser fixtures use synthetic APIs and do not substitute for those hosted gates.
+
 ### Remaining migration scope after batch 22
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
