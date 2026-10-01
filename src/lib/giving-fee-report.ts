@@ -1,7 +1,10 @@
-// Generated from src/lib/giving-fee-report.ts by npm run build:server. Do not edit.
 import { d1All } from './database-reads.js';
+import type { DatabaseReadEnv } from './database-reads.js';
+import type { GivingContributionInput } from './giving-contributions.js';
 import { givingContribution } from './giving-contributions.js';
-const cents = (value) => (Number.isSafeInteger(Number(value)) && Number(value) >= 0 ? Number(value) : 0);
+
+const cents = (value: unknown): number =>
+  Number.isSafeInteger(Number(value)) && Number(value) >= 0 ? Number(value) : 0;
 const fields = [
   'giftCount',
   'confirmedCount',
@@ -14,22 +17,55 @@ const fields = [
   'excessCoverageCents',
   'estimatedStripeFeeCents',
   'refundedCents',
-];
-const empty = (label) => ({ label, ...Object.fromEntries(fields.map((key) => [key, 0])) });
-function summarizeGivingFees(rows, year) {
+] as const;
+export type GivingFeeBucket = { label: string } & Record<(typeof fields)[number], number>;
+export interface GivingFeeReport {
+  year: number;
+  currency: 'USD';
+  basis: 'gift_date';
+  excludedCurrencyCount: number;
+  monthly: GivingFeeBucket[];
+  quarterly: GivingFeeBucket[];
+  annual: GivingFeeBucket;
+}
+export interface GivingFeeGift extends GivingContributionInput {
+  readonly completedAt?: unknown;
+  readonly createdAt?: unknown;
+  readonly paymentStatus?: unknown;
+  readonly currency?: unknown;
+  readonly stripeFeeSource?: unknown;
+  readonly stripeBalanceTransactionId?: unknown;
+  readonly stripeFeeCents?: unknown;
+  readonly estimatedStripeFeeCents?: unknown;
+}
+export interface GivingFeeRow extends GivingFeeGift {
+  readonly data?: unknown;
+  readonly created_at?: unknown;
+  readonly payment_status?: unknown;
+}
+// Every numeric field is initialized from the same closed field list used by sum.
+const empty = (label: string): GivingFeeBucket =>
+  ({ label, ...Object.fromEntries(fields.map((key) => [key, 0])) }) as GivingFeeBucket;
+
+export function summarizeGivingFees(rows: readonly GivingFeeRow[], year: number): GivingFeeReport {
   const monthly = Array.from({ length: 12 }, (_, index) => empty(`${year}-${String(index + 1).padStart(2, '0')}`));
   let excludedCurrencyCount = 0;
   for (const row of rows) {
-    let gift;
+    let gift: GivingFeeGift;
     try {
-      gift = typeof row.data === 'string' ? JSON.parse(row.data) : row.data || row;
+      // Preserve the existing object check and coercions; this is not schema validation.
+      gift = (typeof row.data === 'string' ? JSON.parse(row.data) : row.data || row) as GivingFeeGift;
     } catch {
       continue;
     }
     if (!gift || typeof gift !== 'object') continue;
     const date = String(gift.completedAt || row.created_at || gift.createdAt || '');
     if (!date.startsWith(`${year}-`)) continue;
-    if (!['paid', 'succeeded', 'refunded', 'partially_refunded'].includes(row.payment_status || gift.paymentStatus))
+    if (
+      !['paid', 'succeeded', 'refunded', 'partially_refunded'].includes(
+        (row.payment_status || gift.paymentStatus) as string
+      )
+    )
       continue;
     if (String(gift.currency || 'USD').toUpperCase() !== 'USD') {
       excludedCurrencyCount++;
@@ -46,6 +82,8 @@ function summarizeGivingFees(rows, year) {
       Number.isSafeInteger(Number(gift.stripeFeeCents)) &&
       Number(gift.stripeFeeCents) >= 0;
     const fee = cents(gift.stripeFeeCents ?? gift.estimatedStripeFeeCents);
+    // Allocate refunds against the fee-covering addition first. This conservative
+    // allocation cannot claim donor coverage that was returned to the donor.
     const retainedCoverage = Math.max(0, contribution.feeCoverageCents - contribution.refundedCents);
     bucket.giftCount++;
     bucket.grossContributionCents += contribution.grossContributionCents;
@@ -62,7 +100,7 @@ function summarizeGivingFees(rows, year) {
       bucket.estimatedStripeFeeCents += fee;
     }
   }
-  const sum = (label, buckets) =>
+  const sum = (label: string, buckets: readonly GivingFeeBucket[]): GivingFeeBucket =>
     buckets.reduce((total, bucket) => {
       fields.forEach((key) => {
         total[key] += bucket[key];
@@ -81,9 +119,14 @@ function summarizeGivingFees(rows, year) {
     annual: sum(String(year), monthly),
   };
 }
-async function readGivingFeeReport(env, parishId, year) {
-  if (!Number.isInteger(year) || year < 2e3 || year > 2200) throw new Error('Choose a valid reporting year.');
-  const rows = await d1All(
+
+export async function readGivingFeeReport(
+  env: DatabaseReadEnv,
+  parishId: string,
+  year: number
+): Promise<GivingFeeReport> {
+  if (!Number.isInteger(year) || year < 2000 || year > 2200) throw new Error('Choose a valid reporting year.');
+  const rows = await d1All<GivingFeeRow>(
     env,
     `SELECT created_at, payment_status, data FROM donor_offerings
     WHERE parish_id = ? AND payment_status IN ('paid','succeeded','refunded','partially_refunded')
@@ -95,4 +138,3 @@ async function readGivingFeeReport(env, parishId, year) {
   );
   return summarizeGivingFees(rows, year);
 }
-export { readGivingFeeReport, summarizeGivingFees };

@@ -105,7 +105,7 @@ assert.equal(crossParishAttendance.response.status, 401, 'A Parish A bearer must
 // Exercise the migrated SQL helpers through authenticated deployed routes.
 const year = new Date().getUTCFullYear();
 const stewardshipChecks = [];
-for (const endpoint of ['summary', 'recurring']) {
+for (const endpoint of ['summary', 'recurring', 'health-score']) {
   const path = `/stewardship/giving/${endpoint}?year=${year}`;
   const own = await requestJson(dashboardPath + path, { token });
   assert.equal(own.response.status, 200, `Stewardship ${endpoint} returned HTTP ${own.response.status}.`);
@@ -113,8 +113,33 @@ for (const endpoint of ['summary', 'recurring']) {
   const fields =
     endpoint === 'summary'
       ? ['total_actual_cents', 'manual_income_cents', 'prior_year_actual_cents']
-      : ['recurring_donor_count', 'monthly_recurring_revenue_cents'];
+      : endpoint === 'recurring'
+        ? ['recurring_donor_count', 'monthly_recurring_revenue_cents']
+        : [];
   for (const field of fields) assert.ok(Number.isFinite(own.payload[field]), `Invalid ${endpoint}.${field}`);
+  if (endpoint === 'health-score') {
+    const fees = own.payload.processing_fees;
+    assert.equal(fees?.year, year);
+    assert.equal(fees.currency, 'USD');
+    assert.equal(fees.monthly.length, 12);
+    assert.equal(fees.quarterly.length, 4);
+    for (const key of [
+      'giftCount',
+      'actualStripeFeeCents',
+      'donorFundedStripeFeeCents',
+      'parishFundedStripeFeeCents',
+    ]) {
+      assert.ok(Number.isFinite(fees.annual[key]), `Invalid annual fee field: ${key}`);
+      assert.equal(
+        fees.annual[key],
+        fees.monthly.reduce((sum, row) => sum + row[key], 0)
+      );
+      assert.equal(
+        fees.annual[key],
+        fees.quarterly.reduce((sum, row) => sum + row[key], 0)
+      );
+    }
+  }
   assert.ok(own.response.headers.get('x-request-id'), 'Request diagnostics must reach deployed responses.');
   const anonymous = await requestJson(dashboardPath + path);
   assert.equal(anonymous.response.status, 401, 'Anonymous report access must be denied.');

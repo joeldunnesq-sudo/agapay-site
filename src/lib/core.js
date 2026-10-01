@@ -1,3 +1,5 @@
+import { d1, d1First } from './database-reads.js';
+export { d1, d1First, d1All } from './database-reads.js';
 import { json } from './http-responses.js';
 export { json, corsHeaders, corsJson, corsPreflightResponse, SECURITY_HEADERS } from './http-responses.js';
 // src/lib/core.js
@@ -444,10 +446,6 @@ export function missingProductionStoreResponse() {
   return json({ error: "AGAPAY production data store is not configured" }, { status: 500 });
 }
 
-export function d1(env) {
-  return env.AGAPAY_DB || null;
-}
-
 export function parseJsonRow(row) {
   if (!row?.data) return null;
   return JSON.parse(row.data);
@@ -459,17 +457,6 @@ export function safeParseJsonRow(row) {
   } catch {
     return null;
   }
-}
-
-export async function d1First(env, sql, ...params) {
-  if (!d1(env)) return null;
-  return d1(env).prepare(sql).bind(...params).first();
-}
-
-export async function d1All(env, sql, ...params) {
-  if (!d1(env)) return [];
-  const result = await d1(env).prepare(sql).bind(...params).all();
-  return result.results || [];
 }
 
 export function clampListLimit(value, defaultLimit = 50, maxLimit = 250) {
