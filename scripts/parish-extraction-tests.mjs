@@ -7,6 +7,7 @@ import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import * as notifications from '../src/lib/parish-notifications.js';
 import * as stripeConnect from '../src/lib/stripe-connect.js';
 import * as stripeFees from '../src/lib/stripe-fees.js';
+import * as givingReportExports from '../src/handlers/parish-giving-reports.js';
 
 const stripeExports = [
   'MAX_DONATION_CENTS',
@@ -209,11 +210,7 @@ for (const name of givingReportPublicFunctions) {
     new RegExp(`(?:async\\s+)?function\\s+${name}\\b`),
     `${name} should move out of parish.js`
   );
-  assert.match(
-    parishGivingReports,
-    new RegExp(`export\\s+(?:async\\s+)?function\\s+${name}\\b`),
-    `${name} should be exported by parish-giving-reports.js`
-  );
+  assert.equal(typeof givingReportExports[name], 'function', `${name} should be exported by parish-giving-reports.js`);
 }
 assertImports(parishGivingReports, './parish.js', [
   'findRegistrationByParishId',
@@ -236,14 +233,14 @@ assert.doesNotMatch(
   /(?:async\s+)?function\s+summarizeCharges\b/,
   'parish-giving-reports should import the deliberately divergent summarizeCharges instead of redefining it'
 );
-assertImports(parishGivingReports, '../lib/stripe-connect.js', ['listYtdStripeCharges', 'numericCents']);
+assertImports(parishGivingReports, '../lib/stripe-connect.js', ['listYtdStripeCharges']);
 assert.ok(
   !importedNames(parishGivingReports, '../lib/stripe-connect.js').has('summarizeCharges'),
   "parish-giving-reports must not silently substitute stripe-connect's divergent summarizeCharges"
 );
 assertImports(parishGivingReports, '../lib/stripe-volume.js', ['refreshStripeVolume', 'summarizeStoredStripeVolume']);
 assertImports(parishGivingReports, '../lib/core.js', ['d1']);
-assertImports(parishGivingReports, '../lib/format.js', ['monthLabel']);
+assertImports(parishGivingReports, '../lib/stored-giving-summary.js', ['summarizeStoredParishGifts']);
 assertImports(worker, '../handlers/parish-giving-reports.js', givingReportPublicFunctions.slice(1));
 const givingReportParishWorkerImports = importedNames(worker, '../handlers/parish.js');
 for (const name of givingReportPublicFunctions) {

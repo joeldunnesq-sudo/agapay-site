@@ -21,10 +21,10 @@ import { fundReportPeriod, parishReportingTimezone, loadFundGiftActivity } from 
 import { exportMonthlyGiving } from "../lib/monthly-giving-export.js";
 import { outsideGiftsForGiving, subtractLinkedOutsideGifts } from "../lib/outside-gifts.js";
 import { d1 } from "../lib/core.js";
-import { monthLabel } from "../lib/format.js";
+import { summarizeStoredParishGifts } from '../lib/stored-giving-summary.js';
+export { summarizeStoredParishGifts } from '../lib/stored-giving-summary.js';
 import {
   listYtdStripeCharges,
-  numericCents,
 } from "../lib/stripe-connect.js";
 import {
   refreshStripeVolume,
@@ -36,7 +36,7 @@ import { resolveOperationalAccountingDatabase } from "../accounting/source-wirin
 // this reporting cluster, even though the current endpoints return narrower payloads.
 void parishDashboardPayload;
 
-const MANUAL_GIVING_SIGNAL = /\b(alms?|candle|candles|collection|contribution|donation|gift|giving|offering|stewardship|tithe|tithes|vigil)\b/i;
+import { manualAccountingGifts } from '../lib/manual-giving-model.js';
 
 export async function loadManualAccountingGivingEntries(env, parishId, limit = 500) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);
@@ -57,97 +57,11 @@ export async function loadManualAccountingGivingEntries(env, parishId, limit = 5
       ORDER BY gift_date DESC,e.created_at DESC,l.line_number
       LIMIT ?
     `).bind(Math.max(1, Math.min(2000, Number(limit) || 500))).all();
-    return (result.results || [])
-      .filter((row) => row.source_type === "manual_register_contribution"
-        || MANUAL_GIVING_SIGNAL.test(`${row.account_name || ""} ${row.entry_description || ""}`))
-      .map((row) => ({
-        id: `accounting:${row.entry_id}:${row.line_id}`,
-        source: "manual_accounting",
-        giftType: "manual_accounting",
-        amountCents: Number(row.credit_amount || 0),
-        parishNetCents: Number(row.credit_amount || 0),
-        giftAmountCents: Number(row.credit_amount || 0),
-        createdAt: row.gift_date,
-        date: row.gift_date,
-        description: [row.entry_description, row.account_name].filter(Boolean).join(" · "),
-        label: row.account_name || "",
-        fund: row.fund_name || "",
-        fundId: row.fund_code || "",
-        donorName: "",
-        donorEmail: "",
-        recurring: false,
-        type: "one_time"
-      }));
+    return manualAccountingGifts(result.results || []);
   } catch (error) {
     if (/no such table|not configured|unavailable/i.test(String(error?.message || ""))) return [];
     throw error;
   }
-}
-
-export function summarizeStoredParishGifts(gifts = []) {
-  const now = new Date();
-  const currentYear = now.getUTCFullYear();
-  const giftYears = gifts
-    .map((gift) => new Date(gift.createdAt || gift.date || 0).getUTCFullYear())
-    .filter((yearValue) => Number.isFinite(yearValue));
-  const year = giftYears.includes(currentYear)
-    ? currentYear
-    : giftYears.length
-      ? Math.max(...giftYears)
-      : currentYear;
-  const monthly = Array.from({ length: 12 }, (_, index) => ({
-    month: index + 1,
-    label: monthLabel(index),
-    amountCents: 0,
-    giftCount: 0
-  }));
-  const givers = new Set();
-  let ytdCents = 0;
-  let grossGiftCents = 0;
-  let donorCoveredFeeCents = 0;
-  let feesAbsorbedCents = 0;
-  let coverFeesCount = 0;
-  let giftCount = 0;
-  let lastGiftAt = "";
-
-  for (const gift of gifts) {
-    const created = new Date(gift.createdAt || gift.date || 0);
-    if (created.getUTCFullYear() !== year) continue;
-    const netCents = numericCents(gift.parishNetCents ?? gift.amountCents);
-    const grossCents = numericCents(gift.giftAmountCents ?? gift.amountCents);
-    if (!netCents && !grossCents) continue;
-
-    const monthIndex = created.getUTCMonth();
-    monthly[monthIndex].amountCents += netCents;
-    monthly[monthIndex].giftCount += 1;
-    ytdCents += netCents;
-    grossGiftCents += grossCents;
-    feesAbsorbedCents += numericCents(gift.totalFeeCents);
-    if (gift.coverFees) {
-      coverFeesCount += 1;
-      donorCoveredFeeCents += numericCents(gift.donorCoveredFeeCents);
-    }
-    giftCount += 1;
-    const giverKey = gift.donorEmail || gift.donorName || gift.id;
-    if (giverKey) givers.add(String(giverKey).toLowerCase());
-    const iso = created.toISOString();
-    if (!lastGiftAt || iso > lastGiftAt) lastGiftAt = iso;
-  }
-
-  return {
-    year,
-    currency: "usd",
-    ytdCents,
-    grossGiftCents,
-    donorCoveredFeeCents,
-    feesAbsorbedCents,
-    feeCoveragePercent: giftCount ? Math.round((coverFeesCount / giftCount) * 100) : 0,
-    giftCount,
-    giverCount: givers.size,
-    averageGiftCents: giftCount ? Math.round(ytdCents / giftCount) : 0,
-    lastGiftAt,
-    monthly
-  };
 }
 
 export async function handleParishGivingSummary(request, env, parishId) {

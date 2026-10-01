@@ -15,6 +15,9 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/public-gift-model-typescript-tests.mjs',
+  'scripts/manual-giving-model-typescript-tests.mjs',
+  'scripts/stored-giving-summary-typescript-tests.mjs',
   'scripts/outside-composition-typescript-tests.mjs',
   'scripts/giving-export-service-typescript-tests.mjs',
   'scripts/outside-reads-typescript-tests.mjs',
