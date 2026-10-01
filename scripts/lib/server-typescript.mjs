@@ -22,6 +22,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/fund-report-period.ts',
   'src/lib/fund-allocation.ts',
   'src/lib/numeric-cents.ts',
+  'src/lib/stored-giving-summary.ts',
   'src/lib/offering-fee-breakdown.ts',
   'src/lib/fund-reporting.ts',
   'src/lib/monthly-giving-csv.ts',
