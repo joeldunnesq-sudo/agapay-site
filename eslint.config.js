@@ -141,6 +141,7 @@ export default [
       'scripts/parish-recurring-typescript-browser-tests.mjs',
       'scripts/parish-overview-typescript-browser-tests.mjs',
       'scripts/parish-insights-typescript-browser-tests.mjs',
+      'scripts/parish-weekly-funds-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -203,5 +204,16 @@ export default [
     files: ['public/parish/feature-registry.js', 'public/parish/diagnostics.js'],
     languageOptions: { globals: globals.browser },
     rules: recommendedRules,
+  },
+  {
+    files: ['src/browser/parish/features/giving/weekly-funds.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadWeeklyFunds$' }] },
+  },
+  {
+    files: ['public/parish/features/giving/weekly-funds.js'],
+    languageOptions: {
+      globals: { currentParish: 'readonly', authHeaders: 'readonly', escapeHtml: 'readonly', moneyFull: 'readonly' },
+    },
+    rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^loadWeeklyFunds$' }] },
   },
 ];

@@ -7,6 +7,10 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  {
+    source: 'src/browser/parish/features/giving/weekly-funds.ts',
+    output: 'public/parish/features/giving/weekly-funds.js',
+  },
   { source: 'src/browser/parish/features/giving/insights.ts', output: 'public/parish/features/giving/insights.js' },
   { source: 'src/browser/parish/features/giving/overview.ts', output: 'public/parish/features/giving/overview.js' },
   { source: 'src/browser/parish/features/giving/recurring.ts', output: 'public/parish/features/giving/recurring.js' },

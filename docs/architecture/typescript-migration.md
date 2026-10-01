@@ -373,6 +373,14 @@ The giving-insights controller now has typed report envelopes, panel tuples, sel
 
 The new desktop/mobile browser regression passed first against the original JavaScript, then against the generated output. It covers tier denial, year validation, source proportions, unsafe/malformed totals, stale responses after year and parish changes, failure/retry and missing DOM. Normalized executable parity passed. Validation passed: strict quality, four prechecks and all 265 main regression commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging. This batch stays local, bringing local generated-runtime coverage to 61 modules (53 server, eight browser).
 
+### Stage 6 batch 27: weekly fund activity (local)
+
+The weekly-funds browser controller now has checked report, allocation, cache and refresh-button contracts. The shared parish contract includes its optional fund catalog. Existing report availability/completeness checks narrow optional response data; no runtime validation or business rules were added. The generated classic script retains its URL, function globals and load position, with a content hash on the dashboard reference.
+
+Desktop/mobile browser fixtures passed against the original JavaScript before conversion. They protect cache reuse/expiry, catalog invalidation, manual refresh, stale parish responses, escaped labels/errors, bounded allocation bars, expanded fund rows, incomplete-report rejection, retry, empty data and missing parish/DOM. Normalized executable parity and strict browser contracts passed. Validation passed: strict quality, four prechecks and all 266 main regression commands, generated-output parity, Worker startup analysis and private-provisioner dry-run packaging. Strict browser typing and generated-output checks also passed after narrowing optional report data through the existing runtime checks.
+
+This batch brings local generated-runtime coverage to 62 modules (53 server, nine browser). Batches 26–27 remain local; production remains at the accepted 60-module checkpoint below. Next, size the adjacent giving-history/report controllers and preserve their filtering/export and access behavior in similarly bounded batches.
+
 ### Release checkpoint for batches 23–25: accepted
 
 [PR #215](https://github.com/joeldunnesq-sudo/agapay-site/pull/215) merged as 904a7e29. Its first production test run caught a browser-fixture animation race before deployment: rounded final amounts could appear before the last frame. Test-only [PR #216](https://github.com/joeldunnesq-sudo/agapay-site/pull/216), merged as 3f89c45e816408f21a44cb60ddbdf847f4812f5c, now waits for all pending frames and retains every assertion. Application source and assets were unchanged by this correction.
