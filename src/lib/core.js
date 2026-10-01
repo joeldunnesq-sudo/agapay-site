@@ -386,9 +386,8 @@ export function handleSecurityConfig(env) {
   });
 }
 
-export function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
-}
+import { normalizeEmail } from './normalize-email.js';
+export { normalizeEmail } from './normalize-email.js';
 
 export function donorKey(email) {
   return `${DONOR_KEY_PREFIX}${normalizeEmail(email)}`;

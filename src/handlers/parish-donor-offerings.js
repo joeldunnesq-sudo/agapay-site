@@ -293,18 +293,8 @@ export async function loadDonorCommemorations(env, email, limit = 100) {
   return entries.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }
 
-export function paidOfferingStatus(offering = {}) {
-  if (offering.recordType === 'subscription_setup') return false;
-  const status = String(offering.status || '').toLowerCase();
-  const paymentStatus = String(offering.paymentStatus || '').toLowerCase();
-  return (
-    status === 'paid' ||
-    status === 'complete' ||
-    status === 'completed' ||
-    paymentStatus === 'paid' ||
-    paymentStatus === 'succeeded'
-  );
-}
+import { paidOfferingStatus } from '../lib/paid-offering-status.js';
+export { paidOfferingStatus } from '../lib/paid-offering-status.js';
 
 export function stripeObjectMetadata(...objects) {
   return objects.reduce(
