@@ -285,13 +285,23 @@ New regressions exercise actual SQLite online/outside composition and foreign-pa
 
 Stage 6 batch 17 validation on October 1, 2026: quality and strict typing passed, together with all four prechecks and 256 main regression commands. Focused export-service SQLite/paging/completeness regressions, existing outside-gift/export integration, authentication and giving-history browser checks passed. Main Worker startup/packaging and private provisioner dry-run packaging passed. Executable parity passed after explicit typed import relocations. Batches 16–17 remain local; production is still verified commit `a071e262`.
 
-### Remaining migration scope after batch 17
+### Stage 6 batch 18: outside-gift reconciliation composition
+
+outside-gift-composition.ts extracts subtraction of linked outside contributions from manual Accounting giving totals. The legacy outside-gifts.js export retains function identity and the shared OutsideGiftError constructor. Read-only inputs accept the typed outside-gift reader result; generic manual inputs preserve caller metadata while the three monetary output fields become numeric.
+
+Accumulation by entry/line, original Number conversion, zero-row filtering and over-allocation rejection remain unchanged. No additional runtime validation or ledger writes were introduced. Executable parity passes for both the extracted function and retained legacy module after the explicit re-export relocation.
+
+Focused regressions protect conservation across multiple allocations, distinct entry/line IDs, absent/unlinked Accounting metadata, complete allocation, the original 409 error, coercion/filtering, unchanged inputs and extra fields. Compile-time fixtures verify actual outside-reader compatibility, numeric replacements and invalid link/amount rejection. Forty-eight runtime modules now have authoritative TypeScript sources; this batch remains local pending hosted acceptance.
+
+Stage 6 batch 18 validation on October 1, 2026: quality and strict typing passed, together with all four prechecks and 257 main regression commands. Focused composition and outside-gift/accounting integration passed, as did normalized executable parity, main Worker startup/packaging and private provisioner dry-run packaging. Batches 16–18 are ready for grouped hosted acceptance; production remains at `a071e262`.
+
+### Remaining migration scope after batch 18
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
 
 The foundation is complete, but migrating most of the platform is not nearly finished. Continue with connected read/report contracts and typed consumers, then bounded browser controller families; isolate authentication, payment/webhook and accounting-write changes behind their dedicated gates. Before calling stage 7 complete, classify all remaining files as migration targets, generated compatibility outputs or documented exceptions. No defensible remaining batch count is available until that classification and dependency sizing are complete.
 
-Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. The next connected target is outside-gift reconciliation composition (subtracting linked contributions from Accounting totals), followed by its reporting consumer. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
+Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. Batch 18 completed outside-gift reconciliation composition. The next connected target is the manual Accounting giving read model and its reporting consumer; preserve the existing database-resolution and authorization boundaries. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
 
 ## Release and rollback
 
