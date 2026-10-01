@@ -1,27 +1,35 @@
-// Generated from src/lib/monthly-giving-export.ts by npm run build:server. Do not edit.
 import { json } from './http-responses.js';
+import type { DatabaseReadEnv } from './database-reads.js';
+import type { FundCatalog } from './fund-allocation.js';
+import type { GivingExportOptions, GivingExportRecord, GivingExportRow } from './monthly-giving-csv.js';
 import { givingExportOptions, givingExportRows, monthlyGivingCsv } from './monthly-giving-csv.js';
-import {
-  csvCell,
-  givingExportOptions as givingExportOptions2,
-  givingExportRows as givingExportRows2,
-  monthlyGivingCsv as monthlyGivingCsv2,
-} from './monthly-giving-csv.js';
+export { csvCell, givingExportOptions, givingExportRows, monthlyGivingCsv } from './monthly-giving-csv.js';
 import { outsideGiftsForGiving } from './outside-gift-reads.js';
+
 const PAGE_SIZE = 500;
-const MAX_EXPORT_ROWS = 25e3;
+const MAX_EXPORT_ROWS = 25000;
 const SETTLED = "'paid','succeeded','complete','completed','refunded','partially_refunded','disputed'";
-async function exportMonthlyGiving(request, env, parishId, registration) {
-  let options;
+
+// Called only after the giving-history handler verifies the parish session.
+// Page through the selected month, not the dashboard's 500-row history cache.
+export type GivingExportRegistration = FundCatalog & { readonly timezone?: string | null };
+
+export async function exportMonthlyGiving(
+  request: Request,
+  env: DatabaseReadEnv,
+  parishId: string,
+  registration?: GivingExportRegistration
+): Promise<Response> {
+  let options: GivingExportOptions;
   try {
     options = givingExportOptions(new URL(request.url).searchParams, registration);
   } catch (error) {
-    return json({ error: error.message }, { status: 422 });
+    return json({ error: (error as { message?: unknown }).message }, { status: 422 });
   }
   if (!env.AGAPAY_DB)
     return json({ error: 'Complete monthly exports require the giving database. Contact support.' }, { status: 503 });
   let cursor = '';
-  const records = [];
+  const records: GivingExportRecord[] = [];
   for (;;) {
     const page = await env.AGAPAY_DB.prepare(
       `
@@ -34,9 +42,9 @@ async function exportMonthlyGiving(request, env, parishId, registration) {
     `
     )
       .bind(parishId, cursor, options.start, options.end, PAGE_SIZE)
-      .all();
-    const rows2 = page.results || [];
-    records.push(...rows2);
+      .all<GivingExportRecord>();
+    const rows = page.results || [];
+    records.push(...rows);
     if (records.length > MAX_EXPORT_ROWS)
       return json(
         {
@@ -45,10 +53,10 @@ async function exportMonthlyGiving(request, env, parishId, registration) {
         },
         { status: 413 }
       );
-    if (rows2.length < PAGE_SIZE) break;
-    cursor = rows2[rows2.length - 1].id;
+    if (rows.length < PAGE_SIZE) break;
+    cursor = rows[rows.length - 1].id;
   }
-  let rows;
+  let rows: GivingExportRow[];
   try {
     rows = givingExportRows(records, options);
     const outside = await outsideGiftsForGiving(env, parishId, registration, {
@@ -107,10 +115,3 @@ async function exportMonthlyGiving(request, env, parishId, registration) {
     },
   });
 }
-export {
-  csvCell,
-  exportMonthlyGiving,
-  givingExportOptions2 as givingExportOptions,
-  givingExportRows2 as givingExportRows,
-  monthlyGivingCsv2 as monthlyGivingCsv,
-};
