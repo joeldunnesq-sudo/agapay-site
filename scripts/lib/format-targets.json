@@ -207,7 +207,11 @@
     "scripts/giving-reader-contracts-tests.mjs",
     "scripts/format.mjs",
     "scripts/lib/format-targets.json",
-    "scripts/check-worker-split.mjs"
+    "scripts/check-worker-split.mjs",
+    "public/parish/features/giving/recurring.js",
+    "scripts/lib/browser-typescript.mjs",
+    "scripts/lib/app-asset-versions.mjs",
+    "scripts/parish-recurring-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -448,6 +452,10 @@
     "scripts/giving-reader-contracts-tests.mjs",
     "scripts/format.mjs",
     "scripts/lib/format-targets.json",
-    "scripts/check-worker-split.mjs"
+    "scripts/check-worker-split.mjs",
+    "public/parish/features/giving/recurring.js",
+    "scripts/lib/browser-typescript.mjs",
+    "scripts/lib/app-asset-versions.mjs",
+    "scripts/parish-recurring-typescript-browser-tests.mjs"
   ]
 }

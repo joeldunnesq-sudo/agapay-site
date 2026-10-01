@@ -17,6 +17,11 @@ export default [
     },
   },
   {
+    // This classic entry point is invoked by parish dashboard scripts and HTML.
+    files: ['src/browser/parish/features/giving/recurring.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadRecurringHealth$' }] },
+  },
+  {
     files: ['src/browser/admin/controllers/contact-leads.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadContactLeads$' }],
@@ -125,6 +130,7 @@ export default [
       'scripts/parish-campaign-browser-tests.mjs',
       'scripts/parish-stewardship-browser-tests.mjs',
       'scripts/parish-giving-browser-tests.mjs',
+      'scripts/parish-recurring-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -141,6 +147,19 @@ export default [
     ],
     languageOptions: { sourceType: 'script', globals: globals.browser },
     rules: recommendedRules,
+  },
+  {
+    files: ['public/parish/features/giving/recurring.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        authHeaders: 'readonly',
+        escapeHtml: 'readonly',
+        pdxAnimateCount: 'readonly',
+        money: 'readonly',
+      },
+    },
+    rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^loadRecurringHealth$' }] },
   },
   {
     files: ['public/parish/feature-registry.js', 'public/parish/diagnostics.js'],

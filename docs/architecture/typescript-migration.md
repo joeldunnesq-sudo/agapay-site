@@ -347,6 +347,16 @@ The growing formatter target list exceeded the Windows shell limit. A direct Nod
 
 The next bounded migration is a parish browser giving controller with explicit classic-script globals and DOM contracts. The following inventory remains the historical batch-22 snapshot; its first giving-reader item is completed locally by this batch.
 
+### Stage 6 batch 24: parish recurring-health browser flow
+
+The parish recurring-health controller now has an authoritative TypeScript source with explicit nullable parish identity, optional refresh-button, response, and SVG element contracts. It remains a classic script at the same URL and load position. The response assertion and error assertion describe existing boundaries; they add no runtime validation. SVG numeric offset assignments retain their existing browser coercion. Normalized executable parity confirms unchanged runtime instructions.
+
+The controller is registered in the browser compiler and the page-asset version manifest. The dashboard now references its content hash. Local coverage is 59 generated runtime modules (53 server, six browser); production remains at the verified 54-module checkpoint until batches 23–24 pass hosted release gates.
+
+New desktop/mobile browser regressions verify current identity lookup, encoded parish identifiers, existing auth headers, loading/disabled state, chart offsets and counts, escaped server errors, malformed JSON recovery, retry, empty health, and missing identity/DOM. Existing complete parish giving journeys pass, including history, fund editing, reconciliation and statement flows. Strict compile fixtures reject incorrect controls and identity shapes. Validation passed: strict quality (including generated-output and content-version checks), four prechecks, all 263 main regression commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging. Lint retains explicit checks of the generated classic globals and public entry point. This batch remains local and awaits the grouped authenticated hosted release checkpoint.
+
+Next: extend the same explicit browser contracts into an adjacent giving summary flow, then group the reader and browser batches into a hosted release checkpoint with authenticated staging and production acceptance. The historical inventory below is not a current converted-file count.
+
 ### Remaining migration scope after batch 22
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
