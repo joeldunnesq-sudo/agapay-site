@@ -1,11 +1,51 @@
-// Generated from src/lib/stewardship-summary.ts by npm run build:server. Do not edit.
 import { parishPledgeReceivedCents } from './pledge-report-reads.js';
-async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCents) {
+import type { manualIncomeTotalCents as readManualIncome } from './stewardship-income.js';
+
+export interface StewardshipGivingSummary {
+  fiscal_year: number;
+  pledging_donors: number;
+  active_donors: number;
+  total_pledged_cents: number;
+  pledge_actual_cents: number;
+  total_actual_cents: number;
+  manual_income_cents: number;
+  prior_year_actual_cents: number;
+  run_rate_cents: number;
+  fulfillment_rate_pct: number | null;
+  avg_per_donor_cents: number;
+  day_of_year: number;
+  days_in_year: number;
+}
+// COUNT/SUM describe the SQL aggregates; NULL sums retain their existing defaults.
+interface PledgeAggregate {
+  pledging_donors: number;
+  total_pledged_cents: number | null;
+}
+interface ActualAggregate {
+  active_donors: number;
+  total_actual_cents: number | null;
+}
+interface PriorAggregate {
+  total_prior_cents: number | null;
+}
+
+export async function stewardshipGivingSummary(
+  env: Pick<Env, 'AGAPAY_DB'>,
+  parishId: string,
+  year: number,
+  manualIncomeTotalCents: typeof readManualIncome
+): Promise<StewardshipGivingSummary> {
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
-  const today = /* @__PURE__ */ new Date();
-  const dayOfYear = Math.max(1, Math.ceil((today - /* @__PURE__ */ new Date(`${year}-01-01`)) / 864e5));
+
+  const today = new Date();
+  // Type-only assertions preserve JavaScript Date subtraction and its coercion.
+  const dayOfYear = Math.max(
+    1,
+    Math.ceil(((today as unknown as number) - (new Date(`${year}-01-01`) as unknown as number)) / 86400000)
+  );
   const daysInYear = year % 4 === 0 ? 366 : 365;
+
   const [pledgeRow, actualRow, priorRow, manualCurrentCents, manualPriorCents] = await Promise.all([
     env.AGAPAY_DB.prepare(
       `
@@ -14,7 +54,8 @@ async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCe
     `
     )
       .bind(parishId, year)
-      .first(),
+      .first<PledgeAggregate>(),
+
     env.AGAPAY_DB.prepare(
       `
       SELECT
@@ -26,7 +67,8 @@ async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCe
     `
     )
       .bind(parishId, yearStart, yearEnd)
-      .first(),
+      .first<ActualAggregate>(),
+
     env.AGAPAY_DB.prepare(
       `
       SELECT SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS total_prior_cents
@@ -36,17 +78,20 @@ async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCe
     `
     )
       .bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`)
-      .first(),
+      .first<PriorAggregate>(),
+
     manualIncomeTotalCents(env, parishId, yearStart, yearEnd),
     manualIncomeTotalCents(env, parishId, `${year - 1}-01-01`, `${year - 1}-12-31`),
   ]);
+
   const totalPledged = pledgeRow?.total_pledged_cents || 0;
   const totalActual = (actualRow?.total_actual_cents || 0) + manualCurrentCents;
   const totalPrior = (priorRow?.total_prior_cents || 0) + manualPriorCents;
   const runRate = Math.round((totalActual / dayOfYear) * daysInYear);
   const pledgeActual = await parishPledgeReceivedCents(env, parishId, year);
   const fulfillment = totalPledged > 0 ? Math.round((pledgeActual / totalPledged) * 100) : null;
-  const avgPerDonor = (actualRow?.active_donors || 0) > 0 ? Math.round(totalActual / actualRow.active_donors) : 0;
+  const avgPerDonor = (actualRow?.active_donors || 0) > 0 ? Math.round(totalActual / actualRow!.active_donors) : 0;
+
   return {
     fiscal_year: year,
     pledging_donors: pledgeRow?.pledging_donors || 0,
@@ -63,4 +108,3 @@ async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCe
     days_in_year: daysInYear,
   };
 }
-export { stewardshipGivingSummary };

@@ -19,6 +19,7 @@ const core = [
   'scripts/giving-reporting-typescript-tests.mjs',
   'scripts/fee-report-typescript-tests.mjs',
   'scripts/pledge-reads-typescript-tests.mjs',
+  'scripts/stewardship-summary-typescript-tests.mjs',
   'scripts/logging-typescript-tests.mjs',
   'scripts/format-typescript-tests.mjs',
   'scripts/staging-parish-session-tests.mjs',

@@ -21,6 +21,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/database-reads.ts',
   'src/lib/giving-fee-report.ts',
   'src/lib/pledge-report-reads.ts',
+  'src/lib/stewardship-summary.ts',
   'src/lib/stewardship-income.ts',
   'src/lib/stewardship-giving.ts',
   'src/lib/request-context.ts',
