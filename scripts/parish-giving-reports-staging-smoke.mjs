@@ -79,7 +79,9 @@ const invalidAttendance = await requestJson(`${dashboardPath}/stewardship/attend
   token,
   body: { weekOf: '2026-08-31', headcount: 42 },
 });
-assert.equal(invalidAttendance.response.status, 422, 'A non-Sunday attendance correction should fail without writing.');
+assert.equal(invalidAttendance.response.status, 400, 'A non-Sunday attendance correction should fail without writing.');
+
+assert.equal(invalidAttendance.payload.error, 'Week must be a valid Sunday.');
 
 const currentDelegateId = attendance.payload.delegate?.ministryId || null;
 const delegation = await requestJson(`${dashboardPath}/stewardship/attendance/delegation`, {
