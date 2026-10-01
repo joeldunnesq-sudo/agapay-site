@@ -18,6 +18,8 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/xml-text.ts',
   'src/lib/format.ts',
   'src/lib/giving-contributions.ts',
+  'src/lib/database-reads.ts',
+  'src/lib/giving-fee-report.ts',
   'src/lib/stewardship-income.ts',
   'src/lib/stewardship-giving.ts',
   'src/lib/request-context.ts',
