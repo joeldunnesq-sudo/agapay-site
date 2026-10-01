@@ -213,7 +213,9 @@
     "scripts/lib/app-asset-versions.mjs",
     "scripts/parish-recurring-typescript-browser-tests.mjs",
     "public/parish/features/giving/overview.js",
-    "scripts/parish-overview-typescript-browser-tests.mjs"
+    "scripts/parish-overview-typescript-browser-tests.mjs",
+    "public/parish/features/giving/insights.js",
+    "scripts/parish-insights-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -460,6 +462,8 @@
     "scripts/lib/app-asset-versions.mjs",
     "scripts/parish-recurring-typescript-browser-tests.mjs",
     "public/parish/features/giving/overview.js",
-    "scripts/parish-overview-typescript-browser-tests.mjs"
+    "scripts/parish-overview-typescript-browser-tests.mjs",
+    "public/parish/features/giving/insights.js",
+    "scripts/parish-insights-typescript-browser-tests.mjs"
   ]
 }

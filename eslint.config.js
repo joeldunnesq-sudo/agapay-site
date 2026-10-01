@@ -18,6 +18,10 @@ export default [
   },
   {
     // This classic entry point is invoked by parish dashboard scripts and HTML.
+    files: ['src/browser/parish/features/giving/insights.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadGivingOverviewInsights$' }] },
+  },
+  {
     files: ['src/browser/parish/features/giving/overview.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadGivingSummary$' }] },
   },
@@ -136,6 +140,7 @@ export default [
       'scripts/parish-giving-browser-tests.mjs',
       'scripts/parish-recurring-typescript-browser-tests.mjs',
       'scripts/parish-overview-typescript-browser-tests.mjs',
+      'scripts/parish-insights-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -152,6 +157,19 @@ export default [
     ],
     languageOptions: { sourceType: 'script', globals: globals.browser },
     rules: recommendedRules,
+  },
+  {
+    files: ['public/parish/features/giving/insights.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        authHeaders: 'readonly',
+        isParishTier: 'readonly',
+        isParishPlusActive: 'readonly',
+        renderStewardshipFees: 'readonly',
+      },
+    },
+    rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^loadGivingOverviewInsights$' }] },
   },
   {
     files: ['public/parish/features/giving/overview.js'],

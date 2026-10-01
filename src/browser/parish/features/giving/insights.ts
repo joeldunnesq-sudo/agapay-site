@@ -1,8 +1,19 @@
-// Generated from src/browser/parish/features/giving/insights.ts by npm run build:browser. Do not edit.
 'use strict';
+// Describes the existing JSON boundary. Numeric validity remains checked by the renderer.
+interface ParishGivingInsightResponse {
+  readonly total_actual_cents?: unknown;
+  readonly manual_income_cents?: unknown;
+  readonly processing_fees?: unknown;
+  readonly error?: unknown;
+}
+declare function isParishTier(): boolean;
+declare function isParishPlusActive(): boolean;
+declare function renderStewardshipFees(fees: unknown, compact?: boolean): string;
+
 let givingOverviewInsightRequest = 0;
 let givingOverviewInsightParish = '';
-async function loadGivingOverviewInsights() {
+
+async function loadGivingOverviewInsights(): Promise<void> {
   const section = document.getElementById('givingOverviewInsights');
   if (!section) return;
   if (!section.children.length)
@@ -11,29 +22,34 @@ async function loadGivingOverviewInsights() {
   const parishId = currentParish?.parishId;
   section.hidden = !parishId || (!isParishTier() && !isParishPlusActive());
   if (section.hidden) return;
-  const selector = document.getElementById('givingOverviewInsightYear');
+  const selector = document.getElementById('givingOverviewInsightYear') as HTMLInputElement;
   if (givingOverviewInsightParish !== parishId) {
-    givingOverviewInsightParish = parishId;
-    const year2 = /* @__PURE__ */ new Date().getFullYear();
-    selector.max = String(year2);
-    selector.value = String(year2);
+    givingOverviewInsightParish = parishId!;
+    const year = new Date().getFullYear();
+    selector.max = String(year);
+    selector.value = String(year);
   }
   if (!selector.reportValidity()) return;
   const year = Number(selector.value);
-  const panels = [
+  const panels: [string, string, (data: ParishGivingInsightResponse) => string][] = [
     ['givingOverviewComparison', 'summary', (data) => swGivingSourceComparison(data, year)],
     ['givingOverviewFees', 'health-score', (data) => renderStewardshipFees(data.processing_fees, true)],
   ];
   await Promise.all(
     panels.map(async ([id, endpoint, render]) => {
-      const pane = document.getElementById(id);
+      const pane = document.getElementById(id)!;
       pane.innerHTML = '<p class="sw-chart-note" role="status">Loading giving insights…</p>';
       try {
         const response = await fetch(
-          '/api/parish/dashboard/' + encodeURIComponent(parishId) + '/stewardship/giving/' + endpoint + '?year=' + year,
+          '/api/parish/dashboard/' +
+            encodeURIComponent(parishId!) +
+            '/stewardship/giving/' +
+            endpoint +
+            '?year=' +
+            year,
           { headers: authHeaders() }
         );
-        const data = await response.json();
+        const data = (await response.json()) as ParishGivingInsightResponse;
         if (!response.ok || data.error) throw new Error('Report unavailable');
         if (request !== givingOverviewInsightRequest || currentParish?.parishId !== parishId) return;
         pane.innerHTML = render(data);
@@ -45,14 +61,15 @@ async function loadGivingOverviewInsights() {
     })
   );
 }
-function swGivingSourceComparison(summary, year) {
-  const total = summary.total_actual_cents;
-  const outside = summary.manual_income_cents;
+
+function swGivingSourceComparison(summary: ParishGivingInsightResponse, year: unknown): string {
+  const total = summary.total_actual_cents as number;
+  const outside = summary.manual_income_cents as number;
   if (!Number.isSafeInteger(total) || !Number.isSafeInteger(outside) || outside < 0 || total < outside)
     return '<section class="sw-giving-comparison"><h3>In-app and outside-app giving</h3><p class="sw-chart-note">The giving-source comparison is not available yet.</p></section>';
   const inside = total - outside;
-  const money = (value) => (value / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  const rows = [
+  const money = (value: number) => (value / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const rows: [string, number, string][] = [
     ['In AGAPAY', inside, 'green'],
     ['Outside AGAPAY', outside, 'gold'],
   ];
