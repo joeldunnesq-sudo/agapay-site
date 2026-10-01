@@ -1,6 +1,26 @@
-// Generated from src/browser/parish/features/giving/recurring.ts by npm run build:browser. Do not edit.
 'use strict';
-async function loadRecurringHealth(btn) {
+
+// Contracts for the existing parish classic-script environment and JSON response.
+// Response assertions preserve the current boundary; they do not validate JSON.
+interface ParishRecurringHealthView {
+  readonly activeCount?: unknown;
+  readonly failedThisMonthCount?: unknown;
+  readonly lapsedCount?: unknown;
+  readonly monthlyRecurringCents?: unknown;
+}
+interface ParishRecurringHealthResponse {
+  readonly detail?: string;
+  readonly error?: string;
+  readonly health?: ParishRecurringHealthView | null;
+}
+declare let currentParish: { readonly parishId: string } | null;
+declare function authHeaders(): Record<string, string>;
+declare function escapeHtml(value: unknown): string;
+declare function money(cents: unknown): string;
+
+// Giving recurring; read shared identity and catalog state only when actions run.
+
+async function loadRecurringHealth(btn?: HTMLButtonElement | null): Promise<void> {
   const pane = document.getElementById('recurringHealthPane');
   if (!currentParish || !pane) return;
   if (btn) {
@@ -13,11 +33,11 @@ async function loadRecurringHealth(btn) {
       '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/recurring-health',
       { headers: authHeaders() }
     );
-    const data = await res.json();
+    const data = (await res.json()) as ParishRecurringHealthResponse;
     if (!res.ok) throw new Error(data.detail || data.error || 'Unable to load recurring giving health');
     renderRecurringHealth(data.health || {});
   } catch (err) {
-    pane.innerHTML = `<div class="recurring-health-empty">${escapeHtml(err.message)}</div>`;
+    pane.innerHTML = `<div class="recurring-health-empty">${escapeHtml((err as Error).message)}</div>`;
   } finally {
     if (btn) {
       btn.classList.remove('loading');
@@ -25,7 +45,8 @@ async function loadRecurringHealth(btn) {
     }
   }
 }
-function renderRecurringHealth(health) {
+
+function renderRecurringHealth(health: ParishRecurringHealthView): void {
   const pane = document.getElementById('recurringHealthPane');
   if (!pane) return;
   const activeCount = Number(health.activeCount || 0);
@@ -33,22 +54,26 @@ function renderRecurringHealth(health) {
   const lapsedCount = Number(health.lapsedCount || 0);
   const total = activeCount + failedCount + lapsedCount;
   const monthlyRecurring = Number(health.monthlyRecurringCents || 0);
+
+  // Update the "Recurring givers" KPI card to reflect active recurring
   const kpiRecurring = document.getElementById('pdxKpiRecurring');
   const kpiRecurringMeta = document.getElementById('pdxKpiRecurringMeta');
   if (kpiRecurring) pdxAnimateCount(kpiRecurring, activeCount);
   if (kpiRecurringMeta) {
-    const needsAttention2 = failedCount + lapsedCount;
+    const needsAttention = failedCount + lapsedCount;
     kpiRecurringMeta.innerHTML =
-      needsAttention2 > 0
-        ? `<span class="pdx-delta down">${needsAttention2}</span>need attention`
+      needsAttention > 0
+        ? `<span class="pdx-delta down">${needsAttention}</span>need attention`
         : `<span class="pdx-delta up">healthy</span>no issues`;
   }
+
   if (total === 0) {
     pane.innerHTML =
       '<div class="pdx-recurring-empty">No recurring gifts yet. Recurring giving health will appear here once donors set up monthly gifts.</div>';
     return;
   }
-  const C = 2 * Math.PI * 70;
+
+  const C = 2 * Math.PI * 70; // donut circumference
   const activeShare = activeCount / total;
   const lapsedShare = lapsedCount / total;
   const failedShare = failedCount / total;
@@ -57,6 +82,7 @@ function renderRecurringHealth(health) {
     needsAttention === 0
       ? 'All recurring gifts are healthy.'
       : `Reach out to ${needsAttention} giver${needsAttention === 1 ? '' : 's'} to restore monthly gifts.`;
+
   pane.innerHTML = `
       <div class="pdx-recurring-layout">
         <div class="pdx-donut-wrap">
@@ -93,11 +119,13 @@ function renderRecurringHealth(health) {
           ${monthlyRecurring > 0 ? `<div class="pdx-legend-note">Expected monthly: ${escapeHtml(money(monthlyRecurring))}. ${escapeHtml(noteText)}</div>` : `<div class="pdx-legend-note">${escapeHtml(noteText)}</div>`}
         </div>
       </div>`;
+
+  // Animate arcs after paint
   requestAnimationFrame(() =>
     setTimeout(() => {
-      const active = pane.querySelector('[data-arc="active"]');
-      const lapsed = pane.querySelector('[data-arc="lapsed"]');
-      const failed = pane.querySelector('[data-arc="failed"]');
+      const active = pane.querySelector<SVGCircleElement>('[data-arc="active"]');
+      const lapsed = pane.querySelector<SVGCircleElement>('[data-arc="lapsed"]');
+      const failed = pane.querySelector<SVGCircleElement>('[data-arc="failed"]');
       if (active) {
         active.style.transition = 'stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1)';
         active.style.strokeDasharray = `${C * activeShare} ${C}`;
@@ -106,13 +134,13 @@ function renderRecurringHealth(health) {
         lapsed.style.transition =
           'stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s';
         lapsed.style.strokeDasharray = `${C * lapsedShare} ${C}`;
-        lapsed.style.strokeDashoffset = -C * activeShare;
+        lapsed.style.strokeDashoffset = (-C * activeShare) as unknown as string;
       }
       if (failed) {
         failed.style.transition =
           'stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s';
         failed.style.strokeDasharray = `${C * failedShare} ${C}`;
-        failed.style.strokeDashoffset = -C * (activeShare + lapsedShare);
+        failed.style.strokeDashoffset = (-C * (activeShare + lapsedShare)) as unknown as string;
       }
     }, 100)
   );

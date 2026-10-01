@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/giving-reader-contracts-tests.mjs',
   'scripts/recurring-health-typescript-tests.mjs',
   'scripts/public-gift-model-typescript-tests.mjs',
   'scripts/manual-giving-model-typescript-tests.mjs',
@@ -203,6 +204,8 @@ const productUi = [
   'scripts/stewardship-entry-report-browser-tests.mjs',
   'scripts/giving-overview-insights-browser-tests.mjs',
   'scripts/parish-giving-browser-tests.mjs',
+  'scripts/parish-recurring-typescript-browser-tests.mjs',
+  'scripts/parish-overview-typescript-browser-tests.mjs',
   'scripts/giving-embed-theme-browser-tests.mjs',
   'scripts/fund-reconciliation-browser-tests.mjs',
   'scripts/outside-gifts-browser-tests.mjs',

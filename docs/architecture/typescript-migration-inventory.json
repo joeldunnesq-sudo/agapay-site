@@ -1,0 +1,2883 @@
+{
+  "snapshotCommit": "84ee978a4269fa1b138f8017832cee19d05aaacf",
+  "runtimeBaseline": "db4085d2f3b94145e9e2552fa63ec2ffe1b898c6",
+  "scope": "Tracked .js files under src/ and public/ only; excludes tooling, .mjs, inline scripts and dependency directories. Counts are inventory, not effort or behavior coverage.",
+  "classification": "Generated outputs come from explicit build manifests. Vendor bundles reside under public/vendor. Module forwarders contain only imports/exports/empty statements, verified with the TypeScript parser; targets may still be JavaScript. All other files remain candidates requiring manual dependency/risk review.",
+  "counts": {
+    "first_party_migration_candidate": 437,
+    "generated_typescript_output": 54,
+    "vendor_bundle": 4,
+    "module_forwarder": 17
+  },
+  "total": 512,
+  "serverGenerated": 49,
+  "browserGenerated": 5,
+  "existingTsOutsideManifests": ["src/learn/domain.ts", "src/learn/future-records.ts"],
+  "candidateGroups": {
+    "public/admin": {
+      "files": 4,
+      "lines": 4290
+    },
+    "public/attribution-core.js": {
+      "files": 1,
+      "lines": 69
+    },
+    "public/attribution.js": {
+      "files": 1,
+      "lines": 47
+    },
+    "public/bookstore": {
+      "files": 1,
+      "lines": 303
+    },
+    "public/campaign-box.js": {
+      "files": 1,
+      "lines": 48
+    },
+    "public/donor": {
+      "files": 8,
+      "lines": 6162
+    },
+    "public/events": {
+      "files": 1,
+      "lines": 164
+    },
+    "public/give": {
+      "files": 3,
+      "lines": 933
+    },
+    "public/giving-box.js": {
+      "files": 1,
+      "lines": 125
+    },
+    "public/home-giving-impact.js": {
+      "files": 1,
+      "lines": 58
+    },
+    "public/koinonia-preview.js": {
+      "files": 1,
+      "lines": 74
+    },
+    "public/learn": {
+      "files": 5,
+      "lines": 11126
+    },
+    "public/listen": {
+      "files": 5,
+      "lines": 1940
+    },
+    "public/liturgical-calendar.js": {
+      "files": 1,
+      "lines": 195
+    },
+    "public/marketing-funnel.js": {
+      "files": 1,
+      "lines": 40
+    },
+    "public/meta-pixel.js": {
+      "files": 1,
+      "lines": 53
+    },
+    "public/myagapay-shell.js": {
+      "files": 1,
+      "lines": 1069
+    },
+    "public/myagapay": {
+      "files": 17,
+      "lines": 5288
+    },
+    "public/parish": {
+      "files": 75,
+      "lines": 25890
+    },
+    "public/pwa-home-install.js": {
+      "files": 1,
+      "lines": 104
+    },
+    "public/pwa-register.js": {
+      "files": 1,
+      "lines": 36
+    },
+    "public/registration-assistance.js": {
+      "files": 1,
+      "lines": 132
+    },
+    "public/scripts": {
+      "files": 2,
+      "lines": 645
+    },
+    "public/security.js": {
+      "files": 1,
+      "lines": 46
+    },
+    "public/service-worker.js": {
+      "files": 1,
+      "lines": 204
+    },
+    "public/site-chrome.js": {
+      "files": 1,
+      "lines": 403
+    },
+    "public/site-mobile-nav.js": {
+      "files": 1,
+      "lines": 115
+    },
+    "src/accounting": {
+      "files": 50,
+      "lines": 10444
+    },
+    "src/directory": {
+      "files": 24,
+      "lines": 11559
+    },
+    "src/festal-alms.js": {
+      "files": 1,
+      "lines": 99
+    },
+    "src/handlers": {
+      "files": 86,
+      "lines": 34882
+    },
+    "src/learn": {
+      "files": 21,
+      "lines": 11712
+    },
+    "src/lib": {
+      "files": 53,
+      "lines": 11245
+    },
+    "src/liturgical-calendar.js": {
+      "files": 1,
+      "lines": 181
+    },
+    "src/operations": {
+      "files": 6,
+      "lines": 1244
+    },
+    "src/organizations": {
+      "files": 1,
+      "lines": 53
+    },
+    "src/payments": {
+      "files": 4,
+      "lines": 480
+    },
+    "src/portability": {
+      "files": 21,
+      "lines": 2100
+    },
+    "src/recovery": {
+      "files": 9,
+      "lines": 1381
+    },
+    "src/reports": {
+      "files": 2,
+      "lines": 426
+    },
+    "src/routes": {
+      "files": 11,
+      "lines": 1480
+    },
+    "src/sacraments": {
+      "files": 5,
+      "lines": 2004
+    },
+    "src/stewardship": {
+      "files": 3,
+      "lines": 403
+    },
+    "src/worker.js": {
+      "files": 1,
+      "lines": 773
+    }
+  },
+  "entries": [
+    {
+      "path": "public/admin/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 3477
+    },
+    {
+      "path": "public/admin/controllers/contact-leads.js",
+      "category": "generated_typescript_output",
+      "lines": 107,
+      "source": "src/browser/admin/controllers/contact-leads.ts"
+    },
+    {
+      "path": "public/admin/controllers/tax-exemptions.js",
+      "category": "first_party_migration_candidate",
+      "lines": 712
+    },
+    {
+      "path": "public/admin/metrics.js",
+      "category": "generated_typescript_output",
+      "lines": 133,
+      "source": "src/browser/admin/metrics.ts"
+    },
+    {
+      "path": "public/admin/navigation.js",
+      "category": "generated_typescript_output",
+      "lines": 203,
+      "source": "src/browser/admin/navigation.ts"
+    },
+    {
+      "path": "public/admin/presentation.js",
+      "category": "generated_typescript_output",
+      "lines": 157,
+      "source": "src/browser/admin/presentation.ts"
+    },
+    {
+      "path": "public/admin/pwa.js",
+      "category": "first_party_migration_candidate",
+      "lines": 40
+    },
+    {
+      "path": "public/admin/relationships.js",
+      "category": "first_party_migration_candidate",
+      "lines": 61
+    },
+    {
+      "path": "public/attribution-core.js",
+      "category": "first_party_migration_candidate",
+      "lines": 69
+    },
+    {
+      "path": "public/attribution.js",
+      "category": "first_party_migration_candidate",
+      "lines": 47
+    },
+    {
+      "path": "public/bookstore/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 303
+    },
+    {
+      "path": "public/campaign-box.js",
+      "category": "first_party_migration_candidate",
+      "lines": 48
+    },
+    {
+      "path": "public/donor/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 2554
+    },
+    {
+      "path": "public/donor/bookstore-experience.js",
+      "category": "first_party_migration_candidate",
+      "lines": 147
+    },
+    {
+      "path": "public/donor/bookstore-presentation.js",
+      "category": "generated_typescript_output",
+      "lines": 22,
+      "source": "src/browser/donor/bookstore-presentation.ts"
+    },
+    {
+      "path": "public/donor/controllers/bookstore.js",
+      "category": "first_party_migration_candidate",
+      "lines": 966
+    },
+    {
+      "path": "public/donor/controllers/calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 934
+    },
+    {
+      "path": "public/donor/controllers/history.js",
+      "category": "first_party_migration_candidate",
+      "lines": 471
+    },
+    {
+      "path": "public/donor/controllers/sacraments.js",
+      "category": "first_party_migration_candidate",
+      "lines": 944
+    },
+    {
+      "path": "public/donor/pwa-install.js",
+      "category": "first_party_migration_candidate",
+      "lines": 66
+    },
+    {
+      "path": "public/donor/session.js",
+      "category": "first_party_migration_candidate",
+      "lines": 80
+    },
+    {
+      "path": "public/events/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 164
+    },
+    {
+      "path": "public/give/embed.js",
+      "category": "first_party_migration_candidate",
+      "lines": 453
+    },
+    {
+      "path": "public/give/parish-giving/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 435
+    },
+    {
+      "path": "public/give/parish-giving/embed.js",
+      "category": "first_party_migration_candidate",
+      "lines": 45
+    },
+    {
+      "path": "public/giving-box.js",
+      "category": "first_party_migration_candidate",
+      "lines": 125
+    },
+    {
+      "path": "public/home-giving-impact.js",
+      "category": "first_party_migration_candidate",
+      "lines": 58
+    },
+    {
+      "path": "public/koinonia-preview.js",
+      "category": "first_party_migration_candidate",
+      "lines": 74
+    },
+    {
+      "path": "public/learn/dashboard-shell.js",
+      "category": "first_party_migration_candidate",
+      "lines": 9272
+    },
+    {
+      "path": "public/learn/dashboard-view-models.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1725
+    },
+    {
+      "path": "public/learn/legacy-planner.js",
+      "category": "first_party_migration_candidate",
+      "lines": 24
+    },
+    {
+      "path": "public/learn/mobile-gate.js",
+      "category": "first_party_migration_candidate",
+      "lines": 99
+    },
+    {
+      "path": "public/learn/sanitized-render.js",
+      "category": "first_party_migration_candidate",
+      "lines": 6
+    },
+    {
+      "path": "public/listen/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1599
+    },
+    {
+      "path": "public/listen/db.js",
+      "category": "first_party_migration_candidate",
+      "lines": 124
+    },
+    {
+      "path": "public/listen/opml.js",
+      "category": "first_party_migration_candidate",
+      "lines": 70
+    },
+    {
+      "path": "public/listen/player.js",
+      "category": "first_party_migration_candidate",
+      "lines": 93
+    },
+    {
+      "path": "public/listen/service-worker.js",
+      "category": "first_party_migration_candidate",
+      "lines": 54
+    },
+    {
+      "path": "public/liturgical-calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 195
+    },
+    {
+      "path": "public/marketing-funnel.js",
+      "category": "first_party_migration_candidate",
+      "lines": 40
+    },
+    {
+      "path": "public/meta-pixel.js",
+      "category": "first_party_migration_candidate",
+      "lines": 53
+    },
+    {
+      "path": "public/myagapay-shell.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1069
+    },
+    {
+      "path": "public/myagapay/app-header.js",
+      "category": "first_party_migration_candidate",
+      "lines": 276
+    },
+    {
+      "path": "public/myagapay/church-year.js",
+      "category": "first_party_migration_candidate",
+      "lines": 37
+    },
+    {
+      "path": "public/myagapay/events.js",
+      "category": "first_party_migration_candidate",
+      "lines": 167
+    },
+    {
+      "path": "public/myagapay/exchange.js",
+      "category": "first_party_migration_candidate",
+      "lines": 469
+    },
+    {
+      "path": "public/myagapay/feed.js",
+      "category": "first_party_migration_candidate",
+      "lines": 190
+    },
+    {
+      "path": "public/myagapay/groups.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1024
+    },
+    {
+      "path": "public/myagapay/koinonia-experience.js",
+      "category": "first_party_migration_candidate",
+      "lines": 58
+    },
+    {
+      "path": "public/myagapay/library.js",
+      "category": "first_party_migration_candidate",
+      "lines": 112
+    },
+    {
+      "path": "public/myagapay/media.js",
+      "category": "first_party_migration_candidate",
+      "lines": 154
+    },
+    {
+      "path": "public/myagapay/ministry-home.js",
+      "category": "first_party_migration_candidate",
+      "lines": 88
+    },
+    {
+      "path": "public/myagapay/news.js",
+      "category": "first_party_migration_candidate",
+      "lines": 188
+    },
+    {
+      "path": "public/myagapay/parish-life.js",
+      "category": "first_party_migration_candidate",
+      "lines": 762
+    },
+    {
+      "path": "public/myagapay/prayer-requests.js",
+      "category": "first_party_migration_candidate",
+      "lines": 229
+    },
+    {
+      "path": "public/myagapay/push-notifications.js",
+      "category": "first_party_migration_candidate",
+      "lines": 163
+    },
+    {
+      "path": "public/myagapay/signups.js",
+      "category": "first_party_migration_candidate",
+      "lines": 234
+    },
+    {
+      "path": "public/myagapay/teaching.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1130
+    },
+    {
+      "path": "public/myagapay/watch.js",
+      "category": "first_party_migration_candidate",
+      "lines": 7
+    },
+    {
+      "path": "public/parish/accounting-report-pdf.js",
+      "category": "first_party_migration_candidate",
+      "lines": 207
+    },
+    {
+      "path": "public/parish/app.js",
+      "category": "first_party_migration_candidate",
+      "lines": 2244
+    },
+    {
+      "path": "public/parish/backup.js",
+      "category": "first_party_migration_candidate",
+      "lines": 177
+    },
+    {
+      "path": "public/parish/dashboard-runtime.js",
+      "category": "first_party_migration_candidate",
+      "lines": 138
+    },
+    {
+      "path": "public/parish/diagnostics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 73
+    },
+    {
+      "path": "public/parish/directory-import-file-worker.js",
+      "category": "first_party_migration_candidate",
+      "lines": 39
+    },
+    {
+      "path": "public/parish/directory-import-format.js",
+      "category": "first_party_migration_candidate",
+      "lines": 103
+    },
+    {
+      "path": "public/parish/directory-import.js",
+      "category": "first_party_migration_candidate",
+      "lines": 155
+    },
+    {
+      "path": "public/parish/feature-registry.js",
+      "category": "first_party_migration_candidate",
+      "lines": 39
+    },
+    {
+      "path": "public/parish/features/accounting.js",
+      "category": "first_party_migration_candidate",
+      "lines": 238
+    },
+    {
+      "path": "public/parish/features/accounting/activation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 295
+    },
+    {
+      "path": "public/parish/features/accounting/banking.js",
+      "category": "first_party_migration_candidate",
+      "lines": 437
+    },
+    {
+      "path": "public/parish/features/accounting/close.js",
+      "category": "first_party_migration_candidate",
+      "lines": 322
+    },
+    {
+      "path": "public/parish/features/accounting/funds.js",
+      "category": "first_party_migration_candidate",
+      "lines": 263
+    },
+    {
+      "path": "public/parish/features/accounting/ledger.js",
+      "category": "first_party_migration_candidate",
+      "lines": 408
+    },
+    {
+      "path": "public/parish/features/accounting/migration.js",
+      "category": "first_party_migration_candidate",
+      "lines": 335
+    },
+    {
+      "path": "public/parish/features/accounting/payables.js",
+      "category": "first_party_migration_candidate",
+      "lines": 896
+    },
+    {
+      "path": "public/parish/features/accounting/report-documents.js",
+      "category": "first_party_migration_candidate",
+      "lines": 211
+    },
+    {
+      "path": "public/parish/features/accounting/report-loaders.js",
+      "category": "first_party_migration_candidate",
+      "lines": 87
+    },
+    {
+      "path": "public/parish/features/accounting/reports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 785
+    },
+    {
+      "path": "public/parish/features/accounting/treasurer.js",
+      "category": "first_party_migration_candidate",
+      "lines": 465
+    },
+    {
+      "path": "public/parish/features/accounting/workspace.js",
+      "category": "first_party_migration_candidate",
+      "lines": 703
+    },
+    {
+      "path": "public/parish/features/campaigns.js",
+      "category": "first_party_migration_candidate",
+      "lines": 385
+    },
+    {
+      "path": "public/parish/features/campaigns/website-embed.js",
+      "category": "first_party_migration_candidate",
+      "lines": 112
+    },
+    {
+      "path": "public/parish/features/commerce.js",
+      "category": "first_party_migration_candidate",
+      "lines": 155
+    },
+    {
+      "path": "public/parish/features/commerce/bookstore-catalog.js",
+      "category": "first_party_migration_candidate",
+      "lines": 258
+    },
+    {
+      "path": "public/parish/features/commerce/bookstore-checkout.js",
+      "category": "first_party_migration_candidate",
+      "lines": 102
+    },
+    {
+      "path": "public/parish/features/commerce/bookstore-counts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 233
+    },
+    {
+      "path": "public/parish/features/commerce/bookstore-inventory.js",
+      "category": "first_party_migration_candidate",
+      "lines": 570
+    },
+    {
+      "path": "public/parish/features/commerce/bookstore-sales.js",
+      "category": "first_party_migration_candidate",
+      "lines": 337
+    },
+    {
+      "path": "public/parish/features/commerce/offerings.js",
+      "category": "first_party_migration_candidate",
+      "lines": 294
+    },
+    {
+      "path": "public/parish/features/directory.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1258
+    },
+    {
+      "path": "public/parish/features/giving.js",
+      "category": "first_party_migration_candidate",
+      "lines": 64
+    },
+    {
+      "path": "public/parish/features/giving/commemorations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 182
+    },
+    {
+      "path": "public/parish/features/giving/embed-theme.js",
+      "category": "first_party_migration_candidate",
+      "lines": 102
+    },
+    {
+      "path": "public/parish/features/giving/feasts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 220
+    },
+    {
+      "path": "public/parish/features/giving/givers.js",
+      "category": "first_party_migration_candidate",
+      "lines": 288
+    },
+    {
+      "path": "public/parish/features/giving/history.js",
+      "category": "first_party_migration_candidate",
+      "lines": 272
+    },
+    {
+      "path": "public/parish/features/giving/insights.js",
+      "category": "first_party_migration_candidate",
+      "lines": 68
+    },
+    {
+      "path": "public/parish/features/giving/options.js",
+      "category": "first_party_migration_candidate",
+      "lines": 412
+    },
+    {
+      "path": "public/parish/features/giving/outside-gifts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 394
+    },
+    {
+      "path": "public/parish/features/giving/overview.js",
+      "category": "first_party_migration_candidate",
+      "lines": 172
+    },
+    {
+      "path": "public/parish/features/giving/reconciliation-reports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 409
+    },
+    {
+      "path": "public/parish/features/giving/reconciliation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 254
+    },
+    {
+      "path": "public/parish/features/giving/recurring.js",
+      "category": "first_party_migration_candidate",
+      "lines": 133
+    },
+    {
+      "path": "public/parish/features/giving/sharing.js",
+      "category": "first_party_migration_candidate",
+      "lines": 275
+    },
+    {
+      "path": "public/parish/features/giving/statements.js",
+      "category": "first_party_migration_candidate",
+      "lines": 184
+    },
+    {
+      "path": "public/parish/features/giving/transfers.js",
+      "category": "first_party_migration_candidate",
+      "lines": 118
+    },
+    {
+      "path": "public/parish/features/giving/weekly-funds.js",
+      "category": "first_party_migration_candidate",
+      "lines": 93
+    },
+    {
+      "path": "public/parish/features/koinonia.js",
+      "category": "first_party_migration_candidate",
+      "lines": 291
+    },
+    {
+      "path": "public/parish/features/koinonia/announcements.js",
+      "category": "first_party_migration_candidate",
+      "lines": 405
+    },
+    {
+      "path": "public/parish/features/koinonia/bulletins.js",
+      "category": "first_party_migration_candidate",
+      "lines": 850
+    },
+    {
+      "path": "public/parish/features/koinonia/media.js",
+      "category": "first_party_migration_candidate",
+      "lines": 584
+    },
+    {
+      "path": "public/parish/features/koinonia/ministries.js",
+      "category": "first_party_migration_candidate",
+      "lines": 489
+    },
+    {
+      "path": "public/parish/features/koinonia/prayers.js",
+      "category": "first_party_migration_candidate",
+      "lines": 225
+    },
+    {
+      "path": "public/parish/features/library.js",
+      "category": "first_party_migration_candidate",
+      "lines": 62
+    },
+    {
+      "path": "public/parish/features/onboarding.js",
+      "category": "first_party_migration_candidate",
+      "lines": 732
+    },
+    {
+      "path": "public/parish/features/sacraments.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1426
+    },
+    {
+      "path": "public/parish/features/sacraments/pastoral-followup.js",
+      "category": "first_party_migration_candidate",
+      "lines": 881
+    },
+    {
+      "path": "public/parish/features/sacraments/preparation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 189
+    },
+    {
+      "path": "public/parish/features/staff-access.js",
+      "category": "first_party_migration_candidate",
+      "lines": 190
+    },
+    {
+      "path": "public/parish/features/stewardship.js",
+      "category": "first_party_migration_candidate",
+      "lines": 449
+    },
+    {
+      "path": "public/parish/features/stewardship/fees.js",
+      "category": "first_party_migration_candidate",
+      "lines": 42
+    },
+    {
+      "path": "public/parish/features/stewardship/financials-editor.js",
+      "category": "first_party_migration_candidate",
+      "lines": 303
+    },
+    {
+      "path": "public/parish/features/stewardship/financials.js",
+      "category": "first_party_migration_candidate",
+      "lines": 469
+    },
+    {
+      "path": "public/parish/features/stewardship/meetings.js",
+      "category": "first_party_migration_candidate",
+      "lines": 423
+    },
+    {
+      "path": "public/parish/features/stewardship/metrics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 672
+    },
+    {
+      "path": "public/parish/features/stewardship/nudges.js",
+      "category": "first_party_migration_candidate",
+      "lines": 185
+    },
+    {
+      "path": "public/parish/features/stewardship/outside-giving.js",
+      "category": "first_party_migration_candidate",
+      "lines": 254
+    },
+    {
+      "path": "public/parish/features/stewardship/reports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 246
+    },
+    {
+      "path": "public/parish/library.js",
+      "category": "first_party_migration_candidate",
+      "lines": 75
+    },
+    {
+      "path": "public/parish/mfa-settings.js",
+      "category": "first_party_migration_candidate",
+      "lines": 40
+    },
+    {
+      "path": "public/parish/portability.js",
+      "category": "first_party_migration_candidate",
+      "lines": 103
+    },
+    {
+      "path": "public/parish/recovery.js",
+      "category": "first_party_migration_candidate",
+      "lines": 286
+    },
+    {
+      "path": "public/parish/staff-login.js",
+      "category": "first_party_migration_candidate",
+      "lines": 55
+    },
+    {
+      "path": "public/pwa-home-install.js",
+      "category": "first_party_migration_candidate",
+      "lines": 104
+    },
+    {
+      "path": "public/pwa-register.js",
+      "category": "first_party_migration_candidate",
+      "lines": 36
+    },
+    {
+      "path": "public/registration-assistance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 132
+    },
+    {
+      "path": "public/scripts/consumer-passkeys.js",
+      "category": "first_party_migration_candidate",
+      "lines": 303
+    },
+    {
+      "path": "public/scripts/privileged-mfa.js",
+      "category": "first_party_migration_candidate",
+      "lines": 342
+    },
+    {
+      "path": "public/security.js",
+      "category": "first_party_migration_candidate",
+      "lines": 46
+    },
+    {
+      "path": "public/service-worker.js",
+      "category": "first_party_migration_candidate",
+      "lines": 204
+    },
+    {
+      "path": "public/site-chrome.js",
+      "category": "first_party_migration_candidate",
+      "lines": 403
+    },
+    {
+      "path": "public/site-mobile-nav.js",
+      "category": "first_party_migration_candidate",
+      "lines": 115
+    },
+    {
+      "path": "public/vendor/hls.min.js",
+      "category": "vendor_bundle",
+      "lines": 3
+    },
+    {
+      "path": "public/vendor/pdf-lib/fontkit-1.1.1.es.min.js",
+      "category": "vendor_bundle",
+      "lines": 48
+    },
+    {
+      "path": "public/vendor/pdf-lib/pdf-lib-1.17.1.esm.min.js",
+      "category": "vendor_bundle",
+      "lines": 17
+    },
+    {
+      "path": "public/vendor/sheetjs/xlsx-0.20.3.min.js",
+      "category": "vendor_bundle",
+      "lines": 11
+    },
+    {
+      "path": "src/accounting/attachments/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/attachments/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 66
+    },
+    {
+      "path": "src/accounting/background-jobs.js",
+      "category": "first_party_migration_candidate",
+      "lines": 146
+    },
+    {
+      "path": "src/accounting/backup-retention.js",
+      "category": "first_party_migration_candidate",
+      "lines": 80
+    },
+    {
+      "path": "src/accounting/budgets/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/budgets/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 612
+    },
+    {
+      "path": "src/accounting/close/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/close/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 445
+    },
+    {
+      "path": "src/accounting/commerce/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/commerce/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 629
+    },
+    {
+      "path": "src/accounting/context.js",
+      "category": "first_party_migration_candidate",
+      "lines": 88
+    },
+    {
+      "path": "src/accounting/contracts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 72
+    },
+    {
+      "path": "src/accounting/control-plane.js",
+      "category": "first_party_migration_candidate",
+      "lines": 562
+    },
+    {
+      "path": "src/accounting/csv-utils.js",
+      "category": "first_party_migration_candidate",
+      "lines": 77
+    },
+    {
+      "path": "src/accounting/database-resolution.js",
+      "category": "first_party_migration_candidate",
+      "lines": 79
+    },
+    {
+      "path": "src/accounting/environment.js",
+      "category": "first_party_migration_candidate",
+      "lines": 171
+    },
+    {
+      "path": "src/accounting/errors.js",
+      "category": "first_party_migration_candidate",
+      "lines": 81
+    },
+    {
+      "path": "src/accounting/gateway/index.js",
+      "category": "first_party_migration_candidate",
+      "lines": 95
+    },
+    {
+      "path": "src/accounting/index.js",
+      "category": "module_forwarder",
+      "lines": 29,
+      "targets": [
+        "./errors.js",
+        "./validation.js",
+        "./environment.js",
+        "./storage.js",
+        "./migration-safety.js",
+        "./database-resolution.js",
+        "./context.js",
+        "./contracts.js",
+        "./stripe-source-events.js",
+        "./background-jobs.js",
+        "./observability.js",
+        "./storage-foundations.js",
+        "./control-plane.js",
+        "./gateway/index.js",
+        "./provisioning/index.js",
+        "./ledger/index.js",
+        "./setup/index.js",
+        "./reports/index.js",
+        "./integrations/index.js",
+        "./reconciliation/index.js",
+        "./payables/index.js",
+        "./budgets/index.js",
+        "./commerce/index.js",
+        "./close/index.js",
+        "./integrity/index.js",
+        "./recurring/index.js",
+        "./attachments/index.js",
+        "./migration/index.js"
+      ]
+    },
+    {
+      "path": "src/accounting/integrations/fee-coverage.js",
+      "category": "first_party_migration_candidate",
+      "lines": 118
+    },
+    {
+      "path": "src/accounting/integrations/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/integrations/processor-fees.js",
+      "category": "first_party_migration_candidate",
+      "lines": 57
+    },
+    {
+      "path": "src/accounting/integrations/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 214
+    },
+    {
+      "path": "src/accounting/integrity/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/integrity/scheduler.js",
+      "category": "first_party_migration_candidate",
+      "lines": 105
+    },
+    {
+      "path": "src/accounting/integrity/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 197
+    },
+    {
+      "path": "src/accounting/ledger/index.js",
+      "category": "module_forwarder",
+      "lines": 3,
+      "targets": ["./service.js", "./workspace.js"]
+    },
+    {
+      "path": "src/accounting/ledger/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 275
+    },
+    {
+      "path": "src/accounting/ledger/workspace.js",
+      "category": "first_party_migration_candidate",
+      "lines": 301
+    },
+    {
+      "path": "src/accounting/migration-safety.js",
+      "category": "first_party_migration_candidate",
+      "lines": 51
+    },
+    {
+      "path": "src/accounting/migration/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/migration/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 533
+    },
+    {
+      "path": "src/accounting/observability.js",
+      "category": "first_party_migration_candidate",
+      "lines": 134
+    },
+    {
+      "path": "src/accounting/payables/check-printing.js",
+      "category": "first_party_migration_candidate",
+      "lines": 78
+    },
+    {
+      "path": "src/accounting/payables/index.js",
+      "category": "module_forwarder",
+      "lines": 4,
+      "targets": ["./service.js", "./recurring-bills.js", "./vendor-reporting.js"]
+    },
+    {
+      "path": "src/accounting/payables/recurring-bills.js",
+      "category": "first_party_migration_candidate",
+      "lines": 212
+    },
+    {
+      "path": "src/accounting/payables/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1185
+    },
+    {
+      "path": "src/accounting/payables/vendor-reporting.js",
+      "category": "first_party_migration_candidate",
+      "lines": 98
+    },
+    {
+      "path": "src/accounting/provisioning/activation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 175
+    },
+    {
+      "path": "src/accounting/provisioning/adapters.js",
+      "category": "first_party_migration_candidate",
+      "lines": 115
+    },
+    {
+      "path": "src/accounting/provisioning/chart-import.js",
+      "category": "first_party_migration_candidate",
+      "lines": 236
+    },
+    {
+      "path": "src/accounting/provisioning/fiscal-calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 29
+    },
+    {
+      "path": "src/accounting/provisioning/full-schema.js",
+      "category": "first_party_migration_candidate",
+      "lines": 84
+    },
+    {
+      "path": "src/accounting/provisioning/index.js",
+      "category": "module_forwarder",
+      "lines": 6,
+      "targets": ["./naming.js", "./migration.js", "./adapters.js", "./service.js", "./orchestrator.js"]
+    },
+    {
+      "path": "src/accounting/provisioning/migration.js",
+      "category": "first_party_migration_candidate",
+      "lines": 20
+    },
+    {
+      "path": "src/accounting/provisioning/naming.js",
+      "category": "first_party_migration_candidate",
+      "lines": 9
+    },
+    {
+      "path": "src/accounting/provisioning/orchestrator.js",
+      "category": "first_party_migration_candidate",
+      "lines": 72
+    },
+    {
+      "path": "src/accounting/provisioning/schema.generated.js",
+      "category": "first_party_migration_candidate",
+      "lines": 56
+    },
+    {
+      "path": "src/accounting/provisioning/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 36
+    },
+    {
+      "path": "src/accounting/provisioning/worker.js",
+      "category": "first_party_migration_candidate",
+      "lines": 247
+    },
+    {
+      "path": "src/accounting/reconciliation/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/reconciliation/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 731
+    },
+    {
+      "path": "src/accounting/recurring/index.js",
+      "category": "module_forwarder",
+      "lines": 3,
+      "targets": ["./service.js", "./scheduler.js"]
+    },
+    {
+      "path": "src/accounting/recurring/scheduler.js",
+      "category": "first_party_migration_candidate",
+      "lines": 33
+    },
+    {
+      "path": "src/accounting/recurring/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 91
+    },
+    {
+      "path": "src/accounting/reports/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/reports/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 480
+    },
+    {
+      "path": "src/accounting/service-costs.js",
+      "category": "first_party_migration_candidate",
+      "lines": 150
+    },
+    {
+      "path": "src/accounting/setup/index.js",
+      "category": "module_forwarder",
+      "lines": 2,
+      "targets": ["./service.js"]
+    },
+    {
+      "path": "src/accounting/setup/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 111
+    },
+    {
+      "path": "src/accounting/source-wiring.js",
+      "category": "first_party_migration_candidate",
+      "lines": 499
+    },
+    {
+      "path": "src/accounting/storage-foundations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 143
+    },
+    {
+      "path": "src/accounting/storage.js",
+      "category": "first_party_migration_candidate",
+      "lines": 71
+    },
+    {
+      "path": "src/accounting/stripe-source-events.js",
+      "category": "first_party_migration_candidate",
+      "lines": 220
+    },
+    {
+      "path": "src/accounting/validation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 75
+    },
+    {
+      "path": "src/directory/admin-actor.js",
+      "category": "first_party_migration_candidate",
+      "lines": 11
+    },
+    {
+      "path": "src/directory/admin.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1916
+    },
+    {
+      "path": "src/directory/child-publication.js",
+      "category": "first_party_migration_candidate",
+      "lines": 336
+    },
+    {
+      "path": "src/directory/claims.js",
+      "category": "first_party_migration_candidate",
+      "lines": 178
+    },
+    {
+      "path": "src/directory/contacts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 367
+    },
+    {
+      "path": "src/directory/duplicates.js",
+      "category": "first_party_migration_candidate",
+      "lines": 486
+    },
+    {
+      "path": "src/directory/foundation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 627
+    },
+    {
+      "path": "src/directory/household-share-invitations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 292
+    },
+    {
+      "path": "src/directory/imports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 234
+    },
+    {
+      "path": "src/directory/index.js",
+      "category": "module_forwarder",
+      "lines": 18,
+      "targets": [
+        "./foundation.js",
+        "./shared.js",
+        "./settings.js",
+        "./privacy.js",
+        "./contacts.js",
+        "./publication.js",
+        "./projections.js",
+        "./invitations.js",
+        "./self-service.js",
+        "./media.js",
+        "./admin.js",
+        "./duplicates.js",
+        "./member-directory.js",
+        "./child-publication.js",
+        "./review-correspondence.js",
+        "./ministries.js",
+        "./skills-service.js"
+      ]
+    },
+    {
+      "path": "src/directory/invitations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 547
+    },
+    {
+      "path": "src/directory/media-transform.js",
+      "category": "first_party_migration_candidate",
+      "lines": 285
+    },
+    {
+      "path": "src/directory/media.js",
+      "category": "first_party_migration_candidate",
+      "lines": 860
+    },
+    {
+      "path": "src/directory/member-directory.js",
+      "category": "first_party_migration_candidate",
+      "lines": 814
+    },
+    {
+      "path": "src/directory/milestones.js",
+      "category": "first_party_migration_candidate",
+      "lines": 129
+    },
+    {
+      "path": "src/directory/ministries.js",
+      "category": "first_party_migration_candidate",
+      "lines": 908
+    },
+    {
+      "path": "src/directory/privacy.js",
+      "category": "first_party_migration_candidate",
+      "lines": 187
+    },
+    {
+      "path": "src/directory/projections.js",
+      "category": "first_party_migration_candidate",
+      "lines": 206
+    },
+    {
+      "path": "src/directory/publication.js",
+      "category": "first_party_migration_candidate",
+      "lines": 165
+    },
+    {
+      "path": "src/directory/review-correspondence.js",
+      "category": "first_party_migration_candidate",
+      "lines": 116
+    },
+    {
+      "path": "src/directory/self-service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1734
+    },
+    {
+      "path": "src/directory/settings.js",
+      "category": "first_party_migration_candidate",
+      "lines": 163
+    },
+    {
+      "path": "src/directory/shared.js",
+      "category": "first_party_migration_candidate",
+      "lines": 240
+    },
+    {
+      "path": "src/directory/signup-invitation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 18
+    },
+    {
+      "path": "src/directory/skills-service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 740
+    },
+    {
+      "path": "src/festal-alms.js",
+      "category": "first_party_migration_candidate",
+      "lines": 99
+    },
+    {
+      "path": "src/handlers/accounting-access.js",
+      "category": "first_party_migration_candidate",
+      "lines": 60
+    },
+    {
+      "path": "src/handlers/accounting-activation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 126
+    },
+    {
+      "path": "src/handlers/accounting-adjustments.js",
+      "category": "first_party_migration_candidate",
+      "lines": 17
+    },
+    {
+      "path": "src/handlers/accounting-attachments.js",
+      "category": "first_party_migration_candidate",
+      "lines": 97
+    },
+    {
+      "path": "src/handlers/accounting-close.js",
+      "category": "first_party_migration_candidate",
+      "lines": 196
+    },
+    {
+      "path": "src/handlers/accounting-governance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 18
+    },
+    {
+      "path": "src/handlers/accounting-ledger.js",
+      "category": "first_party_migration_candidate",
+      "lines": 294
+    },
+    {
+      "path": "src/handlers/accounting-migration.js",
+      "category": "first_party_migration_candidate",
+      "lines": 128
+    },
+    {
+      "path": "src/handlers/accounting-payables-budgets.js",
+      "category": "first_party_migration_candidate",
+      "lines": 221
+    },
+    {
+      "path": "src/handlers/accounting-reconciliation-commerce.js",
+      "category": "first_party_migration_candidate",
+      "lines": 75
+    },
+    {
+      "path": "src/handlers/accounting-recurring.js",
+      "category": "first_party_migration_candidate",
+      "lines": 21
+    },
+    {
+      "path": "src/handlers/accounting-setup-reports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 168
+    },
+    {
+      "path": "src/handlers/admin-email-diagnostics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 148
+    },
+    {
+      "path": "src/handlers/admin-learning-support.js",
+      "category": "first_party_migration_candidate",
+      "lines": 365
+    },
+    {
+      "path": "src/handlers/admin-relationships.js",
+      "category": "first_party_migration_candidate",
+      "lines": 63
+    },
+    {
+      "path": "src/handlers/admin.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1268
+    },
+    {
+      "path": "src/handlers/consumer-passkeys.js",
+      "category": "first_party_migration_candidate",
+      "lines": 171
+    },
+    {
+      "path": "src/handlers/contact.js",
+      "category": "first_party_migration_candidate",
+      "lines": 103
+    },
+    {
+      "path": "src/handlers/diocesan-statistics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 86
+    },
+    {
+      "path": "src/handlers/directory-admin.js",
+      "category": "first_party_migration_candidate",
+      "lines": 531
+    },
+    {
+      "path": "src/handlers/directory-imports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 55
+    },
+    {
+      "path": "src/handlers/directory-media.js",
+      "category": "first_party_migration_candidate",
+      "lines": 132
+    },
+    {
+      "path": "src/handlers/directory-member.js",
+      "category": "first_party_migration_candidate",
+      "lines": 151
+    },
+    {
+      "path": "src/handlers/directory-self-service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 331
+    },
+    {
+      "path": "src/handlers/donor-bookstore.js",
+      "category": "first_party_migration_candidate",
+      "lines": 725
+    },
+    {
+      "path": "src/handlers/donor-groups.js",
+      "category": "first_party_migration_candidate",
+      "lines": 832
+    },
+    {
+      "path": "src/handlers/donor-notifications.js",
+      "category": "first_party_migration_candidate",
+      "lines": 60
+    },
+    {
+      "path": "src/handlers/donor-parish-calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 356
+    },
+    {
+      "path": "src/handlers/donor-sacraments.js",
+      "category": "first_party_migration_candidate",
+      "lines": 736
+    },
+    {
+      "path": "src/handlers/donor.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1323
+    },
+    {
+      "path": "src/handlers/giving-statements.js",
+      "category": "first_party_migration_candidate",
+      "lines": 458
+    },
+    {
+      "path": "src/handlers/identity.js",
+      "category": "first_party_migration_candidate",
+      "lines": 338
+    },
+    {
+      "path": "src/handlers/koinonia-access.js",
+      "category": "first_party_migration_candidate",
+      "lines": 139
+    },
+    {
+      "path": "src/handlers/koinonia-community-tools.js",
+      "category": "first_party_migration_candidate",
+      "lines": 102
+    },
+    {
+      "path": "src/handlers/koinonia-exchange.js",
+      "category": "first_party_migration_candidate",
+      "lines": 497
+    },
+    {
+      "path": "src/handlers/koinonia-prayer-requests.js",
+      "category": "first_party_migration_candidate",
+      "lines": 411
+    },
+    {
+      "path": "src/handlers/koinonia-signups.js",
+      "category": "first_party_migration_candidate",
+      "lines": 716
+    },
+    {
+      "path": "src/handlers/listen.js",
+      "category": "first_party_migration_candidate",
+      "lines": 417
+    },
+    {
+      "path": "src/handlers/marketplace.js",
+      "category": "first_party_migration_candidate",
+      "lines": 242
+    },
+    {
+      "path": "src/handlers/mfa.js",
+      "category": "first_party_migration_candidate",
+      "lines": 300
+    },
+    {
+      "path": "src/handlers/mobile-app-associations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 49
+    },
+    {
+      "path": "src/handlers/nonprofit-pricing.js",
+      "category": "first_party_migration_candidate",
+      "lines": 297
+    },
+    {
+      "path": "src/handlers/outside-gift-accounting.js",
+      "category": "first_party_migration_candidate",
+      "lines": 164
+    },
+    {
+      "path": "src/handlers/parish-blog.js",
+      "category": "first_party_migration_candidate",
+      "lines": 395
+    },
+    {
+      "path": "src/handlers/parish-bookstore-handler.js",
+      "category": "first_party_migration_candidate",
+      "lines": 653
+    },
+    {
+      "path": "src/handlers/parish-bookstore-inventory.js",
+      "category": "first_party_migration_candidate",
+      "lines": 909
+    },
+    {
+      "path": "src/handlers/parish-bulletins.js",
+      "category": "first_party_migration_candidate",
+      "lines": 542
+    },
+    {
+      "path": "src/handlers/parish-checkout.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1123
+    },
+    {
+      "path": "src/handlers/parish-commemorations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 172
+    },
+    {
+      "path": "src/handlers/parish-commerce.js",
+      "category": "first_party_migration_candidate",
+      "lines": 506
+    },
+    {
+      "path": "src/handlers/parish-communications.js",
+      "category": "first_party_migration_candidate",
+      "lines": 708
+    },
+    {
+      "path": "src/handlers/parish-dashboard-handler.js",
+      "category": "first_party_migration_candidate",
+      "lines": 618
+    },
+    {
+      "path": "src/handlers/parish-donor-offerings.js",
+      "category": "first_party_migration_candidate",
+      "lines": 575
+    },
+    {
+      "path": "src/handlers/parish-events.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1039
+    },
+    {
+      "path": "src/handlers/parish-giving-catalog.js",
+      "category": "first_party_migration_candidate",
+      "lines": 488
+    },
+    {
+      "path": "src/handlers/parish-giving-read-models.js",
+      "category": "first_party_migration_candidate",
+      "lines": 129
+    },
+    {
+      "path": "src/handlers/parish-giving-reports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 245
+    },
+    {
+      "path": "src/handlers/parish-interest.js",
+      "category": "first_party_migration_candidate",
+      "lines": 167
+    },
+    {
+      "path": "src/handlers/parish-library.js",
+      "category": "first_party_migration_candidate",
+      "lines": 408
+    },
+    {
+      "path": "src/handlers/parish-onboarding.js",
+      "category": "first_party_migration_candidate",
+      "lines": 179
+    },
+    {
+      "path": "src/handlers/parish-outside-gifts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 375
+    },
+    {
+      "path": "src/handlers/parish-pastoral-followup.js",
+      "category": "first_party_migration_candidate",
+      "lines": 390
+    },
+    {
+      "path": "src/handlers/parish-portability.js",
+      "category": "first_party_migration_candidate",
+      "lines": 141
+    },
+    {
+      "path": "src/handlers/parish-reconciliation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 846
+    },
+    {
+      "path": "src/handlers/parish-sacraments.js",
+      "category": "first_party_migration_candidate",
+      "lines": 543
+    },
+    {
+      "path": "src/handlers/parish-teaching.js",
+      "category": "first_party_migration_candidate",
+      "lines": 394
+    },
+    {
+      "path": "src/handlers/parish-video.js",
+      "category": "first_party_migration_candidate",
+      "lines": 486
+    },
+    {
+      "path": "src/handlers/parish.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1064
+    },
+    {
+      "path": "src/handlers/platform-actions.js",
+      "category": "first_party_migration_candidate",
+      "lines": 100
+    },
+    {
+      "path": "src/handlers/public-entry.js",
+      "category": "first_party_migration_candidate",
+      "lines": 326
+    },
+    {
+      "path": "src/handlers/public-parish-assets.js",
+      "category": "first_party_migration_candidate",
+      "lines": 50
+    },
+    {
+      "path": "src/handlers/registration-admin-page.js",
+      "category": "first_party_migration_candidate",
+      "lines": 129
+    },
+    {
+      "path": "src/handlers/resend-webhook.js",
+      "category": "first_party_migration_candidate",
+      "lines": 182
+    },
+    {
+      "path": "src/handlers/sacrament-preparation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 329
+    },
+    {
+      "path": "src/handlers/stewardship-accounting-bridge.js",
+      "category": "first_party_migration_candidate",
+      "lines": 175
+    },
+    {
+      "path": "src/handlers/stewardship-attendance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 80
+    },
+    {
+      "path": "src/handlers/stewardship-communications.js",
+      "category": "first_party_migration_candidate",
+      "lines": 333
+    },
+    {
+      "path": "src/handlers/stewardship-financials.js",
+      "category": "first_party_migration_candidate",
+      "lines": 690
+    },
+    {
+      "path": "src/handlers/stewardship-giving.js",
+      "category": "first_party_migration_candidate",
+      "lines": 756
+    },
+    {
+      "path": "src/handlers/stewardship-http.js",
+      "category": "first_party_migration_candidate",
+      "lines": 281
+    },
+    {
+      "path": "src/handlers/stewardship-packet-presentation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 698
+    },
+    {
+      "path": "src/handlers/stewardship-presentation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 640
+    },
+    {
+      "path": "src/handlers/stewardship-reports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 572
+    },
+    {
+      "path": "src/handlers/stewardship.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1362
+    },
+    {
+      "path": "src/handlers/stripe.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1172
+    },
+    {
+      "path": "src/handlers/tax-exemption.js",
+      "category": "first_party_migration_candidate",
+      "lines": 925
+    },
+    {
+      "path": "src/learn/academic-exports.js",
+      "category": "first_party_migration_candidate",
+      "lines": 32
+    },
+    {
+      "path": "src/learn/academic-print-templates.js",
+      "category": "first_party_migration_candidate",
+      "lines": 465
+    },
+    {
+      "path": "src/learn/academic-records.js",
+      "category": "first_party_migration_candidate",
+      "lines": 380
+    },
+    {
+      "path": "src/learn/access.js",
+      "category": "first_party_migration_candidate",
+      "lines": 30
+    },
+    {
+      "path": "src/learn/billing.js",
+      "category": "first_party_migration_candidate",
+      "lines": 711
+    },
+    {
+      "path": "src/learn/community-store.js",
+      "category": "first_party_migration_candidate",
+      "lines": 225
+    },
+    {
+      "path": "src/learn/demo-data.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1032
+    },
+    {
+      "path": "src/learn/feedback-store.js",
+      "category": "first_party_migration_candidate",
+      "lines": 139
+    },
+    {
+      "path": "src/learn/google-calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 552
+    },
+    {
+      "path": "src/learn/gpa.js",
+      "category": "first_party_migration_candidate",
+      "lines": 63
+    },
+    {
+      "path": "src/learn/grade-records.js",
+      "category": "first_party_migration_candidate",
+      "lines": 696
+    },
+    {
+      "path": "src/learn/handlers.js",
+      "category": "first_party_migration_candidate",
+      "lines": 781
+    },
+    {
+      "path": "src/learn/hymn-source.js",
+      "category": "first_party_migration_candidate",
+      "lines": 115
+    },
+    {
+      "path": "src/learn/liturgical-source.js",
+      "category": "first_party_migration_candidate",
+      "lines": 43
+    },
+    {
+      "path": "src/learn/planner-overrides.js",
+      "category": "first_party_migration_candidate",
+      "lines": 141
+    },
+    {
+      "path": "src/learn/print-documents.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1951
+    },
+    {
+      "path": "src/learn/print-engine.js",
+      "category": "first_party_migration_candidate",
+      "lines": 743
+    },
+    {
+      "path": "src/learn/readings-source.js",
+      "category": "first_party_migration_candidate",
+      "lines": 217
+    },
+    {
+      "path": "src/learn/repository.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1488
+    },
+    {
+      "path": "src/learn/setup-persistence.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1688
+    },
+    {
+      "path": "src/learn/test-scores.js",
+      "category": "first_party_migration_candidate",
+      "lines": 220
+    },
+    {
+      "path": "src/lib/accounting-attachment-storage.js",
+      "category": "generated_typescript_output",
+      "lines": 86,
+      "source": "src/lib/accounting-attachment-storage.ts"
+    },
+    {
+      "path": "src/lib/accounting-availability.js",
+      "category": "first_party_migration_candidate",
+      "lines": 29
+    },
+    {
+      "path": "src/lib/accounting-staff.js",
+      "category": "first_party_migration_candidate",
+      "lines": 70
+    },
+    {
+      "path": "src/lib/admin-overview-metrics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 52
+    },
+    {
+      "path": "src/lib/audit-log.js",
+      "category": "first_party_migration_candidate",
+      "lines": 184
+    },
+    {
+      "path": "src/lib/authorization.js",
+      "category": "first_party_migration_candidate",
+      "lines": 484
+    },
+    {
+      "path": "src/lib/commerce-readiness.js",
+      "category": "first_party_migration_candidate",
+      "lines": 127
+    },
+    {
+      "path": "src/lib/consumer-passkeys.js",
+      "category": "first_party_migration_candidate",
+      "lines": 331
+    },
+    {
+      "path": "src/lib/contact-leads.js",
+      "category": "first_party_migration_candidate",
+      "lines": 98
+    },
+    {
+      "path": "src/lib/content-reads.js",
+      "category": "generated_typescript_output",
+      "lines": 66,
+      "source": "src/lib/content-reads.ts"
+    },
+    {
+      "path": "src/lib/core.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1082
+    },
+    {
+      "path": "src/lib/database-reads.js",
+      "category": "generated_typescript_output",
+      "lines": 21,
+      "source": "src/lib/database-reads.ts"
+    },
+    {
+      "path": "src/lib/directory-invitation-next.js",
+      "category": "first_party_migration_candidate",
+      "lines": 6
+    },
+    {
+      "path": "src/lib/directory-pdf.js",
+      "category": "first_party_migration_candidate",
+      "lines": 303
+    },
+    {
+      "path": "src/lib/early-adopter-pricing.js",
+      "category": "first_party_migration_candidate",
+      "lines": 100
+    },
+    {
+      "path": "src/lib/email.js",
+      "category": "first_party_migration_candidate",
+      "lines": 91
+    },
+    {
+      "path": "src/lib/entitlements.js",
+      "category": "first_party_migration_candidate",
+      "lines": 263
+    },
+    {
+      "path": "src/lib/format.js",
+      "category": "generated_typescript_output",
+      "lines": 37,
+      "source": "src/lib/format.ts"
+    },
+    {
+      "path": "src/lib/fund-allocation.js",
+      "category": "generated_typescript_output",
+      "lines": 72,
+      "source": "src/lib/fund-allocation.ts"
+    },
+    {
+      "path": "src/lib/fund-report-period.js",
+      "category": "generated_typescript_output",
+      "lines": 88,
+      "source": "src/lib/fund-report-period.ts"
+    },
+    {
+      "path": "src/lib/fund-reporting.js",
+      "category": "generated_typescript_output",
+      "lines": 119,
+      "source": "src/lib/fund-reporting.ts"
+    },
+    {
+      "path": "src/lib/giving-contributions.js",
+      "category": "generated_typescript_output",
+      "lines": 26,
+      "source": "src/lib/giving-contributions.ts"
+    },
+    {
+      "path": "src/lib/giving-fee-report.js",
+      "category": "generated_typescript_output",
+      "lines": 99,
+      "source": "src/lib/giving-fee-report.ts"
+    },
+    {
+      "path": "src/lib/giving-statement-pdf.js",
+      "category": "first_party_migration_candidate",
+      "lines": 166
+    },
+    {
+      "path": "src/lib/giving-statement-storage.js",
+      "category": "generated_typescript_output",
+      "lines": 42,
+      "source": "src/lib/giving-statement-storage.ts"
+    },
+    {
+      "path": "src/lib/household-verification.js",
+      "category": "first_party_migration_candidate",
+      "lines": 15
+    },
+    {
+      "path": "src/lib/http-responses.js",
+      "category": "generated_typescript_output",
+      "lines": 54,
+      "source": "src/lib/http-responses.ts"
+    },
+    {
+      "path": "src/lib/identity.js",
+      "category": "first_party_migration_candidate",
+      "lines": 240
+    },
+    {
+      "path": "src/lib/koinonia-calendar.js",
+      "category": "generated_typescript_output",
+      "lines": 62,
+      "source": "src/lib/koinonia-calendar.ts"
+    },
+    {
+      "path": "src/lib/lead-attribution.js",
+      "category": "first_party_migration_candidate",
+      "lines": 25
+    },
+    {
+      "path": "src/lib/legal-acceptance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 81
+    },
+    {
+      "path": "src/lib/logging.js",
+      "category": "generated_typescript_output",
+      "lines": 113,
+      "source": "src/lib/logging.ts"
+    },
+    {
+      "path": "src/lib/manual-giving-model.js",
+      "category": "generated_typescript_output",
+      "lines": 31,
+      "source": "src/lib/manual-giving-model.ts"
+    },
+    {
+      "path": "src/lib/memberships.js",
+      "category": "first_party_migration_candidate",
+      "lines": 510
+    },
+    {
+      "path": "src/lib/mfa-diagnostics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 47
+    },
+    {
+      "path": "src/lib/mfa.js",
+      "category": "first_party_migration_candidate",
+      "lines": 588
+    },
+    {
+      "path": "src/lib/monthly-giving-csv.js",
+      "category": "generated_typescript_output",
+      "lines": 141,
+      "source": "src/lib/monthly-giving-csv.ts"
+    },
+    {
+      "path": "src/lib/monthly-giving-export.js",
+      "category": "generated_typescript_output",
+      "lines": 117,
+      "source": "src/lib/monthly-giving-export.ts"
+    },
+    {
+      "path": "src/lib/nonprofit-pricing-storage.js",
+      "category": "generated_typescript_output",
+      "lines": 49,
+      "source": "src/lib/nonprofit-pricing-storage.ts"
+    },
+    {
+      "path": "src/lib/nonprofit-pricing.js",
+      "category": "first_party_migration_candidate",
+      "lines": 465
+    },
+    {
+      "path": "src/lib/normalize-email.js",
+      "category": "generated_typescript_output",
+      "lines": 8,
+      "source": "src/lib/normalize-email.ts"
+    },
+    {
+      "path": "src/lib/numeric-cents.js",
+      "category": "generated_typescript_output",
+      "lines": 7,
+      "source": "src/lib/numeric-cents.ts"
+    },
+    {
+      "path": "src/lib/offering-fee-breakdown.js",
+      "category": "generated_typescript_output",
+      "lines": 33,
+      "source": "src/lib/offering-fee-breakdown.ts"
+    },
+    {
+      "path": "src/lib/outside-gift-composition.js",
+      "category": "generated_typescript_output",
+      "lines": 20,
+      "source": "src/lib/outside-gift-composition.ts"
+    },
+    {
+      "path": "src/lib/outside-gift-error.js",
+      "category": "generated_typescript_output",
+      "lines": 10,
+      "source": "src/lib/outside-gift-error.ts"
+    },
+    {
+      "path": "src/lib/outside-gift-reads.js",
+      "category": "generated_typescript_output",
+      "lines": 129,
+      "source": "src/lib/outside-gift-reads.ts"
+    },
+    {
+      "path": "src/lib/outside-gifts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 121
+    },
+    {
+      "path": "src/lib/outside-pledges.js",
+      "category": "first_party_migration_candidate",
+      "lines": 19
+    },
+    {
+      "path": "src/lib/paid-offering-status.js",
+      "category": "generated_typescript_output",
+      "lines": 15,
+      "source": "src/lib/paid-offering-status.ts"
+    },
+    {
+      "path": "src/lib/parish-feature-requests.js",
+      "category": "first_party_migration_candidate",
+      "lines": 150
+    },
+    {
+      "path": "src/lib/parish-library.js",
+      "category": "first_party_migration_candidate",
+      "lines": 125
+    },
+    {
+      "path": "src/lib/parish-life-access.js",
+      "category": "first_party_migration_candidate",
+      "lines": 8
+    },
+    {
+      "path": "src/lib/parish-life-experience.js",
+      "category": "first_party_migration_candidate",
+      "lines": 10
+    },
+    {
+      "path": "src/lib/parish-notifications.js",
+      "category": "first_party_migration_candidate",
+      "lines": 473
+    },
+    {
+      "path": "src/lib/parish-onboarding.js",
+      "category": "first_party_migration_candidate",
+      "lines": 513
+    },
+    {
+      "path": "src/lib/parish-pricing-usage.js",
+      "category": "first_party_migration_candidate",
+      "lines": 41
+    },
+    {
+      "path": "src/lib/parish-relationships.js",
+      "category": "first_party_migration_candidate",
+      "lines": 73
+    },
+    {
+      "path": "src/lib/parish-support-tickets.js",
+      "category": "first_party_migration_candidate",
+      "lines": 84
+    },
+    {
+      "path": "src/lib/payment-classification.js",
+      "category": "first_party_migration_candidate",
+      "lines": 17
+    },
+    {
+      "path": "src/lib/payment-fees.js",
+      "category": "first_party_migration_candidate",
+      "lines": 115
+    },
+    {
+      "path": "src/lib/pledge-report-reads.js",
+      "category": "generated_typescript_output",
+      "lines": 65,
+      "source": "src/lib/pledge-report-reads.ts"
+    },
+    {
+      "path": "src/lib/public-gift-model.js",
+      "category": "generated_typescript_output",
+      "lines": 55,
+      "source": "src/lib/public-gift-model.ts"
+    },
+    {
+      "path": "src/lib/push-notifications.js",
+      "category": "first_party_migration_candidate",
+      "lines": 381
+    },
+    {
+      "path": "src/lib/recurring-health.js",
+      "category": "generated_typescript_output",
+      "lines": 115,
+      "source": "src/lib/recurring-health.ts"
+    },
+    {
+      "path": "src/lib/registration-intake.js",
+      "category": "first_party_migration_candidate",
+      "lines": 106
+    },
+    {
+      "path": "src/lib/registration-publication.js",
+      "category": "first_party_migration_candidate",
+      "lines": 28
+    },
+    {
+      "path": "src/lib/registration-retries.js",
+      "category": "first_party_migration_candidate",
+      "lines": 43
+    },
+    {
+      "path": "src/lib/registrations.js",
+      "category": "first_party_migration_candidate",
+      "lines": 174
+    },
+    {
+      "path": "src/lib/request-context.js",
+      "category": "generated_typescript_output",
+      "lines": 35,
+      "source": "src/lib/request-context.ts"
+    },
+    {
+      "path": "src/lib/request-diagnostics.js",
+      "category": "generated_typescript_output",
+      "lines": 52,
+      "source": "src/lib/request-diagnostics.ts"
+    },
+    {
+      "path": "src/lib/rich-text.js",
+      "category": "generated_typescript_output",
+      "lines": 107,
+      "source": "src/lib/rich-text.ts"
+    },
+    {
+      "path": "src/lib/sacrament-availability.js",
+      "category": "first_party_migration_candidate",
+      "lines": 202
+    },
+    {
+      "path": "src/lib/sacrament-document-storage.js",
+      "category": "generated_typescript_output",
+      "lines": 102,
+      "source": "src/lib/sacrament-document-storage.ts"
+    },
+    {
+      "path": "src/lib/safe-external-url.js",
+      "category": "generated_typescript_output",
+      "lines": 49,
+      "source": "src/lib/safe-external-url.ts"
+    },
+    {
+      "path": "src/lib/settlement-profiles.js",
+      "category": "first_party_migration_candidate",
+      "lines": 265
+    },
+    {
+      "path": "src/lib/stewardship-funds.js",
+      "category": "first_party_migration_candidate",
+      "lines": 174
+    },
+    {
+      "path": "src/lib/stewardship-giving.js",
+      "category": "generated_typescript_output",
+      "lines": 18,
+      "source": "src/lib/stewardship-giving.ts"
+    },
+    {
+      "path": "src/lib/stewardship-income.js",
+      "category": "generated_typescript_output",
+      "lines": 18,
+      "source": "src/lib/stewardship-income.ts"
+    },
+    {
+      "path": "src/lib/stewardship-summary.js",
+      "category": "generated_typescript_output",
+      "lines": 67,
+      "source": "src/lib/stewardship-summary.ts"
+    },
+    {
+      "path": "src/lib/stored-giving-summary.js",
+      "category": "generated_typescript_output",
+      "lines": 63,
+      "source": "src/lib/stored-giving-summary.ts"
+    },
+    {
+      "path": "src/lib/stripe-connect.js",
+      "category": "first_party_migration_candidate",
+      "lines": 205
+    },
+    {
+      "path": "src/lib/stripe-fees.js",
+      "category": "first_party_migration_candidate",
+      "lines": 69
+    },
+    {
+      "path": "src/lib/stripe-volume.js",
+      "category": "first_party_migration_candidate",
+      "lines": 208
+    },
+    {
+      "path": "src/lib/subscription-checkout.js",
+      "category": "first_party_migration_candidate",
+      "lines": 363
+    },
+    {
+      "path": "src/lib/subscriptions.js",
+      "category": "first_party_migration_candidate",
+      "lines": 244
+    },
+    {
+      "path": "src/lib/tax-codes.js",
+      "category": "first_party_migration_candidate",
+      "lines": 158
+    },
+    {
+      "path": "src/lib/tax-exemption-storage.js",
+      "category": "generated_typescript_output",
+      "lines": 118,
+      "source": "src/lib/tax-exemption-storage.ts"
+    },
+    {
+      "path": "src/lib/tax-exemption.js",
+      "category": "first_party_migration_candidate",
+      "lines": 1339
+    },
+    {
+      "path": "src/lib/tax-readiness.js",
+      "category": "first_party_migration_candidate",
+      "lines": 138
+    },
+    {
+      "path": "src/lib/webauthn.js",
+      "category": "first_party_migration_candidate",
+      "lines": 42
+    },
+    {
+      "path": "src/lib/xml-text.js",
+      "category": "generated_typescript_output",
+      "lines": 66,
+      "source": "src/lib/xml-text.ts"
+    },
+    {
+      "path": "src/liturgical-calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 181
+    },
+    {
+      "path": "src/operations/monitoring.js",
+      "category": "first_party_migration_candidate",
+      "lines": 135
+    },
+    {
+      "path": "src/operations/parish-milestones.js",
+      "category": "first_party_migration_candidate",
+      "lines": 169
+    },
+    {
+      "path": "src/operations/rate-limiter.js",
+      "category": "first_party_migration_candidate",
+      "lines": 30
+    },
+    {
+      "path": "src/operations/scheduled-heartbeats.js",
+      "category": "first_party_migration_candidate",
+      "lines": 45
+    },
+    {
+      "path": "src/operations/scheduled-task-observer.js",
+      "category": "first_party_migration_candidate",
+      "lines": 110
+    },
+    {
+      "path": "src/operations/weekly-email-digests.js",
+      "category": "first_party_migration_candidate",
+      "lines": 755
+    },
+    {
+      "path": "src/organizations/access.js",
+      "category": "first_party_migration_candidate",
+      "lines": 53
+    },
+    {
+      "path": "src/organizations/api-policy.js",
+      "category": "generated_typescript_output",
+      "lines": 64,
+      "source": "src/organizations/api-policy.ts"
+    },
+    {
+      "path": "src/organizations/context.js",
+      "category": "generated_typescript_output",
+      "lines": 99,
+      "source": "src/organizations/context.ts"
+    },
+    {
+      "path": "src/organizations/index.js",
+      "category": "module_forwarder",
+      "lines": 45,
+      "targets": [
+        "./context.js",
+        "./access.js",
+        "./module-access.js",
+        "./module-profiles.js",
+        "./terminology.js",
+        "./types.js",
+        "./verification-policies.js",
+        "./api-policy.js"
+      ]
+    },
+    {
+      "path": "src/organizations/module-access.js",
+      "category": "generated_typescript_output",
+      "lines": 67,
+      "source": "src/organizations/module-access.ts"
+    },
+    {
+      "path": "src/organizations/module-profiles.js",
+      "category": "generated_typescript_output",
+      "lines": 50,
+      "source": "src/organizations/module-profiles.ts"
+    },
+    {
+      "path": "src/organizations/terminology.js",
+      "category": "generated_typescript_output",
+      "lines": 83,
+      "source": "src/organizations/terminology.ts"
+    },
+    {
+      "path": "src/organizations/types.js",
+      "category": "generated_typescript_output",
+      "lines": 140,
+      "source": "src/organizations/types.ts"
+    },
+    {
+      "path": "src/organizations/verification-policies.js",
+      "category": "generated_typescript_output",
+      "lines": 226,
+      "source": "src/organizations/verification-policies.ts"
+    },
+    {
+      "path": "src/payments/classification.js",
+      "category": "first_party_migration_candidate",
+      "lines": 289
+    },
+    {
+      "path": "src/payments/donation-events.js",
+      "category": "first_party_migration_candidate",
+      "lines": 49
+    },
+    {
+      "path": "src/payments/donation-receipts.js",
+      "category": "first_party_migration_candidate",
+      "lines": 89
+    },
+    {
+      "path": "src/payments/giving-checkout.js",
+      "category": "first_party_migration_candidate",
+      "lines": 53
+    },
+    {
+      "path": "src/portability/accounting-legacy.js",
+      "category": "first_party_migration_candidate",
+      "lines": 9
+    },
+    {
+      "path": "src/portability/accounting-schema.js",
+      "category": "first_party_migration_candidate",
+      "lines": 84
+    },
+    {
+      "path": "src/portability/accounting.js",
+      "category": "first_party_migration_candidate",
+      "lines": 119
+    },
+    {
+      "path": "src/portability/archive.js",
+      "category": "first_party_migration_candidate",
+      "lines": 55
+    },
+    {
+      "path": "src/portability/backup-evidence.js",
+      "category": "first_party_migration_candidate",
+      "lines": 13
+    },
+    {
+      "path": "src/portability/budget.js",
+      "category": "first_party_migration_candidate",
+      "lines": 65
+    },
+    {
+      "path": "src/portability/catalog.js",
+      "category": "first_party_migration_candidate",
+      "lines": 158
+    },
+    {
+      "path": "src/portability/closure.js",
+      "category": "first_party_migration_candidate",
+      "lines": 139
+    },
+    {
+      "path": "src/portability/cloud-backup.js",
+      "category": "first_party_migration_candidate",
+      "lines": 37
+    },
+    {
+      "path": "src/portability/diagnostics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 47
+    },
+    {
+      "path": "src/portability/disposal.js",
+      "category": "first_party_migration_candidate",
+      "lines": 153
+    },
+    {
+      "path": "src/portability/export.js",
+      "category": "first_party_migration_candidate",
+      "lines": 143
+    },
+    {
+      "path": "src/portability/legacy.js",
+      "category": "first_party_migration_candidate",
+      "lines": 139
+    },
+    {
+      "path": "src/portability/maintenance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 49
+    },
+    {
+      "path": "src/portability/policy.js",
+      "category": "first_party_migration_candidate",
+      "lines": 42
+    },
+    {
+      "path": "src/portability/public-media.js",
+      "category": "first_party_migration_candidate",
+      "lines": 47
+    },
+    {
+      "path": "src/portability/restore.js",
+      "category": "first_party_migration_candidate",
+      "lines": 60
+    },
+    {
+      "path": "src/portability/schema.js",
+      "category": "first_party_migration_candidate",
+      "lines": 240
+    },
+    {
+      "path": "src/portability/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 275
+    },
+    {
+      "path": "src/portability/storage.js",
+      "category": "first_party_migration_candidate",
+      "lines": 113
+    },
+    {
+      "path": "src/portability/suppression.js",
+      "category": "first_party_migration_candidate",
+      "lines": 113
+    },
+    {
+      "path": "src/recovery/archive.js",
+      "category": "first_party_migration_candidate",
+      "lines": 46
+    },
+    {
+      "path": "src/recovery/configuration.js",
+      "category": "first_party_migration_candidate",
+      "lines": 54
+    },
+    {
+      "path": "src/recovery/database.js",
+      "category": "first_party_migration_candidate",
+      "lines": 239
+    },
+    {
+      "path": "src/recovery/files.js",
+      "category": "first_party_migration_candidate",
+      "lines": 172
+    },
+    {
+      "path": "src/recovery/locks.js",
+      "category": "first_party_migration_candidate",
+      "lines": 142
+    },
+    {
+      "path": "src/recovery/maintenance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 38
+    },
+    {
+      "path": "src/recovery/retention.js",
+      "category": "first_party_migration_candidate",
+      "lines": 80
+    },
+    {
+      "path": "src/recovery/service.js",
+      "category": "first_party_migration_candidate",
+      "lines": 437
+    },
+    {
+      "path": "src/recovery/storage.js",
+      "category": "first_party_migration_candidate",
+      "lines": 173
+    },
+    {
+      "path": "src/reports/diocesan-statistical-totals.js",
+      "category": "first_party_migration_candidate",
+      "lines": 58
+    },
+    {
+      "path": "src/reports/diocesan-statistics.js",
+      "category": "first_party_migration_candidate",
+      "lines": 368
+    },
+    {
+      "path": "src/routes/accounting.js",
+      "category": "first_party_migration_candidate",
+      "lines": 31
+    },
+    {
+      "path": "src/routes/admin.js",
+      "category": "first_party_migration_candidate",
+      "lines": 165
+    },
+    {
+      "path": "src/routes/directory.js",
+      "category": "first_party_migration_candidate",
+      "lines": 21
+    },
+    {
+      "path": "src/routes/donor.js",
+      "category": "first_party_migration_candidate",
+      "lines": 143
+    },
+    {
+      "path": "src/routes/learn.js",
+      "category": "first_party_migration_candidate",
+      "lines": 83
+    },
+    {
+      "path": "src/routes/organization.js",
+      "category": "first_party_migration_candidate",
+      "lines": 52
+    },
+    {
+      "path": "src/routes/parish.js",
+      "category": "first_party_migration_candidate",
+      "lines": 179
+    },
+    {
+      "path": "src/routes/public.js",
+      "category": "first_party_migration_candidate",
+      "lines": 78
+    },
+    {
+      "path": "src/routes/registry.js",
+      "category": "first_party_migration_candidate",
+      "lines": 8
+    },
+    {
+      "path": "src/routes/stewardship.js",
+      "category": "first_party_migration_candidate",
+      "lines": 92
+    },
+    {
+      "path": "src/routes/worker-actions.js",
+      "category": "first_party_migration_candidate",
+      "lines": 628
+    },
+    {
+      "path": "src/sacraments/document-upload.js",
+      "category": "generated_typescript_output",
+      "lines": 59,
+      "source": "src/sacraments/document-upload.ts"
+    },
+    {
+      "path": "src/sacraments/google-calendar.js",
+      "category": "first_party_migration_candidate",
+      "lines": 299
+    },
+    {
+      "path": "src/sacraments/memorial-followup.js",
+      "category": "first_party_migration_candidate",
+      "lines": 408
+    },
+    {
+      "path": "src/sacraments/pastoral-digest.js",
+      "category": "first_party_migration_candidate",
+      "lines": 373
+    },
+    {
+      "path": "src/sacraments/pastoral-followup.js",
+      "category": "first_party_migration_candidate",
+      "lines": 393
+    },
+    {
+      "path": "src/sacraments/preparation.js",
+      "category": "first_party_migration_candidate",
+      "lines": 531
+    },
+    {
+      "path": "src/stewardship/attendance.js",
+      "category": "first_party_migration_candidate",
+      "lines": 218
+    },
+    {
+      "path": "src/stewardship/council-reports.js",
+      "category": "generated_typescript_output",
+      "lines": 51,
+      "source": "src/stewardship/council-reports.ts"
+    },
+    {
+      "path": "src/stewardship/financial-snapshots.js",
+      "category": "first_party_migration_candidate",
+      "lines": 158
+    },
+    {
+      "path": "src/stewardship/giving-fee-presentation.js",
+      "category": "generated_typescript_output",
+      "lines": 27,
+      "source": "src/stewardship/giving-fee-presentation.ts"
+    },
+    {
+      "path": "src/stewardship/ledger-cost-presentation.js",
+      "category": "generated_typescript_output",
+      "lines": 15,
+      "source": "src/stewardship/ledger-cost-presentation.ts"
+    },
+    {
+      "path": "src/stewardship/platform-costs.js",
+      "category": "first_party_migration_candidate",
+      "lines": 27
+    },
+    {
+      "path": "src/worker.js",
+      "category": "first_party_migration_candidate",
+      "lines": 773
+    }
+  ]
+}

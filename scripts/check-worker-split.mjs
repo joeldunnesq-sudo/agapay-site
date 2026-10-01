@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -54,13 +55,17 @@ function exportedNames(source) {
     for (const part of match[1].split(',')) {
       const name = part
         .trim()
-        .split(/\s+as\s+/)[0]
+        .split(/\s+as\s+/)
+        .at(-1)
         ?.trim();
       if (name) names.add(name);
     }
   }
   return names;
 }
+
+assert.deepEqual([...exportedNames('export { internal as publicName, ordinary };')], ['publicName', 'ordinary']);
+assert.equal(exportedNames('export { internal as publicName };').has('internal'), false);
 
 function namedImports(source) {
   const imports = [];
