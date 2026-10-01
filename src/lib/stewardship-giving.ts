@@ -1,5 +1,16 @@
-// Generated from src/lib/stewardship-giving.ts by npm run build:server. Do not edit.
-async function readStewardshipGivingMix(env, parishId, year) {
+// SQL aggregate values remain unvalidated at this database boundary.
+export interface StewardshipGivingMix {
+  total_cents: unknown;
+  recurring_received_cents: unknown;
+}
+
+// Received gifts for the recurring / one-time chart. Keep this separate from
+// monthly recurring revenue, which projects the active subscription run rate.
+export async function readStewardshipGivingMix(
+  env: Pick<Env, 'AGAPAY_DB'>,
+  parishId: string,
+  year: number
+): Promise<StewardshipGivingMix | null> {
   return env.AGAPAY_DB.prepare(
     `
     SELECT
@@ -12,6 +23,5 @@ async function readStewardshipGivingMix(env, parishId, year) {
   `
   )
     .bind(parishId, `${year}-01-01`, `${year + 1}-01-01`)
-    .first();
+    .first<StewardshipGivingMix>();
 }
-export { readStewardshipGivingMix };
