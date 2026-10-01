@@ -5,10 +5,8 @@ import {
 } from "./payment-fees.js";
 import { classifyStripeCharge } from "./payment-classification.js";
 
-export function numericCents(value) {
-  const number = Number(value || 0);
-  return Number.isFinite(number) ? Math.round(number) : 0;
-}
+import { numericCents } from './numeric-cents.js';
+export { numericCents } from './numeric-cents.js';
 
 export async function stripeFormRequest(env, path, form, method = "POST") {
   if (!env.STRIPE_SECRET_KEY) {
