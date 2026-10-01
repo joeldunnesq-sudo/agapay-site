@@ -15,6 +15,10 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/giving-export-typescript-tests.mjs',
+  'scripts/fund-activity-typescript-tests.mjs',
+  'scripts/fund-contracts-typescript-tests.mjs',
+  'scripts/report-presentation-typescript-tests.mjs',
   'scripts/http-responses-typescript-tests.mjs',
   'scripts/giving-reporting-typescript-tests.mjs',
   'scripts/fee-report-typescript-tests.mjs',

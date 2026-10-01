@@ -1,10 +1,32 @@
-// Generated from src/stewardship/council-reports.ts by npm run build:server. Do not edit.
-import { ledgerCostTable } from './ledger-cost-presentation.js';
+import { ledgerCostTable, type LedgerCostData } from './ledger-cost-presentation.js';
 import { htmlEscape } from '../lib/format.js';
-function councilReportPeriod(url, now = /* @__PURE__ */ new Date()) {
+
+export interface CouncilReportPeriod {
+  year: number;
+  requestedMonth: string;
+  monthStart: string;
+  monthEnd: string;
+  nextMonthStart: string;
+  monthLabel: string;
+}
+
+export interface CouncilReportSnapshot extends LedgerCostData {
+  readonly totalIncomeCents: number;
+  readonly totalExpenseCents: number;
+  readonly netCents: number;
+  readonly restrictedFunds: readonly {
+    readonly fundName: unknown;
+    readonly beginningBalanceCents: number;
+    readonly totalReceivedCents: number;
+    readonly totalDisbursedCents: number;
+    readonly endingBalanceCents: number;
+  }[];
+}
+
+export function councilReportPeriod(url: Pick<URL, 'searchParams'>, now = new Date()): CouncilReportPeriod | null {
   const rawMonth = url.searchParams.get('month');
   const rawYear = url.searchParams.get('year') || String(now.getUTCFullYear());
-  if (!/^\d{4}$/.test(rawYear) || Number(rawYear) < 2e3 || Number(rawYear) > 2100) return null;
+  if (!/^\d{4}$/.test(rawYear) || Number(rawYear) < 2000 || Number(rawYear) > 2100) return null;
   const month = rawMonth || `${rawYear}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
   if (!/^(20\d{2}|2100)-(0[1-9]|1[0-2])$/.test(month)) return null;
   const [year, number] = month.split('-').map(Number);
@@ -22,10 +44,16 @@ function councilReportPeriod(url, now = /* @__PURE__ */ new Date()) {
     }),
   };
 }
-function accountingCouncilReport(parishName, period, monthly, yearToDate) {
+
+export function accountingCouncilReport(
+  parishName: unknown,
+  period: CouncilReportPeriod,
+  monthly: CouncilReportSnapshot,
+  yearToDate: CouncilReportSnapshot
+): Response {
   const esc = htmlEscape;
-  const money = (value) => Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  const totals = (data) =>
+  const money = (value: unknown) => Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const totals = (data: CouncilReportSnapshot) =>
     `<div class="totals"><div><span>Income</span><strong>${money(data.totalIncomeCents / 100)}</strong></div><div><span>Expenses</span><strong>${money(data.totalExpenseCents / 100)}</strong></div><div><span>Income less expenses</span><strong>${money(data.netCents / 100)}</strong></div></div>`;
   const funds = monthly.restrictedFunds.filter((f) =>
     [f.beginningBalanceCents, f.totalReceivedCents, f.totalDisbursedCents, f.endingBalanceCents].some(Number)
@@ -38,7 +66,7 @@ function accountingCouncilReport(parishName, period, monthly, yearToDate) {
   <section><h2>Year-to-date activity</h2><p class="note">January 1 through ${esc(period.monthEnd)}. These are activity totals, not bank balances.</p>${totals(yearToDate)}</section>
   ${ledgerCostTable(monthly, yearToDate, money)}
   <section><h2>Restricted fund balances</h2><p class="note">Balances and changes during ${esc(period.monthLabel)}. Funds with no balance or activity are omitted.</p>${funds.length ? `<div class="table-wrap"><table><thead><tr><th>Fund</th><th>Beginning</th><th>Received / transfers in</th><th>Used / transfers out</th><th>Ending</th></tr></thead><tbody>${funds.map((f) => `<tr><td>${esc(f.fundName)}</td><td>${money(f.beginningBalanceCents / 100)}</td><td>${money(f.totalReceivedCents / 100)}</td><td>${money(f.totalDisbursedCents / 100)}</td><td>${money(f.endingBalanceCents / 100)}</td></tr>`).join('')}</tbody></table></div>` : '<p>No restricted fund balances or activity for this month.</p>'}<p class="note">Ending balance = beginning balance + received and transfers in − used and transfers out.</p></section>
-  <section><h2>Reporting basis</h2><p>This report reads completed Accounting entries for the selected dates. Drafts and saved meeting snapshots are not included. Giving already recorded in Accounting is counted once.</p><p>Income less expenses is different from cash movement. Include the Accounting balance sheet, cash-flow report, and budget comparison when needed for council review.</p><p>Saved meeting packets remain separate historical copies. Generating this report does not change them.</p></section><footer>Generated ${esc(/* @__PURE__ */ new Date().toISOString().slice(0, 10))} · AGAPAY · Review before council distribution</footer></main></body></html>`;
+  <section><h2>Reporting basis</h2><p>This report reads completed Accounting entries for the selected dates. Drafts and saved meeting snapshots are not included. Giving already recorded in Accounting is counted once.</p><p>Income less expenses is different from cash movement. Include the Accounting balance sheet, cash-flow report, and budget comparison when needed for council review.</p><p>Saved meeting packets remain separate historical copies. Generating this report does not change them.</p></section><footer>Generated ${esc(new Date().toISOString().slice(0, 10))} · AGAPAY · Review before council distribution</footer></main></body></html>`;
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html;charset=utf-8',
@@ -47,4 +75,3 @@ function accountingCouncilReport(parishName, period, monthly, yearToDate) {
     },
   });
 }
-export { accountingCouncilReport, councilReportPeriod };

@@ -156,7 +156,91 @@ for (const endpoint of ['summary', 'recurring', 'health-score']) {
   });
 }
 
+// Read-only acceptance for the typed fund report and CSV presentation path.
+const weeklyPath = '/giving-summary?view=weekly-funds';
+const weekly = await requestJson(dashboardPath + weeklyPath, { token });
+assert.equal(weekly.response.status, 200);
+const funds = weekly.payload.weeklyFunds;
+assert.equal(funds?.available, true, 'Weekly fund report must be available.');
+assert.equal(funds.complete, true, 'Partial weekly totals must not pass acceptance.');
+assert.equal(funds.period.month, null);
+assert.equal(funds.currency, 'usd');
+assert.equal(funds.basis, 'gift_date_before_refunds');
+for (const [total, field] of [
+  ['grossGiftCents', 'grossCents'],
+  ['parishNetCents', 'netCents'],
+  ['feeCents', 'feeCents'],
+  ['giftCount', 'transactionCount'],
+]) {
+  assert.ok(Number.isFinite(funds[total]));
+  assert.equal(
+    funds[total],
+    funds.allocations.reduce((sum, row) => sum + row[field], 0)
+  );
+}
+const exportMonth = new Date().toISOString().slice(0, 7);
+const csvPath = '/giving-history?format=csv&month=' + exportMonth + '&groupBy=giver';
+const exported = await fetch(baseUrl + dashboardPath + csvPath, {
+  headers: { authorization: 'Bearer ' + token },
+  redirect: 'error',
+  signal: AbortSignal.timeout(30000),
+});
+assert.equal(exported.status, 200, 'Monthly CSV must be available.');
+assert.match(exported.headers.get('content-type'), /^text\/csv/i);
+assert.match(exported.headers.get('content-disposition'), /^attachment;/i);
+assert.match(exported.headers.get('cache-control'), /private/);
+assert.match(exported.headers.get('cache-control'), /no-store/);
+assert.equal(exported.headers.get('vary'), 'Authorization');
+const exportCount = exported.headers.get('x-agapay-export-rows');
+assert.match(exportCount, /^\d+$/);
+assert.ok(Number(exportCount) <= 25000);
+const exportBytes = new Uint8Array(await exported.arrayBuffer());
+assert.deepEqual([...exportBytes.slice(0, 3)], [239, 187, 191], 'CSV must retain its UTF-8 BOM.');
+const exportText = new TextDecoder().decode(exportBytes);
+assert.ok(exportText.startsWith('"Giving date","Parish timezone","Paid timestamp UTC"'));
+assert.ok(exportText.endsWith('\r\n'));
+const financialPath = '/stewardship/report/monthly-financial?month=' + exportMonth;
+const financial = await fetch(baseUrl + dashboardPath + financialPath, {
+  headers: { authorization: 'Bearer ' + token },
+  redirect: 'error',
+  signal: AbortSignal.timeout(30000),
+});
+assert.equal(financial.status, 200, 'Monthly financial report must be available.');
+assert.match(financial.headers.get('content-type'), /^text\/html/i);
+assert.match(financial.headers.get('cache-control'), /no-store/);
+const financialHtml = await financial.text();
+assert.ok(financialHtml.includes('Monthly Financial Report'));
+assert.ok(financialHtml.includes('Live from Accounting'));
+assert.ok(financialHtml.includes('Processing &amp; platform expenses'));
+assert.ok(financialHtml.includes('Every gift. Every fee.'));
+const reportingAccessChecks = [];
+for (const path of [weeklyPath, csvPath, financialPath]) {
+  const anonymous = await requestJson(dashboardPath + path);
+  assert.equal(anonymous.response.status, 401);
+  const foreign = await requestJson(
+    '/api/parish/dashboard/' + encodeURIComponent(credentials.ACCOUNTING_GATE_PARISH_B_ID) + path,
+    { token }
+  );
+  assert.equal(foreign.response.status, 401);
+  reportingAccessChecks.push({
+    path,
+    anonymousStatus: anonymous.response.status,
+    crossParishStatus: foreign.response.status,
+  });
+}
+const invalidExport = await requestJson(dashboardPath + '/giving-history?format=csv&month=invalid', { token });
+assert.equal(invalidExport.response.status, 422);
+
 const evidence = {
+  weeklyFunds: { status: weekly.response.status, complete: funds.complete, giftCount: funds.giftCount },
+  monthlyCsv: {
+    status: exported.status,
+    month: exportMonth,
+    rowCount: Number(exportCount),
+    invalidMonthStatus: invalidExport.response.status,
+  },
+  financialReport: { status: financial.status, month: exportMonth, accounting: true, feeSection: true },
+  reportingAccessChecks,
   target: baseUrl,
   parishId,
   summary: {

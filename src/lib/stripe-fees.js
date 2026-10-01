@@ -6,7 +6,6 @@ import {
   grossUpForStripeProcessingFeeCents as grossUpCard,
   normalizePaymentMethod,
 } from "./payment-fees.js";
-import { numericCents } from "./stripe-connect.js";
 
 export const MAX_DONATION_CENTS = 5_000_000;
 
@@ -59,35 +58,7 @@ export function checkoutFinancials(amountCents, coverFees, recurring, paymentMet
   return calculateCheckoutFinancials(amountCents, coverFees, recurring, paymentMethod);
 }
 
-export function offeringFeeBreakdown(offering = {}) {
-  const giftAmountCents = numericCents(offering.giftAmountCents ?? offering.amountCents);
-  const chargeCents = numericCents(offering.chargeCents ?? offering.amountChargedCents ?? giftAmountCents);
-  const stripeFeeCents = numericCents(offering.stripeFeeCents ?? offering.estimatedStripeFeeCents);
-  const agapayFeeCents = numericCents(offering.agapayFeeCents);
-  const totalFeeCents = numericCents(offering.totalFeeCents ?? stripeFeeCents + agapayFeeCents);
-  const coverFees = Boolean(offering.coverFees);
-  const donorCoveredFeeCents = coverFees
-    ? numericCents(offering.donorCoveredFeeCents ?? Math.max(0, chargeCents - giftAmountCents))
-    : 0;
-  const parishNetCents = Math.max(
-    0,
-    numericCents(
-      offering.parishNetCents
-      ?? offering.netCents
-      ?? (coverFees ? Math.max(0, chargeCents - totalFeeCents) : giftAmountCents - totalFeeCents)
-    )
-  );
-  return {
-    giftAmountCents,
-    chargeCents,
-    stripeFeeCents,
-    agapayFeeCents,
-    totalFeeCents,
-    donorCoveredFeeCents,
-    parishNetCents,
-    coverFees
-  };
-}
+export { offeringFeeBreakdown } from './offering-fee-breakdown.js';
 
 export function donorName(body) {
   return [body.firstName, body.lastName]

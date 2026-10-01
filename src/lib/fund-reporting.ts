@@ -1,16 +1,74 @@
-// Generated from src/lib/fund-reporting.ts by npm run build:server. Do not edit.
-import { offeringFeeBreakdown } from './offering-fee-breakdown.js';
+import { offeringFeeBreakdown, type OfferingFeeInput } from './offering-fee-breakdown.js';
+import type { DatabaseReadEnv } from './database-reads.js';
+import type { FundCatalog, FundDesignation, ResolvedFundAllocation } from './fund-allocation.js';
+
 import { createFundAllocationResolver } from './fund-allocation.js';
-import { createFundAllocationResolver as createFundAllocationResolver2, fundAllocation } from './fund-allocation.js';
-import {
+export { createFundAllocationResolver, fundAllocation } from './fund-allocation.js';
+export {
   parishReportingTimezone,
   parishCalendarDate,
   calendarMidnight,
   fundReportPeriod,
 } from './fund-report-period.js';
-async function loadFundGiftActivity(env, parishId, period, registration = {}) {
+
+export interface FundActivityPeriod {
+  readonly startIso: string;
+  readonly endIso: string;
+}
+interface FundGiftRow {
+  id: string;
+  data: string;
+  created_at: string;
+}
+interface FundActivityGift extends OfferingFeeInput, FundDesignation {
+  readonly parishId?: unknown;
+  readonly currency?: string | null;
+  readonly stripeFeeSource?: unknown;
+}
+export interface FundActivityAllocation {
+  key: string;
+  label: string;
+  category: ResolvedFundAllocation['category'] | 'Unallocated';
+  fundId: string;
+  catalogSource?: ResolvedFundAllocation['catalogSource'];
+  grossCents: number;
+  feeCents: number;
+  netCents: number;
+  transactionCount: number;
+}
+export type FundGiftActivity<P extends FundActivityPeriod = FundActivityPeriod> =
+  | {
+      available: false;
+      complete: false;
+      reason: string;
+    }
+  | {
+      available: true;
+      complete: true;
+      period: P;
+      currency: 'usd';
+      giftCount: number;
+      grossGiftCents: number;
+      parishNetCents: number;
+      feeCents: number;
+      estimatedFeeCount: number;
+      unallocatedCount: number;
+      allocations: FundActivityAllocation[];
+      generatedAt: string;
+      basis: 'gift_date_before_refunds';
+      note: string;
+    };
+
+// Period-scoped database paging, never the browser's last-500-gift cache.
+// A bounded report must explicitly fail completeness instead of showing partial totals.
+export async function loadFundGiftActivity<P extends FundActivityPeriod>(
+  env: DatabaseReadEnv,
+  parishId: string,
+  period: P,
+  registration: FundCatalog = {}
+): Promise<FundGiftActivity<P>> {
   if (!env.AGAPAY_DB) return { available: false, complete: false, reason: 'Giving database unavailable.' };
-  const allocations = /* @__PURE__ */ new Map();
+  const allocations = new Map<string, FundActivityAllocation>();
   const resolveFund = createFundAllocationResolver(registration);
   let cursor = '',
     recordCount = 0,
@@ -22,20 +80,24 @@ async function loadFundGiftActivity(env, parishId, period, registration = {}) {
     unallocatedCount = 0;
   for (;;) {
     const page = await env.AGAPAY_DB.prepare(
-      "SELECT id, data, created_at FROM donor_offerings WHERE parish_id=?1 AND id>?2 AND (payment_status IN ('paid','succeeded','complete','completed','refunded','partially_refunded','disputed') OR status IN ('paid','succeeded','complete','completed','refunded','partially_refunded','disputed')) AND julianday(COALESCE(NULLIF(json_extract(data,'$.paidAt'),''),NULLIF(json_extract(data,'$.createdAt'),''),created_at))>=julianday(?3) AND julianday(COALESCE(NULLIF(json_extract(data,'$.paidAt'),''),NULLIF(json_extract(data,'$.createdAt'),''),created_at))<julianday(?4) ORDER BY id LIMIT 500"
+      'SELECT id, data, created_at FROM donor_offerings WHERE parish_id=?1 AND id>?2 ' +
+        "AND (payment_status IN ('paid','succeeded','complete','completed','refunded','partially_refunded','disputed') OR status IN ('paid','succeeded','complete','completed','refunded','partially_refunded','disputed')) " +
+        "AND julianday(COALESCE(NULLIF(json_extract(data,'$.paidAt'),''),NULLIF(json_extract(data,'$.createdAt'),''),created_at))>=julianday(?3) " +
+        "AND julianday(COALESCE(NULLIF(json_extract(data,'$.paidAt'),''),NULLIF(json_extract(data,'$.createdAt'),''),created_at))<julianday(?4) ORDER BY id LIMIT 500"
     )
       .bind(parishId, cursor, period.startIso, period.endIso)
-      .all();
+      .all<FundGiftRow>();
     const rows = page.results || [];
     recordCount += rows.length;
-    if (recordCount > 25e3)
+    if (recordCount > 25000)
       return {
         available: false,
         complete: false,
         reason: 'This period exceeds the interactive reporting limit. Contact support for a complete report.',
       };
     for (const row of rows) {
-      const gift = JSON.parse(row.data);
+      // This assertion describes stored fields; existing runtime checks and failures remain unchanged.
+      const gift = JSON.parse(row.data) as FundActivityGift;
       if (!gift || (gift.parishId && gift.parishId !== parishId)) throw new Error('Invalid giving record.');
       if ((gift.currency || 'usd').toLowerCase() !== 'usd')
         return {
@@ -62,12 +124,13 @@ async function loadFundGiftActivity(env, parishId, period, registration = {}) {
           reason: 'A giving record has an invalid amount. Totals cannot be verified.',
         };
       const fee = offeringFeeBreakdown(gift);
-      const allocation = resolveFund(gift) || {
-        key: 'unallocated',
-        label: 'Needs allocation',
-        category: 'Unallocated',
-        fundId: '',
-      };
+      const allocation: Pick<FundActivityAllocation, 'key' | 'label' | 'category' | 'fundId' | 'catalogSource'> =
+        resolveFund(gift) || {
+          key: 'unallocated',
+          label: 'Needs allocation',
+          category: 'Unallocated',
+          fundId: '',
+        };
       const item = allocations.get(allocation.key) || {
         ...allocation,
         grossCents: 0,
@@ -102,17 +165,8 @@ async function loadFundGiftActivity(env, parishId, period, registration = {}) {
     estimatedFeeCount,
     unallocatedCount,
     allocations: [...allocations.values()].sort((a, b) => b.netCents - a.netCents),
-    generatedAt: /* @__PURE__ */ new Date().toISOString(),
+    generatedAt: new Date().toISOString(),
     basis: 'gift_date_before_refunds',
     note: 'By gift paid date. Net is before refunds and disputes, not bank deposits or current fund balances. See monthly reconciliation for payout adjustments.',
   };
 }
-export {
-  calendarMidnight,
-  createFundAllocationResolver2 as createFundAllocationResolver,
-  fundAllocation,
-  fundReportPeriod,
-  loadFundGiftActivity,
-  parishCalendarDate,
-  parishReportingTimezone,
-};

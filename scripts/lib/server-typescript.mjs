@@ -19,6 +19,12 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/format.ts',
   'src/lib/giving-contributions.ts',
   'src/lib/database-reads.ts',
+  'src/lib/fund-report-period.ts',
+  'src/lib/fund-allocation.ts',
+  'src/lib/numeric-cents.ts',
+  'src/lib/offering-fee-breakdown.ts',
+  'src/lib/fund-reporting.ts',
+  'src/lib/monthly-giving-csv.ts',
   'src/lib/giving-fee-report.ts',
   'src/lib/pledge-report-reads.ts',
   'src/lib/stewardship-summary.ts',
@@ -38,6 +44,9 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/nonprofit-pricing-storage.ts',
   'src/lib/accounting-attachment-storage.ts',
   'src/sacraments/document-upload.ts',
+  'src/stewardship/giving-fee-presentation.ts',
+  'src/stewardship/ledger-cost-presentation.ts',
+  'src/stewardship/council-reports.ts',
 ]);
 
 export function serverSourcePath(runtimePath) {
