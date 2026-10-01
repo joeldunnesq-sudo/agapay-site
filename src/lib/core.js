@@ -10,7 +10,8 @@ export const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
 export const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
 export const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
 export const DONOR_KEY_PREFIX = "__agapay_donor__";
-export const DONOR_OFFERING_KEY_PREFIX = "__agapay_donor_offering__";
+import { DONOR_OFFERING_KEY_PREFIX } from './kv-reads.js';
+export { DONOR_OFFERING_KEY_PREFIX } from './kv-reads.js';
 export const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
 export const RATE_LIMIT_PREFIX = "__agapay_rate_limit__";
 export const STRIPE_EVENT_PREFIX = "__agapay_stripe_event__";
@@ -421,21 +422,8 @@ export function stripeEventKey(eventId) {
   return `${STRIPE_EVENT_PREFIX}${eventId}`;
 }
 
-export async function listKvKeys(env, { prefix = "", limit = 1000, pageSize = 100 } = {}) {
-  if (!env.AGAPAY_REGISTRATIONS) return [];
-  const keys = [];
-  let cursor;
-  do {
-    const page = await env.AGAPAY_REGISTRATIONS.list({
-      prefix,
-      limit: Math.min(pageSize, Math.max(1, limit - keys.length)),
-      cursor
-    });
-    keys.push(...page.keys);
-    cursor = page.list_complete || keys.length >= limit ? undefined : page.cursor;
-  } while (cursor && keys.length < limit);
-  return keys;
-}
+import { listKvKeys } from './kv-reads.js';
+export { listKvKeys } from './kv-reads.js';
 
 export function hasProductionStore(env) {
   return Boolean(env.AGAPAY_DB || env.AGAPAY_REGISTRATIONS);
@@ -445,18 +433,8 @@ export function missingProductionStoreResponse() {
   return json({ error: "AGAPAY production data store is not configured" }, { status: 500 });
 }
 
-export function parseJsonRow(row) {
-  if (!row?.data) return null;
-  return JSON.parse(row.data);
-}
-
-export function safeParseJsonRow(row) {
-  try {
-    return parseJsonRow(row);
-  } catch {
-    return null;
-  }
-}
+import { parseJsonRow, safeParseJsonRow } from './json-rows.js';
+export { parseJsonRow, safeParseJsonRow } from './json-rows.js';
 
 export function clampListLimit(value, defaultLimit = 50, maxLimit = 250) {
   const parsed = Number(value);

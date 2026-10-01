@@ -35,14 +35,4 @@ export function invoiceSubscriptionId(invoice = {}) {
   return stripeObjectId(invoice.subscription) || stripeObjectId(invoice.parent?.subscription_details?.subscription);
 }
 
-export function visibleDonationRecords(records = []) {
-  const invoiced = new Set(
-    records
-      .filter((record) => record.stripeInvoiceId)
-      .map((record) => record.stripeSubscriptionId)
-      .filter(Boolean)
-  );
-  return records.filter(
-    (record) => record.recordType !== 'subscription_setup' || !invoiced.has(record.stripeSubscriptionId)
-  );
-}
+export { visibleDonationRecords } from './donation-visibility.js';

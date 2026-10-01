@@ -335,6 +335,18 @@ Fixed-clock regressions cover status precedence, grouping, all expected-day thre
 
 Stage 6 batch 22 validation on October 1, 2026: strict typing and quality passed, with all four prechecks and 261 main regression commands. Fixed-clock recurring-health and shared-helper identity tests, extraction contracts and executable parity passed. Main Worker startup/packaging and private provisioner dry-run packaging passed. This checkpoint is ready for hosted acceptance; production remains at `46b72f93`.
 
+### Stage 6 batch 23: giving readers and storage contracts
+
+Authoritative TypeScript now covers parish paid/recurring giving readers, KV key pagination, stored JSON parsing and donation visibility. Existing core and payment compatibility exports retain function identity; runtime imports still use generated JavaScript paths. This brings the local generated-runtime total to 58 (53 server, five browser); the verified production checkpoint below remains at 54 until this batch passes hosted release gates.
+
+Stored JSON deliberately returns unknown. Reader assertions describe the existing storage boundary without introducing validation or changing malformed-record behavior. D1 errors still propagate without KV fallback; KV record parsing still skips malformed entries, while KV transport errors propagate. Query parameters, parish scoping, metadata precedence, limits, ordering and subscription-setup visibility remain unchanged.
+
+Validation includes real SQLite parish/status/recurring queries, legacy row fallbacks, injection-shaped parish identifiers, malformed JSON, KV pagination/duplicates/limits and transport errors, compatibility identity, and strict positive/negative compile fixtures. Normalized executable parity covers all four migrated modules and both retained facades. Validation passed: full strict quality, all four prechecks and 262 main test commands, Worker startup analysis and private-provisioner dry-run packaging. Formatting target parity confirms neither existing target set lost files. The initial sandbox-restricted runtime attempt was rerun successfully with native runtime access. This batch is validated locally and is not yet pushed or deployed; hosted authenticated staging and production acceptance remains required at its release checkpoint.
+
+The growing formatter target list exceeded the Windows shell limit. A direct Node launcher now passes the existing write/check target lists to Prettier without shell expansion; both target sets are preserved in a manifest. The Worker export checker now reads the exported name of aliases, with positive and negative regression assertions, so generated re-exports are checked correctly.
+
+The next bounded migration is a parish browser giving controller with explicit classic-script globals and DOM contracts. The following inventory remains the historical batch-22 snapshot; its first giving-reader item is completed locally by this batch.
+
 ### Remaining migration scope after batch 22
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
