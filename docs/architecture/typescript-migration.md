@@ -275,13 +275,23 @@ New isolated SQLite/handler regressions protect error/export identity, giver/par
 
 Stage 6 batch 16 validation on October 1, 2026: quality and strict typing passed, together with all four prechecks and 255 main regression commands. Focused outside-gift reader SQLite/handler tests, existing outside-gift/accounting/export integration and browser checks passed. Main Worker startup/packaging and private provisioner dry-run packaging passed. This batch starts from verified production commit `a071e262` and is not deployed.
 
-### Remaining migration scope after batch 13
+### Stage 6 batch 17: complete monthly export service
+
+monthly-giving-export.ts migrates the complete HTTP export service and consumes the typed CSV, outside-gift reader, database and response contracts. It retains the existing JavaScript path and CSV compatibility exports. Request/registration inputs, stored pages, nullable outside-gift fees and Response results are now checked together. The narrow caught-error assertion preserves the previous message lookup.
+
+The generated implementation matches normalized executable code after explicit response/reader import relocations. Parish-bound cursor SQL, 500-row pages, padded month selection, 25,000-record limits, outside-gift composition, sorting, filename sanitization, private CSV headers and failure boundaries remain unchanged. In particular, online query failures still propagate, while record shaping and outside-reader failures produce the existing review response. Authorization remains in the calling giving-history handler.
+
+New regressions exercise actual SQLite online/outside composition and foreign-parish isolation, multi-page cursors, invalid options, missing storage, malformed records, narrow missing-table fallback, propagated query failures, both completeness limits, BOM/CRLF and private download headers. Compile-time fixtures reject invalid requests, parish IDs, database bindings and timezones, and mutation of registration inputs. Forty-seven runtime modules now have authoritative TypeScript sources; this batch remains local pending hosted acceptance.
+
+Stage 6 batch 17 validation on October 1, 2026: quality and strict typing passed, together with all four prechecks and 256 main regression commands. Focused export-service SQLite/paging/completeness regressions, existing outside-gift/export integration, authentication and giving-history browser checks passed. Main Worker startup/packaging and private provisioner dry-run packaging passed. Executable parity passed after explicit typed import relocations. Batches 16–17 remain local; production is still verified commit `a071e262`.
+
+### Remaining migration scope after batch 17
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
 
 The foundation is complete, but migrating most of the platform is not nearly finished. Continue with connected read/report contracts and typed consumers, then bounded browser controller families; isolate authentication, payment/webhook and accounting-write changes behind their dedicated gates. Before calling stage 7 complete, classify all remaining files as migration targets, generated compatibility outputs or documented exceptions. No defensible remaining batch count is available until that classification and dependency sizing are complete.
 
-Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. The next connected target is the monthly export handler itself, whose direct data and formatting dependencies now have typed contracts. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
+Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. The next connected target is outside-gift reconciliation composition (subtracting linked contributions from Accounting totals), followed by its reporting consumer. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
 
 ## Release and rollback
 
