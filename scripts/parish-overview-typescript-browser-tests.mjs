@@ -63,10 +63,20 @@ function money(v){return '$'+Number(v)/100;}
 function shortDate(v){return v?String(v):'';}
 function escapeHtml(v){return String(v||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}`,
       });
+      // Wait for completion, not a rounded intermediate value that may appear early.
+      await page.addScriptTag({
+        content: `window.pendingGivingAnimationFrames = 0;
+const nativeGivingFrame = window.requestAnimationFrame.bind(window);
+window.requestAnimationFrame = (callback) => {
+ window.pendingGivingAnimationFrames++;
+ return nativeGivingFrame((time) => { try { callback(time); } finally { window.pendingGivingAnimationFrames--; } });
+};`,
+      });
       await page.addScriptTag({ content: source });
       await page.evaluate(() => loadGivingSummary(document.querySelector('#refresh')));
       assert.equal(requests[0], 'https://overview.test/api/parish/dashboard/p%20%2F%20one/giving-summary');
       await page.waitForFunction(() => document.querySelector('#pdxHeroTotal').textContent === '$100');
+      await page.waitForFunction(() => window.pendingGivingAnimationFrames === 0);
       assert.equal(await page.locator('#pdxKpiDonors').textContent(), '3');
       assert.match(await page.locator('#pdxKpiAvgGiftMeta').textContent(), /100%/);
       assert.equal(await page.locator('#pdxHeroSpark circle').count(), 2);
