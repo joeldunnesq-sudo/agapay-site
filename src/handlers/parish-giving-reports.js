@@ -36,7 +36,7 @@ import { resolveOperationalAccountingDatabase } from "../accounting/source-wirin
 // this reporting cluster, even though the current endpoints return narrower payloads.
 void parishDashboardPayload;
 
-const MANUAL_GIVING_SIGNAL = /\b(alms?|candle|candles|collection|contribution|donation|gift|giving|offering|stewardship|tithe|tithes|vigil)\b/i;
+import { manualAccountingGifts } from '../lib/manual-giving-model.js';
 
 export async function loadManualAccountingGivingEntries(env, parishId, limit = 500) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);
@@ -57,27 +57,7 @@ export async function loadManualAccountingGivingEntries(env, parishId, limit = 5
       ORDER BY gift_date DESC,e.created_at DESC,l.line_number
       LIMIT ?
     `).bind(Math.max(1, Math.min(2000, Number(limit) || 500))).all();
-    return (result.results || [])
-      .filter((row) => row.source_type === "manual_register_contribution"
-        || MANUAL_GIVING_SIGNAL.test(`${row.account_name || ""} ${row.entry_description || ""}`))
-      .map((row) => ({
-        id: `accounting:${row.entry_id}:${row.line_id}`,
-        source: "manual_accounting",
-        giftType: "manual_accounting",
-        amountCents: Number(row.credit_amount || 0),
-        parishNetCents: Number(row.credit_amount || 0),
-        giftAmountCents: Number(row.credit_amount || 0),
-        createdAt: row.gift_date,
-        date: row.gift_date,
-        description: [row.entry_description, row.account_name].filter(Boolean).join(" · "),
-        label: row.account_name || "",
-        fund: row.fund_name || "",
-        fundId: row.fund_code || "",
-        donorName: "",
-        donorEmail: "",
-        recurring: false,
-        type: "one_time"
-      }));
+    return manualAccountingGifts(result.results || []);
   } catch (error) {
     if (/no such table|not configured|unavailable/i.test(String(error?.message || ""))) return [];
     throw error;

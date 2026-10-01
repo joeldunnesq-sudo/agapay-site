@@ -305,13 +305,23 @@ Focused regressions cover year/UTC boundaries, historical fallback, malformed/mi
 
 Stage 6 batch 19 validation on October 1, 2026: strict typing and quality passed, followed by all four prechecks and 258 main regression commands. The first full run exposed declaration-location and import expectations in the extraction test; those now check actual runtime exports and the new dependency, and the complete rerun passed. Focused summary tests, executable parity, main Worker startup/packaging and private provisioner dry-run packaging passed. This batch remains local; production is verified commit `ed248fc6`.
 
-### Remaining migration scope after batch 19
+### Stage 6 batch 20: manual Accounting giving projection
+
+manual-giving-model.ts extracts the existing signal-based selection and row projection into read-only SQLite row contracts and an explicit manual-giving output. Its results compose with typed outside-gift subtraction and stored summaries. The original handler keeps database resolution, SQL, limit coercion, missing-result fallback and error handling in place; the extracted helper is synchronous.
+
+Whole-word classification, the manual-register bypass, input ordering, nullable metadata defaults, joined descriptions and original Number conversion remain unchanged. No new validation, query, ledger write or authorization behavior was introduced. Normalized executable comparison verifies the extracted helper and reconstructs the original handler by inlining its expression.
+
+Focused regressions cover every signal term, word boundaries, manual-register records, null/default metadata, numeric strings and invalid/negative values, immutable inputs, actual SQLite result objects, and downstream allocation/summary conservation. Compile-time fixtures protect required row aliases, read-only inputs, dates, literal output kinds and numeric amounts. Fifty runtime modules now have authoritative TypeScript sources; batches 19–20 remain local pending grouped hosted acceptance.
+
+Stage 6 batch 20 validation on October 1, 2026: strict typing and quality passed, along with all four prechecks and 259 main regression commands. Focused SQLite projection/composition, extraction contracts and normalized executable parity passed. Main Worker startup/packaging and private provisioner dry-run packaging passed. Batches 19–20 remain local; production is verified commit `ed248fc6`.
+
+### Remaining migration scope after batch 20
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
 
 The foundation is complete, but migrating most of the platform is not nearly finished. Continue with connected read/report contracts and typed consumers, then bounded browser controller families; isolate authentication, payment/webhook and accounting-write changes behind their dedicated gates. Before calling stage 7 complete, classify all remaining files as migration targets, generated compatibility outputs or documented exceptions. No defensible remaining batch count is available until that classification and dependency sizing are complete.
 
-Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. Batch 18 completed outside-gift reconciliation composition. Batch 19 completed the stored giving summary model. The next connected target is manual Accounting giving row shaping, keeping database resolution, query ordering, error fallback and authorization boundaries intact. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
+Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. Batch 18 completed outside-gift reconciliation composition. Batch 19 completed the stored giving summary model. Batch 20 completed manual Accounting giving row shaping. The next connected target is the public parish gift projection and donor display-name helper, consuming the existing typed fee breakdown while preserving paid-status and database/KV boundaries. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
 
 ## Release and rollback
 
