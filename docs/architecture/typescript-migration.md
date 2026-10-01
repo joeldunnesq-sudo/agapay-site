@@ -315,13 +315,23 @@ Focused regressions cover every signal term, word boundaries, manual-register re
 
 Stage 6 batch 20 validation on October 1, 2026: strict typing and quality passed, along with all four prechecks and 259 main regression commands. Focused SQLite projection/composition, extraction contracts and normalized executable parity passed. Main Worker startup/packaging and private provisioner dry-run packaging passed. Batches 19–20 remain local; production is verified commit `ed248fc6`.
 
-### Remaining migration scope after batch 20
+### Stage 6 batch 21: public parish gift model
+
+public-gift-model.ts extracts donor display names and public gift projection from the parish giving read model. It consumes the typed fee breakdown and preserves the original compatibility exports. Monetary fields and recurring-kind results are checked, while unvalidated display values remain unknown. The result composes with the stored giving summary contract.
+
+ID/date/email precedence, fund/campaign fallbacks, general-fund normalization, name joining, fee values, recurring truthiness and commemoration array versus multiline-string behavior remain unchanged. Array assertions preserve original values after Array.isArray without silently claiming string elements. Paid-status decisions, donation visibility and database/KV reads stay in the existing module.
+
+Focused regressions cover compatibility identity, names and whitespace, fee/null/zero behavior, legacy display objects, date and ID precedence, fund/campaign fallback, recurring case sensitivity, immutable inputs and mixed commemoration values. Compile-time fixtures reject unsupported timestamps, mutation and unsafe assumptions about display/name values. Both extracted and retained implementations pass normalized executable parity after explicit import/re-export relocations. Fifty-one runtime modules now have authoritative TypeScript sources; batches 19–21 await grouped hosted acceptance.
+
+Stage 6 batch 21 validation on October 1, 2026: strict typing and quality passed, with all four prechecks and 260 main regression commands. Focused public-gift and compatibility tests, retained handler contracts, executable parity and main Worker/private provisioner packaging passed. Batches 19–21 are ready for grouped hosted acceptance; production remains at `ed248fc6`.
+
+### Remaining migration scope after batch 21
 
 The October 1 inventory at the preceding batch-12 checkpoint found 498 tracked JavaScript files under src and public: 38 generated from the migration manifests and 460 outside them. The latter includes vendor assets and compatibility wrappers, so it is an inventory rather than a required-conversion count or behavior coverage percentage. Extracting two helpers does not retire their remaining JavaScript caller. Large remaining areas include 86 handler files, 75 parish browser files, 65 accounting files, 55 shared-library files, 25 directory files, and recovery/portability/payment services. These are path-based counts, not effort estimates.
 
 The foundation is complete, but migrating most of the platform is not nearly finished. Continue with connected read/report contracts and typed consumers, then bounded browser controller families; isolate authentication, payment/webhook and accounting-write changes behind their dedicated gates. Before calling stage 7 complete, classify all remaining files as migration targets, generated compatibility outputs or documented exceptions. No defensible remaining batch count is available until that classification and dependency sizing are complete.
 
-Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. Batch 18 completed outside-gift reconciliation composition. Batch 19 completed the stored giving summary model. Batch 20 completed manual Accounting giving row shaping. The next connected target is the public parish gift projection and donor display-name helper, consuming the existing typed fee breakdown while preserving paid-status and database/KV boundaries. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
+Batches 14–15 completed the connected fee breakdown, paged fund activity and CSV model work. Batch 16 completed the outside-gift reader boundary. Batch 17 completed the monthly export handler. Batch 18 completed outside-gift reconciliation composition. Batch 19 completed the stored giving summary model. Batch 20 completed manual Accounting giving row shaping. Batch 21 completed the public gift projection and donor display-name helper. The next connected target is recurring-gift health calculation, preserving paid-status dependencies and database/KV boundaries. Keep checkout fee-schedule changes, Stripe network calls and outside-gift mutations separate. Existing fund reconciliation, payment integrity, monthly export, catalog and browser tests must remain in the release gate.
 
 ## Release and rollback
 
