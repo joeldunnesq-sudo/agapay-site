@@ -19,6 +19,8 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/format.ts',
   'src/lib/request-context.ts',
   'src/lib/logging.ts',
+  'src/lib/http-responses.ts',
+  'src/lib/request-diagnostics.ts',
   'src/lib/content-reads.ts',
   'src/lib/safe-external-url.ts',
   'src/lib/koinonia-calendar.ts',

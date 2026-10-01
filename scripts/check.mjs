@@ -1,3 +1,4 @@
+import * as coreRuntime from '../src/lib/core.js';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
@@ -871,13 +872,18 @@ assert.ok(donorSecurity.includes("cf-turnstile-response"), "security helper shou
 // mechanisms exist and stay in sync, not just that one of them does.
 const securityHeadersFile = await readFile("public/_headers", "utf8");
 const expectedHstsPolicy = "max-age=2592000; includeSubDomains";
-assert.ok(core.includes("export const SECURITY_HEADERS"), "core.js should export a shared SECURITY_HEADERS constant");
-assert.ok(core.includes('"X-Content-Type-Options": "nosniff"'), "SECURITY_HEADERS should set X-Content-Type-Options");
-assert.ok(core.includes('"X-Frame-Options": "SAMEORIGIN"'), "SECURITY_HEADERS should set X-Frame-Options");
-assert.ok(core.includes(`"Strict-Transport-Security": "${expectedHstsPolicy}"`), "SECURITY_HEADERS should set the staged HSTS policy");
-assert.ok(core.includes("Content-Security-Policy-Report-Only"), "CSP should ship Report-Only, not enforcing, until violations have been reviewed (see docs/SECURITY_HEADERS.md)");
-assert.ok(!core.includes('"Content-Security-Policy":'), "CSP should not be flipped to enforcing without reading docs/SECURITY_HEADERS.md first");
-assert.ok(core.includes("...SECURITY_HEADERS"), "json()/corsJson() should apply SECURITY_HEADERS to Worker-generated API responses");
+assert.equal(typeof coreRuntime.SECURITY_HEADERS, 'object', 'core.js should export the shared security headers');
+assert.equal(coreRuntime.SECURITY_HEADERS['X-Content-Type-Options'], 'nosniff');
+assert.equal(coreRuntime.SECURITY_HEADERS['X-Frame-Options'], 'SAMEORIGIN');
+assert.equal(coreRuntime.SECURITY_HEADERS['Strict-Transport-Security'], expectedHstsPolicy);
+assert.ok(coreRuntime.SECURITY_HEADERS['Content-Security-Policy-Report-Only'], 'CSP remains Report-Only');
+assert.ok(!Object.hasOwn(coreRuntime.SECURITY_HEADERS, 'Content-Security-Policy'), 'CSP must not become enforcing in this extraction');
+for (const response of [coreRuntime.json({}), coreRuntime.corsJson({}, {})]) {
+  for (const [header, value] of Object.entries(coreRuntime.SECURITY_HEADERS)) {
+    assert.equal(response.headers.get(header), value, 'Both JSON helpers must apply every baseline security header');
+  }
+  assert.equal(response.headers.has('Content-Security-Policy'), false);
+}
 assert.ok(securityHeadersFile.includes("X-Content-Type-Options: nosniff"), "public/_headers should set X-Content-Type-Options for static assets");
 assert.ok(securityHeadersFile.includes(`Strict-Transport-Security: ${expectedHstsPolicy}`), "public/_headers should match the staged Worker HSTS policy");
 assert.ok(securityHeadersFile.includes("Content-Security-Policy-Report-Only:"), "public/_headers should ship CSP Report-Only, matching core.js");
