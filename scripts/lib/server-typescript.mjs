@@ -38,6 +38,9 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/nonprofit-pricing-storage.ts',
   'src/lib/accounting-attachment-storage.ts',
   'src/sacraments/document-upload.ts',
+  'src/stewardship/giving-fee-presentation.ts',
+  'src/stewardship/ledger-cost-presentation.ts',
+  'src/stewardship/council-reports.ts',
 ]);
 
 export function serverSourcePath(runtimePath) {

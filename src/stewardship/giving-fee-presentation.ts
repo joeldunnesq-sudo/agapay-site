@@ -1,8 +1,9 @@
-// Generated from src/stewardship/giving-fee-presentation.ts by npm run build:server. Do not edit.
+import type { GivingFeeReport } from '../lib/giving-fee-report.js';
 import { htmlEscape } from '../lib/format.js';
-function givingFeeReportHtml(report) {
+
+export function givingFeeReportHtml(report: GivingFeeReport | null | undefined): string {
   if (!report?.annual) return '';
-  const money = (value) =>
+  const money = (value: unknown) =>
     (Number(value || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: report.currency });
   const a = report.annual;
   const rows = [...report.quarterly, ...report.monthly];
@@ -14,7 +15,11 @@ function givingFeeReportHtml(report) {
     <p class="sw-fees-note">Donors contributed ${money(a.donorFeeContributionCents)} toward processing costs; ${money(a.excessCoverageCents)} of retained coverage exceeds confirmed fees and remains a contribution. ${a.pendingCount} gifts await reconciliation (${money(a.estimatedStripeFeeCents)} estimated fees, excluded from confirmed totals). Fees are grouped by gift date across this calendar year. Recorded refunds: ${money(a.refundedCents)}; returned coverage is allocated to the parish share. USD AGAPAY giving only; Commerce, subscriptions, separate Stripe adjustments, and ${report.excludedCurrencyCount} non-USD gifts are excluded. This fee detail supplements the financial report and must not be added to expenses a second time.</p>
   </section>`;
 }
-async function appendGivingFeeReport(response, report) {
+
+export async function appendGivingFeeReport(
+  response: Response,
+  report: GivingFeeReport | null | undefined
+): Promise<Response> {
   const html = await response.text();
   const section = givingFeeReportHtml(report);
   const closing = html.includes('</main>') ? '</main>' : '</body>';
@@ -23,4 +28,3 @@ async function appendGivingFeeReport(response, report) {
     headers: response.headers,
   });
 }
-export { appendGivingFeeReport, givingFeeReportHtml };
