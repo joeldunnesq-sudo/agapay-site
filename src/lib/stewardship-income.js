@@ -1,5 +1,5 @@
-// Qualified outside gifts share one definition across giving and council reports.
-export async function manualIncomeTotalCents(env, parishId, startDate, endDate) {
+// Generated from src/lib/stewardship-income.ts by npm run build:server. Do not edit.
+async function manualIncomeTotalCents(env, parishId, startDate, endDate) {
   try {
     const row = await env.AGAPAY_DB.prepare(
       `SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
@@ -14,3 +14,4 @@ export async function manualIncomeTotalCents(env, parishId, startDate, endDate) 
     throw error;
   }
 }
+export { manualIncomeTotalCents };

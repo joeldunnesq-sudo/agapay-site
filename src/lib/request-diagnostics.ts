@@ -1,11 +1,20 @@
-// Generated from src/lib/request-diagnostics.ts by npm run build:server. Do not edit.
 import { corsJson } from './http-responses.js';
+import type { HttpResponseEnv } from './http-responses.js';
+import type { LoggingEnv } from './logging.js';
 import { logEvent } from './logging.js';
 import { requestContext, safeErrorClass, safeRequestRoute } from './request-context.js';
-function withRequestDiagnostics(handler) {
+
+export type DiagnosticsEnv = LoggingEnv & HttpResponseEnv;
+export interface DiagnosticHandler<Environment extends DiagnosticsEnv, Context> {
+  fetch(request: Request, env: Environment, ctx: Context): Response | Promise<Response>;
+}
+
+export function withRequestDiagnostics<Environment extends DiagnosticsEnv, Context, Extra extends object>(
+  handler: Extra & DiagnosticHandler<Environment, Context>
+): Omit<Extra, 'fetch'> & { fetch(request: Request, env: Environment, ctx: Context): Promise<Response> } {
   return {
     ...handler,
-    async fetch(request, env, ctx) {
+    async fetch(request: Request, env: Environment, ctx: Context): Promise<Response> {
       const context = {
         requestId: crypto.randomUUID(),
         route: safeRequestRoute(request),
@@ -39,6 +48,7 @@ function withRequestDiagnostics(handler) {
             },
           });
         }
+        // Preserve streaming bodies, status, cookies, and Cloudflare response properties.
         const result = new Response(response.body, response);
         result.headers.set('X-Request-ID', context.requestId);
         const exposed = result.headers.get('Access-Control-Expose-Headers');
@@ -48,4 +58,3 @@ function withRequestDiagnostics(handler) {
     },
   };
 }
-export { withRequestDiagnostics };

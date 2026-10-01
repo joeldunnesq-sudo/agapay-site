@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { json } from "../src/lib/core.js";
 
-const [givePage, requestDemoPage, pixel, privacy, headers, core] = await Promise.all([
+const [givePage, requestDemoPage, pixel, privacy, headers] = await Promise.all([
   readFile("public/give/index.html", "utf8"),
   readFile("public/give/request-demo.html", "utf8"),
   readFile("public/meta-pixel.js", "utf8"),
   readFile("public/privacy.html", "utf8"),
   readFile("public/_headers", "utf8"),
-  readFile("src/lib/core.js", "utf8"),
 ]);
+const core = json({}).headers.get("Content-Security-Policy-Report-Only");
 
 const pixelId = "1065546639329281";
 const tagCount = (source, pattern) => [...source.matchAll(pattern)].length;
