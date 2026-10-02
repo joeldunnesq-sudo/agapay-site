@@ -1,0 +1,64 @@
+# Historical reconciliation and live acceptance — September 5, 2026
+
+Application commit: `6b821bbb371580cec1fa95a3f7f770fc45184c18`.
+
+## Historical financial reconciliation
+
+Read-only production D1 queries were compared with the authenticated Stripe dashboard. No production financial records, Stripe payments, refunds, subscription settings, or emails were changed. Raw query evidence is retained locally under `artifacts/readiness-2026-09-05/`, outside version control.
+
+The central database contains 95 donation records: 91 paid St. Fiacre demo records, one expired unpaid St. Fiacre checkout, one paid Test Lubbock gift, and two expired unpaid Test Lubbock checkouts. Both bookstore records are explicitly identified as demo records. There are no duplicate nonempty payment-intent IDs in the donation table. All 33 donation records with subscription IDs belong to St. Fiacre's seeded demo history; there are no recorded live recurring donations to reconcile.
+
+Test Lubbock is mapped to connected account `acct_1U3nOw6HOK0CIbX2`, displayed by Stripe as Anchor Podcasting (AgaPay). Its unfiltered Payments view shows one succeeded payment, zero refunded payments, zero disputed payments, and no additional PaymentIntents. That payment exactly matches the stored PaymentIntent, charge, and Checkout Session identities.
+
+| Item | AGAPAY | Stripe | Result |
+| --- | ---: | ---: | --- |
+| Donor charge | $1.34 | $1.34 | Match |
+| Gift amount | $1.00 | $1.00 in metadata | Match |
+| Processing fee | $0.34 | $0.34 | Match |
+| AGAPAY fee | $0.00 | $0.00 in metadata | Match |
+| Gift net before separate account fees | $1.00 | $1.00 | Match |
+| Fund identity | Missing `fundId`; label Candles / Vigil Lights | `fund_id=candle`, same label | Recoverable omission |
+
+Payment: `pi_3U3pMy6HOK0CIbX21Qeb6CmW`, succeeded August 13. Stripe's payout `po_1U6JpR6HOK0CIbX2YMFuODzG` was paid August 20 for $0.85. Its composition is the $1.00 net charge minus a separate $0.15 Radar fee. This explains the difference between the gift net and the bank payout; it is not a missing donation or an AGAPAY fee.
+
+AGAPAY records its receipt as sent at `2026-08-13T03:32:18.017Z`. Stripe shows no Stripe-sent receipts; AGAPAY sends its own receipt, so these are different delivery systems. This audit verifies the application marker, not inbox delivery or the provider's historical delivery log.
+
+The exact historical metadata repair is to restore `fundId: "candle"` on the single matching Test Lubbock offering. Stripe provides the original stable ID, so no interpretation of the current fund catalog is needed. This report does not execute that repair or resend the receipt.
+
+Test Lubbock's accounting database is active and healthy, but contains no journal entries or integration source events. Both giving and Stripe posting are disabled, posting mode is `review_required`, and the integration start date is August 30. The August 13 gift and August 20 payout predate that start. Consequently, this is a reconciled operational payment, not a demonstrated historical ledger posting. Choosing a backfill period or opening-balance treatment remains a separate accounting configuration decision.
+
+Scope limitation: the comparison covers recorded parish donations/bookstore orders and the associated live connected-account payment/payout history. It does not constitute a platform subscription revenue audit, a bank-statement audit, or proof that each demo balance is a real Stripe balance.
+
+## Live two-parish acceptance attempt
+
+The current main commit was deployed successfully to the isolated staging Worker by [run 33988749261](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33988749261). Quality checks, the full test job, central/parish migrations, and staging deployment passed.
+
+The protected two-parish acceptance workflow was then dispatched against `https://agapay-site-staging.joeldunnesq.workers.dev` using the existing `accounting-release-gates` credentials: [run 33989007249](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33989007249).
+
+**Result: blocked at authentication; not passed.** Password login returned HTTP 200 without a session token, which the bootstrap script does not handle. Privileged login now requires the MFA challenge/enrollment flow. The bootstrap failure caused subsequent reconciliation, giving catalog, check-print, service-worker, and cross-parish matrix steps to be skipped. No cross-parish attempt count should be attributed to this run.
+
+At initial inspection, the staging registrations used `acct_staging_*` onboarding simulation IDs, not real Stripe test-account IDs. These fixtures can exercise onboarding presentation but cannot demonstrate real Stripe checkout, payout reconciliation, recurring billing, or webhook delivery. Existing synthetic commerce history indicated earlier test activity, but did not establish that the setup remained connected.
+
+### Setup repairs after the initial attempt
+
+After the user completed staging administrator MFA, both test connections were restored through the existing staging reset and Stripe metadata recovery actions. Parish A now uses `acct_1TyvxS4MIV9oqpYA`; Parish B uses `acct_1Tyx1K9JNQkYmrEj`. The Stripe response confirmed staging uses a test key. No production account connection changed. Resetting the simulations intentionally cleared their launch signoffs and hid their giving pages. Parish A's synthetic review was then completed through the admin UI with an explicit unrestricted `general` fund mapped to `fund_general`; its twelve setup checks passed and it awaits fresh parish launch approval.
+
+The MFA-aware rerun [33989528933](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33989528933) exposed a missing runtime authenticator encryption key. Staging health returned HTTP 503 with `totp_key_unconfigured`. Although the secret name existed, it supplied no usable value. A read-only check found zero encrypted or confirmed TOTP profiles. A fresh staging-only encryption key was configured, preserving existing passkeys. Staging health subsequently returned `ok=true` and `checks.mfa.ok=true`. The staging deployment workflow now includes a post-deploy health assertion.
+
+Rerun [33989721765](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33989721765) successfully enrolled and authenticated both dedicated named test users through the real MFA endpoints. Their setup secrets and recovery codes were retained only in encrypted evidence. The run then stopped at Parish A's existing shared-account second factor. No existing factor was reset. A request to store the newly generated test-user secrets in the protected GitHub environment was blocked by automatic approval review pending explicit user authorization for that destination.
+
+The updated harness supports named-staff browser sign-in with MFA followed by the independent accounting PIN. This is the application's normal supported sign-in route; it does not remove the existing shared-dashboard factor. Shared-dashboard launch acceptance remains a separately identified check. Protected workflow credentials are restricted to the exact dedicated staging origin before any authentication request.
+
+Validation of these harness changes: `npm run quality` and all ten commands in `npm run check:release-gates` passed. This includes real local workerd/storage exercises, the RFC TOTP vector, encrypted credential round-trip, MFA destination restrictions, and named-staff session handling. These results are not represented as completed live payment or cross-parish acceptance. Changes are tracked in [draft PR 150](https://github.com/joeldunnesq-sudo/agapay-site/pull/150).
+
+The latest production smoke artifact from [deployment 33987746217](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/33987746217) reports public health passed and `authenticated.status=blocked_missing_credentials`. A green deployment job must not be described as a successful authenticated two-parish test. The staging runbook intentionally keeps staging credentials out of production deployment secrets.
+
+## Work required to finish acceptance
+
+1. Both real Stripe test connections and staging administrator authentication are restored. Finish the synthetic launch setup: Parish A has passed all twelve setup checks and awaits parish signoff; Parish B's reset review must still be completed.
+2. Both named test users are enrolled and the harness is updated. Explicit authorization to store their new MFA secrets in protected GitHub storage remains pending, as does the user's St. Fiacre shared-account passkey sign-in. Do not disable MFA, reset an existing factor, or fabricate authenticated sessions to make a gate pass.
+3. Rerun all authenticated gates and retain their actual evidence.
+4. Exercise one-time and recurring Stripe test payments, delayed-payment success/failure, renewal, cancellation, refunds, replay, receipts, donor history, fund reports, and accounting effects. The current failed run proves none of these.
+5. Verify the shared-dashboard initial launch, independent accounting PIN, and 30-day trial/billing transition on the deployed test system. The prior local regression results remain useful but are not substitutes for this acceptance evidence.
+
+A separate real backup restore remains outside the completed checks in this report.
