@@ -1,9 +1,49 @@
-// Generated from src/browser/parish/features/giving/history.ts by npm run build:browser. Do not edit.
 'use strict';
-let allGifts = [];
-let manualAccountingGifts = [];
-let filteredGifts = [];
-async function loadGivingHistory(btn) {
+
+// Describes the existing JSON boundary; this migration adds no runtime validation.
+interface ParishHistoryGift {
+  readonly id?: string;
+  readonly date?: string | number | null;
+  readonly createdAt?: string | number | null;
+  readonly donorName?: string | null;
+  readonly donorEmail?: string | null;
+  readonly fund?: string | null;
+  readonly fundId?: string | null;
+  readonly description?: string | null;
+  readonly commemorationNames?: readonly string[] | null;
+  readonly type?: string;
+  readonly source?: string;
+  readonly sourceLabel?: string;
+  readonly recurring?: boolean;
+  readonly coverFees?: boolean;
+  readonly giftAmountCents?: number | null;
+  readonly amountCents?: number | null;
+  readonly parishNetCents?: number | null;
+  readonly totalFeeCents?: number | null;
+}
+interface ParishHistoryResponse {
+  readonly detail?: string;
+  readonly error?: string;
+  readonly gifts?: ParishHistoryGift[] | null;
+  readonly manualAccountingGifts?: ParishHistoryGift[] | null;
+}
+declare function setStatus(message: string, kind: string): void;
+declare function renderCandleGiving(): void;
+declare function renderGivingOptionsEditor(): void;
+declare function renderGiversPanel(): void;
+declare function escapeAttr(value: unknown): string;
+declare function fullDate(value: string | number | null | undefined): string;
+declare function downloadBlob(name: string, blob: Blob): void;
+
+// Giving history; read shared identity and catalog state only when actions run.
+let allGifts: ParishHistoryGift[] = []; // full history cache
+
+let manualAccountingGifts: ParishHistoryGift[] = []; // posted manual contributions used by overview widgets
+
+let filteredGifts: ParishHistoryGift[] = []; // filtered view
+
+// ── GIVING HISTORY ────────────────────────────────────────
+async function loadGivingHistory(btn?: HTMLButtonElement | null): Promise<void> {
   if (!currentParish) {
     setStatus('Load a parish first.', 'error');
     return;
@@ -18,11 +58,12 @@ async function loadGivingHistory(btn) {
     const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/giving-history', {
       headers: authHeaders(),
     });
-    const data = await res.json();
+    const data = (await res.json()) as ParishHistoryResponse;
     if (!res.ok) throw new Error(data.detail || data.error || 'Unable to load giving history');
     allGifts = data.gifts || [];
     manualAccountingGifts = data.manualAccountingGifts || [];
     renderCandleGiving();
+    // Populate fund filter
     const funds = [...new Set(allGifts.map((g) => g.fund || g.fundId || 'General').filter(Boolean))];
     const fundSel = document.getElementById('histFundFilter');
     if (fundSel) {
@@ -34,7 +75,7 @@ async function loadGivingHistory(btn) {
     if (currentParish) renderGivingOptionsEditor();
     renderGiversPanel();
   } catch (err) {
-    if (wrap) wrap.innerHTML = `<div class="history-empty">${escapeHtml(err.message)}</div>`;
+    if (wrap) wrap.innerHTML = `<div class="history-empty">${escapeHtml((err as Error).message)}</div>`;
   } finally {
     if (btn) {
       btn.classList.remove('loading');
@@ -42,17 +83,18 @@ async function loadGivingHistory(btn) {
     }
   }
 }
-function filterHistory() {
-  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
-  const type = document.getElementById('histTypeFilter')?.value || 'all';
-  const fund = document.getElementById('histFundFilter')?.value || 'all';
-  const range = document.getElementById('histRangeFilter')?.value || 'ytd';
-  const now = /* @__PURE__ */ new Date();
+
+function filterHistory(): void {
+  const q = ((document.getElementById('histSearch') as HTMLInputElement | null)?.value || '').toLowerCase();
+  const type = (document.getElementById('histTypeFilter') as HTMLSelectElement | null)?.value || 'all';
+  const fund = (document.getElementById('histFundFilter') as HTMLSelectElement | null)?.value || 'all';
+  const range = (document.getElementById('histRangeFilter') as HTMLSelectElement | null)?.value || 'ytd';
+  const now = new Date();
   const rangeStart =
     range === '30d'
-      ? new Date(now.getTime() - 30 * 864e5)
+      ? new Date(now.getTime() - 30 * 86400000)
       : range === '90d'
-        ? new Date(now.getTime() - 90 * 864e5)
+        ? new Date(now.getTime() - 90 * 86400000)
         : range === 'ytd'
           ? new Date(now.getFullYear(), 0, 1)
           : null;
@@ -72,11 +114,17 @@ function filterHistory() {
       const matchRange = !rangeStart || (!Number.isNaN(giftDate.getTime()) && giftDate >= rangeStart);
       return matchQ && matchType && matchFund && matchRange;
     })
-    .sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+    // JavaScript Date subtraction uses numeric coercion; assertions preserve that expression.
+    .sort(
+      (a, b) =>
+        (new Date(b.date || b.createdAt || 0) as unknown as number) -
+        (new Date(a.date || a.createdAt || 0) as unknown as number)
+    );
   renderHistoryTable();
   renderGiversPanel();
 }
-function renderHistoryInsights() {
+
+function renderHistoryInsights(): void {
   const trendPane = document.getElementById('historyTrendPanel');
   const fundPane = document.getElementById('historyFundPanel');
   const gifts = filteredGifts || [];
@@ -85,7 +133,7 @@ function renderHistoryInsights() {
       const date = new Date(gift.date || gift.createdAt || 0);
       return !Number.isNaN(date.getTime()) && date > latest ? date : latest;
     },
-    new Date(/* @__PURE__ */ new Date().getFullYear(), /* @__PURE__ */ new Date().getMonth(), 1)
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
   const months = [];
   for (let offset = 5; offset >= 0; offset -= 1) {
@@ -98,7 +146,7 @@ function renderHistoryInsights() {
     });
   }
   const monthMap = new Map(months.map((month) => [month.key, month]));
-  const fundMap = /* @__PURE__ */ new Map();
+  const fundMap = new Map<string, number>();
   gifts.forEach((gift) => {
     const date = new Date(gift.date || gift.createdAt || 0);
     const cents = Number((gift.giftAmountCents ?? gift.amountCents) || 0);
@@ -145,7 +193,9 @@ function renderHistoryInsights() {
       : '<div class="parish-history-insight-empty">Fund allocation will appear after gifts are recorded.</div>';
   }
 }
-function renderHistoryTable() {
+
+function renderHistoryTable(): void {
+  // Summary stats
   const total = filteredGifts.reduce((s, g) => s + ((g.giftAmountCents ?? g.amountCents) || 0), 0);
   const avg = filteredGifts.length ? Math.round(total / filteredGifts.length) : 0;
   const recurring = filteredGifts.filter((g) => g.recurring).length;
@@ -159,12 +209,13 @@ function renderHistoryTable() {
       .filter(Boolean)
   ).size;
   const feeCovered = filteredGifts.filter((g) => g.coverFees).length;
-  document.getElementById('histStatTotal').textContent = filteredGifts.length;
-  document.getElementById('histStatAmount').textContent = money(total);
-  document.getElementById('histStatAvg').textContent = filteredGifts.length ? money(avg) : '—';
-  document.getElementById('histStatRecurring').textContent = recurring;
+  // DOM text setters coerce these counts to strings; retain existing assignments.
+  document.getElementById('histStatTotal')!.textContent = filteredGifts.length as unknown as string;
+  document.getElementById('histStatAmount')!.textContent = money(total);
+  document.getElementById('histStatAvg')!.textContent = filteredGifts.length ? money(avg) : '—';
+  document.getElementById('histStatRecurring')!.textContent = recurring as unknown as string;
   const donorStat = document.getElementById('histStatDonors');
-  if (donorStat) donorStat.textContent = donors;
+  if (donorStat) donorStat.textContent = donors as unknown as string;
   const context = document.getElementById('historyHeroContext');
   if (context)
     context.textContent = `${recurring} recurring gift${recurring === 1 ? '' : 's'} · ${feeCovered} fee-covered · ${donors} distinct donor${donors === 1 ? '' : 's'}`;
@@ -172,6 +223,7 @@ function renderHistoryTable() {
   if (resultCount)
     resultCount.textContent = `Showing ${filteredGifts.length} of ${allGifts.length} gift${allGifts.length === 1 ? '' : 's'}`;
   renderHistoryInsights();
+
   const wrap = document.getElementById('historyTableWrap');
   if (!wrap) return;
   if (!filteredGifts.length) {
@@ -184,7 +236,7 @@ function renderHistoryTable() {
       const netCents = Number((g.parishNetCents ?? g.amountCents) || 0);
       const feeCents = Number(g.totalFeeCents || 0);
       const details = (g.commemorationNames || []).length
-        ? `<span class="parish-history-row-note">For ${escapeHtml(g.commemorationNames.join(', '))}</span>`
+        ? `<span class="parish-history-row-note">For ${escapeHtml(g.commemorationNames!.join(', '))}</span>`
         : '';
       return `
         <tr>
@@ -198,6 +250,7 @@ function renderHistoryTable() {
         </tr>`;
     })
     .join('');
+
   wrap.innerHTML = `
       <div class="history-table-wrap">
         <table class="history-table">
@@ -208,7 +261,9 @@ function renderHistoryTable() {
         </table>
       </div>`;
 }
-function exportHistoryCsv() {
+
+// ── CSV EXPORT ────────────────────────────────────────────
+function exportHistoryCsv(): void {
   if (!filteredGifts.length) {
     setStatus('No gifts to export. Load history first.', 'error');
     return;
@@ -247,7 +302,7 @@ function exportHistoryCsv() {
       .join(',')
   );
   const csv = [headers.join(','), ...rows].join('\n');
-  const name = `${currentParish?.parishId || 'parish'}-giving-history-${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}.csv`;
+  const name = `${currentParish?.parishId || 'parish'}-giving-history-${new Date().toISOString().slice(0, 10)}.csv`;
   downloadBlob(name, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
   setStatus(`Exported ${filteredGifts.length} gifts to ${name}.`, 'success');
 }

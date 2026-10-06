@@ -142,6 +142,7 @@ export default [
       'scripts/parish-overview-typescript-browser-tests.mjs',
       'scripts/parish-insights-typescript-browser-tests.mjs',
       'scripts/parish-weekly-funds-typescript-browser-tests.mjs',
+      'scripts/parish-history-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -215,5 +216,39 @@ export default [
       globals: { currentParish: 'readonly', authHeaders: 'readonly', escapeHtml: 'readonly', moneyFull: 'readonly' },
     },
     rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^loadWeeklyFunds$' }] },
+  },
+  {
+    files: ['src/browser/parish/features/giving/history.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(manualAccountingGifts|loadGivingHistory|exportHistoryCsv)$' },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/history.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        setStatus: 'readonly',
+        authHeaders: 'readonly',
+        renderCandleGiving: 'readonly',
+        escapeHtml: 'readonly',
+        renderGivingOptionsEditor: 'readonly',
+        renderGiversPanel: 'readonly',
+        escapeAttr: 'readonly',
+        moneyFull: 'readonly',
+        money: 'readonly',
+        fullDate: 'readonly',
+        downloadBlob: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(manualAccountingGifts|loadGivingHistory|exportHistoryCsv)$' },
+      ],
+    },
   },
 ];

@@ -14,7 +14,7 @@ Plan for seven major stages, with multiple independently tested batches inside t
 6. Broader backend adoption: underway with content services; continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
 7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
 
-The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. Forty-four runtime modules are deployed through stage 6 batch 15; the outside-gift reader batch adds two more. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
+The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. The latest accepted release checkpoint contains 60 migrated runtime modules; local batches 26–28 bring the migration manifest to 63. Local validation does not establish deployment acceptance. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
 
 ## Stage 1: strict checking without changing execution
 
@@ -380,6 +380,14 @@ The weekly-funds browser controller now has checked report, allocation, cache an
 Desktop/mobile browser fixtures passed against the original JavaScript before conversion. They protect cache reuse/expiry, catalog invalidation, manual refresh, stale parish responses, escaped labels/errors, bounded allocation bars, expanded fund rows, incomplete-report rejection, retry, empty data and missing parish/DOM. Normalized executable parity and strict browser contracts passed. Validation passed: strict quality, four prechecks and all 266 main regression commands, generated-output parity, Worker startup analysis and private-provisioner dry-run packaging. Strict browser typing and generated-output checks also passed after narrowing optional report data through the existing runtime checks.
 
 This batch brings local generated-runtime coverage to 62 modules (53 server, nine browser). Batches 26–27 remain local; production remains at the accepted 60-module checkpoint below. Next, size the adjacent giving-history/report controllers and preserve their filtering/export and access behavior in similarly bounded batches.
+
+### Stage 6 batch 28: giving history (local)
+
+The giving-history controller now has explicit gift and response contracts, typed shared history/manual-gift caches, filter controls and refresh-button inputs. It remains a classic script with the same globals, runtime URL and dashboard load order. The dashboard reference is content-versioned. Type assertions retain the existing Date arithmetic and DOM number-to-text coercion; the JSON boundary remains asserted rather than newly validated.
+
+The desktop/mobile regression passed first against the original JavaScript. It covers shared-cache handoff to candle and giver consumers, date/type/fund/intention filters, contribution totals, donor counts, trend rendering, outside-gift fee/net labels, escaped markup, CSV quote/formula protection, refresh failure/recovery and empty/no-parish states. The existing integrated giving browser suite continues to protect actual donor/candle composition. Normalized executable parity and strict browser checking passed. Validation passed: strict quality, four prechecks and all 267 main regression commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging. The only validation correction was declaring the synthetic download global in the browser-test lint annotation; runtime logic was unchanged.
+
+Local generated-runtime coverage is 63 modules (53 server, ten browser). Batches 26–28 remain separate from the accepted 60-module production checkpoint. A grouped release is the next checkpoint after this batch passes; authentication, payment and accounting-write logic remain outside these browser conversions.
 
 ### Release checkpoint for batches 23–25: accepted
 
