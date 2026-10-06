@@ -1,6 +1,29 @@
-// Generated from src/browser/parish/features/giving/commemorations.ts by npm run build:browser. Do not edit.
 'use strict';
-function renderCommemorations(data) {
+
+// Existing JSON contract. Names remain unknown until the current array checks.
+interface ParishCommemorationEntry {
+  readonly donorName?: string;
+  readonly name?: string;
+  readonly donorEmail?: string;
+  readonly createdAt?: string | number | null;
+  readonly date?: string | number | null;
+  readonly paidAt?: string | number | null;
+  readonly commemorationKind?: string;
+  readonly living?: unknown;
+  readonly departed?: unknown;
+}
+interface ParishCommemorationResponse {
+  readonly entries?: readonly ParishCommemorationEntry[] | null;
+  readonly error?: string;
+}
+
+// Giving commemorations; read shared identity and catalog state only when actions run.
+
+// ── COMMUNICATIONS ────────────────────────────────────────
+// koinonia implementations live under features/koinonia/.
+
+// ── COMMEMORATIONS ────────────────────────────────────────
+function renderCommemorations(data: ParishCommemorationResponse): void {
   const pane = document.getElementById('commemorationQueuePane');
   if (!pane) return;
   const entries = data.entries || [];
@@ -9,7 +32,7 @@ function renderCommemorations(data) {
       '<div class="pdx-commemoration-empty">No commemoration names submitted this week yet. Names will appear here as donors submit them.</div>';
     return;
   }
-  const cards = [];
+  const cards: string[] = [];
   entries.forEach((entry) => {
     const from = entry.donorName || entry.name || entry.donorEmail || 'Anonymous';
     const when = shortDate(entry.createdAt || entry.date || entry.paidAt);
@@ -38,23 +61,24 @@ function renderCommemorations(data) {
     ? `<div class="pdx-commemoration-grid">${cards.join('')}</div>`
     : '<div class="pdx-commemoration-empty">Commemoration gifts were found this week but no names were attached.</div>';
 }
-async function loadCommemorations(btn) {
+
+async function loadCommemorations(btn?: HTMLButtonElement | null): Promise<void> {
   const pane = document.getElementById('commemorationQueuePane');
   if (!currentParish || !pane) return;
   if (btn) {
     btn.classList.add('loading');
     btn.disabled = true;
   }
-  pane.innerHTML = `<p class="section-note">Loading this week's commemoration names...</p>`;
+  pane.innerHTML = '<p class="section-note">Loading this week\'s commemoration names...</p>';
   try {
     const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/commemorations', {
       headers: authHeaders(),
     });
-    const data = await res.json();
+    const data = (await res.json()) as ParishCommemorationResponse;
     if (!res.ok) throw new Error(data.error || 'Unable to load commemorations');
     renderCommemorations(data);
   } catch (err) {
-    pane.innerHTML = `<p class="section-note">${escapeHtml(err.message)}</p>`;
+    pane.innerHTML = `<p class="section-note">${escapeHtml((err as Error).message)}</p>`;
   } finally {
     if (btn) {
       btn.classList.remove('loading');
@@ -62,7 +86,9 @@ async function loadCommemorations(btn) {
     }
   }
 }
-function candleGiftSignals(gift = {}) {
+
+// Candle giving totals and donor intentions.
+function candleGiftSignals(gift: ParishHistoryGift = {}): string {
   return [
     gift.giftType,
     gift.fund,
@@ -78,11 +104,13 @@ function candleGiftSignals(gift = {}) {
     .join(' ')
     .toLowerCase();
 }
-function isCandleGift(gift) {
+
+function isCandleGift(gift: ParishHistoryGift): boolean {
   const text = candleGiftSignals(gift);
   return /\bcandle|candles|vigil|intention|intentions\b/.test(text);
 }
-function renderCandleGiving() {
+
+function renderCandleGiving(): void {
   const pane = document.getElementById('candleGivingPane');
   if (!pane) return;
   const gifts = [...allGifts, ...manualAccountingGifts].filter(isCandleGift);
@@ -91,13 +119,15 @@ function renderCandleGiving() {
       '<div class="pdx-candle-empty">No candle gifts found yet. Candle activity will appear here once donors choose a candle-related fund.</div>';
     return;
   }
-  const now = /* @__PURE__ */ new Date();
-  const monthLabels = [];
-  const monthKeys = [];
+
+  // Bucket last 6 months
+  const now = new Date();
+  const monthLabels: string[] = [];
+  const monthKeys: string[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     monthKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-    monthLabels.push(d.toLocaleDateString(void 0, { month: 'short' }));
+    monthLabels.push(d.toLocaleDateString(undefined, { month: 'short' }));
   }
   const monthTotals = Object.fromEntries(monthKeys.map((k) => [k, 0]));
   const priorSixMonthsTotal = { cents: 0 };
@@ -105,11 +135,13 @@ function renderCandleGiving() {
     const dateStr = gift.createdAt || gift.date || gift.paidAt;
     if (!dateStr) return;
     const d = new Date(dateStr);
-    if (isNaN(d)) return;
+    // Preserve global isNaN Date coercion.
+    if (isNaN(d as unknown as number)) return;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const cents = Number(gift.parishNetCents || gift.amountCents || 0);
     if (key in monthTotals) monthTotals[key] += cents;
     else {
+      // Compute prior 6mo for trend comparison
       const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
       if (monthsAgo >= 6 && monthsAgo < 12) priorSixMonthsTotal.cents += cents;
     }
@@ -120,6 +152,7 @@ function renderCandleGiving() {
     priorSixMonthsTotal.cents > 0
       ? Math.round(((last6Total - priorSixMonthsTotal.cents) / priorSixMonthsTotal.cents) * 100)
       : null;
+
   const rows = monthKeys
     .map((k, i) => {
       const pct = Math.round((monthTotals[k] / maxMonth) * 100);
@@ -130,6 +163,7 @@ function renderCandleGiving() {
       </div>`;
     })
     .join('');
+
   const trendChip =
     trend === null
       ? ''
@@ -138,6 +172,7 @@ function renderCandleGiving() {
         : trend < 0
           ? `<span class="pdx-delta down" style="font-size:12px;">${Math.abs(trend)}% vs. prior 6mo</span>`
           : `<span class="pdx-delta flat" style="font-size:12px;">Flat vs. prior 6mo</span>`;
+
   pane.innerHTML = `
       <div class="pdx-candle-list">${rows}</div>
       <div class="pdx-candle-summary">
@@ -147,9 +182,11 @@ function renderCandleGiving() {
         </div>
         ${trendChip}
       </div>`;
+
+  // Animate bar fills
   requestAnimationFrame(() =>
     setTimeout(() => {
-      pane.querySelectorAll('.pdx-candle-bar-fill').forEach((el, i) => {
+      pane.querySelectorAll<HTMLElement>('.pdx-candle-bar-fill').forEach((el, i) => {
         setTimeout(() => {
           el.style.width = el.dataset.fill + '%';
         }, i * 80);

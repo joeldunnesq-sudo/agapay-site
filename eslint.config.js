@@ -143,6 +143,7 @@ export default [
       'scripts/parish-insights-typescript-browser-tests.mjs',
       'scripts/parish-weekly-funds-typescript-browser-tests.mjs',
       'scripts/parish-history-typescript-browser-tests.mjs',
+      'scripts/parish-commemorations-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -250,5 +251,29 @@ export default [
         { varsIgnorePattern: '^(manualAccountingGifts|loadGivingHistory|exportHistoryCsv)$' },
       ],
     },
+  },
+  {
+    files: ['src/browser/parish/features/giving/commemorations.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(loadCommemorations|renderCandleGiving)$' },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/commemorations.js'],
+    languageOptions: {
+      globals: {
+        shortDate: 'readonly',
+        escapeHtml: 'readonly',
+        currentParish: 'readonly',
+        authHeaders: 'readonly',
+        allGifts: 'readonly',
+        manualAccountingGifts: 'readonly',
+        money: 'readonly',
+      },
+    },
+    rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^(loadCommemorations|renderCandleGiving)$' }] },
   },
 ];

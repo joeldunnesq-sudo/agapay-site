@@ -14,7 +14,7 @@ Plan for seven major stages, with multiple independently tested batches inside t
 6. Broader backend adoption: underway with content services; continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
 7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
 
-The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. The latest accepted release checkpoint contains 60 migrated runtime modules; local batches 26–28 bring the migration manifest to 63. Local validation does not establish deployment acceptance. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
+The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. The latest accepted release checkpoint contains 63 migrated runtime modules; local batch 29 brings the migration manifest to 64. Local validation does not establish deployment acceptance. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
 
 ## Stage 1: strict checking without changing execution
 
@@ -388,6 +388,24 @@ The giving-history controller now has explicit gift and response contracts, type
 The desktop/mobile regression passed first against the original JavaScript. It covers shared-cache handoff to candle and giver consumers, date/type/fund/intention filters, contribution totals, donor counts, trend rendering, outside-gift fee/net labels, escaped markup, CSV quote/formula protection, refresh failure/recovery and empty/no-parish states. The existing integrated giving browser suite continues to protect actual donor/candle composition. Normalized executable parity and strict browser checking passed. Validation passed: strict quality, four prechecks and all 267 main regression commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging. The only validation correction was declaring the synthetic download global in the browser-test lint annotation; runtime logic was unchanged.
 
 Local generated-runtime coverage is 63 modules (53 server, ten browser). Batches 26–28 remain separate from the accepted 60-module production checkpoint. A grouped release is the next checkpoint after this batch passes; authentication, payment and accounting-write logic remain outside these browser conversions.
+
+### Stage 6 batch 29: commemorations and candle giving (local)
+
+The commemoration queue and candle-giving summary now have checked response, gift-signal, date-bucket and DOM contracts. Giving history consumes the implemented candle renderer instead of an ambient declaration. Existing runtime array checks, date coercion, online/manual gift composition, net-amount fallback and chart animation remain unchanged. The generated script keeps its classic globals and runtime path with a content-versioned dashboard reference.
+
+Desktop/mobile tests passed against the original JavaScript before conversion and against generated output. They cover name escaping, empty/malformed name collections, load failure/retry, candle classification, shared manual/online gifts, invalid dates, six-month totals and positive/flat/negative comparisons. Strict browser contracts and normalized executable parity passed. Validation passed: strict quality, four prechecks and all 268 main regression commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging.
+
+This batch adds one local generated runtime module: 64 total (53 server, eleven browser). It remains local and is not included in the accepted batches 26–28 release.
+
+### Release checkpoint for batches 26–28: accepted
+
+[PR #217](https://github.com/joeldunnesq-sudo/agapay-site/pull/217) merged as 572d9c69c18575cdba15abfead3ac1f4f3258bcd. The first CI attempt stopped before deployment on an insights retry test race: an absent retry button also matched the loading state. Test-only commit f05e9189 waits for the rendered figure and keeps the amount assertion; runtime source and assets were unchanged. The corrected full suite passed four prechecks and all 267 main commands.
+
+[Staging deployment](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/37547249645), [authenticated giving reports](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/37547858982), [commemorations/private documents](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/37547862001), and [production deployment and Accounting acceptance](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/37547976759) passed. Hosted checks verified exact assets, dashboard hashes, HTTP/security/CORS/request diagnostics, offline service-worker behavior, all three migrated controllers and existing Admin/contact/bookstore/donor-history journeys. Browser application APIs were synthetic. Authenticated staging used normal staff MFA and verified anonymous/cross-parish denial. Summary contained 31 gifts and history 61 records; weekly totals, October CSV, current recurring groups and commemoration entries were empty, with nonempty behavior covered locally.
+
+Production health confirmed the exact merged SHA and deployedAt 2026-10-06T23:48:36Z. Normal password/TOTP and staff login, Stripe diagnostics, reconciliation, Accounting readiness, ledger, reports, payables, budgets, close, governance and health-state checks passed. Attachment download was skipped because no existing bill was available; staging private-document upload/download/isolation/deletion passed. No entitlement or authentication changes were needed for this release.
+
+Sixty-three migrated runtime modules are now deployed. Main Worker: ce7ac8b8-e43a-498c-bf79-332dff79aba5. Private provisioner: e8d5ec56-54eb-489a-82b3-ffadde5326c2. Prior accepted rollback baseline: 3f89c45e816408f21a44cb60ddbdf847f4812f5c, main e5034bef-fcda-4051-b87b-6db5c944a37e, private c822d22e-497f-4116-9a11-816d53e92d7d. Batch 29 continues separately from this merged checkpoint.
 
 ### Release checkpoint for batches 23–25: accepted
 
