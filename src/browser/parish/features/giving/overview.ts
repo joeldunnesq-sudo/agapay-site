@@ -18,7 +18,6 @@ interface ParishGivingSummaryResponse {
   readonly error?: string;
   readonly summary?: ParishGivingSummaryView | null;
 }
-declare function loadGivingOverviewInsights(): void;
 declare function loadStripeVolume(): void;
 declare function shortDate(value: string | number | Date | null | undefined): string;
 

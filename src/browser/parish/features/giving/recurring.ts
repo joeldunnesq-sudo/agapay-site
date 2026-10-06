@@ -13,7 +13,7 @@ interface ParishRecurringHealthResponse {
   readonly error?: string;
   readonly health?: ParishRecurringHealthView | null;
 }
-declare let currentParish: { readonly parishId: string } | null;
+declare let currentParish: { readonly parishId: string; readonly funds?: readonly unknown[] } | null;
 declare function authHeaders(): Record<string, string>;
 declare function escapeHtml(value: unknown): string;
 declare function money(cents: unknown): string;
