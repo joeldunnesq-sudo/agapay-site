@@ -88,7 +88,7 @@ function renderStewardshipFees(fees){return '<p>'+fees.label+'</p>';}`,
       assert.equal(await page.getByRole('button', { name: 'Try again' }).count(), 2);
       failed = false;
       await page.getByRole('button', { name: 'Try again' }).first().click();
-      await page.waitForFunction(() => !document.querySelector('#givingOverviewComparison button'));
+      await page.locator('#givingOverviewComparison figure').waitFor({ state: 'visible' });
       assert.match(await page.locator('#givingOverviewComparison').textContent(), /\$100\.00/);
       const invalid = await page.evaluate(() =>
         [
