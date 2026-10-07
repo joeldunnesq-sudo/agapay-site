@@ -147,6 +147,7 @@ export default [
       'scripts/parish-history-typescript-browser-tests.mjs',
       'scripts/parish-commemorations-typescript-browser-tests.mjs',
       'scripts/parish-givers-typescript-browser-tests.mjs',
+      'scripts/parish-transfers-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -396,6 +397,32 @@ export default [
       'no-unused-vars': [
         'error',
         { varsIgnorePattern: '^(openGivingEmbedTheme|previewGivingEmbedTheme|copyStyledGivingEmbed)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/transfers.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(renderFundTransferWorksheet|collectFundTransferInstructions)$' },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/transfers.js'],
+    languageOptions: {
+      globals: {
+        escapeAttr: 'readonly',
+        escapeHtml: 'readonly',
+        moneyFull: 'readonly',
+        reconciliationData: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(renderFundTransferWorksheet|collectFundTransferInstructions)$' },
       ],
     },
   },
