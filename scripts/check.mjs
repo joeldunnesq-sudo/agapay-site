@@ -483,7 +483,7 @@ const giveEmbedHtml = await readFile("public/give/embed.html", "utf8");
 const giveEmbedCss = await readFile("public/give/embed.css", "utf8");
 const giveEmbedJs = await readFile("public/give/embed.js", "utf8");
 const giveEmbedLoader = await readFile("public/giving-box.js", "utf8");
-assert.match(parishGivingCatalogHandler, /if \(!parish \|\| parish\.status !== "verified"\)/, "hidden onboarding parishes must return a normal 404 instead of throwing during public lookup");
+assert.match(parishGivingCatalogHandler, /if \(!parish \|\| parish\.status !== ['"]verified['"]\)/, "hidden onboarding parishes must return a normal 404 instead of throwing during public lookup");
 assert.match(giveHtml, /DEFAULT_PROCESSING_FEE_SCHEDULES\s*=\s*\{[\s\S]*rateBasisPoints:290[\s\S]*fixedFeeCents:30/, "the giving form must retain a standard card-fee fallback when parish data is unavailable");
 assert.match(giveHtml, /processingFeeSchedules:\s*\{ \.\.\.DEFAULT_PROCESSING_FEE_SCHEDULES/, "the parish response must merge over, not replace, the safe fee schedules");
 assert.match(giveHtml, /showGivingPageUnavailable\(\)/, "the giving form must fail closed instead of displaying placeholder parish or fee data");

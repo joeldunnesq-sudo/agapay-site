@@ -244,7 +244,9 @@
     "scripts/liturgical-calendar-typescript-tests.mjs",
     "src/liturgical-calendar.js",
     "src/festal-alms.js",
-    "scripts/calendar-festal-typescript-tests.mjs"
+    "scripts/calendar-festal-typescript-tests.mjs",
+    "src/handlers/parish-giving-catalog.js",
+    "scripts/giving-catalog-handler-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -522,6 +524,8 @@
     "scripts/liturgical-calendar-typescript-tests.mjs",
     "src/liturgical-calendar.js",
     "src/festal-alms.js",
-    "scripts/calendar-festal-typescript-tests.mjs"
+    "scripts/calendar-festal-typescript-tests.mjs",
+    "src/handlers/parish-giving-catalog.js",
+    "scripts/giving-catalog-handler-typescript-tests.mjs"
   ]
 }
