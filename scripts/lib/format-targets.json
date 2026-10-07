@@ -228,7 +228,13 @@
     "scripts/parish-statements-typescript-tests.mjs",
     "public/parish/features/giving/sharing.js",
     "public/parish/features/giving/embed-theme.js",
-    "scripts/parish-sharing-typescript-tests.mjs"
+    "scripts/parish-sharing-typescript-tests.mjs",
+    "public/parish/features/giving/transfers.js",
+    "scripts/parish-transfers-typescript-browser-tests.mjs",
+    "public/parish/features/giving/reconciliation-reports.js",
+    "scripts/parish-reconciliation-reports-typescript-tests.mjs",
+    "public/parish/features/giving/reconciliation.js",
+    "scripts/parish-reconciliation-controller-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -490,6 +496,12 @@
     "scripts/parish-statements-typescript-tests.mjs",
     "public/parish/features/giving/sharing.js",
     "public/parish/features/giving/embed-theme.js",
-    "scripts/parish-sharing-typescript-tests.mjs"
+    "scripts/parish-sharing-typescript-tests.mjs",
+    "public/parish/features/giving/transfers.js",
+    "scripts/parish-transfers-typescript-browser-tests.mjs",
+    "public/parish/features/giving/reconciliation-reports.js",
+    "scripts/parish-reconciliation-reports-typescript-tests.mjs",
+    "public/parish/features/giving/reconciliation.js",
+    "scripts/parish-reconciliation-controller-typescript-tests.mjs"
   ]
 }

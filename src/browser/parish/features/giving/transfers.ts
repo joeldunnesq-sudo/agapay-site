@@ -1,10 +1,45 @@
-// Generated from src/browser/parish/features/giving/transfers.ts by npm run build:browser. Do not edit.
 'use strict';
-function renderFundTransferWorksheet(worksheet, savedInstructions = []) {
+
+interface ParishFundTransferInstruction {
+  key?: string;
+  action?: string;
+  destination?: string;
+  completed?: boolean;
+  reference?: string;
+}
+interface ParishFundTransferLine {
+  key?: string;
+  category?: string;
+  label?: string;
+  needsReview?: boolean;
+  recommendedAction?: string;
+  netCents?: number;
+  grossCents?: number;
+  feeCents?: number;
+  transactionCount?: number;
+}
+interface ParishFundTransferWorksheet {
+  available?: boolean;
+  requiresDetail?: boolean;
+  readyToTransfer?: boolean;
+  lines?: ParishFundTransferLine[];
+  unallocatedCents?: number;
+  depositedCents?: number;
+  recommendedTransferCents?: number;
+  retainInDepositAccountCents?: number;
+}
+
+// Giving transfers; read shared identity and catalog state only when actions run.
+
+function renderFundTransferWorksheet(
+  worksheet: ParishFundTransferWorksheet | null | undefined,
+  savedInstructions: ParishFundTransferInstruction[] = []
+): void {
   const pane = document.getElementById('reconcileTransferWorksheetPane');
-  const printButton = document.getElementById('reconcileTransferPrintButton');
+  const printButton = document.getElementById('reconcileTransferPrintButton') as HTMLButtonElement | null;
   if (!pane) return;
   if (printButton) printButton.disabled = !worksheet?.available;
+
   if (worksheet?.requiresDetail) {
     pane.innerHTML = `<div class="pdx-rc-transfer-empty">
         <div><strong>Prepare the transfer plan when you are ready.</strong><span>AGAPAY will match each paid Stripe payout to its gifts, fees, refunds, and designated funds. This can take a little longer than the monthly summary.</span></div>
@@ -17,12 +52,13 @@ function renderFundTransferWorksheet(worksheet, savedInstructions = []) {
       '<div class="pdx-recurring-empty">No matched fund allocations are available for a transfer worksheet.</div>';
     return;
   }
+
   const savedByKey = new Map(
     (Array.isArray(savedInstructions) ? savedInstructions : []).map((item) => [String(item.key || ''), item])
   );
   const rows = worksheet.lines
     .map((line) => {
-      const saved = savedByKey.get(String(line.key || '')) || {};
+      const saved: ParishFundTransferInstruction = savedByKey.get(String(line.key || '')) || {};
       const action = line.needsReview ? 'retain' : saved.action || line.recommendedAction || 'retain';
       const transfer = action === 'transfer';
       return `<div class="pdx-rc-transfer-row ${line.needsReview ? 'needs-review' : ''}" data-transfer-row data-key="${escapeAttr(line.key || '')}" data-net-cents="${Number(line.netCents || 0)}">
@@ -60,17 +96,18 @@ function renderFundTransferWorksheet(worksheet, savedInstructions = []) {
       <p class="pdx-rc-transfer-disclaimer">Optional treasurer notes, saved with the reconciled review. Period receipts are not current fund balances or a recommendation to transfer the full amount. AGAPAY does not initiate, schedule, or approve transfers between parish bank accounts.</p>`;
   updateFundTransferWorksheet();
 }
-function updateFundTransferWorksheet() {
-  const rows = [...document.querySelectorAll('[data-transfer-row]')];
+
+function updateFundTransferWorksheet(): void {
+  const rows = [...document.querySelectorAll<HTMLElement>('[data-transfer-row]')];
   let plannedCents = 0;
   rows.forEach((row) => {
-    const action = row.querySelector('[data-transfer-action]')?.value || 'retain';
+    const action = row.querySelector<HTMLSelectElement>('[data-transfer-action]')?.value || 'retain';
     const transfer = action === 'transfer';
     const netCents = Number(row.dataset.netCents || 0);
     if (transfer && netCents > 0) plannedCents += netCents;
-    const destination = row.querySelector('[data-transfer-destination]');
-    const completed = row.querySelector('[data-transfer-completed]');
-    const reference = row.querySelector('[data-transfer-reference]');
+    const destination = row.querySelector<HTMLInputElement>('[data-transfer-destination]');
+    const completed = row.querySelector<HTMLInputElement>('[data-transfer-completed]');
+    const reference = row.querySelector<HTMLInputElement>('[data-transfer-reference]');
     if (destination) destination.disabled = !transfer;
     if (completed) {
       completed.disabled = !transfer;
@@ -87,21 +124,30 @@ function updateFundTransferWorksheet() {
   if (planned) planned.textContent = moneyFull(plannedCents);
   if (retained) retained.textContent = moneyFull(depositedCents - plannedCents);
 }
-function collectFundTransferInstructions() {
-  const rows = [...document.querySelectorAll('[data-transfer-row]')];
+
+function collectFundTransferInstructions(): ParishFundTransferInstruction[] {
+  const rows = [...document.querySelectorAll<HTMLElement>('[data-transfer-row]')];
   if (!rows.length)
     return Array.isArray(reconciliationData?.closeRecord?.transferInstructions)
       ? reconciliationData.closeRecord.transferInstructions
       : [];
   return rows
     .map((row) => {
-      const action = row.querySelector('[data-transfer-action]')?.value === 'transfer' ? 'transfer' : 'retain';
+      const action =
+        row.querySelector<HTMLSelectElement>('[data-transfer-action]')?.value === 'transfer' ? 'transfer' : 'retain';
       return {
         key: row.dataset.key || '',
         action,
-        destination: action === 'transfer' ? row.querySelector('[data-transfer-destination]')?.value.trim() || '' : '',
-        completed: action === 'transfer' && Boolean(row.querySelector('[data-transfer-completed]')?.checked),
-        reference: action === 'transfer' ? row.querySelector('[data-transfer-reference]')?.value.trim() || '' : '',
+        destination:
+          action === 'transfer'
+            ? row.querySelector<HTMLInputElement>('[data-transfer-destination]')?.value.trim() || ''
+            : '',
+        completed:
+          action === 'transfer' && Boolean(row.querySelector<HTMLInputElement>('[data-transfer-completed]')?.checked),
+        reference:
+          action === 'transfer'
+            ? row.querySelector<HTMLInputElement>('[data-transfer-reference]')?.value.trim() || ''
+            : '',
       };
     })
     .filter((item) => item.key);

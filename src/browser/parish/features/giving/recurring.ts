@@ -16,6 +16,7 @@ interface ParishRecurringHealthResponse {
 declare let currentParish: {
   readonly parishId: string;
   readonly parishName?: string;
+  readonly timezone?: string;
   readonly funds?: readonly unknown[];
   readonly entitlements?: { readonly givingFeatures?: { readonly annualStatements?: boolean } };
 } | null;
