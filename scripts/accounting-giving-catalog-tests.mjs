@@ -606,21 +606,13 @@ assert.match(
   /isGeneralStewardship\s*\?\s*"general"/,
   'checkout must store the canonical General Operating fund ID'
 );
-assert.doesNotMatch(
-  read('src/lib/stewardship-funds.js'),
-  /name: "Poor Box \/ Alms"/,
-  'Poor Box / Alms must not be a default fund'
-);
-assert.doesNotMatch(
-  read('src/lib/stewardship-funds.js'),
-  /name: "Campaign \/ Appeal"/,
-  'campaigns must publish their own individual funds'
-);
-assert.doesNotMatch(
-  read('src/lib/stewardship-funds.js'),
-  /name: "General Stewardship"/,
-  'General Stewardship must not be a parallel fund'
-);
+for (const retiredName of ['Poor Box / Alms', 'Campaign / Appeal', 'General Stewardship']) {
+  assert.equal(
+    STEWARDSHIP_FUND_DEFAULTS.some((fund) => fund.name === retiredName),
+    false,
+    `${retiredName} must not be a default fund`
+  );
+}
 assert.doesNotMatch(
   worker,
   /const defaults = \[\s*\{ name: "General Stewardship"/,

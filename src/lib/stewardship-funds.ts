@@ -1,5 +1,36 @@
-// Generated from src/lib/stewardship-funds.ts by npm run build:server. Do not edit.
-const BENEVOLENCE_FUND_DEFAULT = Object.freeze({
+// Stored identifiers and display values are normalized by the existing runtime code.
+export interface StewardshipFund {
+  [field: string]: unknown;
+  id?: unknown;
+  code?: unknown;
+  name?: unknown;
+  reportCode?: unknown;
+}
+export interface StewardshipFeastCampaign {
+  [field: string]: unknown;
+  id?: unknown;
+  patronal?: unknown;
+  destinationFundId?: unknown;
+}
+export interface StewardshipRegistration {
+  [field: string]: unknown;
+  funds?: (StewardshipFund | null)[] | null;
+  feastCampaigns?: (StewardshipFeastCampaign | null)[] | null;
+  patronalFeast?: unknown;
+  patronalFeastName?: unknown;
+  patronalFeastDate?: unknown;
+}
+export interface StewardshipFundDefault extends StewardshipFund {
+  id: string;
+  name: string;
+  restrictionType: string;
+  description: string;
+  sortOrder: number;
+  isDefault?: boolean;
+  reportCode?: string;
+}
+
+export const BENEVOLENCE_FUND_DEFAULT = Object.freeze({
   id: 'benevolence-fund',
   reportCode: 'alms',
   name: 'Benevolence Fund',
@@ -7,7 +38,8 @@ const BENEVOLENCE_FUND_DEFAULT = Object.freeze({
   description: 'Alms designated exclusively for the poor and needy.',
   sortOrder: 3,
 });
-const STEWARDSHIP_FUND_DEFAULTS = Object.freeze([
+
+export const STEWARDSHIP_FUND_DEFAULTS: readonly Readonly<StewardshipFundDefault>[] = Object.freeze([
   {
     id: 'general',
     reportCode: 'general',
@@ -47,30 +79,33 @@ const STEWARDSHIP_FUND_DEFAULTS = Object.freeze([
     sortOrder: 5,
   },
 ]);
-const normalized = (value) =>
+
+const normalized = (value: unknown) =>
   String(value || '')
     .trim()
     .toLowerCase();
-const legacyAlmsFund = (fund) => normalized(fund?.id) === 'alms' || normalized(fund?.name) === 'poor box / alms';
-const legacyGeneralStewardshipFund = (fund) =>
+const legacyAlmsFund = (fund: StewardshipFund | null | undefined) =>
+  normalized(fund?.id) === 'alms' || normalized(fund?.name) === 'poor box / alms';
+const legacyGeneralStewardshipFund = (fund: StewardshipFund | null | undefined) =>
   normalized(fund?.id) === 'stewardship' ||
   normalized(fund?.code) === 'stewardship' ||
   normalized(fund?.name) === 'general stewardship';
-const legacyGenericCampaignFund = (fund) =>
+const legacyGenericCampaignFund = (fund: StewardshipFund | null | undefined) =>
   normalized(fund?.id) === 'campaign' ||
   normalized(fund?.code) === 'campaign' ||
   normalized(fund?.name) === 'campaign / appeal';
-const generalOperatingFund = (fund) =>
+const generalOperatingFund = (fund: StewardshipFund | null | undefined) =>
   normalized(fund?.id) === 'general' ||
   normalized(fund?.code) === 'general' ||
   normalized(fund?.name) === 'general operating fund';
-function ensureBenevolenceFundInRegistration(registration = {}) {
+
+export function ensureBenevolenceFundInRegistration(registration: StewardshipRegistration = {}) {
   const funds = Array.isArray(registration.funds) ? registration.funds : [];
   const exists = funds.some(
-    (fund2) =>
-      normalized(fund2?.id) === 'benevolence-fund' ||
-      normalized(fund2?.reportCode) === 'alms' ||
-      normalized(fund2?.name) === 'benevolence fund'
+    (fund) =>
+      normalized(fund?.id) === 'benevolence-fund' ||
+      normalized(fund?.reportCode) === 'alms' ||
+      normalized(fund?.name) === 'benevolence fund'
   );
   if (exists) return { registration, added: false, changed: false };
   const { reportCode, ...fund } = BENEVOLENCE_FUND_DEFAULT;
@@ -80,14 +115,17 @@ function ensureBenevolenceFundInRegistration(registration = {}) {
     changed: true,
   };
 }
-function mergeStewardshipFundsIntoRegistration(registration = {}) {
+
+export function mergeStewardshipFundsIntoRegistration(registration: StewardshipRegistration = {}) {
   const original = Array.isArray(registration.funds) ? registration.funds : [];
+  // "alms" remains a payment/reporting category, but Benevolence Fund is the
+  // single parish/accounting fund for money restricted to the poor and needy.
   const existingGeneral = original.find(generalOperatingFund);
   const legacyGeneral = original.find(legacyGeneralStewardshipFund);
   const removed = original.filter(
     (fund) => legacyAlmsFund(fund) || legacyGenericCampaignFund(fund) || legacyGeneralStewardshipFund(fund)
   );
-  const current = original
+  const current: (StewardshipFund | null)[] = original
     .filter((fund) => !legacyAlmsFund(fund) && !legacyGenericCampaignFund(fund) && !legacyGeneralStewardshipFund(fund))
     .map((fund) =>
       generalOperatingFund(fund)
@@ -118,14 +156,15 @@ function mergeStewardshipFundsIntoRegistration(registration = {}) {
       sortOrder: 0,
     });
   }
-  const identities = /* @__PURE__ */ new Set();
+  const identities = new Set<string>();
   current.forEach((fund) => {
     [fund?.id, fund?.code, fund?.name]
       .map(normalized)
       .filter(Boolean)
       .forEach((key) => identities.add(key));
   });
-  const added = [];
+
+  const added: StewardshipFundDefault[] = [];
   for (const fund of STEWARDSHIP_FUND_DEFAULTS) {
     const keys = [fund.id, fund.name].map(normalized);
     if (keys.some((key) => identities.has(key))) continue;
@@ -137,7 +176,7 @@ function mergeStewardshipFundsIntoRegistration(registration = {}) {
   const patronalFeastId = String(registration.patronalFeast || '').trim();
   const patronalFeastName = String(registration.patronalFeastName || '').trim();
   const patronalFeastDate = String(registration.patronalFeastDate || '').slice(-5);
-  const feastCampaigns = originalFeastCampaigns.map((campaign) => {
+  const feastCampaigns: StewardshipFeastCampaign[] = originalFeastCampaigns.map((campaign) => {
     const patronal = Boolean(campaign?.patronal || (patronalFeastId && campaign?.id === patronalFeastId));
     return {
       ...campaign,
@@ -164,6 +203,7 @@ function mergeStewardshipFundsIntoRegistration(registration = {}) {
   }
   const fundsChanged = Boolean(added.length || removed.length || JSON.stringify(current) !== JSON.stringify(original));
   const feastCampaignsChanged = JSON.stringify(feastCampaigns) !== JSON.stringify(originalFeastCampaigns);
+
   return {
     registration:
       fundsChanged || feastCampaignsChanged
@@ -178,9 +218,3 @@ function mergeStewardshipFundsIntoRegistration(registration = {}) {
     changed: Boolean(fundsChanged || feastCampaignsChanged),
   };
 }
-export {
-  BENEVOLENCE_FUND_DEFAULT,
-  STEWARDSHIP_FUND_DEFAULTS,
-  ensureBenevolenceFundInRegistration,
-  mergeStewardshipFundsIntoRegistration,
-};

@@ -246,7 +246,13 @@
     "src/festal-alms.js",
     "scripts/calendar-festal-typescript-tests.mjs",
     "src/handlers/parish-giving-catalog.js",
-    "scripts/giving-catalog-handler-typescript-tests.mjs"
+    "scripts/giving-catalog-handler-typescript-tests.mjs",
+    "src/lib/stewardship-funds.js",
+    "src/lib/payment-fees.js",
+    "src/lib/stripe-fees.js",
+    "src/payments/classification.js",
+    "src/lib/payment-classification.js",
+    "scripts/giving-foundations-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -526,6 +532,12 @@
     "src/festal-alms.js",
     "scripts/calendar-festal-typescript-tests.mjs",
     "src/handlers/parish-giving-catalog.js",
-    "scripts/giving-catalog-handler-typescript-tests.mjs"
+    "scripts/giving-catalog-handler-typescript-tests.mjs",
+    "src/lib/stewardship-funds.js",
+    "src/lib/payment-fees.js",
+    "src/lib/stripe-fees.js",
+    "src/payments/classification.js",
+    "src/lib/payment-classification.js",
+    "scripts/giving-foundations-typescript-tests.mjs"
   ]
 }

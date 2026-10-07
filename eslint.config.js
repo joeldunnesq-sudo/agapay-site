@@ -17,6 +17,11 @@ export default [
     },
   },
   {
+    files: ['src/lib/stewardship-funds.ts'],
+    // Destructuring deliberately omits the reporting-only code from saved funds.
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }] },
+  },
+  {
     // This classic entry point is invoked by parish dashboard scripts and HTML.
     files: ['src/browser/parish/features/giving/insights.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadGivingOverviewInsights$' }] },
@@ -93,6 +98,7 @@ export default [
       'scripts/liturgical-calendar-typescript-tests.mjs',
       'scripts/calendar-festal-typescript-tests.mjs',
       'scripts/giving-catalog-handler-typescript-tests.mjs',
+      'scripts/giving-foundations-typescript-tests.mjs',
       'scripts/parish-outside-gifts-typescript-tests.mjs',
       'scripts/parish-giving-catalog-typescript-tests.mjs',
       'scripts/parish-reconciliation-controller-typescript-tests.mjs',

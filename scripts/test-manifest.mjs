@@ -216,6 +216,7 @@ const productUi = [
   'scripts/liturgical-calendar-typescript-tests.mjs',
   'scripts/calendar-festal-typescript-tests.mjs',
   'scripts/giving-catalog-handler-typescript-tests.mjs',
+  'scripts/giving-foundations-typescript-tests.mjs',
   'scripts/parish-outside-gifts-typescript-tests.mjs',
   'scripts/parish-giving-catalog-typescript-tests.mjs',
   'scripts/parish-reconciliation-controller-typescript-tests.mjs',

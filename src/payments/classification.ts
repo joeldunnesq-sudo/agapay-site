@@ -1,14 +1,16 @@
-// Generated from src/payments/classification.ts by npm run build:server. Do not edit.
 import { ORGANIZATION_TYPES } from '../organizations/types.js';
-const PAYMENT_CLASSIFICATION_VERSION = 1;
-const PAYMENT_PURPOSES = Object.freeze({
+
+export const PAYMENT_CLASSIFICATION_VERSION = 1;
+
+export const PAYMENT_PURPOSES = Object.freeze({
   DONATION: 'donation',
   COMMERCE: 'commerce',
   TUITION: 'tuition',
   PLATFORM_SUBSCRIPTION: 'platform_subscription',
   UNKNOWN: 'unknown',
 });
-const PAYMENT_COMPONENTS = Object.freeze({
+
+export const PAYMENT_COMPONENTS = Object.freeze({
   PRINCIPAL: 'principal',
   PROCESSOR_FEE: 'processor_fee',
   PLATFORM_FEE: 'platform_fee',
@@ -17,13 +19,15 @@ const PAYMENT_COMPONENTS = Object.freeze({
   DISPUTE: 'dispute',
   PAYOUT: 'payout',
 });
-const PAYMENT_AVAILABILITY = Object.freeze({
+
+export const PAYMENT_AVAILABILITY = Object.freeze({
   ACTIVE: 'active',
   RESERVED: 'reserved',
   CONTEXT_REQUIRED: 'context_required',
   UNSUPPORTED: 'unsupported',
 });
-const STRIPE_PAYMENT_CLASSES = Object.freeze([
+
+export const STRIPE_PAYMENT_CLASSES = Object.freeze([
   'qualifying_donation',
   'nonqualifying_commerce',
   'nonqualifying_membership',
@@ -33,14 +37,32 @@ const STRIPE_PAYMENT_CLASSES = Object.freeze([
   'nonqualifying_auction',
   'nonqualifying_other',
   'unclassified',
-]);
-const PAYMENT_CLASS_SET = new Set(STRIPE_PAYMENT_CLASSES);
-const PAYMENT_COMPONENT_SET = new Set(Object.values(PAYMENT_COMPONENTS));
-const CURRENT_ORGANIZATION_TYPES = /* @__PURE__ */ new Set([
+] as const);
+
+export type PaymentPurpose = (typeof PAYMENT_PURPOSES)[keyof typeof PAYMENT_PURPOSES];
+export type PaymentComponent = (typeof PAYMENT_COMPONENTS)[keyof typeof PAYMENT_COMPONENTS];
+export type StripePaymentClass = (typeof STRIPE_PAYMENT_CLASSES)[number];
+export interface PaymentClassificationInput {
+  purpose?: unknown;
+  component?: unknown;
+  organizationType?: unknown;
+  source?: unknown;
+  paymentClass?: unknown;
+}
+export interface PaymentOrganizationContext {
+  organizationType?: unknown;
+}
+export type PaymentMetadata = Readonly<Record<string, unknown>>;
+export type PaymentClassification = ReturnType<typeof classifyPayment>;
+
+const PAYMENT_CLASS_SET = new Set<string>(STRIPE_PAYMENT_CLASSES);
+const PAYMENT_COMPONENT_SET = new Set<string>(Object.values(PAYMENT_COMPONENTS));
+const CURRENT_ORGANIZATION_TYPES = new Set<string>([
   ORGANIZATION_TYPES.CHURCH,
   ORGANIZATION_TYPES.MONASTERY,
   ORGANIZATION_TYPES.DIOCESE,
 ]);
+
 const PURPOSE_DEFINITIONS = Object.freeze({
   [PAYMENT_PURPOSES.DONATION]: Object.freeze({
     paymentClass: 'qualifying_donation',
@@ -68,6 +90,7 @@ const PURPOSE_DEFINITIONS = Object.freeze({
     settlementProfileKind: 'none',
   }),
 });
+
 const PAYMENT_CLASS_PURPOSES = Object.freeze({
   qualifying_donation: PAYMENT_PURPOSES.DONATION,
   nonqualifying_commerce: PAYMENT_PURPOSES.COMMERCE,
@@ -79,7 +102,8 @@ const PAYMENT_CLASS_PURPOSES = Object.freeze({
   nonqualifying_other: PAYMENT_PURPOSES.COMMERCE,
   unclassified: PAYMENT_PURPOSES.UNKNOWN,
 });
-const LEGACY_PAYMENT_CLASS_ALIASES = Object.freeze({
+
+const LEGACY_PAYMENT_CLASS_ALIASES: Readonly<Record<string, StripePaymentClass | undefined>> = Object.freeze({
   donation: 'qualifying_donation',
   non_donation_commerce: 'nonqualifying_commerce',
   non_donation_membership: 'nonqualifying_membership',
@@ -89,7 +113,8 @@ const LEGACY_PAYMENT_CLASS_ALIASES = Object.freeze({
   non_donation_auction: 'nonqualifying_auction',
   non_donation_other: 'nonqualifying_other',
 });
-const PURPOSE_METADATA_ALIASES = Object.freeze({
+
+const PURPOSE_METADATA_ALIASES: Readonly<Record<string, PaymentPurpose | undefined>> = Object.freeze({
   donation: PAYMENT_PURPOSES.DONATION,
   gift: PAYMENT_PURPOSES.DONATION,
   offering: PAYMENT_PURPOSES.DONATION,
@@ -101,7 +126,10 @@ const PURPOSE_METADATA_ALIASES = Object.freeze({
   registration: PAYMENT_PURPOSES.COMMERCE,
   auction: PAYMENT_PURPOSES.COMMERCE,
 });
-const ACCOUNTING_SOURCE_CLASSIFICATIONS = Object.freeze({
+
+const ACCOUNTING_SOURCE_CLASSIFICATIONS: Readonly<
+  Record<string, readonly [PaymentPurpose, PaymentComponent] | undefined>
+> = Object.freeze({
   donation_succeeded: [PAYMENT_PURPOSES.DONATION, PAYMENT_COMPONENTS.PRINCIPAL],
   stripe_fee_assessed: [PAYMENT_PURPOSES.DONATION, PAYMENT_COMPONENTS.PROCESSOR_FEE],
   agapay_fee_assessed: [PAYMENT_PURPOSES.DONATION, PAYMENT_COMPONENTS.PLATFORM_FEE],
@@ -133,33 +161,36 @@ const ACCOUNTING_SOURCE_CLASSIFICATIONS = Object.freeze({
   tuition_payment_refunded: [PAYMENT_PURPOSES.TUITION, PAYMENT_COMPONENTS.REFUND],
   tuition_fee_assessed: [PAYMENT_PURPOSES.TUITION, PAYMENT_COMPONENTS.PROCESSOR_FEE],
 });
-function normalized(value) {
+
+function normalized(value: unknown): string {
   return String(value || '')
     .trim()
     .toLowerCase();
 }
-function paymentAvailability(purpose, organizationType) {
+
+function paymentAvailability(purpose: PaymentPurpose, organizationType: string) {
   if (purpose === PAYMENT_PURPOSES.UNKNOWN) return PAYMENT_AVAILABILITY.UNSUPPORTED;
   if (purpose === PAYMENT_PURPOSES.TUITION) return PAYMENT_AVAILABILITY.RESERVED;
   if (purpose === PAYMENT_PURPOSES.PLATFORM_SUBSCRIPTION) return PAYMENT_AVAILABILITY.ACTIVE;
   if (!organizationType) return PAYMENT_AVAILABILITY.CONTEXT_REQUIRED;
   return CURRENT_ORGANIZATION_TYPES.has(organizationType) ? PAYMENT_AVAILABILITY.ACTIVE : PAYMENT_AVAILABILITY.RESERVED;
 }
-function classifyPayment({
+
+export function classifyPayment({
   purpose,
   component = PAYMENT_COMPONENTS.PRINCIPAL,
   organizationType = '',
   source = 'server_contract',
   paymentClass = '',
-} = {}) {
+}: PaymentClassificationInput = {}) {
   const normalizedPurpose = Object.hasOwn(PURPOSE_DEFINITIONS, normalized(purpose))
-    ? normalized(purpose)
+    ? (normalized(purpose) as PaymentPurpose)
     : PAYMENT_PURPOSES.UNKNOWN;
   const normalizedComponent = PAYMENT_COMPONENT_SET.has(normalized(component))
-    ? normalized(component)
+    ? (normalized(component) as PaymentComponent)
     : PAYMENT_COMPONENTS.PRINCIPAL;
   const definition = PURPOSE_DEFINITIONS[normalizedPurpose];
-  const explicitPaymentClass = normalized(paymentClass);
+  const explicitPaymentClass = normalized(paymentClass) as StripePaymentClass;
   const resolvedPaymentClass =
     PAYMENT_CLASS_SET.has(explicitPaymentClass) && PAYMENT_CLASS_PURPOSES[explicitPaymentClass] === normalizedPurpose
       ? explicitPaymentClass
@@ -179,7 +210,11 @@ function classifyPayment({
     source: normalized(source) || 'server_contract',
   });
 }
-function classifyPaymentMetadata(metadata = {}, { organizationType = '' } = {}) {
+
+export function classifyPaymentMetadata(
+  metadata: PaymentMetadata = {},
+  { organizationType = '' }: PaymentOrganizationContext = {}
+) {
   const explicitPurpose = normalized(metadata.agapay_payment_purpose);
   const explicitVersion = Number(metadata.agapay_classification_version);
   if (
@@ -194,7 +229,8 @@ function classifyPaymentMetadata(metadata = {}, { organizationType = '' } = {}) 
       paymentClass: metadata.agapay_payment_class,
     });
   }
-  const explicitClass = normalized(metadata.agapay_payment_class);
+
+  const explicitClass = normalized(metadata.agapay_payment_class) as StripePaymentClass;
   const canonicalClass = PAYMENT_CLASS_SET.has(explicitClass)
     ? explicitClass
     : LEGACY_PAYMENT_CLASS_ALIASES[explicitClass];
@@ -206,6 +242,7 @@ function classifyPaymentMetadata(metadata = {}, { organizationType = '' } = {}) 
       paymentClass: canonicalClass,
     });
   }
+
   if (metadata.commerce_module || normalized(metadata.order_id).startsWith('bookstore_')) {
     return classifyPayment({
       purpose: PAYMENT_PURPOSES.COMMERCE,
@@ -213,6 +250,7 @@ function classifyPaymentMetadata(metadata = {}, { organizationType = '' } = {}) 
       source: 'legacy_commerce_metadata',
     });
   }
+
   const aliasedPurpose = PURPOSE_METADATA_ALIASES[normalized(metadata.payment_purpose || metadata.transaction_type)];
   if (aliasedPurpose) {
     return classifyPayment({
@@ -221,6 +259,7 @@ function classifyPaymentMetadata(metadata = {}, { organizationType = '' } = {}) 
       source: 'purpose_metadata',
     });
   }
+
   if (metadata.parish_id && (metadata.gift_type || metadata.donor_email || metadata.amount_cents)) {
     return classifyPayment({
       purpose: PAYMENT_PURPOSES.DONATION,
@@ -228,9 +267,11 @@ function classifyPaymentMetadata(metadata = {}, { organizationType = '' } = {}) 
       source: 'legacy_donation_metadata',
     });
   }
+
   return classifyPayment({ purpose: PAYMENT_PURPOSES.UNKNOWN, organizationType, source: 'no_agapay_classification' });
 }
-function paymentMetadataForPurpose(purpose) {
+
+export function paymentMetadataForPurpose(purpose: unknown) {
   const classification = classifyPayment({ purpose });
   if (classification.purpose === PAYMENT_PURPOSES.UNKNOWN) return Object.freeze({});
   return Object.freeze({
@@ -239,7 +280,11 @@ function paymentMetadataForPurpose(purpose) {
     agapay_classification_version: String(PAYMENT_CLASSIFICATION_VERSION),
   });
 }
-function classifyAccountingSourceType(sourceType, { organizationType = '' } = {}) {
+
+export function classifyAccountingSourceType(
+  sourceType: unknown,
+  { organizationType = '' }: PaymentOrganizationContext = {}
+) {
   const source = normalized(sourceType);
   const [purpose, component] = ACCOUNTING_SOURCE_CLASSIFICATIONS[source] || [
     PAYMENT_PURPOSES.UNKNOWN,
@@ -247,32 +292,21 @@ function classifyAccountingSourceType(sourceType, { organizationType = '' } = {}
   ];
   return classifyPayment({ purpose, component, organizationType, source: 'accounting_source_type' });
 }
-const DONATION_ACCOUNTING_SOURCE_TYPES = Object.freeze(
-  Object.entries(ACCOUNTING_SOURCE_CLASSIFICATIONS)
+
+export const DONATION_ACCOUNTING_SOURCE_TYPES = Object.freeze(
+  (Object.entries(ACCOUNTING_SOURCE_CLASSIFICATIONS) as [string, readonly [PaymentPurpose, PaymentComponent]][])
     .filter(([, [purpose]]) => purpose === PAYMENT_PURPOSES.DONATION)
     .map(([sourceType]) => sourceType)
 );
-const COMMERCE_ACCOUNTING_SOURCE_TYPES = Object.freeze(
-  Object.entries(ACCOUNTING_SOURCE_CLASSIFICATIONS)
+
+export const COMMERCE_ACCOUNTING_SOURCE_TYPES = Object.freeze(
+  (Object.entries(ACCOUNTING_SOURCE_CLASSIFICATIONS) as [string, readonly [PaymentPurpose, PaymentComponent]][])
     .filter(([, [purpose]]) => purpose === PAYMENT_PURPOSES.COMMERCE)
     .map(([sourceType]) => sourceType)
 );
-const RESERVED_TUITION_ACCOUNTING_SOURCE_TYPES = Object.freeze(
-  Object.entries(ACCOUNTING_SOURCE_CLASSIFICATIONS)
+
+export const RESERVED_TUITION_ACCOUNTING_SOURCE_TYPES = Object.freeze(
+  (Object.entries(ACCOUNTING_SOURCE_CLASSIFICATIONS) as [string, readonly [PaymentPurpose, PaymentComponent]][])
     .filter(([, [purpose]]) => purpose === PAYMENT_PURPOSES.TUITION)
     .map(([sourceType]) => sourceType)
 );
-export {
-  COMMERCE_ACCOUNTING_SOURCE_TYPES,
-  DONATION_ACCOUNTING_SOURCE_TYPES,
-  PAYMENT_AVAILABILITY,
-  PAYMENT_CLASSIFICATION_VERSION,
-  PAYMENT_COMPONENTS,
-  PAYMENT_PURPOSES,
-  RESERVED_TUITION_ACCOUNTING_SOURCE_TYPES,
-  STRIPE_PAYMENT_CLASSES,
-  classifyAccountingSourceType,
-  classifyPayment,
-  classifyPaymentMetadata,
-  paymentMetadataForPurpose,
-};
