@@ -1,10 +1,16 @@
-// Generated from src/lib/parish-pricing-usage.ts by npm run build:server. Do not edit.
+import type { DatabaseReadEnv } from './database-reads.js';
+import type { SubscriptionRegistration } from './subscriptions.js';
 import { d1, d1First } from './core.js';
 import { normalizeParishHouseholdBand, parishPricingUsageStatus } from './subscriptions.js';
-async function loadParishPricingUsage(env, parishId, registration = {}) {
+
+export async function loadParishPricingUsage(
+  env: DatabaseReadEnv,
+  parishId: string,
+  registration: SubscriptionRegistration = {}
+) {
   if (!d1(env)) return { ...parishPricingUsageStatus(registration, 0, 0), trackingAvailable: false };
   try {
-    const row = await d1First(
+    const row = await d1First<{ represented_households?: unknown; linked_users?: unknown }>(
       env,
       `SELECT
          COUNT(DISTINCT links.external_id) AS linked_users,
@@ -31,7 +37,13 @@ async function loadParishPricingUsage(env, parishId, registration = {}) {
     return { ...parishPricingUsageStatus(registration, 0, 0), trackingAvailable: false };
   }
 }
-async function validateParishCheckoutBand(env, parishId, registration, body = {}) {
+
+export async function validateParishCheckoutBand(
+  env: DatabaseReadEnv,
+  parishId: string,
+  registration: SubscriptionRegistration,
+  body: SubscriptionRegistration = {}
+) {
   if (String(body.subscriptionTier || registration.subscriptionTier || '').toLowerCase() !== 'parish') return null;
   const parishHouseholdBand = normalizeParishHouseholdBand(
     body.parishHouseholdBand ?? registration.parishHouseholdBand
@@ -39,4 +51,3 @@ async function validateParishCheckoutBand(env, parishId, registration, body = {}
   const usage = await loadParishPricingUsage(env, parishId, { ...registration, parishHouseholdBand });
   return usage.trackingAvailable && usage.upgradeRequired ? usage : null;
 }
-export { loadParishPricingUsage, validateParishCheckoutBand };

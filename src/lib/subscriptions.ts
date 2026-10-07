@@ -1,7 +1,54 @@
-// Generated from src/lib/subscriptions.ts by npm run build:server. Do not edit.
-const EARLY_ADOPTER_LIMIT = 20;
-const EARLY_ADOPTER_PROGRAM_ID = 'founding_20';
-const parishHouseholdBands = Object.freeze([
+import type { RegistrationRecord } from '../organizations/types.js';
+
+export interface SubscriptionRegistration extends RegistrationRecord {
+  subscriptionTrialEndsAt?: string | null;
+}
+export interface HouseholdBand {
+  id: string;
+  label: string;
+  minHouseholds: number;
+  maxHouseholds: number | null;
+  earlyAdopterMonthlyCents: number | null;
+  standardMonthlyCents: number | null;
+  earlyStripePriceEnv: string;
+  standardStripePriceEnv: string;
+}
+export interface SubscriptionAddOn {
+  id: string;
+  label: string;
+  description: string;
+  earlyAdopterMonthlyCents: number;
+  standardMonthlyCents: number;
+  earlyStripePriceEnv: string;
+  standardStripePriceEnv: string;
+  modules: string[];
+}
+export interface SubscriptionTierDefinition {
+  id: string;
+  label: string;
+  monthlyCents: number | null;
+  standardMonthlyCents?: number;
+  earlyAdopterMonthlyCents?: number;
+  transactionRateLabel: string;
+  stripePriceEnv: string;
+  standardStripePriceEnv?: string;
+  description: string;
+  modules: Record<string, boolean | string>;
+}
+
+// AGAPAY charges no donation fee on any tier -- transactionRateLabel
+// reflects Stripe's own standard processing cost only, which AGAPAY does
+// not collect or mark up. AGAPAY's revenue is the monthly subscription.
+//
+// The catalog defines module inclusion once. entitlements.js consumes it
+// and adds subscription status, selected add-ons, and existing grants.
+// Legacy early-adopter identifiers remain exported only so historical Stripe
+// records and slot cleanup can still be processed. New checkouts always use
+// the flat standard catalog below.
+export const EARLY_ADOPTER_LIMIT = 20;
+export const EARLY_ADOPTER_PROGRAM_ID = 'founding_20';
+
+export const parishHouseholdBands: readonly HouseholdBand[] = Object.freeze([
   {
     id: 'under_50',
     label: 'Under 50 households',
@@ -53,7 +100,8 @@ const parishHouseholdBands = Object.freeze([
     standardStripePriceEnv: '',
   },
 ]);
-const subscriptionAddOns = Object.freeze([
+
+export const subscriptionAddOns: readonly SubscriptionAddOn[] = Object.freeze([
   {
     id: 'sacraments',
     label: 'Sacraments & Services',
@@ -86,14 +134,15 @@ const subscriptionAddOns = Object.freeze([
     modules: ['bookstore', 'commerceSuite', 'accounting', 'accountingAdvancedOperations'],
   },
 ]);
-function normalizeSubscriptionAddOns(value = [], tierId = 'giving') {
+
+export function normalizeSubscriptionAddOns(value: unknown = [], tierId: unknown = 'giving') {
   if (String(tierId || '').toLowerCase() !== 'giving') return [];
   let entries = value;
   if (typeof entries === 'string') {
     try {
       entries = JSON.parse(entries);
     } catch {
-      entries = entries.split(',');
+      entries = (entries as string).split(',');
     }
   }
   const allowed = new Set(subscriptionAddOns.map((addOn) => addOn.id));
@@ -112,11 +161,16 @@ function normalizeSubscriptionAddOns(value = [], tierId = 'giving') {
     return selected.filter((entry) => entry !== 'bookstore' && entry !== 'full_commerce');
   return selected.includes('full_commerce') ? selected.filter((entry) => entry !== 'bookstore') : selected;
 }
-function subscriptionAddOnsFor(registration = {}) {
+
+export function subscriptionAddOnsFor(registration: SubscriptionRegistration | string = {}) {
   const tierId = typeof registration === 'string' ? registration : registration.subscriptionTier || registration.tier;
   return normalizeSubscriptionAddOns(typeof registration === 'object' ? registration.subscriptionAddOns : [], tierId);
 }
-function subscriptionAddOnPricing(addOn, pricingProgram = 'standard') {
+
+export function subscriptionAddOnPricing(
+  addOn: string | SubscriptionAddOn | null | undefined,
+  pricingProgram = 'standard'
+) {
   const definition = typeof addOn === 'string' ? subscriptionAddOns.find((candidate) => candidate.id === addOn) : addOn;
   if (!definition) return null;
   return {
@@ -126,16 +180,18 @@ function subscriptionAddOnPricing(addOn, pricingProgram = 'standard') {
     stripePriceEnv: definition.standardStripePriceEnv,
   };
 }
-function publicSubscriptionAddOns() {
+
+export function publicSubscriptionAddOns() {
   return subscriptionAddOns.map(({ earlyStripePriceEnv, standardStripePriceEnv, ...addOn }) => addOn);
 }
-function normalizeParishHouseholdBand(value = '') {
+
+export function normalizeParishHouseholdBand(value: unknown = '') {
   const normalized = String(value || '')
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_|_$/g, '');
-  const aliases = {
+  const aliases: Record<string, string | undefined> = {
     under50: 'under_50',
     fewer_than_50: 'under_50',
     '50_149_households': '50_149',
@@ -146,7 +202,8 @@ function normalizeParishHouseholdBand(value = '') {
   const id = aliases[normalized] || normalized;
   return parishHouseholdBands.some((band) => band.id === id) ? id : '';
 }
-function parishHouseholdPricing(registration = {}) {
+
+export function parishHouseholdPricing(registration: SubscriptionRegistration = {}) {
   const bandId =
     normalizeParishHouseholdBand(registration.parishHouseholdBand || registration.householdBand) || 'under_50';
   const band = parishHouseholdBands.find((candidate) => candidate.id === bandId) || parishHouseholdBands[0];
@@ -155,14 +212,20 @@ function parishHouseholdPricing(registration = {}) {
   const stripePriceEnv = band.standardStripePriceEnv;
   return { ...band, pricingProgram, monthlyCents, stripePriceEnv };
 }
-function parishHouseholdBandForCount(value = 0) {
+
+export function parishHouseholdBandForCount(value: unknown = 0) {
   const count = Math.max(0, Math.trunc(Number(value) || 0));
   return (
     parishHouseholdBands.find((band) => band.maxHouseholds === null || count <= band.maxHouseholds) ||
     parishHouseholdBands[parishHouseholdBands.length - 1]
   );
 }
-function parishPricingUsageStatus(registration = {}, representedHouseholds = 0, linkedUsers = 0) {
+
+export function parishPricingUsageStatus(
+  registration: SubscriptionRegistration = {},
+  representedHouseholds: unknown = 0,
+  linkedUsers: unknown = 0
+) {
   const householdCount = Math.max(0, Math.trunc(Number(representedHouseholds) || 0));
   const userCount = Math.max(0, Math.trunc(Number(linkedUsers) || 0));
   const selectedBandId = normalizeParishHouseholdBand(registration.parishHouseholdBand || registration.householdBand);
@@ -189,7 +252,8 @@ function parishPricingUsageStatus(registration = {}, representedHouseholds = 0, 
     upgradeRequired: selectedBandIndex >= 0 && recommendedBandIndex > selectedBandIndex,
   };
 }
-const subscriptionTiers = [
+
+export const subscriptionTiers: SubscriptionTierDefinition[] = [
   {
     id: 'starter',
     label: 'Give',
@@ -305,8 +369,13 @@ const subscriptionTiers = [
     },
   },
 ];
-const PARISH_INTRO_DEMO_DAYS = 30;
-function parishIntroDemoEligible(registration = {}) {
+
+export const PARISH_INTRO_DEMO_DAYS = 30;
+
+// The public offer is available once to each verified canonical community.
+// Pending or abandoned Checkout Sessions do not consume it; activation is
+// recorded only after Stripe creates the subscription.
+export function parishIntroDemoEligible(registration: SubscriptionRegistration = {}) {
   return (
     !registration.stripeSubscriptionId &&
     !registration.subscriptionActivatedAt &&
@@ -315,20 +384,20 @@ function parishIntroDemoEligible(registration = {}) {
     !registration.subscriptionIntroDemoRedeemedAt
   );
 }
-function publicSubscriptionTiers() {
+
+export function publicSubscriptionTiers() {
   return subscriptionTiers.map(({ stripePriceEnv, standardStripePriceEnv, ...tier }) =>
     tier.id === 'parish'
       ? {
           ...tier,
           householdPriced: true,
-          householdBands: parishHouseholdBands.map(
-            ({ earlyStripePriceEnv, standardStripePriceEnv: standardStripePriceEnv2, ...band }) => band
-          ),
+          householdBands: parishHouseholdBands.map(({ earlyStripePriceEnv, standardStripePriceEnv, ...band }) => band),
         }
       : tier
   );
 }
-function subscriptionTierFromStripePriceId(env = {}, priceId = '') {
+
+export function subscriptionTierFromStripePriceId(env: Readonly<Record<string, unknown>> = {}, priceId = '') {
   const matched = subscriptionTiers.find(
     (tier) => tier.id !== 'parish' && tier.stripePriceEnv && env[tier.stripePriceEnv] === priceId
   );
@@ -345,7 +414,7 @@ function subscriptionTierFromStripePriceId(env = {}, priceId = '') {
     };
   for (const band of parishHouseholdBands) {
     if (band.earlyStripePriceEnv && env[band.earlyStripePriceEnv] === priceId) {
-      const parish = subscriptionTiers.find((tier) => tier.id === 'parish');
+      const parish = subscriptionTiers.find((tier) => tier.id === 'parish')!;
       return {
         ...parish,
         ...band,
@@ -357,7 +426,7 @@ function subscriptionTierFromStripePriceId(env = {}, priceId = '') {
       };
     }
     if (band.standardStripePriceEnv && env[band.standardStripePriceEnv] === priceId) {
-      const parish = subscriptionTiers.find((tier) => tier.id === 'parish');
+      const parish = subscriptionTiers.find((tier) => tier.id === 'parish')!;
       return {
         ...parish,
         ...band,
@@ -371,14 +440,16 @@ function subscriptionTierFromStripePriceId(env = {}, priceId = '') {
   }
   return null;
 }
-function defaultSubscriptionTier(registration = {}) {
+
+export function defaultSubscriptionTier(registration: SubscriptionRegistration = {}) {
   const type = String(registration.communityType || registration.parishType || '').toLowerCase();
   if (type.includes('cathedral') || type.includes('diocese')) return 'diocese';
   if (type.includes('monastery') || type.includes('skete')) return 'monastery_free';
   if (type.includes('mission')) return 'starter';
   return 'parish';
 }
-function subscriptionTier(registration = {}) {
+
+export function subscriptionTier(registration: SubscriptionRegistration | string = {}) {
   const isTierId = typeof registration === 'string';
   const rawSelected = String(isTierId ? registration : registration.subscriptionTier || registration.tier || '')
     .trim()
@@ -387,7 +458,7 @@ function subscriptionTier(registration = {}) {
   const matched =
     subscriptionTiers.find((tier) => tier.id === selected) ||
     (!isTierId ? subscriptionTiers.find((tier) => tier.id === defaultSubscriptionTier(registration)) : null) ||
-    subscriptionTiers.find((tier) => tier.id === 'parish');
+    subscriptionTiers.find((tier) => tier.id === 'parish')!;
   if (matched?.id !== 'parish') {
     if (
       !isTierId &&
@@ -406,7 +477,10 @@ function subscriptionTier(registration = {}) {
   const pricing = parishHouseholdPricing(isTierId ? {} : registration);
   return { ...matched, ...pricing, id: matched.id, parishHouseholdBand: pricing.id };
 }
-function subscriptionEntitlementActive(registration) {
+
+// Older records have no explicit status; retain their existing entitlement
+// behavior. Once present, status is authoritative for every paid module.
+export function subscriptionEntitlementActive(registration: SubscriptionRegistration | null | undefined) {
   if (!registration) return false;
   const status = String(registration.subscriptionStatus || registration.billingStatus || '')
     .trim()
@@ -419,31 +493,11 @@ function subscriptionEntitlementActive(registration) {
     Date.parse(registration.subscriptionTrialEndsAt) > Date.now()
   );
 }
-function subscriptionReady(registration = {}) {
+
+export function subscriptionReady(registration: SubscriptionRegistration = {}) {
   const explicitStatus = String(registration.subscriptionStatus || registration.billingStatus || '').toLowerCase();
   if (explicitStatus) return subscriptionEntitlementActive(registration);
+  // Backward compatibility for records created before subscription status
+  // was stored. Once an explicit status exists, it is authoritative.
   return Boolean(registration.subscriptionId || registration.stripeSubscriptionId);
 }
-export {
-  EARLY_ADOPTER_LIMIT,
-  EARLY_ADOPTER_PROGRAM_ID,
-  PARISH_INTRO_DEMO_DAYS,
-  defaultSubscriptionTier,
-  normalizeParishHouseholdBand,
-  normalizeSubscriptionAddOns,
-  parishHouseholdBandForCount,
-  parishHouseholdBands,
-  parishHouseholdPricing,
-  parishIntroDemoEligible,
-  parishPricingUsageStatus,
-  publicSubscriptionAddOns,
-  publicSubscriptionTiers,
-  subscriptionAddOnPricing,
-  subscriptionAddOns,
-  subscriptionAddOnsFor,
-  subscriptionEntitlementActive,
-  subscriptionReady,
-  subscriptionTier,
-  subscriptionTierFromStripePriceId,
-  subscriptionTiers,
-};

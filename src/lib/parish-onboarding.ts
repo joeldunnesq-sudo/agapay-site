@@ -1,4 +1,57 @@
-// Generated from src/lib/parish-onboarding.ts by npm run build:server. Do not edit.
+import type { EntitlementRegistration } from './entitlements.js';
+export interface OnboardingFund {
+  [field: string]: unknown;
+  name?: string | null;
+}
+export interface OnboardingCheck {
+  status?: unknown;
+  note?: unknown;
+  evidence?: unknown;
+  updatedAt?: unknown;
+  updatedBy?: unknown;
+}
+export type OnboardingChecks = Record<string, OnboardingCheck | null | undefined>;
+interface ApprovedException {
+  approved?: unknown;
+  legacyFundIdentifier?: unknown;
+  reason?: unknown;
+  approvedBy?: unknown;
+  approvedAt?: string | number | null;
+}
+interface TreasurerSignoff {
+  [field: string]: unknown;
+  status?: unknown;
+  signedAt?: unknown;
+  snapshotVersion?: unknown;
+  reviewVersion?: unknown;
+}
+export interface OnboardingRegistration extends EntitlementRegistration {
+  funds?: OnboardingFund[] | null;
+  campaigns?: OnboardingFund[] | null;
+  feastCampaigns?: OnboardingFund[] | null;
+  generalFundLegacyException?: ApprovedException | null;
+  legacySharedAccessAllowed?: ApprovedException | null;
+  onboardingAccess?: Record<string, { status?: unknown; email?: unknown; membershipId?: unknown } | null> | null;
+  treasurerSignoff?: TreasurerSignoff | null;
+  onboardingChecks?: OnboardingChecks | null;
+  stripeStatusCheckedAt?: string | number | null;
+}
+export interface OnboardingOptions {
+  memberships?: readonly { id?: unknown; parishId?: unknown; status?: unknown }[] | null;
+  legacyPlanSummary?: boolean;
+  receiptContact?: unknown;
+  appUrl?: unknown;
+  now?: number;
+  actor?: unknown;
+  reason?: unknown;
+}
+export interface TreasurerGoLiveInput {
+  affirmations?: Record<string, unknown> | null;
+  signerName?: unknown;
+  signerTitle?: unknown;
+  authorityConfirmed?: unknown;
+}
+
 import { normalizeEmail, sha256Hex } from './core.js';
 import { accountingEnabledFor } from './entitlements.js';
 import {
@@ -11,14 +64,17 @@ import {
   VERIFICATION_ONBOARDING_MANUAL_CHECKS,
   verificationOnboardingSteps,
 } from '../organizations/verification-policies.js';
-const PARISH_ONBOARDING_WORKFLOW_VERSION = 1;
-const STRIPE_READINESS_MAX_AGE_MS = 24 * 60 * 60 * 1e3;
-const ONBOARDING_MANUAL_CHECKS = Object.freeze([
+
+export const PARISH_ONBOARDING_WORKFLOW_VERSION = 1;
+export const STRIPE_READINESS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+export const ONBOARDING_MANUAL_CHECKS = Object.freeze([
   ...VERIFICATION_ONBOARDING_MANUAL_CHECKS,
   'givingConfiguration',
   'importDecision',
 ]);
-const TREASURER_AFFIRMATIONS = Object.freeze([
+
+export const TREASURER_AFFIRMATIONS = Object.freeze([
   'stripeAccount',
   'payoutBank',
   'organizationName',
@@ -28,30 +84,30 @@ const TREASURER_AFFIRMATIONS = Object.freeze([
   'receiptDetails',
   'agapayPlan',
 ]);
-const MANUAL_STATUSES = /* @__PURE__ */ new Set(['not_started', 'in_progress', 'blocked', 'passed', 'not_applicable']);
-const GENERAL_FUND_KEYS = /* @__PURE__ */ new Set([
-  'general',
-  'stewardship',
-  'general operating fund',
-  'general stewardship',
-]);
+
+const MANUAL_STATUSES = new Set(['not_started', 'in_progress', 'blocked', 'passed', 'not_applicable']);
+const GENERAL_FUND_KEYS = new Set(['general', 'stewardship', 'general operating fund', 'general stewardship']);
 const GENERAL_FUND_CANONICAL_ID = 'general';
 const GENERAL_ACCOUNTING_FUND_ID = 'fund_general';
-function text(value, maxLength = 1e3) {
+
+function text(value: unknown, maxLength = 1000) {
   return String(value || '')
     .trim()
     .slice(0, maxLength);
 }
-function activeItems(items) {
+
+function activeItems(items: OnboardingFund[] | null | undefined) {
   return (Array.isArray(items) ? items : []).filter((item) => item && item.enabled !== false && item.active !== false);
 }
-function isGeneralFundCandidate(fund = {}) {
+
+function isGeneralFundCandidate(fund: OnboardingFund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
     .filter(Boolean)
     .map((value) => text(value, 160).toLowerCase())
     .some((value) => GENERAL_FUND_KEYS.has(value));
 }
-function approvedLegacyGeneralFundException(registration = {}, fund = {}) {
+
+function approvedLegacyGeneralFundException(registration: OnboardingRegistration = {}, fund: OnboardingFund = {}) {
   const exception = registration.generalFundLegacyException;
   if (!exception || exception.approved !== true) return false;
   const legacyId = text(exception.legacyFundIdentifier, 160).toLowerCase();
@@ -63,7 +119,8 @@ function approvedLegacyGeneralFundException(registration = {}, fund = {}) {
     validDate(exception.approvedAt)
   );
 }
-function validateGeneralOperatingFund(registration = {}) {
+
+export function validateGeneralOperatingFund(registration: OnboardingRegistration = {}) {
   const funds = Array.isArray(registration.funds) ? registration.funds.filter(Boolean) : [];
   const activeFunds = activeItems(funds);
   const allCandidates = funds.filter(isGeneralFundCandidate);
@@ -71,6 +128,7 @@ function validateGeneralOperatingFund(registration = {}) {
   const errors = [];
   const warnings = [];
   const fund = candidates.length === 1 ? candidates[0] : allCandidates.length === 1 ? allCandidates[0] : null;
+
   if (!candidates.length) {
     errors.push(
       allCandidates.length
@@ -80,6 +138,7 @@ function validateGeneralOperatingFund(registration = {}) {
   } else if (candidates.length > 1) {
     errors.push(`Exactly one active General Operating Fund is required; ${candidates.length} are configured.`);
   }
+
   if (fund) {
     const canonicalId = text(fund.id, 160).toLowerCase();
     const legacyException = approvedLegacyGeneralFundException(registration, fund);
@@ -87,6 +146,7 @@ function validateGeneralOperatingFund(registration = {}) {
       errors.push('The General Operating Fund must use the stable identifier "general".');
     }
     if (legacyException) warnings.push(`Approved legacy identifier: ${text(fund.id, 160)}.`);
+
     const restrictionType = text(fund.restrictionType || fund.restriction_type, 80).toLowerCase();
     if (restrictionType !== 'unrestricted') {
       errors.push('General Operating Fund is restricted. Change the restriction to Unrestricted before launch.');
@@ -114,6 +174,7 @@ function validateGeneralOperatingFund(registration = {}) {
       errors.push('General Operating Fund must map to the unrestricted operating fund in AGAPAY Accounting.');
     }
   }
+
   return {
     passed: errors.length === 0,
     fund,
@@ -121,7 +182,8 @@ function validateGeneralOperatingFund(registration = {}) {
     warnings,
   };
 }
-function publicFund(item = {}) {
+
+function publicFund(item: OnboardingFund = {}) {
   return {
     id: text(item.id || item.code || item.name, 160),
     name: text(item.name || item.label, 160),
@@ -137,24 +199,27 @@ function publicFund(item = {}) {
     status: text(item.status || (item.enabled === false || item.active === false ? 'disabled' : 'active'), 40),
   };
 }
-function publicCampaign(item = {}) {
+
+function publicCampaign(item: OnboardingFund = {}) {
   return {
     ...publicFund(item),
     goalCents: Number(item.goalCents || 0),
     destinationFundId: text(item.destinationFundId, 160),
   };
 }
-function stableValue(value) {
-  if (Array.isArray(value)) return value.map(stableValue);
+
+function stableValue<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(stableValue) as T;
   if (!value || typeof value !== 'object') return value;
   return Object.keys(value)
     .sort()
-    .reduce((result, key) => {
-      result[key] = stableValue(value[key]);
+    .reduce<Record<string, unknown>>((result, key) => {
+      result[key] = stableValue((value as Record<string, unknown>)[key]);
       return result;
-    }, {});
+    }, {}) as T;
 }
-function step(key, title, passed, detail, owner = 'AGAPAY') {
+
+function step(key: string, title: string, passed: unknown, detail: unknown, owner = 'AGAPAY') {
   return {
     key,
     title,
@@ -164,11 +229,13 @@ function step(key, title, passed, detail, owner = 'AGAPAY') {
     owner,
   };
 }
-function manualPassed(checks, key) {
+
+function manualPassed(checks: OnboardingChecks, key: string) {
   const status = checks[key]?.status || 'not_started';
   return status === 'passed' || (key === 'importDecision' && status === 'not_applicable');
 }
-function legacySharedAccessApproved(registration = {}) {
+
+function legacySharedAccessApproved(registration: OnboardingRegistration = {}) {
   const exception = registration.legacySharedAccessAllowed;
   return Boolean(
     exception?.approved === true &&
@@ -179,7 +246,11 @@ function legacySharedAccessApproved(registration = {}) {
     registration.parishDashboardPasswordRecord
   );
 }
-function requiredPersonalAccessAccepted(registration = {}, options = {}) {
+
+export function requiredPersonalAccessAccepted(
+  registration: OnboardingRegistration = {},
+  options: OnboardingOptions = {}
+) {
   const access =
     registration.onboardingAccess && typeof registration.onboardingAccess === 'object'
       ? registration.onboardingAccess
@@ -204,22 +275,27 @@ function requiredPersonalAccessAccepted(registration = {}, options = {}) {
     );
   });
 }
-function accessAccepted(registration = {}, options = {}) {
+
+function accessAccepted(registration: OnboardingRegistration = {}, options: OnboardingOptions = {}) {
   const dashboardSecured =
     registration.dashboardInviteEmailStatus === 'sent' &&
     Boolean(registration.parishDashboardPasswordRecord) &&
     registration.parishDashboardTokenTemporary !== true;
   if (!dashboardSecured) return legacySharedAccessApproved(registration);
+  // Initial publication uses the secured parish dashboard session, including
+  // during the 30-day trial. Accounting authorization remains a separate gate.
   if (!registration.goLiveAt && !registration.treasurerSignoff?.signedAt) return true;
   const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === 'active';
   if (!paidSubscription) return true;
   return requiredPersonalAccessAccepted(registration, options) || legacySharedAccessApproved(registration);
 }
-function validDate(value) {
+
+function validDate(value: string | number | null | undefined) {
   const time = new Date(value || '').getTime();
   return Number.isFinite(time) ? time : 0;
 }
-function stripeReadiness(registration = {}, now = Date.now()) {
+
+function stripeReadiness(registration: OnboardingRegistration = {}, now = Date.now()) {
   const checkedAt = validDate(registration.stripeStatusCheckedAt);
   const fresh = checkedAt > 0 && now - checkedAt <= STRIPE_READINESS_MAX_AGE_MS;
   const requirements = Array.isArray(registration.stripeRequirementsDue) ? registration.stripeRequirementsDue : [];
@@ -243,18 +319,24 @@ function stripeReadiness(registration = {}, now = Date.now()) {
     ),
   };
 }
-function onboardingWorkflowEnabled(registration = {}) {
+
+export function onboardingWorkflowEnabled(registration: OnboardingRegistration = {}) {
   return Number(registration.onboardingWorkflowVersion || 0) >= PARISH_ONBOARDING_WORKFLOW_VERSION;
 }
-function normalizeOnboardingChecks(
-  input = {},
-  current = {},
+
+export function normalizeOnboardingChecks(
+  input: OnboardingChecks | null = {},
+  current: OnboardingChecks | null = {},
   actor = 'AGAPAY Admin',
-  now = /* @__PURE__ */ new Date().toISOString()
+  now = new Date().toISOString()
 ) {
   const existing = current && typeof current === 'object' ? current : {};
   const submitted = input && typeof input === 'object' ? input : {};
-  const normalized = {};
+  const normalized: Record<
+    string,
+    { status: string; note: string; evidence: string; updatedAt: unknown; updatedBy: unknown }
+  > = {};
+
   for (const key of ONBOARDING_MANUAL_CHECKS) {
     const prior = existing[key] && typeof existing[key] === 'object' ? existing[key] : {};
     const next = submitted[key] && typeof submitted[key] === 'object' ? submitted[key] : null;
@@ -262,10 +344,10 @@ function normalizeOnboardingChecks(
     const status = MANUAL_STATUSES.has(requestedStatus) ? requestedStatus : 'not_started';
     const allowedStatus = status === 'not_applicable' && key !== 'importDecision' ? 'not_started' : status;
     const note = text(next?.note ?? prior.note, 1200);
-    const evidence = text(next?.evidence ?? prior.evidence, 1e3);
+    const evidence = text(next?.evidence ?? prior.evidence, 1000);
     const changed =
       Boolean(next) &&
-      (allowedStatus !== prior.status || note !== text(prior.note, 1200) || evidence !== text(prior.evidence, 1e3));
+      (allowedStatus !== prior.status || note !== text(prior.note, 1200) || evidence !== text(prior.evidence, 1000));
     normalized[key] = {
       status: allowedStatus,
       note,
@@ -274,13 +356,15 @@ function normalizeOnboardingChecks(
       updatedBy: changed ? text(actor, 160) : prior.updatedBy || '',
     };
   }
+
   return normalized;
 }
-function recordParishGivingSetupReview(
-  registration = {},
+
+export function recordParishGivingSetupReview(
+  registration: OnboardingRegistration = {},
   importDecision = 'none',
   actor = 'Parish dashboard',
-  now = /* @__PURE__ */ new Date().toISOString()
+  now = new Date().toISOString()
 ) {
   const importRequested = importDecision === 'requested';
   return {
@@ -306,7 +390,8 @@ function recordParishGivingSetupReview(
     ),
   };
 }
-function onboardingMaterialSnapshot(registration = {}, options = {}) {
+
+export function onboardingMaterialSnapshot(registration: OnboardingRegistration = {}, options: OnboardingOptions = {}) {
   const funds = activeItems(registration.funds);
   const generalFunds = funds.filter(isGeneralFundCandidate);
   const designatedFunds = funds.filter((fund) => !isGeneralFundCandidate(fund));
@@ -314,7 +399,7 @@ function onboardingMaterialSnapshot(registration = {}, options = {}) {
   const baseMonthlyCents = plan.monthlyCents ?? registration.subscriptionMonthlyCents ?? null;
   const addOns = subscriptionAddOnsFor(registration)
     .map((id) => subscriptionAddOnPricing(id))
-    .filter(Boolean);
+    .filter(Boolean) as NonNullable<ReturnType<typeof subscriptionAddOnPricing>>[];
   const modules = { ...plan.modules };
   for (const addOn of addOns) for (const moduleId of addOn.modules) modules[moduleId] = true;
   return stableValue({
@@ -375,10 +460,19 @@ function onboardingMaterialSnapshot(registration = {}, options = {}) {
     },
   });
 }
-async function onboardingMaterialVersion(registration = {}, options = {}) {
+
+export async function onboardingMaterialVersion(
+  registration: OnboardingRegistration = {},
+  options: OnboardingOptions = {}
+) {
   return sha256Hex(JSON.stringify(onboardingMaterialSnapshot(registration, options)));
 }
-function recommendedOnboardingState(registration = {}, checksInput = registration.onboardingChecks, options = {}) {
+
+export function recommendedOnboardingState(
+  registration: OnboardingRegistration = {},
+  checksInput: OnboardingChecks | null | undefined = registration.onboardingChecks,
+  options: OnboardingOptions = {}
+) {
   if (!registration.reference) return 'RECEIVED';
   if (registration.status !== 'verified') return 'IDENTITY_REVIEW';
   if (
@@ -405,7 +499,11 @@ function recommendedOnboardingState(registration = {}, checksInput = registratio
     return 'CONFIGURING';
   return 'AWAITING_TREASURER_SIGNOFF';
 }
-async function buildParishOnboardingWorkflow(registration = {}, options = {}) {
+
+export async function buildParishOnboardingWorkflow(
+  registration: OnboardingRegistration = {},
+  options: OnboardingOptions = {}
+) {
   const checks = normalizeOnboardingChecks({}, registration.onboardingChecks);
   const stripe = stripeReadiness(registration, options.now ?? Date.now());
   const generalFund = validateGeneralOperatingFund(registration);
@@ -524,6 +622,7 @@ async function buildParishOnboardingWorkflow(registration = {}, options = {}) {
     state !== 'LIVE' &&
     registration.givingStatus === 'hidden' &&
     blockers.length === 0;
+
   return {
     version: PARISH_ONBOARDING_WORKFLOW_VERSION,
     enabled: onboardingWorkflowEnabled(registration),
@@ -586,7 +685,11 @@ async function buildParishOnboardingWorkflow(registration = {}, options = {}) {
     },
   };
 }
-function validateTreasurerGoLiveInput(body = {}, registration = {}) {
+
+export function validateTreasurerGoLiveInput(
+  body: TreasurerGoLiveInput = {},
+  registration: OnboardingRegistration = {}
+) {
   const affirmations = body.affirmations && typeof body.affirmations === 'object' ? body.affirmations : {};
   const missingAffirmations = TREASURER_AFFIRMATIONS.filter((key) => affirmations[key] !== true);
   const signerName = text(body.signerName, 160);
@@ -600,7 +703,12 @@ function validateTreasurerGoLiveInput(body = {}, registration = {}) {
   if (body.authorityConfirmed !== true) errors.push('Confirm authority to act for the parish.');
   return { ok: errors.length === 0, errors, missingAffirmations, signerName, signerTitle, signerEmail, affirmations };
 }
-async function invalidateOnboardingSignoffIfChanged(previous = {}, next = {}, options = {}) {
+
+export async function invalidateOnboardingSignoffIfChanged(
+  previous: OnboardingRegistration = {},
+  next: OnboardingRegistration = {},
+  options: OnboardingOptions = {}
+) {
   if (!onboardingWorkflowEnabled(previous) || previous.treasurerSignoff?.status !== 'signed') return next;
   const [previousVersion, nextVersion, previousWithoutPublicNameVersion, nextWithoutPublicNameVersion] =
     await Promise.all([
@@ -610,18 +718,23 @@ async function invalidateOnboardingSignoffIfChanged(previous = {}, next = {}, op
       onboardingMaterialVersion({ ...next, parishName: '' }, options),
     ]);
   if (previousVersion === nextVersion) return next;
+  // The dashboard's parish name is public display copy, not the canonical or
+  // legal receipt identity. Keep an existing launch approval valid when that
+  // is the only material-snapshot input that changed. Explicit legal receipt
+  // names, Stripe/bank details, plans, and giving configuration still
+  // invalidate the approval below.
   if (previousWithoutPublicNameVersion === nextWithoutPublicNameVersion) {
     return {
       ...next,
       treasurerSignoff: {
         ...previous.treasurerSignoff,
         snapshotVersion: nextVersion,
-        publicNameUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
+        publicNameUpdatedAt: new Date().toISOString(),
         publicNameUpdatedBy: text(options.actor || 'parish', 160),
       },
     };
   }
-  const now = /* @__PURE__ */ new Date().toISOString();
+  const now = new Date().toISOString();
   return {
     ...next,
     givingStatus: previous.onboardingState === 'LIVE' ? 'paused' : 'hidden',
@@ -635,20 +748,3 @@ async function invalidateOnboardingSignoffIfChanged(previous = {}, next = {}, op
     },
   };
 }
-export {
-  ONBOARDING_MANUAL_CHECKS,
-  PARISH_ONBOARDING_WORKFLOW_VERSION,
-  STRIPE_READINESS_MAX_AGE_MS,
-  TREASURER_AFFIRMATIONS,
-  buildParishOnboardingWorkflow,
-  invalidateOnboardingSignoffIfChanged,
-  normalizeOnboardingChecks,
-  onboardingMaterialSnapshot,
-  onboardingMaterialVersion,
-  onboardingWorkflowEnabled,
-  recommendedOnboardingState,
-  recordParishGivingSetupReview,
-  requiredPersonalAccessAccepted,
-  validateGeneralOperatingFund,
-  validateTreasurerGoLiveInput,
-};

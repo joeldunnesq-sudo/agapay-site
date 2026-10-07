@@ -17,6 +17,16 @@ export default [
     },
   },
   {
+    files: ['src/lib/subscriptions.ts'],
+    // Public catalogs omit private binding names; preserve the legacy pricing argument.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { ignoreRestSiblings: true, argsIgnorePattern: '^pricingProgram$' },
+      ],
+    },
+  },
+  {
     files: ['src/lib/stewardship-funds.ts'],
     // Destructuring deliberately omits the reporting-only code from saved funds.
     rules: { '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }] },
@@ -100,6 +110,7 @@ export default [
       'scripts/giving-catalog-handler-typescript-tests.mjs',
       'scripts/giving-foundations-typescript-tests.mjs',
       'scripts/stripe-volume-typescript-tests.mjs',
+      'scripts/dashboard-foundation-typescript-tests.mjs',
       'scripts/giving-catalog-staging-smoke-tests.mjs',
       'scripts/parish-outside-gifts-typescript-tests.mjs',
       'scripts/parish-giving-catalog-typescript-tests.mjs',

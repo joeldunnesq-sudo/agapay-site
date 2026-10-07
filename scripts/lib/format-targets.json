@@ -259,7 +259,14 @@
     ".github/workflows/accounting-release-gates.yml",
     "src/lib/stripe-connect.js",
     "src/lib/stripe-volume.js",
-    "scripts/stripe-volume-typescript-tests.mjs"
+    "scripts/stripe-volume-typescript-tests.mjs",
+    "src/lib/subscriptions.js",
+    "src/lib/entitlements.js",
+    "src/lib/parish-onboarding.js",
+    "src/lib/parish-feature-requests.js",
+    "src/lib/parish-pricing-usage.js",
+    "src/lib/parish-life-access.js",
+    "scripts/dashboard-foundation-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -552,6 +559,13 @@
     ".github/workflows/accounting-release-gates.yml",
     "src/lib/stripe-connect.js",
     "src/lib/stripe-volume.js",
-    "scripts/stripe-volume-typescript-tests.mjs"
+    "scripts/stripe-volume-typescript-tests.mjs",
+    "src/lib/subscriptions.js",
+    "src/lib/entitlements.js",
+    "src/lib/parish-onboarding.js",
+    "src/lib/parish-feature-requests.js",
+    "src/lib/parish-pricing-usage.js",
+    "src/lib/parish-life-access.js",
+    "scripts/dashboard-foundation-typescript-tests.mjs"
   ]
 }

@@ -1,17 +1,46 @@
-// Generated from src/lib/parish-feature-requests.ts by npm run build:server. Do not edit.
+import type { DatabaseReadEnv } from './database-reads.js';
+export interface FeatureRequestEnv extends DatabaseReadEnv {
+  AGAPAY_REGISTRATIONS: Pick<KVNamespace, 'get' | 'put'>;
+}
+export interface FeatureRequestEntry {
+  count?: unknown;
+  firstRequestedAt?: string | null;
+  lastRequestedAt?: string | null;
+  requestors?: unknown;
+  dismissedAt?: string | null;
+}
+interface FeatureRequestStore {
+  version: number;
+  features: Record<string, FeatureRequestEntry>;
+}
+interface FeatureRequestRow {
+  feature_id: string;
+  count?: unknown;
+  first_requested_at?: string | null;
+  last_requested_at?: string | null;
+}
+export interface FeatureRequestInput {
+  parishId: string;
+  featureId: string;
+  donorEmail: string;
+}
+
 import { d1, d1All, d1First, d1GetSetting, d1Run, d1SetSetting, sha256Hex } from './core.js';
+
 const FEATURE_REQUEST_PREFIX = 'parish-feature-requests:';
-function featureRequestKey(parishId) {
+
+function featureRequestKey(parishId: string) {
   return `${FEATURE_REQUEST_PREFIX}${String(parishId || '')
     .trim()
     .toLowerCase()}`;
 }
-async function readFeatureRequestStore(env, parishId) {
+
+async function readFeatureRequestStore(env: FeatureRequestEnv, parishId: string): Promise<FeatureRequestStore> {
   const key = featureRequestKey(parishId);
   const raw = d1(env) ? await d1GetSetting(env, key) : await env.AGAPAY_REGISTRATIONS?.get(key);
   if (!raw) return { version: 1, features: {} };
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw) as { features?: FeatureRequestStore['features'] } | null;
     return parsed && typeof parsed === 'object'
       ? { version: 1, features: parsed.features && typeof parsed.features === 'object' ? parsed.features : {} }
       : { version: 1, features: {} };
@@ -19,13 +48,15 @@ async function readFeatureRequestStore(env, parishId) {
     return { version: 1, features: {} };
   }
 }
-async function writeFeatureRequestStore(env, parishId, store) {
+
+async function writeFeatureRequestStore(env: FeatureRequestEnv, parishId: string, store: FeatureRequestStore) {
   const key = featureRequestKey(parishId);
   const value = JSON.stringify(store);
   if (d1(env)) return d1SetSetting(env, key, value);
   return env.AGAPAY_REGISTRATIONS.put(key, value);
 }
-function publicFeatureRequest(featureId, entry = {}) {
+
+function publicFeatureRequest(featureId: string, entry: FeatureRequestEntry = {}) {
   return {
     featureId,
     count: Math.max(0, Number(entry.count || 0)),
@@ -33,13 +64,18 @@ function publicFeatureRequest(featureId, entry = {}) {
     lastRequestedAt: entry.lastRequestedAt || '',
   };
 }
-async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail }) {
+
+export async function recordParishFeatureRequest(
+  env: FeatureRequestEnv,
+  { parishId, featureId, donorEmail }: FeatureRequestInput
+) {
   const donorHash = await sha256Hex(
     String(donorEmail || '')
       .trim()
       .toLowerCase()
   );
-  const now = /* @__PURE__ */ new Date().toISOString();
+  const now = new Date().toISOString();
+
   if (d1(env)) {
     const result = await d1Run(
       env,
@@ -51,8 +87,8 @@ async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail
       donorHash,
       now
     );
-    const duplicate2 = Number(result?.meta?.changes || 0) === 0;
-    if (!duplicate2) {
+    const duplicate = Number(result?.meta?.changes || 0) === 0;
+    if (!duplicate) {
       await d1Run(
         env,
         'DELETE FROM parish_feature_request_dismissals WHERE parish_id = ? AND feature_id = ?',
@@ -60,7 +96,7 @@ async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail
         featureId
       );
     }
-    const aggregate = await d1First(
+    const aggregate = await d1First<FeatureRequestRow>(
       env,
       `SELECT COUNT(*) AS count, MIN(created_at) AS first_requested_at, MAX(created_at) AS last_requested_at
        FROM parish_feature_requests WHERE parish_id = ? AND feature_id = ?`,
@@ -68,7 +104,7 @@ async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail
       featureId
     );
     return {
-      duplicate: duplicate2,
+      duplicate,
       request: publicFeatureRequest(featureId, {
         count: aggregate?.count,
         firstRequestedAt: aggregate?.first_requested_at,
@@ -76,10 +112,12 @@ async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail
       }),
     };
   }
+
   const store = await readFeatureRequestStore(env, parishId);
   const current = store.features[featureId] || {};
   const requestors = Array.isArray(current.requestors) ? current.requestors : [];
   const duplicate = requestors.includes(donorHash);
+
   if (!duplicate) {
     store.features[featureId] = {
       ...current,
@@ -91,14 +129,16 @@ async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail
     };
     await writeFeatureRequestStore(env, parishId, store);
   }
+
   return {
     duplicate,
     request: publicFeatureRequest(featureId, store.features[featureId] || current),
   };
 }
-async function loadPendingParishFeatureRequests(env, parishId) {
+
+export async function loadPendingParishFeatureRequests(env: FeatureRequestEnv, parishId: string) {
   if (d1(env)) {
-    const rows = await d1All(
+    const rows = await d1All<FeatureRequestRow>(
       env,
       `SELECT r.feature_id, COUNT(*) AS count,
               MIN(r.created_at) AS first_requested_at,
@@ -123,7 +163,8 @@ async function loadPendingParishFeatureRequests(env, parishId) {
     .filter(([, entry]) => Number(entry?.count || 0) > 0 && !entry?.dismissedAt)
     .map(([featureId, entry]) => publicFeatureRequest(featureId, entry));
 }
-async function dismissParishFeatureRequest(env, parishId, featureId) {
+
+export async function dismissParishFeatureRequest(env: FeatureRequestEnv, parishId: string, featureId: string) {
   if (d1(env)) {
     const existing = await d1First(
       env,
@@ -139,15 +180,14 @@ async function dismissParishFeatureRequest(env, parishId, featureId) {
        ON CONFLICT(parish_id, feature_id) DO UPDATE SET dismissed_at = excluded.dismissed_at`,
       parishId,
       featureId,
-      /* @__PURE__ */ new Date().toISOString()
+      new Date().toISOString()
     );
     return true;
   }
   const store = await readFeatureRequestStore(env, parishId);
   const current = store.features[featureId];
   if (!current) return false;
-  store.features[featureId] = { ...current, dismissedAt: /* @__PURE__ */ new Date().toISOString() };
+  store.features[featureId] = { ...current, dismissedAt: new Date().toISOString() };
   await writeFeatureRequestStore(env, parishId, store);
   return true;
 }
-export { dismissParishFeatureRequest, loadPendingParishFeatureRequests, recordParishFeatureRequest };

@@ -1,3 +1,4 @@
+import { subscriptionTiers, subscriptionAddOns, parishHouseholdBands } from '../src/lib/subscriptions.js';
 import * as coreRuntime from '../src/lib/core.js';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
@@ -496,7 +497,9 @@ assert.ok(
   "public parish giving should label stewardship as Tithes and include Greek commemoration terminology"
 );
 const givePricingHtml = await readFile("public/give/index.html", "utf8");
-const subscriptionCatalog = await readFile("src/lib/subscriptions.js", "utf8");
+const tierById = Object.fromEntries(subscriptionTiers.map((tier) => [tier.id, tier]));
+const bandById = Object.fromEntries(parishHouseholdBands.map((band) => [band.id, band]));
+const addOnById = Object.fromEntries(subscriptionAddOns.map((addOn) => [addOn.id, addOn]));
 const starterPricingCard = givePricingHtml.slice(
   givePricingHtml.indexOf('<span class="give-plan-name">Give</span>'),
   givePricingHtml.indexOf('<span class="give-plan-name">Give +</span>')
@@ -510,18 +513,16 @@ const parishPricingCard = givePricingHtml.slice(
   givePricingHtml.indexOf('<div class="give-addons"')
 );
 assert.ok(
-  subscriptionCatalog.includes('id: "starter"')
-    && subscriptionCatalog.includes("monthlyCents: 900")
-    && subscriptionCatalog.includes('id: "under_50"')
-    && subscriptionCatalog.includes('standardMonthlyCents: 14900')
-    && subscriptionCatalog.includes('id: "300_599"')
-    && subscriptionCatalog.includes('standardMonthlyCents: 20900')
-    && !subscriptionCatalog.includes('AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_49_MONTHLY')
-    && subscriptionCatalog.includes('AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_9_MONTHLY')
-    && subscriptionCatalog.includes('AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_29_MONTHLY')
-    && subscriptionCatalog.includes('AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_129_MONTHLY')
-    && subscriptionCatalog.includes('label: "Give"')
-    && subscriptionCatalog.includes('label: "Give +"'),
+  tierById.starter?.monthlyCents === 900
+    && tierById.giving?.monthlyCents === 7900
+    && bandById.under_50?.standardMonthlyCents === 14900
+    && bandById['300_599']?.standardMonthlyCents === 20900
+    && !subscriptionAddOns.some((addOn) => [addOn.earlyStripePriceEnv, addOn.standardStripePriceEnv].includes('AGAPAY_STRIPE_PRICE_ADDON_KOINONIA_49_MONTHLY'))
+    && addOnById.sacraments?.standardStripePriceEnv === 'AGAPAY_STRIPE_PRICE_ADDON_SACRAMENTS_9_MONTHLY'
+    && addOnById.full_commerce?.standardStripePriceEnv === 'AGAPAY_STRIPE_PRICE_ADDON_COMMERCE_29_MONTHLY'
+    && addOnById.accounting?.standardStripePriceEnv === 'AGAPAY_STRIPE_PRICE_ADDON_ACCOUNTING_129_MONTHLY'
+    && tierById.starter?.label === 'Give'
+    && tierById.giving?.label === 'Give +',
   "subscription catalog should expose Give, Give +, and household-priced Parish rates"
 );
 assert.ok(
@@ -568,11 +569,12 @@ assert.ok(
     && givingPlusPricingCard.includes("Campaigns and branding"),
   "Give includes unlimited funds and basic pledges while Give + adds campaigns"
 );
+assert.deepEqual(addOnById.full_commerce?.modules, ['bookstore', 'commerceSuite']);
+assert.deepEqual(addOnById.accounting?.modules, ['bookstore', 'commerceSuite', 'accounting', 'accountingAdvancedOperations']);
 assert.ok(
-  subscriptionCatalog.includes('id: "full_commerce"')
-    && subscriptionCatalog.includes('modules: ["bookstore", "commerceSuite"]')
-    && subscriptionCatalog.includes('modules: ["bookstore", "commerceSuite", "accounting", "accountingAdvancedOperations"]')
-    && subscriptionCatalog.includes("bookstore: true, commerceSuite: true")
+  tierById.giving?.modules.bookstore === true
+    && tierById.parish?.modules.bookstore === true
+    && tierById.parish?.modules.commerceSuite === true
     && !givePricingHtml.includes("Koinonia · $49/mo")
     && givePricingHtml.includes("Sacraments &amp; Services</span><strong>$9/mo")
     && !givePricingHtml.includes("Bookstore</span><strong>$9/mo")
