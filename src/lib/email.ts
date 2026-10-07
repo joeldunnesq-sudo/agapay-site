@@ -1,11 +1,43 @@
-// Generated from src/lib/email.ts by npm run build:server. Do not edit.
+import type { LoggingEnv } from './logging.js';
+export type EmailEnv = LoggingEnv & { readonly RESEND_API_KEY?: string | null };
+export interface EmailAttachment {
+  filename: string;
+  content: string;
+}
+export interface EmailMessage {
+  from: string;
+  to: readonly string[];
+  subject: string;
+  reply_to?: string;
+  html?: string;
+  text?: string;
+  attachments?: readonly EmailAttachment[];
+}
+export interface EmailResult {
+  status: 'not_configured' | 'sent' | 'failed' | 'error';
+  httpStatus?: number;
+  body?: string;
+  id?: string;
+  errorCode?: 'provider_rejected' | 'timeout' | 'network_error';
+  detail?: unknown;
+  error?: string;
+}
+interface ProviderBody {
+  id?: string;
+  message?: unknown;
+  error?: unknown;
+}
+
 import { logEvent } from './logging.js';
 import { htmlEscape } from './format.js';
+
 const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
 const RESEND_USER_AGENT = 'AGAPAY/1.0';
-function agapayEmailHtml(appUrl, title, bodyHtml) {
+
+export function agapayEmailHtml(appUrl: unknown, title: unknown, bodyHtml: string) {
   const baseUrl = String(appUrl || 'https://agapay.app').replace(/\/+$/, '');
   const markUrl = htmlEscape(`${baseUrl}/mark.png`);
+
   return `
     <div style="margin:0;padding:0;background:#F4F0E6;color:#111827;font-family:Arial,Helvetica,sans-serif;">
       <div style="max-width:660px;margin:0 auto;padding:28px 14px;">
@@ -41,10 +73,17 @@ function agapayEmailHtml(appUrl, title, bodyHtml) {
     </div>
   `;
 }
-async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 1e4 } = {}) {
+
+export async function sendEmail(
+  env: EmailEnv,
+  message: EmailMessage,
+  { idempotencyKey = '', timeoutMs = 10000 }: { idempotencyKey?: string; timeoutMs?: number } = {}
+): Promise<EmailResult> {
   const apiKey = String(env.RESEND_API_KEY || '').trim();
   if (!apiKey) return { status: 'not_configured' };
-  const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(Math.ceil(timeoutMs), 3e4) : 1e4;
+
+  // Invalid overrides cannot accidentally disable the provider deadline.
+  const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(Math.ceil(timeoutMs), 30000) : 10000;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deadlineMs);
   try {
@@ -60,9 +99,9 @@ async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 1e4 } 
       signal: controller.signal,
     });
     const bodyText = await response.text();
-    let body = {};
+    let body: ProviderBody = {};
     try {
-      body = bodyText ? JSON.parse(bodyText) : {};
+      body = bodyText ? (JSON.parse(bodyText) as ProviderBody) : {};
     } catch {
       body = {};
     }
@@ -92,9 +131,9 @@ async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 1e4 } 
       severity: 'warn',
       metadata: { errorClass: errorCode, deadlineMs },
     });
+    // A timeout may occur after acceptance; retries belong to the idempotent caller.
     return { status: 'error', errorCode, detail, error: detail };
   } finally {
     clearTimeout(timer);
   }
 }
-export { agapayEmailHtml, sendEmail };

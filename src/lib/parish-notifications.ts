@@ -1,4 +1,41 @@
-// Generated from src/lib/parish-notifications.ts by npm run build:server. Do not edit.
+import type { EmailEnv, EmailResult } from './email.js';
+import type { SubscriptionRegistration } from './subscriptions.js';
+import type { AttributionInput } from './lead-attribution.js';
+export interface NotificationRegistration extends SubscriptionRegistration {
+  parishId?: string;
+  parishName?: string;
+  city?: string;
+  priestEmail?: string;
+  treasurerEmail?: string;
+  email?: string;
+  attribution?: AttributionInput | null;
+}
+export interface StaffInvitationInput {
+  email?: unknown;
+  token?: unknown;
+  roleTemplate: string;
+}
+interface InvitationDelivery {
+  key: string;
+  email: string;
+  roleTemplate: string;
+  label: string;
+  status: string;
+  detail?: unknown;
+  invitationId?: string;
+  expiresAt?: string;
+  id?: string;
+}
+interface InvitationAccess {
+  email: string;
+  roleTemplate: string;
+  invitationId: string;
+  status: string;
+  invitedAt: string;
+  expiresAt: string;
+  emailStatus: EmailResult['status'];
+}
+
 import { attributionEmail } from './lead-attribution.js';
 import { parishSlug } from './format.js';
 import { agapayEmailHtml, sendEmail } from './email.js';
@@ -9,31 +46,37 @@ import {
   subscriptionReady as sharedSubscriptionReady,
   subscriptionTier,
 } from './subscriptions.js';
-function subscriptionTierSummary(tier) {
+
+function subscriptionTierSummary(tier: ReturnType<typeof subscriptionTier> | null | undefined) {
   if (!tier) return '';
   if (tier.monthlyCents === null)
     return `${tier.label} - custom / negotiated subscription; ${tier.transactionRateLabel || 'no AGAPAY donation fee'}`;
   if (tier.monthlyCents === 0)
     return `${tier.label} - free forever monthly subscription; ${tier.transactionRateLabel || 'no AGAPAY donation fee'}`;
-  return `${tier.label} - $${(tier.monthlyCents / 100).toFixed(0)}/mo; ${tier.transactionRateLabel || 'no AGAPAY donation fee'}`;
+  return `${tier.label} - $${((tier.monthlyCents as number) / 100).toFixed(0)}/mo; ${tier.transactionRateLabel || 'no AGAPAY donation fee'}`;
 }
-function htmlEscape(value) {
+
+export function htmlEscape(value: unknown) {
   return String(value || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
-function generateDashboardToken() {
+
+export function generateDashboardToken() {
   return `agp_tmp_${crypto.randomUUID().replace(/-/g, '')}`;
 }
-function startOfYearUnix(date = /* @__PURE__ */ new Date()) {
-  return Math.floor(Date.UTC(date.getUTCFullYear(), 0, 1) / 1e3);
+
+export function startOfYearUnix(date = new Date()) {
+  return Math.floor(Date.UTC(date.getUTCFullYear(), 0, 1) / 1000);
 }
-function monthLabel(index) {
+
+export function monthLabel(index: number) {
   return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index] || '';
 }
-async function loadParishOnboardingGuideAttachment(env, appUrl) {
+
+export async function loadParishOnboardingGuideAttachment(env: EmailEnv, appUrl: string) {
   if (!env.RESEND_API_KEY) return null;
   const baseUrl = String(appUrl || 'https://agapay.app').replace(/\/+$/, '');
   const guideUrl = `${baseUrl}/docs/AGAPAY-Stripe-Setup-Guide.pdf`;
@@ -44,8 +87,8 @@ async function loadParishOnboardingGuideAttachment(env, appUrl) {
     if (!response.ok) return null;
     const bytes = new Uint8Array(await response.arrayBuffer());
     let binary = '';
-    for (let offset = 0; offset < bytes.length; offset += 32768) {
-      binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+    for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
     }
     return {
       filename: 'AGAPAY-Parish-Onboarding-Guide.pdf',
@@ -55,9 +98,11 @@ async function loadParishOnboardingGuideAttachment(env, appUrl) {
     return null;
   }
 }
-async function sendTreasurerStripeInvite(env, appUrl, registration) {
+
+export async function sendTreasurerStripeInvite(env: EmailEnv, appUrl: string, registration: NotificationRegistration) {
   const to = registration.treasurerEmail || registration.priestEmail || '';
   if (!to) return { status: 'missing_recipient' };
+
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
@@ -65,6 +110,7 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
   const parishName = htmlEscape(registration.parishName || 'your parish');
   const safeDashboardUrl = htmlEscape(dashboardUrl);
   const currentGuideAttachment = await loadParishOnboardingGuideAttachment(env, appUrl);
+
   return sendEmail(env, {
     from,
     to: [to],
@@ -102,11 +148,17 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
     attachments: [...(currentGuideAttachment ? [currentGuideAttachment] : [])],
   });
 }
-async function sendParishStaffAccessInvitation(env, appUrl, registration, invitation) {
+
+export async function sendParishStaffAccessInvitation(
+  env: EmailEnv,
+  appUrl: string,
+  registration: NotificationRegistration,
+  invitation: StaffInvitationInput
+) {
   const email = normalizeEmail(invitation?.email);
   const token = String(invitation?.token || '');
   if (!email || !token) return { status: 'missing_recipient' };
-  const roleLabels = {
+  const roleLabels: Record<string, string | undefined> = {
     rector: 'Rector',
     priest: 'Priest',
     deacon: 'Deacon',
@@ -148,7 +200,8 @@ async function sendParishStaffAccessInvitation(env, appUrl, registration, invita
     ].join('\n'),
   });
 }
-async function sendDashboardInvite(env, appUrl, registration) {
+
+export async function sendDashboardInvite(env: EmailEnv, appUrl: string, registration: NotificationRegistration) {
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const paidSubscription =
     String(registration.subscriptionStatus || '')
@@ -168,13 +221,15 @@ async function sendDashboardInvite(env, appUrl, registration) {
     (person, index) => people.findIndex((candidate) => candidate.email === person.email) === index
   );
   const currentGuideAttachment = await loadParishOnboardingGuideAttachment(env, appUrl);
+
   if (uniquePeople.length && d1(env)) {
-    const from2 = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
-    const replyTo2 = env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
-    const parishName2 = htmlEscape(registration.parishName || 'your parish');
+    const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
+    const replyTo = env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
+    const parishName = htmlEscape(registration.parishName || 'your parish');
     const existing = await listInvitationsForParish(env, parishId);
-    const deliveries = [];
-    const access = {};
+    const deliveries: InvitationDelivery[] = [];
+    const access: Record<string, InvitationAccess> = {};
+
     for (const person of uniquePeople) {
       for (const pending of existing.filter(
         (item) => item.status === 'pending' && normalizeEmail(item.email) === person.email
@@ -195,18 +250,19 @@ async function sendDashboardInvite(env, appUrl, registration) {
         });
         continue;
       }
+
       const accessUrl = `${String(appUrl).replace(/\/+$/, '')}/give/login?invite=${encodeURIComponent(invitation.token)}`;
-      const email2 = await sendEmail(env, {
-        from: from2,
+      const email = await sendEmail(env, {
+        from,
         to: [person.email],
-        reply_to: replyTo2,
+        reply_to: replyTo,
         subject: `Getting started with AGAPAY - ${registration.parishName || 'your parish'}`,
         html: agapayEmailHtml(
           appUrl,
           'Getting started with AGAPAY',
           `
           <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-          <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName2}</strong> invited you to its AGAPAY dashboard as ${htmlEscape(person.label)}.</p>
+          <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> invited you to its AGAPAY dashboard as ${htmlEscape(person.label)}.</p>
           <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px;margin:0 0 22px;">
             <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Parish setup</p>
             <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;">Open your secure link and create your own password. No parish ID or temporary password is required.</p>
@@ -233,20 +289,21 @@ async function sendDashboardInvite(env, appUrl, registration) {
         ...person,
         invitationId: invitation.id,
         expiresAt: invitation.expiresAt,
-        status: email2.status,
-        id: email2.id || '',
-        detail: email2.detail || '',
+        status: email.status,
+        id: email.id || '',
+        detail: email.detail || '',
       });
       access[person.key] = {
         email: person.email,
         roleTemplate: person.roleTemplate,
         invitationId: invitation.id,
         status: 'invited',
-        invitedAt: /* @__PURE__ */ new Date().toISOString(),
+        invitedAt: new Date().toISOString(),
         expiresAt: invitation.expiresAt,
-        emailStatus: email2.status,
+        emailStatus: email.status,
       };
     }
+
     for (const person of people) {
       if (!access[person.key]) {
         const shared = Object.values(access).find((entry) => entry.email === person.email);
@@ -266,13 +323,18 @@ async function sendDashboardInvite(env, appUrl, registration) {
       access,
     };
   }
-  const recipients = Array.from(new Set([registration.priestEmail, registration.treasurerEmail].filter(Boolean)));
+
+  const recipients = Array.from(
+    new Set([registration.priestEmail, registration.treasurerEmail].filter(Boolean) as string[])
+  );
   if (!recipients.length) return { status: 'missing_recipient' };
+
   const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   const parishName = htmlEscape(registration.parishName || 'your parish');
   const safeDashboardUrl = htmlEscape(dashboardUrl);
+
   const email = await sendEmail(env, {
     from,
     to: recipients,
@@ -317,14 +379,23 @@ async function sendDashboardInvite(env, appUrl, registration) {
     ].join('\n'),
     attachments: currentGuideAttachment ? [currentGuideAttachment] : [],
   });
+
   return { ...email, recipients };
 }
-async function sendParishPasswordResetEmail(env, appUrl, registration, resetUrl, recipients) {
+
+export async function sendParishPasswordResetEmail(
+  env: EmailEnv,
+  appUrl: string,
+  registration: NotificationRegistration,
+  resetUrl: string,
+  recipients: readonly string[]
+) {
   const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   const parishName = htmlEscape(registration.parishName || 'your parish');
   const parishId = htmlEscape(registration.parishId || parishSlug(registration.parishName, registration.city));
   const safeResetUrl = htmlEscape(resetUrl);
+
   return sendEmail(env, {
     from,
     to: recipients,
@@ -355,9 +426,17 @@ async function sendParishPasswordResetEmail(env, appUrl, registration, resetUrl,
     ].join('\n'),
   });
 }
-async function sendRegistrationConfirmation(env, appUrl, registration) {
-  const recipients = Array.from(new Set([registration.priestEmail, registration.treasurerEmail].filter(Boolean)));
+
+export async function sendRegistrationConfirmation(
+  env: EmailEnv,
+  appUrl: string,
+  registration: NotificationRegistration
+) {
+  const recipients = Array.from(
+    new Set([registration.priestEmail, registration.treasurerEmail].filter(Boolean) as string[])
+  );
   if (!recipients.length) return { status: 'missing_recipient' };
+
   const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   const parishName = htmlEscape(registration.parishName || 'your community');
@@ -424,9 +503,15 @@ async function sendRegistrationConfirmation(env, appUrl, registration) {
     ].join('\n'),
   });
 }
-async function sendAdminRegistrationNotice(env, appUrl, registration) {
+
+export async function sendAdminRegistrationNotice(
+  env: EmailEnv,
+  appUrl: string,
+  registration: NotificationRegistration
+) {
   const to = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   if (!to) return { status: 'missing_recipient' };
+
   const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
   const replyTo = registration.priestEmail || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   const referral = attributionEmail(registration.attribution);
@@ -450,9 +535,10 @@ async function sendAdminRegistrationNotice(env, appUrl, registration) {
   const descriptionRow = registration.organizationDescription
     ? `<p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Description:</strong> ${htmlEscape(registration.organizationDescription || '')}</p>`
     : '';
+
   return sendEmail(env, {
     from,
-    to: [.../* @__PURE__ */ new Set([to, 'onboarding@agapay.app'])],
+    to: [...new Set([to, 'onboarding@agapay.app'])],
     reply_to: replyTo,
     subject: `New AGAPAY ${subscriptionTierSummary(tier)} registration: ${registration.parishName || registration.reference}`,
     html: agapayEmailHtml(
@@ -499,24 +585,11 @@ async function sendAdminRegistrationNotice(env, appUrl, registration) {
     ].join('\n'),
   });
 }
-function publicSubscriptionTiers() {
+
+export function publicSubscriptionTiers() {
   return sharedPublicSubscriptionTiers();
 }
-function subscriptionReady(registration) {
+
+export function subscriptionReady(registration: SubscriptionRegistration) {
   return sharedSubscriptionReady(registration);
 }
-export {
-  generateDashboardToken,
-  htmlEscape,
-  loadParishOnboardingGuideAttachment,
-  monthLabel,
-  publicSubscriptionTiers,
-  sendAdminRegistrationNotice,
-  sendDashboardInvite,
-  sendParishPasswordResetEmail,
-  sendParishStaffAccessInvitation,
-  sendRegistrationConfirmation,
-  sendTreasurerStripeInvite,
-  startOfYearUnix,
-  subscriptionReady,
-};

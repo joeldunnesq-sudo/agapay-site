@@ -40,3 +40,5 @@ export function issueParishDashboardSession(
   registration: DashboardRegistration,
   options?: { mfaVerifiedAt?: string; accessType?: string }
 ): Promise<DashboardSession>;
+
+export function generateSecret(prefix?: string): string;

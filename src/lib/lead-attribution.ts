@@ -1,14 +1,16 @@
-// Generated from src/lib/lead-attribution.ts by npm run build:server. Do not edit.
+import type { AttributionInput } from '../../public/attribution-core.js';
+export type { AttributionInput } from '../../public/attribution-core.js';
 import { htmlEscape } from './format.js';
-import { sanitizeAttribution } from '../../public/attribution-core.js';
-function attributionEmail(attribution) {
+export { sanitizeAttribution } from '../../public/attribution-core.js';
+
+export function attributionEmail(attribution: AttributionInput | null | undefined) {
   if (!attribution) return { html: '', text: '' };
   const lines = [];
   for (const [key, label, pageLabel, timeLabel] of [
     ['firstTouch', 'First touch', 'Landing page', 'First visited'],
     ['lastTouch', 'Last touch', 'Conversion page', 'Submitted'],
   ]) {
-    const touch = attribution[key];
+    const touch = attribution[key as keyof AttributionInput];
     if (!touch) continue;
     lines.push(`${label}: ${touch.category}`);
     for (const [field, title] of [
@@ -33,11 +35,7 @@ function attributionEmail(attribution) {
       );
     lines.push('');
   }
-  const text = lines.length
-    ? `Referral Attribution
-
-${lines.join('\n')}`
-    : '';
+  const text = lines.length ? `Referral Attribution\n\n${lines.join('\n')}` : '';
   return {
     text,
     html: text
@@ -45,4 +43,3 @@ ${lines.join('\n')}`
       : '',
   };
 }
-export { attributionEmail, sanitizeAttribution };

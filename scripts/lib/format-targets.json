@@ -268,7 +268,12 @@
     "src/lib/parish-life-access.js",
     "scripts/dashboard-foundation-typescript-tests.mjs",
     "src/handlers/parish-dashboard-handler.js",
-    "scripts/dashboard-handler-typescript-tests.mjs"
+    "scripts/dashboard-handler-typescript-tests.mjs",
+    "src/lib/email.js",
+    "src/lib/parish-notifications.js",
+    "src/lib/parish-support-tickets.js",
+    "src/lib/lead-attribution.js",
+    "scripts/notifications-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -570,6 +575,11 @@
     "src/lib/parish-life-access.js",
     "scripts/dashboard-foundation-typescript-tests.mjs",
     "src/handlers/parish-dashboard-handler.js",
-    "scripts/dashboard-handler-typescript-tests.mjs"
+    "scripts/dashboard-handler-typescript-tests.mjs",
+    "src/lib/email.js",
+    "src/lib/parish-notifications.js",
+    "src/lib/parish-support-tickets.js",
+    "src/lib/lead-attribution.js",
+    "scripts/notifications-typescript-tests.mjs"
   ]
 }

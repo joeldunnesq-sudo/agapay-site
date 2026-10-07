@@ -324,8 +324,8 @@ assert.ok(
     && donorHandler.includes("export async function handleDonorSupportTicket")
     && donorHandler.includes('rateLimit(request, env, "donor-support-ticket"')
     && donorHandler.includes('source: "myagapay"')
-    && parishSupportTickets.includes('"feature"')
-    && parishSupportTickets.includes('source === "myagapay" ? "My AGAPAY"'),
+    && /["']feature["']/.test(parishSupportTickets)
+    && /source === ["']myagapay["'] \? ["']My AGAPAY["']/.test(parishSupportTickets),
   "My AGAPAY support requests should use an authenticated, rate-limited endpoint and the shared support queue"
 );
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
