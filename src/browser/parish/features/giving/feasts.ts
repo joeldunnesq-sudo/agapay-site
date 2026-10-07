@@ -1,6 +1,45 @@
-// Generated from src/browser/parish/features/giving/feasts.ts by npm run build:browser. Do not edit.
 'use strict';
-const fallbackFeastPresets = [
+
+interface ParishGivingOption {
+  id?: string | null;
+  code?: string | null;
+  name?: string | null;
+  description?: string;
+  enabled?: boolean | null;
+  active?: boolean;
+  accountNumber?: string;
+  restrictionType?: string;
+  campaignName?: string | null;
+  feastId?: string;
+  title?: string;
+  goalCents?: number;
+  targetCents?: number;
+  goalAmountCents?: number;
+  starterBuiltin?: boolean;
+  fundType?: string;
+  patronal?: boolean;
+  feastDate?: string;
+  destinationFundId?: string;
+}
+interface ParishFeastIdentity {
+  patronalFeast?: string;
+  patronalFeastName?: string;
+  patronalFeastDate?: string;
+}
+interface ParishFeastChoice {
+  id: string;
+  name: string;
+  displayDate?: string;
+  sourceDate?: string;
+  date?: string;
+  patronal?: boolean;
+  feastDate?: string;
+  calendar?: string;
+}
+declare let editableFunds: ParishGivingOption[];
+declare let editableFeastCampaigns: ParishGivingOption[];
+// Giving feasts; read shared identity and catalog state only when actions run.
+const fallbackFeastPresets: ParishFeastChoice[] = [
   { id: 'pascha', name: 'Pascha', displayDate: 'Varies', sourceDate: 'Moveable feast from Orthodox Pascha' },
   { id: 'ascension', name: 'Ascension', displayDate: 'Varies', sourceDate: 'Moveable feast - 39 days after Pascha' },
   { id: 'pentecost', name: 'Pentecost', displayDate: 'Varies', sourceDate: 'Moveable feast - 49 days after Pascha' },
@@ -14,21 +53,26 @@ const fallbackFeastPresets = [
   { id: 'transfiguration', name: 'Transfiguration', displayDate: 'Aug 19', sourceDate: 'Julian Aug 6' },
   { id: 'dormition', name: 'Dormition of the Theotokos', displayDate: 'Aug 28', sourceDate: 'Julian Aug 15' },
 ];
-function calendarLabel(v) {
+
+// ── FEAST CAMPAIGN HELPERS ────────────────────────────────
+function calendarLabel(v: string) {
   return window.AGAPAYLiturgicalCalendar?.calendarLabel(v) || (v === 'gregorian' ? 'Revised-Julian' : 'Julian');
 }
-function feastPresetsForCalendar(cal) {
+
+function feastPresetsForCalendar(cal: string): ParishFeastChoice[] {
   const api = window.AGAPAYLiturgicalCalendar;
   if (!api) return fallbackFeastPresets;
   return api
-    .liturgicalFeastsForYear(/* @__PURE__ */ new Date().getFullYear(), cal)
+    .liturgicalFeastsForYear(new Date().getFullYear(), cal)
     .filter((feast) => ['great', 'major'].includes(feast.rank))
     .map((feast) => ({ id: feast.id, name: feast.name, displayDate: feast.displayDate, sourceDate: feast.sourceDate }));
 }
-function feastDateLabel(feast) {
+
+function feastDateLabel(feast: ParishFeastChoice) {
   return feast.displayDate || feast.date || '';
 }
-function patronalFeastCampaignChoice(cal) {
+
+function patronalFeastCampaignChoice(cal: string): ParishFeastChoice | null {
   const saved = editableFeastCampaigns.find((campaign) => campaign?.patronal);
   const id = currentParish?.patronalFeast || saved?.id || '';
   const name = currentParish?.patronalFeastName || saved?.name || '';
@@ -41,7 +85,8 @@ function patronalFeastCampaignChoice(cal) {
       : 'Date set in parish settings';
   return { id, name, displayDate, feastDate: feastDate.slice(-5), patronal: true, calendar: cal };
 }
-function feastCampaignChoices(cal) {
+
+function feastCampaignChoices(cal: string) {
   const feasts = feastPresetsForCalendar(cal);
   const patronal = patronalFeastCampaignChoice(cal);
   if (!patronal) return feasts;
@@ -52,9 +97,12 @@ function feastCampaignChoices(cal) {
   }
   return [...feasts, patronal];
 }
-function toggleFeastCampaign(id, checked) {
+
+function toggleFeastCampaign(id: string, checked: boolean) {
   const cal =
-    document.getElementById('feastLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
+    (document.getElementById('feastLiturgicalCalendar') as HTMLSelectElement | null)?.value ||
+    currentParish?.liturgicalCalendar ||
+    'julian';
   const feast = feastCampaignChoices(cal).find((f) => f.id === id);
   if (!feast) return;
   editableFeastCampaigns = editableFeastCampaigns.filter((f) => f.id !== id);
@@ -74,7 +122,8 @@ function toggleFeastCampaign(id, checked) {
     'success'
   );
 }
-function feastDestinationFundOptions(selectedId) {
+
+function feastDestinationFundOptions(selectedId?: string) {
   const selected = selectedId || 'benevolence-fund';
   return editableFunds
     .filter((fund) => fund && fund.enabled !== false)
@@ -85,59 +134,72 @@ function feastDestinationFundOptions(selectedId) {
     })
     .join('');
 }
-function updateFeastCampaignFund(feastId, destinationFundId) {
+
+function updateFeastCampaignFund(feastId: string, destinationFundId: string) {
   const campaign = editableFeastCampaigns.find((item) => item.id === feastId);
   if (!campaign) return;
   campaign.destinationFundId = destinationFundId || 'benevolence-fund';
   const fund = editableFunds.find((item) =>
-    [item?.id, item?.code, item?.name].filter(Boolean).map(String).includes(campaign.destinationFundId)
+    [item?.id, item?.code, item?.name]
+      .filter(Boolean)
+      .map(String)
+      .includes(campaign.destinationFundId as string)
   );
   setStatus(
     `${campaign.name || 'Feast'} gifts will go to ${fund?.name || 'Benevolence Fund'}. Save when ready.`,
     'success'
   );
 }
+
 function allFeastPresets() {
   const cal =
-    document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
+    (document.getElementById('settingsLiturgicalCalendar') as HTMLSelectElement | null)?.value ||
+    currentParish?.liturgicalCalendar ||
+    'julian';
   return feastPresetsForCalendar(cal);
 }
-function patronalFeastDisplayName(parish) {
+
+function patronalFeastDisplayName(parish: ParishFeastIdentity | null | undefined) {
   if (parish?.patronalFeastName) return parish.patronalFeastName;
   const selected = parish?.patronalFeast || '';
   return allFeastPresets().find((feast) => feast.id === selected)?.name || selected;
 }
-function patronalMonthDay(value) {
+
+function patronalMonthDay(value: unknown) {
   const monthDay = String(value || '').slice(-5);
   return /^\d{2}-\d{2}$/.test(monthDay)
     ? { month: Number(monthDay.slice(0, 2)), day: Number(monthDay.slice(3, 5)) }
     : { month: 0, day: 0 };
 }
-function patronalMonthOptions(selected) {
+
+function patronalMonthOptions(selected?: number) {
   return Array.from({ length: 12 }, (_, index) => {
     const month = index + 1;
     const label = new Date(2024, index, 1).toLocaleString('en-US', { month: 'long' });
     return `<option value="${month}" ${month === selected ? 'selected' : ''}>${label}</option>`;
   }).join('');
 }
-function patronalDayOptions(month, selected) {
+
+function patronalDayOptions(month: number, selected?: number) {
   const count = month ? new Date(2024, month, 0).getDate() : 31;
   return Array.from({ length: count }, (_, index) => {
     const day = index + 1;
     return `<option value="${day}" ${day === selected ? 'selected' : ''}>${day}</option>`;
   }).join('');
 }
-function updatePatronalFeastDays(preferredDay) {
-  const month = Number(document.getElementById('patronalFeastMonth')?.value || 0);
-  const daySelect = document.getElementById('patronalFeastDay');
+
+function updatePatronalFeastDays(preferredDay?: number) {
+  const month = Number((document.getElementById('patronalFeastMonth') as HTMLSelectElement | null)?.value || 0);
+  const daySelect = document.getElementById('patronalFeastDay') as HTMLSelectElement | null;
   if (!daySelect) return;
   const selected = Math.min(Number(preferredDay || daySelect.value || 1), new Date(2024, month, 0).getDate());
   daySelect.innerHTML = patronalDayOptions(month, selected);
 }
+
 function syncPatronalFeastOptionsFromSettings() {
-  const nameInput = document.getElementById('patronalFeastName');
-  const monthInput = document.getElementById('patronalFeastMonth');
-  const dayInput = document.getElementById('patronalFeastDay');
+  const nameInput = document.getElementById('patronalFeastName') as HTMLInputElement | null;
+  const monthInput = document.getElementById('patronalFeastMonth') as HTMLSelectElement | null;
+  const dayInput = document.getElementById('patronalFeastDay') as HTMLSelectElement | null;
   if (!nameInput || !monthInput || !dayInput) return;
   const match = allFeastPresets().find((feast) => feast.name === nameInput.value);
   if (match) {
@@ -146,7 +208,8 @@ function syncPatronalFeastOptionsFromSettings() {
     updatePatronalFeastDays(parts.day);
   }
 }
-function upsertPatronalFeastCampaign(patronalFeastId, calendar, customName = '', customDate = '') {
+
+function upsertPatronalFeastCampaign(patronalFeastId: string, calendar: string, customName = '', customDate = '') {
   if (!patronalFeastId) return;
   const feast = feastPresetsForCalendar(calendar).find((item) => item.id === patronalFeastId) ||
     feastPresetsForCalendar(calendar === 'julian' ? 'gregorian' : 'julian').find(
@@ -179,9 +242,12 @@ function upsertPatronalFeastCampaign(patronalFeastId, calendar, customName = '',
     destinationFundId: 'benevolence-fund',
   });
 }
+
 function renderFeastCampaignSetup() {
   const cal =
-    document.getElementById('feastLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
+    (document.getElementById('feastLiturgicalCalendar') as HTMLSelectElement | null)?.value ||
+    currentParish?.liturgicalCalendar ||
+    'julian';
   const feasts = feastCampaignChoices(cal);
   return `<div class="option-group"><div class="option-group-head"><div><h3 class="option-group-title">Major feast alms campaigns</h3><p class="section-note" style="margin:.25rem 0 0;">Each feast defaults to Benevolence Fund. Choose General Operating or another designated fund when appropriate.</p></div><span class="option-group-count">${editableFeastCampaigns.filter((f) => f.enabled !== false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal === 'julian' ? 'selected' : ''}>Julian</option><option value="gregorian" ${cal === 'gregorian' ? 'selected' : ''}>Revised-Julian</option></select><p class="section-note" style="margin:0;">AGAPAY computes fixed feasts from this calendar and keeps Pascha-based feasts on the shared Orthodox paschalion. The parish feast day comes from Parish Settings.</p></div></div><div class="option-list"><div class="feast-grid">${feasts
     .map((feast) => {

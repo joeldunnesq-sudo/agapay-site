@@ -36,7 +36,6 @@ interface ParishHistoryResponse {
   readonly manualAccountingGifts?: ParishHistoryGift[] | null;
 }
 declare function setStatus(message: string, kind: string): void;
-declare function renderGivingOptionsEditor(): void;
 declare function escapeAttr(value: unknown): string;
 declare function fullDate(value: string | number | null | undefined): string;
 declare function downloadBlob(name: string, blob: Blob): void;

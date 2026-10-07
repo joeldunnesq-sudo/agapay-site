@@ -6,6 +6,8 @@ import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
 import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import assert from "node:assert/strict";
+import { runInNewContext } from "node:vm";
+import * as serverLiturgicalCalendar from "../src/liturgical-calendar.js";
 import { access, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
 import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
@@ -169,7 +171,8 @@ assert.ok(hasWorkerRoute("/api/parish-interest"), "worker should route parish in
 
 const donorApp = readDonorAppSource();
 const publicLiturgicalCalendar = await readFile("public/liturgical-calendar.js", "utf8");
-const srcLiturgicalCalendar = await readFile("src/liturgical-calendar.js", "utf8");
+const calendarContext = { window: {} };
+runInNewContext(publicLiturgicalCalendar, calendarContext);
 const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
 const manifest = await readFile("public/myagapay/manifest.webmanifest", "utf8");
 const adminHtml = await readFile("public/admin.html", "utf8");
@@ -419,11 +422,15 @@ assert.ok(donorCalendar.includes('id="saintPreviewCard"') && donorCalendar.inclu
 assert.ok(donorApp.includes("Tone of the Week") && donorApp.includes('return "";') && !donorApp.includes('return "Church day"') && !donorApp.includes('return "Liturgical Day"'), "Today hero chips should omit generic liturgical fallback labels and use clear tone labels");
 assert.ok(!donorApp.includes("[today.tone, today.epistleRef"), "Today hero description should not duplicate the Tone of the Week beside the Epistle reading");
 assert.ok(donorApp.includes("calendarShortDateIso(pascha?.date)"), "Today Pascha metric should read the date returned by the calendar helper");
-for (const source of [publicLiturgicalCalendar, srcLiturgicalCalendar]) {
+for (const calendar of [calendarContext.window.AGAPAYLiturgicalCalendar, serverLiturgicalCalendar]) {
+  const feasts = [...calendar.MOVEABLE_FEASTS, ...calendar.FIXED_FEASTS];
   for (const feastId of ["great-lent-ends", "apostles-fast-ends", "dormition-fast-begins", "dormition-fast-ends", "nativity-fast-begins", "nativity-fast-ends"]) {
-    assert.ok(source.includes(`id: "${feastId}"`), `liturgical calendar should include ${feastId}`);
+    assert.ok(feasts.some((feast) => feast.id === feastId), `liturgical calendar should include ${feastId}`);
   }
-  assert.ok(source.includes('id: "clean-monday", name: "Clean Monday / Great Lent Begins", offset: -48, rank: "fast"'), "Clean Monday should be highlighted as a fast boundary");
+  const cleanMonday = feasts.find((feast) => feast.id === "clean-monday");
+  assert.equal(cleanMonday?.name, "Clean Monday / Great Lent Begins");
+  assert.equal(cleanMonday?.offset, -48);
+  assert.equal(cleanMonday?.rank, "fast", "Clean Monday should be highlighted as a fast boundary");
 }
 assert.ok(donorApp.includes("parishPatronalFeastForYear") && donorApp.includes('rank: "patronal"'), "Today Feast Highlights should include the donor parish Patronal feast");
 assert.ok(donorCalendar.includes('class="patronal"') && donorCalendarCss.includes(".cal-feast-rank.patronal"), "Today Feast Highlights should label Patronal feasts distinctly");

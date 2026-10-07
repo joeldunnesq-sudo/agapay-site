@@ -7,6 +7,13 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/liturgical-calendar.ts', output: 'public/liturgical-calendar.js' },
+  {
+    source: 'src/browser/parish/features/giving/outside-gifts.ts',
+    output: 'public/parish/features/giving/outside-gifts.js',
+  },
+  { source: 'src/browser/parish/features/giving/options.ts', output: 'public/parish/features/giving/options.js' },
+  { source: 'src/browser/parish/features/giving/feasts.ts', output: 'public/parish/features/giving/feasts.js' },
   {
     source: 'src/browser/parish/features/giving/reconciliation.ts',
     output: 'public/parish/features/giving/reconciliation.js',
