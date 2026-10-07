@@ -90,6 +90,7 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/parish-sharing-typescript-tests.mjs',
       'scripts/parish-statements-typescript-tests.mjs',
       'scripts/typecheck.mjs',
       'scripts/build-server-typescript.mjs',
@@ -336,6 +337,65 @@ export default [
       'no-unused-vars': [
         'error',
         { varsIgnorePattern: '^(populateGivingStatementsPanel|previewGivingStatement|startGivingStatementJob)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/sharing.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderQrCode|copyGivingLink|copyGivingEmbedCode|downloadQrSvg|downloadQrPng|downloadBulletinSvg|downloadBulletinPng|givingEmbedSnippet)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/sharing.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        dedicatedGivingUrl: 'readonly',
+        dedicatedGivingEmbedUrl: 'readonly',
+        qrcode: 'readonly',
+        setStatus: 'readonly',
+        downloadBlob: 'readonly',
+        escapeHtml: 'readonly',
+      },
+    },
+    rules: {
+      // esbuild escapes the closing script tag in the copied embed snippet.
+      // Keep source lint strict; this file is checked against compiler output.
+      'no-useless-escape': 'off',
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderQrCode|copyGivingLink|copyGivingEmbedCode|downloadQrSvg|downloadQrPng|downloadBulletinSvg|downloadBulletinPng|givingEmbedSnippet)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/embed-theme.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(openGivingEmbedTheme|previewGivingEmbedTheme|copyStyledGivingEmbed)$' },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/embed-theme.js'],
+    languageOptions: {
+      globals: { dedicatedGivingEmbedUrl: 'readonly', givingEmbedSnippet: 'readonly', setStatus: 'readonly' },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(openGivingEmbedTheme|previewGivingEmbedTheme|copyStyledGivingEmbed)$' },
       ],
     },
   },

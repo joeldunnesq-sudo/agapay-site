@@ -212,6 +212,7 @@ const productUi = [
   'scripts/parish-commemorations-typescript-browser-tests.mjs',
   'scripts/parish-givers-typescript-browser-tests.mjs',
   'scripts/parish-statements-typescript-tests.mjs',
+  'scripts/parish-sharing-typescript-tests.mjs',
   'scripts/giving-embed-theme-browser-tests.mjs',
   'scripts/fund-reconciliation-browser-tests.mjs',
   'scripts/outside-gifts-browser-tests.mjs',

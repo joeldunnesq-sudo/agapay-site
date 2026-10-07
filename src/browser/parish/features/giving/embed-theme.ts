@@ -1,5 +1,7 @@
-// Generated from src/browser/parish/features/giving/embed-theme.ts by npm run build:browser. Do not edit.
 'use strict';
+
+type ParishGivingTheme = Record<string, string>;
+
 const givingThemeDefaults = {
   primary: '#071a2a',
   'primary-text': '#f4efe4',
@@ -15,8 +17,9 @@ const givingThemeDefaults = {
   font: '"DM Sans", system-ui, sans-serif',
   'heading-font': '"Cormorant Garamond", Georgia, serif',
 };
+
 function ensureGivingEmbedThemeDialog() {
-  if (document.getElementById('givingThemeDialog')) return;
+  if (document.getElementById('givingThemeDialog') as HTMLDialogElement) return;
   document.body.insertAdjacentHTML(
     'beforeend',
     `<dialog id="givingThemeDialog" aria-labelledby="givingThemeHeading" style="width:min(1000px,calc(100% - 24px));max-height:90vh;overflow:auto;border:0;border-radius:16px;padding:24px">
@@ -30,19 +33,21 @@ function ensureGivingEmbedThemeDialog() {
 </dialog>`
   );
 }
+
 function openGivingEmbedTheme() {
   ensureGivingEmbedThemeDialog();
   if (!dedicatedGivingEmbedUrl()) return setStatus('Load a parish first.', 'error');
-  const editor = document.getElementById('givingThemeCss');
+  const editor = document.getElementById('givingThemeCss') as HTMLTextAreaElement;
   editor.value = Object.entries(givingThemeDefaults)
     .map(([key, value]) => `--agapay-giving-${key}: ${value};`)
     .join('\n');
-  document.getElementById('givingThemeDialog').showModal();
+  (document.getElementById('givingThemeDialog') as HTMLDialogElement).showModal();
   previewGivingEmbedTheme();
 }
-function readGivingThemeEditor() {
-  const input = document.getElementById('givingThemeCss').value;
-  const theme = {};
+
+function readGivingThemeEditor(): ParishGivingTheme {
+  const input = (document.getElementById('givingThemeCss') as HTMLTextAreaElement).value;
+  const theme: ParishGivingTheme = {};
   for (const declaration of input.split(';').filter((part) => part.trim())) {
     const match = declaration.trim().match(/^--agapay-giving-([a-z-]+)\s*:\s*(.+)$/);
     if (!match || !Object.hasOwn(givingThemeDefaults, match[1])) {
@@ -61,21 +66,23 @@ function readGivingThemeEditor() {
   }
   return theme;
 }
-function previewGivingEmbedTheme() {
-  const status = document.getElementById('givingThemeStatus');
+
+function previewGivingEmbedTheme(): ParishGivingTheme | null {
+  const status = document.getElementById('givingThemeStatus')!;
   try {
     const theme = readGivingThemeEditor();
     const url = new URL(dedicatedGivingEmbedUrl());
     Object.entries(theme).forEach(([key, value]) => url.searchParams.set(`theme.${key}`, value));
-    document.getElementById('givingThemePreview').src = url.href;
+    (document.getElementById('givingThemePreview') as HTMLIFrameElement).src = url.href;
     status.textContent = 'Preview updated. Copy the styled code when you are ready.';
     return theme;
   } catch (error) {
-    status.textContent = error.message;
+    status.textContent = (error as Error).message;
     return null;
   }
 }
-async function copyStyledGivingEmbed() {
+
+async function copyStyledGivingEmbed(): Promise<void> {
   const theme = previewGivingEmbedTheme();
   if (!theme) return;
   const css = Object.entries(theme)
@@ -83,16 +90,11 @@ async function copyStyledGivingEmbed() {
     .join('\n');
   const snippet = givingEmbedSnippet().replace('<div ', '<div class="parish-giving-embed" ');
   try {
-    await navigator.clipboard.writeText(`<style>
-.parish-giving-embed {
-${css}
-}
-</style>
-${snippet}`);
-    document.getElementById('givingThemeStatus').textContent =
+    await navigator.clipboard.writeText(`<style>\n.parish-giving-embed {\n${css}\n}\n</style>\n${snippet}`);
+    document.getElementById('givingThemeStatus')!.textContent =
       'Styled embed code copied. Paste it into your parish website; the styles are saved in that code.';
   } catch {
-    document.getElementById('givingThemeStatus').textContent =
+    document.getElementById('givingThemeStatus')!.textContent =
       'Clipboard unavailable. Allow clipboard access and try again.';
   }
 }
