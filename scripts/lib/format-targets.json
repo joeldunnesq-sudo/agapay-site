@@ -234,7 +234,14 @@
     "public/parish/features/giving/reconciliation-reports.js",
     "scripts/parish-reconciliation-reports-typescript-tests.mjs",
     "public/parish/features/giving/reconciliation.js",
-    "scripts/parish-reconciliation-controller-typescript-tests.mjs"
+    "scripts/parish-reconciliation-controller-typescript-tests.mjs",
+    "public/parish/features/giving/feasts.js",
+    "public/parish/features/giving/options.js",
+    "scripts/parish-giving-catalog-typescript-tests.mjs",
+    "public/parish/features/giving/outside-gifts.js",
+    "scripts/parish-outside-gifts-typescript-tests.mjs",
+    "public/liturgical-calendar.js",
+    "scripts/liturgical-calendar-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -502,6 +509,13 @@
     "public/parish/features/giving/reconciliation-reports.js",
     "scripts/parish-reconciliation-reports-typescript-tests.mjs",
     "public/parish/features/giving/reconciliation.js",
-    "scripts/parish-reconciliation-controller-typescript-tests.mjs"
+    "scripts/parish-reconciliation-controller-typescript-tests.mjs",
+    "public/parish/features/giving/feasts.js",
+    "public/parish/features/giving/options.js",
+    "scripts/parish-giving-catalog-typescript-tests.mjs",
+    "public/parish/features/giving/outside-gifts.js",
+    "scripts/parish-outside-gifts-typescript-tests.mjs",
+    "public/liturgical-calendar.js",
+    "scripts/liturgical-calendar-typescript-tests.mjs"
   ]
 }

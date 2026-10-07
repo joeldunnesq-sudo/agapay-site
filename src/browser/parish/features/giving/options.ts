@@ -1,7 +1,36 @@
-// Generated from src/browser/parish/features/giving/options.ts by npm run build:browser. Do not edit.
 'use strict';
-let editingGivingOption = null;
-const fundPresets = {
+
+declare let editableCampaigns: ParishGivingOption[];
+
+type ParishGivingOptionKind = 'fund' | 'campaign';
+interface ParishGivingPreset {
+  id: string;
+  name: string;
+  description: string;
+  restrictionType?: string;
+}
+interface ParishGivingProgressRow {
+  kind: ParishGivingOptionKind;
+  label: string;
+  item: ParishGivingOption;
+  index?: number | null;
+}
+interface ParishGivingEditControls extends HTMLFormControlsCollection {
+  name?: HTMLInputElement;
+  description?: HTMLTextAreaElement;
+  restrictionType?: HTMLSelectElement;
+  accountNumber?: HTMLInputElement;
+}
+declare function restrictionLabel(value: string): string;
+declare function isGeneralDashboardFund(value: ParishGivingOption): boolean;
+declare function isCandleDashboardFund(value: ParishGivingOption): boolean;
+declare function hasGivingPlusAccess(): boolean;
+declare function slugifyLocal(value: string): string;
+// Giving options; read shared identity and catalog state only when actions run.
+let editingGivingOption: { kind: ParishGivingOptionKind; index: number } | null = null;
+
+// ── PRESETS ──────────────────────────────────────────────
+const fundPresets: Record<string, ParishGivingPreset> = {
   general: {
     id: 'general',
     name: 'General Operating Fund',
@@ -39,7 +68,8 @@ const fundPresets = {
     description: 'Evangelism, local outreach, charitable work, and mission-related parish efforts.',
   },
 };
-const campaignPresets = {
+
+const campaignPresets: Record<string, ParishGivingPreset> = {
   disaster: {
     id: 'disaster-relief',
     name: 'Disaster Relief',
@@ -81,7 +111,9 @@ const campaignPresets = {
     description: 'Alms to support the parish brotherhood in fellowship, service, and practical parish needs.',
   },
 };
-function optionCards(items, kind, emptyText) {
+
+// ── GIVING OPTIONS HELPERS ────────────────────────────────
+function optionCards(items: ParishGivingOption[] | null | undefined, kind: ParishGivingOptionKind, emptyText: string) {
   if (!items || !items.length) return `<div class="option-empty">${emptyText}</div>`;
   return items
     .map((item, i) => {
@@ -126,31 +158,36 @@ function optionCards(items, kind, emptyText) {
     })
     .join('');
 }
-function presetOptions(presets) {
+
+function presetOptions(presets: Record<string, ParishGivingPreset>) {
   return Object.entries(presets)
     .map(([k, v]) => `<option value="${k}">${escapeHtml(v.name)}</option>`)
     .join('');
 }
-function fillGivingPreset(kind) {
+
+function fillGivingPreset(kind: ParishGivingOptionKind) {
   const presets = kind === 'fund' ? fundPresets : campaignPresets;
   const prefix = kind === 'fund' ? 'fund' : 'campaign';
-  const preset = presets[document.getElementById(`${prefix}Preset`)?.value];
+  const preset = presets[(document.getElementById(`${prefix}Preset`) as HTMLSelectElement)?.value];
   if (!preset) return;
-  document.getElementById(`${prefix}Name`).value = preset.name;
-  document.getElementById(`${prefix}Description`).value = preset.description;
-  const restriction = document.getElementById(`${prefix}Restriction`);
+  (document.getElementById(`${prefix}Name`) as HTMLInputElement).value = preset.name;
+  (document.getElementById(`${prefix}Description`) as HTMLTextAreaElement).value = preset.description;
+  const restriction = document.getElementById(`${prefix}Restriction`) as HTMLSelectElement;
   if (restriction && preset.restrictionType) restriction.value = preset.restrictionType;
 }
-function parseDollarsToCents(value) {
+
+function parseDollarsToCents(value: unknown) {
   const amount = Number(String(value || '').replace(/[^0-9.]/g, ''));
   return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : 0;
 }
-function optionKeys(item = {}) {
+
+function optionKeys(item: ParishGivingOption = {}) {
   return [item.id, item.feastId, item.name, item.campaignName, item.title]
     .filter(Boolean)
     .map((v) => String(v).trim().toLowerCase());
 }
-function giftMatchesOption(gift, item, kind) {
+
+function giftMatchesOption(gift: ParishHistoryGift, item: ParishGivingOption, kind: ParishGivingOptionKind) {
   const keys = new Set(optionKeys(item));
   const giftKeys =
     kind === 'fund'
@@ -158,19 +195,22 @@ function giftMatchesOption(gift, item, kind) {
       : optionKeys({ id: gift.campaignId, name: gift.campaign, campaignName: gift.description });
   return giftKeys.some((key) => keys.has(key));
 }
-function optionProgress(item, kind) {
+
+function optionProgress(item: ParishGivingOption, kind: ParishGivingOptionKind) {
   const gifts = allGifts.filter((gift) => giftMatchesOption(gift, item, kind));
   const raisedCents = gifts.reduce((sum, gift) => sum + Number(gift.amountCents || 0), 0);
   const goalCents = kind === 'campaign' ? Number(item.goalCents || item.targetCents || item.goalAmountCents || 0) : 0;
   return { raisedCents, goalCents, giftCount: gifts.length };
 }
-function progressMarkup(raisedCents, goalCents) {
+
+function progressMarkup(raisedCents: number, goalCents: number) {
   if (!goalCents) return '<span class="progress-muted">No goal set</span>';
   const pct = Math.min(100, Math.round((raisedCents / goalCents) * 100));
   return `<div class="option-progress"><span style="width:${pct}%"></span></div><small>${pct}%</small>`;
 }
+
 function renderOptionsProgressSummary() {
-  const summaryFunds = editableFunds.map((item, index) => ({
+  const summaryFunds: { item: ParishGivingOption; index: number | null }[] = editableFunds.map((item, index) => ({
     item,
     index,
   }));
@@ -186,10 +226,10 @@ function renderOptionsProgressSummary() {
       index: null,
     });
   }
-  const rows = [
+  const rows: ParishGivingProgressRow[] = [
     ...summaryFunds
       .map(({ item, index }) => ({
-        kind: 'fund',
+        kind: 'fund' as const,
         label: isGeneralDashboardFund(item)
           ? 'General fund'
           : isCandleDashboardFund(item)
@@ -199,11 +239,13 @@ function renderOptionsProgressSummary() {
         index,
       }))
       .filter((row) => row.item?.enabled !== false && row.item?.active !== false),
-    ...(hasGivingPlusAccess() ? editableCampaigns.map((item) => ({ kind: 'campaign', label: 'Campaign', item })) : []),
+    ...(hasGivingPlusAccess()
+      ? editableCampaigns.map((item) => ({ kind: 'campaign' as const, label: 'Campaign', item }))
+      : []),
     ...(hasGivingPlusAccess()
       ? editableFeastCampaigns
           .filter((item) => item.enabled !== false)
-          .map((item) => ({ kind: 'campaign', label: 'Feast campaign', item }))
+          .map((item) => ({ kind: 'campaign' as const, label: 'Feast campaign', item }))
       : []),
   ];
   return `<div class="options-summary-card"><div class="options-summary-head"><span>Active giving options</span><small>Based on paid gifts in AGAPAY</small></div><div class="options-progress-table">${
@@ -265,14 +307,15 @@ function renderOptionsProgressSummary() {
       </div>
     </div>`;
 }
-function addGivingOption(kind) {
+
+function addGivingOption(kind: ParishGivingOptionKind) {
   if (kind === 'campaign' && !hasGivingPlusAccess()) {
     setStatus('Campaigns require Give +.', 'error');
     return;
   }
   const prefix = kind === 'fund' ? 'fund' : 'campaign';
-  const nameEl = document.getElementById(`${prefix}Name`);
-  const descEl = document.getElementById(`${prefix}Description`);
+  const nameEl = document.getElementById(`${prefix}Name`) as HTMLInputElement;
+  const descEl = document.getElementById(`${prefix}Description`) as HTMLTextAreaElement;
   const name = nameEl?.value.trim();
   if (!name) {
     setStatus(`Enter a ${kind} name.`, 'error');
@@ -282,9 +325,9 @@ function addGivingOption(kind) {
   const target = kind === 'fund' ? editableFunds : editableCampaigns;
   if (
     target.some(
-      (item2) =>
-        item2.id === id ||
-        String(item2.name || '')
+      (item) =>
+        item.id === id ||
+        String(item.name || '')
           .trim()
           .toLowerCase() === name.toLowerCase()
     )
@@ -292,45 +335,48 @@ function addGivingOption(kind) {
     setStatus(`A ${kind} with that name already exists.`, 'error');
     return;
   }
-  const item = {
+  const item: ParishGivingOption = {
     id,
     name,
     description:
       descEl?.value.trim() ||
       (kind === 'fund' ? 'Designated support for this parish.' : 'Parish-approved alms for this need.'),
-    accountNumber: document.getElementById(`${prefix}AccountNumber`)?.value.trim() || '',
+    accountNumber: (document.getElementById(`${prefix}AccountNumber`) as HTMLInputElement)?.value.trim() || '',
     restrictionType:
-      document.getElementById(`${prefix}Restriction`)?.value ||
+      (document.getElementById(`${prefix}Restriction`) as HTMLSelectElement)?.value ||
       (kind === 'campaign' ? 'donor_restricted_temporary' : 'unrestricted'),
     ...(kind === 'fund'
       ? {
-          fundType: document.getElementById('fundPreset')?.value === 'custom' ? 'custom' : 'preset',
+          fundType:
+            (document.getElementById('fundPreset') as HTMLSelectElement)?.value === 'custom' ? 'custom' : 'preset',
         }
       : {}),
   };
   if (kind === 'campaign') {
-    const goalCents = parseDollarsToCents(document.getElementById('campaignGoal')?.value);
+    const goalCents = parseDollarsToCents((document.getElementById('campaignGoal') as HTMLInputElement)?.value);
     if (goalCents > 0) item.goalCents = goalCents;
   }
   target.push(item);
   nameEl.value = '';
   descEl.value = '';
-  const goalEl = document.getElementById(`${prefix}Goal`);
+  const goalEl = document.getElementById(`${prefix}Goal`) as HTMLInputElement;
   if (goalEl) goalEl.value = '';
   renderGivingOptionsEditor();
   setStatus(`${kind === 'fund' ? 'Fund' : 'Campaign'} added. Save when ready.`, 'success');
 }
-function editGivingOption(kind, i) {
+
+function editGivingOption(kind: ParishGivingOptionKind, i: number) {
   editingGivingOption =
     editingGivingOption?.kind === kind && editingGivingOption?.index === i ? null : { kind, index: i };
   renderGivingOptionsEditor();
 }
-function updateGivingOption(event, kind, i) {
+
+function updateGivingOption(event: Event, kind: ParishGivingOptionKind, i: number) {
   event.preventDefault();
   const target = kind === 'fund' ? editableFunds : editableCampaigns;
   const current = target[i];
   if (!current) return;
-  const form = event.currentTarget;
+  const form = event.currentTarget as HTMLFormElement & { elements: ParishGivingEditControls };
   const name = String(form.elements.name?.value || '').trim();
   if (!name) {
     setStatus(`Enter a ${kind} name.`, 'error');
@@ -348,7 +394,7 @@ function updateGivingOption(event, kind, i) {
     setStatus(`Another ${kind} already uses that name.`, 'error');
     return;
   }
-  const validRestrictions = /* @__PURE__ */ new Set([
+  const validRestrictions = new Set([
     'unrestricted',
     'board_designated',
     'donor_restricted_temporary',
@@ -373,19 +419,22 @@ function updateGivingOption(event, kind, i) {
   renderGivingOptionsEditor();
   setStatus(`${kind === 'fund' ? 'Fund' : 'Campaign'} updated. Save giving options to publish the change.`, 'success');
 }
-function removeGivingOption(kind, i) {
+
+function removeGivingOption(kind: ParishGivingOptionKind, i: number) {
   if (kind === 'fund') editableFunds.splice(i, 1);
   else editableCampaigns.splice(i, 1);
   editingGivingOption = null;
   renderGivingOptionsEditor();
   setStatus('Option removed. Save when ready.', 'success');
 }
+
+// ── GIVING OPTIONS EDITOR ─────────────────────────────────
 function renderGivingOptionsEditor() {
-  const pane = document.getElementById('editorPane');
+  const pane = document.getElementById('editorPane') as HTMLElement;
   if (!pane) return;
   pane.innerHTML = `
       ${renderOptionsProgressSummary()}
       <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Give includes <strong>General Operating</strong>, <strong>unlimited designated funds</strong>, and <strong>Candles</strong>.'}</div>
-      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns, 'campaign', 'No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : `<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Give +</span><strong>Ready for campaigns and parish life?</strong><p>Give includes unlimited funds, candles, commemorations, giver records, and CSV export. Give + adds campaigns, festal alms, branding, statements, enhanced reporting, and connected parish life.</p></div><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Compare plans</button></aside>`}
+      ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns, 'campaign', 'No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : '<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Give +</span><strong>Ready for campaigns and parish life?</strong><p>Give includes unlimited funds, candles, commemorations, giver records, and CSV export. Give + adds campaigns, festal alms, branding, statements, enhanced reporting, and connected parish life.</p></div><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Compare plans</button></aside>'}
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
 }

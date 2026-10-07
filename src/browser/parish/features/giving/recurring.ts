@@ -17,7 +17,11 @@ declare let currentParish: {
   readonly parishId: string;
   readonly parishName?: string;
   readonly timezone?: string;
-  readonly funds?: readonly unknown[];
+  readonly liturgicalCalendar?: string;
+  readonly patronalFeast?: string;
+  readonly patronalFeastName?: string;
+  readonly patronalFeastDate?: string;
+  readonly funds?: readonly ParishGivingOption[];
   readonly entitlements?: { readonly givingFeatures?: { readonly annualStatements?: boolean } };
 } | null;
 declare function authHeaders(): Record<string, string>;

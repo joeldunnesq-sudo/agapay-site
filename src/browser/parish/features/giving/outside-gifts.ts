@@ -1,34 +1,103 @@
-// Generated from src/browser/parish/features/giving/outside-gifts.ts by npm run build:browser. Do not edit.
 'use strict';
-let outsideGivingState = {
+
+interface ParishOutsideGift {
+  id: string;
+  revision: number;
+  recordState: 'active' | 'void';
+  donorName: string;
+  donorEmail: string;
+  giverReferenceId: string;
+  receivedDate: string;
+  amountCents: number;
+  givingKind: string;
+  pledgeYear: number | null;
+  fundId: string;
+  fund: string | null;
+  sourceLabel: string | null;
+  contributionSource: string;
+  reference: string;
+  notes: string;
+  voidReason: string;
+  accounting: { linked: boolean; entryId: string };
+}
+interface ParishOutsideGivingState {
+  parishId: string;
+  rows: ParishOutsideGift[];
+  editing: ParishOutsideGift | null;
+  requestKey: string;
+  year: string;
+  accountingGift?: ParishOutsideGift;
+  voidGift?: ParishOutsideGift;
+}
+interface ParishOutsideError extends Error {
+  code?: string;
+}
+interface ParishOutsideForm extends HTMLFormElement {
+  readonly elements: HTMLFormControlsCollection & {
+    reason: HTMLTextAreaElement;
+    confirmedNotDuplicate: HTMLInputElement;
+    entryDate: HTMLInputElement;
+    givingKind: HTMLSelectElement;
+    pledgeYear: HTMLInputElement;
+    giverReferenceId: HTMLSelectElement;
+    fundId: HTMLSelectElement;
+    amount: HTMLInputElement;
+    source: HTMLSelectElement;
+    sourceLabel: HTMLInputElement;
+    reference: HTMLInputElement;
+    notes: HTMLTextAreaElement;
+    confirmedDeposit: HTMLInputElement;
+    confirmedLedgerUnchanged: HTMLInputElement;
+  };
+}
+interface ParishOutsideGiver {
+  referenceId: string;
+  name: string;
+  email?: string;
+}
+interface ParishOutsideAudit {
+  revision: number;
+  action: string;
+  created_at: string;
+  actor_id: string;
+  reason?: string;
+}
+interface ParishOutsideAccountingLine {
+  availableCents: number;
+  line_id: string;
+  entry_date: string;
+  description?: string;
+  account_name?: string;
+}
+let outsideGivingState: ParishOutsideGivingState = {
   parishId: '',
   rows: [],
   editing: null,
   requestKey: '',
-  year: String(/* @__PURE__ */ new Date().getFullYear()),
+  year: String(new Date().getFullYear()),
 };
 const outsideApi = (suffix = '') =>
-  '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/outside-gifts' + suffix;
-const outsideText = (id, text) => {
+  '/api/parish/dashboard/' + encodeURIComponent(currentParish!.parishId) + '/outside-gifts' + suffix;
+const outsideText = (id: string, text: string) => {
   const element = document.getElementById(id);
   if (element) element.textContent = text;
 };
-async function outsideRequest(suffix = '', body) {
+async function outsideRequest<T = unknown>(suffix = '', body?: Record<string, unknown>): Promise<T> {
   const response = await fetch(outsideApi(suffix), {
     method: body ? 'POST' : 'GET',
     headers: { ...authHeaders(), ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  const data = await response.json();
+  const data = (await response.json()) as T & { error?: string; code?: string };
   if (!response.ok) {
-    const error = new Error(data.error || 'Unable to load outside giving.');
+    const error = new Error(data.error || 'Unable to load outside giving.') as ParishOutsideError;
     error.code = data.code;
     throw error;
   }
   return data;
 }
-function outsideDate(value) {
-  return /* @__PURE__ */ new Date(value + 'T12:00:00').toLocaleDateString(void 0, {
+function outsideDate(value: string) {
+  return new Date(value + 'T12:00:00').toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -36,33 +105,33 @@ function outsideDate(value) {
 }
 function resetOutsideParish() {
   if (outsideGivingState.parishId === currentParish?.parishId) return;
-  document.getElementById('outsideGiftDialog')?.close();
-  document.getElementById('outsideAccountingDialog')?.close();
-  document.getElementById('outsideVoidDialog')?.close();
+  (document.getElementById('outsideGiftDialog') as HTMLDialogElement)?.close();
+  (document.getElementById('outsideAccountingDialog') as HTMLDialogElement)?.close();
+  (document.getElementById('outsideVoidDialog') as HTMLDialogElement)?.close();
   outsideGivingState = {
     parishId: currentParish?.parishId || '',
     rows: [],
     editing: null,
     requestKey: '',
-    year: String(/* @__PURE__ */ new Date().getFullYear()),
+    year: String(new Date().getFullYear()),
   };
 }
 async function loadOutsideGiving() {
   if (!currentParish) return;
   resetOutsideParish();
-  const mount = document.getElementById('outsideGivingMount');
-  if (mount && !document.getElementById('outsideGivingPane'))
+  const mount = document.getElementById('outsideGivingMount')!;
+  if (mount && !document.getElementById('outsideGivingPane')!)
     mount.innerHTML =
       '        <section class="og-panel" id="outsideGivingPane" aria-labelledby="outsideGivingTitle">\n          <div class="og-header"><div><span class="og-eyebrow">Every gift belongs · every plan</span><h2 id="outsideGivingTitle">Giving beyond the app</h2><p class="og-note">Cash, checks, and other platforms—connected to your givers and Funds &amp; Alms.</p></div><button type="button" class="sw-report-generate-btn" onclick="openOutsideGift()">＋ Record outside gift</button></div>\n          <div class="og-toolbar"><label for="outsideGivingYear">Year<input id="outsideGivingYear" type="number" min="1900" max="2199" onchange="loadOutsideGiving()" /></label><button type="button" class="sw-action-btn" onclick="loadOutsideGiving()">Refresh outside gifts</button><strong id="outsideGivingTotal" class="og-total">—</strong></div>\n          <p id="outsideGivingStatus" class="og-status" role="status">Open Givers to load recorded outside contributions.</p><div id="outsideGivingRows"></div>\n        </section>';
-  const pane = document.getElementById('outsideGivingPane');
+  const pane = document.getElementById('outsideGivingPane')!;
   if (!pane) return;
-  const year = document.getElementById('outsideGivingYear')?.value || outsideGivingState.year;
-  const parishId = currentParish.parishId;
+  const year = (document.getElementById('outsideGivingYear') as HTMLInputElement)?.value || outsideGivingState.year;
+  const parishId = currentParish!.parishId;
   outsideGivingState.year = year;
-  document.getElementById('outsideGivingYear').value = year;
+  (document.getElementById('outsideGivingYear') as HTMLInputElement).value = year;
   outsideText('outsideGivingStatus', 'Loading outside contributions…');
   try {
-    const data = await outsideRequest('?year=' + encodeURIComponent(year));
+    const data = await outsideRequest<{ gifts: ParishOutsideGift[] }>('?year=' + encodeURIComponent(year));
     if (currentParish?.parishId !== parishId || outsideGivingState.year !== year) return;
     outsideGivingState.rows = data.gifts;
     const active = data.gifts.filter((g) => g.recordState === 'active');
@@ -76,7 +145,7 @@ async function loadOutsideGiving() {
         year +
         ' · outside gifts, not Stripe deposits'
     );
-    document.getElementById('outsideGivingRows').innerHTML = data.gifts.length
+    document.getElementById('outsideGivingRows')!.innerHTML = data.gifts.length
       ? data.gifts
           .map(
             (g) => `<details class="og-record ${g.recordState === 'void' ? 'og-void' : ''}">
@@ -91,11 +160,12 @@ async function loadOutsideGiving() {
       : '<div class="og-empty">Cash, checks, and gifts from other platforms belong here.<br>Record a gift to connect it to a giver and a parish fund.</div>';
   } catch (error) {
     if (currentParish?.parishId === parishId)
-      outsideText('outsideGivingStatus', error.message + ' Use Refresh to retry.');
+      outsideText('outsideGivingStatus', (error as ParishOutsideError).message + ' Use Refresh to retry.');
   }
 }
+
 function outsideDialogs() {
-  if (document.getElementById('outsideGiftDialog')) return;
+  if (document.getElementById('outsideGiftDialog') as HTMLDialogElement) return;
   const root = document.createElement('div');
   root.innerHTML = `<dialog id="outsideGiftDialog" class="og-dialog" aria-labelledby="outsideGiftTitle"><form id="outsideGiftForm" onsubmit="submitOutsideGift(event)">
     <div class="og-dialog-head"><div><span class="og-eyebrow">Giving beyond the app</span><h2 id="outsideGiftTitle">Record outside gift</h2></div><button type="button" class="og-close" onclick="closeOutsideGift()" aria-label="Close outside gift form">×</button></div>
@@ -107,7 +177,7 @@ function outsideDialogs() {
     <label for="outsideFund">Fund<select id="outsideFund" name="fundId" required></select></label><label for="outsideSource">Source<select id="outsideSource" name="source" onchange="outsideSourceFields()"><option value="cash">Cash</option><option value="check">Check</option><option value="tithely">Tithe.ly</option><option value="paypal">PayPal</option><option value="other_giving_platform">Another giving platform</option></select></label>
     <label for="outsidePlatform" id="outsidePlatformLabel" hidden>Platform name<input id="outsidePlatform" name="sourceLabel" maxlength="60" /></label><label for="outsideReference">Check / deposit reference (optional)<input id="outsideReference" name="reference" maxlength="120" /></label></div>
     <label for="outsideNotes">Notes (optional)<textarea id="outsideNotes" name="notes" maxlength="500" rows="2"></textarea></label>
-    <p class="og-note">Use the full contribution amount. External processing fees and bank net amounts are not inferred. Funds come from Funds &amp; Alms. Only gifts explicitly marked as pledge payments count toward the selected giver's existing pledge for that year. Other giving never reduces a pledge balance.</p>
+    <p class="og-note">Use the full contribution amount. External processing fees and bank net amounts are not inferred. Funds come from Funds &amp; Alms. Only gifts explicitly marked as pledge payments count toward the selected giver\u0027s existing pledge for that year. Other giving never reduces a pledge balance.</p>
     <label class="og-check" id="outsideDuplicateConfirm"><input type="checkbox" name="confirmedNotDuplicate" />I confirm this gift is not already recorded here, in AGAPAY online giving, or within an outside-giving collection total.</label>
     <label id="outsideCorrectionReason" hidden>Reason for correction<textarea name="reason" maxlength="500" rows="2"></textarea></label>
     <label id="outsideDuplicateReason" hidden>Why is this a separate gift?<textarea name="duplicateReason" maxlength="500" rows="2" placeholder="Explain the matching date, giver, amount, and reference"></textarea></label>
@@ -124,14 +194,15 @@ function outsideDialogs() {
   <dialog id="outsideVoidDialog" class="og-dialog" aria-labelledby="outsideVoidTitle"><form onsubmit="submitOutsideVoid(event)"><span class="og-eyebrow">Keep the history, correct the record</span><h2 id="outsideVoidTitle">Void outside gift</h2><p id="outsideVoidContext" class="og-note"></p><p class="og-note">This removes the gift from giving totals and pledge progress. The original record and audit history remain. No money is moved.</p><label>Reason for voiding<textarea name="reason" minlength="8" maxlength="500" required rows="3"></textarea></label><p id="outsideVoidStatus" class="og-status" role="status"></p><div class="og-dialog-footer"><button type="button" class="sw-action-btn" onclick="document.getElementById('outsideVoidDialog').close()">Cancel</button><button id="outsideVoidSave" type="submit" class="sw-report-generate-btn">Void gift</button></div></form></dialog>`;
   document.body.appendChild(root);
 }
-async function searchOutsideGivers(selected) {
+
+async function searchOutsideGivers(selected?: unknown) {
   const parishId = currentParish?.parishId;
-  const select = document.getElementById('outsideGiver');
+  const select = document.getElementById('outsideGiver') as HTMLSelectElement;
   const value = typeof selected === 'string' ? selected : select.value;
   outsideText('outsideGiverStatus', 'Searching parish giver records…');
   try {
-    const data = await outsideRequest(
-      '/givers?q=' + encodeURIComponent(document.getElementById('outsideGiverSearch').value)
+    const data = await outsideRequest<{ givers: ParishOutsideGiver[]; hasMore?: boolean }>(
+      '/givers?q=' + encodeURIComponent((document.getElementById('outsideGiverSearch') as HTMLInputElement).value)
     );
     if (currentParish?.parishId !== parishId) return;
     select.innerHTML =
@@ -154,9 +225,10 @@ async function searchOutsideGivers(selected) {
         : 'Select a giver, or leave this contribution unassigned.'
     );
   } catch (error) {
-    outsideText('outsideGiverStatus', error.message);
+    outsideText('outsideGiverStatus', (error as ParishOutsideError).message);
   }
 }
+
 async function openOutsideGift(id = '') {
   resetOutsideParish();
   outsideDialogs();
@@ -164,18 +236,18 @@ async function openOutsideGift(id = '') {
   if (id && !gift) return;
   outsideGivingState.editing = gift;
   outsideGivingState.requestKey = crypto.randomUUID();
-  const form = document.getElementById('outsideGiftForm');
+  const form = document.getElementById('outsideGiftForm') as ParishOutsideForm;
   form.reset();
-  document.getElementById('outsideDuplicateReason').hidden = true;
-  document.getElementById('outsideDuplicateConfirm').hidden = Boolean(gift);
-  document.getElementById('outsideCorrectionReason').hidden = !gift;
+  document.getElementById('outsideDuplicateReason')!.hidden = true;
+  document.getElementById('outsideDuplicateConfirm')!.hidden = Boolean(gift);
+  document.getElementById('outsideCorrectionReason')!.hidden = !gift;
   form.elements.reason.required = Boolean(gift);
   form.elements.confirmedNotDuplicate.required = !gift;
-  const today = /* @__PURE__ */ new Date();
+  const today = new Date();
   let localDay;
   try {
     localDay = new Intl.DateTimeFormat('en-CA', {
-      timeZone: currentParish.timezone || 'UTC',
+      timeZone: currentParish!.timezone || 'UTC',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -186,12 +258,12 @@ async function openOutsideGift(id = '') {
   form.elements.entryDate.value = gift?.receivedDate || localDay;
   form.elements.entryDate.max = localDay;
   form.elements.givingKind.value = gift?.givingKind || '';
-  form.elements.pledgeYear.value = gift?.pledgeYear || (gift?.receivedDate || localDay).slice(0, 4);
+  form.elements.pledgeYear.value = (gift?.pledgeYear || (gift?.receivedDate || localDay).slice(0, 4)) as string;
   outsidePledgeFields();
   outsideSourceFields();
   form.elements.fundId.innerHTML =
     '<option value="">Choose a fund</option>' +
-    (currentParish.funds || [])
+    (currentParish!.funds || [])
       .filter((f) => f.enabled !== false && f.active !== false)
       .map((f) => `<option value="${escapeAttr(f.id || f.code)}">${escapeHtml(f.name)}</option>`)
       .join('');
@@ -204,7 +276,9 @@ async function openOutsideGift(id = '') {
           ? 'check'
           : 'cash'
         : gift.contributionSource;
-    form.elements.sourceLabel.value = gift.contributionSource === 'other_giving_platform' ? gift.sourceLabel : '';
+    form.elements.sourceLabel.value = (
+      gift.contributionSource === 'other_giving_platform' ? gift.sourceLabel : ''
+    ) as string;
     outsideSourceFields();
     form.elements.reference.value = gift.reference;
     form.elements.notes.value = gift.notes;
@@ -212,30 +286,31 @@ async function openOutsideGift(id = '') {
   outsideText('outsideGiftTitle', gift ? 'Correct outside gift' : 'Record outside gift');
   outsideText('outsideGiftSave', gift ? 'Save correction' : 'Record gift');
   outsideText('outsideGiftStatus', '');
-  document.getElementById('outsideGiftDialog').showModal();
+  (document.getElementById('outsideGiftDialog') as HTMLDialogElement).showModal();
   await searchOutsideGivers(gift?.giverReferenceId || '');
 }
 function outsidePledgeFields() {
-  const form = document.getElementById('outsideGiftForm');
+  const form = document.getElementById('outsideGiftForm') as ParishOutsideForm;
   const pledge = form.elements.givingKind.value === 'pledge';
-  document.getElementById('outsidePledgeYearLabel').hidden = !pledge;
+  document.getElementById('outsidePledgeYearLabel')!.hidden = !pledge;
   form.elements.pledgeYear.required = pledge;
   form.elements.giverReferenceId.required = pledge;
 }
 function outsideSourceFields() {
-  const form = document.getElementById('outsideGiftForm');
+  const form = document.getElementById('outsideGiftForm') as ParishOutsideForm;
   const other = form.elements.source.value === 'other_giving_platform';
-  document.getElementById('outsidePlatformLabel').hidden = !other;
+  document.getElementById('outsidePlatformLabel')!.hidden = !other;
   form.elements.sourceLabel.required = other;
 }
 function closeOutsideGift() {
-  if (!document.getElementById('outsideGiftSave')?.disabled) document.getElementById('outsideGiftDialog')?.close();
+  if (!(document.getElementById('outsideGiftSave') as HTMLButtonElement)?.disabled)
+    (document.getElementById('outsideGiftDialog') as HTMLDialogElement)?.close();
 }
-async function submitOutsideGift(event) {
+async function submitOutsideGift(event: Event): Promise<void> {
   event.preventDefault();
-  const form = event.currentTarget,
-    button = document.getElementById('outsideGiftSave'),
-    data = Object.fromEntries(new FormData(form));
+  const form = event.currentTarget as ParishOutsideForm,
+    button = document.getElementById('outsideGiftSave') as HTMLButtonElement,
+    data = Object.fromEntries(new FormData(form)) as Record<string, string> & { entryDate: string };
   const amount = String(data.amount || '').trim();
   if (!/^\d+(\.\d{1,2})?$/.test(amount)) {
     outsideText('outsideGiftStatus', 'Enter a positive amount with no more than two decimal places.');
@@ -248,7 +323,7 @@ async function submitOutsideGift(event) {
     return;
   }
   const gift = outsideGivingState.editing,
-    parishId = currentParish.parishId;
+    parishId = currentParish!.parishId;
   const payload = {
     ...data,
     amountCents,
@@ -261,26 +336,28 @@ async function submitOutsideGift(event) {
   try {
     await outsideRequest(gift ? '/' + encodeURIComponent(gift.id) + '/correct' : '', payload);
     if (currentParish?.parishId !== parishId) return;
-    document.getElementById('outsideGiftDialog').close();
+    (document.getElementById('outsideGiftDialog') as HTMLDialogElement).close();
     outsideGivingState.year = payload.entryDate.slice(0, 4);
-    const yearInput = document.getElementById('outsideGivingYear');
+    const yearInput = document.getElementById('outsideGivingYear') as HTMLInputElement;
     if (yearInput) yearInput.value = outsideGivingState.year;
     document.dispatchEvent(new Event('agapay:outside-gift-saved'));
     await Promise.all([loadOutsideGiving(), loadGivingHistory()]);
   } catch (error) {
-    outsideText('outsideGiftStatus', error.message);
-    if (error.code === 'outside_gift_duplicate') document.getElementById('outsideDuplicateReason').hidden = false;
+    outsideText('outsideGiftStatus', (error as ParishOutsideError).message);
+    if ((error as ParishOutsideError).code === 'outside_gift_duplicate')
+      document.getElementById('outsideDuplicateReason')!.hidden = false;
   } finally {
     button.disabled = false;
   }
 }
-async function outsideGiftAction(id, action) {
+
+async function outsideGiftAction(id: string, action: string) {
   const gift = outsideGivingState.rows.find((g) => g.id === id);
   if (!gift) return;
   try {
     if (action === 'audit') {
-      const data = await outsideRequest('/' + encodeURIComponent(id));
-      document.getElementById('og-audit-' + id).innerHTML = data.audit
+      const data = await outsideRequest<{ audit: ParishOutsideAudit[] }>('/' + encodeURIComponent(id));
+      document.getElementById('og-audit-' + id)!.innerHTML = data.audit
         .map(
           (a) =>
             `<p><strong>Revision ${a.revision} · ${escapeHtml(a.action.replaceAll('_', ' '))}</strong><br>${escapeHtml(a.created_at)} · ${escapeHtml(a.actor_id)}${a.reason ? '<br>' + escapeHtml(a.reason) : ''}</p>`
@@ -289,21 +366,21 @@ async function outsideGiftAction(id, action) {
     } else if (action === 'void') {
       outsideDialogs();
       outsideGivingState.voidGift = gift;
-      const dialog = document.getElementById('outsideVoidDialog');
-      dialog.querySelector('form').reset();
+      const dialog = document.getElementById('outsideVoidDialog') as HTMLDialogElement;
+      dialog.querySelector('form')!.reset();
       outsideText('outsideVoidContext', gift.donorName + ' · ' + moneyFull(gift.amountCents) + ' · ' + gift.fund);
       outsideText('outsideVoidStatus', '');
       dialog.showModal();
     } else {
       outsideDialogs();
       outsideGivingState.accountingGift = gift;
-      const form = document.getElementById('outsideAccountingForm');
+      const form = document.getElementById('outsideAccountingForm') as ParishOutsideForm;
       form.reset();
       const linked = gift.accounting.linked;
-      document.getElementById('outsideAccountingChoice').hidden = linked;
-      document.getElementById('outsideAccountingConfirmation').hidden = linked;
-      document.getElementById('outsideUnlinkReason').hidden = !linked;
-      document.getElementById('outsideUnlinkConfirm').hidden = !linked;
+      document.getElementById('outsideAccountingChoice')!.hidden = linked;
+      document.getElementById('outsideAccountingConfirmation')!.hidden = linked;
+      document.getElementById('outsideUnlinkReason')!.hidden = !linked;
+      document.getElementById('outsideUnlinkConfirm')!.hidden = !linked;
       form.elements.confirmedDeposit.required = !linked;
       form.elements.reason.required = linked;
       form.elements.confirmedLedgerUnchanged.required = linked;
@@ -318,11 +395,13 @@ async function outsideGiftAction(id, action) {
           (linked ? ' · ' + gift.accounting.entryId : '')
       );
       outsideText('outsideAccountingSave', linked ? 'Unlink contribution' : 'Link contribution');
-      document.getElementById('outsideAccountingSave').disabled = true;
-      document.getElementById('outsideAccountingDialog').showModal();
+      (document.getElementById('outsideAccountingSave') as HTMLButtonElement).disabled = true;
+      (document.getElementById('outsideAccountingDialog') as HTMLDialogElement).showModal();
       outsideText('outsideAccountingStatus', 'Checking Accounting access…');
-      const data = await outsideRequest('/' + encodeURIComponent(id) + '/accounting');
-      document.getElementById('outsideAccountingLine').innerHTML =
+      const data = await outsideRequest<{ lines: ParishOutsideAccountingLine[]; linkValid?: boolean; note: string }>(
+        '/' + encodeURIComponent(id) + '/accounting'
+      );
+      (document.getElementById('outsideAccountingLine') as HTMLSelectElement).innerHTML =
         '<option value="">Choose a posted contribution</option>' +
         data.lines
           .filter((l) => l.availableCents >= gift.amountCents)
@@ -339,17 +418,20 @@ async function outsideGiftAction(id, action) {
             : 'Unlinking preserves the audit trail and does not change Accounting.'
           : data.note
       );
-      document.getElementById('outsideAccountingSave').disabled = false;
+      (document.getElementById('outsideAccountingSave') as HTMLButtonElement).disabled = false;
     }
   } catch (error) {
-    outsideText(action === 'accounting' ? 'outsideAccountingStatus' : 'outsideGivingStatus', error.message);
+    outsideText(
+      action === 'accounting' ? 'outsideAccountingStatus' : 'outsideGivingStatus',
+      (error as ParishOutsideError).message
+    );
   }
 }
-async function submitOutsideAccounting(event) {
+async function submitOutsideAccounting(event: Event): Promise<void> {
   event.preventDefault();
-  const form = event.currentTarget,
-    gift = outsideGivingState.accountingGift,
-    button = document.getElementById('outsideAccountingSave');
+  const form = event.currentTarget as ParishOutsideForm,
+    gift = outsideGivingState.accountingGift!,
+    button = document.getElementById('outsideAccountingSave') as HTMLButtonElement;
   button.disabled = true;
   try {
     await outsideRequest('/' + encodeURIComponent(gift.id) + (gift.accounting.linked ? '/unlink' : '/accounting'), {
@@ -358,28 +440,28 @@ async function submitOutsideAccounting(event) {
       confirmedDeposit: form.elements.confirmedDeposit.checked,
       confirmedLedgerUnchanged: form.elements.confirmedLedgerUnchanged.checked,
     });
-    document.getElementById('outsideAccountingDialog').close();
+    (document.getElementById('outsideAccountingDialog') as HTMLDialogElement).close();
     await Promise.all([loadOutsideGiving(), loadGivingHistory()]);
   } catch (error) {
-    outsideText('outsideAccountingStatus', error.message);
+    outsideText('outsideAccountingStatus', (error as ParishOutsideError).message);
   } finally {
     button.disabled = false;
   }
 }
-async function submitOutsideVoid(event) {
+async function submitOutsideVoid(event: Event): Promise<void> {
   event.preventDefault();
-  const gift = outsideGivingState.voidGift;
-  const button = document.getElementById('outsideVoidSave');
+  const gift = outsideGivingState.voidGift!;
+  const button = document.getElementById('outsideVoidSave') as HTMLButtonElement;
   button.disabled = true;
   try {
     await outsideRequest('/' + encodeURIComponent(gift.id) + '/void', {
       revision: gift.revision,
-      reason: event.currentTarget.elements.reason.value,
+      reason: (event.currentTarget as ParishOutsideForm).elements.reason.value,
     });
-    document.getElementById('outsideVoidDialog').close();
+    (document.getElementById('outsideVoidDialog') as HTMLDialogElement).close();
     await Promise.all([loadOutsideGiving(), loadGivingHistory()]);
   } catch (error) {
-    outsideText('outsideVoidStatus', error.message);
+    outsideText('outsideVoidStatus', (error as ParishOutsideError).message);
   } finally {
     button.disabled = false;
   }

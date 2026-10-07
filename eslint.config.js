@@ -90,6 +90,9 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/liturgical-calendar-typescript-tests.mjs',
+      'scripts/parish-outside-gifts-typescript-tests.mjs',
+      'scripts/parish-giving-catalog-typescript-tests.mjs',
       'scripts/parish-reconciliation-controller-typescript-tests.mjs',
       'scripts/parish-reconciliation-reports-typescript-tests.mjs',
       'scripts/parish-sharing-typescript-tests.mjs',
@@ -507,5 +510,124 @@ export default [
         },
       ],
     },
+  },
+  {
+    files: ['src/browser/parish/features/giving/feasts.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(toggleFeastCampaign|updateFeastCampaignFund|patronalFeastDisplayName|patronalMonthOptions|syncPatronalFeastOptionsFromSettings|upsertPatronalFeastCampaign|renderFeastCampaignSetup)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/feasts.js'],
+    languageOptions: {
+      globals: {
+        editableFeastCampaigns: 'writable',
+        currentParish: 'readonly',
+        renderGivingOptionsEditor: 'readonly',
+        setStatus: 'readonly',
+        editableFunds: 'readonly',
+        escapeHtml: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(toggleFeastCampaign|updateFeastCampaignFund|patronalFeastDisplayName|patronalMonthOptions|syncPatronalFeastOptionsFromSettings|upsertPatronalFeastCampaign|renderFeastCampaignSetup)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/options.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(fillGivingPreset|addGivingOption|editGivingOption|updateGivingOption|removeGivingOption|renderGivingOptionsEditor)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/options.js'],
+    languageOptions: {
+      globals: {
+        escapeHtml: 'readonly',
+        escapeAttr: 'readonly',
+        restrictionLabel: 'readonly',
+        allGifts: 'readonly',
+        editableFunds: 'readonly',
+        isGeneralDashboardFund: 'readonly',
+        isCandleDashboardFund: 'readonly',
+        hasGivingPlusAccess: 'readonly',
+        editableCampaigns: 'readonly',
+        editableFeastCampaigns: 'writable',
+        moneyFull: 'readonly',
+        setStatus: 'readonly',
+        slugifyLocal: 'readonly',
+        renderFeastCampaignSetup: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(fillGivingPreset|addGivingOption|editGivingOption|updateGivingOption|removeGivingOption|renderGivingOptionsEditor)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/outside-gifts.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(outsidePledgeFields|outsideSourceFields|submitOutsideVoid|openOutsideGift|submitOutsideGift|closeOutsideGift|outsideGiftAction|submitOutsideAccounting)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/outside-gifts.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        authHeaders: 'readonly',
+        escapeHtml: 'readonly',
+        escapeAttr: 'readonly',
+        moneyFull: 'readonly',
+        loadGivingHistory: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(outsidePledgeFields|outsideSourceFields|submitOutsideVoid|openOutsideGift|submitOutsideGift|closeOutsideGift|outsideGiftAction|submitOutsideAccounting)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/liturgical-calendar.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }] },
+  },
+  {
+    files: ['public/liturgical-calendar.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+    rules: recommendedRules,
   },
 ];
