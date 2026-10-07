@@ -17,6 +17,11 @@ export default [
     },
   },
   {
+    files: ['src/handlers/parish-dashboard-handler.ts'],
+    // Keep the legacy recursive helper's optional argument and call shape.
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^key$' }] },
+  },
+  {
     files: ['src/lib/subscriptions.ts'],
     // Public catalogs omit private binding names; preserve the legacy pricing argument.
     rules: {
@@ -111,6 +116,7 @@ export default [
       'scripts/giving-foundations-typescript-tests.mjs',
       'scripts/stripe-volume-typescript-tests.mjs',
       'scripts/dashboard-foundation-typescript-tests.mjs',
+      'scripts/dashboard-handler-typescript-tests.mjs',
       'scripts/giving-catalog-staging-smoke-tests.mjs',
       'scripts/parish-outside-gifts-typescript-tests.mjs',
       'scripts/parish-giving-catalog-typescript-tests.mjs',

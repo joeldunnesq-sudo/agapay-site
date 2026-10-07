@@ -18,3 +18,25 @@ export function stewardshipStatus(registration: EntitlementRegistration | null |
 export function sha256Hex(value: unknown): Promise<string>;
 export function d1GetSetting(env: DatabaseReadEnv, key: string): Promise<string>;
 export function d1SetSetting(env: DatabaseReadEnv, key: string, value: string): Promise<void>;
+
+export { json } from './http-responses.js';
+import type { DashboardRegistration, DashboardSession } from '../handlers/parish-dashboard-handler.js';
+export function getBearerToken(request: Request): string;
+export function hasProductionStore(env: Partial<Env>): boolean;
+export function missingProductionStoreResponse(): Response;
+export function unauthorized(): Response;
+export function rateLimit(
+  request: Request,
+  env: Partial<Env>,
+  bucket: string,
+  options?: { limit?: number; windowSeconds?: number }
+): Promise<Response | null>;
+export function applyParishDashboardPassword(
+  registration: DashboardRegistration,
+  password: string,
+  options?: { temporary?: boolean; keepLegacyToken?: boolean }
+): Promise<DashboardRegistration>;
+export function issueParishDashboardSession(
+  registration: DashboardRegistration,
+  options?: { mfaVerifiedAt?: string; accessType?: string }
+): Promise<DashboardSession>;

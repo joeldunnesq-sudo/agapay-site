@@ -360,6 +360,21 @@ export function normalizeOnboardingChecks(
   return normalized;
 }
 
+type WithOnboardingUpdate<T, Changes> = {
+  [K in keyof T]: K extends keyof Changes ? Changes[K] : T[K];
+} & Changes;
+export function recordParishGivingSetupReview<T extends OnboardingRegistration>(
+  registration: T,
+  importDecision?: string,
+  actor?: string,
+  now?: string
+): WithOnboardingUpdate<T, { onboardingChecks: ReturnType<typeof normalizeOnboardingChecks> }>;
+export function recordParishGivingSetupReview(
+  registration?: OnboardingRegistration,
+  importDecision?: string,
+  actor?: string,
+  now?: string
+): OnboardingRegistration;
 export function recordParishGivingSetupReview(
   registration: OnboardingRegistration = {},
   importDecision = 'none',
@@ -704,6 +719,18 @@ export function validateTreasurerGoLiveInput(
   return { ok: errors.length === 0, errors, missingAffirmations, signerName, signerTitle, signerEmail, affirmations };
 }
 
+export function invalidateOnboardingSignoffIfChanged<T extends OnboardingRegistration>(
+  previous: OnboardingRegistration,
+  next: T,
+  options?: OnboardingOptions
+): Promise<
+  WithOnboardingUpdate<T, Pick<OnboardingRegistration, 'givingStatus' | 'onboardingState' | 'treasurerSignoff'>>
+>;
+export function invalidateOnboardingSignoffIfChanged(
+  previous?: OnboardingRegistration,
+  next?: OnboardingRegistration,
+  options?: OnboardingOptions
+): Promise<OnboardingRegistration>;
 export async function invalidateOnboardingSignoffIfChanged(
   previous: OnboardingRegistration = {},
   next: OnboardingRegistration = {},
