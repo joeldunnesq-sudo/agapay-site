@@ -1,3 +1,4 @@
+import { readServerModuleSource } from './lib/server-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
@@ -139,10 +140,7 @@ const parishReconciliation = await readFile(
   new URL('../src/handlers/parish-reconciliation.js', import.meta.url),
   'utf8'
 );
-const parishGivingCatalog = await readFile(
-  new URL('../src/handlers/parish-giving-catalog.js', import.meta.url),
-  'utf8'
-);
+const parishGivingCatalog = await readServerModuleSource('src/handlers/parish-giving-catalog.js');
 const parishGivingReports = await readFile(
   new URL('../src/handlers/parish-giving-reports.js', import.meta.url),
   'utf8'
@@ -527,7 +525,6 @@ assertImports(parishGivingCatalog, './parish.js', [
   'paidOfferingStatus',
   'parishFromRegistration',
   'rateLimit',
-  'registrationRequiresJurisdiction',
   'saveRegistrationRecord',
   'slugify',
   'unauthorized',
@@ -537,7 +534,7 @@ assertImports(parishGivingCatalog, './parish.js', [
 assert.doesNotMatch(
   parishGivingCatalog,
   /(?:async\s+)?function\s+registrationRequiresJurisdiction\b/,
-  'parish-giving-catalog should import registrationRequiresJurisdiction instead of absorbing the next cluster'
+  'parish-giving-catalog should not absorb jurisdiction policy from the legacy parish handler'
 );
 assertImports(parishGivingCatalog, '../festal-alms.js', ['activeFestalAlmsCampaigns']);
 assertImports(parishGivingCatalog, '../lib/core.js', ['DONOR_OFFERING_KEY_PREFIX', 'd1', 'd1First', 'listKvKeys']);

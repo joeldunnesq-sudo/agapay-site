@@ -52,7 +52,10 @@ jobs:
         run: node scripts/parish-giving-catalog-staging-smoke.mjs "${{ inputs.target_url }}"
         env:
           ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
-          ACCOUNTING_GATE_PARISH_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_PARISH_A_PASSWORD }}
+          ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
+          ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
+          ACCOUNTING_GATE_USER_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_A_TOTP_SECRET }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Gate 1 — authenticated check-print evidence
         run: node scripts/accounting-release-gate-1-check-print.mjs "${{ inputs.target_url }}"

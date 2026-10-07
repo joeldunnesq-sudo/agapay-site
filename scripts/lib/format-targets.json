@@ -241,7 +241,22 @@
     "public/parish/features/giving/outside-gifts.js",
     "scripts/parish-outside-gifts-typescript-tests.mjs",
     "public/liturgical-calendar.js",
-    "scripts/liturgical-calendar-typescript-tests.mjs"
+    "scripts/liturgical-calendar-typescript-tests.mjs",
+    "src/liturgical-calendar.js",
+    "src/festal-alms.js",
+    "scripts/calendar-festal-typescript-tests.mjs",
+    "src/handlers/parish-giving-catalog.js",
+    "scripts/giving-catalog-handler-typescript-tests.mjs",
+    "src/lib/stewardship-funds.js",
+    "src/lib/payment-fees.js",
+    "src/lib/stripe-fees.js",
+    "src/payments/classification.js",
+    "src/lib/payment-classification.js",
+    "scripts/giving-foundations-typescript-tests.mjs",
+    "scripts/giving-catalog-staging-smoke-tests.mjs",
+    "scripts/parish-giving-catalog-staging-smoke.mjs",
+    ".github/workflows/parish-giving-reports-staging-smoke.yml",
+    ".github/workflows/accounting-release-gates.yml"
   ],
   "check": [
     ".prettierrc.json",
@@ -516,6 +531,21 @@
     "public/parish/features/giving/outside-gifts.js",
     "scripts/parish-outside-gifts-typescript-tests.mjs",
     "public/liturgical-calendar.js",
-    "scripts/liturgical-calendar-typescript-tests.mjs"
+    "scripts/liturgical-calendar-typescript-tests.mjs",
+    "src/liturgical-calendar.js",
+    "src/festal-alms.js",
+    "scripts/calendar-festal-typescript-tests.mjs",
+    "src/handlers/parish-giving-catalog.js",
+    "scripts/giving-catalog-handler-typescript-tests.mjs",
+    "src/lib/stewardship-funds.js",
+    "src/lib/payment-fees.js",
+    "src/lib/stripe-fees.js",
+    "src/payments/classification.js",
+    "src/lib/payment-classification.js",
+    "scripts/giving-foundations-typescript-tests.mjs",
+    "scripts/giving-catalog-staging-smoke-tests.mjs",
+    "scripts/parish-giving-catalog-staging-smoke.mjs",
+    ".github/workflows/parish-giving-reports-staging-smoke.yml",
+    ".github/workflows/accounting-release-gates.yml"
   ]
 }

@@ -1,5 +1,31 @@
-// Generated from src/lib/payment-fees.ts by npm run build:server. Do not edit.
-const PAYMENT_FEE_SCHEDULES = Object.freeze({
+export type PaymentMethod = 'card' | 'ach';
+// External amounts retain the existing Number coercion at the runtime boundary.
+export interface PaymentFeeScheduleInput {
+  readonly rateBasisPoints?: unknown;
+  readonly fixedFeeCents?: unknown;
+  readonly maxFeeCents?: unknown;
+}
+export interface PublicPaymentFeeSchedule {
+  id: string;
+  label: string;
+  rateBasisPoints: number;
+  fixedFeeCents: number;
+  maxFeeCents: number | null;
+}
+export interface CheckoutFinancials {
+  chargeCents: number;
+  estimatedStripeFeeCents: number;
+  agapayFeeCents: number;
+  totalTransactionFeeCents: number;
+  paymentMethod: PaymentMethod;
+  feeScheduleId: string;
+}
+
+// Authoritative payment-fee schedules and integer-cent calculations.
+// Stripe may approve account-specific pricing; these defaults represent
+// AGAPAY's currently supported public card and ACH Direct Debit estimates.
+
+export const PAYMENT_FEE_SCHEDULES = Object.freeze({
   card: Object.freeze({
     id: 'stripe_standard_card_us',
     label: 'Card',
@@ -15,21 +41,25 @@ const PAYMENT_FEE_SCHEDULES = Object.freeze({
     maxFeeCents: 500,
   }),
 });
-function positiveInteger(value) {
+
+function positiveInteger(value: unknown): number {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? Math.round(number) : 0;
 }
-function normalizePaymentMethod(value, recurring = false) {
+
+export function normalizePaymentMethod(value: unknown, recurring = false): PaymentMethod {
   if (recurring) return 'card';
   const method = String(value || 'card')
     .toLowerCase()
     .trim();
   return ['ach', 'bank', 'bank_account', 'us_bank_account'].includes(method) ? 'ach' : 'card';
 }
-function paymentFeeSchedule(paymentMethod = 'card', recurring = false) {
+
+export function paymentFeeSchedule(paymentMethod: unknown = 'card', recurring = false) {
   return PAYMENT_FEE_SCHEDULES[normalizePaymentMethod(paymentMethod, recurring)];
 }
-function publicPaymentFeeSchedules() {
+
+export function publicPaymentFeeSchedules(): Record<PaymentMethod, PublicPaymentFeeSchedule> {
   return Object.fromEntries(
     Object.entries(PAYMENT_FEE_SCHEDULES).map(([key, schedule]) => [
       key,
@@ -41,49 +71,63 @@ function publicPaymentFeeSchedules() {
         maxFeeCents: schedule.maxFeeCents,
       },
     ])
-  );
+  ) as Record<PaymentMethod, PublicPaymentFeeSchedule>;
 }
-function estimatePaymentFeeCents(chargeCents, schedule) {
+
+export function estimatePaymentFeeCents(chargeCents: unknown, schedule?: PaymentFeeScheduleInput | null): number {
   const charge = positiveInteger(chargeCents);
   if (!charge) return 0;
   const rateBasisPoints = Math.max(0, positiveInteger(schedule?.rateBasisPoints));
   const fixedFeeCents = Math.max(0, positiveInteger(schedule?.fixedFeeCents));
-  const percentageFee = Math.round((charge * rateBasisPoints) / 1e4);
+  const percentageFee = Math.round((charge * rateBasisPoints) / 10_000);
   const uncappedFee = percentageFee + fixedFeeCents;
   const maximum = schedule?.maxFeeCents == null ? null : Math.max(0, positiveInteger(schedule.maxFeeCents));
   return maximum == null ? uncappedFee : Math.min(maximum, uncappedFee);
 }
-function grossUpForPaymentFeeCents(netAmountCents, schedule) {
+
+export function grossUpForPaymentFeeCents(netAmountCents: unknown, schedule?: PaymentFeeScheduleInput | null): number {
   const target = positiveInteger(netAmountCents);
   if (!target) return 0;
-  const rate = Math.max(0, positiveInteger(schedule?.rateBasisPoints)) / 1e4;
+
+  const rate = Math.max(0, positiveInteger(schedule?.rateBasisPoints)) / 10_000;
   const fixed = Math.max(0, positiveInteger(schedule?.fixedFeeCents));
   const maximum = schedule?.maxFeeCents == null ? null : Math.max(0, positiveInteger(schedule.maxFeeCents));
   const uncappedCandidate = rate < 1 ? Math.ceil((target + fixed) / (1 - rate)) : target + fixed;
   const cappedCandidate = maximum == null ? uncappedCandidate : target + maximum;
   let charge = Math.max(target, Math.min(uncappedCandidate, cappedCandidate));
+
   while (charge - estimatePaymentFeeCents(charge, schedule) < target) charge += 1;
   while (charge > target && charge - 1 - estimatePaymentFeeCents(charge - 1, schedule) >= target) {
     charge -= 1;
   }
   return charge;
 }
-function estimateStripeProcessingFeeCents(chargeCents) {
+
+export function estimateStripeProcessingFeeCents(chargeCents: unknown): number {
   return estimatePaymentFeeCents(chargeCents, PAYMENT_FEE_SCHEDULES.card);
 }
-function estimateStripeAchFeeCents(chargeCents) {
+
+export function estimateStripeAchFeeCents(chargeCents: unknown): number {
   return estimatePaymentFeeCents(chargeCents, PAYMENT_FEE_SCHEDULES.ach);
 }
-function grossUpForStripeProcessingFeeCents(netAmountCents) {
+
+export function grossUpForStripeProcessingFeeCents(netAmountCents: unknown): number {
   return grossUpForPaymentFeeCents(netAmountCents, PAYMENT_FEE_SCHEDULES.card);
 }
-function grossUpForAchFeeCents(netAmountCents, additionalFeeCents = 0) {
+
+export function grossUpForAchFeeCents(netAmountCents: unknown, additionalFeeCents: unknown = 0): number {
   return grossUpForPaymentFeeCents(
     positiveInteger(netAmountCents) + Math.max(0, positiveInteger(additionalFeeCents)),
     PAYMENT_FEE_SCHEDULES.ach
   );
 }
-function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = 'card') {
+
+export function checkoutFinancials(
+  amountCents: unknown,
+  coverFees: boolean,
+  recurring: boolean,
+  paymentMethod: unknown = 'card'
+): CheckoutFinancials {
   const giftAmountCents = positiveInteger(amountCents);
   const method = normalizePaymentMethod(paymentMethod, recurring);
   const schedule = paymentFeeSchedule(method);
@@ -98,16 +142,3 @@ function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = '
     feeScheduleId: schedule.id,
   };
 }
-export {
-  PAYMENT_FEE_SCHEDULES,
-  checkoutFinancials,
-  estimatePaymentFeeCents,
-  estimateStripeAchFeeCents,
-  estimateStripeProcessingFeeCents,
-  grossUpForAchFeeCents,
-  grossUpForPaymentFeeCents,
-  grossUpForStripeProcessingFeeCents,
-  normalizePaymentMethod,
-  paymentFeeSchedule,
-  publicPaymentFeeSchedules,
-};

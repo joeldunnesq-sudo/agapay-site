@@ -1,4 +1,71 @@
-// Generated from src/handlers/parish-giving-catalog.ts by npm run build:server. Do not edit.
+import type { FestalAlmsCampaign } from '../festal-alms.js';
+import type { PaidOfferingStatusInput } from '../lib/paid-offering-status.js';
+export type GivingCatalogEnv = Partial<Env>;
+export interface CatalogOptionKeys {
+  id?: unknown;
+  feastId?: unknown;
+  name?: unknown;
+  campaignName?: unknown;
+  title?: unknown;
+}
+export interface CatalogGift extends PaidOfferingStatusInput {
+  campaignId?: unknown;
+  campaign?: unknown;
+  description?: unknown;
+  campaignDescription?: unknown;
+  giftType?: unknown;
+  fund?: unknown;
+  amountCents?: unknown;
+  giftAmountCents?: unknown;
+  publicAnonymous?: unknown;
+  publicDisplayName?: unknown;
+  donorName?: unknown;
+  publicComment?: unknown;
+  createdAt?: unknown;
+  completedAt?: unknown;
+}
+export interface CatalogCampaign extends FestalAlmsCampaign {
+  title?: string;
+  slug?: string;
+  code?: string;
+  photos?: (string | { url?: string })[];
+  coverPhotoUrl?: string;
+  coverUrl?: string;
+  imageUrl?: string;
+  photoUrl?: string;
+  description?: string;
+  category?: string;
+  goalCents?: unknown;
+  targetCents?: unknown;
+  goalAmountCents?: unknown;
+  raisedCents?: unknown;
+  amountCents?: unknown;
+  currentCents?: unknown;
+  giftCount?: unknown;
+  donorCount?: unknown;
+  active?: boolean;
+  hidden?: boolean;
+}
+export interface CatalogParish {
+  id: string;
+  status?: string;
+  campaigns?: CatalogCampaign[] | null;
+  feastCampaigns?: CatalogCampaign[] | null;
+  liturgicalCalendar?: string;
+  [key: string]: unknown;
+}
+interface PlatformOfferingTotalsRow {
+  gift_count: number | string | null;
+  total_given_cents: number | string | null;
+}
+export interface CatalogRegistration {
+  logoStorageKey?: string;
+  logoUrl?: string;
+  [key: string]: unknown;
+}
+// src/handlers/parish-giving-catalog.js
+// Public giving options, campaign presentation and assets, and platform totals.
+
 import { activeFestalAlmsCampaigns } from '../festal-alms.js';
 import { DONOR_OFFERING_KEY_PREFIX, d1, d1First, listKvKeys } from '../lib/core.js';
 import {
@@ -19,18 +86,21 @@ import {
   verifiedRegistrationParishes,
   verifyParishDashboardBearer,
 } from './parish.js';
-const PARISH_EDITORIAL_IMAGE_TYPES = /* @__PURE__ */ new Map([
+
+export const PARISH_EDITORIAL_IMAGE_TYPES = new Map([
   ['image/jpeg', 'jpg'],
   ['image/png', 'png'],
   ['image/webp', 'webp'],
 ]);
-const PARISH_EDITORIAL_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-function normalizedOptionKeys(option = {}) {
+export const PARISH_EDITORIAL_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+export function normalizedOptionKeys(option: CatalogOptionKeys = {}) {
   return [option.id, option.feastId, option.name, option.campaignName, option.title]
     .filter(Boolean)
     .map((value) => String(value).trim().toLowerCase());
 }
-function campaignGiftKeys(gift = {}) {
+
+function campaignGiftKeys(gift: CatalogGift = {}) {
   return normalizedOptionKeys({
     id: gift.campaignId,
     name: gift.campaign,
@@ -38,11 +108,13 @@ function campaignGiftKeys(gift = {}) {
     title: gift.giftType === 'campaign' ? gift.fund : '',
   });
 }
-function giftMatchesCampaignKeys(gift, keys) {
+
+function giftMatchesCampaignKeys(gift: CatalogGift, keys: ReadonlySet<string>) {
   const giftType = String(gift.giftType || '').toLowerCase();
   return ['campaign', 'alms', 'feast'].includes(giftType) && campaignGiftKeys(gift).some((key) => keys.has(key));
 }
-function campaignRaisedTotals(campaign, gifts) {
+
+export function campaignRaisedTotals(campaign: CatalogOptionKeys, gifts: readonly CatalogGift[]) {
   const keys = new Set(normalizedOptionKeys(campaign));
   let raisedCents = 0;
   let giftCount = 0;
@@ -54,16 +126,19 @@ function campaignRaisedTotals(campaign, gifts) {
   });
   return { raisedCents, giftCount };
 }
-function publicBoolean(value) {
+
+export function publicBoolean(value: unknown) {
   return value === true || String(value || '').toLowerCase() === 'true' || String(value || '') === '1';
 }
-function publicComment(value) {
+
+export function publicComment(value: unknown) {
   return String(value || '')
     .trim()
     .replace(/\s+/g, ' ')
     .slice(0, 280);
 }
-function campaignPublicSupporters(campaign, gifts) {
+
+function campaignPublicSupporters(campaign: CatalogOptionKeys, gifts: readonly CatalogGift[]) {
   const keys = new Set(normalizedOptionKeys(campaign));
   return gifts
     .filter((gift) => giftMatchesCampaignKeys(gift, keys))
@@ -82,53 +157,54 @@ function campaignPublicSupporters(campaign, gifts) {
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
     .slice(0, 24);
 }
+
 function stFiacreRoofDemoSupporters() {
   return [
     {
       name: 'Sophia Lebedev',
-      amountCents: 55e3,
+      amountCents: 55000,
       comment: 'May this church shelter generations to come.',
       anonymous: false,
       createdAt: '2026-07-05T09:30:00.000Z',
     },
     {
       name: 'Anonymous',
-      amountCents: 8e4,
+      amountCents: 80000,
       comment: 'For the continued life of the parish.',
       anonymous: true,
       createdAt: '2026-06-07T12:30:00.000Z',
     },
     {
       name: 'Elena Sokolov',
-      amountCents: 65e3,
+      amountCents: 65000,
       comment: 'With love for our parish home.',
       anonymous: false,
       createdAt: '2026-05-03T10:00:00.000Z',
     },
     {
       name: 'Nikolai Volkov',
-      amountCents: 125e3,
+      amountCents: 125000,
       comment: 'Glory to God for this parish and the work ahead.',
       anonymous: false,
       createdAt: '2026-04-05T13:00:00.000Z',
     },
     {
       name: 'Anna Kozlov',
-      amountCents: 1e5,
+      amountCents: 100000,
       comment: 'For our children and the future of the parish.',
       anonymous: false,
       createdAt: '2026-03-15T10:30:00.000Z',
     },
     {
       name: 'Anonymous',
-      amountCents: 75e3,
+      amountCents: 75000,
       comment: 'Praying this roof protects the church for many years.',
       anonymous: true,
       createdAt: '2026-02-22T09:45:00.000Z',
     },
     {
       name: 'Maria Petrov',
-      amountCents: 5e4,
+      amountCents: 50000,
       comment: 'In thanksgiving for the mission and all who worship here.',
       anonymous: false,
       createdAt: '2026-02-01T11:15:00.000Z',
@@ -142,13 +218,19 @@ function stFiacreRoofDemoSupporters() {
     },
   ];
 }
-async function enrichParishGivingOptions(env, parish) {
+
+export function enrichParishGivingOptions(env: GivingCatalogEnv, parish: CatalogParish): Promise<CatalogParish>;
+export function enrichParishGivingOptions(
+  env: GivingCatalogEnv,
+  parish: CatalogParish | null | undefined
+): Promise<CatalogParish | null | undefined>;
+export async function enrichParishGivingOptions(env: GivingCatalogEnv, parish: CatalogParish | null | undefined) {
   if (!parish?.id) return parish;
-  const gifts = await loadParishPaidOfferings(env, parish.id, 1e3);
-  const enrichCampaign = (campaign) => {
+  const gifts = await loadParishPaidOfferings(env, parish.id, 1000);
+  const enrichCampaign = (campaign: CatalogCampaign) => {
     const totals = campaignRaisedTotals(campaign, gifts);
     const supporters = campaignPublicSupporters(campaign, gifts);
-    const photos = Array.isArray(campaign.photos) ? campaign.photos : [];
+    const photos: NonNullable<CatalogCampaign['photos']> = Array.isArray(campaign.photos) ? campaign.photos : [];
     const optionKeys = [...normalizedOptionKeys(campaign), campaign.slug, campaign.code]
       .filter(Boolean)
       .map((value) => String(value).trim().toLowerCase());
@@ -176,7 +258,7 @@ async function enrichParishGivingOptions(env, parish) {
         : campaign.description,
       category: isStFiacreRoofDemo ? 'Building' : campaign.category,
       goalCents: isStFiacreRoofDemo
-        ? 1e6
+        ? 1000000
         : Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
       coverPhotoUrl,
       raisedCents:
@@ -194,17 +276,26 @@ async function enrichParishGivingOptions(env, parish) {
     feastCampaigns: activeFestalAlmsCampaigns(parish.feastCampaigns, parish.liturgicalCalendar).map(enrichCampaign),
   };
 }
-async function handleParishes(request, env) {
+
+export async function handleParishes(request: Request, env: GivingCatalogEnv) {
   const url = new URL(request.url);
+
+  // Fast single-parish lookup: /api/parishes?id=st-fiacre
+  // Used by the give/form page to avoid fetching all parishes just to find one.
   const singleId = (url.searchParams.get('id') || '').trim();
   if (singleId) {
     const found = await findRegistrationByParishId(env, singleId);
     if (!found) return json({ error: 'Parish not found' }, { status: 404 });
     const parish = parishFromRegistration(found.registration);
+    // parishFromRegistration intentionally returns null while a verified parish
+    // is still hidden or paused. Treat that as a normal unavailable record,
+    // rather than dereferencing null and turning an onboarding preview into a
+    // Cloudflare 1101 Worker exception.
     if (!parish || parish.status !== 'verified') return json({ error: 'Parish not found' }, { status: 404 });
     const enriched = await enrichParishGivingOptions(env, parish);
     return json({ parish: enriched, source: 'd1' });
   }
+
   const page = await loadVerifiedRegistrationParishPage(env, {
     limit: url.searchParams.get('limit'),
     cursor: url.searchParams.get('cursor'),
@@ -213,6 +304,7 @@ async function handleParishes(request, env) {
     jurisdiction: url.searchParams.get('jurisdiction'),
   });
   const enrichedParishes = await Promise.all(page.parishes.map((parish) => enrichParishGivingOptions(env, parish)));
+
   return json({
     parishes: enrichedParishes,
     cursor: page.cursor,
@@ -221,7 +313,8 @@ async function handleParishes(request, env) {
     source: page.source,
   });
 }
-async function handlePublicCampaign(request, env) {
+
+export async function handlePublicCampaign(request: Request, env: GivingCatalogEnv) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   const url = new URL(request.url);
   const parishId = String(url.searchParams.get('parish') || url.searchParams.get('parishId') || '').trim();
@@ -229,10 +322,12 @@ async function handlePublicCampaign(request, env) {
     url.searchParams.get('slug') || url.searchParams.get('campaign') || url.searchParams.get('c') || ''
   ).trim();
   if (!parishId || !slug) return json({ error: 'Campaign parish and slug are required.' }, { status: 422 });
+
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Campaign not found' }, { status: 404 });
   const parish = parishFromRegistration(found.registration);
   if (!parish) return json({ error: 'Campaign not found' }, { status: 404 });
+
   const enrichedParish = await enrichParishGivingOptions(env, parish);
   const campaigns = [
     ...(Array.isArray(enrichedParish.campaigns) ? enrichedParish.campaigns : []),
@@ -246,10 +341,12 @@ async function handlePublicCampaign(request, env) {
     return keys.includes(normalizedSlug);
   });
   if (!campaign) return json({ error: 'Campaign not found' }, { status: 404 });
+
   const status = String(campaign.status || (campaign.enabled === false ? 'hidden' : 'active')).toLowerCase();
   if (['hidden', 'cancelled', 'inactive'].includes(status)) {
     return json({ error: 'Campaign not found' }, { status: 404 });
   }
+
   return json({
     ok: true,
     parish: enrichedParish,
@@ -259,11 +356,13 @@ async function handlePublicCampaign(request, env) {
     },
   });
 }
-async function handleParishCampaignUpload(request, env, parishId) {
+
+export async function handleParishCampaignUpload(request: Request, env: GivingCatalogEnv, parishId: string) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'parish-campaign-upload', { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
   const token = getBearerToken(request);
@@ -271,9 +370,11 @@ async function handleParishCampaignUpload(request, env, parishId) {
   if (!givingFeatureAccess(found.registration, 'campaigns')) {
     return json({ error: 'Campaigns are available with Give +.' }, { status: 403 });
   }
+
   if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
     return json({ error: 'Campaign photo storage is not configured.' }, { status: 503 });
   }
+
   const contentType = String(request.headers.get('content-type') || '')
     .split(';')[0]
     .trim()
@@ -282,14 +383,17 @@ async function handleParishCampaignUpload(request, env, parishId) {
   if (!ext) {
     return json({ error: 'Campaign photos must be JPG, PNG, or WebP images.' }, { status: 415 });
   }
+
   const maxBytes = PARISH_EDITORIAL_IMAGE_MAX_BYTES;
   const contentLength = Number(request.headers.get('content-length') || 0);
   if (contentLength && contentLength > maxBytes) {
     return json({ error: 'Campaign photo must be 10MB or smaller.' }, { status: 413 });
   }
+
   const bytes = await request.arrayBuffer();
   if (!bytes.byteLength) return json({ error: 'Campaign photo is empty.' }, { status: 422 });
   if (bytes.byteLength > maxBytes) return json({ error: 'Campaign photo must be 10MB or smaller.' }, { status: 413 });
+
   const uploadUrl = new URL(request.url);
   const campaignId = slugify(uploadUrl.searchParams.get('campaign') || 'draft');
   const key = ['campaigns', slugify(parishId), campaignId, `${Date.now()}-${crypto.randomUUID()}.${ext}`].join('/');
@@ -309,13 +413,15 @@ async function handleParishCampaignUpload(request, env, parishId) {
     size: bytes.byteLength,
   });
 }
-async function handleParishLogo(request, env, parishId) {
+
+export async function handleParishLogo(request: Request, env: GivingCatalogEnv, parishId: string) {
   if (!['POST', 'DELETE'].includes(request.method)) {
     return json({ error: 'Method not allowed' }, { status: 405 });
   }
   const limited = await rateLimit(request, env, 'parish-logo', { limit: 12, windowSeconds: 300 });
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
   const token = getBearerToken(request);
@@ -326,29 +432,32 @@ async function handleParishLogo(request, env, parishId) {
   if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
     return json({ error: 'Parish logo storage is not configured.' }, { status: 503 });
   }
+
   const previousKey = String(found.registration.logoStorageKey || '');
   if (request.method === 'DELETE') {
-    const updated2 = {
+    const updated = {
       ...found.registration,
       logoUrl: '',
       logoStorageKey: '',
-      parishUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
+      parishUpdatedAt: new Date().toISOString(),
     };
-    await saveRegistrationRecord(env, found.key, updated2, found.registration);
+    await saveRegistrationRecord(env, found.key, updated, found.registration);
     if (previousKey) await env.CAMPAIGN_ASSETS.delete(previousKey);
     return json({ ok: true, logoUrl: '' });
   }
+
   const contentType = String(request.headers.get('content-type') || '')
     .split(';')[0]
     .trim()
     .toLowerCase();
-  const allowed = /* @__PURE__ */ new Map([
+  const allowed = new Map([
     ['image/jpeg', 'jpg'],
     ['image/png', 'png'],
     ['image/webp', 'webp'],
   ]);
   const ext = allowed.get(contentType);
   if (!ext) return json({ error: 'Logo must be a JPG, PNG, or WebP image.' }, { status: 415 });
+
   const maxBytes = 5 * 1024 * 1024;
   const contentLength = Number(request.headers.get('content-length') || 0);
   if (contentLength && contentLength > maxBytes) {
@@ -357,6 +466,7 @@ async function handleParishLogo(request, env, parishId) {
   const bytes = await request.arrayBuffer();
   if (!bytes.byteLength) return json({ error: 'Logo image is empty.' }, { status: 422 });
   if (bytes.byteLength > maxBytes) return json({ error: 'Logo must be 5MB or smaller.' }, { status: 413 });
+
   const key = `parish-logos/${slugify(parishId)}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   await env.CAMPAIGN_ASSETS.put(key, bytes, {
     customMetadata: { agapayParishId: parishId },
@@ -368,7 +478,7 @@ async function handleParishLogo(request, env, parishId) {
     ...found.registration,
     logoUrl,
     logoStorageKey: key,
-    parishUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
+    parishUpdatedAt: new Date().toISOString(),
   };
   try {
     await saveRegistrationRecord(env, found.key, updated, found.registration);
@@ -379,9 +489,10 @@ async function handleParishLogo(request, env, parishId) {
   if (previousKey && previousKey !== key) await env.CAMPAIGN_ASSETS.delete(previousKey);
   return json({ ok: true, logoUrl, key, contentType, size: bytes.byteLength });
 }
-async function loadPaidDonorOfferingPlatformTotals(env) {
+
+export async function loadPaidDonorOfferingPlatformTotals(env: GivingCatalogEnv) {
   if (d1(env)) {
-    const row = await d1First(
+    const row = await d1First<PlatformOfferingTotalsRow>(
       env,
       `SELECT
          COUNT(*) AS gift_count,
@@ -394,24 +505,30 @@ async function loadPaidDonorOfferingPlatformTotals(env) {
       totalGivenCents: Number(row?.total_given_cents || 0),
     };
   }
+
   if (!env.AGAPAY_REGISTRATIONS) return { giftCount: 0, totalGivenCents: 0 };
-  const keys = await listKvKeys(env, { prefix: DONOR_OFFERING_KEY_PREFIX, limit: 5e3 });
+  const keys = await listKvKeys(env, { prefix: DONOR_OFFERING_KEY_PREFIX, limit: 5000 });
   let giftCount = 0;
   let totalGivenCents = 0;
+
   for (const key of keys) {
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
-      const offering = JSON.parse(raw);
+      const offering = JSON.parse(raw) as PaidOfferingStatusInput & { amountCents?: unknown };
       if (paidOfferingStatus(offering)) {
         giftCount += 1;
         totalGivenCents += Number(offering.amountCents || 0);
       }
-    } catch {}
+    } catch {
+      // Ignore malformed donation records in public aggregate totals.
+    }
   }
+
   return { giftCount, totalGivenCents };
 }
-async function handlePublicPlatformSummary(env) {
+
+export async function handlePublicPlatformSummary(env: GivingCatalogEnv) {
   if (!hasProductionStore(env)) {
     return json({
       summary: {
@@ -420,11 +537,12 @@ async function handlePublicPlatformSummary(env) {
         totalGivenCents: 0,
         giftCount: 0,
         dataSource: 'not_configured',
-        generatedAt: /* @__PURE__ */ new Date().toISOString(),
+        generatedAt: new Date().toISOString(),
       },
     });
   }
-  const parishes = await verifiedRegistrationParishes(env, { limit: 1e4 });
+
+  const parishes = await verifiedRegistrationParishes(env, { limit: 10000 });
   const donationTotals = await loadPaidDonorOfferingPlatformTotals(env);
   const activeCampaigns = parishes.reduce((total, parish) => {
     const campaigns = Array.isArray(parish.campaigns) ? parish.campaigns : [];
@@ -432,6 +550,7 @@ async function handlePublicPlatformSummary(env) {
       total + campaigns.filter((campaign) => campaign && campaign.active !== false && campaign.hidden !== true).length
     );
   }, 0);
+
   return json({
     summary: {
       organizationsSupported: parishes.length,
@@ -439,22 +558,7 @@ async function handlePublicPlatformSummary(env) {
       totalGivenCents: donationTotals.totalGivenCents,
       giftCount: donationTotals.giftCount,
       dataSource: d1(env) ? 'd1' : 'kv',
-      generatedAt: /* @__PURE__ */ new Date().toISOString(),
+      generatedAt: new Date().toISOString(),
     },
   });
 }
-export {
-  PARISH_EDITORIAL_IMAGE_MAX_BYTES,
-  PARISH_EDITORIAL_IMAGE_TYPES,
-  campaignRaisedTotals,
-  enrichParishGivingOptions,
-  handleParishCampaignUpload,
-  handleParishLogo,
-  handleParishes,
-  handlePublicCampaign,
-  handlePublicPlatformSummary,
-  loadPaidDonorOfferingPlatformTotals,
-  normalizedOptionKeys,
-  publicBoolean,
-  publicComment,
-};
