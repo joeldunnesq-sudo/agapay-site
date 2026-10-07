@@ -1,10 +1,61 @@
-// Generated from src/lib/stripe-connect.ts by npm run build:server. Do not edit.
+import type { StripeChargeClassificationInput } from './payment-classification.js';
+export interface StripeRequestEnv {
+  readonly STRIPE_SECRET_KEY?: string | null;
+}
+// Stripe JSON is described at the transport boundary; this is not runtime validation.
+export interface StripeResponseBody {
+  [field: string]: unknown;
+  error?: { message?: string };
+  data?: unknown;
+  has_more?: unknown;
+}
+export interface StripeApiResponse {
+  ok: boolean;
+  status: number;
+  body: StripeResponseBody;
+}
+export type StripeObjectReference = string | { id?: string | null } | null | undefined;
+export interface StripeCheckoutSession {
+  payment_status?: string | null;
+  status?: unknown;
+  payment_intent?: StripeObjectReference;
+}
+export interface StripeCharge extends StripeChargeClassificationInput {
+  id?: string;
+  amount_captured?: unknown;
+  amount?: unknown;
+  amount_refunded?: unknown;
+  currency?: unknown;
+  status?: unknown;
+  paid?: unknown;
+  created?: unknown;
+  application_fee_amount?: unknown;
+  balance_transaction?: string | { fee?: unknown; net?: unknown } | null;
+  billing_details?: { email?: unknown } | null;
+  receipt_email?: unknown;
+  customer?: unknown;
+  payment_method?: unknown;
+}
+export interface StripeAccountReadiness {
+  payouts_enabled?: unknown;
+  charges_enabled?: unknown;
+  details_submitted?: unknown;
+  requirements?: { disabled_reason?: unknown } | null;
+}
+
 import { monthLabel } from './format.js';
 import { estimateStripeAchFeeCents, estimateStripeProcessingFeeCents } from './payment-fees.js';
 import { classifyStripeCharge } from './payment-classification.js';
+
 import { numericCents } from './numeric-cents.js';
-import { numericCents as numericCents2 } from './numeric-cents.js';
-async function stripeFormRequest(env, path, form, method = 'POST') {
+export { numericCents } from './numeric-cents.js';
+
+export async function stripeFormRequest(
+  env: StripeRequestEnv,
+  path: string,
+  form: BodyInit | null,
+  method = 'POST'
+): Promise<StripeApiResponse> {
   if (!env.STRIPE_SECRET_KEY) {
     return { ok: false, status: 500, body: { error: { message: 'STRIPE_SECRET_KEY is not configured' } } };
   }
@@ -16,20 +67,26 @@ async function stripeFormRequest(env, path, form, method = 'POST') {
     },
     body: form,
   });
-  const body = await response.json();
+  const body = (await response.json()) as StripeResponseBody;
   return { ok: response.ok, status: response.status, body };
 }
-async function stripeGetRequest(env, path) {
+
+export async function stripeGetRequest(env: StripeRequestEnv, path: string): Promise<StripeApiResponse> {
   if (!env.STRIPE_SECRET_KEY) {
     return { ok: false, status: 500, body: { error: { message: 'STRIPE_SECRET_KEY is not configured' } } };
   }
   const response = await fetch(`https://api.stripe.com${path}`, {
     headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
   });
-  const body = await response.json();
+  const body = (await response.json()) as StripeResponseBody;
   return { ok: response.ok, status: response.status, body };
 }
-async function stripeGetConnectedRequest(env, path, stripeAccountId) {
+
+export async function stripeGetConnectedRequest(
+  env: StripeRequestEnv,
+  path: string,
+  stripeAccountId: string
+): Promise<StripeApiResponse> {
   if (!env.STRIPE_SECRET_KEY) {
     return { ok: false, status: 500, body: { error: { message: 'STRIPE_SECRET_KEY is not configured' } } };
   }
@@ -39,46 +96,59 @@ async function stripeGetConnectedRequest(env, path, stripeAccountId) {
       'Stripe-Account': stripeAccountId,
     },
   });
-  const body = await response.json();
+  const body = (await response.json()) as StripeResponseBody;
   return { ok: response.ok, status: response.status, body };
 }
-async function stripeFormConnectedRequest(env, path, form, stripeAccountId, method = 'POST') {
+
+export async function stripeFormConnectedRequest(
+  env: StripeRequestEnv,
+  path: string,
+  form: BodyInit | null,
+  stripeAccountId: string,
+  method = 'POST'
+): Promise<StripeApiResponse> {
   if (!env.STRIPE_SECRET_KEY) {
     return { ok: false, status: 500, body: { error: { message: 'STRIPE_SECRET_KEY is not configured' } } };
   }
-  const headers = {
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
     'Content-Type': 'application/x-www-form-urlencoded',
   };
   if (stripeAccountId) headers['Stripe-Account'] = stripeAccountId;
   const response = await fetch(`https://api.stripe.com${path}`, { method, headers, body: form });
-  const body = await response.json();
+  const body = (await response.json()) as StripeResponseBody;
   return { ok: response.ok, status: response.status, body };
 }
-function stripeAccountStatus(account = {}) {
+
+export function stripeAccountStatus(account: StripeAccountReadiness = {}) {
   if (account.payouts_enabled) return 'payouts_enabled';
   if (account.charges_enabled) return 'charges_enabled';
   if (account.requirements?.disabled_reason) return 'restricted';
   if (account.details_submitted) return 'onboarding';
   return 'invited';
 }
-function stripeReady(registration = {}) {
-  return ['charges_enabled', 'payouts_enabled'].includes(registration.stripeAccountStatus);
+
+export function stripeReady(registration: { stripeAccountStatus?: string | null } = {}) {
+  return ['charges_enabled', 'payouts_enabled'].includes(registration.stripeAccountStatus as string);
 }
-function normalizedCheckoutPaymentStatus(session = {}, fallback = 'pending') {
+
+export function normalizedCheckoutPaymentStatus(session: StripeCheckoutSession = {}, fallback = 'pending') {
   if (session.payment_status === 'paid') return 'paid';
   if (session.status === 'expired') return session.payment_status || 'unpaid';
   return session.payment_status || fallback || 'pending';
 }
-function checkoutPaymentIntentId(session = {}) {
+
+export function checkoutPaymentIntentId(session: StripeCheckoutSession = {}) {
   return typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || '';
 }
-function stripeObjectId(value) {
+
+export function stripeObjectId(value: StripeObjectReference): string {
   if (!value) return '';
   if (typeof value === 'string') return value;
   return value.id || '';
 }
-function booleanFromStripeMetadata(value, fallback = false) {
+
+export function booleanFromStripeMetadata(value: unknown, fallback: unknown = false): boolean {
   if (typeof value === 'boolean') return value;
   const normalized = String(value || '')
     .trim()
@@ -87,12 +157,14 @@ function booleanFromStripeMetadata(value, fallback = false) {
   if (['false', '0', 'no', 'off'].includes(normalized)) return false;
   return Boolean(fallback);
 }
-function startOfYearUnix(date = /* @__PURE__ */ new Date()) {
-  return Math.floor(Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0) / 1e3);
+
+function startOfYearUnix(date = new Date()) {
+  return Math.floor(Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0) / 1000);
 }
-async function listYtdStripeCharges(env, stripeAccountId) {
-  const charges = [];
-  let startingAfter = '';
+
+export async function listYtdStripeCharges(env: StripeRequestEnv, stripeAccountId: string) {
+  const charges: StripeCharge[] = [];
+  let startingAfter: string | undefined = '';
   let pages = 0;
   do {
     const params = new URLSearchParams({
@@ -103,7 +175,7 @@ async function listYtdStripeCharges(env, stripeAccountId) {
     if (startingAfter) params.set('starting_after', startingAfter);
     const result = await stripeGetConnectedRequest(env, `/v1/charges?${params.toString()}`, stripeAccountId);
     if (!result.ok) return result;
-    const data = Array.isArray(result.body.data) ? result.body.data : [];
+    const data: StripeCharge[] = Array.isArray(result.body.data) ? result.body.data : [];
     charges.push(...data);
     startingAfter = data.length ? data[data.length - 1].id : '';
     pages += 1;
@@ -111,8 +183,9 @@ async function listYtdStripeCharges(env, stripeAccountId) {
   } while (true);
   return { ok: true, body: { data: charges } };
 }
-function summarizeCharges(charges) {
-  const now = /* @__PURE__ */ new Date();
+
+export function summarizeCharges(charges: readonly StripeCharge[]) {
+  const now = new Date();
   const year = now.getUTCFullYear();
   const monthly = Array.from({ length: 12 }, (_, index) => ({
     month: index + 1,
@@ -122,7 +195,7 @@ function summarizeCharges(charges) {
     grossGiftCents: 0,
     giftCount: 0,
   }));
-  const givers = /* @__PURE__ */ new Set();
+  const givers = new Set();
   let ytdCents = 0;
   let grossGiftCents = 0;
   let donorCoveredFeeCents = 0;
@@ -133,7 +206,7 @@ function summarizeCharges(charges) {
   for (const charge of charges) {
     if (charge.status !== 'succeeded' || charge.paid === false) continue;
     if (classifyStripeCharge(charge).paymentClass !== 'qualifying_donation') continue;
-    const created = new Date((charge.created || 0) * 1e3);
+    const created = new Date(((charge.created || 0) as number) * 1000);
     if (created.getUTCFullYear() !== year) continue;
     const chargeCents = numericCents(charge.amount_captured || charge.amount);
     const refundedCents = numericCents(charge.amount_refunded);
@@ -189,18 +262,3 @@ function summarizeCharges(charges) {
     monthly,
   };
 }
-export {
-  booleanFromStripeMetadata,
-  checkoutPaymentIntentId,
-  listYtdStripeCharges,
-  normalizedCheckoutPaymentStatus,
-  numericCents2 as numericCents,
-  stripeAccountStatus,
-  stripeFormConnectedRequest,
-  stripeFormRequest,
-  stripeGetConnectedRequest,
-  stripeGetRequest,
-  stripeObjectId,
-  stripeReady,
-  summarizeCharges,
-};

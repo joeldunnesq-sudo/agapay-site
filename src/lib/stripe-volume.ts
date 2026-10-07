@@ -1,16 +1,39 @@
-// Generated from src/lib/stripe-volume.ts by npm run build:server. Do not edit.
+import type { StripeCharge, StripeRequestEnv } from './stripe-connect.js';
+export type StripeVolumeEnv = Partial<Env> & StripeRequestEnv;
+export type StripeVolumeCharge = StripeCharge;
+export interface StripeVolumeScanRow {
+  status?: string | null;
+  starting_after?: string | null;
+  scanned_count?: number | string | null;
+  pass_started_at?: string | null;
+  last_completed_at?: string | null;
+  last_error?: string | null;
+  updated_at?: string | null;
+}
+export interface StripeVolumeAggregateRow {
+  payment_class: string;
+  payment_count?: unknown;
+  gross_cents?: unknown;
+  refunded_cents?: unknown;
+  net_cents?: unknown;
+}
+export interface StripeVolumeBucket {
+  paymentCount: number;
+  grossCents: number;
+  refundedCents: number;
+  netCents: number;
+}
 import { d1All, d1Batch, d1First, d1Run } from './core.js';
 import { stripeGetConnectedRequest } from './stripe-connect.js';
 import { classifyStripeCharge, STRIPE_PAYMENT_CLASSES } from './payment-classification.js';
-import {
-  classifyStripeCharge as classifyStripeCharge2,
-  STRIPE_PAYMENT_CLASSES as STRIPE_PAYMENT_CLASSES2,
-} from './payment-classification.js';
-function cents(value) {
+export { classifyStripeCharge, STRIPE_PAYMENT_CLASSES } from './payment-classification.js';
+
+function cents(value: unknown): number {
   const number = Number(value);
   return Number.isFinite(number) ? Math.max(0, Math.round(number)) : 0;
 }
-function stripeChargeVolumeRecord(parishId, stripeAccountId, charge = {}) {
+
+export function stripeChargeVolumeRecord(parishId: string, stripeAccountId: string, charge: StripeVolumeCharge = {}) {
   const classification = classifyStripeCharge(charge);
   const grossCents = cents(charge.amount_captured || charge.amount);
   const refundedCents = Math.min(grossCents, cents(charge.amount_refunded));
@@ -25,9 +48,10 @@ function stripeChargeVolumeRecord(parishId, stripeAccountId, charge = {}) {
     refundedCents,
     netCents: Math.max(0, grossCents - refundedCents),
     chargeStatus: String(charge.status || (charge.paid === false ? 'failed' : 'succeeded')),
-    occurredAt: new Date((Number(charge.created) || Math.floor(Date.now() / 1e3)) * 1e3).toISOString(),
+    occurredAt: new Date((Number(charge.created) || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
   };
 }
+
 const UPSERT_VOLUME_SQL = `
   INSERT INTO stripe_payment_volume_records
     (stripe_account_id, stripe_charge_id, parish_id, payment_class, classification_source,
@@ -45,10 +69,16 @@ const UPSERT_VOLUME_SQL = `
     occurred_at = excluded.occurred_at,
     updated_at = excluded.updated_at
 `;
-async function upsertStripeChargeVolumeRecord(env, parishId, stripeAccountId, charge) {
+
+export async function upsertStripeChargeVolumeRecord(
+  env: StripeVolumeEnv,
+  parishId: string,
+  stripeAccountId: string,
+  charge: StripeVolumeCharge | null | undefined
+) {
   if (!parishId || !stripeAccountId || !charge?.id) return null;
-  const record = stripeChargeVolumeRecord(parishId, stripeAccountId, charge);
-  const now = /* @__PURE__ */ new Date().toISOString();
+  const record = stripeChargeVolumeRecord(parishId, stripeAccountId, charge!);
+  const now = new Date().toISOString();
   return d1Run(
     env,
     UPSERT_VOLUME_SQL,
@@ -66,12 +96,18 @@ async function upsertStripeChargeVolumeRecord(env, parishId, stripeAccountId, ch
     now
   );
 }
-async function upsertChargePage(env, parishId, stripeAccountId, charges) {
-  const now = /* @__PURE__ */ new Date().toISOString();
+
+async function upsertChargePage(
+  env: StripeVolumeEnv,
+  parishId: string,
+  stripeAccountId: string,
+  charges: (StripeVolumeCharge | null)[]
+) {
+  const now = new Date().toISOString();
   const statements = charges
     .filter((charge) => charge?.id)
     .map((charge) => {
-      const record = stripeChargeVolumeRecord(parishId, stripeAccountId, charge);
+      const record = stripeChargeVolumeRecord(parishId, stripeAccountId, charge!);
       return {
         sql: UPSERT_VOLUME_SQL,
         params: [
@@ -92,13 +128,20 @@ async function upsertChargePage(env, parishId, stripeAccountId, charges) {
     });
   if (statements.length) await d1Batch(env, statements);
 }
-function startOfCurrentYearIso(date = /* @__PURE__ */ new Date()) {
+
+export function startOfCurrentYearIso(date = new Date()) {
   return new Date(Date.UTC(date.getUTCFullYear(), 0, 1)).toISOString();
 }
-async function refreshStripeVolume(env, parishId, stripeAccountId, { maxPages = 5 } = {}) {
+
+export async function refreshStripeVolume(
+  env: StripeVolumeEnv,
+  parishId: string,
+  stripeAccountId: string,
+  { maxPages = 5 } = {}
+) {
   const periodStart = startOfCurrentYearIso();
-  const now = /* @__PURE__ */ new Date().toISOString();
-  const existing = await d1First(
+  const now = new Date().toISOString();
+  const existing = await d1First<StripeVolumeScanRow>(
     env,
     `SELECT * FROM stripe_payment_volume_scans WHERE parish_id = ? AND period_start = ?`,
     parishId,
@@ -108,18 +151,19 @@ async function refreshStripeVolume(env, parishId, stripeAccountId, { maxPages = 
   let scannedCount = existing?.status === 'in_progress' ? Number(existing.scanned_count || 0) : 0;
   const passStartedAt = existing?.status === 'in_progress' ? existing.pass_started_at : now;
   let hasMore = false;
+
   try {
     for (let page = 0; page < maxPages; page += 1) {
       const params = new URLSearchParams({
         limit: '100',
-        'created[gte]': String(Math.floor(new Date(periodStart).getTime() / 1e3)),
+        'created[gte]': String(Math.floor(new Date(periodStart).getTime() / 1000)),
       });
       params.append('expand[]', 'data.payment_intent');
       params.append('expand[]', 'data.invoice');
       if (cursor) params.set('starting_after', cursor);
       const result = await stripeGetConnectedRequest(env, `/v1/charges?${params}`, stripeAccountId);
       if (!result.ok) throw new Error(result.body?.error?.message || 'Stripe charge scan failed');
-      const charges = Array.isArray(result.body?.data) ? result.body.data : [];
+      const charges: (StripeVolumeCharge | null)[] = Array.isArray(result.body?.data) ? result.body.data : [];
       await upsertChargePage(env, parishId, stripeAccountId, charges);
       scannedCount += charges.length;
       cursor = charges.at(-1)?.id || '';
@@ -179,14 +223,19 @@ async function refreshStripeVolume(env, parishId, stripeAccountId, { maxPages = 
       cursor,
       scannedCount,
       passStartedAt,
-      error.message,
+      (error as Error).message,
       now
     );
     throw error;
   }
 }
-async function summarizeStoredStripeVolume(env, parishId, periodStart = startOfCurrentYearIso()) {
-  const rows = await d1All(
+
+export async function summarizeStoredStripeVolume(
+  env: StripeVolumeEnv,
+  parishId: string,
+  periodStart = startOfCurrentYearIso()
+) {
+  const rows = await d1All<StripeVolumeAggregateRow>(
     env,
     `
     SELECT payment_class,
@@ -201,7 +250,7 @@ async function summarizeStoredStripeVolume(env, parishId, periodStart = startOfC
     parishId,
     periodStart
   );
-  const scan = await d1First(
+  const scan = await d1First<StripeVolumeScanRow>(
     env,
     `SELECT status, scanned_count, pass_started_at, last_completed_at, last_error, updated_at
        FROM stripe_payment_volume_scans WHERE parish_id = ? AND period_start = ?`,
@@ -210,8 +259,13 @@ async function summarizeStoredStripeVolume(env, parishId, periodStart = startOfC
   );
   return summarizeStripeVolumeRows(rows, scan, periodStart);
 }
-function summarizeStripeVolumeRows(rows = [], scan = null, periodStart = startOfCurrentYearIso()) {
-  const byClass = Object.fromEntries(
+
+export function summarizeStripeVolumeRows(
+  rows: StripeVolumeAggregateRow[] | null = [],
+  scan: StripeVolumeScanRow | null = null,
+  periodStart = startOfCurrentYearIso()
+) {
+  const byClass: Record<string, StripeVolumeBucket> = Object.fromEntries(
     STRIPE_PAYMENT_CLASSES.map((paymentClass) => [
       paymentClass,
       { paymentCount: 0, grossCents: 0, refundedCents: 0, netCents: 0 },
@@ -227,7 +281,7 @@ function summarizeStripeVolumeRows(rows = [], scan = null, periodStart = startOf
   const donation = byClass.qualifying_donation;
   const totalNetCents = Object.values(byClass).reduce((sum, bucket) => sum + bucket.netCents, 0);
   const totalPaymentCount = Object.values(byClass).reduce((sum, bucket) => sum + bucket.paymentCount, 0);
-  const donationPercent = totalNetCents ? Math.round((donation.netCents / totalNetCents) * 1e4) / 100 : 0;
+  const donationPercent = totalNetCents ? Math.round((donation.netCents / totalNetCents) * 10_000) / 100 : 0;
   const complete = scan?.status === 'complete' || Boolean(scan?.last_completed_at);
   return {
     periodStart,
@@ -255,13 +309,3 @@ function summarizeStripeVolumeRows(rows = [], scan = null, periodStart = startOf
     byClass,
   };
 }
-export {
-  STRIPE_PAYMENT_CLASSES2 as STRIPE_PAYMENT_CLASSES,
-  classifyStripeCharge2 as classifyStripeCharge,
-  refreshStripeVolume,
-  startOfCurrentYearIso,
-  stripeChargeVolumeRecord,
-  summarizeStoredStripeVolume,
-  summarizeStripeVolumeRows,
-  upsertStripeChargeVolumeRecord,
-};

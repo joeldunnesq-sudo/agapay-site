@@ -8,6 +8,8 @@ export const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 // Authoritative sources. Runtime consumers retain the adjacent .js import paths.
 export const serverTypeScriptSources = Object.freeze([
+  'src/lib/stripe-connect.ts',
+  'src/lib/stripe-volume.ts',
   'src/lib/stewardship-funds.ts',
   'src/lib/payment-fees.ts',
   'src/lib/stripe-fees.ts',

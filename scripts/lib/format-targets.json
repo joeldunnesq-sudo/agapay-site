@@ -256,7 +256,10 @@
     "scripts/giving-catalog-staging-smoke-tests.mjs",
     "scripts/parish-giving-catalog-staging-smoke.mjs",
     ".github/workflows/parish-giving-reports-staging-smoke.yml",
-    ".github/workflows/accounting-release-gates.yml"
+    ".github/workflows/accounting-release-gates.yml",
+    "src/lib/stripe-connect.js",
+    "src/lib/stripe-volume.js",
+    "scripts/stripe-volume-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -546,6 +549,9 @@
     "scripts/giving-catalog-staging-smoke-tests.mjs",
     "scripts/parish-giving-catalog-staging-smoke.mjs",
     ".github/workflows/parish-giving-reports-staging-smoke.yml",
-    ".github/workflows/accounting-release-gates.yml"
+    ".github/workflows/accounting-release-gates.yml",
+    "src/lib/stripe-connect.js",
+    "src/lib/stripe-volume.js",
+    "scripts/stripe-volume-typescript-tests.mjs"
   ]
 }
