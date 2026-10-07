@@ -219,7 +219,16 @@
     "public/parish/features/giving/weekly-funds.js",
     "scripts/parish-weekly-funds-typescript-browser-tests.mjs",
     "public/parish/features/giving/history.js",
-    "scripts/parish-history-typescript-browser-tests.mjs"
+    "scripts/parish-history-typescript-browser-tests.mjs",
+    "public/parish/features/giving/commemorations.js",
+    "scripts/parish-commemorations-typescript-browser-tests.mjs",
+    "public/parish/features/giving/givers.js",
+    "scripts/parish-givers-typescript-browser-tests.mjs",
+    "public/parish/features/giving/statements.js",
+    "scripts/parish-statements-typescript-tests.mjs",
+    "public/parish/features/giving/sharing.js",
+    "public/parish/features/giving/embed-theme.js",
+    "scripts/parish-sharing-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -472,6 +481,15 @@
     "public/parish/features/giving/weekly-funds.js",
     "scripts/parish-weekly-funds-typescript-browser-tests.mjs",
     "public/parish/features/giving/history.js",
-    "scripts/parish-history-typescript-browser-tests.mjs"
+    "scripts/parish-history-typescript-browser-tests.mjs",
+    "public/parish/features/giving/commemorations.js",
+    "scripts/parish-commemorations-typescript-browser-tests.mjs",
+    "public/parish/features/giving/givers.js",
+    "scripts/parish-givers-typescript-browser-tests.mjs",
+    "public/parish/features/giving/statements.js",
+    "scripts/parish-statements-typescript-tests.mjs",
+    "public/parish/features/giving/sharing.js",
+    "public/parish/features/giving/embed-theme.js",
+    "scripts/parish-sharing-typescript-tests.mjs"
   ]
 }

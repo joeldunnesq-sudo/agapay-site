@@ -1,13 +1,33 @@
-// Generated from src/browser/parish/features/giving/givers.ts by npm run build:browser. Do not edit.
 'use strict';
-let pdxGiversSort = 'amount';
-async function exportGiversMonthlyCsv(event) {
+
+interface ParishGiverSummary {
+  name: string;
+  email: string;
+  giftCount: number;
+  totalCents: number;
+  recurring: boolean;
+  lastGiftAt: string;
+  firstGiftAt: string;
+  outsideCount?: number;
+}
+interface Window {
+  pdxGiversAll?: ParishGiverSummary[];
+}
+type ParishGiverSort = 'amount' | 'name' | 'recency' | 'gifts';
+declare function checkNudgeEligibility(): void;
+
+// Giving givers; read shared identity and catalog state only when actions run.
+
+let pdxGiversSort: ParishGiverSort = 'amount';
+
+async function exportGiversMonthlyCsv(event: SubmitEvent): Promise<void> {
   event.preventDefault();
   if (!currentParish?.parishId) return;
-  const month = document.getElementById('givingExportMonth')?.value;
-  const groupBy = document.getElementById('givingExportGroup')?.value || 'date';
-  const status = document.getElementById('givingExportStatus');
-  const button = event.submitter || event.currentTarget.querySelector('button[type="submit"]');
+  const month = (document.getElementById('givingExportMonth') as HTMLInputElement | null)?.value;
+  const groupBy = (document.getElementById('givingExportGroup') as HTMLSelectElement | null)?.value || 'date';
+  const status = document.getElementById('givingExportStatus')!;
+  const button = (event.submitter ||
+    (event.currentTarget as HTMLFormElement).querySelector('button[type="submit"]')) as HTMLButtonElement;
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month || '')) {
     status.textContent = 'Choose a giving month first.';
     return;
@@ -16,13 +36,13 @@ async function exportGiversMonthlyCsv(event) {
   button.classList.add('loading');
   status.textContent = 'Preparing your complete monthly export…';
   try {
-    const query = new URLSearchParams({ format: 'csv', month, groupBy });
+    const query = new URLSearchParams({ format: 'csv', month: month!, groupBy });
     const response = await fetch(
       '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/giving-history?' + query,
       { headers: authHeaders() }
     );
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = (await response.json().catch(() => ({}))) as { readonly error?: string };
       throw new Error(error.error || 'Unable to export giving. Please try again.');
     }
     if (!response.headers.get('Content-Type')?.includes('text/csv'))
@@ -36,33 +56,36 @@ async function exportGiversMonthlyCsv(event) {
       ? `Exported ${rows} transaction${rows === 1 ? '' : 's'} for ${month}, grouped by ${groupBy === 'giver' ? 'giver' : 'giving date'}.`
       : `No recorded gifts for ${month}. Downloaded a CSV with column headers.`;
   } catch (error) {
-    status.textContent = error.message;
+    status.textContent = (error as Error).message;
   } finally {
     button.disabled = false;
     button.classList.remove('loading');
   }
 }
-function setGiversSort(mode, btn) {
+
+function setGiversSort(mode: ParishGiverSort, btn?: HTMLButtonElement | null): void {
   pdxGiversSort = mode;
   if (btn) {
-    btn.parentElement.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+    btn.parentElement!.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
   }
   renderGiversDirectory();
 }
-function scrollToGiverDirectory() {
+
+function scrollToGiverDirectory(): void {
   const el = document.getElementById('pdxGvDirectorySection');
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-function renderGiversPanel() {
-  const exportMonth = document.getElementById('givingExportMonth');
+
+function renderGiversPanel(): void {
+  const exportMonth = document.getElementById('givingExportMonth') as HTMLInputElement | null;
   if (exportMonth && !exportMonth.value) {
-    const previousMonth = /* @__PURE__ */ new Date();
+    const previousMonth = new Date();
     previousMonth.setDate(1);
     previousMonth.setMonth(previousMonth.getMonth() - 1);
     exportMonth.value = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
   }
-  const groups = /* @__PURE__ */ new Map();
+  const groups = new Map<string, ParishGiverSummary>();
   allGifts.forEach((gift) => {
     const key =
       gift.giverKey ||
@@ -80,7 +103,8 @@ function renderGiversPanel() {
     existing.outsideCount = (existing.outsideCount || 0) + (gift.source === 'outside' ? 1 : 0);
     existing.totalCents += Number((gift.giftAmountCents ?? gift.amountCents) || 0);
     existing.recurring = existing.recurring || Boolean(gift.recurring);
-    const date = gift.date || gift.createdAt || '';
+    // The directory assumes API ISO date strings; preserve its lexical comparisons.
+    const date = (gift.date || gift.createdAt || '') as string;
     if (date) {
       if (!existing.lastGiftAt || date > existing.lastGiftAt) existing.lastGiftAt = date;
       if (!existing.firstGiftAt || date < existing.firstGiftAt) existing.firstGiftAt = date;
@@ -89,6 +113,7 @@ function renderGiversPanel() {
   });
   const givers = Array.from(groups.values()).sort((a, b) => b.totalCents - a.totalCents);
   window.pdxGiversAll = givers;
+
   const total = givers.reduce((sum, g) => sum + g.totalCents, 0);
   const recurring = givers.filter((g) => g.recurring).length;
   const last = givers
@@ -96,15 +121,25 @@ function renderGiversPanel() {
     .filter(Boolean)
     .sort()
     .pop();
+
+  // Median gift (across all gifts, not per-donor)
   const amounts = allGifts
     .map((g) => Number((g.giftAmountCents ?? g.amountCents) || 0))
     .filter((a) => a > 0)
     .sort((a, b) => a - b);
   const median = amounts.length ? amounts[Math.floor(amounts.length / 2)] : 0;
-  const now = /* @__PURE__ */ new Date();
+
+  // "New this month" = donors whose first gift was in the current month
+  const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const newThisMonth = givers.filter((g) => g.firstGiftAt && g.firstGiftAt >= monthStart).length;
-  const setCount = (id, val, opts = {}) => {
+
+  // KPIs — use the shared count-up helper if available
+  const setCount = (
+    id: string,
+    val: number,
+    opts: { readonly money?: boolean; readonly duration?: number } = {}
+  ): void => {
     const el = document.getElementById(id);
     if (!el) return;
     if (typeof pdxAnimateCount === 'function') pdxAnimateCount(el, val, opts);
@@ -114,6 +149,7 @@ function renderGiversPanel() {
   setCount('giverStatTotal', total, { money: true });
   setCount('pdxGvKpiMedian', median, { money: true });
   setCount('giverStatRecurring', recurring);
+
   const countMeta = document.getElementById('pdxGvKpiCountMeta');
   if (countMeta)
     countMeta.innerHTML =
@@ -128,8 +164,12 @@ function renderGiversPanel() {
     const pct = givers.length ? Math.round((recurring / givers.length) * 100) : 0;
     recurringMeta.innerHTML = `<span style="opacity:0.7;">${pct}% of households</span>`;
   }
+
+  // Legacy hidden binding for "last gift" (still referenced elsewhere in app.js)
   const legacyLast = document.getElementById('giverStatLast');
   if (legacyLast) legacyLast.textContent = shortDate(last);
+
+  // Hero: title with count, mini-donut ratio
   const heroTitle = document.getElementById('pdxGvTitle');
   if (heroTitle)
     heroTitle.innerHTML = givers.length
@@ -142,15 +182,17 @@ function renderGiversPanel() {
   if (donutPct) donutPct.textContent = `${Math.round(ratio * 100)}%`;
   if (donutSub) donutSub.textContent = `${recurring} of ${givers.length} household${givers.length === 1 ? '' : 's'}`;
   if (donut) {
-    const C = 2 * Math.PI * 82;
-    donut.setAttribute('stroke-dasharray', C);
-    donut.setAttribute('stroke-dashoffset', C);
+    const C = 2 * Math.PI * 82; // ≈ 515
+    donut.setAttribute('stroke-dasharray', C as unknown as string);
+    donut.setAttribute('stroke-dashoffset', C as unknown as string);
     requestAnimationFrame(() =>
       setTimeout(() => {
         donut.style.strokeDashoffset = String(C * (1 - ratio));
       }, 300)
     );
   }
+
+  // Leaderboard: top 6
   const lbEl = document.getElementById('pdxGvLeaderboard');
   if (lbEl) {
     const topSix = givers.slice(0, 6);
@@ -171,14 +213,16 @@ function renderGiversPanel() {
           .join('')}</div>`
       : '<div class="pdx-recurring-empty">No paid gifts have been recorded yet.</div>';
   }
+
+  // Nudge list: recurring donors whose last gift is > 30 days old
   const nudgeEl = document.getElementById('pdxGvNudgeList');
   if (nudgeEl) {
-    const dayMs = 864e5;
+    const dayMs = 86400000;
     const nudgeCandidates = givers
       .filter((g) => g.recurring && g.lastGiftAt)
       .map((g) => ({
         ...g,
-        daysQuiet: Math.floor((now - new Date(g.lastGiftAt)) / dayMs),
+        daysQuiet: Math.floor(((now as unknown as number) - (new Date(g.lastGiftAt) as unknown as number)) / dayMs),
       }))
       .filter((g) => g.daysQuiet >= 30)
       .sort((a, b) => b.daysQuiet - a.daysQuiet)
@@ -208,11 +252,13 @@ function renderGiversPanel() {
         .join('')}</div>`;
     }
   }
+
   renderGiversDirectory();
   populateGivingStatementsPanel();
   checkNudgeEligibility();
 }
-function renderGiversDirectory() {
+
+function renderGiversDirectory(): void {
   const pane = document.getElementById('giversPane');
   if (!pane) return;
   const all = Array.isArray(window.pdxGiversAll) ? window.pdxGiversAll : [];
@@ -220,7 +266,9 @@ function renderGiversDirectory() {
     pane.innerHTML = '<div class="pdx-gv-dir-empty">No paid gifts have been recorded yet.</div>';
     return;
   }
-  const search = (document.getElementById('pdxGvSearch')?.value || '').trim().toLowerCase();
+  const search = ((document.getElementById('pdxGvSearch') as HTMLInputElement | null)?.value || '')
+    .trim()
+    .toLowerCase();
   const filtered = search
     ? all.filter((g) => (g.name || '').toLowerCase().includes(search) || (g.email || '').toLowerCase().includes(search))
     : all.slice();

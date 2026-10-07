@@ -1,11 +1,42 @@
-// Generated from src/browser/parish/features/giving/statements.ts by npm run build:browser. Do not edit.
 'use strict';
+
+// Describes existing response shapes without changing validation or job behavior.
+interface ParishStatementError {
+  readonly error?: string;
+}
+interface ParishStatementStartResponse extends ParishStatementError {
+  readonly jobId: string;
+  readonly totalDonors: number;
+}
+interface ParishStatementProgress extends ParishStatementError {
+  readonly status: string;
+  readonly processedDonors: number;
+  readonly totalDonors: number;
+  readonly sentCount: number;
+  readonly failedCount: number;
+}
+interface ParishStatementHistoryRow {
+  readonly fiscalYear?: unknown;
+  readonly status?: unknown;
+  readonly sentCount?: unknown;
+  readonly totalDonors?: unknown;
+  readonly failedCount?: unknown;
+  readonly createdAt?: string | number | Date | null;
+}
+interface ParishStatementHistoryResponse extends ParishStatementError {
+  readonly jobs?: readonly ParishStatementHistoryRow[] | null;
+}
+
+// Giving statements; read shared identity and catalog state only when actions run.
+
+// ── ANNUAL GIVING STATEMENTS ───────────────────────────────
 let gsJobHistoryLoaded = false;
-function populateGivingStatementsPanel() {
+
+function populateGivingStatementsPanel(): void {
   if (!currentParish?.entitlements?.givingFeatures?.annualStatements) return;
   const yearSel = document.getElementById('gsFiscalYear');
   if (yearSel && !yearSel.dataset.populated) {
-    const nowYear = /* @__PURE__ */ new Date().getFullYear();
+    const nowYear = new Date().getFullYear();
     const years = [nowYear - 1, nowYear, nowYear - 2, nowYear - 3];
     yearSel.innerHTML = years.map((y, i) => `<option value="${y}" ${i === 0 ? 'selected' : ''}>${y}</option>`).join('');
     yearSel.dataset.populated = '1';
@@ -27,13 +58,14 @@ function populateGivingStatementsPanel() {
     loadGivingStatementJobHistory();
   }
 }
-async function previewGivingStatement(btn) {
+
+async function previewGivingStatement(btn?: HTMLButtonElement | null): Promise<void> {
   if (!currentParish) {
     setStatus('Load a parish first.', 'error');
     return;
   }
-  const fiscalYear = document.getElementById('gsFiscalYear')?.value;
-  const donorEmail = document.getElementById('gsPreviewDonor')?.value;
+  const fiscalYear = (document.getElementById('gsFiscalYear') as HTMLSelectElement | null)?.value;
+  const donorEmail = (document.getElementById('gsPreviewDonor') as HTMLSelectElement | null)?.value;
   if (!fiscalYear || !donorEmail) {
     setStatus('Choose a tax year and donor to preview.', 'error');
     return;
@@ -52,15 +84,15 @@ async function previewGivingStatement(btn) {
       }
     );
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      const data = (await res.json().catch(() => ({}))) as ParishStatementError;
       throw new Error(data.error || 'Unable to generate preview.');
     }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(url), 6e4);
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   } catch (err) {
-    setStatus(err.message, 'error');
+    setStatus((err as Error).message, 'error');
   } finally {
     if (btn) {
       btn.classList.remove('loading');
@@ -68,12 +100,13 @@ async function previewGivingStatement(btn) {
     }
   }
 }
-async function startGivingStatementJob(btn) {
+
+async function startGivingStatementJob(btn?: HTMLButtonElement | null): Promise<void> {
   if (!currentParish) {
     setStatus('Load a parish first.', 'error');
     return;
   }
-  const fiscalYear = document.getElementById('gsFiscalYear')?.value;
+  const fiscalYear = (document.getElementById('gsFiscalYear') as HTMLSelectElement | null)?.value;
   if (!fiscalYear) {
     setStatus('Choose a tax year first.', 'error');
     return;
@@ -93,14 +126,14 @@ async function startGivingStatementJob(btn) {
         body: JSON.stringify({ fiscalYear: Number(fiscalYear) }),
       }
     );
-    const data = await res.json();
+    const data = (await res.json()) as ParishStatementStartResponse;
     if (!res.ok) throw new Error(data.error || 'Unable to start the giving-statement batch.');
     setStatus(`Started generating statements for ${data.totalDonors} donor(s).`, 'success');
     const progress = document.getElementById('gsJobProgress');
     if (progress) progress.hidden = false;
     pollGivingStatementJob(data.jobId);
   } catch (err) {
-    setStatus(err.message, 'error');
+    setStatus((err as Error).message, 'error');
   } finally {
     if (btn) {
       btn.classList.remove('loading');
@@ -108,7 +141,8 @@ async function startGivingStatementJob(btn) {
     }
   }
 }
-async function pollGivingStatementJob(jobId) {
+
+async function pollGivingStatementJob(jobId: string): Promise<void> {
   if (!currentParish) return;
   const textEl = document.getElementById('gsJobProgressText');
   try {
@@ -119,26 +153,27 @@ async function pollGivingStatementJob(jobId) {
         encodeURIComponent(jobId),
       { headers: authHeaders() }
     );
-    const data = await res.json();
+    const data = (await res.json()) as ParishStatementProgress;
     if (!res.ok) throw new Error(data.error || 'Unable to check batch status.');
     if (textEl) {
       textEl.textContent = `${data.status.replace(/_/g, ' ')} — ${data.processedDonors}/${data.totalDonors} processed (${data.sentCount} sent, ${data.failedCount} failed)`;
     }
     if (data.status === 'pending' || data.status === 'running') {
-      setTimeout(() => pollGivingStatementJob(jobId), 3e3);
+      setTimeout(() => pollGivingStatementJob(jobId), 3000);
     } else {
       const progress = document.getElementById('gsJobProgress');
       if (progress)
         setTimeout(() => {
           progress.hidden = true;
-        }, 8e3);
+        }, 8000);
       loadGivingStatementJobHistory();
     }
   } catch (err) {
-    if (textEl) textEl.textContent = err.message;
+    if (textEl) textEl.textContent = (err as Error).message;
   }
 }
-async function loadGivingStatementJobHistory() {
+
+async function loadGivingStatementJobHistory(): Promise<void> {
   if (!currentParish) return;
   const wrap = document.getElementById('gsJobHistory');
   if (!wrap) return;
@@ -147,7 +182,7 @@ async function loadGivingStatementJobHistory() {
       '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/giving-statements/jobs',
       { headers: authHeaders() }
     );
-    const data = await res.json();
+    const data = (await res.json()) as ParishStatementHistoryResponse;
     if (!res.ok) throw new Error(data.error || 'Unable to load batch history.');
     const jobs = data.jobs || [];
     if (!jobs.length) {
@@ -167,6 +202,6 @@ async function loadGivingStatementJobHistory() {
       )
       .join('')}</tbody></table>`;
   } catch (err) {
-    wrap.innerHTML = `<div class="pdx-recurring-empty">${escapeHtml(err.message)}</div>`;
+    wrap.innerHTML = `<div class="pdx-recurring-empty">${escapeHtml((err as Error).message)}</div>`;
   }
 }
