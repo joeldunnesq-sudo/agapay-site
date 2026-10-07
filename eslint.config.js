@@ -90,6 +90,7 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/parish-reconciliation-reports-typescript-tests.mjs',
       'scripts/parish-sharing-typescript-tests.mjs',
       'scripts/parish-statements-typescript-tests.mjs',
       'scripts/typecheck.mjs',
@@ -423,6 +424,47 @@ export default [
       'no-unused-vars': [
         'error',
         { varsIgnorePattern: '^(renderFundTransferWorksheet|collectFundTransferInstructions)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/reconciliation-reports.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderReconciliationAllocations|setReconcileAllocView|renderReconciliationGiftActivity|renderReconciliationPayouts|renderReconciliationExceptions|exportReconciliationCsv|printFundTransferWorksheet|printReconciliationReport|renderReconciliationReviewHistory)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/reconciliation-reports.js'],
+    languageOptions: {
+      globals: {
+        reconciliationData: 'readonly',
+        escapeHtml: 'readonly',
+        statusLabel: 'readonly',
+        reconciliationDate: 'readonly',
+        moneyFull: 'readonly',
+        setStatus: 'readonly',
+        collectFundTransferInstructions: 'readonly',
+        currentParish: 'readonly',
+        downloadBlob: 'readonly',
+        reconciliationMonthLabel: 'readonly',
+        fundReportColor: 'readonly',
+      },
+    },
+    rules: {
+      // Compiler escapes closing script tags in printable HTML; source lint remains strict.
+      'no-useless-escape': 'off',
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderReconciliationAllocations|setReconcileAllocView|renderReconciliationGiftActivity|renderReconciliationPayouts|renderReconciliationExceptions|exportReconciliationCsv|printFundTransferWorksheet|printReconciliationReport|renderReconciliationReviewHistory)$',
+        },
       ],
     },
   },

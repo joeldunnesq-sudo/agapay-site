@@ -7,6 +7,7 @@ import { repoRoot } from './browser-composed-source.mjs';
 // references so one content version is used by every consumer.
 // Admin keeps its network-only service-worker policy while using content versions.
 export const pageAssets = Object.freeze([
+  '/parish/features/giving/reconciliation-reports.js',
   '/parish/features/giving/transfers.js',
   '/parish/features/giving/embed-theme.js',
   '/parish/features/giving/sharing.js',

@@ -28,11 +28,6 @@ interface ParishFundTransferWorksheet {
   recommendedTransferCents?: number;
   retainInDepositAccountCents?: number;
 }
-declare let reconciliationData: {
-  transferWorksheet?: ParishFundTransferWorksheet | null;
-  summary?: { depositedCents?: number } | null;
-  closeRecord?: { transferInstructions?: ParishFundTransferInstruction[] } | null;
-} | null;
 
 // Giving transfers; read shared identity and catalog state only when actions run.
 

@@ -1,6 +1,92 @@
-// Generated from src/browser/parish/features/giving/reconciliation-reports.ts by npm run build:browser. Do not edit.
 'use strict';
-function renderReconciliationAllocations(allocations) {
+
+declare function statusLabel(value: unknown): string;
+declare function reconciliationDate(seconds: unknown, timezone?: string): string;
+declare function reconciliationMonthLabel(month?: string): string;
+interface ParishReconciliationAllocation extends ParishFundTransferLine {
+  catalogSource?: string;
+  chargedCents?: number;
+  refundsCents?: number;
+  fundId?: string;
+}
+interface ParishReconciliationTransaction {
+  id?: string;
+  payoutId?: string;
+  payoutStatus?: string;
+  allocationKey?: string;
+  allocationLabel?: string;
+  created?: number;
+  donorName?: string;
+  reportingCategory?: string;
+  matched?: boolean;
+  grossCents?: number;
+  feeCents?: number;
+  netCents?: number;
+}
+interface ParishReconciliationPayout {
+  id?: string;
+  arrivalDate?: number;
+  differenceCents?: number;
+  matchingComplete?: boolean;
+  transactionCount?: number;
+  status?: string;
+  amountCents?: number;
+  matchedNetCents?: number;
+}
+interface ParishReconciliationException {
+  severity?: string;
+  message?: string;
+  payoutId?: string;
+  amountCents?: number;
+}
+interface ParishReconciliationGiftActivity {
+  available?: boolean;
+  complete?: boolean;
+  reason?: string;
+  giftCount?: number;
+  grossGiftCents?: number;
+  parishNetCents?: number;
+  feeCents?: number;
+  estimatedFeeCount?: number;
+}
+interface ParishReconciliationReview {
+  status?: string;
+  updatedAt: string | number;
+  bankConfirmed?: boolean;
+  bankStatementCents?: number;
+  notes?: string;
+  reviewId?: string;
+  closedAt?: string;
+  transferInstructions?: ParishFundTransferInstruction[];
+}
+interface ParishReconciliationSummary {
+  depositedCents?: number;
+  matchedNetCents?: number;
+  unmatchedCount?: number;
+  grossActivityCents?: number;
+  totalFeeCents?: number;
+}
+interface ParishReconciliationReport {
+  available?: boolean;
+  complete?: boolean;
+  state?: string;
+  period: { month: string; timezone?: string };
+  generatedAt?: string | number;
+  fingerprint?: string;
+  stripeAccountId?: string;
+  allocations?: ParishReconciliationAllocation[];
+  transactions?: ParishReconciliationTransaction[];
+  payouts?: ParishReconciliationPayout[];
+  exceptions?: ParishReconciliationException[];
+  transferWorksheet?: ParishFundTransferWorksheet | null;
+  summary?: ParishReconciliationSummary | null;
+  closeRecord?: ParishReconciliationReview | null;
+}
+declare let reconciliationData: ParishReconciliationReport | null;
+
+// Giving reconciliation-reports; read shared identity and catalog state only when actions run.
+
+function renderReconciliationAllocations(allocations: ParishReconciliationAllocation[]): void {
   const pane = document.getElementById('reconcileAllocationsPane');
   if (!pane) return;
   if (!allocations.length) {
@@ -34,7 +120,8 @@ function renderReconciliationAllocations(allocations) {
         escapeHtml(item.label) +
         '</span><span class="fr-fund-total">' +
         moneyFull(item.netCents) +
-        '</span></summary><div class="fr-fund-detail">' +
+        '</span></summary>' +
+        '<div class="fr-fund-detail">' +
         (item.catalogSource === 'historical_gift'
           ? '<p class="fr-source">Saved gift designation; not in the current Funds &amp; Alms catalog.</p>'
           : '') +
@@ -46,17 +133,21 @@ function renderReconciliationAllocations(allocations) {
         moneyFull(item.refundsCents || 0) +
         '</strong></div></div><div class="fr-table-wrap"><table class="fr-table"><caption class="fr-source">' +
         Number(item.transactionCount || 0) +
-        ' transaction(s) in these payouts · amounts charged include any donor-covered fees</caption><thead><tr><th>Activity date</th><th>Giver / activity</th><th class="fr-number">Gross</th><th class="fr-number">Fees</th><th class="fr-number">Net</th></tr></thead><tbody>' +
+        ' transaction(s) in these payouts · amounts charged include any donor-covered fees</caption>' +
+        '<thead><tr><th>Activity date</th><th>Giver / activity</th><th class="fr-number">Gross</th><th class="fr-number">Fees</th><th class="fr-number">Net</th></tr></thead><tbody>' +
         detail +
         '</tbody></table></div></div></details>'
       );
     })
     .join('');
 }
+
+// Kept for older saved dashboard links; the accessible fund list is now primary.
 function setReconcileAllocView() {
   renderReconciliationAllocations(reconciliationData?.allocations || []);
 }
-function renderReconciliationGiftActivity(activity) {
+
+function renderReconciliationGiftActivity(activity: ParishReconciliationGiftActivity): void {
   const pane = document.getElementById('reconcileGiftActivityPane');
   if (!pane) return;
   if (!activity.available || !activity.complete) {
@@ -85,7 +176,11 @@ function renderReconciliationGiftActivity(activity) {
       </div>
       <p class="fr-source">By gift paid date. Net is before refunds and disputes; ${activity.estimatedFeeCount ? 'includes estimated fees' : 'uses recorded fees'}. Gift totals can differ from payouts and are not current fund balances.</p>`;
 }
-function renderReconciliationPayouts(payouts, transactions) {
+
+function renderReconciliationPayouts(
+  payouts: ParishReconciliationPayout[],
+  transactions: ParishReconciliationTransaction[]
+): void {
   const pane = document.getElementById('reconcilePayoutsPane');
   if (!pane) return;
   if (!payouts.length) {
@@ -96,7 +191,7 @@ function renderReconciliationPayouts(payouts, transactions) {
   pane.innerHTML = `<div class="pdx-rc-payout-list">${payouts
     .map((payout) => {
       const rows = transactions.filter((row) => row.payoutId === payout.id);
-      const arrival = payout.arrivalDate ? new Date(Number(payout.arrivalDate) * 1e3) : null;
+      const arrival = payout.arrivalDate ? new Date(Number(payout.arrivalDate) * 1000) : null;
       const day = arrival ? String(arrival.getUTCDate()).padStart(2, '0') : '—';
       const mon = arrival ? arrival.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' }) : '';
       const diff = Math.abs(Number(payout.differenceCents || 0));
@@ -155,7 +250,8 @@ function renderReconciliationPayouts(payouts, transactions) {
     })
     .join('')}</div>`;
 }
-function renderReconciliationExceptions(exceptions) {
+
+function renderReconciliationExceptions(exceptions: ParishReconciliationException[]): void {
   const pane = document.getElementById('reconcileExceptionsPane');
   if (!pane) return;
   if (!exceptions.length) {
@@ -171,7 +267,11 @@ function renderReconciliationExceptions(exceptions) {
       const severity = item.severity === 'error' || item.severity === 'critical' ? 'error' : 'warning';
       return `<div class="pdx-rc-exception ${severity}">
         <div class="pdx-rc-exception-icon">
-          ${severity === 'error' ? '<svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg>' : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'}
+          ${
+            severity === 'error'
+              ? '<svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg>'
+              : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+          }
         </div>
         <div class="pdx-rc-exception-copy">
           <strong>${escapeHtml(item.message || 'Review this item.')}</strong>
@@ -182,7 +282,8 @@ function renderReconciliationExceptions(exceptions) {
     })
     .join('')}</div>`;
 }
-function renderReconciliationReviewHistory(history) {
+
+function renderReconciliationReviewHistory(history: ParishReconciliationReview[]): void {
   const pane = document.getElementById('reconcileReviewHistory');
   if (!pane) return;
   pane.innerHTML = history.length
@@ -206,11 +307,13 @@ function renderReconciliationReviewHistory(history) {
         .join('')
     : '<p class="fr-source">No saved reviews for this month yet.</p>';
 }
-function csvCell(value) {
+
+function csvCell(value: unknown): string {
   let text = String(value ?? '');
   if (typeof value !== 'number' && /^[\s\uFEFF]*[=+@-]|^[\t\r\n]/.test(text)) text = "'" + text;
   return '"' + text.replace(/"/g, '""') + '"';
 }
+
 function exportFundReconciliation(kind = 'funds') {
   const data = reconciliationData;
   if (!data?.available) {
@@ -241,7 +344,7 @@ function exportFundReconciliation(kind = 'funds') {
     'Prepared at',
     'Stripe account',
   ];
-  const cents = (n) => Number((Number(n || 0) / 100).toFixed(2));
+  const cents = (n: number | undefined) => Number((Number(n || 0) / 100).toFixed(2));
   const rows =
     kind === 'transactions'
       ? [
@@ -305,13 +408,14 @@ function exportFundReconciliation(kind = 'funds') {
           ],
         ];
   const csv = '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
-  const name = currentParish.parishId + '-reconciliation-' + data.period.month + '-' + kind + '.csv';
+  const name = currentParish!.parishId + '-reconciliation-' + data.period.month + '-' + kind + '.csv';
   downloadBlob(name, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
   setStatus('Exported ' + name + '.', 'success');
 }
 function exportReconciliationCsv() {
   exportFundReconciliation('funds');
 }
+
 function printFundTransferWorksheet() {
   const worksheet = reconciliationData?.transferWorksheet;
   if (!worksheet?.available) {
@@ -337,12 +441,13 @@ function printFundTransferWorksheet() {
     `<!doctype html><html><head><title>AGAPAY Fund Transfer Worksheet</title><style>body{font:13px Arial;color:#061522;margin:38px}header{border-bottom:3px solid #c9a24a;padding-bottom:15px;margin-bottom:22px}small{display:block;color:#68717a;margin-top:3px}h1{font:600 28px Georgia,serif;margin:5px 0}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:10px;text-transform:uppercase}.summary strong{display:block;font:600 20px Georgia,serif;margin-top:4px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;vertical-align:top}th{font-size:10px;text-transform:uppercase;color:#555}.hold{border:1px solid #d7b96c;background:#fff8e6;padding:10px;margin-top:14px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:48px}.sign div{border-top:1px solid #333;padding-top:6px;color:#666}.note{margin-top:24px;color:#666;line-height:1.5}@media print{body{margin:14mm}}@media(max-width:700px){.summary{grid-template-columns:1fr}}</style></head><body><header><small>AGAPAY GIVE · TREASURER WORKSHEET</small><h1>${escapeHtml(currentParish?.parishName || 'Parish')}</h1><div>${escapeHtml(reconciliationMonthLabel(reconciliationData?.period?.month))} · USD · ${reconciliationData?.state === 'reconciled' ? 'Reconciled report' : 'DRAFT — NOT BANK-VERIFIED'}</div></header><div class="summary"><div><span>Stripe deposits</span><strong>${moneyFull(worksheet.depositedCents || 0)}</strong></div><div><span>Planned transfers</span><strong>${moneyFull(
       [...instructions.entries()].reduce((sum, [key, value]) => {
         const line = (worksheet.lines || []).find((item) => item.key === key);
-        return sum + (value.action === 'transfer' && Number(line?.netCents || 0) > 0 ? Number(line.netCents) : 0);
+        return sum + (value.action === 'transfer' && Number(line?.netCents || 0) > 0 ? Number(line!.netCents) : 0);
       }, 0)
-    )}</strong></div><div><span>Unallocated / review</span><strong>${moneyFull(worksheet.unallocatedCents || 0)}</strong></div></div>${Number(worksheet.unallocatedCents || 0) !== 0 ? `<div class="hold"><strong>Hold ${moneyFull(Math.abs(Number(worksheet.unallocatedCents || 0)))} for review.</strong> Do not distribute the unmatched amount until reconciliation exceptions are resolved.</div>` : ''}<table><thead><tr><th>Fund</th><th>Gross</th><th>Fees</th><th>Net</th><th>Handling</th><th>Destination</th><th>Status / reference</th></tr></thead><tbody>${rows}</tbody></table><p class="note">Stripe payouts settle into the parish deposit account. These amounts are period receipts after recorded fees and adjustments, not current fund balances or a recommendation to transfer the full amount. Worksheet edits are unsaved until the review is saved. AGAPAY does not initiate or approve bank transfers.</p><div class="sign"><div>Treasurer signature / date</div><div>Reviewer signature / date</div></div><script>window.onload=()=>window.print()<\/script></body></html>`
+    )}</strong></div><div><span>Unallocated / review</span><strong>${moneyFull(worksheet.unallocatedCents || 0)}</strong></div></div>${Number(worksheet.unallocatedCents || 0) !== 0 ? `<div class="hold"><strong>Hold ${moneyFull(Math.abs(Number(worksheet.unallocatedCents || 0)))} for review.</strong> Do not distribute the unmatched amount until reconciliation exceptions are resolved.</div>` : ''}<table><thead><tr><th>Fund</th><th>Gross</th><th>Fees</th><th>Net</th><th>Handling</th><th>Destination</th><th>Status / reference</th></tr></thead><tbody>${rows}</tbody></table><p class="note">Stripe payouts settle into the parish deposit account. These amounts are period receipts after recorded fees and adjustments, not current fund balances or a recommendation to transfer the full amount. Worksheet edits are unsaved until the review is saved. AGAPAY does not initiate or approve bank transfers.</p><div class="sign"><div>Treasurer signature / date</div><div>Reviewer signature / date</div></div><script>window.onload=()=>window.print()</script></body></html>`
   );
   popup.document.close();
 }
+
 function printReconciliationReport() {
   if (!reconciliationData?.available) {
     setStatus('Run the reconciliation first.', 'error');
@@ -378,7 +483,7 @@ function printReconciliationReport() {
     .join('');
   popup.opener = null;
   popup.document.write(
-    `<!doctype html><html><head><title>AGAPAY Reconciliation</title><style>body{font:14px Arial;color:#061522;margin:40px}h1,h2{font-family:Georgia,serif}header{border-bottom:3px solid #c9a24a;margin-bottom:24px;padding-bottom:16px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:11px;text-transform:uppercase}.summary strong{font-size:20px}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left}th{font-size:11px;text-transform:uppercase}footer{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;color:#666}@media print{body{margin:18mm}.no-print{display:none}}@media(max-width:700px){.summary{grid-template-columns:1fr 1fr}}</style></head><body><header><small>AGAPAY GIVE · MONTHLY RECONCILIATION</small><h1>${escapeHtml(currentParish.parishName || 'Parish')}</h1><p>${escapeHtml(reconciliationMonthLabel(data.period?.month))} · USD · ${escapeHtml(data.period?.timezone || 'UTC')}</p><p><strong>${data.state === 'reconciled' ? 'RECONCILED — BANK CHECK SAVED' : 'DRAFT — NOT BANK-VERIFIED'}</strong></p><p>Payout basis: Stripe expected arrival date (UTC calendar date). These are period receipts, not current fund balances.</p><small>Report fingerprint: ${escapeHtml(data.fingerprint || 'Unavailable')}</small></header><div class="summary"><div><span>Bank deposits</span><strong>${moneyFull(summary.depositedCents || 0)}</strong></div><div><span>Gross activity</span><strong>${moneyFull(summary.grossActivityCents || 0)}</strong></div><div><span>Total fees</span><strong>${moneyFull(summary.totalFeeCents || 0)}</strong></div><div><span>Needs allocation</span><strong>${moneyFull((summary.depositedCents || 0) - (summary.matchedNetCents || 0))}</strong></div></div><h2>Fund allocation</h2><table><thead><tr><th>Category</th><th>Post to</th><th>Count</th><th>Net</th></tr></thead><tbody>${allocations || '<tr><td colspan="4">No allocations.</td></tr>'}</tbody></table>${transfers ? `<h2>Fund transfer worksheet</h2><table><thead><tr><th>Fund</th><th>Net</th><th>Handling</th><th>Destination</th><th>Status</th></tr></thead><tbody>${transfers}</tbody></table>` : ''}<h2>Stripe payouts</h2><table><thead><tr><th>Arrival</th><th>Payout</th><th>Status</th><th>Amount</th></tr></thead><tbody>${payouts || '<tr><td colspan="4">No payouts.</td></tr>'}</tbody></table><h2>Review items</h2><ul>${exceptions}</ul><h2>Saved bank check</h2><p>${data.state === 'reconciled' ? moneyFull(data.closeRecord.bankStatementCents) + ' confirmed · ' + escapeHtml(data.closeRecord.closedAt) : 'Not verified for this report revision.'}</p><p>${escapeHtml(data.closeRecord?.notes || '')}</p><footer>Generated ${escapeHtml(new Date(data.generatedAt || Date.now()).toLocaleString())} · AGAPAY Give</footer><script>window.onload=()=>window.print()<\/script></body></html>`
+    `<!doctype html><html><head><title>AGAPAY Reconciliation</title><style>body{font:14px Arial;color:#061522;margin:40px}h1,h2{font-family:Georgia,serif}header{border-bottom:3px solid #c9a24a;margin-bottom:24px;padding-bottom:16px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:11px;text-transform:uppercase}.summary strong{font-size:20px}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left}th{font-size:11px;text-transform:uppercase}footer{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;color:#666}@media print{body{margin:18mm}.no-print{display:none}}@media(max-width:700px){.summary{grid-template-columns:1fr 1fr}}</style></head><body><header><small>AGAPAY GIVE · MONTHLY RECONCILIATION</small><h1>${escapeHtml(currentParish!.parishName || 'Parish')}</h1><p>${escapeHtml(reconciliationMonthLabel(data.period?.month))} · USD · ${escapeHtml(data.period?.timezone || 'UTC')}</p><p><strong>${data.state === 'reconciled' ? 'RECONCILED — BANK CHECK SAVED' : 'DRAFT — NOT BANK-VERIFIED'}</strong></p><p>Payout basis: Stripe expected arrival date (UTC calendar date). These are period receipts, not current fund balances.</p><small>Report fingerprint: ${escapeHtml(data.fingerprint || 'Unavailable')}</small></header><div class="summary"><div><span>Bank deposits</span><strong>${moneyFull(summary.depositedCents || 0)}</strong></div><div><span>Gross activity</span><strong>${moneyFull(summary.grossActivityCents || 0)}</strong></div><div><span>Total fees</span><strong>${moneyFull(summary.totalFeeCents || 0)}</strong></div><div><span>Needs allocation</span><strong>${moneyFull((summary.depositedCents || 0) - (summary.matchedNetCents || 0))}</strong></div></div><h2>Fund allocation</h2><table><thead><tr><th>Category</th><th>Post to</th><th>Count</th><th>Net</th></tr></thead><tbody>${allocations || '<tr><td colspan="4">No allocations.</td></tr>'}</tbody></table>${transfers ? `<h2>Fund transfer worksheet</h2><table><thead><tr><th>Fund</th><th>Net</th><th>Handling</th><th>Destination</th><th>Status</th></tr></thead><tbody>${transfers}</tbody></table>` : ''}<h2>Stripe payouts</h2><table><thead><tr><th>Arrival</th><th>Payout</th><th>Status</th><th>Amount</th></tr></thead><tbody>${payouts || '<tr><td colspan="4">No payouts.</td></tr>'}</tbody></table><h2>Review items</h2><ul>${exceptions}</ul><h2>Saved bank check</h2><p>${data.state === 'reconciled' ? moneyFull(data.closeRecord!.bankStatementCents) + ' confirmed · ' + escapeHtml(data.closeRecord!.closedAt) : 'Not verified for this report revision.'}</p><p>${escapeHtml(data.closeRecord?.notes || '')}</p><footer>Generated ${escapeHtml(new Date(data.generatedAt || Date.now()).toLocaleString())} · AGAPAY Give</footer><script>window.onload=()=>window.print()</script></body></html>`
   );
   popup.document.close();
 }
