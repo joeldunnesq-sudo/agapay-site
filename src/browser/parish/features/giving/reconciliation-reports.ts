@@ -1,8 +1,6 @@
 'use strict';
 
 declare function statusLabel(value: unknown): string;
-declare function reconciliationDate(seconds: unknown, timezone?: string): string;
-declare function reconciliationMonthLabel(month?: string): string;
 interface ParishReconciliationAllocation extends ParishFundTransferLine {
   catalogSource?: string;
   chargedCents?: number;
@@ -60,6 +58,10 @@ interface ParishReconciliationReview {
   transferInstructions?: ParishFundTransferInstruction[];
 }
 interface ParishReconciliationSummary {
+  paidPayoutCount?: number;
+  unmatchedAbsoluteCents?: number;
+  readyForReview?: boolean;
+  inTransitCents?: number;
   depositedCents?: number;
   matchedNetCents?: number;
   unmatchedCount?: number;
@@ -67,10 +69,16 @@ interface ParishReconciliationSummary {
   totalFeeCents?: number;
 }
 interface ParishReconciliationReport {
+  parishId?: string;
+  detail?: string;
+  error?: string;
+  reason?: string;
+  giftActivity?: ParishReconciliationGiftActivity;
+  reviewHistory?: ParishReconciliationReview[];
   available?: boolean;
   complete?: boolean;
   state?: string;
-  period: { month: string; timezone?: string };
+  period: { month: string; timezone?: string; label?: string; inProgress?: boolean };
   generatedAt?: string | number;
   fingerprint?: string;
   stripeAccountId?: string;
@@ -82,10 +90,10 @@ interface ParishReconciliationReport {
   summary?: ParishReconciliationSummary | null;
   closeRecord?: ParishReconciliationReview | null;
 }
-declare let reconciliationData: ParishReconciliationReport | null;
 
 // Giving reconciliation-reports; read shared identity and catalog state only when actions run.
 
+function renderReconciliationAllocations(allocations: ParishReconciliationAllocation[], depositedCents?: number): void;
 function renderReconciliationAllocations(allocations: ParishReconciliationAllocation[]): void {
   const pane = document.getElementById('reconcileAllocationsPane');
   if (!pane) return;

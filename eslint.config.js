@@ -90,6 +90,7 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/parish-reconciliation-controller-typescript-tests.mjs',
       'scripts/parish-reconciliation-reports-typescript-tests.mjs',
       'scripts/parish-sharing-typescript-tests.mjs',
       'scripts/parish-statements-typescript-tests.mjs',
@@ -434,7 +435,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(renderReconciliationAllocations|setReconcileAllocView|renderReconciliationGiftActivity|renderReconciliationPayouts|renderReconciliationExceptions|exportReconciliationCsv|printFundTransferWorksheet|printReconciliationReport|renderReconciliationReviewHistory)$',
+            '^(ParishReconciliationReport|renderReconciliationAllocations|setReconcileAllocView|renderReconciliationGiftActivity|renderReconciliationPayouts|renderReconciliationExceptions|exportReconciliationCsv|printFundTransferWorksheet|printReconciliationReport|renderReconciliationReviewHistory)$',
         },
       ],
     },
@@ -464,6 +465,45 @@ export default [
         {
           varsIgnorePattern:
             '^(renderReconciliationAllocations|setReconcileAllocView|renderReconciliationGiftActivity|renderReconciliationPayouts|renderReconciliationExceptions|exportReconciliationCsv|printFundTransferWorksheet|printReconciliationReport|renderReconciliationReviewHistory)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/reconciliation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(reconciliationDate|reconciliationMonthLabel|initReconciliationMonths|loadFundTransferWorksheet|saveReconciliationClose)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/reconciliation.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        authHeaders: 'readonly',
+        moneyFull: 'readonly',
+        setStatus: 'readonly',
+        renderReconciliationAllocations: 'readonly',
+        renderReconciliationPayouts: 'readonly',
+        renderReconciliationExceptions: 'readonly',
+        renderReconciliationGiftActivity: 'readonly',
+        renderFundTransferWorksheet: 'readonly',
+        collectFundTransferInstructions: 'readonly',
+        renderReconciliationReviewHistory: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(reconciliationDate|reconciliationMonthLabel|initReconciliationMonths|loadFundTransferWorksheet|saveReconciliationClose)$',
         },
       ],
     },

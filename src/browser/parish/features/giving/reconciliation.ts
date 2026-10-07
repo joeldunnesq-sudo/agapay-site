@@ -1,11 +1,11 @@
-// Generated from src/browser/parish/features/giving/reconciliation.ts by npm run build:browser. Do not edit.
 'use strict';
-let reconciliationData = null;
+let reconciliationData: ParishReconciliationReport | null = null;
 let reconciliationRequest = 0;
 let reconciliationParish = '';
 let reconciliationSaving = false;
+
 function initReconciliationMonths() {
-  const select = document.getElementById('reconcileMonth');
+  const select = document.getElementById('reconcileMonth') as HTMLSelectElement;
   if (!select || (select.options.length && reconciliationParish === currentParish?.parishId)) return;
   reconciliationParish = currentParish?.parishId || '';
   let timezone = currentParish?.timezone || 'UTC';
@@ -20,7 +20,7 @@ function initReconciliationMonths() {
       month: '2-digit',
       timeZone: timezone,
     })
-      .formatToParts(/* @__PURE__ */ new Date())
+      .formatToParts(new Date())
       .map(({ type, value }) => [type, value])
   );
   select.innerHTML = Array.from({ length: 36 }, (_, offset) => {
@@ -38,41 +38,41 @@ function initReconciliationMonths() {
     );
   }).join('');
 }
-function reconciliationMonthLabel(month) {
+function reconciliationMonthLabel(month?: string): string {
   if (!/^\d{4}-\d{2}$/.test(month || '')) return 'Selected month';
-  return /* @__PURE__ */ new Date(month + '-01T12:00:00Z').toLocaleDateString('en-US', {
+  return new Date(month + '-01T12:00:00Z').toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
   });
 }
-function reconciliationDate(seconds, timezone = reconciliationData?.period?.timezone || 'UTC') {
+function reconciliationDate(seconds: unknown, timezone = reconciliationData?.period?.timezone || 'UTC') {
   if (!seconds) return '—';
-  return new Date(Number(seconds) * 1e3).toLocaleDateString('en-US', {
+  return new Date(Number(seconds) * 1000).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     timeZone: timezone,
   });
 }
-function setReconciliationLoading(message, state = 'Preparing report') {
-  document.getElementById('pdxRcStatusPill').className = 'fr-state';
-  document.getElementById('pdxRcStatusPill').textContent = state;
-  document.getElementById('reconcileStatusLine').textContent = message;
-  document.getElementById('reconcileResults').hidden = true;
-  document.querySelectorAll('[data-reconcile-export]').forEach((button) => {
+function setReconciliationLoading(message: string, state = 'Preparing report') {
+  document.getElementById('pdxRcStatusPill')!.className = 'fr-state';
+  document.getElementById('pdxRcStatusPill')!.textContent = state;
+  document.getElementById('reconcileStatusLine')!.textContent = message;
+  document.getElementById('reconcileResults')!.hidden = true;
+  document.querySelectorAll<HTMLButtonElement>('[data-reconcile-export]').forEach((button) => {
     button.disabled = true;
   });
 }
-async function loadReconciliation(btn) {
+async function loadReconciliation(btn?: HTMLButtonElement | null): Promise<void> {
   if (!currentParish) return;
   initReconciliationMonths();
-  const month = document.getElementById('reconcileMonth')?.value;
-  const parishId = currentParish.parishId;
+  const month = (document.getElementById('reconcileMonth') as HTMLSelectElement)?.value;
+  const parishId = currentParish!.parishId;
   const requestId = ++reconciliationRequest;
   reconciliationData = null;
   setReconciliationLoading('Matching Stripe payouts to giving records and funds…');
-  document.getElementById('reconcileWorkspace').setAttribute('aria-busy', 'true');
+  document.getElementById('reconcileWorkspace')!.setAttribute('aria-busy', 'true');
   if (btn) btn.disabled = true;
   try {
     const response = await fetch(
@@ -83,7 +83,7 @@ async function loadReconciliation(btn) {
         '&detail=full',
       { headers: authHeaders() }
     );
-    const data = await response.json().catch(() => ({}));
+    const data = (await response.json().catch(() => ({}))) as ParishReconciliationReport;
     if (requestId !== reconciliationRequest || currentParish?.parishId !== parishId) return;
     if (!response.ok) throw new Error(data.detail || data.error || 'Unable to prepare this report. Please retry.');
     if (!data.available) throw new Error(data.reason || 'Connect Stripe to prepare your monthly report.');
@@ -92,35 +92,36 @@ async function loadReconciliation(btn) {
     reconciliationData = data;
     renderReconciliation(data);
   } catch (error) {
-    if (requestId === reconciliationRequest) setReconciliationLoading(error.message, 'Report unavailable');
+    if (requestId === reconciliationRequest) setReconciliationLoading((error as Error).message, 'Report unavailable');
   } finally {
     if (requestId === reconciliationRequest)
-      document.getElementById('reconcileWorkspace').setAttribute('aria-busy', 'false');
+      document.getElementById('reconcileWorkspace')!.setAttribute('aria-busy', 'false');
     if (btn) btn.disabled = false;
   }
 }
-function loadFundTransferWorksheet(btn) {
+// Compatibility for older links: full detail now loads automatically.
+function loadFundTransferWorksheet(btn?: HTMLButtonElement | null): Promise<void> {
   return loadReconciliation(btn);
 }
-function renderReconciliation(data) {
+function renderReconciliation(data: ParishReconciliationReport): void {
   const summary = data.summary || {};
   const close = data.closeRecord;
   const currentReview = data.state === 'reconciled' && close?.bankConfirmed;
-  document.getElementById('reconcileResults').hidden = false;
-  document.getElementById('reconcileStatusLine').textContent =
+  document.getElementById('reconcileResults')!.hidden = false;
+  document.getElementById('reconcileStatusLine')!.textContent =
     data.period.label +
     ' · ' +
     (data.period.timezone || 'UTC') +
     ' · USD · Payouts: Stripe expected arrival date · Prepared ' +
-    new Date(data.generatedAt).toLocaleString();
-  document.getElementById('reconcileDeposited').textContent = moneyFull(summary.depositedCents || 0);
-  document.getElementById('reconcileMatched').textContent = moneyFull(summary.matchedNetCents || 0);
-  document.getElementById('reconcileUnallocated').textContent = moneyFull(
+    new Date(data.generatedAt as string | number).toLocaleString();
+  document.getElementById('reconcileDeposited')!.textContent = moneyFull(summary.depositedCents || 0);
+  document.getElementById('reconcileMatched')!.textContent = moneyFull(summary.matchedNetCents || 0);
+  document.getElementById('reconcileUnallocated')!.textContent = moneyFull(
     (summary.depositedCents || 0) - (summary.matchedNetCents || 0)
   );
-  document.getElementById('reconcilePayoutCount').textContent =
+  document.getElementById('reconcilePayoutCount')!.textContent =
     (summary.paidPayoutCount || 0) + ' paid payout(s) · Stripe-reported';
-  document.getElementById('reconcileReviewCount').textContent = summary.unmatchedCount
+  document.getElementById('reconcileReviewCount')!.textContent = summary.unmatchedCount
     ? summary.unmatchedCount +
       ' unmatched item(s) · ' +
       moneyFull(summary.unmatchedAbsoluteCents || 0) +
@@ -128,7 +129,7 @@ function renderReconciliation(data) {
     : data.complete
       ? 'All payout items classified'
       : 'Matching is not complete';
-  const state = document.getElementById('pdxRcStatusPill');
+  const state = document.getElementById('pdxRcStatusPill')!;
   state.className = 'fr-state' + (currentReview ? ' is-verified' : '');
   state.textContent = currentReview
     ? 'Reconciled'
@@ -146,18 +147,20 @@ function renderReconciliation(data) {
   renderFundTransferWorksheet(data.transferWorksheet || {}, close?.transferInstructions || []);
   renderReconciliationReviewHistory(data.reviewHistory || []);
   const locked = close?.status === 'closed';
-  document.getElementById('reconcileBankAmount').disabled = locked;
-  document.getElementById('reconcileBankConfirmed').disabled = locked;
-  document.querySelectorAll('[data-transfer-row] input, [data-transfer-row] select').forEach((input) => {
-    if (locked) input.disabled = true;
-  });
-  document.getElementById('reconcileBankAmount').value = currentReview
-    ? (close.bankStatementCents / 100).toFixed(2)
+  (document.getElementById('reconcileBankAmount') as HTMLInputElement).disabled = locked;
+  (document.getElementById('reconcileBankConfirmed') as HTMLInputElement).disabled = locked;
+  document
+    .querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-transfer-row] input, [data-transfer-row] select')
+    .forEach((input) => {
+      if (locked) input.disabled = true;
+    });
+  (document.getElementById('reconcileBankAmount') as HTMLInputElement).value = currentReview
+    ? (close.bankStatementCents! / 100).toFixed(2)
     : '';
-  document.getElementById('reconcileBankConfirmed').checked = Boolean(currentReview);
-  document.getElementById('reconcileNotes').value = close?.notes || '';
-  document.getElementById('reconcileReopenButton').hidden = close?.status !== 'closed';
-  document.getElementById('reconcileReviewNotice').textContent =
+  (document.getElementById('reconcileBankConfirmed') as HTMLInputElement).checked = Boolean(currentReview);
+  (document.getElementById('reconcileNotes') as HTMLTextAreaElement).value = close?.notes || '';
+  document.getElementById('reconcileReopenButton')!.hidden = close?.status !== 'closed';
+  document.getElementById('reconcileReviewNotice')!.textContent =
     data.state === 'revised'
       ? 'Source data changed after the saved review. Reopen and review this version; the prior record is preserved.'
       : !data.complete
@@ -167,19 +170,19 @@ function renderReconciliation(data) {
           : summary.inTransitCents
             ? 'A payout is still in transit. Wait for its final status before completing the month.'
             : 'Fund allocation does not move money. These are period receipts, not current fund balances.';
-  document.querySelectorAll('[data-reconcile-export]').forEach((button) => {
+  document.querySelectorAll<HTMLButtonElement>('[data-reconcile-export]').forEach((button) => {
     button.disabled = false;
   });
   updateReconciliationDifference();
 }
 function updateReconciliationDifference() {
   const data = reconciliationData;
-  const value = document.getElementById('reconcileBankAmount')?.value || '';
+  const value = (document.getElementById('reconcileBankAmount') as HTMLInputElement)?.value || '';
   const amount = Math.round(Number(value) * 100);
   const valid = value !== '' && /^\d+(?:\.\d{1,2})?$/.test(value) && Number.isSafeInteger(amount) && amount >= 0;
-  const confirmed = document.getElementById('reconcileBankConfirmed')?.checked;
+  const confirmed = (document.getElementById('reconcileBankConfirmed') as HTMLInputElement)?.checked;
   const difference = valid ? amount - Number(data?.summary?.depositedCents || 0) : null;
-  const output = document.getElementById('reconcileDifference');
+  const output = document.getElementById('reconcileDifference')!;
   output.textContent = !valid
     ? 'Not checked against your bank yet.'
     : 'Difference: ' +
@@ -190,7 +193,7 @@ function updateReconciliationDifference() {
           ? ' · bank total confirmed'
           : ' · confirm you checked the statement');
   output.className = 'fr-bank-difference' + (valid && !difference && confirmed ? ' is-verified' : '');
-  document.getElementById('reconcileSaveButton').disabled =
+  (document.getElementById('reconcileSaveButton') as HTMLButtonElement).disabled =
     reconciliationSaving ||
     !data?.summary?.readyForReview ||
     !data?.complete ||
@@ -199,15 +202,20 @@ function updateReconciliationDifference() {
     !confirmed ||
     data.closeRecord?.status === 'closed';
 }
-async function saveReconciliationClose(closed, btn) {
+async function saveReconciliationClose(closed: boolean, btn?: HTMLButtonElement | null): Promise<void> {
   const data = reconciliationData;
-  if (reconciliationSaving || !data || (closed && document.getElementById('reconcileSaveButton').disabled)) return;
-  const notes = document.getElementById('reconcileNotes').value.trim();
+  if (
+    reconciliationSaving ||
+    !data ||
+    (closed && (document.getElementById('reconcileSaveButton') as HTMLButtonElement).disabled)
+  )
+    return;
+  const notes = (document.getElementById('reconcileNotes') as HTMLTextAreaElement).value.trim();
   if (!closed && !notes) {
     setStatus('Add a reason for reopening this review.', 'error');
     return;
   }
-  const parishId = currentParish.parishId;
+  const parishId = currentParish!.parishId;
   reconciliationSaving = true;
   if (btn) btn.disabled = true;
   updateReconciliationDifference();
@@ -219,14 +227,16 @@ async function saveReconciliationClose(closed, btn) {
         month: data.period.month,
         closed,
         notes,
-        bankStatementCents: Math.round(Number(document.getElementById('reconcileBankAmount').value) * 100),
-        bankConfirmed: document.getElementById('reconcileBankConfirmed').checked,
+        bankStatementCents: Math.round(
+          Number((document.getElementById('reconcileBankAmount') as HTMLInputElement).value) * 100
+        ),
+        bankConfirmed: (document.getElementById('reconcileBankConfirmed') as HTMLInputElement).checked,
         fingerprint: data.fingerprint,
         expectedReviewVersion: data.closeRecord?.reviewId || data.closeRecord?.updatedAt || null,
         transferInstructions: collectFundTransferInstructions(),
       }),
     });
-    const result = await response.json();
+    const result = (await response.json()) as { error?: string; record: ParishReconciliationReview };
     if (!response.ok) throw new Error(result.error || 'Could not save this review.');
     if (reconciliationData !== data || currentParish?.parishId !== parishId) return;
     data.closeRecord = result.record;
@@ -238,7 +248,7 @@ async function saveReconciliationClose(closed, btn) {
       'success'
     );
   } catch (error) {
-    setStatus(error.message, 'error');
+    setStatus((error as Error).message, 'error');
   } finally {
     reconciliationSaving = false;
     if (btn && !closed) btn.disabled = false;
