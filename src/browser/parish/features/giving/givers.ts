@@ -14,7 +14,6 @@ interface Window {
   pdxGiversAll?: ParishGiverSummary[];
 }
 type ParishGiverSort = 'amount' | 'name' | 'recency' | 'gifts';
-declare function populateGivingStatementsPanel(): void;
 declare function checkNudgeEligibility(): void;
 
 // Giving givers; read shared identity and catalog state only when actions run.

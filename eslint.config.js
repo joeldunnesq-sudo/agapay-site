@@ -90,6 +90,7 @@ export default [
   {
     files: [
       'scripts/run-tests.mjs',
+      'scripts/parish-statements-typescript-tests.mjs',
       'scripts/typecheck.mjs',
       'scripts/build-server-typescript.mjs',
       'scripts/build-browser-typescript.mjs',
@@ -308,6 +309,33 @@ export default [
       'no-unused-vars': [
         'error',
         { varsIgnorePattern: '^(setGiversSort|scrollToGiverDirectory|renderGiversPanel|exportGiversMonthlyCsv)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/giving/statements.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(populateGivingStatementsPanel|previewGivingStatement|startGivingStatementJob)$' },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/statements.js'],
+    languageOptions: {
+      globals: {
+        escapeHtml: 'readonly',
+        currentParish: 'readonly',
+        setStatus: 'readonly',
+        authHeaders: 'readonly',
+        shortDate: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(populateGivingStatementsPanel|previewGivingStatement|startGivingStatementJob)$' },
       ],
     },
   },
