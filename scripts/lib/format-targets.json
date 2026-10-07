@@ -241,7 +241,10 @@
     "public/parish/features/giving/outside-gifts.js",
     "scripts/parish-outside-gifts-typescript-tests.mjs",
     "public/liturgical-calendar.js",
-    "scripts/liturgical-calendar-typescript-tests.mjs"
+    "scripts/liturgical-calendar-typescript-tests.mjs",
+    "src/liturgical-calendar.js",
+    "src/festal-alms.js",
+    "scripts/calendar-festal-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -516,6 +519,9 @@
     "public/parish/features/giving/outside-gifts.js",
     "scripts/parish-outside-gifts-typescript-tests.mjs",
     "public/liturgical-calendar.js",
-    "scripts/liturgical-calendar-typescript-tests.mjs"
+    "scripts/liturgical-calendar-typescript-tests.mjs",
+    "src/liturgical-calendar.js",
+    "src/festal-alms.js",
+    "scripts/calendar-festal-typescript-tests.mjs"
   ]
 }

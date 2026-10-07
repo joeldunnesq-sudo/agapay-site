@@ -1,30 +1,57 @@
-// Generated from src/festal-alms.ts by npm run build:server. Do not edit.
+export interface FestalAlmsCampaign {
+  id?: string;
+  feastId?: string;
+  name?: string;
+  campaignName?: string;
+  status?: string;
+  enabled?: boolean;
+  patronal?: boolean;
+  feastDate?: string;
+  patronalFeastDate?: string;
+}
+export interface FestalAlmsVisibility {
+  feastDate: string;
+  startsAt: string;
+  endsAt: string;
+  fastStartId: string | null;
+  alwaysVisible?: boolean;
+}
+export type ActiveFestalAlmsCampaign<T extends FestalAlmsCampaign = FestalAlmsCampaign> = T & {
+  visibility: FestalAlmsVisibility;
+};
 import { addDaysToIso, liturgicalFeastsForYear } from './liturgical-calendar.js';
-const FEAST_FAST_STARTS = /* @__PURE__ */ new Map([
+
+const FEAST_FAST_STARTS = new Map([
   ['pascha', 'clean-monday'],
   ['apostles-peter-paul', 'apostles-fast-start'],
   ['dormition', 'dormition-fast-begins'],
   ['nativity-christ', 'nativity-fast-begins'],
 ]);
-const INACTIVE_STATUSES = /* @__PURE__ */ new Set(['hidden', 'paused', 'cancelled', 'ended', 'inactive']);
-function isoDate(value = /* @__PURE__ */ new Date()) {
+
+const INACTIVE_STATUSES = new Set(['hidden', 'paused', 'cancelled', 'ended', 'inactive']);
+
+function isoDate(value: Date | string = new Date()) {
   if (typeof value === 'string') return value.slice(0, 10);
   return value.toISOString().slice(0, 10);
 }
-function campaignFeastId(campaign = {}) {
+
+function campaignFeastId(campaign: FestalAlmsCampaign = {}) {
   return String(campaign.feastId || campaign.id || '').trim();
 }
-function campaignIsEnabled(campaign = {}) {
+
+function campaignIsEnabled(campaign: FestalAlmsCampaign = {}) {
   const status = String(campaign.status || (campaign.enabled === false ? 'hidden' : 'active')).toLowerCase();
   return campaign.enabled !== false && !INACTIVE_STATUSES.has(status);
 }
-function feastOccurrencesNear(dateIso, calendar) {
+
+function feastOccurrencesNear(dateIso: string, calendar: string) {
   const year = Number(dateIso.slice(0, 4));
   return [year - 1, year, year + 1]
     .flatMap((feastYear) => liturgicalFeastsForYear(feastYear, calendar))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
-function annualCustomFeastOccurrences(dateIso, campaign = {}) {
+
+function annualCustomFeastOccurrences(dateIso: string, campaign: FestalAlmsCampaign = {}) {
   const raw = String(campaign.feastDate || campaign.patronalFeastDate || '').trim();
   const monthDay = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw.slice(5) : raw;
   if (!/^\d{2}-\d{2}$/.test(monthDay)) return [];
@@ -35,10 +62,16 @@ function annualCustomFeastOccurrences(dateIso, campaign = {}) {
     date: `${occurrenceYear}-${monthDay}`,
   }));
 }
-function festalAlmsVisibilityWindow(campaign, calendar = 'julian', referenceDate = /* @__PURE__ */ new Date()) {
+
+export function festalAlmsVisibilityWindow(
+  campaign: FestalAlmsCampaign,
+  calendar = 'julian',
+  referenceDate: Date | string = new Date()
+): FestalAlmsVisibility | null {
   const dateIso = isoDate(referenceDate);
   const feastId = campaignFeastId(campaign);
   if (!feastId) return null;
+
   const calendarOccurrences = feastOccurrencesNear(dateIso, calendar);
   const customOccurrences = annualCustomFeastOccurrences(dateIso, campaign);
   const occurrences = customOccurrences.length ? customOccurrences : calendarOccurrences;
@@ -50,10 +83,12 @@ function festalAlmsVisibilityWindow(campaign, calendar = 'julian', referenceDate
         Math.abs(Date.parse(`${b.date}T12:00:00Z`) - Date.parse(`${dateIso}T12:00:00Z`))
     )[0];
   if (!feast) return null;
+
   const fastStartId = FEAST_FAST_STARTS.get(feastId);
   const fastStart = fastStartId
     ? occurrences.filter((item) => item.id === fastStartId && item.date <= feast.date).at(-1)
     : null;
+
   return {
     feastDate: feast.date,
     startsAt: fastStart?.date || addDaysToIso(feast.date, -7),
@@ -61,11 +96,16 @@ function festalAlmsVisibilityWindow(campaign, calendar = 'julian', referenceDate
     fastStartId: fastStart?.id || null,
   };
 }
-function activeFestalAlmsCampaigns(campaigns, calendar = 'julian', referenceDate = /* @__PURE__ */ new Date()) {
+
+export function activeFestalAlmsCampaigns<T extends FestalAlmsCampaign>(
+  campaigns: readonly T[] | null | undefined,
+  calendar = 'julian',
+  referenceDate: Date | string = new Date()
+): ActiveFestalAlmsCampaign<T>[] {
   const dateIso = isoDate(referenceDate);
-  return (Array.isArray(campaigns) ? campaigns : [])
+  return ((Array.isArray(campaigns) ? campaigns : []) as T[])
     .filter(campaignIsEnabled)
-    .map((campaign) => {
+    .map((campaign): ActiveFestalAlmsCampaign<T> | null => {
       const visibility = festalAlmsVisibilityWindow(campaign, calendar, dateIso);
       if (campaign.patronal) {
         return {
@@ -80,7 +120,10 @@ function activeFestalAlmsCampaigns(campaigns, calendar = 'julian', referenceDate
       }
       return visibility ? { ...campaign, visibility } : null;
     })
-    .filter((campaign) => campaign && dateIso >= campaign.visibility.startsAt && dateIso <= campaign.visibility.endsAt)
+    .filter(
+      (campaign): campaign is ActiveFestalAlmsCampaign<T> =>
+        (campaign && dateIso >= campaign.visibility.startsAt && dateIso <= campaign.visibility.endsAt) as boolean
+    )
     .sort((a, b) => {
       if (Boolean(a.patronal) !== Boolean(b.patronal)) return a.patronal ? -1 : 1;
       const aDistance = Math.abs(
@@ -92,4 +135,3 @@ function activeFestalAlmsCampaigns(campaigns, calendar = 'julian', referenceDate
       return aDistance - bDistance;
     });
 }
-export { activeFestalAlmsCampaigns, festalAlmsVisibilityWindow };

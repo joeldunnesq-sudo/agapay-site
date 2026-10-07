@@ -1,6 +1,24 @@
-// Generated from src/liturgical-calendar.ts by npm run build:server. Do not edit.
+export interface CivilCalendarDate {
+  year: number;
+  month: number;
+  day: number;
+}
+export interface FixedCalendarFeast {
+  id: string;
+  name: string;
+  month: number;
+  day: number;
+  rank: string;
+}
+export interface MoveableCalendarFeast {
+  id: string;
+  name: string;
+  offset: number;
+  rank: string;
+}
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MOVEABLE_FEASTS = [
+
+export const MOVEABLE_FEASTS: MoveableCalendarFeast[] = [
   { id: 'triodion-start', name: 'Triodion Begins', offset: -70, rank: 'season' },
   { id: 'meatfare-sunday', name: 'Sunday of the Last Judgment / Meatfare', offset: -56, rank: 'season' },
   { id: 'cheesefare-sunday', name: 'Forgiveness Sunday / Cheesefare', offset: -49, rank: 'season' },
@@ -24,7 +42,8 @@ const MOVEABLE_FEASTS = [
   { id: 'all-saints', name: 'All Saints', offset: 56, rank: 'season' },
   { id: 'apostles-fast-start', name: "Apostles' Fast Begins", offset: 57, rank: 'fast' },
 ];
-const FIXED_FEASTS = [
+
+export const FIXED_FEASTS: FixedCalendarFeast[] = [
   { id: 'circumcision', name: 'Circumcision of the Lord / St. Basil', month: 1, day: 1, rank: 'great' },
   { id: 'theophany', name: 'Theophany', month: 1, day: 6, rank: 'great' },
   { id: 'meeting-lord', name: 'Meeting of the Lord', month: 2, day: 2, rank: 'great' },
@@ -43,10 +62,12 @@ const FIXED_FEASTS = [
   { id: 'nativity-fast-ends', name: 'Nativity Fast Ends', month: 12, day: 24, rank: 'fast' },
   { id: 'nativity-christ', name: 'Nativity of Christ', month: 12, day: 25, rank: 'great' },
 ];
-function pad(value) {
+
+function pad(value: number) {
   return String(value).padStart(2, '0');
 }
-function gregorianToJdn(year, month, day) {
+
+export function gregorianToJdn(year: number, month: number, day: number) {
   const a = Math.floor((14 - month) / 12);
   const y = year + 4800 - a;
   const m = month + 12 * a - 3;
@@ -60,13 +81,15 @@ function gregorianToJdn(year, month, day) {
     32045
   );
 }
-function julianToJdn(year, month, day) {
+
+export function julianToJdn(year: number, month: number, day: number) {
   const a = Math.floor((14 - month) / 12);
   const y = year + 4800 - a;
   const m = month + 12 * a - 3;
   return day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - 32083;
 }
-function jdnToGregorian(jdn) {
+
+export function jdnToGregorian(jdn: number) {
   const a = jdn + 32044;
   const b = Math.floor((4 * a + 3) / 146097);
   const c = a - Math.floor((146097 * b) / 4);
@@ -78,17 +101,21 @@ function jdnToGregorian(jdn) {
   const year = 100 * b + d - 4800 + Math.floor(m / 10);
   return { year, month, day };
 }
-function isoFromGregorianDate(date) {
+
+export function isoFromGregorianDate(date: CivilCalendarDate) {
   return `${date.year}-${pad(date.month)}-${pad(date.day)}`;
 }
-function displayDate(date) {
+
+export function displayDate(date: CivilCalendarDate) {
   return `${MONTH_NAMES[date.month - 1]} ${date.day}, ${date.year}`;
 }
-function addDaysToIso(iso, days) {
+
+export function addDaysToIso(iso: string, days: number) {
   const [year, month, day] = iso.split('-').map(Number);
   return isoFromGregorianDate(jdnToGregorian(gregorianToJdn(year, month, day) + days));
 }
-function orthodoxPascha(year) {
+
+export function orthodoxPascha(year: number) {
   const a = year % 4;
   const b = year % 7;
   const c = year % 19;
@@ -106,27 +133,36 @@ function orthodoxPascha(year) {
     displayDate: displayDate(civil),
   };
 }
-function calendarKey(calendar) {
+
+function calendarKey(calendar?: string) {
   return String(calendar || 'julian')
     .toLowerCase()
     .includes('gregorian')
     ? 'gregorian'
     : 'julian';
 }
-function fixedFeastDateForCivilYear(feast, year, calendar = 'julian') {
+
+export function fixedFeastDateForCivilYear(
+  feast: Pick<FixedCalendarFeast, 'month' | 'day'>,
+  year: number,
+  calendar = 'julian'
+) {
   const key = calendarKey(calendar);
   if (key === 'gregorian') {
     const civil = { year, month: feast.month, day: feast.day };
     return { ...civil, sourceYear: year };
   }
+
   for (const sourceYear of [year - 1, year, year + 1]) {
     const civil = jdnToGregorian(julianToJdn(sourceYear, feast.month, feast.day));
     if (civil.year === year) return { ...civil, sourceYear };
   }
+
   const fallback = jdnToGregorian(julianToJdn(year, feast.month, feast.day));
   return { ...fallback, sourceYear: year };
 }
-function fixedFeastsForYear(year, calendar = 'julian') {
+
+export function fixedFeastsForYear(year: number, calendar = 'julian') {
   const key = calendarKey(calendar);
   return FIXED_FEASTS.map((feast) => {
     const civil = fixedFeastDateForCivilYear(feast, year, key);
@@ -143,7 +179,8 @@ function fixedFeastsForYear(year, calendar = 'julian') {
     };
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
-function moveableFeastsForYear(year) {
+
+export function moveableFeastsForYear(year: number) {
   const pascha = orthodoxPascha(year);
   return MOVEABLE_FEASTS.map((feast) => {
     const date = addDaysToIso(pascha.date, feast.offset);
@@ -158,13 +195,15 @@ function moveableFeastsForYear(year) {
     };
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
-function liturgicalFeastsForYear(year, calendar = 'julian') {
+
+export function liturgicalFeastsForYear(year: number, calendar = 'julian') {
   const key = calendarKey(calendar);
   return [...moveableFeastsForYear(year), ...fixedFeastsForYear(year, key)].sort(
     (a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name)
   );
 }
-function nextLiturgicalFeast(calendar = 'julian', fromDate = /* @__PURE__ */ new Date()) {
+
+export function nextLiturgicalFeast(calendar = 'julian', fromDate = new Date()) {
   const key = calendarKey(calendar);
   const year = fromDate.getFullYear();
   const todayIso = `${fromDate.getFullYear()}-${pad(fromDate.getMonth() + 1)}-${pad(fromDate.getDate())}`;
@@ -175,23 +214,7 @@ function nextLiturgicalFeast(calendar = 'julian', fromDate = /* @__PURE__ */ new
       .sort((a, b) => a.date.localeCompare(b.date))[0] || null
   );
 }
-function calendarLabel(calendar = 'julian') {
+
+export function calendarLabel(calendar = 'julian') {
   return calendarKey(calendar) === 'gregorian' ? 'Revised-Julian' : 'Julian';
 }
-export {
-  FIXED_FEASTS,
-  MOVEABLE_FEASTS,
-  addDaysToIso,
-  calendarLabel,
-  displayDate,
-  fixedFeastDateForCivilYear,
-  fixedFeastsForYear,
-  gregorianToJdn,
-  isoFromGregorianDate,
-  jdnToGregorian,
-  julianToJdn,
-  liturgicalFeastsForYear,
-  moveableFeastsForYear,
-  nextLiturgicalFeast,
-  orthodoxPascha,
-};
