@@ -10,12 +10,15 @@ const env = {
 };
 const prefix = 'campaigns/parish-a/release-gate-00000000-0000-0000-0000-000000000000/';
 const key = `${prefix}123-00000000-0000-0000-0000-000000000000.png`;
-let command;
+const commands = [];
 deleteStagingCampaignUpload(key, prefix, (...args) => {
-  command = args;
+  commands.push(args);
 });
-assert.equal(command[1][4], `agapay-campaign-assets-staging/${key}`);
-assert.deepEqual(command[1].slice(-3), ['--remote', '--env', 'staging']);
+assert.equal(commands[0][1][4], `agapay-campaign-assets-staging/${key}`);
+assert.deepEqual(commands[0][1].slice(-3), ['--remote', '--env', 'staging']);
+assert.equal(commands[1][1][3], 'AGAPAY_DB');
+assert.ok(commands[1][1].at(-1).includes("state='deleted'"));
+assert.ok(commands[1][1].at(-1).includes(key));
 for (const invalid of [key.replace('parish-a', 'other'), `${prefix}../other.png`, `${prefix}unexpected.png`]) {
   assert.throws(() => deleteStagingCampaignUpload(invalid, prefix, () => assert.fail('Unsafe cleanup executed')));
 }
@@ -31,7 +34,7 @@ await assert.rejects(
   }),
   /TOTP_SECRET/
 );
-for (const scenario of ['success', 'save-failed', 'public-failed', 'restore-failed', 'delete-failed']) {
+for (const scenario of ['success', 'hidden', 'save-failed', 'public-failed', 'restore-failed', 'delete-failed']) {
   const original = [
     { id: 'roof-campaign', name: 'Original roof', accountingFundId: 'fund_roof', custom: 'preserve' },
     { id: 'other', name: 'Other campaign' },
@@ -65,7 +68,11 @@ for (const scenario of ['success', 'save-failed', 'public-failed', 'restore-fail
         assert.equal(new URL(url).origin, origin);
         assert.equal(options.redirect, 'error');
         const path = new URL(url).pathname;
-        if (path === '/api/parishes') return Response.json({ parishes: [{ id: 'parish-a' }] });
+        if (path === '/api/parishes') {
+          if (new URL(url).searchParams.has('id'))
+            return Response.json({}, { status: scenario === 'hidden' ? 404 : 200 });
+          return Response.json({ parishes: scenario === 'hidden' ? [] : [{ id: 'parish-a' }] });
+        }
         if (path === '/api/platform/summary') return Response.json({ summary: { organizationsSupported: 1 } });
         if (path.endsWith('/campaign-upload')) {
           assert.equal(options.headers.authorization, 'Bearer synthetic-token');
@@ -89,30 +96,34 @@ for (const scenario of ['success', 'save-failed', 'public-failed', 'restore-fail
           const failing =
             (scenario === 'save-failed' && patches.length === 1) ||
             (scenario === 'restore-failed' && patches.length === 2);
-          return Response.json({}, { status: failing ? 503 : 200 });
+          return Response.json({ parish: { campaigns: patch.campaigns } }, { status: failing ? 503 : 200 });
         }
+        if (path === '/api/campaign' && scenario === 'hidden')
+          return Response.json({ error: 'Campaign not found' }, { status: 404 });
         if (path === '/api/campaign')
           return Response.json(
             {
-              campaign: { name: 'Church Roof Restoration', coverPhotoUrl: uploadedUrl, supporters: Array(8).fill({}) },
+              campaign: { name: 'Catalog Release Smoke', coverPhotoUrl: uploadedUrl, supporters: Array(8).fill({}) },
             },
             { status: scenario === 'public-failed' ? 503 : 200 }
           );
         assert.fail(`Unexpected synthetic request ${path}`);
       },
     });
-  if (scenario === 'success') await execute();
+  if (['success', 'hidden'].includes(scenario)) await execute();
   else await assert.rejects(execute(), /catalog staging smoke failed/);
   assert.equal(deleted, true, `${scenario} cleans up uploaded image`);
   assert.equal(patches.length, 2);
-  assert.equal(patches[0].campaigns.length, original.length, 'Never append a duplicate roof campaign');
+  assert.equal(patches[0].campaigns.length, original.length + 1);
+  assert.deepEqual(patches[0].campaigns.slice(0, -1), original);
+  assert.match(patches[0].campaigns.at(-1).id, /^release-gate-/);
   assert.equal(patches[0].campaigns[0].accountingFundId, 'fund_roof');
   assert.equal(patches[0].campaigns[0].custom, 'preserve');
   assert.deepEqual(patches[1].campaigns, original);
   assert.deepEqual(original, before);
   assert.equal(evidence.catalogRestored, scenario !== 'restore-failed');
   assert.equal(evidence.uploadDeleted, scenario !== 'delete-failed');
-  assert.equal(evidence.passed, scenario === 'success');
+  assert.equal(evidence.passed, ['success', 'hidden'].includes(scenario));
   assert.ok(!JSON.stringify(evidence).includes('synthetic-token'));
 }
 console.log(

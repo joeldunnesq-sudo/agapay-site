@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { slugify } from '../src/lib/format.js';
 import { stagingParishSession } from './lib/staging-parish-session.mjs';
 import { baseUrlFrom, requiredEnvironment, writeArtifact } from './lib/accounting-release-gates.mjs';
 
@@ -30,6 +31,22 @@ export function deleteStagingCampaignUpload(key, expectedPrefix, run = execFileS
     ],
     { stdio: 'pipe', timeout: 60000 }
   );
+  const sql = `UPDATE parish_portability_objects SET state='deleted',updated_at=${Date.now()} WHERE binding='CAMPAIGN_ASSETS' AND object_key='${key}' AND disposition='delete'`;
+  run(
+    process.execPath,
+    [
+      'node_modules/wrangler/bin/wrangler.js',
+      'd1',
+      'execute',
+      'AGAPAY_DB',
+      '--remote',
+      '--env',
+      'staging',
+      '--command',
+      sql,
+    ],
+    { stdio: 'pipe', timeout: 60000 }
+  );
 }
 
 export async function runCatalogSmoke({
@@ -54,10 +71,7 @@ export async function runCatalogSmoke({
   const parishId = credentials.ACCOUNTING_GATE_PARISH_A_ID;
   const uploadId = `release-gate-${randomUUID()}`;
   // The upload handler uses this same slug normalization for the storage prefix.
-  const parishSlug = parishId
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  const parishSlug = slugify(parishId);
   const uploadPrefix = `campaigns/${parishSlug}/${uploadId}/`;
   const evidence = { target: baseUrl, parishId, upload: null, catalogRestored: false, uploadDeleted: false };
   async function requestJson(
@@ -83,10 +97,18 @@ export async function runCatalogSmoke({
   }
   const directory = await requestJson('/api/parishes?limit=50');
   assert.equal(directory.response.status, 200);
-  assert.ok(directory.payload.parishes?.some((parish) => parish.id === parishId));
+  assert.ok(Array.isArray(directory.payload.parishes));
+  const publicParish = await requestJson(`/api/parishes?id=${encodeURIComponent(parishId)}`);
+  assert.ok([200, 404].includes(publicParish.response.status));
+  const publiclyVisible = publicParish.response.status === 200;
+  if (!publiclyVisible) assert.ok(!directory.payload.parishes.some((parish) => parish.id === parishId));
+  evidence.publicParishStatus = publicParish.response.status;
   const summary = await requestJson('/api/platform/summary');
   assert.equal(summary.response.status, 200);
-  assert.ok(summary.payload.summary?.organizationsSupported > 0);
+  assert.ok(
+    Number.isInteger(summary.payload.summary?.organizationsSupported) &&
+      summary.payload.summary.organizationsSupported >= 0
+  );
   const token = await session({
     baseUrl,
     parishId,
@@ -101,8 +123,6 @@ export async function runCatalogSmoke({
   const originalCampaigns = Array.isArray(dashboard.payload.parish?.campaigns)
     ? dashboard.payload.parish.campaigns
     : [];
-  const roofs = originalCampaigns.filter((c) => c.id === 'roof-campaign' || c.slug === 'roof-campaign');
-  assert.ok(roofs.length <= 1, 'Ambiguous roof campaign must be resolved before a smoke write.');
   let saveAttempted = false;
   let uploadKey;
   const failures = [];
@@ -130,20 +150,16 @@ export async function runCatalogSmoke({
     assert.equal(image.status, 200);
     assert.deepEqual(Buffer.from(await image.arrayBuffer()), PNG);
     const temporaryCampaign = {
-      ...(roofs[0] || {
-        id: 'roof-campaign',
-        slug: 'roof-campaign',
-        name: 'Catalog Extraction Smoke',
-        description: 'Temporary staging verification campaign.',
-        category: 'Building',
-        goalCents: 1000000,
-        active: true,
-      }),
+      id: uploadId,
+      slug: uploadId,
+      name: 'Catalog Release Smoke',
+      description: 'Temporary staging verification campaign.',
+      category: 'Building',
+      goalCents: 1000000,
+      active: true,
       coverPhotoUrl: uploaded.payload.url,
     };
-    const campaigns = roofs.length
-      ? originalCampaigns.map((c) => (c === roofs[0] ? temporaryCampaign : c))
-      : [...originalCampaigns, temporaryCampaign];
+    const campaigns = [...originalCampaigns, temporaryCampaign];
     saveAttempted = true;
     const saved = await requestJson(dashboardPath, {
       method: 'PATCH',
@@ -151,14 +167,20 @@ export async function runCatalogSmoke({
       body: { campaigns, givingCatalogChanged: true, accountingCatalogChanged: false },
     });
     assert.equal(saved.response.status, 200, `Temporary campaign save HTTP ${saved.response.status}`);
-    const campaign = await requestJson(`/api/campaign?parish=${encodeURIComponent(parishId)}&slug=roof-campaign`);
-    assert.equal(campaign.response.status, 200);
-    assert.equal(campaign.payload.campaign?.name, 'Church Roof Restoration');
-    assert.equal(campaign.payload.campaign?.coverPhotoUrl, uploaded.payload.url);
-    assert.ok(campaign.payload.campaign?.supporters?.length >= 8);
+    assert.equal(saved.payload.parish?.campaigns?.find((c) => c.id === uploadId)?.coverPhotoUrl, uploaded.payload.url);
+    const campaign = await requestJson(`/api/campaign?parish=${encodeURIComponent(parishId)}&slug=${uploadId}`);
+    assert.equal(campaign.response.status, publiclyVisible ? 200 : 404);
+    if (publiclyVisible) {
+      assert.equal(campaign.payload.campaign?.name, temporaryCampaign.name);
+      assert.equal(campaign.payload.campaign?.coverPhotoUrl, uploaded.payload.url);
+      assert.ok(Array.isArray(campaign.payload.campaign?.supporters));
+    } else {
+      assert.equal(campaign.payload.campaign, undefined, 'Unpublished parish must not expose campaign details.');
+    }
     evidence.campaign = {
-      name: campaign.payload.campaign.name,
-      supporterCount: campaign.payload.campaign.supporters.length,
+      status: campaign.response.status,
+      visibility: publiclyVisible ? 'public' : 'unpublished',
+      authenticatedSaveVerified: true,
     };
     evidence.directoryCount = directory.payload.parishes.length;
     evidence.verifiedAt = new Date().toISOString();
