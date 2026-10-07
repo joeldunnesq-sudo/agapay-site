@@ -145,7 +145,10 @@ export async function runCatalogSmoke({
     await artifact(EVIDENCE_PATH, evidence);
     assert.ok(uploadKey.startsWith(uploadPrefix));
     const uploadedUrl = new URL(uploaded.payload.url);
-    assert.equal(uploadedUrl.origin, baseUrl);
+    assert.ok(
+      [baseUrl, 'https://pub-7c0fef2b0b954c5b88f1cc3e944e97a7.r2.dev'].includes(uploadedUrl.origin),
+      'Image must use the configured staging delivery origin.'
+    );
     const image = await fetchImpl(uploadedUrl.href, { redirect: 'error', signal: AbortSignal.timeout(30000) });
     assert.equal(image.status, 200);
     assert.deepEqual(Buffer.from(await image.arrayBuffer()), PNG);

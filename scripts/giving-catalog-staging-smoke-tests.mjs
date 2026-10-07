@@ -34,7 +34,7 @@ await assert.rejects(
   }),
   /TOTP_SECRET/
 );
-for (const scenario of ['success', 'hidden', 'save-failed', 'public-failed', 'restore-failed', 'delete-failed']) {
+for (const scenario of ['success', 'r2', 'hidden', 'save-failed', 'public-failed', 'restore-failed', 'delete-failed']) {
   const original = [
     { id: 'roof-campaign', name: 'Original roof', accountingFundId: 'fund_roof', custom: 'preserve' },
     { id: 'other', name: 'Other campaign' },
@@ -65,7 +65,7 @@ for (const scenario of ['success', 'hidden', 'save-failed', 'public-failed', 're
         if (scenario === 'delete-failed') throw new Error('Synthetic cleanup failure');
       },
       fetchImpl: async (url, options) => {
-        assert.equal(new URL(url).origin, origin);
+        assert.ok([origin, 'https://pub-7c0fef2b0b954c5b88f1cc3e944e97a7.r2.dev'].includes(new URL(url).origin));
         assert.equal(options.redirect, 'error');
         const path = new URL(url).pathname;
         if (path === '/api/parishes') {
@@ -78,7 +78,7 @@ for (const scenario of ['success', 'hidden', 'save-failed', 'public-failed', 're
           assert.equal(options.headers.authorization, 'Bearer synthetic-token');
           uploadedBytes = options.body;
           uploadedKey = `campaigns/parish-a/${new URL(url).searchParams.get('campaign')}/123-00000000-0000-0000-0000-000000000000.png`;
-          uploadedUrl = `${origin}/api/public/parish-assets/campaign/${uploadedKey}`;
+          uploadedUrl = `${scenario === 'r2' ? 'https://pub-7c0fef2b0b954c5b88f1cc3e944e97a7.r2.dev' : origin}/api/public/parish-assets/campaign/${uploadedKey}`;
           return Response.json({
             key: uploadedKey,
             url: uploadedUrl,
@@ -110,7 +110,7 @@ for (const scenario of ['success', 'hidden', 'save-failed', 'public-failed', 're
         assert.fail(`Unexpected synthetic request ${path}`);
       },
     });
-  if (['success', 'hidden'].includes(scenario)) await execute();
+  if (['success', 'r2', 'hidden'].includes(scenario)) await execute();
   else await assert.rejects(execute(), /catalog staging smoke failed/);
   assert.equal(deleted, true, `${scenario} cleans up uploaded image`);
   assert.equal(patches.length, 2);
@@ -123,7 +123,7 @@ for (const scenario of ['success', 'hidden', 'save-failed', 'public-failed', 're
   assert.deepEqual(original, before);
   assert.equal(evidence.catalogRestored, scenario !== 'restore-failed');
   assert.equal(evidence.uploadDeleted, scenario !== 'delete-failed');
-  assert.equal(evidence.passed, ['success', 'hidden'].includes(scenario));
+  assert.equal(evidence.passed, ['success', 'r2', 'hidden'].includes(scenario));
   assert.ok(!JSON.stringify(evidence).includes('synthetic-token'));
 }
 console.log(
