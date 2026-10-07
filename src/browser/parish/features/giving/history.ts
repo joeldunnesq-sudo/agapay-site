@@ -3,6 +3,7 @@
 // Describes the existing JSON boundary; this migration adds no runtime validation.
 interface ParishHistoryGift {
   readonly id?: string;
+  readonly giverKey?: string;
   readonly paidAt?: string | number | null;
   readonly giftType?: string;
   readonly campaign?: string;
@@ -36,7 +37,6 @@ interface ParishHistoryResponse {
 }
 declare function setStatus(message: string, kind: string): void;
 declare function renderGivingOptionsEditor(): void;
-declare function renderGiversPanel(): void;
 declare function escapeAttr(value: unknown): string;
 declare function fullDate(value: string | number | null | undefined): string;
 declare function downloadBlob(name: string, blob: Blob): void;

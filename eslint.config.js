@@ -144,6 +144,7 @@ export default [
       'scripts/parish-weekly-funds-typescript-browser-tests.mjs',
       'scripts/parish-history-typescript-browser-tests.mjs',
       'scripts/parish-commemorations-typescript-browser-tests.mjs',
+      'scripts/parish-givers-typescript-browser-tests.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: recommendedRules,
@@ -275,5 +276,39 @@ export default [
       },
     },
     rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^(loadCommemorations|renderCandleGiving)$' }] },
+  },
+  {
+    files: ['src/browser/parish/features/giving/givers.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(Window|setGiversSort|scrollToGiverDirectory|renderGiversPanel|exportGiversMonthlyCsv)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/giving/givers.js'],
+    languageOptions: {
+      globals: {
+        allGifts: 'readonly',
+        pdxAnimateCount: 'readonly',
+        money: 'readonly',
+        shortDate: 'readonly',
+        escapeHtml: 'readonly',
+        populateGivingStatementsPanel: 'readonly',
+        checkNudgeEligibility: 'readonly',
+        currentParish: 'readonly',
+        authHeaders: 'readonly',
+        downloadBlob: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(setGiversSort|scrollToGiverDirectory|renderGiversPanel|exportGiversMonthlyCsv)$' },
+      ],
+    },
   },
 ];

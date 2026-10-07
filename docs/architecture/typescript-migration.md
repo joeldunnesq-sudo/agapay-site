@@ -14,7 +14,7 @@ Plan for seven major stages, with multiple independently tested batches inside t
 6. Broader backend adoption: underway with content services; continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
 7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
 
-The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. The latest accepted release checkpoint contains 63 migrated runtime modules; local batch 29 brings the migration manifest to 64. Local validation does not establish deployment acceptance. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
+The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. The latest accepted release checkpoint contains 63 migrated runtime modules; local batches 29–30 bring the migration manifest to 65. Local validation does not establish deployment acceptance. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
 
 ## Stage 1: strict checking without changing execution
 
@@ -396,6 +396,14 @@ The commemoration queue and candle-giving summary now have checked response, gif
 Desktop/mobile tests passed against the original JavaScript before conversion and against generated output. They cover name escaping, empty/malformed name collections, load failure/retry, candle classification, shared manual/online gifts, invalid dates, six-month totals and positive/flat/negative comparisons. Strict browser contracts and normalized executable parity passed. Validation passed: strict quality, four prechecks and all 268 main regression commands, normalized executable parity, Worker startup analysis and private-provisioner dry-run packaging.
 
 This batch adds one local generated runtime module: 64 total (53 server, eleven browser). It remains local and is not included in the accepted batches 26–28 release.
+
+### Stage 6 batch 30: giver directory and monthly CSV (local)
+
+The giver directory now has typed household summaries, window state, sort modes, refresh/export controls and response errors. Giving history calls its implementation rather than an ambient renderer declaration, and its gift contract includes the existing giver key. Date-string comparisons and Date/DOM coercion are preserved through explicit boundary assertions. The migration does not introduce runtime JSON validation or change grouping, totals, median selection, lapsed-donor presentation or CSV behavior. The generated classic script retains its runtime URL and globals, with a content-versioned dashboard reference.
+
+Desktop/mobile regression fixtures passed first against the original JavaScript. They cover normalized-email grouping, explicit giver keys, outside-gift counts, summary totals and median, sort/search, escaped donor text, lapsed donors, missing month, authenticated export requests, server filenames, CSV-only validation, rejected requests, retry, empty exports and empty/no-parish states. Existing integrated giving journeys continue to cover the actual dashboard composition. Strict browser checking passed. Executable parity passed after accounting for the lint-required change of one never-reassigned local binding from let to const; all other executable code matches. Validation passed: strict quality, four prechecks and all 269 main regression commands, generated-output checks, Worker startup analysis and private-provisioner dry-run packaging.
+
+This batch brings local generated-runtime coverage to 65 modules (53 server, twelve browser). Batches 29–30 remain local, while the accepted production checkpoint contains 63 modules. Remaining giving statement jobs, reconciliation and mutation controllers need separate contracts and dedicated behavior checks before conversion.
 
 ### Release checkpoint for batches 26–28: accepted
 
