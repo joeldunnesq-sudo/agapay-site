@@ -1,137 +1,95 @@
-// Subscription billing normalization. The parish's connected Stripe account
-// owns tax configuration for parish transactions. AGAPAY subscription tax is
-// handled separately on the platform Stripe account through Checkout's
-// automatic-tax configuration, so no per-parish manual tax approval belongs
-// in the subscription checkout gate.
-//
-// This is deliberately NOT a tax engine and makes no jurisdictional legal
-// conclusions. The old tax-readiness fields remain normalized below only so
-// stored registration records and historical audit data stay compatible;
-// they no longer control subscription checkout.
-//
-// Storage note: registrations are stored as a single JSON blob (D1 `data`
-// column / KV value), not as individual structured columns -- see
-// saveRegistrationRecord()/loadRegistrationByReference() in
-// src/handlers/parish.js. These new fields are just additional properties
-// on that same object; no migration is needed to add them, and old
-// registrations that predate this feature simply don't have them yet --
-// withTaxReadinessDefaults() below is what makes that safe everywhere.
-
-export const TAX_READINESS_STATUSES = [
-  "tax_not_required_yet",
-  "tax_needs_review",
-  "tax_registration_pending",
-  "tax_ready_for_checkout",
-  "tax_blocked"
+// Generated from src/lib/tax-readiness.ts by npm run build:server. Do not edit.
+const TAX_READINESS_STATUSES = [
+  'tax_not_required_yet',
+  'tax_needs_review',
+  'tax_registration_pending',
+  'tax_ready_for_checkout',
+  'tax_blocked',
 ];
-
-export const TAX_READINESS_LABELS = {
-  tax_needs_review: "Needs review",
-  tax_registration_pending: "Registration pending",
-  tax_ready_for_checkout: "Ready for checkout",
-  tax_not_required_yet: "Not required yet",
-  tax_blocked: "Blocked"
+const TAX_READINESS_LABELS = {
+  tax_needs_review: 'Needs review',
+  tax_registration_pending: 'Registration pending',
+  tax_ready_for_checkout: 'Ready for checkout',
+  tax_not_required_yet: 'Not required yet',
+  tax_blocked: 'Blocked',
 };
-
-export const DEFAULT_TAX_READINESS_STATUS = "tax_needs_review";
-
-// line2 is intentionally not required -- many church addresses are a
-// single line (PO box or street address with no suite/unit).
+const DEFAULT_TAX_READINESS_STATUS = 'tax_needs_review';
 const REQUIRED_BILLING_FIELDS = [
-  "billingLegalName",
-  "billingAddressLine1",
-  "billingCity",
-  "billingState",
-  "billingPostalCode",
-  "billingCountry"
+  'billingLegalName',
+  'billingAddressLine1',
+  'billingCity',
+  'billingState',
+  'billingPostalCode',
+  'billingCountry',
 ];
-
 const ALL_BILLING_FIELDS = [
-  "billingLegalName",
-  "billingAddressLine1",
-  "billingAddressLine2",
-  "billingCity",
-  "billingState",
-  "billingPostalCode",
-  "billingCountry"
+  'billingLegalName',
+  'billingAddressLine1',
+  'billingAddressLine2',
+  'billingCity',
+  'billingState',
+  'billingPostalCode',
+  'billingCountry',
 ];
-
 const BILLING_REGISTRATION_FALLBACKS = Object.freeze({
-  billingLegalName: ["taxLegalName", "parishName"],
-  billingAddressLine1: ["addressLine1"],
-  billingAddressLine2: ["addressLine2"],
-  billingCity: ["city"],
-  billingState: ["state"],
-  billingPostalCode: ["postalCode"],
-  billingCountry: ["country"]
+  billingLegalName: ['taxLegalName', 'parishName'],
+  billingAddressLine1: ['addressLine1'],
+  billingAddressLine2: ['addressLine2'],
+  billingCity: ['city'],
+  billingState: ['state'],
+  billingPostalCode: ['postalCode'],
+  billingCountry: ['country'],
 });
-
 function firstNonBlank(...values) {
-  return values.find((value) => String(value || "").trim().length > 0) || "";
+  return values.find((value) => String(value || '').trim().length > 0) || '';
 }
-
-/**
- * Returns a NEW object with safe defaults for any legacy tax-readiness and
- * current billing fields, without overwriting a value that's already set. The
- * church name and address collected at registration are the initial billing
- * identity. Explicit billing fields continue to take precedence.
- * Never mutates the input and never persists anything -- purely a
- * read/display-time normalization helper. Existing registration data is
- * never deleted or altered by this function.
- */
-export function withTaxReadinessDefaults(registration = {}) {
+function withTaxReadinessDefaults(registration = {}) {
   const next = { ...registration };
   if (!TAX_READINESS_STATUSES.includes(next.taxReadinessStatus)) {
     next.taxReadinessStatus = DEFAULT_TAX_READINESS_STATUS;
   }
-  next.taxReadinessReviewedAt = next.taxReadinessReviewedAt || "";
-  next.taxReadinessReviewedBy = next.taxReadinessReviewedBy || "";
-  next.taxReadinessNotes = next.taxReadinessNotes || "";
+  next.taxReadinessReviewedAt = next.taxReadinessReviewedAt || '';
+  next.taxReadinessReviewedBy = next.taxReadinessReviewedBy || '';
+  next.taxReadinessNotes = next.taxReadinessNotes || '';
   for (const field of ALL_BILLING_FIELDS) {
     const fallbacks = (BILLING_REGISTRATION_FALLBACKS[field] || []).map((fallbackField) => next[fallbackField]);
     next[field] = firstNonBlank(next[field], ...fallbacks);
   }
-  if (!next.billingCountry && next.billingAddressLine1) next.billingCountry = "US";
+  if (!next.billingCountry && next.billingAddressLine1) next.billingCountry = 'US';
   return next;
 }
-
-/** True only if every required billing field is present and non-blank. */
-export function hasCompleteBillingAddress(registration = {}) {
+function hasCompleteBillingAddress(registration = {}) {
   const normalized = withTaxReadinessDefaults(registration);
-  return REQUIRED_BILLING_FIELDS.every((field) => String(normalized[field] || "").trim().length > 0);
+  return REQUIRED_BILLING_FIELDS.every((field) => String(normalized[field] || '').trim().length > 0);
 }
-
-/**
- * The actual pre-checkout gate. Call this AFTER any free-tier early
- * return (free/non-billable tiers never reach this -- see
- * src/lib/subscription-checkout.js) and BEFORE creating a Stripe
- * Customer or Checkout Session.
- *
- * Returns { ok: true } if checkout may proceed, or
- * { ok: false, status, body } with a ready-to-return JSON body if not.
- */
-export function subscriptionCheckoutReadinessGate(registration = {}) {
-  if (registration.status !== "verified") {
+function subscriptionCheckoutReadinessGate(registration = {}) {
+  if (registration.status !== 'verified') {
     return {
       ok: false,
       status: 403,
       body: {
-        error: "This parish must be canonically verified before subscription checkout can be created.",
-        code: "not_verified"
-      }
+        error: 'This parish must be canonically verified before subscription checkout can be created.',
+        code: 'not_verified',
+      },
     };
   }
-
   if (!hasCompleteBillingAddress(registration)) {
     return {
       ok: false,
       status: 422,
       body: {
-        error: "Billing address required before subscription checkout.",
-        code: "billing_address_required"
-      }
+        error: 'Billing address required before subscription checkout.',
+        code: 'billing_address_required',
+      },
     };
   }
-
   return { ok: true };
 }
+export {
+  DEFAULT_TAX_READINESS_STATUS,
+  TAX_READINESS_LABELS,
+  TAX_READINESS_STATUSES,
+  hasCompleteBillingAddress,
+  subscriptionCheckoutReadinessGate,
+  withTaxReadinessDefaults,
+};

@@ -1,13 +1,11 @@
+// Generated from src/lib/email.ts by npm run build:server. Do not edit.
 import { logEvent } from './logging.js';
-import { htmlEscape } from "./format.js";
-
-const RESEND_EMAILS_URL = "https://api.resend.com/emails";
-const RESEND_USER_AGENT = "AGAPAY/1.0";
-
-export function agapayEmailHtml(appUrl, title, bodyHtml) {
-  const baseUrl = String(appUrl || "https://agapay.app").replace(/\/+$/, "");
+import { htmlEscape } from './format.js';
+const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
+const RESEND_USER_AGENT = 'AGAPAY/1.0';
+function agapayEmailHtml(appUrl, title, bodyHtml) {
+  const baseUrl = String(appUrl || 'https://agapay.app').replace(/\/+$/, '');
   const markUrl = htmlEscape(`${baseUrl}/mark.png`);
-
   return `
     <div style="margin:0;padding:0;background:#F4F0E6;color:#111827;font-family:Arial,Helvetica,sans-serif;">
       <div style="max-width:660px;margin:0 auto;padding:28px 14px;">
@@ -43,48 +41,60 @@ export function agapayEmailHtml(appUrl, title, bodyHtml) {
     </div>
   `;
 }
-
-export async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 10000 } = {}) {
-  const apiKey = String(env.RESEND_API_KEY || "").trim();
-  if (!apiKey) return { status: "not_configured" };
-
-  // Invalid overrides cannot accidentally disable the provider deadline.
-  const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(Math.ceil(timeoutMs), 30000) : 10000;
+async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 1e4 } = {}) {
+  const apiKey = String(env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return { status: 'not_configured' };
+  const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(Math.ceil(timeoutMs), 3e4) : 1e4;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deadlineMs);
   try {
     const response = await fetch(RESEND_EMAILS_URL, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "User-Agent": RESEND_USER_AGENT,
-        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+        'Content-Type': 'application/json',
+        'User-Agent': RESEND_USER_AGENT,
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       },
       body: JSON.stringify(message),
       signal: controller.signal,
     });
     const bodyText = await response.text();
     let body = {};
-    try { body = bodyText ? JSON.parse(bodyText) : {}; } catch { body = {}; }
+    try {
+      body = bodyText ? JSON.parse(bodyText) : {};
+    } catch {
+      body = {};
+    }
     if (!response.ok) {
-      await logEvent(env, { eventType: 'email.delivery.failed', severity: 'warn', metadata: { errorClass: 'provider_rejected', httpStatus: response.status } });
+      await logEvent(env, {
+        eventType: 'email.delivery.failed',
+        severity: 'warn',
+        metadata: { errorClass: 'provider_rejected', httpStatus: response.status },
+      });
       return {
         errorCode: 'provider_rejected',
-        status: "failed",
+        status: 'failed',
         httpStatus: response.status,
         body: bodyText,
-        detail: body.message || body.error || "Email provider rejected the message",
+        detail: body.message || body.error || 'Email provider rejected the message',
       };
     }
-    return { status: "sent", httpStatus: response.status, body: bodyText, id: body.id || "" };
+    return { status: 'sent', httpStatus: response.status, body: bodyText, id: body.id || '' };
   } catch {
     const errorCode = controller.signal.aborted ? 'timeout' : 'network_error';
-    const detail = errorCode === 'timeout' ? 'Email provider did not respond before the deadline; delivery is unconfirmed.' : 'Email provider request failed; delivery is unconfirmed.';
-    await logEvent(env, { eventType: 'email.delivery.failed', severity: 'warn', metadata: { errorClass: errorCode, deadlineMs } });
-    // A timeout may occur after acceptance; retries belong to the idempotent caller.
+    const detail =
+      errorCode === 'timeout'
+        ? 'Email provider did not respond before the deadline; delivery is unconfirmed.'
+        : 'Email provider request failed; delivery is unconfirmed.';
+    await logEvent(env, {
+      eventType: 'email.delivery.failed',
+      severity: 'warn',
+      metadata: { errorClass: errorCode, deadlineMs },
+    });
     return { status: 'error', errorCode, detail, error: detail };
   } finally {
     clearTimeout(timer);
   }
 }
+export { agapayEmailHtml, sendEmail };

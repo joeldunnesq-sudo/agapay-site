@@ -1,0 +1,139 @@
+import type { LoggingEnv } from './logging.js';
+export type EmailEnv = LoggingEnv & { readonly RESEND_API_KEY?: string | null };
+export interface EmailAttachment {
+  filename: string;
+  content: string;
+}
+export interface EmailMessage {
+  from: string;
+  to: readonly string[];
+  subject: string;
+  reply_to?: string;
+  html?: string;
+  text?: string;
+  attachments?: readonly EmailAttachment[];
+}
+export interface EmailResult {
+  status: 'not_configured' | 'sent' | 'failed' | 'error';
+  httpStatus?: number;
+  body?: string;
+  id?: string;
+  errorCode?: 'provider_rejected' | 'timeout' | 'network_error';
+  detail?: unknown;
+  error?: string;
+}
+interface ProviderBody {
+  id?: string;
+  message?: unknown;
+  error?: unknown;
+}
+
+import { logEvent } from './logging.js';
+import { htmlEscape } from './format.js';
+
+const RESEND_EMAILS_URL = 'https://api.resend.com/emails';
+const RESEND_USER_AGENT = 'AGAPAY/1.0';
+
+export function agapayEmailHtml(appUrl: unknown, title: unknown, bodyHtml: string) {
+  const baseUrl = String(appUrl || 'https://agapay.app').replace(/\/+$/, '');
+  const markUrl = htmlEscape(`${baseUrl}/mark.png`);
+
+  return `
+    <div style="margin:0;padding:0;background:#F4F0E6;color:#111827;font-family:Arial,Helvetica,sans-serif;">
+      <div style="max-width:660px;margin:0 auto;padding:28px 14px;">
+        <div style="background:#FFFFFF;border:1px solid rgba(201,162,91,0.34);border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(6,21,34,0.14);">
+          <div style="background:linear-gradient(120deg,#041427 0%,#07284A 58%,#0A365B 100%);padding:28px 30px;border-bottom:3px solid #C9A25B;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="width:64px;vertical-align:middle;">
+                  <div style="width:56px;height:56px;display:grid;place-items:center;border:1px solid rgba(200,162,74,0.55);border-radius:50%;background:rgba(6,21,34,0.34);">
+                    <img src="${markUrl}" alt="AGAPAY" width="50" height="50" style="display:block;width:50px;height:50px;object-fit:contain;" />
+                  </div>
+                </td>
+                <td style="vertical-align:middle;padding-left:12px;">
+                  <div style="font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1;font-weight:500;color:#F7F1E3;letter-spacing:0.04em;">AGAPAY</div>
+                  <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#D7B06A;font-weight:700;padding-top:7px;">Love how you give</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="padding:34px 30px 30px;background:#FFFFFF;">
+            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#B58A3F;font-weight:700;margin-bottom:12px;">AGAPAY platform update</div>
+            <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.18;font-weight:500;color:#061522;">${htmlEscape(title)}</h1>
+            ${bodyHtml}
+            <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#171715;">In Christ,<br /><strong>AGAPAY Team</strong></p>
+          </div>
+
+          <div style="background:#F4F0E6;padding:18px 30px;border-top:1px solid rgba(201,162,91,0.28);">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#595959;">AGAPAY helps canonical Orthodox parishes, missions, monasteries, ministries, schools, and faithful families flourish through values-aligned financial technology. If you need help, reply to this email.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export async function sendEmail(
+  env: EmailEnv,
+  message: EmailMessage,
+  { idempotencyKey = '', timeoutMs = 10000 }: { idempotencyKey?: string; timeoutMs?: number } = {}
+): Promise<EmailResult> {
+  const apiKey = String(env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return { status: 'not_configured' };
+
+  // Invalid overrides cannot accidentally disable the provider deadline.
+  const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? Math.min(Math.ceil(timeoutMs), 30000) : 10000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), deadlineMs);
+  try {
+    const response = await fetch(RESEND_EMAILS_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'User-Agent': RESEND_USER_AGENT,
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+      },
+      body: JSON.stringify(message),
+      signal: controller.signal,
+    });
+    const bodyText = await response.text();
+    let body: ProviderBody = {};
+    try {
+      body = bodyText ? (JSON.parse(bodyText) as ProviderBody) : {};
+    } catch {
+      body = {};
+    }
+    if (!response.ok) {
+      await logEvent(env, {
+        eventType: 'email.delivery.failed',
+        severity: 'warn',
+        metadata: { errorClass: 'provider_rejected', httpStatus: response.status },
+      });
+      return {
+        errorCode: 'provider_rejected',
+        status: 'failed',
+        httpStatus: response.status,
+        body: bodyText,
+        detail: body.message || body.error || 'Email provider rejected the message',
+      };
+    }
+    return { status: 'sent', httpStatus: response.status, body: bodyText, id: body.id || '' };
+  } catch {
+    const errorCode = controller.signal.aborted ? 'timeout' : 'network_error';
+    const detail =
+      errorCode === 'timeout'
+        ? 'Email provider did not respond before the deadline; delivery is unconfirmed.'
+        : 'Email provider request failed; delivery is unconfirmed.';
+    await logEvent(env, {
+      eventType: 'email.delivery.failed',
+      severity: 'warn',
+      metadata: { errorClass: errorCode, deadlineMs },
+    });
+    // A timeout may occur after acceptance; retries belong to the idempotent caller.
+    return { status: 'error', errorCode, detail, error: detail };
+  } finally {
+    clearTimeout(timer);
+  }
+}

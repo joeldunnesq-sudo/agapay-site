@@ -649,7 +649,7 @@ assert.doesNotMatch(
 );
 assert.match(
   parish,
-  /export function summarizeCharges\(charges\)/,
+  /export function summarizeCharges\(charges(?:\s*:[^)]*)?\)/,
   'parish summarizeCharges should remain until its drift from the canonical monthly output is resolved explicitly'
 );
 assertImports(parish, '../lib/stripe-connect.js', [

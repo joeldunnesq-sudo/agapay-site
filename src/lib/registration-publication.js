@@ -1,6 +1,5 @@
-// Publication must compare and write in one database statement. KV has no
-// compare-and-swap operation and cannot safely implement this launch command.
-export async function saveReviewedRegistration(env, reference, previous, next) {
+// Generated from src/lib/registration-publication.ts by npm run build:server. Do not edit.
+async function saveReviewedRegistration(env, reference, previous, next) {
   if (!env.AGAPAY_DB?.prepare) return false;
   const result = await env.AGAPAY_DB.prepare(
     `
@@ -18,10 +17,11 @@ export async function saveReviewedRegistration(env, reference, previous, next) {
       next.communityType,
       next.stripeAccountId || '',
       next.stripeSubscriptionId || '',
-      next.parishUpdatedAt || new Date().toISOString(),
+      next.parishUpdatedAt || /* @__PURE__ */ new Date().toISOString(),
       reference,
       JSON.stringify(previous)
     )
     .run();
   return result.success !== false && Number(result.meta?.changes) === 1;
 }
+export { saveReviewedRegistration };

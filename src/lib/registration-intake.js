@@ -1,9 +1,8 @@
+// Generated from src/lib/registration-intake.ts by npm run build:server. Do not edit.
 import { sanitizeAttribution } from './lead-attribution.js';
-import { registrationRequirementsForCommunityType } from "../organizations/verification-policies.js";
-
-export const REGISTRATION_TERMS_VERSION = "2026-08-30";
-export const REGISTRATION_PRIVACY_NOTICE_VERSION = "2026-08-30";
-
+import { registrationRequirementsForCommunityType } from '../organizations/verification-policies.js';
+const REGISTRATION_TERMS_VERSION = '2026-08-30';
+const REGISTRATION_PRIVACY_NOTICE_VERSION = '2026-08-30';
 const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   communityType: 80,
   subscriptionTier: 40,
@@ -18,7 +17,7 @@ const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   postalCode: 24,
   website: 2048,
   liturgicalCalendar: 40,
-  organizationDescription: 4000,
+  organizationDescription: 4e3,
   priestFirst: 120,
   priestLast: 120,
   priestEmail: 320,
@@ -26,12 +25,11 @@ const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   treasurerFirst: 120,
   treasurerLast: 120,
   treasurerEmail: 320,
-  notes: 4000,
+  notes: 4e3,
   acceptingName: 200,
   acceptingEmail: 320,
   acceptingRole: 200,
 });
-
 const PUBLIC_TAX_EXEMPTION_STRING_LIMITS = Object.freeze({
   jurisdiction: 40,
   exemptionType: 120,
@@ -40,66 +38,63 @@ const PUBLIC_TAX_EXEMPTION_STRING_LIMITS = Object.freeze({
   expirationDate: 32,
   authorizedRepresentativeName: 200,
   authorizedRepresentativeTitle: 200,
-  multistateExplanation: 2000,
+  multistateExplanation: 2e3,
 });
-
 function limitedRegistrationString(value, maxLength) {
-  return String(value ?? "").trim().slice(0, maxLength);
+  return String(value ?? '')
+    .trim()
+    .slice(0, maxLength);
 }
-
-export function registrationAgreementEvidence(acceptedAt) {
+function registrationAgreementEvidence(acceptedAt) {
   return {
     canonicalAgreement: true,
     termsAcceptedAt: acceptedAt,
     termsVersion: REGISTRATION_TERMS_VERSION,
     privacyNoticeAcknowledgedAt: acceptedAt,
     privacyNoticeVersion: REGISTRATION_PRIVACY_NOTICE_VERSION,
-    agreementSource: "church_registration",
+    agreementSource: 'church_registration',
   };
 }
-
-export function registrationRequiresJurisdiction(type) {
+function registrationRequiresJurisdiction(type) {
   return registrationRequirementsForCommunityType(type).jurisdiction;
 }
-
-export function registrationRequiresValuesReview(type) {
+function registrationRequiresValuesReview(type) {
   return registrationRequirementsForCommunityType(type).valuesReview;
 }
-
-export function registrationRequiresWebsite(type) {
+function registrationRequiresWebsite(type) {
   return registrationRequirementsForCommunityType(type).website;
 }
-
-/**
- * Public registration is an untrusted intake boundary. Only fields rendered
- * by public/register.html may cross it; review state, credentials, billing
- * identifiers, entitlements, and publication data are always server-owned.
- */
-export function sanitizePublicRegistrationInput(input = {}) {
-  const source = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+function sanitizePublicRegistrationInput(input = {}) {
+  const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
   const sanitized = {};
   for (const [field, maxLength] of Object.entries(PUBLIC_REGISTRATION_STRING_LIMITS)) {
     if (Object.hasOwn(source, field)) sanitized[field] = limitedRegistrationString(source[field], maxLength);
   }
-
   if (source.canonicalAgreement === true) sanitized.canonicalAgreement = true;
-
   const exemption = source.taxExemption;
-  if (exemption && typeof exemption === "object" && !Array.isArray(exemption)) {
+  if (exemption && typeof exemption === 'object' && !Array.isArray(exemption)) {
     const sanitizedExemption = {};
     for (const [field, maxLength] of Object.entries(PUBLIC_TAX_EXEMPTION_STRING_LIMITS)) {
       if (Object.hasOwn(exemption, field)) {
         sanitizedExemption[field] = limitedRegistrationString(exemption[field], maxLength);
       }
     }
-    if (exemption.claimsExemption === true || exemption.claimsExemption === "yes") {
+    if (exemption.claimsExemption === true || exemption.claimsExemption === 'yes') {
       sanitizedExemption.claimsExemption = true;
     }
     if (exemption.certified === true) sanitizedExemption.certified = true;
     sanitized.taxExemption = sanitizedExemption;
   }
-
   const attribution = sanitizeAttribution(source.attribution);
   if (attribution) sanitized.attribution = attribution;
   return sanitized;
 }
+export {
+  REGISTRATION_PRIVACY_NOTICE_VERSION,
+  REGISTRATION_TERMS_VERSION,
+  registrationAgreementEvidence,
+  registrationRequiresJurisdiction,
+  registrationRequiresValuesReview,
+  registrationRequiresWebsite,
+  sanitizePublicRegistrationInput,
+};

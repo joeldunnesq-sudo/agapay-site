@@ -4,10 +4,10 @@ import type { GivingCatalogEnv, CatalogRegistration, CatalogParish } from './par
 export { json } from '../lib/http-responses.js';
 export { paidOfferingStatus } from '../lib/paid-offering-status.js';
 export { loadParishPaidOfferings } from './parish-giving-read-models.js';
-export function findRegistrationByParishId(
+export function findRegistrationByParishId<Registration extends CatalogRegistration = CatalogRegistration>(
   env: GivingCatalogEnv,
   id: string
-): Promise<{ key: string; registration: CatalogRegistration } | null>;
+): Promise<{ key: string; registration: Registration } | null>;
 export function getBearerToken(request: Request): string;
 export function givingFeatureAccess(registration: CatalogRegistration, feature: 'campaigns' | 'branding'): boolean;
 export function hasProductionStore(env: GivingCatalogEnv): boolean;
@@ -43,3 +43,6 @@ export function verifiedRegistrationParishes(
   options?: CatalogPageOptions
 ): Promise<CatalogParish[]>;
 export function verifyParishDashboardBearer(registration: CatalogRegistration, token: string): Promise<boolean>;
+
+export { defaultSubscriptionTier } from '../lib/subscriptions.js';
+export function starterFundCatalogError(funds?: unknown): string;

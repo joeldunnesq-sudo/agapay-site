@@ -1,3 +1,4 @@
+import { readServerModuleSource } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
@@ -481,7 +482,7 @@ assert.equal(
 
 const wiring = read('src/accounting/source-wiring.js');
 const parish = readParishHandlerSource();
-const parishDashboardHandler = read('src/handlers/parish-dashboard-handler.js');
+const parishDashboardHandler = await readServerModuleSource('src/handlers/parish-dashboard-handler.js');
 const accountingRoutes = read('src/handlers/accounting-setup-reports.js');
 const app = readParishDashboardSource();
 const dashboard = read('public/parish/dashboard.html');

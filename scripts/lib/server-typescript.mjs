@@ -8,6 +8,32 @@ export const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 // Authoritative sources. Runtime consumers retain the adjacent .js import paths.
 export const serverTypeScriptSources = Object.freeze([
+  'src/lib/admin-overview-metrics.ts',
+  'src/lib/parish-relationships.ts',
+  'src/lib/commerce-readiness.ts',
+  'src/lib/tax-readiness.ts',
+
+  'src/lib/registrations.ts',
+  'src/lib/registration-intake.ts',
+  'src/lib/registration-retries.ts',
+  'src/lib/registration-publication.ts',
+  'src/lib/contact-leads.ts',
+
+  'src/lib/email.ts',
+  'src/lib/parish-notifications.ts',
+  'src/lib/parish-support-tickets.ts',
+  'src/lib/lead-attribution.ts',
+
+  'src/handlers/parish-dashboard-handler.ts',
+  'src/lib/subscriptions.ts',
+  'src/lib/entitlements.ts',
+  'src/lib/parish-onboarding.ts',
+  'src/lib/parish-feature-requests.ts',
+  'src/lib/parish-pricing-usage.ts',
+  'src/lib/parish-life-access.ts',
+
+  'src/lib/stripe-connect.ts',
+  'src/lib/stripe-volume.ts',
   'src/lib/stewardship-funds.ts',
   'src/lib/payment-fees.ts',
   'src/lib/stripe-fees.ts',

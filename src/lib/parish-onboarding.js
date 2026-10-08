@@ -1,81 +1,85 @@
-import { normalizeEmail, sha256Hex } from "./core.js";
-import { accountingEnabledFor } from "./entitlements.js";
-import { subscriptionReady, subscriptionTier, subscriptionAddOnsFor, subscriptionAddOnPricing } from "./subscriptions.js";
+// Generated from src/lib/parish-onboarding.ts by npm run build:server. Do not edit.
+import { normalizeEmail, sha256Hex } from './core.js';
+import { accountingEnabledFor } from './entitlements.js';
+import {
+  subscriptionReady,
+  subscriptionTier,
+  subscriptionAddOnsFor,
+  subscriptionAddOnPricing,
+} from './subscriptions.js';
 import {
   VERIFICATION_ONBOARDING_MANUAL_CHECKS,
-  verificationOnboardingSteps
-} from "../organizations/verification-policies.js";
-
-export const PARISH_ONBOARDING_WORKFLOW_VERSION = 1;
-export const STRIPE_READINESS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-
-export const ONBOARDING_MANUAL_CHECKS = Object.freeze([
+  verificationOnboardingSteps,
+} from '../organizations/verification-policies.js';
+const PARISH_ONBOARDING_WORKFLOW_VERSION = 1;
+const STRIPE_READINESS_MAX_AGE_MS = 24 * 60 * 60 * 1e3;
+const ONBOARDING_MANUAL_CHECKS = Object.freeze([
   ...VERIFICATION_ONBOARDING_MANUAL_CHECKS,
-  "givingConfiguration",
-  "importDecision"
+  'givingConfiguration',
+  'importDecision',
 ]);
-
-export const TREASURER_AFFIRMATIONS = Object.freeze([
-  "stripeAccount",
-  "payoutBank",
-  "organizationName",
-  "generalFund",
-  "designatedFunds",
-  "recurringGiving",
-  "receiptDetails",
-  "agapayPlan"
+const TREASURER_AFFIRMATIONS = Object.freeze([
+  'stripeAccount',
+  'payoutBank',
+  'organizationName',
+  'generalFund',
+  'designatedFunds',
+  'recurringGiving',
+  'receiptDetails',
+  'agapayPlan',
 ]);
-
-const MANUAL_STATUSES = new Set(["not_started", "in_progress", "blocked", "passed", "not_applicable"]);
-const GENERAL_FUND_KEYS = new Set(["general", "stewardship", "general operating fund", "general stewardship"]);
-const GENERAL_FUND_CANONICAL_ID = "general";
-const GENERAL_ACCOUNTING_FUND_ID = "fund_general";
-
-function text(value, maxLength = 1000) {
-  return String(value || "").trim().slice(0, maxLength);
+const MANUAL_STATUSES = /* @__PURE__ */ new Set(['not_started', 'in_progress', 'blocked', 'passed', 'not_applicable']);
+const GENERAL_FUND_KEYS = /* @__PURE__ */ new Set([
+  'general',
+  'stewardship',
+  'general operating fund',
+  'general stewardship',
+]);
+const GENERAL_FUND_CANONICAL_ID = 'general';
+const GENERAL_ACCOUNTING_FUND_ID = 'fund_general';
+function text(value, maxLength = 1e3) {
+  return String(value || '')
+    .trim()
+    .slice(0, maxLength);
 }
-
 function activeItems(items) {
   return (Array.isArray(items) ? items : []).filter((item) => item && item.enabled !== false && item.active !== false);
 }
-
 function isGeneralFundCandidate(fund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
     .filter(Boolean)
     .map((value) => text(value, 160).toLowerCase())
     .some((value) => GENERAL_FUND_KEYS.has(value));
 }
-
 function approvedLegacyGeneralFundException(registration = {}, fund = {}) {
   const exception = registration.generalFundLegacyException;
   if (!exception || exception.approved !== true) return false;
   const legacyId = text(exception.legacyFundIdentifier, 160).toLowerCase();
   return Boolean(
-    legacyId
-    && legacyId === text(fund.id, 160).toLowerCase()
-    && text(exception.reason, 500)
-    && text(exception.approvedBy, 160)
-    && validDate(exception.approvedAt)
+    legacyId &&
+    legacyId === text(fund.id, 160).toLowerCase() &&
+    text(exception.reason, 500) &&
+    text(exception.approvedBy, 160) &&
+    validDate(exception.approvedAt)
   );
 }
-
-export function validateGeneralOperatingFund(registration = {}) {
+function validateGeneralOperatingFund(registration = {}) {
   const funds = Array.isArray(registration.funds) ? registration.funds.filter(Boolean) : [];
   const activeFunds = activeItems(funds);
   const allCandidates = funds.filter(isGeneralFundCandidate);
   const candidates = activeFunds.filter(isGeneralFundCandidate);
   const errors = [];
   const warnings = [];
-  const fund = candidates.length === 1 ? candidates[0] : (allCandidates.length === 1 ? allCandidates[0] : null);
-
+  const fund = candidates.length === 1 ? candidates[0] : allCandidates.length === 1 ? allCandidates[0] : null;
   if (!candidates.length) {
-    errors.push(allCandidates.length
-      ? "General Operating Fund must be enabled before launch."
-      : "Add one active General Operating Fund before launch.");
+    errors.push(
+      allCandidates.length
+        ? 'General Operating Fund must be enabled before launch.'
+        : 'Add one active General Operating Fund before launch.'
+    );
   } else if (candidates.length > 1) {
     errors.push(`Exactly one active General Operating Fund is required; ${candidates.length} are configured.`);
   }
-
   if (fund) {
     const canonicalId = text(fund.id, 160).toLowerCase();
     const legacyException = approvedLegacyGeneralFundException(registration, fund);
@@ -83,132 +87,138 @@ export function validateGeneralOperatingFund(registration = {}) {
       errors.push('The General Operating Fund must use the stable identifier "general".');
     }
     if (legacyException) warnings.push(`Approved legacy identifier: ${text(fund.id, 160)}.`);
-
     const restrictionType = text(fund.restrictionType || fund.restriction_type, 80).toLowerCase();
-    if (restrictionType !== "unrestricted") {
-      errors.push("General Operating Fund is restricted. Change the restriction to Unrestricted before launch.");
+    if (restrictionType !== 'unrestricted') {
+      errors.push('General Operating Fund is restricted. Change the restriction to Unrestricted before launch.');
     }
     if (fund.isDefault !== true) {
-      errors.push("Your General Operating Fund must be marked as the default unrestricted giving fund.");
+      errors.push('Your General Operating Fund must be marked as the default unrestricted giving fund.');
     }
     const activeDefaults = activeFunds.filter((item) => item.isDefault === true);
     if (activeDefaults.length !== 1 || activeDefaults[0] !== fund) {
-      errors.push("The default giving destination is ambiguous. Keep exactly one default fund: General Operating Fund.");
+      errors.push(
+        'The default giving destination is ambiguous. Keep exactly one default fund: General Operating Fund.'
+      );
     }
     if (fund.enabled === false || fund.active === false) {
-      errors.push("General Operating Fund must be enabled before launch.");
+      errors.push('General Operating Fund must be enabled before launch.');
     }
-    if (fund.givingEnabled === false || fund.donorVisible === false || ["hidden", "private", "disabled"].includes(text(fund.visibility, 40).toLowerCase())) {
-      errors.push("General Operating Fund must be available to donors before launch.");
+    if (
+      fund.givingEnabled === false ||
+      fund.donorVisible === false ||
+      ['hidden', 'private', 'disabled'].includes(text(fund.visibility, 40).toLowerCase())
+    ) {
+      errors.push('General Operating Fund must be available to donors before launch.');
     }
     if (accountingEnabledFor(registration) && text(fund.accountingFundId, 160) !== GENERAL_ACCOUNTING_FUND_ID) {
-      errors.push("General Operating Fund must map to the unrestricted operating fund in AGAPAY Accounting.");
+      errors.push('General Operating Fund must map to the unrestricted operating fund in AGAPAY Accounting.');
     }
   }
-
   return {
     passed: errors.length === 0,
     fund,
     errors,
-    warnings
+    warnings,
   };
 }
-
 function publicFund(item = {}) {
   return {
     id: text(item.id || item.code || item.name, 160),
     name: text(item.name || item.label, 160),
     description: text(item.description, 500),
-    restrictionType: text(item.restrictionType || item.restriction_type || "unrestricted", 80),
+    restrictionType: text(item.restrictionType || item.restriction_type || 'unrestricted', 80),
     accountNumber: text(item.accountNumber || item.account_number, 40),
     accountingFundId: text(item.accountingFundId || item.accounting_fund_id, 160),
     isDefault: item.isDefault === true,
-    donorVisible: item.givingEnabled !== false && item.donorVisible !== false && !["hidden", "private", "disabled"].includes(text(item.visibility, 40).toLowerCase()),
-    status: text(item.status || (item.enabled === false || item.active === false ? "disabled" : "active"), 40)
+    donorVisible:
+      item.givingEnabled !== false &&
+      item.donorVisible !== false &&
+      !['hidden', 'private', 'disabled'].includes(text(item.visibility, 40).toLowerCase()),
+    status: text(item.status || (item.enabled === false || item.active === false ? 'disabled' : 'active'), 40),
   };
 }
-
 function publicCampaign(item = {}) {
   return {
     ...publicFund(item),
     goalCents: Number(item.goalCents || 0),
-    destinationFundId: text(item.destinationFundId, 160)
+    destinationFundId: text(item.destinationFundId, 160),
   };
 }
-
 function stableValue(value) {
   if (Array.isArray(value)) return value.map(stableValue);
-  if (!value || typeof value !== "object") return value;
-  return Object.keys(value).sort().reduce((result, key) => {
-    result[key] = stableValue(value[key]);
-    return result;
-  }, {});
+  if (!value || typeof value !== 'object') return value;
+  return Object.keys(value)
+    .sort()
+    .reduce((result, key) => {
+      result[key] = stableValue(value[key]);
+      return result;
+    }, {});
 }
-
-function step(key, title, passed, detail, owner = "AGAPAY") {
+function step(key, title, passed, detail, owner = 'AGAPAY') {
   return {
     key,
     title,
-    status: passed ? "passed" : "blocked",
+    status: passed ? 'passed' : 'blocked',
     passed: Boolean(passed),
     detail,
-    owner
+    owner,
   };
 }
-
 function manualPassed(checks, key) {
-  const status = checks[key]?.status || "not_started";
-  return status === "passed" || (key === "importDecision" && status === "not_applicable");
+  const status = checks[key]?.status || 'not_started';
+  return status === 'passed' || (key === 'importDecision' && status === 'not_applicable');
 }
-
 function legacySharedAccessApproved(registration = {}) {
   const exception = registration.legacySharedAccessAllowed;
   return Boolean(
-    exception?.approved === true
-    && text(exception.reason, 500)
-    && text(exception.approvedBy, 160)
-    && validDate(exception.approvedAt)
-    && !registration.parishDashboardTokenTemporary
-    && registration.parishDashboardPasswordRecord
+    exception?.approved === true &&
+    text(exception.reason, 500) &&
+    text(exception.approvedBy, 160) &&
+    validDate(exception.approvedAt) &&
+    !registration.parishDashboardTokenTemporary &&
+    registration.parishDashboardPasswordRecord
   );
 }
-
-export function requiredPersonalAccessAccepted(registration = {}, options = {}) {
-  const access = registration.onboardingAccess && typeof registration.onboardingAccess === "object"
-    ? registration.onboardingAccess
-    : {};
-  const required = [["treasurer", normalizeEmail(registration.treasurerEmail)]]
-    .filter(([, email]) => Boolean(email));
+function requiredPersonalAccessAccepted(registration = {}, options = {}) {
+  const access =
+    registration.onboardingAccess && typeof registration.onboardingAccess === 'object'
+      ? registration.onboardingAccess
+      : {};
+  const required = [['treasurer', normalizeEmail(registration.treasurerEmail)]].filter(([, email]) => Boolean(email));
   if (!required.length) return false;
   const memberships = Array.isArray(options.memberships) ? options.memberships : null;
   return required.every(([role, email]) => {
     const accepted = access[role];
-    if (accepted?.status !== "accepted" || normalizeEmail(accepted.email) !== email || !text(accepted.membershipId, 200)) return false;
+    if (
+      accepted?.status !== 'accepted' ||
+      normalizeEmail(accepted.email) !== email ||
+      !text(accepted.membershipId, 200)
+    )
+      return false;
     if (!memberships) return true;
-    return memberships.some((membership) => membership?.id === accepted.membershipId
-      && membership?.parishId === registration.parishId
-      && membership?.status === "active");
+    return memberships.some(
+      (membership) =>
+        membership?.id === accepted.membershipId &&
+        membership?.parishId === registration.parishId &&
+        membership?.status === 'active'
+    );
   });
 }
-
 function accessAccepted(registration = {}, options = {}) {
-  const dashboardSecured = registration.dashboardInviteEmailStatus === "sent"
-    && Boolean(registration.parishDashboardPasswordRecord)
-    && registration.parishDashboardTokenTemporary !== true;
+  const dashboardSecured =
+    registration.dashboardInviteEmailStatus === 'sent' &&
+    Boolean(registration.parishDashboardPasswordRecord) &&
+    registration.parishDashboardTokenTemporary !== true;
   if (!dashboardSecured) return legacySharedAccessApproved(registration);
-  // Initial publication uses the secured parish dashboard session, including
-  // during the 30-day trial. Accounting authorization remains a separate gate.
   if (!registration.goLiveAt && !registration.treasurerSignoff?.signedAt) return true;
-  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active";
+  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === 'active';
   if (!paidSubscription) return true;
   return requiredPersonalAccessAccepted(registration, options) || legacySharedAccessApproved(registration);
 }
-
 function validDate(value) {
-  const time = new Date(value || "").getTime();
+  const time = new Date(value || '').getTime();
   return Number.isFinite(time) ? time : 0;
 }
-
 function stripeReadiness(registration = {}, now = Date.now()) {
   const checkedAt = validDate(registration.stripeStatusCheckedAt);
   const fresh = checkedAt > 0 && now - checkedAt <= STRIPE_READINESS_MAX_AGE_MS;
@@ -220,78 +230,91 @@ function stripeReadiness(registration = {}, now = Date.now()) {
     detailsSubmitted: registration.stripeDetailsSubmitted === true,
     noDisabledReason: !text(registration.stripeDisabledReason, 500),
     noRequirementsDue: requirements.length === 0,
-    checkedAt: registration.stripeStatusCheckedAt || "",
+    checkedAt: registration.stripeStatusCheckedAt || '',
     fresh,
     ready: Boolean(
-      text(registration.stripeAccountId, 255)
-      && registration.stripeChargesEnabled === true
-      && registration.stripePayoutsEnabled === true
-      && registration.stripeDetailsSubmitted === true
-      && !text(registration.stripeDisabledReason, 500)
-      && requirements.length === 0
-      && fresh
-    )
+      text(registration.stripeAccountId, 255) &&
+      registration.stripeChargesEnabled === true &&
+      registration.stripePayoutsEnabled === true &&
+      registration.stripeDetailsSubmitted === true &&
+      !text(registration.stripeDisabledReason, 500) &&
+      requirements.length === 0 &&
+      fresh
+    ),
   };
 }
-
-export function onboardingWorkflowEnabled(registration = {}) {
+function onboardingWorkflowEnabled(registration = {}) {
   return Number(registration.onboardingWorkflowVersion || 0) >= PARISH_ONBOARDING_WORKFLOW_VERSION;
 }
-
-export function normalizeOnboardingChecks(input = {}, current = {}, actor = "AGAPAY Admin", now = new Date().toISOString()) {
-  const existing = current && typeof current === "object" ? current : {};
-  const submitted = input && typeof input === "object" ? input : {};
+function normalizeOnboardingChecks(
+  input = {},
+  current = {},
+  actor = 'AGAPAY Admin',
+  now = /* @__PURE__ */ new Date().toISOString()
+) {
+  const existing = current && typeof current === 'object' ? current : {};
+  const submitted = input && typeof input === 'object' ? input : {};
   const normalized = {};
-
   for (const key of ONBOARDING_MANUAL_CHECKS) {
-    const prior = existing[key] && typeof existing[key] === "object" ? existing[key] : {};
-    const next = submitted[key] && typeof submitted[key] === "object" ? submitted[key] : null;
-    const requestedStatus = text(next?.status || prior.status || "not_started", 40).toLowerCase();
-    const status = MANUAL_STATUSES.has(requestedStatus) ? requestedStatus : "not_started";
-    const allowedStatus = status === "not_applicable" && key !== "importDecision" ? "not_started" : status;
+    const prior = existing[key] && typeof existing[key] === 'object' ? existing[key] : {};
+    const next = submitted[key] && typeof submitted[key] === 'object' ? submitted[key] : null;
+    const requestedStatus = text(next?.status || prior.status || 'not_started', 40).toLowerCase();
+    const status = MANUAL_STATUSES.has(requestedStatus) ? requestedStatus : 'not_started';
+    const allowedStatus = status === 'not_applicable' && key !== 'importDecision' ? 'not_started' : status;
     const note = text(next?.note ?? prior.note, 1200);
-    const evidence = text(next?.evidence ?? prior.evidence, 1000);
-    const changed = Boolean(next) && (allowedStatus !== prior.status || note !== text(prior.note, 1200) || evidence !== text(prior.evidence, 1000));
+    const evidence = text(next?.evidence ?? prior.evidence, 1e3);
+    const changed =
+      Boolean(next) &&
+      (allowedStatus !== prior.status || note !== text(prior.note, 1200) || evidence !== text(prior.evidence, 1e3));
     normalized[key] = {
       status: allowedStatus,
       note,
       evidence,
-      updatedAt: changed ? now : prior.updatedAt || "",
-      updatedBy: changed ? text(actor, 160) : prior.updatedBy || ""
+      updatedAt: changed ? now : prior.updatedAt || '',
+      updatedBy: changed ? text(actor, 160) : prior.updatedBy || '',
     };
   }
-
   return normalized;
 }
-
-export function recordParishGivingSetupReview(registration = {}, importDecision = "none", actor = "Parish dashboard", now = new Date().toISOString()) {
-  const importRequested = importDecision === "requested";
+function recordParishGivingSetupReview(
+  registration = {},
+  importDecision = 'none',
+  actor = 'Parish dashboard',
+  now = /* @__PURE__ */ new Date().toISOString()
+) {
+  const importRequested = importDecision === 'requested';
   return {
     ...registration,
-    onboardingChecks: normalizeOnboardingChecks({
-      givingConfiguration: {
-        status: "passed",
-        note: "The parish reviewed and saved its donor-facing giving setup.",
-        evidence: "Parish giving setup wizard"
+    onboardingChecks: normalizeOnboardingChecks(
+      {
+        givingConfiguration: {
+          status: 'passed',
+          note: 'The parish reviewed and saved its donor-facing giving setup.',
+          evidence: 'Parish giving setup wizard',
+        },
+        importDecision: {
+          status: importRequested ? 'passed' : 'not_applicable',
+          note: importRequested
+            ? 'The parish requested help importing existing donor or pledge records.'
+            : 'The parish chose to launch without importing donor or pledge records.',
+          evidence: 'Parish giving setup wizard',
+        },
       },
-      importDecision: {
-        status: importRequested ? "passed" : "not_applicable",
-        note: importRequested
-          ? "The parish requested help importing existing donor or pledge records."
-          : "The parish chose to launch without importing donor or pledge records.",
-        evidence: "Parish giving setup wizard"
-      }
-    }, registration.onboardingChecks, actor, now)
+      registration.onboardingChecks,
+      actor,
+      now
+    ),
   };
 }
-
-export function onboardingMaterialSnapshot(registration = {}, options = {}) {
+function onboardingMaterialSnapshot(registration = {}, options = {}) {
   const funds = activeItems(registration.funds);
   const generalFunds = funds.filter(isGeneralFundCandidate);
   const designatedFunds = funds.filter((fund) => !isGeneralFundCandidate(fund));
   const plan = subscriptionTier(registration);
   const baseMonthlyCents = plan.monthlyCents ?? registration.subscriptionMonthlyCents ?? null;
-  const addOns = subscriptionAddOnsFor(registration).map((id) => subscriptionAddOnPricing(id)).filter(Boolean);
+  const addOns = subscriptionAddOnsFor(registration)
+    .map((id) => subscriptionAddOnPricing(id))
+    .filter(Boolean);
   const modules = { ...plan.modules };
   for (const addOn of addOns) for (const moduleId of addOn.modules) modules[moduleId] = true;
   return stableValue({
@@ -299,7 +322,10 @@ export function onboardingMaterialSnapshot(registration = {}, options = {}) {
     organization: {
       parishId: text(registration.parishId, 160),
       publicName: text(registration.parishName, 240),
-      legalReceiptName: text(registration.taxLegalName || registration.billingLegalName || registration.parishName, 240)
+      legalReceiptName: text(
+        registration.taxLegalName || registration.billingLegalName || registration.parishName,
+        240
+      ),
     },
     stripe: {
       accountId: text(registration.stripeAccountId, 255),
@@ -307,24 +333,33 @@ export function onboardingMaterialSnapshot(registration = {}, options = {}) {
       payoutsEnabled: registration.stripePayoutsEnabled === true,
       detailsSubmitted: registration.stripeDetailsSubmitted === true,
       disabledReason: text(registration.stripeDisabledReason, 500),
-      requirementsDue: (Array.isArray(registration.stripeRequirementsDue) ? registration.stripeRequirementsDue : []).map((item) => text(item, 160)).sort(),
+      requirementsDue: (Array.isArray(registration.stripeRequirementsDue) ? registration.stripeRequirementsDue : [])
+        .map((item) => text(item, 160))
+        .sort(),
       payoutBankName: text(registration.stripePayoutBankName, 160),
       payoutBankLast4: text(registration.stripePayoutBankLast4, 4),
-      statusCheckedAt: text(registration.stripeStatusCheckedAt, 80)
+      statusCheckedAt: text(registration.stripeStatusCheckedAt, 80),
     },
     plan: {
       id: text(registration.subscriptionTier || plan?.id, 80),
       label: text(registration.subscriptionTierLabel || plan?.label, 160),
       monthlyCents: plan?.monthlyCents ?? registration.subscriptionMonthlyCents ?? null,
       status: text(registration.subscriptionStatus, 80),
-      ...(options.legacyPlanSummary ? {} : {
-        totalMonthlyCents: baseMonthlyCents === null ? null : Number(baseMonthlyCents) + addOns.reduce((sum, item) => sum + item.monthlyCents, 0),
-        addOns: addOns.map((item) => ({ id: item.id, label: item.label, monthlyCents: item.monthlyCents })),
-        modules: Object.keys(modules).filter((key) => modules[key] === true).sort(),
-        trialEndsAt: text(registration.subscriptionTrialEndsAt, 80),
-        transactionRateLabel: text(plan.transactionRateLabel, 240),
-        householdBand: text(registration.parishHouseholdBand, 80)
-      })
+      ...(options.legacyPlanSummary
+        ? {}
+        : {
+            totalMonthlyCents:
+              baseMonthlyCents === null
+                ? null
+                : Number(baseMonthlyCents) + addOns.reduce((sum, item) => sum + item.monthlyCents, 0),
+            addOns: addOns.map((item) => ({ id: item.id, label: item.label, monthlyCents: item.monthlyCents })),
+            modules: Object.keys(modules)
+              .filter((key) => modules[key] === true)
+              .sort(),
+            trialEndsAt: text(registration.subscriptionTrialEndsAt, 80),
+            transactionRateLabel: text(plan.transactionRateLabel, 240),
+            householdBand: text(registration.parishHouseholdBand, 80),
+          }),
     },
     giving: {
       recurringGivingEnabled: registration.recurringGivingEnabled !== false,
@@ -332,82 +367,163 @@ export function onboardingMaterialSnapshot(registration = {}, options = {}) {
       generalFundLegacyException: stableValue(registration.generalFundLegacyException || null),
       designatedFunds: designatedFunds.map(publicFund),
       campaigns: activeItems(registration.campaigns).map(publicCampaign),
-      feastCampaigns: activeItems(registration.feastCampaigns).map(publicCampaign)
+      feastCampaigns: activeItems(registration.feastCampaigns).map(publicCampaign),
     },
     receipt: {
       legalName: text(registration.taxLegalName || registration.billingLegalName || registration.parishName, 240),
-      contact: text(options.receiptContact || registration.receiptContact || "support@agapay.app", 255)
-    }
+      contact: text(options.receiptContact || registration.receiptContact || 'support@agapay.app', 255),
+    },
   });
 }
-
-export async function onboardingMaterialVersion(registration = {}, options = {}) {
+async function onboardingMaterialVersion(registration = {}, options = {}) {
   return sha256Hex(JSON.stringify(onboardingMaterialSnapshot(registration, options)));
 }
-
-export function recommendedOnboardingState(registration = {}, checksInput = registration.onboardingChecks, options = {}) {
-  if (!registration.reference) return "RECEIVED";
-  if (registration.status !== "verified") return "IDENTITY_REVIEW";
-  if (registration.onboardingState === "LIVE" && registration.givingStatus === "active" && registration.treasurerSignoff?.status === "signed") return "LIVE";
-  if (registration.onboardingState === "PAUSED" && registration.givingStatus === "paused") return "PAUSED";
-  if (registration.onboardingState === "CONFIGURING" && registration.givingStatus === "paused") return "CONFIGURING";
-  if (registration.dashboardInviteEmailStatus !== "sent") return "VERIFIED_HIDDEN";
-  if (!accessAccepted(registration, options)) return "INVITED";
-  if (!registration.stripeAccountId) return "CREDENTIAL_SECURED";
+function recommendedOnboardingState(registration = {}, checksInput = registration.onboardingChecks, options = {}) {
+  if (!registration.reference) return 'RECEIVED';
+  if (registration.status !== 'verified') return 'IDENTITY_REVIEW';
+  if (
+    registration.onboardingState === 'LIVE' &&
+    registration.givingStatus === 'active' &&
+    registration.treasurerSignoff?.status === 'signed'
+  )
+    return 'LIVE';
+  if (registration.onboardingState === 'PAUSED' && registration.givingStatus === 'paused') return 'PAUSED';
+  if (registration.onboardingState === 'CONFIGURING' && registration.givingStatus === 'paused') return 'CONFIGURING';
+  if (registration.dashboardInviteEmailStatus !== 'sent') return 'VERIFIED_HIDDEN';
+  if (!accessAccepted(registration, options)) return 'INVITED';
+  if (!registration.stripeAccountId) return 'CREDENTIAL_SECURED';
   const stripe = stripeReadiness(registration);
-  if (!stripe.ready) return "STRIPE_PENDING";
+  if (!stripe.ready) return 'STRIPE_PENDING';
   const checks = normalizeOnboardingChecks({}, checksInput);
   const generalFund = validateGeneralOperatingFund(registration);
-  if (!subscriptionReady(registration)
-    || !generalFund.passed
-    || !manualPassed(checks, "givingConfiguration")
-    || !manualPassed(checks, "importDecision")) return "CONFIGURING";
-  return "AWAITING_TREASURER_SIGNOFF";
+  if (
+    !subscriptionReady(registration) ||
+    !generalFund.passed ||
+    !manualPassed(checks, 'givingConfiguration') ||
+    !manualPassed(checks, 'importDecision')
+  )
+    return 'CONFIGURING';
+  return 'AWAITING_TREASURER_SIGNOFF';
 }
-
-export async function buildParishOnboardingWorkflow(registration = {}, options = {}) {
+async function buildParishOnboardingWorkflow(registration = {}, options = {}) {
   const checks = normalizeOnboardingChecks({}, registration.onboardingChecks);
   const stripe = stripeReadiness(registration, options.now ?? Date.now());
   const generalFund = validateGeneralOperatingFund(registration);
   const verificationSteps = verificationOnboardingSteps(registration, checks);
   const personalAccessAccepted = accessAccepted(registration, options);
-  const paidSubscription = text(registration.subscriptionStatus, 80).toLowerCase() === "active"
-    && Boolean(registration.goLiveAt || registration.treasurerSignoff?.signedAt);
+  const paidSubscription =
+    text(registration.subscriptionStatus, 80).toLowerCase() === 'active' &&
+    Boolean(registration.goLiveAt || registration.treasurerSignoff?.signedAt);
   const workflowSteps = [
-    step("registration", "Registration received", Boolean(registration.reference), registration.reference ? `Reference ${registration.reference}` : "Registration reference is missing."),
+    step(
+      'registration',
+      'Registration received',
+      Boolean(registration.reference),
+      registration.reference ? `Reference ${registration.reference}` : 'Registration reference is missing.'
+    ),
     ...verificationSteps,
-    step("verifiedHidden", "Organization verified and hidden", registration.status === "verified" && registration.givingStatus === "hidden", registration.status === "verified" ? `Giving status: ${registration.givingStatus || "hidden"}.` : "Verify the organization in AGAPAY Admin."),
-    step("invite", "Dashboard invite delivered", registration.dashboardInviteEmailStatus === "sent", registration.dashboardInviteEmailStatus === "sent" ? "Invite delivery is confirmed." : "Send the dashboard invite to verified recipients."),
-    step("credential", paidSubscription ? "Treasurer dashboard access secured" : "Parish dashboard access secured", personalAccessAccepted, personalAccessAccepted
-      ? paidSubscription ? "The treasurer's individual access is active for the paid subscription." : "The shared parish dashboard credential is ready for initial launch."
-      : paidSubscription ? "Ask the treasurer to accept the individual access invitation for the paid subscription." : "Open the dashboard invitation and replace the temporary credential.", "Parish"),
-    step("stripeConnected", "Stripe connected", stripe.connected, stripe.connected ? `Connected account ${registration.stripeAccountId}.` : "Create the parish connected account.", "Treasurer"),
-    step("stripeReady", "Stripe charges and payouts ready", stripe.ready, stripe.ready ? "Charges, payouts, details, and requirements passed a fresh refresh." : "Refresh Stripe; charges and payouts must both be enabled with no requirements due.", "Treasurer"),
-    step("subscription", "Subscription configured", subscriptionReady(registration), subscriptionReady(registration) ? `Plan ${registration.subscriptionTierLabel || registration.subscriptionTier || "selected"} is ${registration.subscriptionStatus}.` : "Activate the selected AGAPAY plan.", "Treasurer"),
-    step("generalFund", "General Operating Fund configured", generalFund.passed, generalFund.passed ? generalFund.fund?.name || "General Operating Fund" : generalFund.errors[0], "Treasurer"),
-    step("givingConfiguration", "Designated funds and campaigns approved", manualPassed(checks, "givingConfiguration"), checks.givingConfiguration.note || "Review the donor-facing giving catalog.", "Treasurer"),
-    step("importDecision", "Donor and pledge import decided", manualPassed(checks, "importDecision"), checks.importDecision.note || "Record not applicable, deferred, or completed import evidence.", "AGAPAY")
+    step(
+      'verifiedHidden',
+      'Organization verified and hidden',
+      registration.status === 'verified' && registration.givingStatus === 'hidden',
+      registration.status === 'verified'
+        ? `Giving status: ${registration.givingStatus || 'hidden'}.`
+        : 'Verify the organization in AGAPAY Admin.'
+    ),
+    step(
+      'invite',
+      'Dashboard invite delivered',
+      registration.dashboardInviteEmailStatus === 'sent',
+      registration.dashboardInviteEmailStatus === 'sent'
+        ? 'Invite delivery is confirmed.'
+        : 'Send the dashboard invite to verified recipients.'
+    ),
+    step(
+      'credential',
+      paidSubscription ? 'Treasurer dashboard access secured' : 'Parish dashboard access secured',
+      personalAccessAccepted,
+      personalAccessAccepted
+        ? paidSubscription
+          ? "The treasurer's individual access is active for the paid subscription."
+          : 'The shared parish dashboard credential is ready for initial launch.'
+        : paidSubscription
+          ? 'Ask the treasurer to accept the individual access invitation for the paid subscription.'
+          : 'Open the dashboard invitation and replace the temporary credential.',
+      'Parish'
+    ),
+    step(
+      'stripeConnected',
+      'Stripe connected',
+      stripe.connected,
+      stripe.connected ? `Connected account ${registration.stripeAccountId}.` : 'Create the parish connected account.',
+      'Treasurer'
+    ),
+    step(
+      'stripeReady',
+      'Stripe charges and payouts ready',
+      stripe.ready,
+      stripe.ready
+        ? 'Charges, payouts, details, and requirements passed a fresh refresh.'
+        : 'Refresh Stripe; charges and payouts must both be enabled with no requirements due.',
+      'Treasurer'
+    ),
+    step(
+      'subscription',
+      'Subscription configured',
+      subscriptionReady(registration),
+      subscriptionReady(registration)
+        ? `Plan ${registration.subscriptionTierLabel || registration.subscriptionTier || 'selected'} is ${registration.subscriptionStatus}.`
+        : 'Activate the selected AGAPAY plan.',
+      'Treasurer'
+    ),
+    step(
+      'generalFund',
+      'General Operating Fund configured',
+      generalFund.passed,
+      generalFund.passed ? generalFund.fund?.name || 'General Operating Fund' : generalFund.errors[0],
+      'Treasurer'
+    ),
+    step(
+      'givingConfiguration',
+      'Designated funds and campaigns approved',
+      manualPassed(checks, 'givingConfiguration'),
+      checks.givingConfiguration.note || 'Review the donor-facing giving catalog.',
+      'Treasurer'
+    ),
+    step(
+      'importDecision',
+      'Donor and pledge import decided',
+      manualPassed(checks, 'importDecision'),
+      checks.importDecision.note || 'Record not applicable, deferred, or completed import evidence.',
+      'AGAPAY'
+    ),
   ];
   const materialVersion = await onboardingMaterialVersion(registration, options);
-  const signedCurrentSnapshot = registration.treasurerSignoff?.status === "signed"
-    && (registration.treasurerSignoff?.snapshotVersion === materialVersion
-      || (registration.treasurerSignoff?.reviewVersion !== 2
-        && registration.treasurerSignoff?.snapshotVersion === await onboardingMaterialVersion(registration, { ...options, legacyPlanSummary: true })));
+  const signedCurrentSnapshot =
+    registration.treasurerSignoff?.status === 'signed' &&
+    (registration.treasurerSignoff?.snapshotVersion === materialVersion ||
+      (registration.treasurerSignoff?.reviewVersion !== 2 &&
+        registration.treasurerSignoff?.snapshotVersion ===
+          (await onboardingMaterialVersion(registration, { ...options, legacyPlanSummary: true }))));
   const derivedState = recommendedOnboardingState(registration, checks, options);
-  const recommendedState = derivedState === "LIVE" && !signedCurrentSnapshot ? "CONFIGURING" : derivedState;
+  const recommendedState = derivedState === 'LIVE' && !signedCurrentSnapshot ? 'CONFIGURING' : derivedState;
   const state = recommendedState;
-  const lifecycleComplete = state === "LIVE" || state === "PAUSED";
+  const lifecycleComplete = state === 'LIVE' || state === 'PAUSED';
   const blockers = workflowSteps
-    .filter((item) => !item.passed && !(lifecycleComplete && item.key === "verifiedHidden"))
+    .filter((item) => !item.passed && !(lifecycleComplete && item.key === 'verifiedHidden'))
     .map((item) => ({ key: item.key, title: item.title, detail: item.detail }));
-  if (registration.givingStatus !== "hidden" && !lifecycleComplete) {
-    blockers.push({ key: "givingHidden", title: "Giving page hidden until signoff", detail: "Set giving status to hidden before Go Live." });
+  if (registration.givingStatus !== 'hidden' && !lifecycleComplete) {
+    blockers.push({
+      key: 'givingHidden',
+      title: 'Giving page hidden until signoff',
+      detail: 'Set giving status to hidden before Go Live.',
+    });
   }
-  const canGoLive = onboardingWorkflowEnabled(registration)
-    && state !== "LIVE"
-    && registration.givingStatus === "hidden"
-    && blockers.length === 0;
-
+  const canGoLive =
+    onboardingWorkflowEnabled(registration) &&
+    state !== 'LIVE' &&
+    registration.givingStatus === 'hidden' &&
+    blockers.length === 0;
   return {
     version: PARISH_ONBOARDING_WORKFLOW_VERSION,
     enabled: onboardingWorkflowEnabled(registration),
@@ -418,8 +534,11 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     completedSteps: workflowSteps.filter((item) => item.passed).length,
     totalSteps: workflowSteps.length,
     blockers,
-    accountingSetupRequired: Boolean(accountingEnabledFor(registration) && generalFund.fund
-      && text(generalFund.fund.accountingFundId, 160) !== GENERAL_ACCOUNTING_FUND_ID),
+    accountingSetupRequired: Boolean(
+      accountingEnabledFor(registration) &&
+      generalFund.fund &&
+      text(generalFund.fund.accountingFundId, 160) !== GENERAL_ACCOUNTING_FUND_ID
+    ),
     canGoLive,
     signedCurrentSnapshot,
     materialVersion,
@@ -427,86 +546,109 @@ export async function buildParishOnboardingWorkflow(registration = {}, options =
     stripe,
     parishStages: [
       {
-        key: "access",
-        title: paidSubscription ? "Treasurer access" : "Parish access",
+        key: 'access',
+        title: paidSubscription ? 'Treasurer access' : 'Parish access',
         detail: personalAccessAccepted
-          ? paidSubscription ? "The treasurer's individual account is ready." : "Your parish dashboard credential is ready."
-          : paidSubscription ? "The treasurer accepts an individual invitation after the parish becomes paid." : "Open the parish invitation and create one dashboard password.",
-        passed: personalAccessAccepted
+          ? paidSubscription
+            ? "The treasurer's individual account is ready."
+            : 'Your parish dashboard credential is ready.'
+          : paidSubscription
+            ? 'The treasurer accepts an individual invitation after the parish becomes paid.'
+            : 'Open the parish invitation and create one dashboard password.',
+        passed: personalAccessAccepted,
       },
       {
-        key: "payments",
-        title: "Connect payments",
-        detail: stripe.ready && subscriptionReady(registration) ? "Your plan and Stripe account are ready." : "Choose your plan and connect the parish Stripe account.",
-        passed: stripe.ready && subscriptionReady(registration)
+        key: 'payments',
+        title: 'Connect payments',
+        detail:
+          stripe.ready && subscriptionReady(registration)
+            ? 'Your plan and Stripe account are ready.'
+            : 'Choose your plan and connect the parish Stripe account.',
+        passed: stripe.ready && subscriptionReady(registration),
       },
       {
-        key: "launch",
-        title: "Review and launch",
-        detail: state === "LIVE" ? "Giving is live." : canGoLive ? "Review the parish details and approve launch." : "AGAPAY is preparing your launch review.",
-        passed: state === "LIVE"
-      }
+        key: 'launch',
+        title: 'Review and launch',
+        detail:
+          state === 'LIVE'
+            ? 'Giving is live.'
+            : canGoLive
+              ? 'Review the parish details and approve launch.'
+              : 'AGAPAY is preparing your launch review.',
+        passed: state === 'LIVE',
+      },
     ],
     signoff: registration.treasurerSignoff || null,
     summary: {
       ...onboardingMaterialSnapshot(registration, options),
-      givingUrl: `${text(options.appUrl || "https://agapay.app", 500).replace(/\/+$/, "")}/give/${encodeURIComponent(text(registration.parishId, 160))}`,
-      treasurerEmail: normalizeEmail(registration.treasurerEmail)
-    }
+      givingUrl: `${text(options.appUrl || 'https://agapay.app', 500).replace(/\/+$/, '')}/give/${encodeURIComponent(text(registration.parishId, 160))}`,
+      treasurerEmail: normalizeEmail(registration.treasurerEmail),
+    },
   };
 }
-
-export function validateTreasurerGoLiveInput(body = {}, registration = {}) {
-  const affirmations = body.affirmations && typeof body.affirmations === "object" ? body.affirmations : {};
+function validateTreasurerGoLiveInput(body = {}, registration = {}) {
+  const affirmations = body.affirmations && typeof body.affirmations === 'object' ? body.affirmations : {};
   const missingAffirmations = TREASURER_AFFIRMATIONS.filter((key) => affirmations[key] !== true);
   const signerName = text(body.signerName, 160);
   const signerTitle = text(body.signerTitle, 160);
   const signerEmail = normalizeEmail(registration.treasurerEmail);
   const errors = [];
-  if (missingAffirmations.length) errors.push("Complete all eight treasurer affirmations.");
-  if (!signerName) errors.push("Enter the treasurer name.");
-  if (!signerTitle || !/treasurer/i.test(signerTitle)) errors.push("Confirm a treasurer title.");
-  if (!signerEmail) errors.push("Add the verified treasurer email before approving launch.");
-  if (body.authorityConfirmed !== true) errors.push("Confirm authority to act for the parish.");
+  if (missingAffirmations.length) errors.push('Complete all eight treasurer affirmations.');
+  if (!signerName) errors.push('Enter the treasurer name.');
+  if (!signerTitle || !/treasurer/i.test(signerTitle)) errors.push('Confirm a treasurer title.');
+  if (!signerEmail) errors.push('Add the verified treasurer email before approving launch.');
+  if (body.authorityConfirmed !== true) errors.push('Confirm authority to act for the parish.');
   return { ok: errors.length === 0, errors, missingAffirmations, signerName, signerTitle, signerEmail, affirmations };
 }
-
-export async function invalidateOnboardingSignoffIfChanged(previous = {}, next = {}, options = {}) {
-  if (!onboardingWorkflowEnabled(previous) || previous.treasurerSignoff?.status !== "signed") return next;
-  const [previousVersion, nextVersion, previousWithoutPublicNameVersion, nextWithoutPublicNameVersion] = await Promise.all([
-    onboardingMaterialVersion(previous, options),
-    onboardingMaterialVersion(next, options),
-    onboardingMaterialVersion({ ...previous, parishName: "" }, options),
-    onboardingMaterialVersion({ ...next, parishName: "" }, options)
-  ]);
+async function invalidateOnboardingSignoffIfChanged(previous = {}, next = {}, options = {}) {
+  if (!onboardingWorkflowEnabled(previous) || previous.treasurerSignoff?.status !== 'signed') return next;
+  const [previousVersion, nextVersion, previousWithoutPublicNameVersion, nextWithoutPublicNameVersion] =
+    await Promise.all([
+      onboardingMaterialVersion(previous, options),
+      onboardingMaterialVersion(next, options),
+      onboardingMaterialVersion({ ...previous, parishName: '' }, options),
+      onboardingMaterialVersion({ ...next, parishName: '' }, options),
+    ]);
   if (previousVersion === nextVersion) return next;
-  // The dashboard's parish name is public display copy, not the canonical or
-  // legal receipt identity. Keep an existing launch approval valid when that
-  // is the only material-snapshot input that changed. Explicit legal receipt
-  // names, Stripe/bank details, plans, and giving configuration still
-  // invalidate the approval below.
   if (previousWithoutPublicNameVersion === nextWithoutPublicNameVersion) {
     return {
       ...next,
       treasurerSignoff: {
         ...previous.treasurerSignoff,
         snapshotVersion: nextVersion,
-        publicNameUpdatedAt: new Date().toISOString(),
-        publicNameUpdatedBy: text(options.actor || "parish", 160)
-      }
+        publicNameUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
+        publicNameUpdatedBy: text(options.actor || 'parish', 160),
+      },
     };
   }
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   return {
     ...next,
-    givingStatus: previous.onboardingState === "LIVE" ? "paused" : "hidden",
-    onboardingState: "CONFIGURING",
+    givingStatus: previous.onboardingState === 'LIVE' ? 'paused' : 'hidden',
+    onboardingState: 'CONFIGURING',
     treasurerSignoff: {
       ...previous.treasurerSignoff,
-      status: "invalidated",
+      status: 'invalidated',
       invalidatedAt: now,
-      invalidatedReason: text(options.reason || "Material onboarding configuration changed.", 500),
-      invalidatedBy: text(options.actor || "system", 160)
-    }
+      invalidatedReason: text(options.reason || 'Material onboarding configuration changed.', 500),
+      invalidatedBy: text(options.actor || 'system', 160),
+    },
   };
 }
+export {
+  ONBOARDING_MANUAL_CHECKS,
+  PARISH_ONBOARDING_WORKFLOW_VERSION,
+  STRIPE_READINESS_MAX_AGE_MS,
+  TREASURER_AFFIRMATIONS,
+  buildParishOnboardingWorkflow,
+  invalidateOnboardingSignoffIfChanged,
+  normalizeOnboardingChecks,
+  onboardingMaterialSnapshot,
+  onboardingMaterialVersion,
+  onboardingWorkflowEnabled,
+  recommendedOnboardingState,
+  recordParishGivingSetupReview,
+  requiredPersonalAccessAccepted,
+  validateGeneralOperatingFund,
+  validateTreasurerGoLiveInput,
+};

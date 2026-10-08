@@ -1,7 +1,7 @@
-import { d1, d1First } from "./core.js";
-import { normalizeParishHouseholdBand, parishPricingUsageStatus } from "./subscriptions.js";
-
-export async function loadParishPricingUsage(env, parishId, registration = {}) {
+// Generated from src/lib/parish-pricing-usage.ts by npm run build:server. Do not edit.
+import { d1, d1First } from './core.js';
+import { normalizeParishHouseholdBand, parishPricingUsageStatus } from './subscriptions.js';
+async function loadParishPricingUsage(env, parishId, registration = {}) {
   if (!d1(env)) return { ...parishPricingUsageStatus(registration, 0, 0), trackingAvailable: false };
   try {
     const row = await d1First(
@@ -25,16 +25,18 @@ export async function loadParishPricingUsage(env, parishId, registration = {}) {
     );
     return {
       ...parishPricingUsageStatus(registration, row?.represented_households, row?.linked_users),
-      trackingAvailable: true
+      trackingAvailable: true,
     };
   } catch {
     return { ...parishPricingUsageStatus(registration, 0, 0), trackingAvailable: false };
   }
 }
-
-export async function validateParishCheckoutBand(env, parishId, registration, body = {}) {
-  if (String(body.subscriptionTier || registration.subscriptionTier || "").toLowerCase() !== "parish") return null;
-  const parishHouseholdBand = normalizeParishHouseholdBand(body.parishHouseholdBand ?? registration.parishHouseholdBand);
+async function validateParishCheckoutBand(env, parishId, registration, body = {}) {
+  if (String(body.subscriptionTier || registration.subscriptionTier || '').toLowerCase() !== 'parish') return null;
+  const parishHouseholdBand = normalizeParishHouseholdBand(
+    body.parishHouseholdBand ?? registration.parishHouseholdBand
+  );
   const usage = await loadParishPricingUsage(env, parishId, { ...registration, parishHouseholdBand });
   return usage.trackingAvailable && usage.upgradeRequired ? usage : null;
 }
+export { loadParishPricingUsage, validateParishCheckoutBand };

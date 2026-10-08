@@ -1,6 +1,4 @@
-// src/handlers/parish-dashboard-handler.js
-// Parish dashboard presentation, settings updates, and feature-request actions.
-
+// Generated from src/handlers/parish-dashboard-handler.ts by npm run build:server. Do not edit.
 import {
   applyParishDashboardPassword,
   getBearerToken,
@@ -64,9 +62,8 @@ import {
   starterFundCatalogError,
   verifyParishDashboardBearer,
 } from './parish.js';
-
-export function summarizeCharges(charges) {
-  const now = new Date();
+function summarizeCharges(charges) {
+  const now = /* @__PURE__ */ new Date();
   const year = now.getUTCFullYear();
   const monthly = Array.from({ length: 12 }, (_, index) => ({
     month: index + 1,
@@ -74,7 +71,7 @@ export function summarizeCharges(charges) {
     amountCents: 0,
     giftCount: 0,
   }));
-  const givers = new Set();
+  const givers = /* @__PURE__ */ new Set();
   let ytdCents = 0;
   let grossGiftCents = 0;
   let donorCoveredFeeCents = 0;
@@ -82,14 +79,11 @@ export function summarizeCharges(charges) {
   let coverFeesCount = 0;
   let giftCount = 0;
   let lastGiftAt = '';
-
   for (const charge of charges) {
     if (charge.status !== 'succeeded' || charge.paid === false) continue;
     if (classifyStripeCharge(charge).paymentClass !== 'qualifying_donation') continue;
-
-    const created = new Date((charge.created || 0) * 1000);
+    const created = new Date((charge.created || 0) * 1e3);
     if (created.getUTCFullYear() !== year) continue;
-
     const chargeCents = numericCents(charge.amount_captured || charge.amount);
     const refundedCents = numericCents(charge.amount_refunded);
     const metadataGiftCents = numericCents(charge.metadata?.amount_cents);
@@ -109,7 +103,6 @@ export function summarizeCharges(charges) {
       ? Math.max(0, numericCents(balanceTransaction.net) - refundedCents)
       : Math.max(0, chargeCents - refundedCents - totalFeeCents);
     if (!netCents) continue;
-
     const monthIndex = created.getUTCMonth();
     monthly[monthIndex].amountCents += netCents;
     monthly[monthIndex].giftCount += 1;
@@ -122,13 +115,11 @@ export function summarizeCharges(charges) {
       feesAbsorbedCents += totalFeeCents;
     }
     giftCount += 1;
-
     const giverKey =
       charge.billing_details?.email || charge.receipt_email || charge.customer || charge.payment_method || charge.id;
     if (giverKey) givers.add(String(giverKey).toLowerCase());
     if (!lastGiftAt || created.toISOString() > lastGiftAt) lastGiftAt = created.toISOString();
   }
-
   return {
     year,
     currency: 'usd',
@@ -144,8 +135,7 @@ export function summarizeCharges(charges) {
     monthly,
   };
 }
-
-export function parishDashboardPayload(parishId, registration) {
+function parishDashboardPayload(parishId, registration) {
   const currentTier = sharedSubscriptionTier(registration);
   const givingPlus = givingFeatureAccess(registration, 'branding');
   const currentAddOns = subscriptionAddOnsFor(registration);
@@ -229,15 +219,13 @@ export function parishDashboardPayload(parishId, registration) {
     feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : [],
   };
 }
-
 async function parishDashboardPayloadWithPricingUsage(env, parishId, registration) {
   return {
     ...parishDashboardPayload(parishId, registration),
     parishPricingUsage: await loadParishPricingUsage(env, parishId, registration),
   };
 }
-
-export function normalizeSacramentPriests(registration = {}) {
+function normalizeSacramentPriests(registration = {}) {
   const saved = Array.isArray(registration.sacramentPriests) ? registration.sacramentPriests : [];
   const rows = saved
     .map((priest) => ({
@@ -263,19 +251,16 @@ export function normalizeSacramentPriests(registration = {}) {
     },
   ];
 }
-
 const DEFAULT_SACRAMENT_SERVICE_TYPES = ['house_blessing', 'confession', 'counseling', 'baptism', 'wedding'];
-const EDITABLE_SACRAMENT_SERVICE_TYPES = new Set([
+const EDITABLE_SACRAMENT_SERVICE_TYPES = /* @__PURE__ */ new Set([
   ...DEFAULT_SACRAMENT_SERVICE_TYPES,
   'home_visit',
   'office_visit',
   'anointing',
 ]);
-
 function defaultSacramentServiceTypes() {
   return [...DEFAULT_SACRAMENT_SERVICE_TYPES];
 }
-
 function sanitizeSacramentServiceTypes(value) {
   if (!Array.isArray(value)) return defaultSacramentServiceTypes();
   return [
@@ -284,7 +269,6 @@ function sanitizeSacramentServiceTypes(value) {
     ),
   ];
 }
-
 function sanitizeCustomSacramentServices(value) {
   if (!Array.isArray(value)) return [];
   return value
@@ -302,7 +286,6 @@ function sanitizeCustomSacramentServices(value) {
     .filter((service) => service.id && service.label)
     .slice(0, 20);
 }
-
 function sanitizeSacramentPriests(value, current) {
   if (!Array.isArray(value)) return normalizeSacramentPriests(current);
   const rows = value
@@ -319,9 +302,12 @@ function sanitizeSacramentPriests(value, current) {
     .filter((priest) => priest.name);
   return rows.slice(0, 12);
 }
-
-const GIVING_CATALOG_COMPUTED_FIELDS = new Set(['giftCount', 'raisedCents', 'supporters', 'visibility']);
-
+const GIVING_CATALOG_COMPUTED_FIELDS = /* @__PURE__ */ new Set([
+  'giftCount',
+  'raisedCents',
+  'supporters',
+  'visibility',
+]);
 function comparableGivingCatalogValue(value, key = '') {
   if (Array.isArray(value)) return value.map((item) => comparableGivingCatalogValue(item));
   if (!value || typeof value !== 'object') return value;
@@ -337,16 +323,14 @@ function comparableGivingCatalogValue(value, key = '') {
     });
   return comparable;
 }
-
-export function givingCatalogChanged(next = {}, current = {}) {
+function givingCatalogChanged(next = {}, current = {}) {
   return ['funds', 'campaigns', 'feastCampaigns'].some(
     (field) =>
       JSON.stringify(comparableGivingCatalogValue(next[field] || [], field)) !==
       JSON.stringify(comparableGivingCatalogValue(current[field] || [], field))
   );
 }
-
-export async function handleParishDashboard(request, env, parishId) {
+async function handleParishDashboard(request, env, parishId) {
   const limited = await rateLimit(
     request,
     env,
@@ -355,10 +339,8 @@ export async function handleParishDashboard(request, env, parishId) {
   );
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
-
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
@@ -369,7 +351,6 @@ export async function handleParishDashboard(request, env, parishId) {
     const result = await submitParishSupportTicket(env, request, { ...found.registration, parishId }, body);
     return json(result, { status: result.ok ? 201 : result.status || 500 });
   }
-
   if (request.method === 'GET') {
     const { registration } = found;
     const [catalog, directorySettings, pendingFeatureRequests] = await Promise.all([
@@ -393,10 +374,8 @@ export async function handleParishDashboard(request, env, parishId) {
       appUrl: env.AGAPAY_APP_URL || new URL(request.url).origin,
       receiptContact: env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
     });
-    // The parish-managed Funds & Alms record is authoritative; Accounting consumes it on save and never overwrites this editor.
     return json({ parish: dashboardParish, accountingCatalogConnected: catalog.available, featureRequests });
   }
-
   if (request.method === 'PATCH') {
     let body;
     try {
@@ -404,7 +383,6 @@ export async function handleParishDashboard(request, env, parishId) {
     } catch {
       return json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-
     const current = found.registration;
     if (onboardingWorkflowEnabled(current) && current.onboardingState !== 'LIVE' && body.givingStatus === 'active') {
       return json(
@@ -416,24 +394,22 @@ export async function handleParishDashboard(request, env, parishId) {
     }
     const givingPlus = givingFeatureAccess(current, 'campaigns');
     const starterDesignatedFund = givingFeatureAccess(current, 'starterDesignatedFund');
-    if (!starterDesignatedFund && body.funds !== undefined) {
+    if (!starterDesignatedFund && body.funds !== void 0) {
       return json({ error: 'Designated funds are not available on this plan.' }, { status: 403 });
     }
-    if (!givingPlus && (body.campaigns !== undefined || body.feastCampaigns !== undefined)) {
+    if (!givingPlus && (body.campaigns !== void 0 || body.feastCampaigns !== void 0)) {
       return json({ error: 'Campaigns and festal alms are available with Give +.' }, { status: 403 });
     }
-    if (!givingPlus && body.funds !== undefined) {
+    if (!givingPlus && body.funds !== void 0) {
       const limitError = starterFundCatalogError(body.funds);
       if (limitError) return json({ error: limitError }, { status: 422 });
     }
     const requestedPassword =
-      body.newDashboardPassword !== undefined ? String(body.newDashboardPassword || '').trim() : '';
+      body.newDashboardPassword !== void 0 ? String(body.newDashboardPassword || '').trim() : '';
     if (requestedPassword && requestedPassword.length < 8) {
       return json({ error: 'Dashboard password must be at least 8 characters.' }, { status: 400 });
     }
-
-    const catalogFieldsSubmitted =
-      body.funds !== undefined || body.campaigns !== undefined || body.feastCampaigns !== undefined;
+    const catalogFieldsSubmitted = body.funds !== void 0 || body.campaigns !== void 0 || body.feastCampaigns !== void 0;
     const submittedCatalog = {
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
@@ -442,15 +418,15 @@ export async function handleParishDashboard(request, env, parishId) {
     const catalogChanged =
       catalogFieldsSubmitted &&
       (body.givingCatalogChanged === true ||
-        (body.givingCatalogChanged === undefined && givingCatalogChanged(submittedCatalog, current)));
+        (body.givingCatalogChanged === void 0 && givingCatalogChanged(submittedCatalog, current)));
     let normalizedKoinoniaCalendarUrl = current.koinoniaCalendarUrl || '';
-    if (body.koinoniaCalendarUrl !== undefined) {
+    if (body.koinoniaCalendarUrl !== void 0) {
       const value = String(body.koinoniaCalendarUrl || '').trim();
       if (!value) {
         normalizedKoinoniaCalendarUrl = '';
       } else {
         try {
-          normalizedKoinoniaCalendarUrl = normalizeKoinoniaCalendarUrl(value).slice(0, 2000);
+          normalizedKoinoniaCalendarUrl = normalizeKoinoniaCalendarUrl(value).slice(0, 2e3);
           await fetchKoinoniaCalendarIcs(normalizedKoinoniaCalendarUrl);
         } catch (error) {
           const message = /public HTTPS|valid/.test(String(error?.message || ''))
@@ -460,7 +436,6 @@ export async function handleParishDashboard(request, env, parishId) {
         }
       }
     }
-
     let updated = {
       ...current,
       parishName: String(body.parishName ?? current.parishName ?? '').trim() || current.parishName || '',
@@ -477,7 +452,7 @@ export async function handleParishDashboard(request, env, parishId) {
         const requested = String(body.timezone ?? current.timezone ?? '').trim();
         if (!requested) return current.timezone || '';
         try {
-          new Intl.DateTimeFormat(undefined, { timeZone: requested });
+          new Intl.DateTimeFormat(void 0, { timeZone: requested });
           return requested;
         } catch {
           return current.timezone || '';
@@ -508,7 +483,7 @@ export async function handleParishDashboard(request, env, parishId) {
       sacramentsEnabled:
         Boolean(body.sacramentsEnabled ?? current.sacramentsEnabled ?? false) && hasModuleAccess(current, 'sacraments'),
       sacramentPriests:
-        body.sacramentPriests !== undefined
+        body.sacramentPriests !== void 0
           ? sanitizeSacramentPriests(body.sacramentPriests, current)
           : normalizeSacramentPriests(current),
       bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),
@@ -517,9 +492,8 @@ export async function handleParishDashboard(request, env, parishId) {
       funds: catalogChanged ? submittedCatalog.funds : current.funds,
       campaigns: catalogChanged ? submittedCatalog.campaigns : current.campaigns,
       feastCampaigns: catalogChanged ? submittedCatalog.feastCampaigns : current.feastCampaigns,
-      parishUpdatedAt: new Date().toISOString(),
+      parishUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
     };
-
     let nextSession = null;
     if (requestedPassword) {
       updated = await applyParishDashboardPassword(updated, requestedPassword, { temporary: false });
@@ -530,12 +504,11 @@ export async function handleParishDashboard(request, env, parishId) {
       nextSession = await issueParishDashboardSession(updated);
       updated = nextSession.registration;
     }
-
     const accountingCatalogChanged =
       catalogChanged &&
       (await accountingCatalogRequiredForParish(env, parishId, current)) &&
       (body.accountingCatalogChanged === true ||
-        (body.accountingCatalogChanged === undefined &&
+        (body.accountingCatalogChanged === void 0 &&
           givingCatalogChanged(
             {
               funds: updated.funds,
@@ -600,11 +573,9 @@ export async function handleParishDashboard(request, env, parishId) {
       expiresAt: nextSession?.expiresAt || '',
     });
   }
-
   return json({ error: 'Method not allowed' }, { status: 405 });
 }
-
-export async function handleParishFeatureRequestDismiss(request, env, parishId, featureId) {
+async function handleParishFeatureRequestDismiss(request, env, parishId, featureId) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const found = await findRegistrationByParishId(env, parishId);
@@ -615,3 +586,11 @@ export async function handleParishFeatureRequestDismiss(request, env, parishId, 
   await dismissParishFeatureRequest(env, parishId, featureId);
   return json({ ok: true });
 }
+export {
+  givingCatalogChanged,
+  handleParishDashboard,
+  handleParishFeatureRequestDismiss,
+  normalizeSacramentPriests,
+  parishDashboardPayload,
+  summarizeCharges,
+};

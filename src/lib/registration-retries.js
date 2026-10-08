@@ -1,5 +1,5 @@
+// Generated from src/lib/registration-retries.ts by npm run build:server. Do not edit.
 import { sha256Hex } from './core.js';
-
 function stable(value) {
   if (Array.isArray(value)) return value.map(stable);
   if (!value || typeof value !== 'object') return value;
@@ -9,8 +9,7 @@ function stable(value) {
       .map((key) => [key, stable(value[key])])
   );
 }
-
-export async function registrationRetryIdentity(request, body) {
+async function registrationRetryIdentity(request, body) {
   const key = request.headers.get('Idempotency-Key');
   if (!key) return null;
   if (!/^[a-f0-9-]{36}$/i.test(key)) return { error: 'Invalid registration retry key.' };
@@ -19,8 +18,7 @@ export async function registrationRetryIdentity(request, body) {
     hash: await sha256Hex(JSON.stringify(stable(body))),
   };
 }
-
-export async function insertRegistrationOnce(env, registration) {
+async function insertRegistrationOnce(env, registration) {
   const result = await env.AGAPAY_DB.prepare(
     `INSERT INTO registrations
     (reference, parish_id, status, parish_name, community_type, stripe_account_id,
@@ -40,3 +38,4 @@ export async function insertRegistrationOnce(env, registration) {
     .run();
   return Number(result.meta?.changes) === 1;
 }
+export { insertRegistrationOnce, registrationRetryIdentity };
