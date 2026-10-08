@@ -279,7 +279,12 @@
     "src/lib/registration-retries.js",
     "src/lib/registration-publication.js",
     "src/lib/contact-leads.js",
-    "scripts/intake-typescript-tests.mjs"
+    "scripts/intake-typescript-tests.mjs",
+    "src/lib/admin-overview-metrics.js",
+    "src/lib/parish-relationships.js",
+    "src/lib/commerce-readiness.js",
+    "src/lib/tax-readiness.js",
+    "scripts/registration-models-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -592,6 +597,11 @@
     "src/lib/registration-retries.js",
     "src/lib/registration-publication.js",
     "src/lib/contact-leads.js",
-    "scripts/intake-typescript-tests.mjs"
+    "scripts/intake-typescript-tests.mjs",
+    "src/lib/admin-overview-metrics.js",
+    "src/lib/parish-relationships.js",
+    "src/lib/commerce-readiness.js",
+    "src/lib/tax-readiness.js",
+    "scripts/registration-models-typescript-tests.mjs"
   ]
 }

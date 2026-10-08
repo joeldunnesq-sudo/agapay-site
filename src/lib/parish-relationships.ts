@@ -1,7 +1,25 @@
-// Generated from src/lib/parish-relationships.ts by npm run build:server. Do not edit.
+import type { MetricsRegistration } from './admin-overview-metrics.js';
+export interface RelationshipRegistration extends MetricsRegistration {
+  reference: string;
+  liturgicalCalendar?: string | null;
+  patronalFeastDate?: string | null;
+  parishPatronalFeastDate?: string | null;
+  patronalFeastName?: string | null;
+  parishPatronalFeastName?: string | null;
+  priestEmail?: string | null;
+  treasurerEmail?: string | null;
+  stripeAccountStatus?: string;
+}
+export type RelationshipSnapshot = Record<string, { paid: boolean; cents: number }>;
+export interface ParishOccasion {
+  kind: 'anniversary' | 'feast';
+  date: string;
+  title: string;
+}
 import { buildAdminOverviewMetrics } from './admin-overview-metrics.js';
 import { liturgicalFeastsForYear } from '../liturgical-calendar.js';
-function relationshipSnapshot(registrations) {
+
+export function relationshipSnapshot(registrations: readonly RelationshipRegistration[]): RelationshipSnapshot {
   return Object.fromEntries(
     registrations.map((r) => {
       const m = buildAdminOverviewMetrics([r]);
@@ -9,7 +27,8 @@ function relationshipSnapshot(registrations) {
     })
   );
 }
-function retentionFromSnapshots(before, after) {
+
+export function retentionFromSnapshots(before: Readonly<RelationshipSnapshot>, after: Readonly<RelationshipSnapshot>) {
   const opening = Object.entries(before).filter(([, r]) => r.paid);
   const retained = opening.filter(([id]) => after[id]?.paid);
   const openingCents = opening.reduce((n, [, r]) => n + r.cents, 0);
@@ -27,7 +46,8 @@ function retentionFromSnapshots(before, after) {
       Object.values(after).reduce((n, r) => n + r.cents, 0) - Object.values(before).reduce((n, r) => n + r.cents, 0),
   };
 }
-function localOccasionClock(now, timeZone = 'America/Chicago') {
+
+export function localOccasionClock(now: Date | number, timeZone = 'America/Chicago') {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat('en-CA', {
       timeZone,
@@ -42,29 +62,28 @@ function localOccasionClock(now, timeZone = 'America/Chicago') {
   );
   return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) };
 }
-function annualDate(year, monthDay) {
+
+function annualDate(year: number, monthDay: string) {
+  // February 29 anniversaries are observed February 28 in non-leap years.
   if (monthDay === '02-29' && new Date(Date.UTC(year, 1, 29)).getUTCMonth() !== 1) monthDay = '02-28';
   const date = `${year}-${monthDay}`;
-  const parsed = /* @__PURE__ */ new Date(`${date}T12:00:00Z`);
+  const parsed = new Date(`${date}T12:00:00Z`);
   return /^\d{4}-\d{2}-\d{2}$/.test(date) &&
     Number.isFinite(parsed.getTime()) &&
     parsed.toISOString().slice(0, 10) === date
     ? date
     : null;
 }
-function parishOccasions(registration, today, yearsAhead = 1) {
+
+export function parishOccasions(registration: Partial<RelationshipRegistration>, today: string, yearsAhead = 1) {
   const year = Number(today.slice(0, 4));
-  const joined = /^\d{4}-\d{2}-\d{2}/.test(registration.receivedAt || '') ? registration.receivedAt.slice(0, 10) : '';
-  const result = [];
+  const joined = /^\d{4}-\d{2}-\d{2}/.test(registration.receivedAt || '') ? registration.receivedAt!.slice(0, 10) : '';
+  const result: ParishOccasion[] = [];
   for (let y = year; y <= year + yearsAhead; y++) {
     if (joined && y > Number(joined.slice(0, 4))) {
-      const date2 = annualDate(y, joined.slice(5));
-      if (date2)
-        result.push({
-          kind: 'anniversary',
-          date: date2,
-          title: `${y - Number(joined.slice(0, 4))} year signup anniversary`,
-        });
+      const date = annualDate(y, joined.slice(5));
+      if (date)
+        result.push({ kind: 'anniversary', date, title: `${y - Number(joined.slice(0, 4))} year signup anniversary` });
     }
     const raw = String(registration.patronalFeastDate || registration.parishPatronalFeastDate || '');
     const explicit = raw.length === 10 ? raw.slice(5) : raw;
@@ -77,7 +96,8 @@ function parishOccasions(registration, today, yearsAhead = 1) {
   }
   return result.filter((item) => item.date >= today).sort((a, b) => a.date.localeCompare(b.date));
 }
-function defaultMilestonePreferences(r) {
+
+export function defaultMilestonePreferences(r: Partial<RelationshipRegistration>) {
   return {
     anniversary: false,
     feast: false,
@@ -86,21 +106,14 @@ function defaultMilestonePreferences(r) {
     timeZone: 'America/Chicago',
   };
 }
-function parishAttention(r) {
+
+export function parishAttention(r: Partial<RelationshipRegistration>) {
   const status = String(r.subscriptionStatus || '').toLowerCase();
   if (['past_due', 'unpaid'].includes(status)) return { label: 'Billing needs attention', tone: 'amber' };
   if (r.subscriptionCancelAtPeriodEnd) return { label: 'Cancellation scheduled', tone: 'amber' };
   if (['canceled', 'cancelled'].includes(status)) return { label: 'Subscription ended', tone: 'rose' };
   if (r.status !== 'verified') return { label: 'Complete parish verification', tone: 'amber' };
-  if (!r.stripeAccountId || !['charges_enabled', 'payouts_enabled'].includes(r.stripeAccountStatus))
+  if (!r.stripeAccountId || !['charges_enabled', 'payouts_enabled'].includes(r.stripeAccountStatus as string))
     return { label: 'Finish payment setup', tone: 'amber' };
   return null;
 }
-export {
-  defaultMilestonePreferences,
-  localOccasionClock,
-  parishAttention,
-  parishOccasions,
-  relationshipSnapshot,
-  retentionFromSnapshots,
-};

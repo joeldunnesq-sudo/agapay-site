@@ -1,3 +1,4 @@
+import * as taxReadinessRuntime from '../src/lib/tax-readiness.js';
 import { subscriptionTiers, subscriptionAddOns, parishHouseholdBands } from '../src/lib/subscriptions.js';
 import * as coreRuntime from '../src/lib/core.js';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
@@ -980,11 +981,10 @@ assert.ok(worker.includes("manualIncomeTotalCents") && worker.includes("contribu
 // end-to-end paths) lives in scripts/tax-readiness-tests.mjs -- these are
 // just the source-presence / wiring checks that belong alongside the rest
 // of this file's static assertions.
-const taxReadinessLib = await readFile("src/lib/tax-readiness.js", "utf8");
 const subscriptionCheckoutLib = await readFile("src/lib/subscription-checkout.js", "utf8");
 const learnBillingLib = await readFile("src/learn/billing.js", "utf8");
-assert.ok(taxReadinessLib.includes("export function subscriptionCheckoutReadinessGate"), "tax-readiness.js should export the verification and billing checkout gate");
-assert.ok(taxReadinessLib.includes("export function withTaxReadinessDefaults"), "tax-readiness.js should export a non-destructive defaults helper");
+assert.ok(typeof taxReadinessRuntime.subscriptionCheckoutReadinessGate === "function", "tax-readiness.js should export the verification and billing checkout gate");
+assert.ok(typeof taxReadinessRuntime.withTaxReadinessDefaults === "function", "tax-readiness.js should export a non-destructive defaults helper");
 assert.ok(subscriptionCheckoutLib.includes("subscriptionCheckoutReadinessGate(billingRegistration)"), "subscription-checkout.js should validate inherited registration billing fields");
 assert.ok(!subscriptionCheckoutLib.includes("tax_readiness_required"), "manual per-parish tax status must not block Stripe subscription checkout");
 assert.ok(subscriptionCheckoutLib.includes('"subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel"'), "demo checkout should cancel at trial end when no payment method was added");
