@@ -1,6 +1,50 @@
-// Generated from src/lib/directory-pdf.ts by npm run build:server. Do not edit.
+import type { PDFFont, PDFImage, PDFPage } from 'pdf-lib';
+
+export interface DirectoryRow {
+  [field: string]: string | null | undefined;
+}
+export interface DirectoryParish {
+  parishName?: string;
+  name?: string;
+  city?: string;
+  state?: string;
+  region?: string;
+}
+export interface DirectoryLogo {
+  bytes?: Uint8Array | ArrayBuffer | string;
+  contentType?: string;
+}
+export interface DirectoryPdfInput {
+  parish?: DirectoryParish;
+  directory?: { privacyReminder?: string; generatedAt?: string | number; households?: readonly DirectoryRow[] };
+  logo?: DirectoryLogo;
+}
+interface DirectoryMember {
+  key: string;
+  name: string;
+  email: string;
+  phone: string;
+  namedays: { saint: string; feast: string }[];
+}
+export interface DirectoryHousehold {
+  id: string;
+  name: string;
+  sortName: string;
+  city: string;
+  region: string;
+  members: DirectoryMember[];
+}
+interface DirectoryFonts {
+  regular: PDFFont;
+  bold: PDFFont;
+  serif: PDFFont;
+  serifBold: PDFFont;
+  italic: PDFFont;
+}
+
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-const LETTER = [612, 792];
+
+const LETTER: [number, number] = [612, 792];
 const NAVY = rgb(0.024, 0.082, 0.133);
 const NAVY_2 = rgb(0.043, 0.153, 0.224);
 const GOLD = rgb(0.78, 0.61, 0.27);
@@ -14,14 +58,16 @@ const RIGHT_MARGIN = 38;
 const TOP_MARGIN = 48;
 const BOTTOM_MARGIN = 44;
 const COLUMN_GAP = 16;
-function text(value) {
+
+function text(value: unknown) {
   return String(value ?? '')
     .normalize('NFKD')
     .replace(/[^\x20-\x7E]/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
 }
-function wrap(value, font, size, width) {
+
+function wrap(value: unknown, font: PDFFont, size: number, width: number) {
   const words = text(value).split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   const lines = [];
@@ -38,24 +84,28 @@ function wrap(value, font, size, width) {
   if (line) lines.push(line);
   return lines;
 }
-function rowValue(row, snake, camel = '') {
+
+function rowValue(row: DirectoryRow | null | undefined, snake: string, camel = '') {
   return row?.[snake] ?? row?.[camel || snake] ?? '';
 }
-function householdSortName(value) {
+
+function householdSortName(value: unknown) {
   const cleaned = text(value)
     .replace(/^the\s+/i, '')
     .replace(/\s+(family|household)$/i, '');
   return cleaned.split(/\s+/).filter(Boolean).at(-1) || cleaned || 'Household';
 }
-function formattedNameday(value) {
+
+function formattedNameday(value: unknown) {
   const cleaned = text(value);
   if (!/^\d{2}-\d{2}$/.test(cleaned)) return cleaned;
   const [month, day] = cleaned.split('-').map(Number);
   const date = new Date(Date.UTC(2024, month - 1, day));
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' });
 }
-function groupHouseholds(rows = []) {
-  const grouped = /* @__PURE__ */ new Map();
+
+function groupHouseholds(rows: readonly DirectoryRow[] = []) {
+  const grouped = new Map<string, DirectoryHousehold>();
   for (const row of rows) {
     const householdId = rowValue(row, 'household_id', 'householdId') || rowValue(row, 'display_name', 'displayName');
     const householdName = rowValue(row, 'display_name', 'displayName') || 'Household';
@@ -72,7 +122,7 @@ function groupHouseholds(rows = []) {
     const memberName = rowValue(row, 'preferred_name', 'preferredName');
     if (!memberName) continue;
     const memberKey = rowValue(row, 'person_id', 'personId') || memberName;
-    const household = grouped.get(householdId);
+    const household = grouped.get(householdId)!;
     let member = household.members.find((item) => item.key === memberKey);
     if (!member) {
       member = {
@@ -94,7 +144,8 @@ function groupHouseholds(rows = []) {
     (a, b) => a.sortName.localeCompare(b.sortName, 'en-US') || a.name.localeCompare(b.name, 'en-US')
   );
 }
-function cardHeight(household, fonts, width) {
+
+function cardHeight(household: DirectoryHousehold, fonts: DirectoryFonts, width: number) {
   const inner = width - 28;
   let height = 22 + wrap(household.name, fonts.bold, 14, inner).length * 17;
   if (household.city || household.region) height += 16;
@@ -110,7 +161,8 @@ function cardHeight(household, fonts, width) {
   }
   return Math.max(84, height + 12);
 }
-async function embedLogo(pdf, logo = {}) {
+
+async function embedLogo(pdf: PDFDocument, logo: DirectoryLogo = {}) {
   const bytes = logo?.bytes;
   if (!bytes) return null;
   try {
@@ -122,7 +174,12 @@ async function embedLogo(pdf, logo = {}) {
   }
   return null;
 }
-function drawFittedImage(page, image, { x, y, width, height }) {
+
+function drawFittedImage(
+  page: PDFPage,
+  image: PDFImage | null,
+  { x, y, width, height }: { x: number; y: number; width: number; height: number }
+) {
   if (!image) return;
   const scale = Math.min(width / image.width, height / image.height);
   const drawWidth = image.width * scale;
@@ -134,7 +191,16 @@ function drawFittedImage(page, image, { x, y, width, height }) {
     height: drawHeight,
   });
 }
-function drawCard(page, household, fonts, x, top, width, height) {
+
+function drawCard(
+  page: PDFPage,
+  household: DirectoryHousehold,
+  fonts: DirectoryFonts,
+  x: number,
+  top: number,
+  width: number,
+  height: number
+) {
   const bottom = top - height;
   page.drawRectangle({ x, y: bottom, width, height, color: rgb(1, 1, 1), borderColor: LINE, borderWidth: 0.7 });
   page.drawRectangle({ x, y: top - 5, width, height: 5, color: GOLD });
@@ -175,7 +241,8 @@ function drawCard(page, household, fonts, x, top, width, height) {
     y -= 4;
   }
 }
-async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} } = {}) {
+
+export async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} }: DirectoryPdfInput = {}) {
   const pdf = await PDFDocument.create();
   const parishName = text(parish.parishName || parish.name || 'Parish');
   const location = [text(parish.city), text(parish.state || parish.region)].filter(Boolean).join(', ');
@@ -184,6 +251,7 @@ async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} 
   pdf.setSubject('Private parish family directory');
   pdf.setProducer('AGAPAY');
   pdf.setCreator('AGAPAY Parish Directory');
+
   const fonts = {
     regular: await pdf.embedFont(StandardFonts.Helvetica),
     bold: await pdf.embedFont(StandardFonts.HelveticaBold),
@@ -193,6 +261,7 @@ async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} 
   };
   const logoImage = await embedLogo(pdf, logo);
   const [pageWidth, pageHeight] = LETTER;
+
   const cover = pdf.addPage(LETTER);
   cover.drawRectangle({ x: 0, y: 0, width: pageWidth, height: pageHeight, color: NAVY });
   cover.drawRectangle({ x: 0, y: 0, width: 18, height: pageHeight, color: GOLD });
@@ -251,11 +320,13 @@ async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} 
       color: GOLD,
     }
   );
+
   const households = groupHouseholds(directory.households || []);
   const contentWidth = pageWidth - BINDING_MARGIN - RIGHT_MARGIN;
   const columnWidth = (contentWidth - COLUMN_GAP) / 2;
-  let page;
-  let y;
+  let page!: PDFPage;
+  let y!: number;
+
   function addDirectoryPage() {
     page = pdf.addPage(LETTER);
     page.drawRectangle({ x: 0, y: 0, width: pageWidth, height: pageHeight, color: PAPER });
@@ -282,6 +353,7 @@ async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} 
     });
     y = pageHeight - TOP_MARGIN - 18;
   }
+
   if (!households.length) {
     addDirectoryPage();
     page.drawText('No published households', { x: BINDING_MARGIN, y, size: 20, font: fonts.serifBold, color: NAVY });
@@ -328,6 +400,7 @@ async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} 
       index += right ? 2 : 1;
     }
   }
+
   const pages = pdf.getPages();
   for (let index = 1; index < pages.length; index++) {
     const numbered = pages[index];
@@ -341,6 +414,8 @@ async function buildParishDirectoryPdf({ parish = {}, directory = {}, logo = {} 
       color: MUTED,
     });
   }
+
   return pdf.save();
 }
-export { buildParishDirectoryPdf, groupHouseholds };
+
+export { groupHouseholds };

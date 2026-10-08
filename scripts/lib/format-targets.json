@@ -292,7 +292,8 @@
     "scripts/parish-life-foundations-typescript-tests.mjs",
     "src/handlers/parish-library.js",
     "src/organizations/access.js",
-    "scripts/library-handler-typescript-tests.mjs"
+    "scripts/library-handler-typescript-tests.mjs",
+    "src/lib/directory-pdf.js"
   ],
   "check": [
     ".prettierrc.json",
@@ -618,6 +619,7 @@
     "scripts/parish-life-foundations-typescript-tests.mjs",
     "src/handlers/parish-library.js",
     "src/organizations/access.js",
-    "scripts/library-handler-typescript-tests.mjs"
+    "scripts/library-handler-typescript-tests.mjs",
+    "src/lib/directory-pdf.js"
   ]
 }
