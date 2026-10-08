@@ -284,7 +284,12 @@
     "src/lib/parish-relationships.js",
     "src/lib/commerce-readiness.js",
     "src/lib/tax-readiness.js",
-    "scripts/registration-models-typescript-tests.mjs"
+    "scripts/registration-models-typescript-tests.mjs",
+    "src/lib/parish-library.js",
+    "src/lib/parish-life-experience.js",
+    "src/lib/household-verification.js",
+    "src/lib/directory-invitation-next.js",
+    "scripts/parish-life-foundations-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -602,6 +607,11 @@
     "src/lib/parish-relationships.js",
     "src/lib/commerce-readiness.js",
     "src/lib/tax-readiness.js",
-    "scripts/registration-models-typescript-tests.mjs"
+    "scripts/registration-models-typescript-tests.mjs",
+    "src/lib/parish-library.js",
+    "src/lib/parish-life-experience.js",
+    "src/lib/household-verification.js",
+    "src/lib/directory-invitation-next.js",
+    "scripts/parish-life-foundations-typescript-tests.mjs"
   ]
 }
