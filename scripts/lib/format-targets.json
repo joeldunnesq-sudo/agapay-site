@@ -289,7 +289,10 @@
     "src/lib/parish-life-experience.js",
     "src/lib/household-verification.js",
     "src/lib/directory-invitation-next.js",
-    "scripts/parish-life-foundations-typescript-tests.mjs"
+    "scripts/parish-life-foundations-typescript-tests.mjs",
+    "src/handlers/parish-library.js",
+    "src/organizations/access.js",
+    "scripts/library-handler-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -612,6 +615,9 @@
     "src/lib/parish-life-experience.js",
     "src/lib/household-verification.js",
     "src/lib/directory-invitation-next.js",
-    "scripts/parish-life-foundations-typescript-tests.mjs"
+    "scripts/parish-life-foundations-typescript-tests.mjs",
+    "src/handlers/parish-library.js",
+    "src/organizations/access.js",
+    "scripts/library-handler-typescript-tests.mjs"
   ]
 }

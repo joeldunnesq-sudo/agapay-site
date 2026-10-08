@@ -8,6 +8,8 @@ export const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 // Authoritative sources. Runtime consumers retain the adjacent .js import paths.
 export const serverTypeScriptSources = Object.freeze([
+  'src/handlers/parish-library.ts',
+  'src/organizations/access.ts',
   'src/lib/parish-library.ts',
   'src/lib/parish-life-experience.ts',
   'src/lib/household-verification.ts',
