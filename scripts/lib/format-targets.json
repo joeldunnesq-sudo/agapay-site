@@ -273,7 +273,13 @@
     "src/lib/parish-notifications.js",
     "src/lib/parish-support-tickets.js",
     "src/lib/lead-attribution.js",
-    "scripts/notifications-typescript-tests.mjs"
+    "scripts/notifications-typescript-tests.mjs",
+    "src/lib/registrations.js",
+    "src/lib/registration-intake.js",
+    "src/lib/registration-retries.js",
+    "src/lib/registration-publication.js",
+    "src/lib/contact-leads.js",
+    "scripts/intake-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -580,6 +586,12 @@
     "src/lib/parish-notifications.js",
     "src/lib/parish-support-tickets.js",
     "src/lib/lead-attribution.js",
-    "scripts/notifications-typescript-tests.mjs"
+    "scripts/notifications-typescript-tests.mjs",
+    "src/lib/registrations.js",
+    "src/lib/registration-intake.js",
+    "src/lib/registration-retries.js",
+    "src/lib/registration-publication.js",
+    "src/lib/contact-leads.js",
+    "scripts/intake-typescript-tests.mjs"
   ]
 }

@@ -1,8 +1,18 @@
-// Generated from src/lib/registration-intake.ts by npm run build:server. Do not edit.
+import type { AttributionInput } from './lead-attribution.js';
+export type PublicRegistrationInput = Partial<Record<keyof typeof PUBLIC_REGISTRATION_STRING_LIMITS, string>> & {
+  canonicalAgreement?: true;
+  taxExemption?: Partial<Record<keyof typeof PUBLIC_TAX_EXEMPTION_STRING_LIMITS, string>> & {
+    claimsExemption?: true;
+    certified?: true;
+  };
+  attribution?: AttributionInput;
+};
 import { sanitizeAttribution } from './lead-attribution.js';
 import { registrationRequirementsForCommunityType } from '../organizations/verification-policies.js';
-const REGISTRATION_TERMS_VERSION = '2026-08-30';
-const REGISTRATION_PRIVACY_NOTICE_VERSION = '2026-08-30';
+
+export const REGISTRATION_TERMS_VERSION = '2026-08-30';
+export const REGISTRATION_PRIVACY_NOTICE_VERSION = '2026-08-30';
+
 const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   communityType: 80,
   subscriptionTier: 40,
@@ -17,7 +27,7 @@ const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   postalCode: 24,
   website: 2048,
   liturgicalCalendar: 40,
-  organizationDescription: 4e3,
+  organizationDescription: 4000,
   priestFirst: 120,
   priestLast: 120,
   priestEmail: 320,
@@ -25,11 +35,12 @@ const PUBLIC_REGISTRATION_STRING_LIMITS = Object.freeze({
   treasurerFirst: 120,
   treasurerLast: 120,
   treasurerEmail: 320,
-  notes: 4e3,
+  notes: 4000,
   acceptingName: 200,
   acceptingEmail: 320,
   acceptingRole: 200,
 });
+
 const PUBLIC_TAX_EXEMPTION_STRING_LIMITS = Object.freeze({
   jurisdiction: 40,
   exemptionType: 120,
@@ -38,14 +49,16 @@ const PUBLIC_TAX_EXEMPTION_STRING_LIMITS = Object.freeze({
   expirationDate: 32,
   authorizedRepresentativeName: 200,
   authorizedRepresentativeTitle: 200,
-  multistateExplanation: 2e3,
+  multistateExplanation: 2000,
 });
-function limitedRegistrationString(value, maxLength) {
+
+function limitedRegistrationString(value: unknown, maxLength: number) {
   return String(value ?? '')
     .trim()
     .slice(0, maxLength);
 }
-function registrationAgreementEvidence(acceptedAt) {
+
+export function registrationAgreementEvidence(acceptedAt: string) {
   return {
     canonicalAgreement: true,
     termsAcceptedAt: acceptedAt,
@@ -55,46 +68,59 @@ function registrationAgreementEvidence(acceptedAt) {
     agreementSource: 'church_registration',
   };
 }
-function registrationRequiresJurisdiction(type) {
+
+export function registrationRequiresJurisdiction(type: unknown) {
   return registrationRequirementsForCommunityType(type).jurisdiction;
 }
-function registrationRequiresValuesReview(type) {
+
+export function registrationRequiresValuesReview(type: unknown) {
   return registrationRequirementsForCommunityType(type).valuesReview;
 }
-function registrationRequiresWebsite(type) {
+
+export function registrationRequiresWebsite(type: unknown) {
   return registrationRequirementsForCommunityType(type).website;
 }
-function sanitizePublicRegistrationInput(input = {}) {
-  const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
-  const sanitized = {};
+
+/**
+ * Public registration is an untrusted intake boundary. Only fields rendered
+ * by public/register.html may cross it; review state, credentials, billing
+ * identifiers, entitlements, and publication data are always server-owned.
+ */
+export function sanitizePublicRegistrationInput(input: unknown = {}): PublicRegistrationInput {
+  const source = input && typeof input === 'object' && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
+  const sanitized: PublicRegistrationInput = {};
   for (const [field, maxLength] of Object.entries(PUBLIC_REGISTRATION_STRING_LIMITS)) {
-    if (Object.hasOwn(source, field)) sanitized[field] = limitedRegistrationString(source[field], maxLength);
+    if (Object.hasOwn(source, field))
+      sanitized[field as keyof typeof PUBLIC_REGISTRATION_STRING_LIMITS] = limitedRegistrationString(
+        source[field],
+        maxLength
+      );
   }
+
   if (source.canonicalAgreement === true) sanitized.canonicalAgreement = true;
+
   const exemption = source.taxExemption;
   if (exemption && typeof exemption === 'object' && !Array.isArray(exemption)) {
-    const sanitizedExemption = {};
+    const sanitizedExemption: NonNullable<PublicRegistrationInput['taxExemption']> = {};
     for (const [field, maxLength] of Object.entries(PUBLIC_TAX_EXEMPTION_STRING_LIMITS)) {
       if (Object.hasOwn(exemption, field)) {
-        sanitizedExemption[field] = limitedRegistrationString(exemption[field], maxLength);
+        sanitizedExemption[field as keyof typeof PUBLIC_TAX_EXEMPTION_STRING_LIMITS] = limitedRegistrationString(
+          (exemption as Record<string, unknown>)[field],
+          maxLength
+        );
       }
     }
-    if (exemption.claimsExemption === true || exemption.claimsExemption === 'yes') {
+    if (
+      (exemption as Record<string, unknown>).claimsExemption === true ||
+      (exemption as Record<string, unknown>).claimsExemption === 'yes'
+    ) {
       sanitizedExemption.claimsExemption = true;
     }
-    if (exemption.certified === true) sanitizedExemption.certified = true;
+    if ((exemption as Record<string, unknown>).certified === true) sanitizedExemption.certified = true;
     sanitized.taxExemption = sanitizedExemption;
   }
+
   const attribution = sanitizeAttribution(source.attribution);
   if (attribution) sanitized.attribution = attribution;
   return sanitized;
 }
-export {
-  REGISTRATION_PRIVACY_NOTICE_VERSION,
-  REGISTRATION_TERMS_VERSION,
-  registrationAgreementEvidence,
-  registrationRequiresJurisdiction,
-  registrationRequiresValuesReview,
-  registrationRequiresWebsite,
-  sanitizePublicRegistrationInput,
-};

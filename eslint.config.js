@@ -118,6 +118,7 @@ export default [
       'scripts/dashboard-foundation-typescript-tests.mjs',
       'scripts/dashboard-handler-typescript-tests.mjs',
       'scripts/notifications-typescript-tests.mjs',
+      'scripts/intake-typescript-tests.mjs',
       'scripts/giving-catalog-staging-smoke-tests.mjs',
       'scripts/parish-outside-gifts-typescript-tests.mjs',
       'scripts/parish-giving-catalog-typescript-tests.mjs',

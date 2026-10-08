@@ -1,14 +1,36 @@
-// Generated from src/lib/registrations.ts by npm run build:server. Do not edit.
+import type { DatabaseReadEnv } from './database-reads.js';
+import type { KvReadEnv } from './kv-reads.js';
+import type { JsonStorageRow } from './json-rows.js';
+import type { SubscriptionRegistration } from './subscriptions.js';
+export type RegistrationReadEnv = DatabaseReadEnv & KvReadEnv;
+export interface RegistrationListOptions {
+  hardLimit?: number;
+  status?: string;
+}
+export interface AdminRegistrationPageOptions {
+  limit?: number;
+  cursor?: string | null;
+  status?: string;
+  query?: string;
+  q?: string;
+}
+interface RegistrationRow extends JsonStorageRow {
+  reference: string;
+  received_at: string;
+}
+// Stored JSON is described, not validated, by these assertions.
 import { clampListLimit, d1, d1All, decodeListCursor, encodeListCursor, listKvKeys, safeParseJsonRow } from './core.js';
 import { defaultSubscriptionTier } from './subscriptions.js';
-function safeParseKvRegistration(value) {
+
+function safeParseKvRegistration(value: string | JsonStorageRow | null): SubscriptionRegistration | null {
   try {
-    return typeof value === 'string' ? JSON.parse(value) : safeParseJsonRow(value);
+    return typeof value === 'string' ? JSON.parse(value) : (safeParseJsonRow(value) as SubscriptionRegistration | null);
   } catch {
     return null;
   }
 }
-function adminRegistrationSummary(registration = {}, fallbackReference = '') {
+
+export function adminRegistrationSummary(registration: SubscriptionRegistration | null = {}, fallbackReference = '') {
   registration = registration || {};
   return {
     reference: registration.reference || fallbackReference || '',
@@ -33,15 +55,19 @@ function adminRegistrationSummary(registration = {}, fallbackReference = '') {
     receivedAt: registration.receivedAt || registration.received_at || registration.createdAt || '',
   };
 }
-async function loadAllRegistrations(env, options = {}) {
-  const hardLimit = clampListLimit(options.hardLimit, 1e4, 25e3);
+
+export async function loadAllRegistrations(
+  env: RegistrationReadEnv,
+  options: RegistrationListOptions = {}
+): Promise<SubscriptionRegistration[]> {
+  const hardLimit = clampListLimit(options.hardLimit, 10000, 25000);
   if (d1(env)) {
-    const registrations = [];
+    const registrations: SubscriptionRegistration[] = [];
     let cursor = '';
     do {
       const decoded = decodeListCursor(cursor);
       const where = [];
-      const params = [];
+      const params: unknown[] = [];
       if (options.status) {
         where.push('status = ?');
         params.push(options.status);
@@ -50,7 +76,7 @@ async function loadAllRegistrations(env, options = {}) {
         where.push('(received_at < ? OR (received_at = ? AND reference < ?))');
         params.push(decoded.receivedAt, decoded.receivedAt, decoded.reference);
       }
-      const rows2 = await d1All(
+      const rows = await d1All<RegistrationRow>(
         env,
         `SELECT reference, received_at, data
          FROM registrations
@@ -60,32 +86,38 @@ async function loadAllRegistrations(env, options = {}) {
         ...params,
         Math.min(250, hardLimit - registrations.length)
       );
-      registrations.push(...rows2.map(safeParseJsonRow).filter(Boolean));
-      cursor = rows2.length ? encodeListCursor(rows2[rows2.length - 1]) : '';
+      registrations.push(...(rows.map(safeParseJsonRow).filter(Boolean) as SubscriptionRegistration[]));
+      cursor = rows.length ? encodeListCursor(rows[rows.length - 1]) : '';
     } while (cursor && registrations.length < hardLimit);
     return registrations.slice(0, hardLimit);
   }
+
   if (!env.AGAPAY_REGISTRATIONS) return [];
   const keys = await listKvKeys(env, { limit: hardLimit });
-  const rows = await Promise.all(keys.map((key) => env.AGAPAY_REGISTRATIONS.get(key.name)));
+  const rows = await Promise.all(keys.map((key) => env.AGAPAY_REGISTRATIONS!.get(key.name)));
   return rows
     .map(safeParseKvRegistration)
     .filter(Boolean)
-    .filter((registration) => !options.status || registration.status === options.status)
-    .slice(0, hardLimit);
+    .filter((registration) => !options.status || registration!.status === options.status)
+    .slice(0, hardLimit) as SubscriptionRegistration[];
 }
-async function loadAllKvRegistrations(env, options = {}) {
-  const hardLimit = clampListLimit(options.hardLimit, 1e4, 25e3);
+
+export async function loadAllKvRegistrations(
+  env: RegistrationReadEnv,
+  options: RegistrationListOptions = {}
+): Promise<SubscriptionRegistration[]> {
+  const hardLimit = clampListLimit(options.hardLimit, 10000, 25000);
   if (!env.AGAPAY_REGISTRATIONS) return [];
   const keys = await listKvKeys(env, { limit: hardLimit });
-  const rows = await Promise.all(keys.map((key) => env.AGAPAY_REGISTRATIONS.get(key.name)));
+  const rows = await Promise.all(keys.map((key) => env.AGAPAY_REGISTRATIONS!.get(key.name)));
   return rows
     .map(safeParseKvRegistration)
     .filter(Boolean)
-    .filter((registration) => !options.status || registration.status === options.status)
-    .slice(0, hardLimit);
+    .filter((registration) => !options.status || registration!.status === options.status)
+    .slice(0, hardLimit) as SubscriptionRegistration[];
 }
-async function loadAdminRegistrationPage(env, options = {}) {
+
+export async function loadAdminRegistrationPage(env: RegistrationReadEnv, options: AdminRegistrationPageOptions = {}) {
   const limit = clampListLimit(options.limit, 100, 250);
   const cursor = decodeListCursor(options.cursor);
   const status = String(options.status || '')
@@ -94,8 +126,9 @@ async function loadAdminRegistrationPage(env, options = {}) {
   const query = String(options.query || options.q || '')
     .trim()
     .toLowerCase();
+
   if (d1(env)) {
-    const params = [];
+    const params: unknown[] = [];
     const where = [];
     if (status && status !== 'all') {
       where.push('status = ?');
@@ -118,7 +151,7 @@ async function loadAdminRegistrationPage(env, options = {}) {
       params.push(like, like, like, like, like, like);
     }
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-    const rows = await d1All(
+    const rows = await d1All<RegistrationRow>(
       env,
       `SELECT reference, received_at, data FROM registrations ${whereSql} ORDER BY received_at DESC, reference DESC LIMIT ?`,
       ...params,
@@ -127,7 +160,7 @@ async function loadAdminRegistrationPage(env, options = {}) {
     const pageRows = rows.slice(0, limit);
     return {
       registrations: pageRows.map((row) => {
-        const registration = safeParseJsonRow(row);
+        const registration = safeParseJsonRow(row) as SubscriptionRegistration | null;
         return registration
           ? adminRegistrationSummary(registration, row.reference)
           : { reference: row.reference || '', status: 'unreadable' };
@@ -138,7 +171,8 @@ async function loadAdminRegistrationPage(env, options = {}) {
       source: 'd1',
     };
   }
-  const registrations = await loadAllKvRegistrations(env, { status, hardLimit: 1e4 });
+
+  const registrations = await loadAllKvRegistrations(env, { status, hardLimit: 10000 });
   const filtered = query
     ? registrations.filter((registration) =>
         [
@@ -170,4 +204,3 @@ async function loadAdminRegistrationPage(env, options = {}) {
     source: 'kv',
   };
 }
-export { adminRegistrationSummary, loadAdminRegistrationPage, loadAllKvRegistrations, loadAllRegistrations };

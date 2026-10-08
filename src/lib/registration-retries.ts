@@ -1,15 +1,25 @@
-// Generated from src/lib/registration-retries.ts by npm run build:server. Do not edit.
+export interface RegistrationInsert {
+  [field: string]: unknown;
+  reference: string;
+  parishId: string;
+  status: string;
+  parishName: string;
+  communityType: string;
+  receivedAt: string;
+}
 import { sha256Hex } from './core.js';
-function stable(value) {
+
+function stable(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stable);
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(
     Object.keys(value)
       .sort()
-      .map((key) => [key, stable(value[key])])
+      .map((key) => [key, stable((value as Record<string, unknown>)[key])])
   );
 }
-async function registrationRetryIdentity(request, body) {
+
+export async function registrationRetryIdentity(request: Request, body: unknown) {
   const key = request.headers.get('Idempotency-Key');
   if (!key) return null;
   if (!/^[a-f0-9-]{36}$/i.test(key)) return { error: 'Invalid registration retry key.' };
@@ -18,7 +28,8 @@ async function registrationRetryIdentity(request, body) {
     hash: await sha256Hex(JSON.stringify(stable(body))),
   };
 }
-async function insertRegistrationOnce(env, registration) {
+
+export async function insertRegistrationOnce(env: Pick<Env, 'AGAPAY_DB'>, registration: RegistrationInsert) {
   const result = await env.AGAPAY_DB.prepare(
     `INSERT INTO registrations
     (reference, parish_id, status, parish_name, community_type, stripe_account_id,
@@ -38,4 +49,3 @@ async function insertRegistrationOnce(env, registration) {
     .run();
   return Number(result.meta?.changes) === 1;
 }
-export { insertRegistrationOnce, registrationRetryIdentity };

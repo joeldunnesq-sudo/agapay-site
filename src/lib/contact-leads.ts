@@ -1,31 +1,52 @@
-// Generated from src/lib/contact-leads.ts by npm run build:server. Do not edit.
+import type { EmailEnv, EmailMessage } from './email.js';
+import type { AttributionInput } from './lead-attribution.js';
+// Contact persistence requires D1; the request handler checks availability first.
+export type ContactLeadEnv = EmailEnv & Pick<Env, 'AGAPAY_DB'> & { readonly AGAPAY_SUPPORT_EMAIL?: string };
+export interface ContactLeadInput {
+  [field: string]: unknown;
+  name: string;
+  email: string;
+  organization?: string;
+  topic: string;
+  message: string;
+  attribution?: AttributionInput | null;
+}
+export interface ContactLeadRow {
+  id: string;
+  data: string;
+  payload_hash: string;
+  notification_json: string | null;
+  notification_status: string;
+  lease_until: number | null;
+  first_attempt_at: number | null;
+  attempts: number;
+  generation: number;
+  provider_id: string | null;
+  last_error: string | null;
+  sent_at: string | null;
+}
+type ContactNotification = ContactLeadInput & { id: string };
 import { d1, sha256Hex } from './core.js';
 import { sendEmail, agapayEmailHtml } from './email.js';
 import { htmlEscape } from './format.js';
 import { attributionEmail } from './lead-attribution.js';
 import { logEvent } from './logging.js';
-const LEASE_MS = 6e4;
-const SAFE_RETRY_MS = 23 * 60 * 60 * 1e3;
-async function getContactLead(env, id) {
-  return d1(env).prepare('SELECT * FROM contact_leads WHERE id = ?1').bind(id).first();
+
+const LEASE_MS = 60000;
+// Provider deduplication lasts 24h. Stop ambiguous retries before that expires.
+const SAFE_RETRY_MS = 23 * 60 * 60 * 1000;
+
+export async function getContactLead(env: ContactLeadEnv, id: string) {
+  return d1(env)!.prepare('SELECT * FROM contact_leads WHERE id = ?1').bind(id).first<ContactLeadRow>();
 }
-function notification(env, lead) {
+
+function notification(env: ContactLeadEnv, lead: ContactNotification) {
   const referral = attributionEmail(lead.attribution);
-  const text = `AGAPAY Contact Form
-Reference: ${lead.id}
-
-From: ${lead.name} <${lead.email}>
-Organization: ${lead.organization || 'N/A'}
-Topic: ${lead.topic}
-
-Message:
-${lead.message}
-
-${referral.text}`;
+  const text = `AGAPAY Contact Form\nReference: ${lead.id}\n\nFrom: ${lead.name} <${lead.email}>\nOrganization: ${lead.organization || 'N/A'}\nTopic: ${lead.topic}\n\nMessage:\n${lead.message}\n\n${referral.text}`;
   return {
     from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>',
     to: [
-      .../* @__PURE__ */ new Set([
+      ...new Set([
         env.AGAPAY_SUPPORT_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
         env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || 'onboarding@agapay.app',
         'onboarding@agapay.app',
@@ -41,17 +62,17 @@ ${referral.text}`;
     ),
   };
 }
-async function saveContactLead(env, input, submissionKey) {
+
+export async function saveContactLead(env: ContactLeadEnv, input: ContactLeadInput, submissionKey?: string | null) {
   const payloadHash = await sha256Hex(
     JSON.stringify([input.name, input.email, input.organization, input.topic, input.message])
   );
-  const key = await sha256Hex(
-    submissionKey || `legacy:${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}:${payloadHash}`
-  );
-  const lead = { ...input, id: crypto.randomUUID(), submittedAt: /* @__PURE__ */ new Date().toISOString() };
+  // Old clients have no key: identical messages on the same UTC day deduplicate.
+  const key = await sha256Hex(submissionKey || `legacy:${new Date().toISOString().slice(0, 10)}:${payloadHash}`);
+  const lead = { ...input, id: crypto.randomUUID(), submittedAt: new Date().toISOString() };
   if (lead.attribution?.lastTouch) lead.attribution.lastTouch.timestamp = lead.submittedAt;
   const email = notification(env, lead);
-  await d1(env)
+  await d1(env)!
     .prepare(
       `INSERT INTO contact_leads
     (id, submission_key, payload_hash, data, created_at, notification_json)
@@ -59,15 +80,20 @@ async function saveContactLead(env, input, submissionKey) {
     )
     .bind(lead.id, key, payloadHash, JSON.stringify(lead), lead.submittedAt, JSON.stringify(email))
     .run();
-  const row = await d1(env).prepare('SELECT * FROM contact_leads WHERE submission_key = ?1').bind(key).first();
+  const row = await d1(env)!
+    .prepare('SELECT * FROM contact_leads WHERE submission_key = ?1')
+    .bind(key)
+    .first<ContactLeadRow>();
   if (!row) throw new Error('Contact persistence failed');
   if (row.payload_hash !== payloadHash) return { conflict: true };
   return { row, duplicate: row.id !== lead.id };
 }
-async function deliverContactNotification(env, id) {
+
+export async function deliverContactNotification(env: ContactLeadEnv, id: string) {
   const now = Date.now();
   const token = crypto.randomUUID();
-  const row = await d1(env)
+  // A single conditional UPDATE both claims and snapshots the job. No read/write race.
+  const row = await d1(env)!
     .prepare(
       `UPDATE contact_leads SET
     notification_status = 'sending', lease_token = ?2, lease_until = ?3,
@@ -78,23 +104,24 @@ async function deliverContactNotification(env, id) {
     RETURNING *`
     )
     .bind(id, token, now + LEASE_MS, now, now - SAFE_RETRY_MS)
-    .first();
+    .first<ContactLeadRow>();
   if (!row) {
     const existing = await getContactLead(env, id);
     return {
       status: existing?.notification_status === 'sent' ? 'sent' : 'review_required',
       // Preserve the legacy numeric comparison: null/undefined leases are not busy.
-      busy: Boolean(existing?.lease_until > now),
+      busy: Boolean((existing?.lease_until as number) > now),
     };
   }
-  const result = await sendEmail(env, JSON.parse(row.notification_json), {
+  const result = await sendEmail(env, JSON.parse(row.notification_json!) as EmailMessage, {
     idempotencyKey: `contact/${id}/${row.generation}`,
-    timeoutMs: 1e4,
+    timeoutMs: 10000,
   });
+  // Persist only a safe classification, never provider response bodies or form content.
   const status = ['sent', 'failed', 'error', 'not_configured'].includes(result.status) ? result.status : 'error';
   const error =
     status === 'sent' ? null : `${status}${result.httpStatus ? ` (HTTP ${Number(result.httpStatus)})` : ''}`;
-  await d1(env)
+  await d1(env)!
     .prepare(
       `UPDATE contact_leads SET notification_status = ?3, provider_id = ?4,
     last_error = ?5, sent_at = ?6, lease_token = NULL, lease_until = NULL
@@ -106,7 +133,7 @@ async function deliverContactNotification(env, id) {
       status,
       status === 'sent' ? String(result.id || '').slice(0, 150) : null,
       error,
-      status === 'sent' ? /* @__PURE__ */ new Date().toISOString() : null
+      status === 'sent' ? new Date().toISOString() : null
     )
     .run();
   await logEvent(env, {
@@ -118,8 +145,9 @@ async function deliverContactNotification(env, id) {
   });
   return { status };
 }
-function contactLeadView(row) {
-  const data = JSON.parse(row.data);
+
+export function contactLeadView(row: ContactLeadRow) {
+  const data = JSON.parse(row.data) as ContactLeadInput;
   return {
     ...data,
     id: row.id,
@@ -140,9 +168,14 @@ function contactLeadView(row) {
       (!row.first_attempt_at || row.first_attempt_at > Date.now() - SAFE_RETRY_MS),
   };
 }
-async function resolveContactDelivery(env, row, resolution) {
+
+export async function resolveContactDelivery(
+  env: ContactLeadEnv,
+  row: ContactLeadRow,
+  resolution: 'delivered' | 'confirmed_not_delivered'
+) {
   const delivered = resolution === 'delivered';
-  return d1(env)
+  return d1(env)!
     .prepare(
       `UPDATE contact_leads SET notification_status = ?2,
     generation = generation + 1, first_attempt_at = NULL, lease_token = NULL, lease_until = NULL,
@@ -153,12 +186,11 @@ async function resolveContactDelivery(env, row, resolution) {
     .bind(
       row.id,
       delivered ? 'sent' : 'pending',
-      delivered ? /* @__PURE__ */ new Date().toISOString() : null,
-      JSON.stringify(notification(env, { ...JSON.parse(row.data), id: row.id })),
+      delivered ? new Date().toISOString() : null,
+      JSON.stringify(notification(env, { ...(JSON.parse(row.data) as ContactLeadInput), id: row.id })),
       row.attempts,
       row.generation,
       Date.now()
     )
-    .first();
+    .first<{ id: string }>();
 }
-export { contactLeadView, deliverContactNotification, getContactLead, resolveContactDelivery, saveContactLead };

@@ -42,3 +42,13 @@ export function issueParishDashboardSession(
 ): Promise<DashboardSession>;
 
 export function generateSecret(prefix?: string): string;
+
+export { safeParseJsonRow } from './json-rows.js';
+export function clampListLimit(value: unknown, defaultLimit?: number, maxLimit?: number): number;
+export interface RegistrationCursorRow {
+  received_at?: unknown;
+  receivedAt?: unknown;
+  reference?: unknown;
+}
+export function encodeListCursor(row?: RegistrationCursorRow): string;
+export function decodeListCursor(cursor: unknown): { receivedAt: unknown; reference: unknown } | null;
