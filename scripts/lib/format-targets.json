@@ -293,7 +293,9 @@
     "src/handlers/parish-library.js",
     "src/organizations/access.js",
     "scripts/library-handler-typescript-tests.mjs",
-    "src/lib/directory-pdf.js"
+    "src/lib/directory-pdf.js",
+    "src/lib/giving-statement-pdf.js",
+    "scripts/giving-statement-pdf-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -620,6 +622,8 @@
     "src/handlers/parish-library.js",
     "src/organizations/access.js",
     "scripts/library-handler-typescript-tests.mjs",
-    "src/lib/directory-pdf.js"
+    "src/lib/directory-pdf.js",
+    "src/lib/giving-statement-pdf.js",
+    "scripts/giving-statement-pdf-typescript-tests.mjs"
   ]
 }
