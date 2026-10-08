@@ -1,6 +1,19 @@
-// Generated from src/lib/parish-library.ts by npm run build:server. Do not edit.
-const ST_FIACRE_LIBRARY_DEMO_PARISH_ID = 'st-fiacre';
-const ST_FIACRE_LIBRARY_DEMO_RESOURCES = Object.freeze([
+export interface ParishLibrarySettings {
+  enabled: boolean;
+  updatedAt: string;
+}
+interface LibrarySettingsRow {
+  enabled: number;
+  updated_at: string;
+}
+export interface ParishLibraryUpdate {
+  parishId: string;
+  enabled: boolean;
+  updatedBy?: string | null;
+}
+export const ST_FIACRE_LIBRARY_DEMO_PARISH_ID = 'st-fiacre';
+
+export const ST_FIACRE_LIBRARY_DEMO_RESOURCES = Object.freeze([
   {
     id: 'demo_library_st_fiacre_liturgical_texts',
     title: 'Orthodox Liturgical Texts & Resources',
@@ -64,7 +77,8 @@ const ST_FIACRE_LIBRARY_DEMO_RESOURCES = Object.freeze([
     pinned: false,
   },
 ]);
-async function ensureStFiacreParishLibraryDemo(db, parishId) {
+
+export async function ensureStFiacreParishLibraryDemo(db: D1Database | null | undefined, parishId: unknown) {
   if (
     !db ||
     String(parishId || '')
@@ -83,6 +97,7 @@ async function ensureStFiacreParishLibraryDemo(db, parishId) {
     .bind(ST_FIACRE_LIBRARY_DEMO_PARISH_ID)
     .first();
   if (existing) return false;
+
   const seededAt = '2026-08-27T12:00:00.000Z';
   const seededBy = 'system:st-fiacre-library-demo';
   await db
@@ -98,8 +113,9 @@ async function ensureStFiacreParishLibraryDemo(db, parishId) {
     )
     .bind(ST_FIACRE_LIBRARY_DEMO_PARISH_ID, seededBy, seededAt)
     .run();
+
   for (const [index, resource] of ST_FIACRE_LIBRARY_DEMO_RESOURCES.entries()) {
-    const publishedAt = new Date(Date.parse(seededAt) - index * 6e4).toISOString();
+    const publishedAt = new Date(Date.parse(seededAt) - index * 60_000).toISOString();
     await db
       .prepare(
         `
@@ -126,16 +142,21 @@ async function ensureStFiacreParishLibraryDemo(db, parishId) {
   }
   return true;
 }
-async function getParishLibrarySettings(db, parishId) {
+
+export async function getParishLibrarySettings(
+  db: D1Database | null | undefined,
+  parishId: string | null | undefined
+): Promise<ParishLibrarySettings> {
   if (!db || !parishId) return { enabled: false, updatedAt: '' };
   await ensureStFiacreParishLibraryDemo(db, parishId);
   const row = await db
     .prepare('SELECT enabled, updated_at FROM parish_library_settings WHERE parish_id = ?')
     .bind(parishId)
-    .first();
+    .first<LibrarySettingsRow>();
   return { enabled: Boolean(row?.enabled), updatedAt: row?.updated_at || '' };
 }
-async function setParishLibraryEnabled(db, { parishId, enabled, updatedBy }) {
+
+export async function setParishLibraryEnabled(db: D1Database, { parishId, enabled, updatedBy }: ParishLibraryUpdate) {
   await db
     .prepare(
       `
@@ -151,10 +172,3 @@ async function setParishLibraryEnabled(db, { parishId, enabled, updatedBy }) {
     .run();
   return getParishLibrarySettings(db, parishId);
 }
-export {
-  ST_FIACRE_LIBRARY_DEMO_PARISH_ID,
-  ST_FIACRE_LIBRARY_DEMO_RESOURCES,
-  ensureStFiacreParishLibraryDemo,
-  getParishLibrarySettings,
-  setParishLibraryEnabled,
-};

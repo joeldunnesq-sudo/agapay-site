@@ -1,6 +1,6 @@
+// Generated from src/organizations/access.ts by npm run build:server. Do not edit.
 import { isOrganizationContext } from './context.js';
-
-export function organizationAuthorizationScope(organization) {
+function organizationAuthorizationScope(organization) {
   if (!isOrganizationContext(organization)) return null;
   const legacyParishId = String(organization.legacy?.parishId || '').trim();
   if (!legacyParishId || legacyParishId !== organization.organizationId) return null;
@@ -11,14 +11,12 @@ export function organizationAuthorizationScope(organization) {
     legacyParishId,
   });
 }
-
-export function bindOrganizationAuthorizationContext(authorizationContext, organization) {
+function bindOrganizationAuthorizationContext(authorizationContext, organization) {
   const organizationScope = organizationAuthorizationScope(organization);
   if (!authorizationContext || typeof authorizationContext !== 'object' || !organizationScope) return null;
   return Object.freeze({ ...authorizationContext, organization, organizationScope });
 }
-
-export async function authorizeOrganization(
+async function authorizeOrganization(
   request,
   env,
   { organization, capability, authorize: authorizeLegacyParish } = {}
@@ -34,8 +32,7 @@ export async function authorizeOrganization(
   });
   return bindOrganizationAuthorizationContext(authorizationContext, organization);
 }
-
-export function organizationAuditFields(organization, fields = {}) {
+function organizationAuditFields(organization, fields = {}) {
   const organizationScope = organizationAuthorizationScope(organization);
   if (!organizationScope || !fields || typeof fields !== 'object' || Array.isArray(fields)) return null;
   const metadata =
@@ -50,3 +47,9 @@ export function organizationAuditFields(organization, fields = {}) {
     }),
   });
 }
+export {
+  authorizeOrganization,
+  bindOrganizationAuthorizationContext,
+  organizationAuditFields,
+  organizationAuthorizationScope,
+};

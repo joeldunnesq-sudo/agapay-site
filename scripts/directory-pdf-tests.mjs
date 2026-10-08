@@ -38,6 +38,27 @@ assert.equal(grouped.length, 24);
 assert.equal(grouped[0].members.length, 2);
 assert.equal(grouped[0].members[0].namedays[0].saint, "St. Nicholas");
 
+assert.deepEqual(groupHouseholds(), []);
+const aliases = groupHouseholds([
+  { householdId: 'a', displayName: 'The Adams Family', personId: 'p', preferredName: 'Alice', saintName: 'Anna', feastMonthDay: '07-25' },
+  { householdId: 'a', displayName: 'The Adams Family', personId: 'p', preferredName: 'Alice', saintName: 'Anna', feastMonthDay: '07-25' },
+  { householdId: 'a', displayName: 'The Adams Family', personId: 'p', preferredName: 'Alice', saintName: 'Mary', feastMonthDay: '08-15' },
+  { household_id: 'b', display_name: 'The Brown Household', preferred_name: null },
+]);
+assert.equal(aliases[0].sortName, 'Adams');
+assert.equal(aliases[0].members.length, 1);
+assert.equal(aliases[0].members[0].namedays.length, 2, 'duplicate namedays collapse but distinct feasts remain');
+assert.equal(aliases[1].members.length, 0, 'households without a named member remain printable');
+assert.equal(groupHouseholds([{ display_name: '', displayName: 'Ignored', preferred_name: '' }])[0].name, 'Household', 'empty snake-case values preserve nullish precedence');
+for (const logo of [{}, { bytes: new Uint8Array([1, 2, 3]), contentType: 'image/png' }, { bytes: new Uint8Array([1]), contentType: 'image/jpeg' }, { bytes: new Uint8Array([1]), contentType: 'image/gif' }]) {
+  const empty = await PDFDocument.load(await buildParishDirectoryPdf({ logo }));
+  assert.equal(empty.getPageCount(), 2, 'empty directory retains its cover and explanatory page even with invalid logos');
+  assert.equal(empty.getTitle(), 'Parish Directory');
+  assert.equal(empty.getSubject(), 'Private parish family directory');
+  assert.equal(empty.getCreator(), 'AGAPAY Parish Directory');
+  for (const page of empty.getPages()) assert.deepEqual(page.getSize(), { width: 612, height: 792 });
+}
+
 const mark = readFileSync(new URL("../public/mark.png", import.meta.url));
 const bytes = await buildParishDirectoryPdf({
   parish: { parishName: "St. Fiacre Orthodox Church", city: "Amarillo", state: "TX" },

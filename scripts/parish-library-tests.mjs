@@ -119,7 +119,7 @@ assert.match(adminPage, /id="tab-library"/);
 assert.match(adminPage, /library\.css\?v=20260829fullscreen1/);
 assert.match(adminPage, /library\.js\?v=20260825library2/);
 assert.match(handler, /PARISH_LIBRARY_ASSETS|parish-library\/|Parish Library file storage/);
-assert.match(handler, /parts\[0\] === "settings" && request\.method === "GET"/);
+assert.match(handler, /parts\[0\] === ['"]settings['"] && request\.method === ['"]GET['"]/);
 const parishDashboardCore = readFileSync(path.join(root, "public", "parish", "app.js"), "utf8");
 const parishLibraryFeature = readFileSync(path.join(root, "public", "parish", "features", "library.js"), "utf8");
 const parishDashboardScript = `${parishDashboardCore}\n${parishLibraryFeature}`;

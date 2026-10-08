@@ -1,10 +1,10 @@
-// Generated from src/lib/parish-life-experience.ts by npm run build:server. Do not edit.
+import type { EntitlementRegistration } from './entitlements.js';
 import { communicationsEnabledFor } from './entitlements.js';
-function parishLifeExperienceFor(registration) {
+
+export function parishLifeExperienceFor(registration: EntitlementRegistration | null | undefined) {
   const communicationsEnabled = communicationsEnabledFor(registration);
   return {
     communicationsEnabled,
     label: communicationsEnabled ? 'Koinonia' : 'Today',
   };
 }
-export { parishLifeExperienceFor };

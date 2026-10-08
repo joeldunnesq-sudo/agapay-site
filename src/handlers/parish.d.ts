@@ -46,3 +46,9 @@ export function verifyParishDashboardBearer(registration: CatalogRegistration, t
 
 export { defaultSubscriptionTier } from '../lib/subscriptions.js';
 export function starterFundCatalogError(funds?: unknown): string;
+
+// Donor authentication remains in parish.js; this describes its library consumer's read boundary.
+export function requireDonor(
+  request: Request,
+  env: Partial<Env>
+): Promise<{ defaultParishId?: unknown; [field: string]: unknown } | null>;
