@@ -16,6 +16,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/outside-gifts.ts',
   'src/lib/outside-pledges.ts',
   'src/lib/legal-acceptance.ts',
+  'src/lib/early-adopter-pricing.ts',
   'src/lib/parish-life-experience.ts',
   'src/lib/household-verification.ts',
   'src/lib/directory-invitation-next.ts',
