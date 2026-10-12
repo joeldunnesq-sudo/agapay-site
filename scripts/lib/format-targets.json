@@ -295,7 +295,9 @@
     "scripts/library-handler-typescript-tests.mjs",
     "src/lib/directory-pdf.js",
     "src/lib/giving-statement-pdf.js",
-    "scripts/giving-statement-pdf-typescript-tests.mjs"
+    "scripts/giving-statement-pdf-typescript-tests.mjs",
+    "src/lib/outside-pledges.js",
+    "scripts/outside-input-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -624,6 +626,8 @@
     "scripts/library-handler-typescript-tests.mjs",
     "src/lib/directory-pdf.js",
     "src/lib/giving-statement-pdf.js",
-    "scripts/giving-statement-pdf-typescript-tests.mjs"
+    "scripts/giving-statement-pdf-typescript-tests.mjs",
+    "src/lib/outside-pledges.js",
+    "scripts/outside-input-typescript-tests.mjs"
   ]
 }

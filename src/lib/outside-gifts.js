@@ -1,8 +1,7 @@
-// Individual outside contributions extend the existing manual contribution register.
-// Nothing here creates a Stripe object or an Accounting journal.
+// Generated from src/lib/outside-gifts.ts by npm run build:server. Do not edit.
 import { OutsideGiftError } from './outside-gift-error.js';
-export { OutsideGiftError } from './outside-gift-error.js';
-export {
+import { OutsideGiftError as OutsideGiftError2 } from './outside-gift-error.js';
+import {
   outsideGiver,
   OUTSIDE_SELECT,
   outsideGiftRow,
@@ -10,8 +9,7 @@ export {
   loadOutsideGiftRows,
   outsideGiftsForGiving,
 } from './outside-gift-reads.js';
-
-export const OUTSIDE_SOURCES = Object.freeze({
+const OUTSIDE_SOURCES = Object.freeze({
   cash: 'Cash',
   check: 'Check',
   tithely: 'Tithe.ly',
@@ -23,12 +21,12 @@ const clean = (value, max) =>
   String(value || '')
     .trim()
     .slice(0, max);
-export async function outsideDigest(value) {
+async function outsideDigest(value) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), (b) =>
     b.toString(16).padStart(2, '0')
   ).join('');
 }
-export function outsideContent(input) {
+function outsideContent(input) {
   return JSON.stringify([
     input.entryDate,
     input.amountCents,
@@ -39,7 +37,7 @@ export function outsideContent(input) {
     input.reference,
   ]);
 }
-export function outsideGiftInput(body, registration, now = new Date()) {
+function outsideGiftInput(body, registration, now = /* @__PURE__ */ new Date()) {
   const entryDate = clean(body.entryDate, 20);
   const timezone = registration.timezone || 'UTC';
   let today;
@@ -61,7 +59,7 @@ export function outsideGiftInput(body, registration, now = new Date()) {
     entryDate < '1900-01-01'
   )
     throw new OutsideGiftError('Choose a valid received date, no later than today.');
-  if (!Number.isSafeInteger(body.amountCents) || body.amountCents <= 0 || body.amountCents > 1000000000)
+  if (!Number.isSafeInteger(body.amountCents) || body.amountCents <= 0 || body.amountCents > 1e9)
     throw new OutsideGiftError('Enter an exact amount between $0.01 and $10,000,000.');
   const givingKind = clean(body.givingKind, 20);
   if (!['pledge', 'other'].includes(givingKind)) throw new OutsideGiftError('Choose pledge payment or other giving.');
@@ -94,8 +92,7 @@ export function outsideGiftInput(body, registration, now = new Date()) {
     notes: clean(body.notes, 500),
   };
 }
-
-export function auditStatement(db, row, action, actor, reason, now) {
+function auditStatement(db, row, action, actor, reason, now) {
   const snapshot = Object.fromEntries(
     Object.entries(row).filter(([key]) => !['giver_data', 'request_key', 'request_hash', 'content_hash'].includes(key))
   );
@@ -116,5 +113,19 @@ export function auditStatement(db, row, action, actor, reason, now) {
       row.revision
     );
 }
-
-export { subtractLinkedOutsideGifts } from './outside-gift-composition.js';
+import { subtractLinkedOutsideGifts } from './outside-gift-composition.js';
+export {
+  OUTSIDE_SELECT,
+  OUTSIDE_SOURCES,
+  OutsideGiftError2 as OutsideGiftError,
+  auditStatement,
+  loadOutsideGiftRows,
+  outsideContent,
+  outsideDigest,
+  outsideGiftDto,
+  outsideGiftInput,
+  outsideGiftRow,
+  outsideGiftsForGiving,
+  outsideGiver,
+  subtractLinkedOutsideGifts,
+};
