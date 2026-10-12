@@ -310,7 +310,9 @@
     "scripts/sacrament-availability-typescript-tests.mjs",
     "src/accounting/errors.js",
     "src/accounting/validation.js",
-    "scripts/accounting-validation-typescript-tests.mjs"
+    "scripts/accounting-validation-typescript-tests.mjs",
+    "src/accounting/environment.js",
+    "scripts/accounting-environment-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -654,6 +656,8 @@
     "scripts/sacrament-availability-typescript-tests.mjs",
     "src/accounting/errors.js",
     "src/accounting/validation.js",
-    "scripts/accounting-validation-typescript-tests.mjs"
+    "scripts/accounting-validation-typescript-tests.mjs",
+    "src/accounting/environment.js",
+    "scripts/accounting-environment-typescript-tests.mjs"
   ]
 }
