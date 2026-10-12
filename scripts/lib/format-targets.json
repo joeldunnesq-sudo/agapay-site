@@ -305,7 +305,9 @@
     "scripts/audit-log-typescript-tests.mjs",
     "src/lib/webauthn.js",
     "src/lib/mfa-diagnostics.js",
-    "scripts/auth-helpers-typescript-tests.mjs"
+    "scripts/auth-helpers-typescript-tests.mjs",
+    "src/lib/sacrament-availability.js",
+    "scripts/sacrament-availability-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -644,6 +646,8 @@
     "scripts/audit-log-typescript-tests.mjs",
     "src/lib/webauthn.js",
     "src/lib/mfa-diagnostics.js",
-    "scripts/auth-helpers-typescript-tests.mjs"
+    "scripts/auth-helpers-typescript-tests.mjs",
+    "src/lib/sacrament-availability.js",
+    "scripts/sacrament-availability-typescript-tests.mjs"
   ]
 }
