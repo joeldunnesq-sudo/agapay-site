@@ -10,6 +10,7 @@ import {
   CURRENT_TERMS_VERSION,
   ORGANIZATION_ACCEPTANCE_DISCLOSURE,
   recordLegalAcceptance,
+  recordOrganizationRegistrationAcceptance,
 } from "../src/lib/legal-acceptance.js";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -86,5 +87,46 @@ assert.match(legacySignup, /id="agreeTerms" type="checkbox" required/);
 assert.match(legacySignup, /id="signupSubmit"[^>]*disabled/);
 assert.doesNotMatch(accountLogin, /donorAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/);
 assert.doesNotMatch(parishLogin, /parishAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/);
+
+const input = {
+  actorType: 'organization_representative', actorName: 'Test', actorEmail: ' TEST@EXAMPLE.TEST ', actorRole: 'Officer',
+  disclosureText: ORGANIZATION_ACCEPTANCE_DISCLOSURE, acceptanceSource: 'test', transactionReference: 'test-reference',
+};
+const kvRecords = new Map();
+let writes = 0;
+const kvEnv = { AGAPAY_REGISTRATIONS: {
+  async get(key) { return kvRecords.get(key) || null; },
+  async put(key, value) { writes++; kvRecords.set(key, value); },
+} };
+const firstKv = await recordLegalAcceptance(kvEnv, request, input);
+const originalStored = kvRecords.get('legal_acceptance:' + firstKv.id);
+const repeated = await recordLegalAcceptance(kvEnv, request, { ...input, actorName: 'Changed' });
+assert.equal(repeated.id, firstKv.id);
+assert.equal(writes, 1, 'repeated acceptance identity must not overwrite evidence');
+assert.equal(kvRecords.get('legal_acceptance:' + firstKv.id), originalStored);
+assert.equal(firstKv.actorEmail, 'test@example.test');
+for (const key of ['actorType', 'actorName', 'actorEmail', 'actorRole', 'disclosureText', 'acceptanceSource', 'transactionReference']) {
+  await assert.rejects(recordLegalAcceptance(kvEnv, request, { ...input, [key]: ' ' }), /required to preserve legal acceptance evidence/);
+}
+assert.equal(writes, 1, 'validation failures must not write records');
+await assert.rejects(recordLegalAcceptance({}, request, input), /legal acceptance store is required/);
+await assert.rejects(recordLegalAcceptance({ AGAPAY_REGISTRATIONS: { async get() { throw new Error('store read failed'); } } }, request, input), /store read failed/);
+const org = await recordOrganizationRegistrationAcceptance(kvEnv, new Request('https://example.test', { headers: { 'X-Forwarded-For': '203.0.113.1, 203.0.113.2' } }), {
+  body: { acceptingName: 'Officer', acceptingEmail: 'officer@example.test', acceptingRole: 'Secretary' }, parishId: 'parish-a', reference: 'organization-reference',
+});
+assert.equal(org.organizationId, 'parish-a');
+assert.equal(org.subjectUserId, 'officer@example.test');
+assert.equal(org.acceptanceSource, 'church_registration');
+assert.equal(org.disclosureText, ORGANIZATION_ACCEPTANCE_DISCLOSURE);
+assert.equal(org.ipAddress, '203.0.113.1');
+const duplicateD1 = await recordLegalAcceptance(env, request, { ...input, transactionReference: 'd1-duplicate' });
+await recordLegalAcceptance(env, request, { ...input, transactionReference: 'd1-duplicate', actorName: 'Changed' });
+assert.equal(db.prepare('SELECT actor_name FROM legal_acceptances WHERE id = ?').get(duplicateD1.id).actor_name, 'Test');
+const long = await recordLegalAcceptance(kvEnv, new Request('https://example.test', { headers: { 'User-Agent': 'x'.repeat(1100) } }), { ...input, transactionReference: 'long', actorName: 'x'.repeat(300), subjectUserId: 'x'.repeat(400), organizationId: 'x'.repeat(300) });
+assert.equal(long.actorName.length, 200);
+assert.equal(long.subjectUserId.length, 320);
+assert.equal(long.organizationId.length, 200);
+assert.equal(long.userAgent.length, 1000);
+db.close();
 
 console.log("Append-only legal acceptance tests passed.");

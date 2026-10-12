@@ -297,7 +297,8 @@
     "src/lib/giving-statement-pdf.js",
     "scripts/giving-statement-pdf-typescript-tests.mjs",
     "src/lib/outside-pledges.js",
-    "scripts/outside-input-typescript-tests.mjs"
+    "scripts/outside-input-typescript-tests.mjs",
+    "src/lib/legal-acceptance.js"
   ],
   "check": [
     ".prettierrc.json",
@@ -628,6 +629,7 @@
     "src/lib/giving-statement-pdf.js",
     "scripts/giving-statement-pdf-typescript-tests.mjs",
     "src/lib/outside-pledges.js",
-    "scripts/outside-input-typescript-tests.mjs"
+    "scripts/outside-input-typescript-tests.mjs",
+    "src/lib/legal-acceptance.js"
   ]
 }
