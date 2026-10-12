@@ -315,7 +315,10 @@
     "scripts/accounting-environment-typescript-tests.mjs",
     "src/accounting/context.js",
     "src/accounting/contracts.js",
-    "scripts/accounting-context-typescript-tests.mjs"
+    "scripts/accounting-context-typescript-tests.mjs",
+    "src/accounting/storage.js",
+    "src/accounting/migration-safety.js",
+    "scripts/accounting-storage-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -664,6 +667,9 @@
     "scripts/accounting-environment-typescript-tests.mjs",
     "src/accounting/context.js",
     "src/accounting/contracts.js",
-    "scripts/accounting-context-typescript-tests.mjs"
+    "scripts/accounting-context-typescript-tests.mjs",
+    "src/accounting/storage.js",
+    "src/accounting/migration-safety.js",
+    "scripts/accounting-storage-typescript-tests.mjs"
   ]
 }

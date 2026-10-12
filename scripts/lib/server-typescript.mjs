@@ -26,6 +26,8 @@ export const serverTypeScriptSources = Object.freeze([
   'src/accounting/environment.ts',
   'src/accounting/context.ts',
   'src/accounting/contracts.ts',
+  'src/accounting/storage.ts',
+  'src/accounting/migration-safety.ts',
   'src/lib/parish-life-experience.ts',
   'src/lib/household-verification.ts',
   'src/lib/directory-invitation-next.ts',
