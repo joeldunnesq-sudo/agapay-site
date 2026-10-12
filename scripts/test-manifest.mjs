@@ -233,6 +233,7 @@ const productUi = [
   'scripts/sacrament-availability-typescript-tests.mjs',
   'scripts/accounting-validation-typescript-tests.mjs',
   'scripts/accounting-environment-typescript-tests.mjs',
+  'scripts/accounting-context-typescript-tests.mjs',
   'scripts/giving-catalog-staging-smoke-tests.mjs',
   'scripts/parish-outside-gifts-typescript-tests.mjs',
   'scripts/parish-giving-catalog-typescript-tests.mjs',
