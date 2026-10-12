@@ -300,7 +300,9 @@
     "scripts/outside-input-typescript-tests.mjs",
     "src/lib/legal-acceptance.js",
     "src/lib/early-adopter-pricing.js",
-    "scripts/early-adopter-typescript-tests.mjs"
+    "scripts/early-adopter-typescript-tests.mjs",
+    "src/lib/audit-log.js",
+    "scripts/audit-log-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -634,6 +636,8 @@
     "scripts/outside-input-typescript-tests.mjs",
     "src/lib/legal-acceptance.js",
     "src/lib/early-adopter-pricing.js",
-    "scripts/early-adopter-typescript-tests.mjs"
+    "scripts/early-adopter-typescript-tests.mjs",
+    "src/lib/audit-log.js",
+    "scripts/audit-log-typescript-tests.mjs"
   ]
 }
