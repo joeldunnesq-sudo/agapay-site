@@ -52,3 +52,5 @@ export interface RegistrationCursorRow {
 }
 export function encodeListCursor(row?: RegistrationCursorRow): string;
 export function decodeListCursor(cursor: unknown): { receivedAt: unknown; reference: unknown } | null;
+
+export function clientIp(request: Request): string;

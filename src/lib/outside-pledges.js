@@ -1,6 +1,6 @@
+// Generated from src/lib/outside-pledges.ts by npm run build:server. Do not edit.
 import { OutsideGiftError } from './outside-gifts.js';
-
-export async function validateOutsidePledge(db, parishId, input, giver) {
+async function validateOutsidePledge(db, parishId, input, giver) {
   if (input.givingKind !== 'pledge') return;
   if (!giver.email) throw new OutsideGiftError('Pledge payments require a giver with an email-linked pledge.');
   const pledge = await db
@@ -14,5 +14,5 @@ export async function validateOutsidePledge(db, parishId, input, giver) {
       'This giver has no pledge for the selected year. Have them set their pledge first, or record this as other giving.'
     );
 }
-
-export { outsidePledgeGiving, parishPledgeReceivedCents, addOutsideDonorPledgeSummary } from './pledge-report-reads.js';
+import { outsidePledgeGiving, parishPledgeReceivedCents, addOutsideDonorPledgeSummary } from './pledge-report-reads.js';
+export { addOutsideDonorPledgeSummary, outsidePledgeGiving, parishPledgeReceivedCents, validateOutsidePledge };
