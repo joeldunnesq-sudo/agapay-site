@@ -307,7 +307,10 @@
     "src/lib/mfa-diagnostics.js",
     "scripts/auth-helpers-typescript-tests.mjs",
     "src/lib/sacrament-availability.js",
-    "scripts/sacrament-availability-typescript-tests.mjs"
+    "scripts/sacrament-availability-typescript-tests.mjs",
+    "src/accounting/errors.js",
+    "src/accounting/validation.js",
+    "scripts/accounting-validation-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -648,6 +651,9 @@
     "src/lib/mfa-diagnostics.js",
     "scripts/auth-helpers-typescript-tests.mjs",
     "src/lib/sacrament-availability.js",
-    "scripts/sacrament-availability-typescript-tests.mjs"
+    "scripts/sacrament-availability-typescript-tests.mjs",
+    "src/accounting/errors.js",
+    "src/accounting/validation.js",
+    "scripts/accounting-validation-typescript-tests.mjs"
   ]
 }
