@@ -302,7 +302,10 @@
     "src/lib/early-adopter-pricing.js",
     "scripts/early-adopter-typescript-tests.mjs",
     "src/lib/audit-log.js",
-    "scripts/audit-log-typescript-tests.mjs"
+    "scripts/audit-log-typescript-tests.mjs",
+    "src/lib/webauthn.js",
+    "src/lib/mfa-diagnostics.js",
+    "scripts/auth-helpers-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -638,6 +641,9 @@
     "src/lib/early-adopter-pricing.js",
     "scripts/early-adopter-typescript-tests.mjs",
     "src/lib/audit-log.js",
-    "scripts/audit-log-typescript-tests.mjs"
+    "scripts/audit-log-typescript-tests.mjs",
+    "src/lib/webauthn.js",
+    "src/lib/mfa-diagnostics.js",
+    "scripts/auth-helpers-typescript-tests.mjs"
   ]
 }

@@ -18,6 +18,8 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/legal-acceptance.ts',
   'src/lib/early-adopter-pricing.ts',
   'src/lib/audit-log.ts',
+  'src/lib/webauthn.ts',
+  'src/lib/mfa-diagnostics.ts',
   'src/lib/parish-life-experience.ts',
   'src/lib/household-verification.ts',
   'src/lib/directory-invitation-next.ts',

@@ -229,6 +229,7 @@ const productUi = [
   'scripts/outside-input-typescript-tests.mjs',
   'scripts/early-adopter-typescript-tests.mjs',
   'scripts/audit-log-typescript-tests.mjs',
+  'scripts/auth-helpers-typescript-tests.mjs',
   'scripts/giving-catalog-staging-smoke-tests.mjs',
   'scripts/parish-outside-gifts-typescript-tests.mjs',
   'scripts/parish-giving-catalog-typescript-tests.mjs',
