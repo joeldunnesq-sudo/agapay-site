@@ -191,7 +191,7 @@ assert.match(publicStoreApp, /source: category === "book" && isbn \? "scan_and_g
 assert.match(myAgapayStore, /onclick="startBookstoreBookScan\(\)"/);
 assert.match(myAgapayStore, /bookstore-product-stock-out/);
 assert.match(myAgapayStore, /class="mobile-tabbar"/);
-assert.match(donorApp, /await donorApi\("\/api\/donor\/dashboard"\)/, "the bookstore refreshes the saved parish before loading");
+assert.match(donorApp, /await donorApi\("\/api\/donor\/dashboard\?view=context"\)/, "the bookstore refreshes the saved parish before loading");
 assert.match(donorApp, /canonicalParish/, "the bookstore canonicalizes a saved parish against the directory");
 assert.match(myAgapayShell, /item\.id === activeProduct\(\)/, "the active bookstore stays in navigation during capability loading");
 assert.match(workerSource, /\["\/myagapay\/bookstore", "\/myagapay\/bookstore\.html"\]/,
