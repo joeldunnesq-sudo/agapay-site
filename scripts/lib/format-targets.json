@@ -322,7 +322,9 @@
     "src/accounting/csv-utils.js",
     "scripts/accounting-csv-typescript-tests.mjs",
     "src/accounting/observability.js",
-    "scripts/accounting-observability-typescript-tests.mjs"
+    "scripts/accounting-observability-typescript-tests.mjs",
+    "src/accounting/storage-foundations.js",
+    "scripts/accounting-storage-foundations-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -678,6 +680,8 @@
     "src/accounting/csv-utils.js",
     "scripts/accounting-csv-typescript-tests.mjs",
     "src/accounting/observability.js",
-    "scripts/accounting-observability-typescript-tests.mjs"
+    "scripts/accounting-observability-typescript-tests.mjs",
+    "src/accounting/storage-foundations.js",
+    "scripts/accounting-storage-foundations-typescript-tests.mjs"
   ]
 }

@@ -237,6 +237,7 @@ const productUi = [
   'scripts/accounting-storage-typescript-tests.mjs',
   'scripts/accounting-csv-typescript-tests.mjs',
   'scripts/accounting-observability-typescript-tests.mjs',
+  'scripts/accounting-storage-foundations-typescript-tests.mjs',
   'scripts/giving-catalog-staging-smoke-tests.mjs',
   'scripts/parish-outside-gifts-typescript-tests.mjs',
   'scripts/parish-giving-catalog-typescript-tests.mjs',
