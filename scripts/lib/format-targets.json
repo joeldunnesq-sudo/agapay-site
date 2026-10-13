@@ -326,7 +326,10 @@
     "src/accounting/storage-foundations.js",
     "scripts/accounting-storage-foundations-typescript-tests.mjs",
     "src/accounting/backup-retention.js",
-    "scripts/accounting-backup-retention-typescript-tests.mjs"
+    "scripts/accounting-backup-retention-typescript-tests.mjs",
+    "src/handlers/donor-parish-context.ts",
+    "src/handlers/donor-parish-context.js",
+    "scripts/typecheck/donor-parish-context-contracts.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -686,6 +689,9 @@
     "src/accounting/storage-foundations.js",
     "scripts/accounting-storage-foundations-typescript-tests.mjs",
     "src/accounting/backup-retention.js",
-    "scripts/accounting-backup-retention-typescript-tests.mjs"
+    "scripts/accounting-backup-retention-typescript-tests.mjs",
+    "src/handlers/donor-parish-context.ts",
+    "src/handlers/donor-parish-context.js",
+    "scripts/typecheck/donor-parish-context-contracts.ts"
   ]
 }
