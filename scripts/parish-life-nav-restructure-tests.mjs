@@ -163,7 +163,7 @@ assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
 assert.match(landingScript, /href="\/myagapay\/media\/watch\?video=/);
 assert.match(landingScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/);
 assert.match(landingScript, /fetch\(path, \{ headers, cache: "no-store" \}\)/, "landing content requests must remain uncached");
-assert.match(landingScript, /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard"/, "cached structure must render before the landing dashboard request resolves");
+assert.match(landingScript, /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard\?view=context"/, "cached structure must render before the landing dashboard request resolves");
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*renderCommunityInbox/, "actionable announcements and signup actions should replace the Community Inbox placeholder");
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/, "ministries should replace their own placeholder when their request resolves");
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/, "recordings should replace their own placeholder when their request resolves");

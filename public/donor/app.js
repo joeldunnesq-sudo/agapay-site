@@ -1775,7 +1775,7 @@ async function loadDonorSettingsPage() {
     return;
   }
   try {
-    const data = await donorApi("/api/donor/dashboard");
+    const data = await donorApi("/api/donor/dashboard?view=context");
     setDonorProfile(data.donor);
     const donor = data.donor || {};
     const setValue = (id, value) => {

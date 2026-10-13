@@ -98,7 +98,7 @@ async function loadNews() {
   const status = document.getElementById("newsStatus");
   try {
     const [dashboard, custom, ...sources] = await Promise.all([
-      newsFetch("/api/donor/dashboard"),
+      newsFetch("/api/donor/dashboard?view=context"),
       newsFetch("/api/donor/custom-news-feeds"),
       ...Object.keys(NEWS_SOURCE_COPY).map((key) => newsFetch(`/api/donor/external-feeds/${key}`)),
     ]);
