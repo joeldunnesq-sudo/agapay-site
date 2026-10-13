@@ -1,3 +1,4 @@
+import { loadDonorParishContext } from "./donor-parish-context.js";
 import { deliverDonationReceipt, sendDonationReceiptMessage } from '../payments/donation-receipts.js';
 import { subscriptionSetupUpdates } from '../payments/donation-events.js';
 import { addOutsideDonorPledgeSummary } from "../lib/outside-pledges.js";
@@ -31,14 +32,10 @@ import {
 
 import { subscriptionTier } from "../lib/subscriptions.js";
 
-import { directoryEnabledFor, exchangeEnabledFor, givingFeatureAccess, hasModuleAccess, prayerRequestsEnabledFor, signupsEnabledFor, stewardshipToolAccess } from "../lib/entitlements.js";
-import { parishLifeAvailableFor } from "../lib/parish-life-access.js";
-import { parishLifeExperienceFor } from "../lib/parish-life-experience.js";
+import { givingFeatureAccess, stewardshipToolAccess } from "../lib/entitlements.js";
 import { recordParishFeatureRequest } from "../lib/parish-feature-requests.js";
 import { submitParishSupportTicket } from "../lib/parish-support-tickets.js";
 import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
-import { getDirectorySettings } from "../directory/settings.js";
-import { getParishLibrarySettings } from "../lib/parish-library.js";
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from "../directory/self-service.js";
 import { migrateConsumerPasskeyEmail } from "../lib/consumer-passkeys.js";
 
@@ -58,7 +55,6 @@ import {
   loadReconciledDonorCommemorations,
   migrateDonorEmailReferences,
   paidOfferingStatus,
-  parishFromRegistration,
   publicDonorOffering,
   reconcilePendingDonorOfferings,
   requireDonor,
@@ -932,32 +928,17 @@ export async function handleDonorDashboard(request, env) {
 
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
 
+  if (new URL(request.url).searchParams.get("view") === "context") {
+    return json({ donor: publicDonor(donor), parish: await loadDonorParishContext(env, donor) });
+  }
+
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const publicOfferings = offerings.map(publicDonorOffering);
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   const summary = await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations));
-  let parish = null;
-  if (donor.defaultParishId) {
-    const found = await findRegistrationByParishId(env, donor.defaultParishId);
-    if (found) {
-      parish = parishFromRegistration(found.registration);
-      if (parish) {
-        const [directorySettings, librarySettings] = await Promise.all([getDirectorySettings(env, parish.id), getParishLibrarySettings(env.AGAPAY_DB || env.DB, parish.id)]);
-        parish.directoryEnabled = directoryEnabledFor(found.registration, directorySettings);
-        parish.libraryEnabled = librarySettings.enabled && hasModuleAccess(found.registration, "library");
-        const parishLifeExperience = parishLifeExperienceFor(found.registration);
-        parish.communicationsEnabled = parishLifeExperience.communicationsEnabled;
-        parish.signupsEnabled = signupsEnabledFor(found.registration);
-        parish.exchangeEnabled = exchangeEnabledFor(found.registration);
-        parish.prayerRequestsEnabled = prayerRequestsEnabledFor(found.registration);
-        parish.parishLifeLabel = parishLifeExperience.label;
-        parish.parishLifeAvailable = parishLifeAvailableFor(env);
-        parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);
-      }
-    }
-    if (parish) parish = await enrichParishGivingOptions(env, parish);
-    if (parish) parish = attachDonorCampaignGiving(parish, offerings);
-  }
+  let parish = await loadDonorParishContext(env, donor);
+  if (parish) parish = await enrichParishGivingOptions(env, parish);
+  if (parish) parish = attachDonorCampaignGiving(parish, offerings);
 
   return json({
     donor: publicDonor(donor),

@@ -654,7 +654,7 @@ async function loadParishLife() {
   // Koinonia access requests below remain authoritative for data and access.
   initializeParishLifeStructure();
   try {
-    const dashboardResponse = await fetch("/api/donor/dashboard", { headers, cache: "no-store" });
+    const dashboardResponse = await fetch("/api/donor/dashboard?view=context", { headers, cache: "no-store" });
     if (window.MyAgapayShell?.handleUnauthorized(dashboardResponse)) return;
     const dashboard = await dashboardResponse.json().catch(() => ({}));
     if (!dashboardResponse.ok) throw new Error(dashboard.error || "Unable to load your parish.");

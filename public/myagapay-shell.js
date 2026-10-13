@@ -761,7 +761,7 @@
       return;
     }
     try {
-      const response = await fetch("/api/donor/dashboard", {
+      const response = await fetch("/api/donor/dashboard?view=context", {
         headers: authHeaders(),
         cache: "no-store"
       });

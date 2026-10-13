@@ -80,9 +80,10 @@
     };
   }
 
-  async function api(path, { method = 'POST', body, authenticated = false } = {}) {
+  async function api(path, { method = 'POST', body, authenticated = false, signal } = {}) {
     const response = await fetch(path, {
       method,
+      signal,
       headers: {
         Accept: 'application/json',
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
@@ -115,7 +116,7 @@
 
   async function authenticate({ mediation, signal } = {}) {
     if (!supported()) throw new Error('Passkeys are not supported in this browser.');
-    const started = await api('/api/donor/passkeys/authentication/options');
+    const started = await api('/api/donor/passkeys/authentication/options', { signal });
     let credential;
     try {
       credential = await navigator.credentials.get({
@@ -128,6 +129,7 @@
     }
     if (!credential) throw new Error('No passkey was selected.');
     return api('/api/donor/passkeys/authentication/verify', {
+      signal,
       body: { pendingToken: started.pendingToken, credential: authenticationToJson(credential) },
     });
   }

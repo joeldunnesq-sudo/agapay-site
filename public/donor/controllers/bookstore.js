@@ -742,7 +742,7 @@ async function loadDonorBookstorePage() {
   let donor = donorProfile();
   let dashboardParish = null;
   try {
-    const dashboard = await donorApi("/api/donor/dashboard");
+    const dashboard = await donorApi("/api/donor/dashboard?view=context");
     dashboardParish = dashboard.parish || null;
     donor = { ...donor, ...(dashboard.donor || {}), defaultParish: dashboardParish || donor.defaultParish || null };
     setDonorProfile(donor);
