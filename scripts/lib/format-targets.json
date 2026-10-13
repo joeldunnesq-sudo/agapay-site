@@ -324,7 +324,9 @@
     "src/accounting/observability.js",
     "scripts/accounting-observability-typescript-tests.mjs",
     "src/accounting/storage-foundations.js",
-    "scripts/accounting-storage-foundations-typescript-tests.mjs"
+    "scripts/accounting-storage-foundations-typescript-tests.mjs",
+    "src/accounting/backup-retention.js",
+    "scripts/accounting-backup-retention-typescript-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -682,6 +684,8 @@
     "src/accounting/observability.js",
     "scripts/accounting-observability-typescript-tests.mjs",
     "src/accounting/storage-foundations.js",
-    "scripts/accounting-storage-foundations-typescript-tests.mjs"
+    "scripts/accounting-storage-foundations-typescript-tests.mjs",
+    "src/accounting/backup-retention.js",
+    "scripts/accounting-backup-retention-typescript-tests.mjs"
   ]
 }
