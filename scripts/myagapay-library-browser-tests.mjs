@@ -2,10 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const html = (await readFile(new URL('../public/myagapay/library.html', import.meta.url), 'utf8')).replace(
-  /<script\b[^>]*>[\s\S]*?<\/script>/gi,
-  ''
-);
+const html = await readFile(new URL('../public/myagapay/library.html', import.meta.url), 'utf8');
 const script = await readFile(new URL('../public/myagapay/library.js', import.meta.url), 'utf8');
 const browser = await chromium.launch({ headless: true });
 try {
@@ -36,6 +33,9 @@ try {
     ];
     await page.route('**/*', async (route) => {
       const request = route.request();
+      // Isolate this controller without rewriting HTML or executing other page scripts.
+      if (request.resourceType() === 'script')
+        return route.fulfill({ contentType: 'application/javascript', body: '' });
       const url = new URL(request.url());
       if (!url.pathname.startsWith('/api/')) return route.fulfill({ contentType: 'text/html', body: html });
       requests.push({ path: url.pathname, headers: request.headers() });
