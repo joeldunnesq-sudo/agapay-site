@@ -915,10 +915,11 @@ assert.ok(
 
 // Phase 6: audit log foundation
 const auditLogLib = await readFile("src/lib/audit-log.js", "utf8");
+const auditExports = await import("../src/lib/audit-log.js");
 const auditLogMigration = await readFile("migrations/0014_audit_log.sql", "utf8");
 assert.ok(auditLogMigration.includes("CREATE TABLE IF NOT EXISTS audit_log"), "migration 0014 should create the audit_log table");
-assert.ok(auditLogLib.includes("export async function recordAuditEvent"), "audit-log.js should export recordAuditEvent");
-assert.ok(auditLogLib.includes("export async function listAuditEvents"), "audit-log.js should export listAuditEvents");
+assert.ok(typeof auditExports.recordAuditEvent === "function", "audit-log.js should export recordAuditEvent");
+assert.ok(typeof auditExports.listAuditEvents === "function", "audit-log.js should export listAuditEvents");
 assert.ok(!auditLogLib.includes("DELETE FROM audit_log") && !auditLogLib.includes("UPDATE audit_log"), "audit_log must stay append-only -- no UPDATE/DELETE path");
 assert.ok(backendSources.includes("recordAuditEvent(env, request, {") && backendSources.includes('action: "admin.index_rebuild"'), "index rebuild should record an audit event");
 assert.ok(backendSources.includes('action: "registration.status_changed"'), "registration status changes should record an audit event");

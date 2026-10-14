@@ -154,3 +154,6 @@
 
 /myagapay/ministry-home.css
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/library.js
+  Cache-Control: public, max-age=31536000, immutable

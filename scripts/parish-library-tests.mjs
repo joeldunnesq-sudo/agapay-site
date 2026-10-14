@@ -112,7 +112,7 @@ assert.match(donorPage, /koinonia-inner\.css\?v=20260915spacing1/);
 assert.ok(donorPage.includes(appAssetUrl('/myagapay/library.css')), 'Library must load its current versioned stylesheet');
 assert.match(donorPage, /myagapay-shell\.js\?v=[a-f0-9]{16}/);
 assert.match(parishLifePage, /myagapay-shell\.js\?v=[a-f0-9]{16}/);
-assert.match(donorScript, /fetch\("\/api\/donor\/library"/);
+assert.match(donorScript, /fetch\(["']\/api\/donor\/library["']/);
 assert.match(donorScript, /data-library-pdf/);
 assert.match(adminPage, /id="nav-library"/);
 assert.match(adminPage, /id="tab-library"/);
