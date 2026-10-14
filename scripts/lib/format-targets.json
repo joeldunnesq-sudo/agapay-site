@@ -329,7 +329,11 @@
     "scripts/accounting-backup-retention-typescript-tests.mjs",
     "src/handlers/donor-parish-context.ts",
     "src/handlers/donor-parish-context.js",
-    "scripts/typecheck/donor-parish-context-contracts.ts"
+    "scripts/typecheck/donor-parish-context-contracts.ts",
+    "src/browser/myagapay/news.ts",
+    "public/myagapay/news.js",
+    "scripts/typecheck-browser/news.ts",
+    "scripts/myagapay-news-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -692,6 +696,10 @@
     "scripts/accounting-backup-retention-typescript-tests.mjs",
     "src/handlers/donor-parish-context.ts",
     "src/handlers/donor-parish-context.js",
-    "scripts/typecheck/donor-parish-context-contracts.ts"
+    "scripts/typecheck/donor-parish-context-contracts.ts",
+    "src/browser/myagapay/news.ts",
+    "public/myagapay/news.js",
+    "scripts/typecheck-browser/news.ts",
+    "scripts/myagapay-news-browser-tests.mjs"
   ]
 }

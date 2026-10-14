@@ -668,7 +668,7 @@ export default [
     },
   },
   {
-    files: ['src/browser/liturgical-calendar.ts'],
+    files: ['src/browser/liturgical-calendar.ts', 'src/browser/myagapay/news.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }] },
   },
   {

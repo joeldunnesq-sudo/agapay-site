@@ -17,6 +17,7 @@ const smoke = [
 const core = [
   'scripts/donor-navigation-context-tests.mjs',
   'scripts/myagapay-performance-browser-tests.mjs',
+  'scripts/myagapay-news-browser-tests.mjs',
   'scripts/giving-reader-contracts-tests.mjs',
   'scripts/recurring-health-typescript-tests.mjs',
   'scripts/public-gift-model-typescript-tests.mjs',
