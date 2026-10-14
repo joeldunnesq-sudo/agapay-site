@@ -677,6 +677,7 @@ export default [
       'src/browser/myagapay/shell-contracts.d.ts',
       'src/browser/myagapay/ministry-home.ts',
       'src/browser/myagapay/koinonia-experience.ts',
+      'src/browser/myagapay/church-year.ts',
     ],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }] },
   },

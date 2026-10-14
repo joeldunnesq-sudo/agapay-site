@@ -350,7 +350,11 @@
     "src/browser/myagapay/push-notifications.ts",
     "public/myagapay/push-notifications.js",
     "scripts/typecheck-browser/push-notifications.ts",
-    "scripts/push-notifications-typescript-browser-tests.mjs"
+    "scripts/push-notifications-typescript-browser-tests.mjs",
+    "src/browser/myagapay/church-year.ts",
+    "public/myagapay/church-year.js",
+    "scripts/typecheck-browser/church-year.ts",
+    "scripts/church-year-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -734,6 +738,10 @@
     "src/browser/myagapay/push-notifications.ts",
     "public/myagapay/push-notifications.js",
     "scripts/typecheck-browser/push-notifications.ts",
-    "scripts/push-notifications-typescript-browser-tests.mjs"
+    "scripts/push-notifications-typescript-browser-tests.mjs",
+    "src/browser/myagapay/church-year.ts",
+    "public/myagapay/church-year.js",
+    "scripts/typecheck-browser/church-year.ts",
+    "scripts/church-year-typescript-browser-tests.mjs"
   ]
 }
