@@ -157,3 +157,6 @@
 
 /myagapay/library.js
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/push-notifications.js
+  Cache-Control: public, max-age=31536000, immutable

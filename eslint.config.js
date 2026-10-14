@@ -7,6 +7,10 @@ const recommendedRules = js.configs.recommended.rules;
 
 export default [
   { ignores: handwrittenIgnores },
+  {
+    files: ['src/browser/myagapay/push-notifications.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Navigator$' }] },
+  },
   ...tseslint.configs.recommended.map((config) => ({ ...config, files: ['src/**/*.ts', 'scripts/**/*.ts'] })),
   {
     files: ['src/**/*.ts', 'scripts/**/*.ts'],

@@ -192,7 +192,7 @@ const groupsHtml = readFileSync(path.join(root, "public", "myagapay", "groups.ht
 assert.match(workerSource, /url\.pathname\.startsWith\("\/api\/donor\/push\/"\)/);
 assert.match(serviceWorker, /addEventListener\("push"/);
 assert.match(serviceWorker, /addEventListener\("notificationclick"/);
-assert.match(pushUi, /enable\?\.addEventListener\("click", async \(\) => \{[\s\S]*Notification\.requestPermission\(\)/,
+assert.match(pushUi, /enable\?\.addEventListener\(["']click["'], async \(\) => \{[\s\S]*Notification\.requestPermission\(\)/,
   "notification permission must only be requested from the explicit enable click");
 assert.match(pushUi, /isIosDevice\(\) && !isStandalone\(\)/);
 assert.match(feedHtml, /Add to Home Screen/);

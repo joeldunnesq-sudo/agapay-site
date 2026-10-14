@@ -346,7 +346,11 @@
     "src/browser/myagapay/koinonia-experience.ts",
     "public/myagapay/koinonia-experience.js",
     "scripts/typecheck-browser/koinonia-experience.ts",
-    "scripts/koinonia-experience-typescript-browser-tests.mjs"
+    "scripts/koinonia-experience-typescript-browser-tests.mjs",
+    "src/browser/myagapay/push-notifications.ts",
+    "public/myagapay/push-notifications.js",
+    "scripts/typecheck-browser/push-notifications.ts",
+    "scripts/push-notifications-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -726,6 +730,10 @@
     "src/browser/myagapay/koinonia-experience.ts",
     "public/myagapay/koinonia-experience.js",
     "scripts/typecheck-browser/koinonia-experience.ts",
-    "scripts/koinonia-experience-typescript-browser-tests.mjs"
+    "scripts/koinonia-experience-typescript-browser-tests.mjs",
+    "src/browser/myagapay/push-notifications.ts",
+    "public/myagapay/push-notifications.js",
+    "scripts/typecheck-browser/push-notifications.ts",
+    "scripts/push-notifications-typescript-browser-tests.mjs"
   ]
 }
