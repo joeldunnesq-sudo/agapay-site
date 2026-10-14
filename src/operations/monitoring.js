@@ -1,8 +1,7 @@
+// Generated from src/operations/monitoring.ts by npm run build:server. Do not edit.
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
-
-const PORTABILITY_MAX_AGE_MS = 20 * 60 * 1000;
-
+const PORTABILITY_MAX_AGE_MS = 20 * 60 * 1e3;
 function response(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -13,7 +12,6 @@ function response(payload, status = 200) {
     },
   });
 }
-
 async function tokenMatches(request, env) {
   const expected = String(env?.AGAPAY_MONITOR_CANARY_TOKEN || '');
   const supplied = String(request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
@@ -29,7 +27,6 @@ async function tokenMatches(request, env) {
   for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ (right[index] || 0);
   return difference === 0;
 }
-
 function bindings(env) {
   return {
     d1: Boolean(env?.DB || env?.AGAPAY_DB),
@@ -38,8 +35,7 @@ function bindings(env) {
     sacramentDocuments: Boolean(env?.SACRAMENT_DOCUMENTS),
   };
 }
-
-export async function handleOperationsCanary(request, env) {
+async function handleOperationsCanary(request, env) {
   if (!env?.AGAPAY_MONITOR_CANARY_TOKEN) return response({ ok: false, error: 'canary_not_configured' }, 503);
   if (!(await tokenMatches(request, env))) return response({ ok: false, error: 'unauthorized' }, 401);
   const bindingChecks = bindings(env);
@@ -66,11 +62,11 @@ export async function handleOperationsCanary(request, env) {
     return response(
       {
         ok,
-        checkedAt: new Date().toISOString(),
+        checkedAt: /* @__PURE__ */ new Date().toISOString(),
         bindings: bindingChecks,
         scheduler: {
           ok: schedulerFresh && failedJobs.length === 0,
-          portabilityAgeSeconds: Number.isFinite(portabilityAgeMs) ? Math.round(portabilityAgeMs / 1000) : null,
+          portabilityAgeSeconds: Number.isFinite(portabilityAgeMs) ? Math.round(portabilityAgeMs / 1e3) : null,
           failedJobs,
           jobs,
         },
@@ -82,7 +78,7 @@ export async function handleOperationsCanary(request, env) {
     return response(
       {
         ok: false,
-        checkedAt: new Date().toISOString(),
+        checkedAt: /* @__PURE__ */ new Date().toISOString(),
         bindings: bindingChecks,
         error: 'heartbeat_read_failed',
       },
@@ -90,8 +86,7 @@ export async function handleOperationsCanary(request, env) {
     );
   }
 }
-
-export async function handleOperationsMonitorAlert(request, env) {
+async function handleOperationsMonitorAlert(request, env) {
   if (!env?.AGAPAY_MONITOR_CANARY_TOKEN) return response({ ok: false, error: 'canary_not_configured' }, 503);
   if (!(await tokenMatches(request, env))) return response({ ok: false, error: 'unauthorized' }, 401);
   let payload;
@@ -104,7 +99,7 @@ export async function handleOperationsMonitorAlert(request, env) {
     String(payload?.runId || '')
       .replace(/[^a-zA-Z0-9_-]/g, '')
       .slice(0, 80) || 'unknown';
-  const summary = String(payload?.summary || 'Production monitor failed.').slice(0, 2000);
+  const summary = String(payload?.summary || 'Production monitor failed.').slice(0, 2e3);
   const recipient = String(env.AGAPAY_OPS_ALERT_EMAIL || '').trim();
   if (!recipient) return response({ ok: false, error: 'alert_recipient_not_configured' }, 503);
   const title = 'Production monitor failed';
@@ -115,7 +110,11 @@ export async function handleOperationsMonitorAlert(request, env) {
       to: [recipient],
       reply_to: env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
       subject: `[AGAPAY Ops] ${title}`,
-      text: `${title}\n\n${summary}\n\nGitHub run: ${runId}`,
+      text: `${title}
+
+${summary}
+
+GitHub run: ${runId}`,
       html: agapayEmailHtml(
         env.AGAPAY_APP_URL,
         title,
@@ -125,10 +124,11 @@ export async function handleOperationsMonitorAlert(request, env) {
     `
       ),
     },
-    { idempotencyKey: `production-monitor-${runId}`, timeoutMs: 10_000 }
+    { idempotencyKey: `production-monitor-${runId}`, timeoutMs: 1e4 }
   );
   return response(
     { ok: result?.status === 'sent', status: result?.status || 'failed' },
     result?.status === 'sent' ? 202 : 502
   );
 }
+export { handleOperationsCanary, handleOperationsMonitorAlert };

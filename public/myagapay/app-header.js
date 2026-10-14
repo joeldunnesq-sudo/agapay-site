@@ -1,6 +1,6 @@
+// Generated from src/browser/myagapay/app-header.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-
   const titles = {
     account: 'Account',
     bookstore: 'Bookstore',
@@ -49,7 +49,6 @@
     .replace(/\/$/, '');
   const key = route === 'calendar' ? 'giving/calendar' : route === 'services' ? 'sacraments' : route;
   if (!titles[key]) return;
-
   const switchIcon =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h11l-3-3M16 17H5l3 3M19 7l-3 3M5 17l3-3"/></svg>';
   const churchIcon =
@@ -59,7 +58,6 @@
   let dialog;
   let churches = [];
   let switching = false;
-
   function updateParish(value) {
     if (!header) return;
     parish = value || null;
@@ -73,7 +71,6 @@
       header.querySelector('[data-app-page-title]').textContent =
         value?.communicationsEnabled === false ? 'Today' : 'Koinonia';
   }
-
   async function request(url, options = {}) {
     const response = await fetch(url, {
       ...options,
@@ -84,7 +81,6 @@
     if (!response.ok) throw new Error(payload.error || 'Unable to complete the request.');
     return payload;
   }
-
   function renderChurches() {
     const query = dialog.querySelector('input').value.trim().toLowerCase();
     const list = dialog.querySelector('[data-app-churches]');
@@ -107,7 +103,6 @@
       });
     if (!list.children.length) list.textContent = 'No churches match your search.';
   }
-
   async function switchChurch(entry) {
     if (switching) return;
     if (entry.id === parish?.id) {
@@ -129,7 +124,6 @@
         defaultParishId: entry.id,
         defaultParish: entry,
       });
-      // Reload parish-owned data and re-evaluate access before showing the new church.
       location.reload();
     } catch (error) {
       status.textContent = error.message;
@@ -137,7 +131,6 @@
       renderChurches();
     }
   }
-
   async function openChurches() {
     if (!dialog) {
       dialog = document.createElement('dialog');
@@ -178,7 +171,6 @@
       status.textContent = error.message;
     }
   }
-
   function buildHeader() {
     const main = document.querySelector('main.content, main.directory-main, main');
     if (!main || main.querySelector('.app-page-header')) return;
@@ -188,7 +180,6 @@
     header.innerHTML = `<div class="app-header-bar koinonia-mobile-appbar"><a class="app-header-brand" href="/myagapay"><img src="/mark.png" alt=""><span>MY AGAPAY</span></a><button class="app-header-menu-button" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation">${window.MyAgapayShell.icons.menu}</button></div><nav id="appHeaderNavigation" class="koinonia-mobile-menu" data-myagapay-app-menu aria-label="My AGAPAY navigation" hidden></nav><div class="app-header-body"><div class="app-header-parish">${churchIcon}<div class="app-header-parish-copy"><div data-app-church-name>Loading your church…</div><div data-app-church-location hidden></div></div><div class="app-header-switch"><button type="button" data-app-switch-church aria-label="Switch churches">${switchIcon}</button></div></div><div class="app-header-title-row"><h1 data-app-page-title></h1><div class="app-header-actions"></div></div></div>`;
     header.querySelector('[data-app-page-title]').textContent = titles[key];
     main.prepend(header);
-
     const description = document.createElement('p');
     description.className = 'app-header-description';
     description.textContent = descriptions[key];
@@ -217,7 +208,6 @@
       header.querySelector('.app-header-title-row').before(back);
     }
     if (key === 'library') main.querySelector('.library-page-heading')?.classList.add('app-header-replaced');
-
     const actions = header.querySelector('.app-header-actions');
     const actionSelectors =
       key === 'bookstore'
@@ -233,8 +223,6 @@
       const nativePicker = main.querySelector('.bookstore-parish-switcher');
       if (nativePicker) header.querySelector('.app-header-switch').replaceChildren(nativePicker);
     } else header.querySelector('[data-app-switch-church]').addEventListener('click', openChurches);
-
-    // Hide old navigation shells, retaining their data-bound elements and notices.
     main
       .querySelectorAll(
         '.topbar, .koinonia-mobile-appbar, .prayer-mobile-appbar, .library-mobile-appbar, [data-myagapay-app-menu], .bookstore-store-context, .koinonia-parish-context, [data-parish-life-back]'
@@ -268,7 +256,6 @@
     });
     updateParish(window.AGAPAYDonorSession.profile()?.defaultParish);
   }
-
   window.addEventListener('myagapay:parish-context', (event) => updateParish(event.detail));
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildHeader);
   else buildHeader();

@@ -1,6 +1,6 @@
+// Generated from src/reports/diocesan-statistical-totals.ts by npm run build:server. Do not edit.
 const FIELDS = ['baptism', 'chrismation', 'wedding', 'funeral', 'catechumensMade', 'people', 'households'];
-
-export function validateStatisticalTotals(input) {
+function validateStatisticalTotals(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new Error('Provide additional annual counts as an object.');
   }
@@ -8,15 +8,14 @@ export function validateStatisticalTotals(input) {
   for (const [field, value] of Object.entries(input)) {
     if (!FIELDS.includes(field)) throw new Error('Unknown annual count.');
     if (value === null || value === '') continue;
-    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > 1000000) {
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > 1e6) {
       throw new Error('Additional counts must be whole numbers between 0 and 1,000,000.');
     }
     totals[field] = value;
   }
   return totals;
 }
-
-export async function saveStatisticalTotals(env, parishId, year, input) {
+async function saveStatisticalTotals(env, parishId, year, input) {
   const totals = validateStatisticalTotals(input);
   await env.AGAPAY_DB.prepare(
     `
@@ -30,8 +29,7 @@ export async function saveStatisticalTotals(env, parishId, year, input) {
     .run();
   return totals;
 }
-
-export async function applyStatisticalTotals(env, parishId, report) {
+async function applyStatisticalTotals(env, parishId, report) {
   const row = await env.AGAPAY_DB.prepare(
     `
     SELECT totals_json FROM parish_diocesan_statistical_totals
@@ -55,3 +53,4 @@ export async function applyStatisticalTotals(env, parishId, report) {
   );
   return { ...report, automaticTotals, manualAdditions };
 }
+export { applyStatisticalTotals, saveStatisticalTotals, validateStatisticalTotals };

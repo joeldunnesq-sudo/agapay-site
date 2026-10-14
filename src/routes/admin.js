@@ -1,4 +1,5 @@
-const SIMPLE_ROUTES = new Map([
+// Generated from src/routes/admin.ts by npm run build:server. Do not edit.
+const SIMPLE_ROUTES = /* @__PURE__ */ new Map([
   ['/api/admin/relationships', 'handleAdminRelationships'],
   ['/api/admin/session', 'handleAdminSession'],
   ['/api/mfa/enrollment/options', 'handleMfaEnrollmentOptions'],
@@ -27,8 +28,7 @@ const SIMPLE_ROUTES = new Map([
   ['/api/admin/nonprofit-pricing', 'handleAdminNonprofitPricing'],
   ['/api/admin/nonprofit-pricing/alerts/run', 'handleAdminNonprofitPricingAlerts'],
 ]);
-
-const GET_ROUTES = new Map([
+const GET_ROUTES = /* @__PURE__ */ new Map([
   ['/api/admin/registrations', 'handleAdminRegistrations'],
   ['/api/admin/platform-summary', 'handleAdminPlatformSummary'],
   ['/api/admin/recent-activity', 'handleAdminRecentActivity'],
@@ -36,20 +36,17 @@ const GET_ROUTES = new Map([
   ['/api/admin/audit-log', 'handleAdminAuditLog'],
   ['/api/admin/learn/summary', 'handleAdminLearnSummary'],
 ]);
-
-export async function routeAdminRequest({ request, env, url, actions }) {
+async function routeAdminRequest({ request, env, url, actions }) {
   if (url.pathname === '/api/admin/contact-leads' || url.pathname.startsWith('/api/admin/contact-leads/'))
     return actions.handleAdminContactLeads(request, env);
   const getAction = request.method === 'GET' ? GET_ROUTES.get(url.pathname) : null;
   if (getAction) return actions[getAction](request, env);
-
   const simpleAction = SIMPLE_ROUTES.get(url.pathname);
   if (simpleAction) {
     return simpleAction === 'handleIdentityCapabilityCatalog'
       ? actions[simpleAction](request)
       : actions[simpleAction](request, env);
   }
-
   if (url.pathname.startsWith('/api/identity/invitations/') && url.pathname.endsWith('/accept')) {
     const token = decodeURIComponent(url.pathname.replace('/api/identity/invitations/', '').replace('/accept', ''));
     return actions.handleIdentityInvitationAccept(request, env, token);
@@ -96,7 +93,6 @@ export async function routeAdminRequest({ request, env, url, actions }) {
       decodeURIComponent(url.pathname.slice('/api/admin/learn/community/'.length))
     );
   }
-
   const registrationPrefix = '/api/admin/registrations/';
   if (url.pathname.startsWith(registrationPrefix)) {
     const rest = url.pathname.slice(registrationPrefix.length);
@@ -114,7 +110,6 @@ export async function routeAdminRequest({ request, env, url, actions }) {
     }
     return actions.handleAdminRegistrationDetail(request, env, decodeURIComponent(rest));
   }
-
   if (url.pathname.startsWith('/api/admin/tax-exemptions/')) {
     const [taxExemptionId, action, syncId, syncAction] = url.pathname
       .slice('/api/admin/tax-exemptions/'.length)
@@ -146,7 +141,6 @@ export async function routeAdminRequest({ request, env, url, actions }) {
     if (!action) return actions.handleAdminTaxExemptionDetail(request, env, taxExemptionId);
     return actions.json({ error: 'Not found' }, { status: 404 });
   }
-
   if (url.pathname.startsWith('/api/admin/nonprofit-pricing/applications/') && url.pathname.includes('/documents/')) {
     const [applicationId, documentPart = ''] = url.pathname
       .slice('/api/admin/nonprofit-pricing/applications/'.length)
@@ -162,3 +156,4 @@ export async function routeAdminRequest({ request, env, url, actions }) {
   }
   return null;
 }
+export { routeAdminRequest };

@@ -1,4 +1,5 @@
-export async function routePublicRequest({ request, env, url, actions }) {
+// Generated from src/routes/public.ts by npm run build:server. Do not edit.
+async function routePublicRequest({ request, env, url, actions }) {
   if (request.method === 'POST' && url.pathname === '/api/stripe/webhook') {
     return actions.handleStripeWebhook(request, env);
   }
@@ -75,3 +76,4 @@ export async function routePublicRequest({ request, env, url, actions }) {
   }
   return null;
 }
+export { routePublicRequest };

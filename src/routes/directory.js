@@ -1,8 +1,8 @@
-export async function routeDirectoryRequest({ request, env, url, actions }) {
+// Generated from src/routes/directory.ts by npm run build:server. Do not edit.
+async function routeDirectoryRequest({ request, env, url, actions }) {
   if (url.pathname === '/api/directory/intake') {
     return actions.handleDirectoryIntake(request, env);
   }
-
   const adminMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/directory\/admin(?:\/.*)?$/);
   if (adminMatch) {
     return (await actions.handleDirectoryAdmin(request, env, decodeURIComponent(adminMatch[1]))) || null;
@@ -18,3 +18,4 @@ export async function routeDirectoryRequest({ request, env, url, actions }) {
   }
   return null;
 }
+export { routeDirectoryRequest };

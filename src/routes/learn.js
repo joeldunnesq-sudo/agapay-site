@@ -1,4 +1,5 @@
-const EXACT_ROUTES = new Map([
+// Generated from src/routes/learn.ts by npm run build:server. Do not edit.
+const EXACT_ROUTES = /* @__PURE__ */ new Map([
   ['GET /api/learn/meta', 'handleLearnMeta'],
   ['GET /api/learn/dashboard', 'handleLearnDashboard'],
   ['POST /api/learn/completion', 'handleLearnCompletionSave'],
@@ -26,23 +27,19 @@ const EXACT_ROUTES = new Map([
   ['POST /api/learn/planner/move', 'handleLearnMoveUnfinishedWork'],
   ['POST /api/learn/feedback', 'handleLearnFeedbackSubmit'],
 ]);
-
-const METHOD_AGNOSTIC_ROUTES = new Map([
+const METHOD_AGNOSTIC_ROUTES = /* @__PURE__ */ new Map([
   ['/api/learn/google-calendar/status', 'handleLearnGoogleCalendarStatus'],
   ['/api/learn/google-calendar/connect', 'handleLearnGoogleCalendarConnect'],
   ['/api/learn/google-calendar/preview', 'handleLearnGoogleCalendarPreview'],
   ['/api/learn/google-calendar/sync', 'handleLearnGoogleCalendarSync'],
 ]);
-
-export async function routeLearnRequest({ request, env, url, actions }) {
+async function routeLearnRequest({ request, env, url, actions }) {
   const exactAction = EXACT_ROUTES.get(`${request.method} ${url.pathname}`);
   if (exactAction) {
     return exactAction === 'handleLearnMeta' ? actions[exactAction](env) : actions[exactAction](request, env);
   }
-
   const generalAction = METHOD_AGNOSTIC_ROUTES.get(url.pathname);
   if (generalAction) return actions[generalAction](request, env);
-
   if (request.method === 'POST' && url.pathname.startsWith('/api/learn/print/')) {
     return actions.handleLearnPrintPdf(
       request,
@@ -80,3 +77,4 @@ export async function routeLearnRequest({ request, env, url, actions }) {
   }
   return null;
 }
+export { routeLearnRequest };

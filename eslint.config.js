@@ -704,6 +704,23 @@ export default [
     rules: recommendedRules,
   },
   {
+    files: ['src/browser/myagapay/app-header.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^WindowEventMap$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/signups.ts'],
+    // Existing HTML invokes these classic-script controls.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(closeSignupSheet|openSignupClaimModal|openSignupCoverageModal|cancelSignupEntry|joinSignupWaitlist)$',
+        },
+      ],
+    },
+  },
+  {
     files: ['src/browser/myagapay/prayer-requests.ts'],
     // These classic-script entry points are called by the existing page and rendered cards.
     rules: {

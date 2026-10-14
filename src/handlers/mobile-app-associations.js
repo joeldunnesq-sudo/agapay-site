@@ -1,3 +1,4 @@
+// Generated from src/handlers/mobile-app-associations.ts by npm run build:server. Do not edit.
 function storeAssociationResponse(request, payload) {
   return new Response(request.method === 'HEAD' ? null : JSON.stringify(payload), {
     status: 200,
@@ -8,8 +9,7 @@ function storeAssociationResponse(request, payload) {
     },
   });
 }
-
-export function androidAssetLinks(request, env) {
+function androidAssetLinks(request, env) {
   const fingerprints = String(env.ANDROID_APP_SIGNING_SHA256 || '')
     .split(',')
     .map((value) => value.trim().toUpperCase())
@@ -26,8 +26,7 @@ export function androidAssetLinks(request, env) {
     },
   ]);
 }
-
-export function appleAppSiteAssociation(request, env) {
+function appleAppSiteAssociation(request, env) {
   const teamId = String(env.APPLE_DEVELOPER_TEAM_ID || '')
     .trim()
     .toUpperCase();
@@ -46,3 +45,4 @@ export function appleAppSiteAssociation(request, env) {
     : [];
   return storeAssociationResponse(request, { applinks: { details } });
 }
+export { androidAssetLinks, appleAppSiteAssociation };

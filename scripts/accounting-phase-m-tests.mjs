@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readServerModuleSource } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -12,7 +13,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => readFileSync(path.join(root, file), "utf8");
 const migration = read("accounting-migrations/0020_phase_m_payment_runs.sql");
 const service = read("src/accounting/payables/service.js");
-const vendorReporting = read("src/accounting/payables/vendor-reporting.js");
+const vendorReporting = await readServerModuleSource("src/accounting/payables/vendor-reporting.js");
 const handler = read("src/handlers/accounting-payables-budgets.js");
 const parishApp = readParishDashboardSource();
 const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));

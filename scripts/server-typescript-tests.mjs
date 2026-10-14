@@ -23,7 +23,10 @@ const sources = (await readdir(join(repoRoot, 'src'), { recursive: true }))
   .map((file) => file.replaceAll('\\', '/'))
   .filter(
     (file) =>
-      file.endsWith('.ts') && !file.endsWith('.d.ts') && !file.startsWith('learn/') && !file.startsWith('browser/')
+      file.endsWith('.ts') &&
+      !file.endsWith('.d.ts') &&
+      !['learn/domain.ts', 'learn/future-records.ts'].includes(file) &&
+      !file.startsWith('browser/')
   )
   .map((file) => `src/${file}`);
 assert.deepEqual(sources.sort(), [...serverTypeScriptSources].sort());
