@@ -354,7 +354,13 @@
     "src/browser/myagapay/church-year.ts",
     "public/myagapay/church-year.js",
     "scripts/typecheck-browser/church-year.ts",
-    "scripts/church-year-typescript-browser-tests.mjs"
+    "scripts/church-year-typescript-browser-tests.mjs",
+    "src/browser/myagapay/media.ts",
+    "src/browser/myagapay/watch.ts",
+    "public/myagapay/media.js",
+    "public/myagapay/watch.js",
+    "scripts/typecheck-browser/media.ts",
+    "scripts/media-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -742,6 +748,12 @@
     "src/browser/myagapay/church-year.ts",
     "public/myagapay/church-year.js",
     "scripts/typecheck-browser/church-year.ts",
-    "scripts/church-year-typescript-browser-tests.mjs"
+    "scripts/church-year-typescript-browser-tests.mjs",
+    "src/browser/myagapay/media.ts",
+    "src/browser/myagapay/watch.ts",
+    "public/myagapay/media.js",
+    "public/myagapay/watch.js",
+    "scripts/typecheck-browser/media.ts",
+    "scripts/media-typescript-browser-tests.mjs"
   ]
 }

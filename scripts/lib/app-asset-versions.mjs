@@ -45,6 +45,8 @@ export const appAssets = Object.freeze([
   '/donor/bookstore-experience.js',
   '/donor/bookstore-experience.css',
   '/myagapay/news.js',
+  '/myagapay/media.js',
+  '/myagapay/watch.js',
   '/myagapay/library.js',
   '/myagapay/push-notifications.js',
   '/myagapay/parish-life.js',

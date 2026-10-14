@@ -129,7 +129,7 @@ assert.match(sources["public/myagapay/watch.js"], /new Hls/);
 assert.match(sources["public/myagapay/media.html"], /Public parish channel[\s\S]*public YouTube media/i);
 assert.match(sources["public/myagapay/media.html"], /id="youtubePlayerModal"[\s\S]*youtubePlayerFrame/);
 assert.match(sources["public/myagapay/media.js"], /youtube-nocookie\.com\/embed\/[\s\S]*openYouTubeMedia/);
-assert.match(sources["public/myagapay/media.js"], /openYouTubeMediaFullscreen[\s\S]*requestFullscreen[\s\S]*orientation\?\.lock\?\.\("landscape"\)/, "YouTube playback must offer native fullscreen with a landscape request");
+assert.match(sources["public/myagapay/media.js"], /openYouTubeMediaFullscreen[\s\S]*requestFullscreen[\s\S]*orientation\?\.lock\?\.\(['"]landscape['"]\)/, "YouTube playback must offer native fullscreen with a landscape request");
 assert.match(sources["public/myagapay/media.js"], /dialog\.requestFullscreen \|\| dialog\.webkitRequestFullscreen/, "Android fullscreen must target the same-origin player shell rather than the cross-origin YouTube iframe");
 assert.match(sources["public/donor/style.css"], /@media \(orientation:portrait\)[\s\S]*is-landscape-fallback[\s\S]*rotate\(90deg\)/, "mobile browsers that reject orientation locking must receive a landscape player fallback");
 assert.match(sources["public/myagapay/media.html"], /youtube-player-fullscreen[\s\S]*allowfullscreen/, "the YouTube player must expose a visible fullscreen control and grant iframe fullscreen permission");

@@ -1,0 +1,126 @@
+interface DonorHlsPlayer {
+  loadSource(url: string): void;
+  attachMedia(video: HTMLVideoElement): void;
+  destroy(): void;
+}
+interface DonorHlsConstructor {
+  new (options: { enableWorker: boolean }): DonorHlsPlayer;
+  isSupported(): boolean;
+}
+declare const Hls: DonorHlsConstructor;
+interface Window {
+  Hls?: DonorHlsConstructor;
+}
+interface DonorPlaybackPayload {
+  video: { title: string; publishedAt: string; descriptionHtml?: string; hlsUrl: string };
+  error?: string;
+}
+interface DonorWatchReceipt {
+  watchCount?: number;
+}
+let watchMarked = false,
+  hlsPlayer: DonorHlsPlayer | null = null;
+const WATCH_ICONS = {
+  play: '<svg class="media-control-icon is-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg class="media-control-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>',
+  volume:
+    '<svg class="media-control-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4zM15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>',
+  muted:
+    '<svg class="media-control-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4zM16 10l5 5M21 10l-5 5"/></svg>',
+};
+function watchTime(value: unknown) {
+  const n = Math.max(0, Math.floor(Number(value) || 0)),
+    h = Math.floor(n / 3600),
+    m = Math.floor((n % 3600) / 60),
+    s = n % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+function setupPlayer(video: HTMLVideoElement, hlsUrl: string, id: string) {
+  if (video.canPlayType('application/vnd.apple.mpegurl')) video.src = hlsUrl;
+  else if (window.Hls?.isSupported()) {
+    hlsPlayer = new Hls({ enableWorker: true });
+    hlsPlayer.loadSource(hlsUrl);
+    hlsPlayer.attachMedia(video);
+  } else throw new Error('This browser cannot play secure HLS video.');
+  const play = document.getElementById('playerPlay')!,
+    center = document.getElementById('centerPlay')!,
+    seek = document.getElementById('playerSeek') as HTMLInputElement,
+    time = document.getElementById('playerTime')!,
+    mute = document.getElementById('playerMute')!,
+    volume = document.getElementById('playerVolume') as HTMLInputElement,
+    fullscreen = document.getElementById('playerFullscreen')!,
+    player = document.getElementById('agapayPlayer')!;
+  const toggle = () => (video.paused ? video.play() : video.pause());
+  play.onclick = toggle;
+  center.onclick = toggle;
+  video.onclick = toggle;
+  video.addEventListener('play', async () => {
+    play.innerHTML = WATCH_ICONS.pause;
+    center.hidden = true;
+    if (!watchMarked) {
+      watchMarked = true;
+      const response = await fetch(`/api/donor/videos/${encodeURIComponent(id)}/watch`, {
+        method: 'POST',
+        headers: window.MyAgapayShell?.authHeaders() || {},
+      });
+      const data: DonorWatchReceipt = await response.json().catch(() => ({}));
+      if (response.ok)
+        document.getElementById('watchCount')!.textContent = `${Number(data.watchCount || 0)} parishioners watched`;
+    }
+  });
+  video.addEventListener('pause', () => {
+    play.innerHTML = WATCH_ICONS.play;
+    center.hidden = false;
+  });
+  video.addEventListener('timeupdate', () => {
+    seek.value = video.duration ? String(Math.round((video.currentTime / video.duration) * 1000)) : '0';
+    time.textContent = `${watchTime(video.currentTime)} / ${watchTime(video.duration)}`;
+  });
+  seek.oninput = () => {
+    if (video.duration) video.currentTime = (Number(seek.value) / 1000) * video.duration;
+  };
+  mute.onclick = () => {
+    video.muted = !video.muted;
+    mute.innerHTML = video.muted ? WATCH_ICONS.muted : WATCH_ICONS.volume;
+  };
+  volume.oninput = () => {
+    video.volume = Number(volume.value);
+    video.muted = false;
+    mute.innerHTML = WATCH_ICONS.volume;
+  };
+  fullscreen.onclick = () => (document.fullscreenElement ? document.exitFullscreen() : player.requestFullscreen());
+}
+async function loadWatch() {
+  const status = document.getElementById('watchStatus')!,
+    id = new URLSearchParams(location.search).get('video') || '';
+  if (!id) {
+    status.textContent = 'Choose a video from Media.';
+    return;
+  }
+  try {
+    const response = await fetch(`/api/donor/videos/${encodeURIComponent(id)}/playback`, {
+      headers: window.MyAgapayShell?.authHeaders() || {},
+      cache: 'no-store',
+    });
+    if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+    const data: DonorPlaybackPayload = await response.json();
+    if (!response.ok) throw new Error(data.error || 'This video is not available.');
+    const item = data.video;
+    document.title = `${item.title} | My AGAPAY`;
+    document.getElementById('watchTitle')!.textContent = item.title;
+    document.getElementById('watchDate')!.textContent = new Date(item.publishedAt).toLocaleDateString(undefined, {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    document.getElementById('watchCount')!.textContent = 'Private parish playback';
+    document.getElementById('watchDescription')!.innerHTML = item.descriptionHtml || '';
+    setupPlayer(document.getElementById('streamVideo') as HTMLVideoElement, item.hlsUrl, id);
+    status.hidden = true;
+    document.getElementById('watchExperience')!.hidden = false;
+  } catch (error) {
+    status.textContent = (error as Error).message || 'Unable to load this video.';
+  }
+}
+document.addEventListener('DOMContentLoaded', loadWatch);
+window.addEventListener('beforeunload', () => hlsPlayer?.destroy());

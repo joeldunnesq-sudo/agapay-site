@@ -160,3 +160,9 @@
 
 /myagapay/push-notifications.js
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/media.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/watch.js
+  Cache-Control: public, max-age=31536000, immutable

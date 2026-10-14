@@ -678,8 +678,15 @@ export default [
       'src/browser/myagapay/ministry-home.ts',
       'src/browser/myagapay/koinonia-experience.ts',
       'src/browser/myagapay/church-year.ts',
+      'src/browser/myagapay/watch.ts',
     ],
-    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }] },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/media.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(Window|Document|HTMLElement)$' }] },
   },
   {
     files: ['public/liturgical-calendar.js'],
