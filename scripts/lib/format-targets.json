@@ -338,7 +338,11 @@
     "src/browser/myagapay/shell-contracts.d.ts",
     "public/myagapay/library.js",
     "scripts/typecheck-browser/library.ts",
-    "scripts/myagapay-library-browser-tests.mjs"
+    "scripts/myagapay-library-browser-tests.mjs",
+    "src/browser/myagapay/ministry-home.ts",
+    "public/myagapay/ministry-home.js",
+    "scripts/typecheck-browser/ministry-home.ts",
+    "scripts/ministry-home-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -710,6 +714,10 @@
     "src/browser/myagapay/shell-contracts.d.ts",
     "public/myagapay/library.js",
     "scripts/typecheck-browser/library.ts",
-    "scripts/myagapay-library-browser-tests.mjs"
+    "scripts/myagapay-library-browser-tests.mjs",
+    "src/browser/myagapay/ministry-home.ts",
+    "public/myagapay/ministry-home.js",
+    "scripts/typecheck-browser/ministry-home.ts",
+    "scripts/ministry-home-typescript-browser-tests.mjs"
   ]
 }

@@ -668,7 +668,11 @@ export default [
     },
   },
   {
-    files: ['src/browser/liturgical-calendar.ts', 'src/browser/myagapay/shell-contracts.d.ts'],
+    files: [
+      'src/browser/liturgical-calendar.ts',
+      'src/browser/myagapay/shell-contracts.d.ts',
+      'src/browser/myagapay/ministry-home.ts',
+    ],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }] },
   },
   {
