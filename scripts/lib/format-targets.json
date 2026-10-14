@@ -364,7 +364,11 @@
     "src/browser/myagapay/feed.ts",
     "public/myagapay/feed.js",
     "scripts/typecheck-browser/feed.ts",
-    "scripts/feed-typescript-browser-tests.mjs"
+    "scripts/feed-typescript-browser-tests.mjs",
+    "src/browser/myagapay/prayer-requests.ts",
+    "public/myagapay/prayer-requests.js",
+    "scripts/typecheck-browser/prayer-requests.ts",
+    "scripts/prayer-requests-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -762,6 +766,10 @@
     "src/browser/myagapay/feed.ts",
     "public/myagapay/feed.js",
     "scripts/typecheck-browser/feed.ts",
-    "scripts/feed-typescript-browser-tests.mjs"
+    "scripts/feed-typescript-browser-tests.mjs",
+    "src/browser/myagapay/prayer-requests.ts",
+    "public/myagapay/prayer-requests.js",
+    "scripts/typecheck-browser/prayer-requests.ts",
+    "scripts/prayer-requests-typescript-browser-tests.mjs"
   ]
 }

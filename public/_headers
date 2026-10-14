@@ -169,3 +169,6 @@
 
 /myagapay/feed.js
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/prayer-requests.js
+  Cache-Control: public, max-age=31536000, immutable

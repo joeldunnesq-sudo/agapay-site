@@ -703,4 +703,17 @@ export default [
     languageOptions: { sourceType: 'script', globals: globals.browser },
     rules: recommendedRules,
   },
+  {
+    files: ['src/browser/myagapay/prayer-requests.ts'],
+    // These classic-script entry points are called by the existing page and rendered cards.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setPrayerFilter|toggleMyPrayerRequests|openPrayerComposer|submitPrayerRequest|togglePrayer|markPrayerAnswered|archivePrayerRequest|openPrayerReport|submitPrayerReport)$',
+        },
+      ],
+    },
+  },
 ];

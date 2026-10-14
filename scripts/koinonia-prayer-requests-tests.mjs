@@ -144,7 +144,7 @@ assert.match(sources.memberPage, /class="prayer-page-back"[^>]*data-parish-life-
 assert.doesNotMatch(sources.memberPage, /prayer-requests-hero|prayer-pastoral-notice/, "the oversized hero and pastoral banner must not return");
 assert.match(sources.donorStyles, /\.prayer-requests-shell \{ display:grid; grid-template-columns:minmax\(0,1fr\); align-content:start; gap:0;/, "the mockup sections must remain content-sized instead of stretching into full-height grid rows");
 assert.match(sources.memberClient, /daysAgo === 0[\s\S]*Today[\s\S]*Yesterday/, "request cards must use the mockup's relative dates");
-assert.match(sources.memberClient, /const PRAYER_CANDLE_ICON = '<svg class="prayer-candle-icon"/);
+assert.match(sources.memberClient, /const PRAYER_CANDLE_ICON =\s*'<svg class="prayer-candle-icon"/);
 assert.match(sources.memberClient, /\$\{PRAYER_CANDLE_ICON\}<\/span>\$\{request\.prayedByMe/, "the I prayed action must use the prayer candle SVG");
 assert.match(sources.donorStyles, /\.prayer-dialog:not\(\.prayer-report-dialog\) \{ inset:auto 0 0;[\s\S]*border-radius:22px 22px 0 0;/, "the mobile composer must open as a bottom sheet");
 assert.match(sources.memberClient, /community-tools\/prayers\/opened/);

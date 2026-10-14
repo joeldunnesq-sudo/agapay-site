@@ -203,6 +203,7 @@ const productUi = [
   'scripts/church-year-typescript-browser-tests.mjs',
   'scripts/media-typescript-browser-tests.mjs',
   'scripts/feed-typescript-browser-tests.mjs',
+  'scripts/prayer-requests-typescript-browser-tests.mjs',
   'scripts/push-notifications-typescript-browser-tests.mjs',
   'scripts/app-header-browser-tests.mjs',
   'scripts/parish-dashboard-browser-tests.mjs',
