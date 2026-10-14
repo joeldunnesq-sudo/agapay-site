@@ -1,3 +1,4 @@
+import { routeAdminRequest, type AdminActions } from '../../src/routes/admin.js';
 import type { AccountingActions } from '../../src/routes/accounting.js';
 import type { DonorActions } from '../../src/routes/donor.js';
 import type { OrganizationActions } from '../../src/routes/organization.js';
@@ -39,3 +40,8 @@ void provisionAccountingDatabase({ adapter, parishId: 42, environment: 'staging'
 void invoicePaymentIntentId({ payment_intent: 42 });
 // @ts-expect-error Check rendering requires payment, vendor, applications and settings.
 void printableCheck({ payment: { checkNumber: '1' } });
+
+// An absent optional migration flag must not exclude the actual Worker bindings.
+declare const workerEnvironment: Env;
+declare const adminActions: AdminActions<Env>;
+void routeAdminRequest({ request, env: workerEnvironment, url: new URL(request.url), actions: adminActions });

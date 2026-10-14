@@ -1,5 +1,8 @@
 type RouteResult = Response | null | undefined;
 type AwaitableResult = RouteResult | Promise<RouteResult>;
+export interface AdminMigrationEnvironment {
+  readonly AGAPAY_ENABLE_KV_MIGRATION?: unknown;
+}
 export interface AdminActions<TEnv> {
   handleAdminAccountingOperations(request: Request, env: TEnv): AwaitableResult;
   handleAdminAuditLog(request: Request, env: TEnv): AwaitableResult;
@@ -151,12 +154,7 @@ const GET_ROUTES = new Map<
   ['/api/admin/learn/summary', 'handleAdminLearnSummary'],
 ]);
 
-export async function routeAdminRequest<TEnv extends { AGAPAY_ENABLE_KV_MIGRATION?: unknown }>({
-  request,
-  env,
-  url,
-  actions,
-}: AdminRouteContext<TEnv>) {
+export async function routeAdminRequest<TEnv extends object>({ request, env, url, actions }: AdminRouteContext<TEnv>) {
   if (url.pathname === '/api/admin/contact-leads' || url.pathname.startsWith('/api/admin/contact-leads/'))
     return actions.handleAdminContactLeads(request, env);
   const getAction = request.method === 'GET' ? GET_ROUTES.get(url.pathname) : null;
@@ -186,7 +184,7 @@ export async function routeAdminRequest<TEnv extends { AGAPAY_ENABLE_KV_MIGRATIO
     return actions.handleAdminSetSacramentsEnabled(request, env);
   }
   if (url.pathname === '/api/admin/migrate-kv-to-d1') {
-    if (env.AGAPAY_ENABLE_KV_MIGRATION !== 'true') {
+    if ((env as TEnv & AdminMigrationEnvironment).AGAPAY_ENABLE_KV_MIGRATION !== 'true') {
       return actions.json(
         { error: 'Migration endpoint is disabled. Set AGAPAY_ENABLE_KV_MIGRATION=true to enable.' },
         { status: 403 }
