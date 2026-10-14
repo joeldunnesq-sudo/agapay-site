@@ -342,7 +342,11 @@
     "src/browser/myagapay/ministry-home.ts",
     "public/myagapay/ministry-home.js",
     "scripts/typecheck-browser/ministry-home.ts",
-    "scripts/ministry-home-typescript-browser-tests.mjs"
+    "scripts/ministry-home-typescript-browser-tests.mjs",
+    "src/browser/myagapay/koinonia-experience.ts",
+    "public/myagapay/koinonia-experience.js",
+    "scripts/typecheck-browser/koinonia-experience.ts",
+    "scripts/koinonia-experience-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -718,6 +722,10 @@
     "src/browser/myagapay/ministry-home.ts",
     "public/myagapay/ministry-home.js",
     "scripts/typecheck-browser/ministry-home.ts",
-    "scripts/ministry-home-typescript-browser-tests.mjs"
+    "scripts/ministry-home-typescript-browser-tests.mjs",
+    "src/browser/myagapay/koinonia-experience.ts",
+    "public/myagapay/koinonia-experience.js",
+    "scripts/typecheck-browser/koinonia-experience.ts",
+    "scripts/koinonia-experience-typescript-browser-tests.mjs"
   ]
 }
