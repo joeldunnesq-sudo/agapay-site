@@ -1,4 +1,5 @@
-const DASHBOARD_SUFFIX_ROUTES = new Map([
+// Generated from src/routes/stewardship.ts by npm run build:server. Do not edit.
+const DASHBOARD_SUFFIX_ROUTES = /* @__PURE__ */ new Map([
   ['/stewardship', 'handleParishStewardshipSummary'],
   ['/stewardship/subscribe', 'handleParishStewardshipSubscribe'],
   ['/stewardship/billing-portal', 'handleParishStewardshipBillingPortal'],
@@ -21,15 +22,13 @@ const DASHBOARD_SUFFIX_ROUTES = new Map([
   ['/stewardship/financials/import-from-accounting', 'handleStewardshipAccountingBridge'],
   ['/stewardship/financials', 'handleStewardshipFinancials'],
 ]);
-
-const PAGE_ROUTES = new Map([
+const PAGE_ROUTES = /* @__PURE__ */ new Map([
   ['/parish/stewardship', 'handleStewardshipHome'],
   ['/parish/stewardship/giving', 'handleStewardshipGivingMetricsPage'],
   ['/parish/stewardship/billing', 'handleStewardshipBilling'],
   ['/parish/stewardship/annual-meetings', 'handleStewardshipMeetingList'],
 ]);
-
-export async function routeStewardshipRequest({ request, env, url, actions }) {
+async function routeStewardshipRequest({ request, env, url, actions }) {
   const pageAction = PAGE_ROUTES.get(url.pathname);
   if (pageAction) return actions[pageAction](request, env);
   if (request.method === 'POST' && url.pathname === '/parish/stewardship/subscribe') {
@@ -58,14 +57,12 @@ export async function routeStewardshipRequest({ request, env, url, actions }) {
       return actions.handleStewardshipMeetingEdit(request, env, meetingId);
     }
   }
-
   const dashboardMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)(\/.*)$/);
   if (!dashboardMatch) return null;
   const parishId = decodeURIComponent(dashboardMatch[1]);
   const suffix = dashboardMatch[2];
   const dashboardAction = DASHBOARD_SUFFIX_ROUTES.get(suffix);
   if (dashboardAction) return actions[dashboardAction](request, env, parishId);
-
   if (suffix.startsWith('/stewardship/meetings/')) {
     return actions.handleParishStewardshipMeetingDetail(
       request,
@@ -89,3 +86,4 @@ export async function routeStewardshipRequest({ request, env, url, actions }) {
   }
   return null;
 }
+export { routeStewardshipRequest };

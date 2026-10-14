@@ -1,4 +1,5 @@
-const SIMPLE_ROUTES = new Map([
+// Generated from src/routes/donor.ts by npm run build:server. Do not edit.
+const SIMPLE_ROUTES = /* @__PURE__ */ new Map([
   ['/api/donor/signup', 'handleDonorSignup'],
   ['/api/donor/login', 'handleDonorLogin'],
   ['/api/donor/passkeys/authentication/options', 'handleConsumerPasskeyAuthenticationOptions'],
@@ -43,8 +44,7 @@ const SIMPLE_ROUTES = new Map([
   ['/api/donor/sacraments/availability', 'handleDonorSacramentAvailability'],
   ['/api/donor/sacraments/book', 'handleDonorSacramentBook'],
 ]);
-
-const VERIFY_PAGES = new Set([
+const VERIFY_PAGES = /* @__PURE__ */ new Set([
   '/donor/verify',
   '/donor/verify/',
   '/my-agapay/verify',
@@ -52,13 +52,10 @@ const VERIFY_PAGES = new Set([
   '/myagapay/verify',
   '/myagapay/verify/',
 ]);
-
-export async function routeDonorRequest({ request, env, ctx, url, actions }) {
+async function routeDonorRequest({ request, env, ctx, url, actions }) {
   const simpleAction = SIMPLE_ROUTES.get(url.pathname);
   if (simpleAction) return actions[simpleAction](request, env);
-
   if (VERIFY_PAGES.has(url.pathname)) return actions.handleDonorVerifyPage(request, env);
-
   if (url.pathname.startsWith('/api/donor/passkeys/')) {
     const credentialId = decodeURIComponent(url.pathname.replace('/api/donor/passkeys/', ''));
     return actions.handleConsumerPasskeys(request, env, credentialId);
@@ -140,3 +137,4 @@ export async function routeDonorRequest({ request, env, ctx, url, actions }) {
   }
   return null;
 }
+export { routeDonorRequest };

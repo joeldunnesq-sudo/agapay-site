@@ -1,9 +1,8 @@
+// Generated from src/accounting/payables/vendor-reporting.ts by npm run build:server. Do not edit.
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
-
-const FORM_1099_THRESHOLD_CENTS = 60000;
+const FORM_1099_THRESHOLD_CENTS = 6e4;
 const FORM_1099_DISCLAIMER =
   'Data-preparation aid only; this export is not a filed or filing-ready Form 1099-NEC or Form 1096.';
-
 function capability(actor, name) {
   if (!actor?.id || !actor.capabilities?.includes(name)) {
     throw new AccountingDatabaseError('Accounts Payable capability is required.', {
@@ -11,11 +10,9 @@ function capability(actor, name) {
     });
   }
 }
-
 function parish(tier) {
   if (tier !== 'parish') throw new AccountingDatabaseError('Accounts Payable is available with Parish Accounting.');
 }
-
 async function all(db, query, ...params) {
   return (
     (
@@ -26,8 +23,7 @@ async function all(db, query, ...params) {
     ).results || []
   );
 }
-
-export async function vendor1099Summary(db, { actor, entitlementTier, calendarYear }) {
+async function vendor1099Summary(db, { actor, entitlementTier, calendarYear }) {
   capability(actor, 'ap.view');
   parish(entitlementTier);
   const year = String(calendarYear || '');
@@ -60,14 +56,12 @@ export async function vendor1099Summary(db, { actor, entitlementTier, calendarYe
     ),
   });
 }
-
 function csvCell(value) {
   const raw = String(value ?? '');
   const rendered = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
   return /[",\r\n]/.test(rendered) ? `"${rendered.replaceAll('"', '""')}"` : rendered;
 }
-
-export function vendor1099SummaryCsv(report) {
+function vendor1099SummaryCsv(report) {
   const lines = [
     ['Disclaimer', report.disclaimer],
     ['Calendar year', report.calendarYear],
@@ -93,5 +87,7 @@ export function vendor1099SummaryCsv(report) {
       vendor.meetsThreshold ? 'Yes' : 'No',
     ]);
   }
-  return `${lines.map((line) => line.map(csvCell).join(',')).join('\r\n')}\r\n`;
+  return `${lines.map((line) => line.map(csvCell).join(',')).join('\r\n')}\r
+`;
 }
+export { vendor1099Summary, vendor1099SummaryCsv };

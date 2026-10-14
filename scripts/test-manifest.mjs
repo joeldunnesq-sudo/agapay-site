@@ -137,6 +137,7 @@ const core = [
   'scripts/admin-presentation-extraction-tests.mjs',
   'scripts/classic-browser-controller-extraction-tests.mjs',
   'scripts/server-domain-handler-extraction-tests.mjs',
+  'scripts/migration-35-boundary-tests.mjs',
   'scripts/route-registry-tests.mjs',
   'scripts/accounting-migration-ledger-tests.mjs',
   'scripts/d1-recovery-tests.mjs',

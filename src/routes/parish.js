@@ -1,6 +1,6 @@
+// Generated from src/routes/parish.ts by npm run build:server. Do not edit.
 import { handleParishOutsideGifts } from '../handlers/parish-outside-gifts.js';
-
-const SIMPLE_SUFFIX_ROUTES = new Map([
+const SIMPLE_SUFFIX_ROUTES = /* @__PURE__ */ new Map([
   ['/session', 'handleParishSession'],
   ['/onboarding', 'handleParishOnboarding'],
   ['/stripe-onboarding', 'handleParishStripeOnboarding'],
@@ -35,8 +35,7 @@ const SIMPLE_SUFFIX_ROUTES = new Map([
   ['/tax-exemption/upload', 'handleParishTaxExemptionDocumentUpload'],
   ['/tax-exemption', 'handleParishTaxExemptionClaim'],
 ]);
-
-export async function routeParishRequest({ request, env, ctx, url, actions }) {
+async function routeParishRequest({ request, env, ctx, url, actions }) {
   if (url.pathname === '/api/parish/password-reset-request') {
     return actions.handleParishPasswordResetRequest(request, env);
   }
@@ -49,10 +48,8 @@ export async function routeParishRequest({ request, env, ctx, url, actions }) {
   if ((request.method === 'GET' || request.method === 'POST') && url.pathname === '/api/checkout-session-status') {
     return actions.handleCheckoutSessionStatus(request, env);
   }
-
   const prefix = '/api/parish/dashboard/';
   if (!url.pathname.startsWith(prefix)) return null;
-
   const remainder = url.pathname.slice(prefix.length);
   const slashIndex = remainder.indexOf('/');
   const parishId = decodeURIComponent(slashIndex < 0 ? remainder : remainder.slice(0, slashIndex));
@@ -62,7 +59,6 @@ export async function routeParishRequest({ request, env, ctx, url, actions }) {
   }
   const simpleAction = SIMPLE_SUFFIX_ROUTES.get(suffix);
   if (simpleAction) return actions[simpleAction](request, env, parishId);
-
   if (suffix.startsWith('/library')) {
     return actions.handleParishLibrary(request, env, parishId, suffix.slice('/library'.length));
   }
@@ -171,8 +167,6 @@ export async function routeParishRequest({ request, env, ctx, url, actions }) {
     const featureId = decodeURIComponent(suffix.slice('/feature-requests/'.length, -'/dismiss'.length));
     return actions.handleParishFeatureRequestDismiss(request, env, parishId, featureId);
   }
-
-  // Preserve the legacy fallback contract, including its handling of unknown
-  // suffixes, until all dashboard handlers have explicit route definitions.
   return actions.handleParishDashboard(request, env, decodeURIComponent(remainder));
 }
+export { routeParishRequest };

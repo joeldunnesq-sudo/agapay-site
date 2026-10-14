@@ -1,7 +1,7 @@
+// Generated from src/operations/scheduled-heartbeats.ts by npm run build:server. Do not edit.
 function databaseFor(env) {
   return env?.DB || env?.AGAPAY_DB || null;
 }
-
 async function persist(env, heartbeat) {
   const db = databaseFor(env);
   if (!db?.prepare) return;
@@ -34,11 +34,11 @@ async function persist(env, heartbeat) {
     )
     .run();
 }
-
-export async function recordScheduledHeartbeat(env, heartbeat) {
+async function recordScheduledHeartbeat(env, heartbeat) {
   try {
     await persist(env, heartbeat);
   } catch (error) {
     console.error('scheduled_job_heartbeat_failed', heartbeat.name, error?.message || String(error));
   }
 }
+export { recordScheduledHeartbeat };

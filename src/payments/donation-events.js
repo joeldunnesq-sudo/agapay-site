@@ -1,6 +1,6 @@
+// Generated from src/payments/donation-events.ts by npm run build:server. Do not edit.
 import { stripeObjectId } from '../lib/stripe-connect.js';
-
-export function subscriptionSetupUpdates(session = {}, offering = {}) {
+function subscriptionSetupUpdates(session = {}, offering = {}) {
   if (session.mode !== 'subscription' && offering.recordType !== 'subscription_setup') return null;
   return {
     recordType: 'subscription_setup',
@@ -12,8 +12,7 @@ export function subscriptionSetupUpdates(session = {}, offering = {}) {
     completedAt: '',
   };
 }
-
-export function invoiceDonationMetadata(invoice = {}) {
+function invoiceDonationMetadata(invoice = {}) {
   return {
     ...(invoice.metadata || {}),
     ...(invoice.lines?.data?.[0]?.metadata || {}),
@@ -21,8 +20,7 @@ export function invoiceDonationMetadata(invoice = {}) {
     ...(invoice.parent?.subscription_details?.metadata || {}),
   };
 }
-
-export function invoicePaymentIntentId(invoice = {}) {
+function invoicePaymentIntentId(invoice = {}) {
   return (
     stripeObjectId(invoice.payment_intent) ||
     stripeObjectId(
@@ -30,9 +28,14 @@ export function invoicePaymentIntentId(invoice = {}) {
     )
   );
 }
-
-export function invoiceSubscriptionId(invoice = {}) {
+function invoiceSubscriptionId(invoice = {}) {
   return stripeObjectId(invoice.subscription) || stripeObjectId(invoice.parent?.subscription_details?.subscription);
 }
-
-export { visibleDonationRecords } from './donation-visibility.js';
+import { visibleDonationRecords } from './donation-visibility.js';
+export {
+  invoiceDonationMetadata,
+  invoicePaymentIntentId,
+  invoiceSubscriptionId,
+  subscriptionSetupUpdates,
+  visibleDonationRecords,
+};

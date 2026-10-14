@@ -1,6 +1,6 @@
+// Generated from src/accounting/provisioning/fiscal-calendar.ts by npm run build:server. Do not edit.
 import { ValidationError } from '../errors.js';
-
-export function fiscalCalendar(date, startMonth = 1) {
+function fiscalCalendar(date, startMonth = 1) {
   if (!Number.isInteger(startMonth) || startMonth < 1 || startMonth > 12 || !Number.isFinite(date.getTime()))
     throw new ValidationError('Choose a valid accounting date and fiscal-year start month.');
   const year = date.getUTCFullYear() - (date.getUTCMonth() + 1 < startMonth ? 1 : 0);
@@ -26,3 +26,4 @@ export function fiscalCalendar(date, startMonth = 1) {
     }),
   };
 }
+export { fiscalCalendar };

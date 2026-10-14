@@ -1,25 +1,21 @@
+// Generated from src/operations/scheduled-task-observer.ts by npm run build:server. Do not edit.
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
 import { recordScheduledHeartbeat } from './scheduled-heartbeats.js';
-
 const SCHEDULED_ALERT_DEDUPE_SECONDS_DEFAULT = 60 * 60;
 const SCHEDULED_ALERT_KEY_PREFIX = 'ops_alert:scheduled_job:';
-
 function scheduledAlertDedupeSeconds(env = {}) {
   const configured = Number(env.AGAPAY_SCHEDULED_ALERT_DEDUPE_SECONDS);
   return Number.isFinite(configured) && configured >= 60
     ? Math.floor(configured)
     : SCHEDULED_ALERT_DEDUPE_SECONDS_DEFAULT;
 }
-
 function scheduledAlertKey(name) {
   return `${SCHEDULED_ALERT_KEY_PREFIX}${encodeURIComponent(String(name || 'unknown'))}`;
 }
-
 async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
   const recipient = String(env?.AGAPAY_OPS_ALERT_EMAIL || '').trim();
   if (!recipient) return { status: 'disabled' };
-
   const windowSeconds = scheduledAlertDedupeSeconds(env);
   const key = scheduledAlertKey(name);
   const failedAtMs = Date.parse(failedAt);
@@ -27,7 +23,7 @@ async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
     try {
       const lastAlertAt = await env.AGAPAY_REGISTRATIONS.get(key);
       const lastAlertMs = Date.parse(String(lastAlertAt || ''));
-      if (Number.isFinite(lastAlertMs) && failedAtMs - lastAlertMs < windowSeconds * 1000) {
+      if (Number.isFinite(lastAlertMs) && failedAtMs - lastAlertMs < windowSeconds * 1e3) {
         console.log('scheduled_job_alert_suppressed', JSON.stringify({ name, lastAlertAt, windowSeconds }));
         return { status: 'suppressed', lastAlertAt, windowSeconds };
       }
@@ -35,7 +31,6 @@ async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
       console.error('scheduled_job_alert_dedupe_check_failed', name, dedupeError?.message || String(dedupeError));
     }
   }
-
   const errorMessage = error?.message || String(error);
   const title = `Scheduled job failed: ${name}`;
   const result = await sendEmail(env, {
@@ -43,7 +38,13 @@ async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
     to: [recipient],
     reply_to: env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
     subject: `[AGAPAY Ops] ${title}`,
-    text: `AGAPAY scheduled job failure\n\nJob: ${name}\nError: ${errorMessage}\nTimestamp: ${failedAt}\n\nThe job failure was logged and remains failed.`,
+    text: `AGAPAY scheduled job failure
+
+Job: ${name}
+Error: ${errorMessage}
+Timestamp: ${failedAt}
+
+The job failure was logged and remains failed.`,
     html: agapayEmailHtml(
       env.AGAPAY_APP_URL,
       title,
@@ -57,15 +58,13 @@ async function sendScheduledJobFailureAlert(env, name, error, failedAt) {
     `
     ),
   });
-
   if (result?.status !== 'sent') return result || { status: 'failed' };
   if (env.AGAPAY_REGISTRATIONS?.put) {
     await env.AGAPAY_REGISTRATIONS.put(key, failedAt, { expirationTtl: windowSeconds });
   }
   return result;
 }
-
-export function observeScheduledTask(name, task, env = {}, event = {}) {
+function observeScheduledTask(name, task, env = {}, event = {}) {
   const startedAtMs = Date.now();
   const startedAt = new Date(startedAtMs).toISOString();
   const runId = `${name}:${event.scheduledTime || startedAtMs}`;
@@ -93,7 +92,7 @@ export function observeScheduledTask(name, task, env = {}, event = {}) {
       });
       console.error(`${name}_failed`, error?.message || String(error));
       try {
-        const alert = await sendScheduledJobFailureAlert(env, name, error, new Date().toISOString());
+        const alert = await sendScheduledJobFailureAlert(env, name, error, /* @__PURE__ */ new Date().toISOString());
         if (!['sent', 'suppressed', 'disabled'].includes(alert?.status)) {
           console.error(
             'scheduled_job_alert_failed',
@@ -107,3 +106,4 @@ export function observeScheduledTask(name, task, env = {}, event = {}) {
       throw error;
     });
 }
+export { observeScheduledTask };

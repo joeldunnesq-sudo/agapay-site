@@ -1,15 +1,13 @@
-export async function routeAccountingRequest({ request, env, url, actions }) {
+// Generated from src/routes/accounting.ts by npm run build:server. Do not edit.
+async function routeAccountingRequest({ request, env, url, actions }) {
   const accessMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting-access(?:\/.*)?$/);
   if (accessMatch) {
-    const parishId = decodeURIComponent(accessMatch[1]);
-    return actions.handleAccountingAccess(request, env, parishId);
+    const parishId2 = decodeURIComponent(accessMatch[1]);
+    return actions.handleAccountingAccess(request, env, parishId2);
   }
-
   const accountingMatch = url.pathname.match(/^\/api\/parish\/dashboard\/([^/]+)\/accounting(?:\/.*)?$/);
   if (!accountingMatch) return null;
-
   const parishId = decodeURIComponent(accountingMatch[1]);
-
   const handlers = [
     actions.handleAccountingRecurring,
     actions.handleAccountingPayablesBudgets,
@@ -28,3 +26,4 @@ export async function routeAccountingRequest({ request, env, url, actions }) {
   }
   return null;
 }
+export { routeAccountingRequest };

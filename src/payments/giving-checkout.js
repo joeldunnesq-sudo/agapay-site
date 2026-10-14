@@ -1,5 +1,5 @@
-const GIVING_FREQUENCIES = new Set(['once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']);
-
+// Generated from src/payments/giving-checkout.ts by npm run build:server. Do not edit.
+const GIVING_FREQUENCIES = /* @__PURE__ */ new Set(['once', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']);
 const RECURRING_SCHEDULES = Object.freeze({
   weekly: Object.freeze({ interval: 'week', count: 1 }),
   biweekly: Object.freeze({ interval: 'week', count: 2 }),
@@ -7,27 +7,23 @@ const RECURRING_SCHEDULES = Object.freeze({
   quarterly: Object.freeze({ interval: 'month', count: 3 }),
   yearly: Object.freeze({ interval: 'year', count: 1 }),
 });
-
-export function normalizeGivingFrequency(value) {
+function normalizeGivingFrequency(value) {
   const raw = String(value || 'once')
     .trim()
     .toLowerCase();
   const frequency = raw === 'annual' ? 'yearly' : raw;
   return GIVING_FREQUENCIES.has(frequency) ? frequency : '';
 }
-
-export function stripeRecurringSchedule(frequency) {
+function stripeRecurringSchedule(frequency) {
   return RECURRING_SCHEDULES[frequency] || null;
 }
-
-export function givingCheckoutReturnUrls({ appUrl, parishId, source, returnPath, donorDashboardReturn, campaign }) {
+function givingCheckoutReturnUrls({ appUrl, parishId, source, returnPath, donorDashboardReturn, campaign }) {
   if (donorDashboardReturn) {
     return {
       successUrl: `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${appUrl}/myagapay/giving/give?checkout_canceled=1`,
     };
   }
-
   const checkoutSource = String(source || '').toLowerCase();
   if (checkoutSource === 'embed') {
     const embedPath = `/give/embed/${encodeURIComponent(parishId)}`;
@@ -36,7 +32,6 @@ export function givingCheckoutReturnUrls({ appUrl, parishId, source, returnPath,
       cancelUrl: `${appUrl}${embedPath}?canceled=1`,
     };
   }
-
   const safeReturnPath = String(returnPath || '').startsWith('/') ? String(returnPath) : '';
   const encodedParishId = encodeURIComponent(parishId);
   const campaignCheckout = checkoutSource === 'campaign_page';
@@ -50,3 +45,4 @@ export function givingCheckoutReturnUrls({ appUrl, parishId, source, returnPath,
         : `${appUrl}/give/${encodedParishId}?canceled=1`,
   };
 }
+export { givingCheckoutReturnUrls, normalizeGivingFrequency, stripeRecurringSchedule };
