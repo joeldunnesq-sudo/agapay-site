@@ -7,6 +7,7 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/myagapay/feed.ts', output: 'public/myagapay/feed.js' },
   { source: 'src/browser/myagapay/media.ts', output: 'public/myagapay/media.js' },
   { source: 'src/browser/myagapay/watch.ts', output: 'public/myagapay/watch.js' },
   { source: 'src/browser/myagapay/church-year.ts', output: 'public/myagapay/church-year.js' },

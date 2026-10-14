@@ -3,5 +3,6 @@ interface Window {
   MyAgapayShell?: {
     authHeaders(extra?: Record<string, string>): Record<string, string>;
     handleUnauthorized(response: Response): boolean;
+    setFeedUnreadCount(count: number): void;
   };
 }

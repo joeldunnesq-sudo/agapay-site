@@ -202,6 +202,7 @@ const productUi = [
   'scripts/koinonia-experience-typescript-browser-tests.mjs',
   'scripts/church-year-typescript-browser-tests.mjs',
   'scripts/media-typescript-browser-tests.mjs',
+  'scripts/feed-typescript-browser-tests.mjs',
   'scripts/push-notifications-typescript-browser-tests.mjs',
   'scripts/app-header-browser-tests.mjs',
   'scripts/parish-dashboard-browser-tests.mjs',

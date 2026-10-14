@@ -360,7 +360,11 @@
     "public/myagapay/media.js",
     "public/myagapay/watch.js",
     "scripts/typecheck-browser/media.ts",
-    "scripts/media-typescript-browser-tests.mjs"
+    "scripts/media-typescript-browser-tests.mjs",
+    "src/browser/myagapay/feed.ts",
+    "public/myagapay/feed.js",
+    "scripts/typecheck-browser/feed.ts",
+    "scripts/feed-typescript-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -754,6 +758,10 @@
     "public/myagapay/media.js",
     "public/myagapay/watch.js",
     "scripts/typecheck-browser/media.ts",
-    "scripts/media-typescript-browser-tests.mjs"
+    "scripts/media-typescript-browser-tests.mjs",
+    "src/browser/myagapay/feed.ts",
+    "public/myagapay/feed.js",
+    "scripts/typecheck-browser/feed.ts",
+    "scripts/feed-typescript-browser-tests.mjs"
   ]
 }

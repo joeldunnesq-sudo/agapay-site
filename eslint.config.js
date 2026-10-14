@@ -689,6 +689,16 @@ export default [
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(Window|Document|HTMLElement)$' }] },
   },
   {
+    files: ['src/browser/myagapay/feed.ts'],
+    // These classic-script entry points are called by the generated announcement HTML.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(setFeedCategoryFilter|openFeedAnnouncement)$' },
+      ],
+    },
+  },
+  {
     files: ['public/liturgical-calendar.js'],
     languageOptions: { sourceType: 'script', globals: globals.browser },
     rules: recommendedRules,
