@@ -1,156 +1,194 @@
-const prayerState = { requests: [], settings: null, mineOnly: false, filter: "all", reportRequestId: "" };
-const PRAYER_CANDLE_ICON = '<svg class="prayer-candle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg>';
-
+// Generated from src/browser/myagapay/prayer-requests.ts by npm run build:browser. Do not edit.
+const prayerState = {
+  requests: [],
+  settings: null,
+  mineOnly: false,
+  filter: 'all',
+  reportRequestId: '',
+};
+const PRAYER_CANDLE_ICON =
+  '<svg class="prayer-candle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg>';
 function prayerEscape(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
-
-function prayerHeaders(extra = { "Content-Type": "application/json" }) {
+function prayerHeaders(extra = { 'Content-Type': 'application/json' }) {
   return window.MyAgapayShell?.authHeaders(extra) || extra;
 }
-
 async function prayerFetch(path, options = {}) {
-  const response = await fetch(path, { ...options, headers: prayerHeaders(), cache: "no-store" });
+  const response = await fetch(path, { ...options, headers: prayerHeaders(), cache: 'no-store' });
   if (window.MyAgapayShell?.handleUnauthorized(response)) return null;
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || "Unable to load Prayer Requests.");
+  if (!response.ok) throw new Error(payload.error || 'Unable to load Prayer Requests.');
   return payload;
 }
-
-function prayerStatus(message, state = "") {
-  const target = document.getElementById("prayerStatus");
+function prayerStatus(message, state = '') {
+  const target = document.getElementById('prayerStatus');
   if (!target) return;
   target.hidden = !message;
-  target.textContent = message || "";
+  target.textContent = message || '';
   if (state) target.dataset.state = state;
   else delete target.dataset.state;
 }
-
 function prayerDate(value) {
   const date = new Date(Number(value));
-  if (Number.isNaN(date.getTime())) return "";
-  const today = new Date();
+  if (Number.isNaN(date.getTime())) return '';
+  const today = /* @__PURE__ */ new Date();
   const currentDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const requestDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const daysAgo = Math.round((currentDay.getTime() - requestDay.getTime()) / 86400000);
-  if (daysAgo === 0) return "Today";
-  if (daysAgo === 1) return "Yesterday";
+  const daysAgo = Math.round((currentDay.getTime() - requestDay.getTime()) / 864e5);
+  if (daysAgo === 0) return 'Today';
+  if (daysAgo === 1) return 'Yesterday';
   if (daysAgo > 1 && daysAgo < 7) return `${daysAgo} days ago`;
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(void 0, { month: 'short', day: 'numeric' }).format(date);
 }
-
 function prayerStatusLabel(request) {
-  if (request.visibility === "clergy_only" && !["archived", "declined"].includes(request.status)) return "Clergy only";
-  return ({ pending: "Awaiting review", active: "Parish only", answered: "Answered", flagged: "Under review", declined: "Declined", archived: "Archived" })[request.status] || request.status;
+  if (request.visibility === 'clergy_only' && !['archived', 'declined'].includes(request.status)) return 'Clergy only';
+  return (
+    {
+      pending: 'Awaiting review',
+      active: 'Parish only',
+      answered: 'Answered',
+      flagged: 'Under review',
+      declined: 'Declined',
+      archived: 'Archived',
+    }[request.status] || request.status
+  );
 }
-
 function visiblePrayerRequests() {
-  if (prayerState.filter === "all") return prayerState.requests;
+  if (prayerState.filter === 'all') return prayerState.requests;
   return prayerState.requests.filter((request) => request.status === prayerState.filter);
 }
-
 function renderPrayerRequests() {
-  const target = document.getElementById("prayerRequestList");
+  const target = document.getElementById('prayerRequestList');
   if (!target) return;
   const requests = visiblePrayerRequests();
   if (!requests.length) {
-    target.innerHTML = `<div class="koinonia-empty-state prayer-empty-state"><span aria-hidden="true">${PRAYER_CANDLE_ICON}</span><strong>${prayerState.mineOnly ? "You have no requests in this view" : "No prayer requests in this view"}</strong><p>${prayerState.mineOnly ? "Share a request whenever you would like your parish to pray with you." : "Choose another filter or return later."}</p>${prayerState.mineOnly ? '<button class="btn btn-gold" type="button" onclick="openPrayerComposer()">Share a request</button>' : ""}</div>`;
+    target.innerHTML = `<div class="koinonia-empty-state prayer-empty-state"><span aria-hidden="true">${PRAYER_CANDLE_ICON}</span><strong>${prayerState.mineOnly ? 'You have no requests in this view' : 'No prayer requests in this view'}</strong><p>${prayerState.mineOnly ? 'Share a request whenever you would like your parish to pray with you.' : 'Choose another filter or return later.'}</p>${prayerState.mineOnly ? '<button class="btn btn-gold" type="button" onclick="openPrayerComposer()">Share a request</button>' : ''}</div>`;
     return;
   }
-  target.innerHTML = requests.map((request) => {
-    const statusClass = `is-${prayerEscape(request.status)}`;
-    const name = request.mine ? (request.anonymous ? "You · anonymous to parishioners" : "You") : request.requesterName;
-    const canPray = request.visibility === "parish_members" && ["active", "answered"].includes(request.status);
-    const canAnswer = request.mine && request.status === "active";
-    const canArchive = request.mine && ["pending", "active", "flagged"].includes(request.status);
-    const canReport = !request.mine && request.visibility === "parish_members" && ["active", "answered"].includes(request.status);
-    return `<article class="prayer-request-card ${statusClass}">
-      <header><span class="prayer-request-avatar" aria-hidden="true">${request.anonymous && !request.mine ? "A" : prayerEscape(String(name || "P").slice(0, 1).toUpperCase())}</span><div><strong>${prayerEscape(name)}</strong><small>${prayerEscape(prayerDate(request.createdAt))}</small></div><em>${prayerEscape(prayerStatusLabel(request))}</em></header>
+  target.innerHTML = requests
+    .map((request) => {
+      const statusClass = `is-${prayerEscape(request.status)}`;
+      const name = request.mine
+        ? request.anonymous
+          ? 'You · anonymous to parishioners'
+          : 'You'
+        : request.requesterName;
+      const canPray = request.visibility === 'parish_members' && ['active', 'answered'].includes(request.status);
+      const canAnswer = request.mine && request.status === 'active';
+      const canArchive = request.mine && ['pending', 'active', 'flagged'].includes(request.status);
+      const canReport =
+        !request.mine && request.visibility === 'parish_members' && ['active', 'answered'].includes(request.status);
+      return `<article class="prayer-request-card ${statusClass}">
+      <header><span class="prayer-request-avatar" aria-hidden="true">${
+        request.anonymous && !request.mine
+          ? 'A'
+          : prayerEscape(
+              String(name || 'P')
+                .slice(0, 1)
+                .toUpperCase()
+            )
+      }</span><div><strong>${prayerEscape(name)}</strong><small>${prayerEscape(prayerDate(request.createdAt))}</small></div><em>${prayerEscape(prayerStatusLabel(request))}</em></header>
       <p>${prayerEscape(request.body)}</p>
-      ${request.status === "declined" && request.declineReason ? `<aside><strong>Parish response</strong><span>${prayerEscape(request.declineReason)}</span></aside>` : ""}
-      <footer><span>${canPray ? `${request.prayerCount} parishioner${request.prayerCount === 1 ? "" : "s"} prayed` : "Shared with your parish"}</span><div>${canReport ? `<button class="prayer-report-link" type="button" onclick="openPrayerReport('${prayerEscape(request.id)}')">Report</button>` : ""}${canArchive ? `<button class="prayer-secondary-action" type="button" onclick="archivePrayerRequest('${prayerEscape(request.id)}')">Withdraw</button>` : ""}${canAnswer ? `<button class="prayer-secondary-action" type="button" onclick="markPrayerAnswered('${prayerEscape(request.id)}')">Mark answered</button>` : ""}${canPray ? `<button class="prayer-prayed-button${request.prayedByMe ? " is-prayed" : ""}" type="button" aria-pressed="${request.prayedByMe ? "true" : "false"}" onclick="togglePrayer('${prayerEscape(request.id)}')"><span aria-hidden="true">${PRAYER_CANDLE_ICON}</span>${request.prayedByMe ? "Prayed" : "I prayed"}</button>` : ""}</div></footer>
+      ${request.status === 'declined' && request.declineReason ? `<aside><strong>Parish response</strong><span>${prayerEscape(request.declineReason)}</span></aside>` : ''}
+      <footer><span>${canPray ? `${request.prayerCount} parishioner${request.prayerCount === 1 ? '' : 's'} prayed` : 'Shared with your parish'}</span><div>${canReport ? `<button class="prayer-report-link" type="button" onclick="openPrayerReport('${prayerEscape(request.id)}')">Report</button>` : ''}${canArchive ? `<button class="prayer-secondary-action" type="button" onclick="archivePrayerRequest('${prayerEscape(request.id)}')">Withdraw</button>` : ''}${canAnswer ? `<button class="prayer-secondary-action" type="button" onclick="markPrayerAnswered('${prayerEscape(request.id)}')">Mark answered</button>` : ''}${canPray ? `<button class="prayer-prayed-button${request.prayedByMe ? ' is-prayed' : ''}" type="button" aria-pressed="${request.prayedByMe ? 'true' : 'false'}" onclick="togglePrayer('${prayerEscape(request.id)}')"><span aria-hidden="true">${PRAYER_CANDLE_ICON}</span>${request.prayedByMe ? 'Prayed' : 'I prayed'}</button>` : ''}</div></footer>
     </article>`;
-  }).join("");
+    })
+    .join('');
 }
-
 async function loadPrayerRequests() {
   try {
-    const query = prayerState.mineOnly ? "?mine=1" : "";
+    const query = prayerState.mineOnly ? '?mine=1' : '';
     const payload = await prayerFetch(`/api/donor/koinonia/prayer-requests${query}`);
     if (!payload) return;
     prayerState.requests = payload.requests || [];
     prayerState.settings = payload.settings || prayerState.settings;
-    const notice = document.getElementById("prayerPastoralNotice");
+    const notice = document.getElementById('prayerPastoralNotice');
     if (notice && prayerState.settings?.pastoralNotice) notice.textContent = prayerState.settings.pastoralNotice;
-    const anonymous = document.getElementById("prayerAnonymousOption");
+    const anonymous = document.getElementById('prayerAnonymousOption');
     if (anonymous) anonymous.hidden = prayerState.settings?.allowAnonymous === false;
     renderPrayerRequests();
-    prayerStatus("");
+    prayerStatus('');
   } catch (error) {
-    prayerStatus(error.message || "Unable to load prayer requests.", "error");
+    prayerStatus(error.message || 'Unable to load prayer requests.', 'error');
   }
 }
-
 function setPrayerFilter(filter, button) {
-  prayerState.filter = ["all", "active", "answered"].includes(filter) ? filter : "all";
-  document.querySelectorAll("[data-prayer-filter]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+  prayerState.filter = ['all', 'active', 'answered'].includes(filter) ? filter : 'all';
+  document
+    .querySelectorAll('[data-prayer-filter]')
+    .forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
   renderPrayerRequests();
 }
-
 function toggleMyPrayerRequests(button) {
   prayerState.mineOnly = !prayerState.mineOnly;
-  button?.setAttribute("aria-pressed", String(prayerState.mineOnly));
+  button?.setAttribute('aria-pressed', String(prayerState.mineOnly));
   void loadPrayerRequests();
 }
-
 function openPrayerComposer() {
-  const dialog = document.getElementById("prayerComposerDialog");
+  const dialog = document.getElementById('prayerComposerDialog');
   if (!dialog) return;
-  if (typeof dialog.showModal === "function") dialog.showModal();
-  else dialog.setAttribute("open", "");
-  window.setTimeout(() => document.getElementById("prayerRequestBody")?.focus(), 50);
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
+  window.setTimeout(() => document.getElementById('prayerRequestBody')?.focus(), 50);
 }
-
 function closePrayerComposer() {
-  const dialog = document.getElementById("prayerComposerDialog");
+  const dialog = document.getElementById('prayerComposerDialog');
   if (!dialog) return;
-  if (typeof dialog.close === "function") dialog.close();
-  else dialog.removeAttribute("open");
-  document.getElementById("prayerComposerForm")?.reset();
+  if (typeof dialog.close === 'function') dialog.close();
+  else dialog.removeAttribute('open');
+  document.getElementById('prayerComposerForm')?.reset();
 }
-
 async function submitPrayerRequest(event) {
   event.preventDefault();
   const form = event.currentTarget;
   if (!form.reportValidity()) return;
-  const button = document.getElementById("prayerSubmitButton");
-  const body = document.getElementById("prayerRequestBody")?.value.trim() || "";
-  const visibility = form.elements.prayerVisibility?.value || "parish_members";
-  const anonymous = Boolean(document.getElementById("prayerAnonymous")?.checked);
-  if (button) { button.disabled = true; button.textContent = "Sharing…"; }
+  const button = document.getElementById('prayerSubmitButton');
+  const body = document.getElementById('prayerRequestBody')?.value.trim() || '';
+  const visibility = form.elements.prayerVisibility?.value || 'parish_members';
+  const anonymous = Boolean(document.getElementById('prayerAnonymous')?.checked);
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Sharing…';
+  }
   try {
-    const payload = await prayerFetch("/api/donor/koinonia/prayer-requests", { method: "POST", body: JSON.stringify({ body, visibility, anonymous }) });
+    const payload = await prayerFetch('/api/donor/koinonia/prayer-requests', {
+      method: 'POST',
+      body: JSON.stringify({ body, visibility, anonymous }),
+    });
     closePrayerComposer();
     prayerState.mineOnly = true;
-    const mineButton = document.getElementById("prayerMineFilter");
-    if (mineButton) mineButton.setAttribute("aria-pressed", "true");
+    const mineButton = document.getElementById('prayerMineFilter');
+    if (mineButton) mineButton.setAttribute('aria-pressed', 'true');
     await loadPrayerRequests();
-    prayerStatus(payload?.approvalRequired ? "Your request was sent to the parish for review." : (visibility === "clergy_only" ? "Your request was shared privately with the parish dashboard team." : "Your request is now on the parish prayer list."), "success");
+    prayerStatus(
+      payload?.approvalRequired
+        ? 'Your request was sent to the parish for review.'
+        : visibility === 'clergy_only'
+          ? 'Your request was shared privately with the parish dashboard team.'
+          : 'Your request is now on the parish prayer list.',
+      'success'
+    );
   } catch (error) {
-    prayerStatus(error.message || "Unable to share this prayer request.", "error");
+    prayerStatus(error.message || 'Unable to share this prayer request.', 'error');
   } finally {
-    if (button) { button.disabled = false; button.textContent = "Share request"; }
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Share request';
+    }
   }
 }
-
 async function togglePrayer(requestId) {
   try {
-    const payload = await prayerFetch(`/api/donor/koinonia/prayer-requests/${encodeURIComponent(requestId)}/pray`, { method: "POST", body: "{}" });
+    const payload = await prayerFetch(`/api/donor/koinonia/prayer-requests/${encodeURIComponent(requestId)}/pray`, {
+      method: 'POST',
+      body: '{}',
+    });
     const request = prayerState.requests.find((item) => item.id === requestId);
     if (request && payload) {
       request.prayedByMe = Boolean(payload.prayed);
@@ -158,71 +196,72 @@ async function togglePrayer(requestId) {
       renderPrayerRequests();
     }
   } catch (error) {
-    prayerStatus(error.message || "Unable to record your prayer.", "error");
+    prayerStatus(error.message || 'Unable to record your prayer.', 'error');
   }
 }
-
 async function updateOwnPrayer(requestId, status) {
-  await prayerFetch(`/api/donor/koinonia/prayer-requests/${encodeURIComponent(requestId)}`, { method: "PATCH", body: JSON.stringify({ status }) });
+  await prayerFetch(`/api/donor/koinonia/prayer-requests/${encodeURIComponent(requestId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
   await loadPrayerRequests();
 }
-
 async function markPrayerAnswered(requestId) {
   try {
-    await updateOwnPrayer(requestId, "answered");
-    prayerStatus("Your request is now marked answered. Thanks be to God.", "success");
+    await updateOwnPrayer(requestId, 'answered');
+    prayerStatus('Your request is now marked answered. Thanks be to God.', 'success');
   } catch (error) {
-    prayerStatus(error.message || "Unable to mark this request answered.", "error");
+    prayerStatus(error.message || 'Unable to mark this request answered.', 'error');
   }
 }
-
 async function archivePrayerRequest(requestId) {
-  if (!window.confirm("Withdraw this prayer request from the active list?")) return;
+  if (!window.confirm('Withdraw this prayer request from the active list?')) return;
   try {
-    await updateOwnPrayer(requestId, "archived");
-    prayerStatus("Your prayer request was withdrawn.", "success");
+    await updateOwnPrayer(requestId, 'archived');
+    prayerStatus('Your prayer request was withdrawn.', 'success');
   } catch (error) {
-    prayerStatus(error.message || "Unable to withdraw this request.", "error");
+    prayerStatus(error.message || 'Unable to withdraw this request.', 'error');
   }
 }
-
 function openPrayerReport(requestId) {
   prayerState.reportRequestId = requestId;
-  const dialog = document.getElementById("prayerReportDialog");
+  const dialog = document.getElementById('prayerReportDialog');
   if (!dialog) return;
-  if (typeof dialog.showModal === "function") dialog.showModal();
-  else dialog.setAttribute("open", "");
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
 }
-
 function closePrayerReport() {
-  prayerState.reportRequestId = "";
-  const dialog = document.getElementById("prayerReportDialog");
+  prayerState.reportRequestId = '';
+  const dialog = document.getElementById('prayerReportDialog');
   if (!dialog) return;
-  if (typeof dialog.close === "function") dialog.close();
-  else dialog.removeAttribute("open");
-  document.getElementById("prayerReportForm")?.reset();
+  if (typeof dialog.close === 'function') dialog.close();
+  else dialog.removeAttribute('open');
+  document.getElementById('prayerReportForm')?.reset();
 }
-
 async function submitPrayerReport(event) {
   event.preventDefault();
   const requestId = prayerState.reportRequestId;
   if (!requestId) return;
-  const button = document.getElementById("prayerReportButton");
-  const reason = document.getElementById("prayerReportReason")?.value || "Needs parish review";
+  const button = document.getElementById('prayerReportButton');
+  const reason = document.getElementById('prayerReportReason')?.value || 'Needs parish review';
   if (button) button.disabled = true;
   try {
-    await prayerFetch(`/api/donor/koinonia/prayer-requests/${encodeURIComponent(requestId)}/report`, { method: "POST", body: JSON.stringify({ reason }) });
+    await prayerFetch(`/api/donor/koinonia/prayer-requests/${encodeURIComponent(requestId)}/report`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
     closePrayerReport();
-    prayerStatus("Your report was sent privately to the parish dashboard team.", "success");
+    prayerStatus('Your report was sent privately to the parish dashboard team.', 'success');
     await loadPrayerRequests();
   } catch (error) {
-    prayerStatus(error.message || "Unable to send this report.", "error");
+    prayerStatus(error.message || 'Unable to send this report.', 'error');
   } finally {
     if (button) button.disabled = false;
   }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  void prayerFetch("/api/donor/koinonia/community-tools/prayers/opened", { method: "POST", body: "{}" }).catch(() => null);
+document.addEventListener('DOMContentLoaded', () => {
+  void prayerFetch('/api/donor/koinonia/community-tools/prayers/opened', { method: 'POST', body: '{}' }).catch(
+    () => null
+  );
   void loadPrayerRequests();
 });

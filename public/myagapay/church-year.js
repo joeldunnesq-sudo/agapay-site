@@ -1,13 +1,13 @@
+// Generated from src/browser/myagapay/church-year.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-
   function progressFor(date, calendar) {
     const api = window.AGAPAYLiturgicalCalendar;
     if (!api || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return null;
     const parts = date.split('-').map(Number);
     const current = api.gregorianToJdn(...parts);
-    const firstDay = (year) =>
-      (api.calendarLabel(calendar) === 'Julian' ? api.julianToJdn : api.gregorianToJdn)(year, 9, 1);
+    const firstDay = (year2) =>
+      (api.calendarLabel(calendar) === 'Julian' ? api.julianToJdn : api.gregorianToJdn)(year2, 9, 1);
     let year = parts[0];
     if (current < firstDay(year)) year -= 1;
     const start = firstDay(year);
@@ -15,7 +15,6 @@
     const elapsed = current - start;
     return { elapsed, day: elapsed + 1, length, percent: (elapsed / length) * 100 };
   }
-
   function render(date, calendar) {
     const card = document.getElementById('calendarChurchYear');
     if (!card) return;
@@ -31,6 +30,5 @@
     card.querySelector('[data-year-day]').textContent = `Day ${progress.day} of ${progress.length}`;
     card.querySelector('[data-year-calendar]').textContent = `${label} calendar`;
   }
-
   window.KoinoniaChurchYear = { render, progressFor };
 })();

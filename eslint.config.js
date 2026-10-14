@@ -7,6 +7,10 @@ const recommendedRules = js.configs.recommended.rules;
 
 export default [
   { ignores: handwrittenIgnores },
+  {
+    files: ['src/browser/myagapay/push-notifications.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Navigator$' }] },
+  },
   ...tseslint.configs.recommended.map((config) => ({ ...config, files: ['src/**/*.ts', 'scripts/**/*.ts'] })),
   {
     files: ['src/**/*.ts', 'scripts/**/*.ts'],
@@ -668,12 +672,48 @@ export default [
     },
   },
   {
-    files: ['src/browser/liturgical-calendar.ts', 'src/browser/myagapay/shell-contracts.d.ts'],
-    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }] },
+    files: [
+      'src/browser/liturgical-calendar.ts',
+      'src/browser/myagapay/shell-contracts.d.ts',
+      'src/browser/myagapay/ministry-home.ts',
+      'src/browser/myagapay/koinonia-experience.ts',
+      'src/browser/myagapay/church-year.ts',
+      'src/browser/myagapay/watch.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^Window$' }],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/media.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(Window|Document|HTMLElement)$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/feed.ts'],
+    // These classic-script entry points are called by the generated announcement HTML.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(setFeedCategoryFilter|openFeedAnnouncement)$' },
+      ],
+    },
   },
   {
     files: ['public/liturgical-calendar.js'],
     languageOptions: { sourceType: 'script', globals: globals.browser },
     rules: recommendedRules,
+  },
+  {
+    files: ['src/browser/myagapay/prayer-requests.ts'],
+    // These classic-script entry points are called by the existing page and rendered cards.
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setPrayerFilter|toggleMyPrayerRequests|openPrayerComposer|submitPrayerRequest|togglePrayer|markPrayerAnswered|archivePrayerRequest|openPrayerReport|submitPrayerReport)$',
+        },
+      ],
+    },
   },
 ];

@@ -1,4 +1,4 @@
-/* Ministry overview presentation; data and actions belong to groups.js. */
+// Generated from src/browser/myagapay/ministry-home.ts by npm run build:browser. Do not edit.
 (() => {
   function render(target, data, { group, members, messages, escape: esc, formatDate }) {
     const action = (tab, label, primary = false) =>
@@ -75,7 +75,8 @@
         button.disabled = true;
         try {
           await window.acceptMinistryCoverage(button.dataset.ministryCoverage);
-        } catch (error) {
+        } catch (caught) {
+          const error = caught;
           window.groupStatus(error.message || 'Unable to accept this request. Please try again.');
         } finally {
           button.disabled = false;

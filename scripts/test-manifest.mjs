@@ -198,6 +198,13 @@ const accounting = [
 const productUi = [
   'scripts/myagapay-calendar-browser-tests.mjs',
   'scripts/ministry-home-browser-tests.mjs',
+  'scripts/ministry-home-typescript-browser-tests.mjs',
+  'scripts/koinonia-experience-typescript-browser-tests.mjs',
+  'scripts/church-year-typescript-browser-tests.mjs',
+  'scripts/media-typescript-browser-tests.mjs',
+  'scripts/feed-typescript-browser-tests.mjs',
+  'scripts/prayer-requests-typescript-browser-tests.mjs',
+  'scripts/push-notifications-typescript-browser-tests.mjs',
   'scripts/app-header-browser-tests.mjs',
   'scripts/parish-dashboard-browser-tests.mjs',
   'scripts/parish-onboarding-browser-tests.mjs',

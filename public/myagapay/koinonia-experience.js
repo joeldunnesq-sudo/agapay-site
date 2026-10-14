@@ -1,3 +1,4 @@
+// Generated from src/browser/myagapay/koinonia-experience.ts by npm run build:browser. Do not edit.
 (function () {
   const iconPaths = {
     signups: '<path d="M9 5H6v16h12V5h-3M9 3h6v4H9zM9 13l2 2 4-4"/>',
@@ -17,7 +18,7 @@
       ['directory', 'Directory', 'Parish Directory', parish?.directoryEnabled, 'directory'],
     ].filter((item) => item[3]);
     target.hidden = !communicationsEnabled || !items.length;
-    target.style.setProperty('--shortcut-count', items.length || 1);
+    target.style.setProperty('--shortcut-count', String(items.length || 1));
     target.innerHTML = items
       .map(([id, label, name, , path]) => {
         const badge = ['signups', 'exchange', 'prayers'].includes(id)
@@ -48,7 +49,7 @@
     pill.setAttribute('aria-label', full);
     pill.classList.add('koinonia-fasting-pill');
   }
-  function liturgicalDay(date, calendar, churchDate) {
+  function liturgicalDay(_date, calendar, churchDate) {
     const calendarDate = document.getElementById('koinoniaChurchDate');
     if (calendarDate)
       calendarDate.textContent = `${churchDate} · ${window.AGAPAYLiturgicalCalendar.calendarLabel(calendar)}`;
