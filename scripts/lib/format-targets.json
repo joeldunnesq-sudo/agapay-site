@@ -333,7 +333,12 @@
     "src/browser/myagapay/news.ts",
     "public/myagapay/news.js",
     "scripts/typecheck-browser/news.ts",
-    "scripts/myagapay-news-browser-tests.mjs"
+    "scripts/myagapay-news-browser-tests.mjs",
+    "src/browser/myagapay/library.ts",
+    "src/browser/myagapay/shell-contracts.d.ts",
+    "public/myagapay/library.js",
+    "scripts/typecheck-browser/library.ts",
+    "scripts/myagapay-library-browser-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -700,6 +705,11 @@
     "src/browser/myagapay/news.ts",
     "public/myagapay/news.js",
     "scripts/typecheck-browser/news.ts",
-    "scripts/myagapay-news-browser-tests.mjs"
+    "scripts/myagapay-news-browser-tests.mjs",
+    "src/browser/myagapay/library.ts",
+    "src/browser/myagapay/shell-contracts.d.ts",
+    "public/myagapay/library.js",
+    "scripts/typecheck-browser/library.ts",
+    "scripts/myagapay-library-browser-tests.mjs"
   ]
 }

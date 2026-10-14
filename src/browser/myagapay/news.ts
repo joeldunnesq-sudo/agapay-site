@@ -37,12 +37,6 @@ interface NewsCustomFeeds {
 interface NewsMutationResult {
   error?: string;
 }
-interface Window {
-  MyAgapayShell?: {
-    authHeaders(extra: Record<string, string>): Record<string, string>;
-    handleUnauthorized(response: Response): boolean;
-  };
-}
 
 const newsState: NewsState = { sources: [], articles: [], filter: 'all' };
 
