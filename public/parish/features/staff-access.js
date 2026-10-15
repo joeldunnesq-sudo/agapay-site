@@ -1,5 +1,5 @@
+// Generated from src/browser/parish/features/staff-access.ts by npm run build:browser. Do not edit.
 'use strict';
-
 let parishStaffAccessState = {
   parishId: '',
   loading: false,
@@ -9,7 +9,6 @@ let parishStaffAccessState = {
   invitations: [],
   latestInvite: null,
 };
-
 const PARISH_STAFF_ROLES = [
   ['rector', 'Rector', 'Full parish oversight, clergy coverage, settings, and accounting approval'],
   ['priest', 'Priest', 'Pastoral work, sacrament follow-up, giving reports, and parish access'],
@@ -22,15 +21,12 @@ const PARISH_STAFF_ROLES = [
   ['bookstore_manager', 'Commerce manager', 'Products, orders, refunds, and commerce reporting'],
   ['volunteer', 'Volunteer', 'Basic parish workspace access'],
 ];
-
 function parishStaffAccessApi(path = '') {
   return `/api/parish/dashboard/${encodeURIComponent(currentParish?.parishId || '')}/memberships${path}`;
 }
-
 function parishStaffRoleLabel(value) {
   return PARISH_STAFF_ROLES.find(([role]) => role === value)?.[1] || String(value || 'Staff').replaceAll('_', ' ');
 }
-
 function parishStaffDate(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -38,7 +34,6 @@ function parishStaffDate(value) {
     ? ''
     : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
-
 function renderParishStaffAccess() {
   const root = document.getElementById('parishStaffAccessManager');
   if (!root) return;
@@ -78,7 +73,6 @@ function renderParishStaffAccess() {
       <div class="staff-access-steps" aria-label="Staff invitation steps"><div><b>1</b><span><strong>Parish sends invitation</strong><small>Choose an email and responsibility here.</small></span></div><div><b>2</b><span><strong>Staff creates a password</strong><small>The secure link is personal and expires after 14 days.</small></span></div><div><b>3</b><span><strong>AGAPAY handles MFA</strong><small>When required, setup continues before dashboard access opens.</small></span></div></div>
     </section>`;
 }
-
 async function loadParishStaffAccess(force = false) {
   if (!currentParish?.parishId) return;
   if (parishStaffAccessState.parishId !== currentParish.parishId) {
@@ -118,12 +112,10 @@ async function loadParishStaffAccess(force = false) {
   }
   renderParishStaffAccess();
 }
-
 function updateParishStaffRoleHelp(select) {
   const help = select?.closest('label')?.querySelector('[data-role-help]');
   if (help) help.textContent = PARISH_STAFF_ROLES.find(([value]) => value === select.value)?.[2] || '';
 }
-
 async function inviteParishStaff(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -160,14 +152,12 @@ async function inviteParishStaff(event) {
     if (button) button.disabled = false;
   }
 }
-
 async function copyParishStaffInvite() {
   const url = parishStaffAccessState.latestInvite?.url || '';
   if (!url) return;
   await navigator.clipboard.writeText(url);
   setStatus('Secure staff setup link copied.', 'success');
 }
-
 async function revokeParishStaffInvitation(invitationId) {
   if (!confirm('Revoke this pending staff invitation? Its secure link will stop working.')) return;
   try {
@@ -183,7 +173,6 @@ async function revokeParishStaffInvitation(invitationId) {
     setStatus(error.message, 'error');
   }
 }
-
 window.ParishFeatureRegistry.register('staff-access', {
   load: loadParishStaffAccess,
 });

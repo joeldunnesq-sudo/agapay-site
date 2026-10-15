@@ -1,3 +1,4 @@
+import { CURRENT_TERMS_VERSION } from '../src/lib/legal-acceptance.js';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -18,9 +19,23 @@ for (const { output, externalEmbed } of browserTypeScriptEntries) {
   const asset = output.slice('public'.length);
   if (externalEmbed) {
     // Published third-party snippets keep the stable URL and their existing revalidation policy.
-    assert.equal(output, 'public/campaign-box.js', 'Only the existing external campaign widget uses this contract');
+    assert.ok(
+      ['public/campaign-box.js', 'public/giving-box.js'].includes(output),
+      'Only published external widgets use the stable URL contract'
+    );
+    if (output === 'public/giving-box.js') {
+      const consumer = await readFile(join(repoRoot, 'public/parish/features/giving/sharing.js'), 'utf8');
+      assert.ok(consumer.includes('/giving-box.js'));
+      const headers = (await readFile(join(repoRoot, 'public/_headers'), 'utf8')).replaceAll('\r\n', '\n');
+      assert.ok(
+        headers.includes(
+          '/giving-box.js\n  Access-Control-Allow-Origin: *\n  Cross-Origin-Resource-Policy: cross-origin\n  Cache-Control: public, max-age=3600, must-revalidate'
+        )
+      );
+      continue;
+    }
     const consumer = await readFile(join(repoRoot, 'public/parish/features/campaigns/website-embed.js'), 'utf8');
-    assert.ok(consumer.includes('/campaign-box.js" async></script>'));
+    assert.ok(consumer.replaceAll('\\/', '/').includes('/campaign-box.js" async></script>'));
     const headers = (await readFile(join(repoRoot, 'public/_headers'), 'utf8')).replaceAll('\r\n', '\n');
     assert.ok(
       headers.includes(
@@ -35,7 +50,14 @@ for (const { output, externalEmbed } of browserTypeScriptEntries) {
     const html = await readFile(join(repoRoot, page), 'utf8');
     if (!html.includes(asset)) continue;
     consumers += 1;
-    assert.ok(html.includes(url), `${page} must use the generated content version`);
+    if (page === 'public/terms.html') {
+      assert.equal(
+        html,
+        await readFile(join(repoRoot, 'docs/legal/terms/terms-' + CURRENT_TERMS_VERSION + '.html'), 'utf8'),
+        'Published Terms must remain byte-identical to their preserved snapshot'
+      );
+      assert.equal(asset, '/site-chrome.js', 'Only the original chrome script uses the immutable Terms page exception');
+    } else assert.ok(html.includes(url), `${page} must use the generated content version`);
     const tag = html.match(new RegExp(`<script\\b[^>]*src=["']${asset.replaceAll('.', '\\.')}[^"']*["'][^>]*>`));
     assert.ok(tag, `${page} must load ${asset} as a script`);
     assert.doesNotMatch(tag[0], /type=["']module["']|\basync\b/i);

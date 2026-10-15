@@ -7,6 +7,49 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/giving-box.ts', output: 'public/giving-box.js', externalEmbed: true },
+  { source: 'src/browser/admin/relationships.ts', output: 'public/admin/relationships.js' },
+  { source: 'src/browser/site-chrome.ts', output: 'public/site-chrome.js' },
+  { source: 'src/browser/donor/bookstore-experience.ts', output: 'public/donor/bookstore-experience.js' },
+  { source: 'src/browser/give/parish-giving/embed.ts', output: 'public/give/parish-giving/embed.js' },
+  { source: 'src/browser/parish/backup.ts', output: 'public/parish/backup.js' },
+  { source: 'src/browser/parish/portability.ts', output: 'public/parish/portability.js' },
+  { source: 'src/browser/parish/library.ts', output: 'public/parish/library.js' },
+  {
+    source: 'src/browser/parish/features/commerce/bookstore-checkout.ts',
+    output: 'public/parish/features/commerce/bookstore-checkout.js',
+  },
+  {
+    source: 'src/browser/parish/features/stewardship/financials-editor.ts',
+    output: 'public/parish/features/stewardship/financials-editor.js',
+  },
+  {
+    source: 'src/browser/parish/features/stewardship/outside-giving.ts',
+    output: 'public/parish/features/stewardship/outside-giving.js',
+  },
+  { source: 'src/browser/parish/features/staff-access.ts', output: 'public/parish/features/staff-access.js' },
+  {
+    source: 'src/browser/parish/features/stewardship/nudges.ts',
+    output: 'public/parish/features/stewardship/nudges.js',
+  },
+  {
+    source: 'src/browser/parish/features/stewardship/reports.ts',
+    output: 'public/parish/features/stewardship/reports.js',
+  },
+  { source: 'src/browser/parish/dashboard-runtime.ts', output: 'public/parish/dashboard-runtime.js' },
+  { source: 'src/browser/parish/features/commerce.ts', output: 'public/parish/features/commerce.js' },
+  { source: 'src/browser/registration-assistance.ts', output: 'public/registration-assistance.js' },
+  { source: 'src/browser/parish/features/giving.ts', output: 'public/parish/features/giving.js' },
+  { source: 'src/browser/parish/features/library.ts', output: 'public/parish/features/library.js' },
+  { source: 'src/browser/parish/features/stewardship/fees.ts', output: 'public/parish/features/stewardship/fees.js' },
+  {
+    source: 'src/browser/parish/features/campaigns/website-embed.ts',
+    output: 'public/parish/features/campaigns/website-embed.js',
+  },
+  { source: 'src/browser/parish/feature-registry.ts', output: 'public/parish/feature-registry.js' },
+  { source: 'src/browser/parish/diagnostics.ts', output: 'public/parish/diagnostics.js' },
+  { source: 'src/browser/parish/mfa-settings.ts', output: 'public/parish/mfa-settings.js' },
+  { source: 'src/browser/parish/staff-login.ts', output: 'public/parish/staff-login.js' },
   { source: 'src/browser/marketing-funnel.ts', output: 'public/marketing-funnel.js' },
   { source: 'src/browser/meta-pixel.ts', output: 'public/meta-pixel.js' },
   { source: 'src/browser/home-giving-impact.ts', output: 'public/home-giving-impact.js' },

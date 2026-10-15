@@ -1,29 +1,13 @@
+// Generated from src/browser/parish/features/stewardship/outside-giving.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global financialsState, currentParish, isParishTier, renderGivingMetricsUpgrade, givingMetricsState,
-  stewardshipApi, authHeaders, escapeHtml, escapeAttr, loadGivingMetricsPanel,
-  loadStewardshipHealthScorePanel, loadFinancialSnapshotsPanel, outsideRequest,
-  resetOutsideParish, outsideGivingState, outsideGiftAction */
-/* exported openOutsideAgapayGiving, closeOutsideAgapayGiving, submitManualIncomeEntry,
-  deleteManualIncomeEntry, ensureOutsideGivingCard, reviewCollectionAccounting */
-
-// Outside-AGAPAY contribution entry, deletion, and dependent panel refreshes.
-// Read shared parish identity and authentication only when actions run.
-
-// ── Outside-AGAPAY contribution intake ──────────────────────────────────
-// This is intentionally limited to contributions. Bookstore, retreat,
-// rental, grant, and other operating revenue belongs in the financial
-// snapshot (and eventually Accounting), never in stewardship-giving health.
 const manualIncomeSourceLabels = {
   cash_and_checks: 'Cash/Check Collection',
   tithely: 'Tithe.ly',
   paypal: 'PayPal',
   other_giving_platform: 'Another Giving Platform',
 };
-
 let manualIncomeYear = null;
 let manualIncomeLoad = 0;
-
 function ensureOutsideGivingCard() {
   const mount = document.getElementById('stewardshipOutsideGivingMount');
   if (!mount || mount.children.length) return;
@@ -35,7 +19,6 @@ function ensureOutsideGivingCard() {
     <p class="sw-chart-note">Record each gift once: use individual gifts or a batch total for the same collection. Sales, rentals, and other operating revenue belong in Accounting.</p>
     <div class="sw-outside-giving-panel" id="stewardshipManualIncomePane" hidden></div></section>`;
 }
-
 function openOutsideAgapayGiving() {
   ensureOutsideGivingCard();
   const pane = document.getElementById('stewardshipManualIncomePane');
@@ -46,12 +29,10 @@ function openOutsideAgapayGiving() {
   });
   pane.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
 function closeOutsideAgapayGiving() {
   const pane = document.getElementById('stewardshipManualIncomePane');
   if (pane) pane.hidden = true;
 }
-
 async function loadManualIncomePanel(year, message = '') {
   const pane = document.getElementById('stewardshipManualIncomePane');
   if (!pane || !currentParish) return;
@@ -81,7 +62,6 @@ async function loadManualIncomePanel(year, message = '') {
         '<p role="status">Contributions could not be loaded.</p><button type="button" class="sw-action-btn" onclick="loadManualIncomePanel()">Try again</button>';
   }
 }
-
 function renderManualIncome(d, year, message = '') {
   const fmt = (c) => (Number(c || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
   const entries = d.entries || [];
@@ -92,7 +72,7 @@ function renderManualIncome(d, year, message = '') {
         `<option value="${escapeAttr(fund.id || fund.code)}">${escapeHtml(fund.name || fund.id || fund.code)}</option>`
     )
     .join('');
-  const now = new Date();
+  const now = /* @__PURE__ */ new Date();
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: currentParish.timezone || 'UTC',
     year: 'numeric',
@@ -131,7 +111,6 @@ function renderManualIncome(d, year, message = '') {
     <div class="sw-fin-table-wrap"><table class="sw-fin-table sw-income-table"><thead><tr><th>Date</th><th>Source</th><th>Fund</th><th class="sw-th-right">Amount</th><th>Reference / note</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6">No contributions recorded for this year. Add your first collection above.</td></tr>'}</tbody></table></div>
     <p class="sw-chart-note">These entries update Budget Pace, Stewardship Health, and stewardship reports. Record the deposit once in Accounting, then use Review / link Accounting to match the contribution to the same fund. Unlinked collections are not posted ledger income. Older collection entries can be reviewed in Accounting separately.</p>`;
 }
-
 async function submitManualIncomeEntry(event) {
   event.preventDefault();
   const form = event.target;
@@ -194,8 +173,6 @@ async function submitManualIncomeEntry(event) {
       nextForm.elements.sourceLabel.required = payload.source === 'other_giving_platform';
       nextForm.elements.amountCents.focus({ preventScroll: true });
     }
-    // Qualified outside contributions affect Budget Pace, Stewardship Health,
-    // and the derived contribution total in the fiscal-year snapshot.
     loadGivingMetricsPanel();
     loadStewardshipHealthScorePanel();
     loadFinancialSnapshotsPanel();
@@ -210,7 +187,6 @@ async function submitManualIncomeEntry(event) {
     if (submitBtn) submitBtn.disabled = false;
   }
 }
-
 async function reviewCollectionAccounting(id) {
   const parishId = currentParish?.parishId;
   const status = document.querySelector('.sw-income-form-status');
@@ -224,7 +200,6 @@ async function reviewCollectionAccounting(id) {
     if (currentParish?.parishId === parishId && status) status.textContent = error.message;
   }
 }
-
 async function deleteManualIncomeEntry(entryId) {
   if (!confirm('Delete this outside-AGAPAY contribution? This cannot be undone.')) return;
   try {
@@ -242,7 +217,6 @@ async function deleteManualIncomeEntry(entryId) {
     alert('Could not delete contribution: ' + e.message);
   }
 }
-
 document.addEventListener('agapay:outside-gift-saved', () => {
   if (!isParishTier()) return;
   const pane = document.getElementById('stewardshipManualIncomePane');

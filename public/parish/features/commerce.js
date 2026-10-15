@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/commerce.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: commerce.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 let bookstoreCatalogState = {
   loaded: false,
   products: [],
@@ -10,14 +7,13 @@ let bookstoreCatalogState = {
   countSessions: [],
   starterCatalog: [],
 };
-
 let bookstoreLowStockOnly = false;
-
 let commerceProductState = 'overview';
-
 function switchCommerceProduct(product, focus = true) {
   const fullSuite = moduleIncluded('commerceSuite');
-  const allowed = fullSuite ? new Set(['overview', 'bookstore', 'events', 'meals']) : new Set(['bookstore']);
+  const allowed = fullSuite
+    ? /* @__PURE__ */ new Set(['overview', 'bookstore', 'events', 'meals'])
+    : /* @__PURE__ */ new Set(['bookstore']);
   commerceProductState = allowed.has(product) ? product : fullSuite ? 'overview' : 'bookstore';
   document.querySelectorAll('.commerce-product-tab').forEach((tab) => {
     const fullSuiteOnly = tab.dataset.commerceProduct !== 'bookstore';
@@ -36,7 +32,6 @@ function switchCommerceProduct(product, focus = true) {
   if (commerceProductState === 'events') loadEventsOversightPanel('event');
   if (commerceProductState === 'meals') loadEventsOversightPanel('meal');
 }
-
 function setCommerceOverviewRange(range) {
   bookstoreSalesState.range = ['30d', '90d', 'ytd', 'all'].includes(range) ? range : '90d';
   document.querySelectorAll('[data-commerce-range], .bk-range-btn').forEach((button) => {
@@ -47,11 +42,9 @@ function setCommerceOverviewRange(range) {
   });
   loadBookstoreSalesPanel(true);
 }
-
 function refreshCommerceOverview() {
   loadBookstoreCatalogTab(true);
 }
-
 function renderCommerceOverview() {
   const body = document.getElementById('commerceOverviewBody');
   if (!body) return;
@@ -65,7 +58,6 @@ function renderCommerceOverview() {
     body.innerHTML = '<p class="sw-tool-loading">Loading Commerce activity…</p>';
     return;
   }
-
   const kpis = sales.kpis || {};
   const products = bookstoreCatalogState.products || [];
   const activeProducts = products.filter((product) => String(product.status || 'active').toLowerCase() === 'active');
@@ -73,7 +65,6 @@ function renderCommerceOverview() {
   const orders = bookstoreSalesState.orders || [];
   const hasActivity = Number(kpis.orderCount || 0) > 0;
   const bookstoreState = currentParish?.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden from My AGAPAY';
-
   body.innerHTML = `
       <section class="commerce-overview-kpis" aria-label="Commerce metrics">
         <article class="commerce-overview-kpi commerce-overview-kpi--primary">
@@ -141,9 +132,6 @@ function renderCommerceOverview() {
         </section>
       </div>`;
 }
-
-// Commerce owns every product: Bookstore, Events, Meals, and future offerings.
-// Retreats, Camp, and Tuition remain disabled until their implementations ship.
 function loadCommerceTab(force = false) {
   switchCommerceProduct(moduleIncluded('commerceSuite') ? 'overview' : 'bookstore', false);
   return loadBookstoreCatalogTab(force);

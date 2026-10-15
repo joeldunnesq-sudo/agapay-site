@@ -1,3 +1,4 @@
+import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import * as taxReadinessRuntime from '../src/lib/tax-readiness.js';
 import { subscriptionTiers, subscriptionAddOns, parishHouseholdBands } from '../src/lib/subscriptions.js';
@@ -38,20 +39,20 @@ const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
 const parishFeatureRequestMigration = await readFile("migrations/0059_parish_feature_requests.sql", "utf8");
 const siteChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(siteChrome.includes('class="btn-demo${activeKey === "demo" ? " active" : ""}" href="/give/request-demo"'), "canonical desktop navigation should present Request a Demo beside the primary action");
-assert.ok(siteChrome.includes('class="drawer-demo" href="/give/request-demo"'), "canonical mobile navigation should present Request a Demo as an action button");
-assert.ok(!siteChrome.includes('{ href: "/give/request-demo", label: "Request Demo", key: "demo" }'), "Request a Demo should not remain in the canonical text-link group");
+assert.ok(includesJavaScriptFragment(siteChrome, 'class="btn-demo${activeKey === \'demo\' ? \' active\' : \'\'}" href="/give/request-demo"'), "canonical desktop navigation should present Request a Demo beside the primary action");
+assert.ok(includesJavaScriptFragment(siteChrome, 'class="drawer-demo" href="/give/request-demo"'), "canonical mobile navigation should present Request a Demo as an action button");
+assert.ok(!includesJavaScriptFragment(siteChrome, '{ href: "/give/request-demo", label: "Request Demo", key: "demo" }'), "Request a Demo should not remain in the canonical text-link group");
 for (const link of [
   '{ href: "/give", label: "Platform", key: "platform" }',
   '{ href: "/about", label: "About", key: "about" }',
   '{ href: "/contact", label: "Contact", key: "contact" }'
-]) assert.ok(siteChrome.includes(link), `canonical static-site navigation should include ${link}`);
+]) assert.ok(includesJavaScriptFragment(siteChrome, link), `canonical static-site navigation should include ${link}`);
 for (const link of [
   '{ href: "/give#pricing", label: "Pricing", key: "pricing" }',
   '{ href: "/give#security", label: "Security", key: "security" }'
-]) assert.ok(!siteChrome.includes(link), `canonical static-site navigation should not include ${link}`);
-assert.ok(!siteChrome.includes('{ href: "/give#why", label: "Why AGAPAY"'), "canonical primary navigation should not duplicate the Why section integrated into /give");
-assert.ok(!siteChrome.includes('{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !siteChrome.includes('{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
+]) assert.ok(!includesJavaScriptFragment(siteChrome, link), `canonical static-site navigation should not include ${link}`);
+assert.ok(!includesJavaScriptFragment(siteChrome, '{ href: "/give#why", label: "Why AGAPAY"'), "canonical primary navigation should not duplicate the Why section integrated into /give");
+assert.ok(!includesJavaScriptFragment(siteChrome, '{ href: "/learn", label: "AGAPAY Learn", key: "learn" }') && !includesJavaScriptFragment(siteChrome, '{ href: "/design", label: "AGAPAY Design", key: "design" }'), "canonical primary navigation should stay focused on AGAPAY Give");
 assert.ok(!/btn-donate[\s\S]{0,180}shellIcon\("giving-hand"\)/.test(siteChrome), "canonical Start for free button should not include an unrelated giving-hand icon");
 assert.ok(!/drawer-join[\s\S]{0,120}shellIcon\("giving-hand"\)/.test(siteChrome), "mobile Start for free button should not include an unrelated giving-hand icon");
 const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + parishCommemorationsHandler + parishGivingCatalogHandler + parishGivingReportsHandler + parishSacramentsHandler + parishReconciliationHandler + parishNotifications + stripeFees + givingCheckout + stripeHandler + parishInterestHandler;
@@ -290,7 +291,7 @@ assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
 assert.ok(myAgapayShell.includes('featureOrFallback("library", "history")') && myAgapayShell.includes('label: "History"'), "History should replace unavailable Library in the bottom nav");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard?view=context"'), "shared My AGAPAY shell should load the donor home parish capabilities");
-assert.ok(siteChrome.includes("/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
+assert.ok(includesJavaScriptFragment(siteChrome, "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
 assert.ok(parishDashboardApp.includes("Apply tier change") && parishDashboardApp.includes("startSubscriptionCheckout(this, \\'subscriptionTierUpgrade\\')"), "active parish subscriptions should change the selected tier without depending on Billing Portal product configuration");
 assert.ok(parishDashboardApp.includes("sidebarStatusChip") && parishDashboardApp.includes("tierDisplay") && parishDashboardApp.includes("subscriptionTierLabel"), "Parish Dashboard active status should display the subscribed tier");
@@ -815,7 +816,7 @@ assert.ok(platformHome.includes("One platform for all of") && platformHome.inclu
 assert.ok(platformHome.includes("Orthodox Tithing App") && platformHome.includes("custom-built Orthodox church management software platform"), "homepage SEO should position AGAPAY as the Orthodox tithing app and custom-built parish platform");
 assert.ok(platformHome.includes("giving-dashboard.jpg?v=afdbcab9659a") && platformHome.includes("data-src=\"/images/app/screenshots/parish-bookstore.jpg?v=6e64e98eb164\"") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
 assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
-assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
+assert.ok(platformHome.includes('src="' + appAssetUrl('/site-chrome.js') + '"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>"), "the consolidated Give page should publish one canonical URL and the approved Orthodox giving headline");
 assert.ok(
   giveStyles.includes(".give-hero h1 em { display: block;")
@@ -828,16 +829,16 @@ assert.match(giveSectionNav, /give-section-links">\s*<a href="#why">Why AGAPAY<\
 assert.ok(givingOverview.indexOf('id="why"') < givingOverview.indexOf('id="pricing"'), "the Why AGAPAY section should appear before Plans and cost to the parish");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(
-  canonicalChrome.includes('{ href: "/give", label: "Platform"')
-    && canonicalChrome.includes('{ href: "/about", label: "About"')
-    && canonicalChrome.includes('{ href: "/contact", label: "Contact"')
-    && !canonicalChrome.includes('{ href: "/give#pricing", label: "Pricing"')
-    && !canonicalChrome.includes('{ href: "/give#security", label: "Security"'),
+  includesJavaScriptFragment(canonicalChrome, '{ href: "/give", label: "Platform"')
+    && includesJavaScriptFragment(canonicalChrome, '{ href: "/about", label: "About"')
+    && includesJavaScriptFragment(canonicalChrome, '{ href: "/contact", label: "Contact"')
+    && !includesJavaScriptFragment(canonicalChrome, '{ href: "/give#pricing", label: "Pricing"')
+    && !includesJavaScriptFragment(canonicalChrome, '{ href: "/give#security", label: "Security"'),
   "canonical navigation should link to Platform, About, and Contact without Pricing or Security"
 );
-assert.ok(canonicalChrome.includes('return hash.slice(1)') && canonicalChrome.includes('return "platform"'), "canonical navigation should recognize anchored Give destinations");
-assert.ok(canonicalChrome.includes('const isHomepage = path === "/" || path === "/index.html"') && canonicalChrome.includes('${isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
-assert.ok(canonicalChrome.includes('href="/register"') && canonicalChrome.includes("Start for free"), "canonical marketing navigation should offer the free registration CTA");
+assert.ok(includesJavaScriptFragment(canonicalChrome, 'return hash.slice(1)') && includesJavaScriptFragment(canonicalChrome, 'return "platform"'), "canonical navigation should recognize anchored Give destinations");
+assert.ok(includesJavaScriptFragment(canonicalChrome, 'const isHomepage = path === "/" || path === "/index.html"') && includesJavaScriptFragment(canonicalChrome, 'isHomepage ? "" :'), "canonical footer should hide Marketplace and Directory on the homepage");
+assert.ok(includesJavaScriptFragment(canonicalChrome, 'href="/register"') && includesJavaScriptFragment(canonicalChrome, "Start for free"), "canonical marketing navigation should offer the free registration CTA");
 assert.ok(registerHtml.includes("free 30-day AGAPAY demo") && registerHtml.includes("No card is required"), "parish registration should explain the free demo terms");
 const designPage = await readFile("public/design.html", "utf8");
 assert.ok(designPage.includes("AGAPAY Design") && designPage.includes("site-chrome.js") && designPage.includes("Straightforward packages"), "AGAPAY Design should render as a canonical public product page");

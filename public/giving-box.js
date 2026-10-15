@@ -1,39 +1,52 @@
+// Generated from src/browser/giving-box.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-
   const existing = window.AGAPAYGivingBox;
   if (existing?.scan) {
     existing.scan();
     return;
   }
-
   const loaderScript = document.currentScript;
   const loaderOrigin = new URL(loaderScript?.src || 'https://agapay.app/giving-box.js', window.location.href).origin;
-  const mountedFrames = new Map();
+  const mountedFrames = /* @__PURE__ */ new Map();
   const selector = '[data-agapay-giving]';
-  const themeKeys = ['primary', 'primary-text', 'accent', 'accent-text', 'background', 'surface', 'text', 'muted', 'border', 'success', 'danger', 'font', 'heading-font'];
-
+  const themeKeys = [
+    'primary',
+    'primary-text',
+    'accent',
+    'accent-text',
+    'background',
+    'surface',
+    'text',
+    'muted',
+    'border',
+    'success',
+    'danger',
+    'font',
+    'heading-font',
+  ];
   function readTheme(container) {
     const styles = getComputedStyle(container);
-    return Object.fromEntries(themeKeys.map((key) => [key, styles.getPropertyValue(`--agapay-giving-${key}`).trim().slice(0, 200)]));
+    return Object.fromEntries(
+      themeKeys.map((key) => [key, styles.getPropertyValue(`--agapay-giving-${key}`).trim().slice(0, 200)])
+    );
   }
-
   function refreshTheme() {
     for (const [frame, record] of mountedFrames) {
-      frame.contentWindow?.postMessage({ type: 'agapay:giving-box-theme', theme: readTheme(record.container) }, record.origin);
+      frame.contentWindow?.postMessage(
+        { type: 'agapay:giving-box-theme', theme: readTheme(record.container) },
+        record.origin
+      );
     }
   }
-
   function clean(value) {
     return String(value || '').trim();
   }
-
   function boundedNumber(value, fallback, minimum, maximum) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) return fallback;
     return Math.min(maximum, Math.max(minimum, parsed));
   }
-
   function givingUrl(container) {
     const organizationId = clean(container.dataset.agapayGiving || container.dataset.organization);
     if (!organizationId) return null;
@@ -41,7 +54,7 @@
     for (const [key, value] of Object.entries(readTheme(container))) {
       if (value) url.searchParams.set(`theme.${key}`, value);
     }
-    const amount = boundedNumber(container.dataset.amount, 0, 0, 50000);
+    const amount = boundedNumber(container.dataset.amount, 0, 0, 5e4);
     const frequency = clean(container.dataset.frequency).toLowerCase();
     const preview = clean(container.dataset.preview);
     if (amount >= 1) url.searchParams.set('amount', String(amount));
@@ -53,12 +66,10 @@
     }
     return url;
   }
-
   function mount(container) {
     if (!(container instanceof HTMLElement) || container.dataset.agapayMounted === 'true') return null;
     const url = givingUrl(container);
     if (!url) return null;
-
     const maxWidth = boundedNumber(container.dataset.maxWidth, 560, 280, 1200);
     const initialHeight = boundedNumber(container.dataset.height, 560, 420, 1800);
     const align = clean(container.dataset.align).toLowerCase();
@@ -77,7 +88,6 @@
     frame.style.borderRadius = '18px';
     frame.style.background = 'transparent';
     frame.style.transition = 'height 180ms ease';
-
     container.dataset.agapayMounted = 'true';
     container.style.width = '100%';
     container.style.maxWidth = `${maxWidth}px`;
@@ -85,15 +95,15 @@
     container.replaceChildren(frame);
     mountedFrames.set(frame, { container, origin: url.origin });
     frame.addEventListener('load', refreshTheme);
-    container.dispatchEvent(new CustomEvent('agapay:mounted', { detail: { frame, organizationId: container.dataset.agapayGiving } }));
+    container.dispatchEvent(
+      new CustomEvent('agapay:mounted', { detail: { frame, organizationId: container.dataset.agapayGiving } })
+    );
     return frame;
   }
-
   function scan(root = document) {
     if (root instanceof HTMLElement && root.matches(selector)) mount(root);
     root.querySelectorAll?.(selector).forEach(mount);
   }
-
   window.addEventListener('message', (event) => {
     if (!event.data || event.data.type !== 'agapay:giving-box-resize') return;
     for (const [frame, record] of mountedFrames) {
@@ -105,20 +115,19 @@
       break;
     }
   });
-
   const api = Object.freeze({ version: '1.4.0', mount, scan, refreshTheme });
   window.AGAPAYGivingBox = api;
-
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => scan(), { once: true });
   } else {
     scan();
   }
-
   const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
-      if (node instanceof HTMLElement) scan(node);
-    }));
+    mutations.forEach((mutation) =>
+      mutation.addedNodes.forEach((node) => {
+        if (node instanceof HTMLElement) scan(node);
+      })
+    );
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 })();

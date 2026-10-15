@@ -1,27 +1,19 @@
+// Generated from src/browser/parish/features/stewardship/nudges.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global currentParish, stewardshipApi, authHeaders, escapeHtml, setStatus */
-/* exported checkNudgeEligibility, sendNudges */
-
-// Pledge eligibility and donor nudge preview, sending, and modal state.
-// Read shared parish identity and authentication only when actions run.
-
-// ── Pledge nudge modal ───────────────────────────────────────────────────
 let nudgePreviewData = null;
-
 async function checkNudgeEligibility() {
   if (!currentParish) return;
   const btn = document.getElementById('nudgeBtn');
   if (!btn) return;
   try {
-    const res = await fetch(stewardshipApi('/nudge?year=' + new Date().getFullYear()), { headers: authHeaders() });
+    const res = await fetch(stewardshipApi('/nudge?year=' + /* @__PURE__ */ new Date().getFullYear()), {
+      headers: authHeaders(),
+    });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.thresholdActive) {
-      // Too early in the year — no one can be 3 months behind yet
       btn.disabled = true;
       btn.title = 'No donors are 3+ months behind on their pledge yet.';
       btn.querySelector('svg + span, svg').nextSibling && (btn.lastChild.textContent = ' Nudge donors (none behind)');
-      // Rebuild label safely
       const svg = btn.querySelector('svg');
       btn.innerHTML = '';
       if (svg) btn.appendChild(svg);
@@ -46,11 +38,8 @@ async function checkNudgeEligibility() {
       btn.appendChild(document.createTextNode(' Nudge ' + count + ' behind-schedule donor' + (count !== 1 ? 's' : '')));
       btn.classList.add('sw-nudge-btn--ready');
     }
-  } catch {
-    // Silent — leave button disabled
-  }
+  } catch {}
 }
-
 async function openNudgeModal() {
   if (!currentParish) return;
   const modal = document.getElementById('nudgeAdminModal');
@@ -61,9 +50,10 @@ async function openNudgeModal() {
   const body = document.getElementById('nudgeAdminBody');
   if (body) body.innerHTML = '<p class="sw-loading">Checking pledges…</p>';
   m.hidden = false;
-
   try {
-    const res = await fetch(stewardshipApi('/nudge?year=' + new Date().getFullYear()), { headers: authHeaders() });
+    const res = await fetch(stewardshipApi('/nudge?year=' + /* @__PURE__ */ new Date().getFullYear()), {
+      headers: authHeaders(),
+    });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Unable to load pledge data');
     nudgePreviewData = data;
@@ -72,30 +62,18 @@ async function openNudgeModal() {
     if (body) body.innerHTML = '<p class="muted">' + escapeHtml(e.message) + '</p>';
   }
 }
-
 function buildNudgeModal() {
   const el = document.createElement('div');
   el.id = 'nudgeAdminModal';
   el.className = 'sw-nudge-admin-modal-backdrop';
   el.hidden = true;
   el.innerHTML =
-    '<div class="sw-nudge-admin-modal">' +
-    '<div class="sw-nudge-admin-header">' +
-    '<h3>Nudge Behind-Schedule Donors</h3>' +
-    '<button class="sw-nudge-admin-close" type="button" onclick="closeNudgeModal()" aria-label="Close">×</button>' +
-    '</div>' +
-    '<div class="sw-nudge-admin-body" id="nudgeAdminBody"><p class="sw-loading">Loading…</p></div>' +
-    '<div class="sw-nudge-admin-footer" id="nudgeAdminFooter" hidden>' +
-    '<p class="sw-nudge-admin-note">A gentle pastoral message will appear in each donor’s My AGAPAY dashboard the next time they log in.</p>' +
-    '<button class="sw-nudge-send-btn" type="button" id="nudgeSendBtn" onclick="sendNudges(this)">Send nudges</button>' +
-    '</div>' +
-    '</div>';
+    '<div class="sw-nudge-admin-modal"><div class="sw-nudge-admin-header"><h3>Nudge Behind-Schedule Donors</h3><button class="sw-nudge-admin-close" type="button" onclick="closeNudgeModal()" aria-label="Close">×</button></div><div class="sw-nudge-admin-body" id="nudgeAdminBody"><p class="sw-loading">Loading…</p></div><div class="sw-nudge-admin-footer" id="nudgeAdminFooter" hidden><p class="sw-nudge-admin-note">A gentle pastoral message will appear in each donor’s My AGAPAY dashboard the next time they log in.</p><button class="sw-nudge-send-btn" type="button" id="nudgeSendBtn" onclick="sendNudges(this)">Send nudges</button></div></div>';
   el.addEventListener('click', (e) => {
     if (e.target === el) closeNudgeModal();
   });
   document.body.appendChild(el);
 }
-
 function renderNudgePreview(data) {
   const body = document.getElementById('nudgeAdminBody');
   const footer = document.getElementById('nudgeAdminFooter');
@@ -106,7 +84,7 @@ function renderNudgePreview(data) {
   if (!behind.length) {
     body.innerHTML =
       '<p class="sw-nudge-none">All pledging donors are on track for ' +
-      (data.year || new Date().getFullYear()) +
+      (data.year || /* @__PURE__ */ new Date().getFullYear()) +
       '. No nudges needed.</p>';
     if (footer) footer.hidden = true;
     return;
@@ -117,34 +95,25 @@ function renderNudgePreview(data) {
     ' donor' +
     (behind.length !== 1 ? 's are' : ' is') +
     ' behind schedule for ' +
-    (data.year || new Date().getFullYear()) +
-    '.</p>' +
-    '<div class="sw-nudge-list">' +
+    (data.year || /* @__PURE__ */ new Date().getFullYear()) +
+    '.</p><div class="sw-nudge-list">' +
     behind
       .map(
         (d) =>
-          '<div class="sw-nudge-row-preview">' +
-          '<span class="sw-nudge-email">' +
+          '<div class="sw-nudge-row-preview"><span class="sw-nudge-email">' +
           escapeHtml(d.donorEmail) +
-          '</span>' +
-          '<span class="sw-nudge-amounts">' +
-          '<span>Pledged: ' +
+          '</span><span class="sw-nudge-amounts"><span>Pledged: ' +
           fmt(d.pledgeCents) +
-          '</span>' +
-          '<span>Given: ' +
+          '</span><span>Given: ' +
           fmt(d.givenCents) +
-          '</span>' +
-          '<span class="sw-nudge-behind">Behind: ' +
+          '</span><span class="sw-nudge-behind">Behind: ' +
           fmt(d.expectedCents - d.givenCents) +
-          '</span>' +
-          '</span>' +
-          '</div>'
+          '</span></span></div>'
       )
       .join('') +
     '</div>';
   if (footer) footer.hidden = false;
 }
-
 async function sendNudges(btn) {
   if (!currentParish || !nudgePreviewData?.behind?.length) return;
   if (btn) {
@@ -152,10 +121,13 @@ async function sendNudges(btn) {
     btn.textContent = 'Sending…';
   }
   try {
-    const res = await fetch(stewardshipApi('/nudge?year=' + (nudgePreviewData.year || new Date().getFullYear())), {
-      method: 'POST',
-      headers: authHeaders(),
-    });
+    const res = await fetch(
+      stewardshipApi('/nudge?year=' + (nudgePreviewData.year || /* @__PURE__ */ new Date().getFullYear())),
+      {
+        method: 'POST',
+        headers: authHeaders(),
+      }
+    );
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Failed to send nudges');
     const body = document.getElementById('nudgeAdminBody');
@@ -176,7 +148,6 @@ async function sendNudges(btn) {
     setStatus(e.message, 'error');
   }
 }
-
 function closeNudgeModal() {
   const m = document.getElementById('nudgeAdminModal');
   if (m) m.hidden = true;

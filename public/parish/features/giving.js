@@ -1,11 +1,5 @@
+// Generated from src/browser/parish/features/giving.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global activeTab, currentParish, allGifts, loadGivingHistory, renderGiversPanel,
-  renderGivingOptionsEditor, loadSettlementProfilesPanel, loadReconciliation, statusLabel,
-  loadGivingSummary, loadGivingOverviewInsights, loadWeeklyFunds, loadOutsideGiving, loadRecurringHealth, renderQrCode, loadCommemorations, initReconciliationMonths */
-
-// Giving owns its tab workflows and delayed dashboard refresh work.
-// Authentication, settings saves, and shared catalog state remain in core.
 function loadGivingTab(tab = activeTab) {
   if (tab === 'giving') loadGivingOverviewInsights();
   if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length)
@@ -18,7 +12,6 @@ function loadGivingTab(tab = activeTab) {
   }
   if (tab === 'reconcile' && currentParish) loadReconciliation();
 }
-
 function renderGivingOverviewStatus() {
   const p = currentParish;
   const overviewStatus = document.getElementById('overviewGivingStatus');
@@ -40,7 +33,6 @@ function renderGivingOverviewStatus() {
   if (overviewFunds) overviewFunds.textContent = (p.funds || []).length;
   if (overviewCampaigns) overviewCampaigns.textContent = (p.campaigns || []).length;
 }
-
 function refreshGivingDashboard() {
   setTimeout(() => loadGivingSummary(), 250);
   setTimeout(() => loadWeeklyFunds(), 350);
@@ -48,12 +40,11 @@ function refreshGivingDashboard() {
   setTimeout(async () => {
     await renderQrCode();
   }, 750);
-  setTimeout(() => loadCommemorations(), 1000);
+  setTimeout(() => loadCommemorations(), 1e3);
   if (['history', 'givers', 'options'].includes(activeTab)) loadGivingHistory();
   else setTimeout(() => loadGivingHistory(), 1250);
   if (activeTab === 'reconcile') loadReconciliation();
 }
-
 window.ParishFeatureRegistry.register('giving', {
   load: loadGivingTab,
   refresh: refreshGivingDashboard,

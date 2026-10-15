@@ -1,21 +1,11 @@
+// Generated from src/browser/parish/dashboard-runtime.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* exported loadDashboard, bookstoreCatalogState, bookstoreLowStockOnly, parishFeatureRequests */
-/* global dashboardLoadPromise:writable, currentParish:writable,
-  bookstoreCatalogState:writable, bookstoreLowStockOnly:writable, parishFeatureRequests:writable,
-  activeTab, setStatus, authHeaders, refreshSubscriptionStatus,
-  refreshStripeStatus, refreshParishLibraryNavigationStatus, saveSession, renderDashboard,
-  syncBookstoreLowStockNavigation, loadBookstoreLowStockBadge, switchTab, setSacramentsDashboardTab,
-  showParishFeatureRequestPopup, updateStewardshipBadges, isParishPlusActive, loadRegisteredParishFeature */
-
-// Dashboard boot/retry lifecycle. Read legacy shared state only when called.
 function setDashboardBootMessage(title, message) {
   const titleEl = document.getElementById('dashboardBootTitle');
   const messageEl = document.getElementById('dashboardBootMessage');
   if (titleEl && title) titleEl.textContent = title;
   if (messageEl && message) messageEl.textContent = message;
 }
-
 function finishDashboardBoot() {
   document.body.classList.remove('dashboard-booting', 'dashboard-load-failed');
   document.body.classList.add('dashboard-ready');
@@ -23,7 +13,6 @@ function finishDashboardBoot() {
   document.getElementById('dashboardBootRetry')?.setAttribute('hidden', '');
   document.getElementById('dashboardBootRecovery')?.setAttribute('hidden', '');
 }
-
 function failDashboardBoot(message) {
   setDashboardBootMessage('We could not open the dashboard', message || 'Please sign in again and retry.');
   document.body.classList.add('dashboard-load-failed');
@@ -31,12 +20,10 @@ function failDashboardBoot(message) {
   document.getElementById('dashboardBootRetry')?.removeAttribute('hidden');
   document.getElementById('dashboardBootRecovery')?.removeAttribute('hidden');
 }
-
 function setDashboardRefreshing(refreshing) {
   document.body.classList.toggle('dashboard-refreshing', refreshing);
   document.querySelector('.app')?.setAttribute('aria-busy', refreshing ? 'true' : 'false');
 }
-
 async function loadDashboard(btn) {
   if (dashboardLoadPromise) return dashboardLoadPromise;
   dashboardLoadPromise = loadDashboardInner(btn);
@@ -46,7 +33,6 @@ async function loadDashboard(btn) {
     dashboardLoadPromise = null;
   }
 }
-
 async function loadDashboardInner(btn) {
   const parishId = document.getElementById('parishId').value.trim();
   const previousParish = currentParish;

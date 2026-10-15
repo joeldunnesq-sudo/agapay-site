@@ -1,7 +1,5 @@
+// Generated from src/browser/parish/diagnostics.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Local diagnostics only: never retain raw errors, messages, request bodies,
-// headers, storage values, or arbitrary context supplied by callers.
 (function installDiagnostics(global) {
   const messages = Object.freeze({
     'dashboard.load': 'Unable to load the dashboard. Please try again.',
@@ -10,9 +8,15 @@
     'browser.error': 'An unexpected error occurred. Please reload and try again.',
     'browser.unhandledrejection': 'An unexpected error occurred. Please reload and try again.',
   });
-  const types = new Set(['Error', 'TypeError', 'SyntaxError', 'RangeError', 'ReferenceError', 'AbortError']);
+  const types = /* @__PURE__ */ new Set([
+    'Error',
+    'TypeError',
+    'SyntaxError',
+    'RangeError',
+    'ReferenceError',
+    'AbortError',
+  ]);
   const recent = [];
-
   function sourceFrames(error) {
     const scripts = new Set(
       Array.from(document.scripts, (script) => {
@@ -22,11 +26,10 @@
     );
     const stack = error?.stack;
     return (typeof stack === 'string' ? stack : '')
-      .slice(0, 16_384)
+      .slice(0, 16384)
       .split('\n')
       .slice(1)
       .flatMap((line) => {
-        // Keep source locations, not function names or the message at stack[0].
         const frame = line.match(/(https?:\/\/[^\s)]+):(\d+):(\d+)\)?$/);
         if (!frame) return [];
         const url = new URL(frame[1]);
@@ -35,7 +38,6 @@
       })
       .slice(0, 12);
   }
-
   function report(error, operation) {
     const known = typeof operation === 'string' && Object.hasOwn(messages, operation) ? operation : 'browser.error';
     let message = messages[known];
@@ -53,19 +55,16 @@
         operation: known,
         type: types.has(type) ? type : 'Error',
         status,
-        time: new Date().toISOString(),
+        time: /* @__PURE__ */ new Date().toISOString(),
         stackSource,
         frames: Object.freeze(frames),
       });
       recent.push(entry);
       if (recent.length > 20) recent.shift();
       global.console.error(`[AGAPAY diagnostic] ${JSON.stringify(entry)}`);
-    } catch {
-      // Reporting must not replace the original failure or prevent recovery.
-    }
+    } catch {}
     return message;
   }
-
   global.AgapayDiagnostics = Object.freeze({ report, recent: () => recent.slice() });
   global.addEventListener('error', (event) => report(event.error, 'browser.error'));
   global.addEventListener('unhandledrejection', (event) => report(event.reason, 'browser.unhandledrejection'));

@@ -1,5 +1,4 @@
-// Keep contact drafts only in this browser tab, never passwords, documents,
-// CAPTCHA tokens, or legal consent. Restored drafts always restart at step one.
+// Generated from src/browser/registration-assistance.ts by npm run build:browser. Do not edit.
 (() => {
   const key = 'agapay_registration_draft_v1';
   const retryKey = 'agapay_registration_retry_v1';
@@ -7,24 +6,18 @@
   window.registrationRetryKey = () => {
     try {
       submissionKey ||= sessionStorage.getItem(retryKey);
-    } catch {
-      /* Optional storage. */
-    }
+    } catch {}
     submissionKey ||= crypto.randomUUID();
     try {
       sessionStorage.setItem(retryKey, submissionKey);
-    } catch {
-      /* Keep the in-memory key for retries. */
-    }
+    } catch {}
     return submissionKey;
   };
   window.finishRegistrationRetry = () => {
     submissionKey = null;
     try {
       sessionStorage.removeItem(retryKey);
-    } catch {
-      /* Optional storage. */
-    }
+    } catch {}
   };
   const fields = [
     'parishName',
@@ -80,14 +73,12 @@
   window.clearRegistrationDraft = () => {
     try {
       sessionStorage.removeItem(key);
-    } catch {
-      /* Storage may be disabled. */
-    }
+    } catch {}
   };
   document.addEventListener('DOMContentLoaded', () => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(key) || 'null');
-      if (saved && Date.now() - saved.savedAt < 24 * 60 * 60 * 1000) {
+      if (saved && Date.now() - saved.savedAt < 24 * 60 * 60 * 1e3) {
         if (saved.communityType) window.showOrganizationFlow(saved.communityType);
         for (const id of fields) {
           const input = document.getElementById(id);
@@ -121,9 +112,7 @@
             values: Object.fromEntries(fields.map((id) => [id, document.getElementById(id)?.value || ''])),
           })
         );
-      } catch {
-        /* Registration remains usable when browser storage is disabled. */
-      }
+      } catch {}
     };
     document.addEventListener('input', save);
     document.addEventListener('change', save);

@@ -11,6 +11,8 @@ const check = process.argv.includes('--check');
 const urls = new Map([...appAssets, ...pageAssets].map((asset) => [asset, appAssetUrl(asset)]));
 const changed = [];
 for (const file of htmlFilesUnder('public')) {
+  // Published Terms are a preserved, hashed legal snapshot, including its stable chrome URL.
+  if (file === 'public/terms.html') continue;
   const filename = path.join(repoRoot, file);
   const html = readFileSync(filename, 'utf8');
   const next = versionAppAssetReferences(html, urls);

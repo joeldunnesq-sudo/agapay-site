@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/library.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish Library bridge between the dashboard shell and the standalone library admin.
-// Loaded before app.js to preserve the existing global dashboard action names.
-
 function loadParishLibraryAdmin(force = false) {
   const included = moduleIncluded('library');
   syncTierRequirementNavigation('library', 'Give +', included);
@@ -10,8 +7,7 @@ function loadParishLibraryAdmin(force = false) {
   if (!included) {
     const root = document.getElementById('parishLibraryAdmin');
     if (root)
-      root.innerHTML =
-        '<div class="communications-paywall"><strong>Parish Library is included with Give +.</strong><p>Upgrade to publish documents and trusted links for parishioners in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'settings\')">Review Give +</button></div>';
+      root.innerHTML = `<div class="communications-paywall"><strong>Parish Library is included with Give +.</strong><p>Upgrade to publish documents and trusted links for parishioners in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Give +</button></div>`;
     return;
   }
   if (!currentParish?.parishId) return;
@@ -26,7 +22,6 @@ function loadParishLibraryAdmin(force = false) {
     },
   });
 }
-
 async function refreshParishLibraryNavigationStatus() {
   const included = moduleIncluded('library');
   syncTierRequirementNavigation('library', 'Give +', included);
@@ -54,7 +49,6 @@ async function refreshParishLibraryNavigationStatus() {
     );
   }
 }
-
 window.ParishFeatureRegistry.register('library', {
   load: loadParishLibraryAdmin,
   refreshNavigationStatus: refreshParishLibraryNavigationStatus,
