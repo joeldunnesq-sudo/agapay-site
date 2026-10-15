@@ -120,3 +120,19 @@ export function resolveParishDashboardSession(
 export function markParishDashboardSessionMfaVerified<
   T extends import('../handlers/parish-dashboard-handler.js').DashboardRegistration,
 >(registration: T, sessionId: string | undefined, verifiedAt?: string): { registration: T; changed: boolean };
+
+export { corsHeaders } from './http-responses.js';
+export function claimStripeEvent(
+  env: Partial<Env>,
+  event?: { id?: string; type?: string }
+): Promise<{ claimed: boolean; reason?: string }>;
+export function finishStripeEvent(
+  env: Partial<Env>,
+  eventId: string,
+  status?: string,
+  errorMessage?: string
+): Promise<void>;
+
+export function donorCheckoutIndexKey(id: string): string;
+export function donorOfferingKey(email: string, id: string): string;
+export function stripePaymentIntentIndexKey(id: string): string;

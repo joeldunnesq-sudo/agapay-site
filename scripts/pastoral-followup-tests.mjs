@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -518,7 +519,7 @@ assert.match(pastoralDigest, /Upcoming · next 7 days/);
 assert.match(pastoralDigest, /Care notes are not included/);
 assert.match(adminRoute, /send-daily-pastoral-digest/);
 assert.match(wrangler, /"0 14 \* \* \*"/);
-assert.match(parishSacramentsHandler, /updated\.request_source === "pastoral_memorial"/);
-assert.match(parishSacramentsHandler, /updated\.request_source !== "pastoral_memorial"/);
+assert.ok(includesJavaScriptFragment(parishSacramentsHandler, 'updated.request_source === "pastoral_memorial"'));
+assert.ok(includesJavaScriptFragment(parishSacramentsHandler, 'updated.request_source !== "pastoral_memorial"'));
 
 console.log('PASS - Named-clergy queues, repose ticklers, and idempotent daily pastoral digests are wired end to end');

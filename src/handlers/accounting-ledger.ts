@@ -1,0 +1,328 @@
+import type { AccountingHttpContext, AccountingHttpFailure } from './accounting-http-contracts.js';
+type LedgerRouteBody = Omit<Parameters<typeof recordSimpleDeposit>[1], 'actor'> &
+  Omit<Parameters<typeof recordSplitDeposit>[1], 'actor'> &
+  Omit<Parameters<typeof recordInKindGift>[1], 'actor'> &
+  Omit<Parameters<typeof createJournalDraft>[1], 'actor'> &
+  Omit<Parameters<typeof postJournalEntry>[1], 'actor' | 'journalEntryId'> &
+  Omit<Parameters<typeof reverseJournalEntry>[1], 'actor' | 'journalEntryId'> &
+  Omit<Parameters<typeof postOpeningBalanceBatch>[1], 'actor'> &
+  Omit<Parameters<typeof updateJournalDraft>[1], 'actor' | 'journalEntryId'> & { reason: string; date?: Date };
+import type { CatalogRegistration } from './parish-giving-catalog.js';
+interface AccountingContextDependencies {
+  postServiceInvoices?: typeof postServiceInvoices;
+  findRegistrationByParishId?: typeof findRegistrationByParishId;
+  authorize?: typeof authorize;
+  requireAccountingStaffProfile?: typeof requireAccountingStaffProfile;
+  resolveAccountingDatabaseForRegistration?: typeof resolveAccountingDatabaseForRegistration;
+}
+import { postServiceInvoices } from '../accounting/service-costs.js';
+import { json } from '../lib/core.js';
+import { authorize } from '../lib/authorization.js';
+import { requireAccountingStaffProfile } from '../lib/accounting-staff.js';
+import { accountingEnabledFor, accountingTierFor } from '../lib/entitlements.js';
+import {
+  authorizeOrganization,
+  bindOrganizationAuthorizationContext,
+  evaluateOrganizationModuleAccess,
+  ORGANIZATION_MODULES,
+} from '../organizations/index.js';
+import { findRegistrationByParishId } from './parish.js';
+import {
+  createD1DatabaseFacade,
+  createJournalDraft,
+  detectAccountingEnvironment,
+  getJournalEntry,
+  initializeLedger,
+  ledgerInitializationStatus,
+  ledgerRegister,
+  ledgerRegisterCsv,
+  loadAccountingDatabaseForEntity,
+  loadAccountingDatabaseProviderRecord,
+  loadAccountingEntityByParish,
+  postJournalEntry,
+  postOpeningBalanceBatch,
+  printableLedger,
+  recordInKindGift,
+  recordSimpleDeposit,
+  recordSplitDeposit,
+  resolveCloudflareD1Adapter,
+  reverseJournalEntry,
+  searchJournalEntries,
+  updateJournalDraft,
+  validateJournalEntryForPosting,
+  validateLedgerFoundation,
+  voidJournalDraft,
+} from '../accounting/index.js';
+const HEADERS = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', Vary: 'Authorization' };
+const reply = (payload: unknown, status = 200) => json(payload, { status, headers: HEADERS });
+async function resolveAccountingDatabaseForRegistration(
+  env: Partial<Env>,
+  parishId: string,
+  registration: CatalogRegistration | null
+) {
+  const environment = detectAccountingEnvironment(env),
+    entity = await loadAccountingEntityByParish(env, parishId),
+    registry = entity && (await loadAccountingDatabaseForEntity(env, entity.id, environment));
+  if (
+    !accountingEnabledFor(registration) ||
+    !entity ||
+    !registry ||
+    entity.entityStatus !== 'ready' ||
+    entity.activationStatus !== 'active' ||
+    registry.provisioningStatus !== 'ready' ||
+    registry.healthStatus !== 'healthy'
+  )
+    return { registration, entity, registry, db: null };
+  const provider = await loadAccountingDatabaseProviderRecord(env, entity.id, environment);
+  if (!provider) return { registration, entity, registry, provider: null, db: null };
+  const adapter = await resolveCloudflareD1Adapter(env, provider.databaseIdentifier),
+    physical = await adapter.findByName(provider.databaseIdentifier);
+  return {
+    registration,
+    entity,
+    registry,
+    provider,
+    physical,
+    db: physical ? createD1DatabaseFacade(adapter, physical.providerId) : null,
+  };
+}
+
+export async function resolveAccountingDatabaseForParish(env: Partial<Env>, parishId: string) {
+  const registration = (await findRegistrationByParishId(env, parishId))?.registration || null;
+  return resolveAccountingDatabaseForRegistration(env, parishId, registration);
+}
+
+export async function accountingContext(
+  request: Request,
+  env: Partial<Env>,
+  parishId: string,
+  capability: string,
+  dependencies: AccountingContextDependencies = {}
+): Promise<
+  (AccountingHttpContext & { organization: unknown; organizationScope: unknown }) | AccountingHttpFailure | null
+> {
+  const findRegistration = dependencies.findRegistrationByParishId || findRegistrationByParishId,
+    authorizeLegacyParish = dependencies.authorize || authorize,
+    requireLegacyStaff = dependencies.requireAccountingStaffProfile || requireAccountingStaffProfile,
+    resolveDatabase = dependencies.resolveAccountingDatabaseForRegistration || resolveAccountingDatabaseForRegistration,
+    found = await findRegistration(env, parishId);
+  if (!found?.registration) return null;
+  const moduleAccess = evaluateOrganizationModuleAccess(
+    found.registration,
+    ORGANIZATION_MODULES.ACCOUNTING,
+    accountingEnabledFor,
+    { organizationId: parishId, registrationReference: found.key }
+  );
+  if (!moduleAccess.organization) return null;
+  const platformAuthorization = await authorizeOrganization(request, env, {
+      organization: moduleAccess.organization,
+      capability,
+      authorize: authorizeLegacyParish,
+    }),
+    staffAuthorization = platformAuthorization
+      ? null
+      : await requireLegacyStaff(request, env, moduleAccess.organization.legacy.parishId, capability),
+    auth = platformAuthorization || bindOrganizationAuthorizationContext(staffAuthorization, moduleAccess.organization);
+  if (!auth) return null;
+  if (!moduleAccess.allowed)
+    return { error: reply({ error: 'Accounting is not included in this subscription.' }, 403) };
+  const tenantParishId = auth.organizationScope.legacyParishId,
+    resolved = await resolveDatabase(env, tenantParishId, found.registration),
+    { registration, entity, registry, db } = resolved;
+  if (!accountingEnabledFor(registration))
+    return { error: reply({ error: 'Accounting is not included in this subscription.' }, 403) };
+  if (
+    !entity ||
+    entity.entityStatus !== 'ready' ||
+    entity.activationStatus !== 'active' ||
+    registry?.provisioningStatus !== 'ready' ||
+    registry?.healthStatus !== 'healthy'
+  )
+    return {
+      error: reply(
+        {
+          error:
+            'Accounting is included, but its books are not ready or did not pass their safety checks. Contact AGAPAY support to complete setup.',
+          accounting: { status: entity ? 'unavailable' : 'setup_required', ready: false },
+        },
+        409
+      ),
+    };
+  if (!db) return { error: reply({ error: 'Accounting database is unavailable.' }, 503) };
+  await (dependencies.postServiceInvoices || postServiceInvoices)(env, db, tenantParishId);
+  return {
+    db,
+    entityId: entity.id,
+    registration: registration!,
+    organization: auth.organization,
+    organizationScope: auth.organizationScope,
+    actor: {
+      id: auth.user.id,
+      type: (auth as { actorType?: string }).actorType || 'platform_user',
+      capabilities: (auth.capabilities as readonly string[]) || [],
+    },
+    tier: accountingTierFor(registration),
+    databaseStatus: registry.provisioningStatus,
+    databaseHealth: registry.healthStatus,
+  };
+}
+export async function handleAccountingLedger(request: Request, env: Partial<Env>, parishId: string) {
+  const url = new URL(request.url),
+    base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting`,
+    path = url.pathname.slice(base.length),
+    match = path.match(/^\/journals(?:\/([^/]+))?(?:\/([^/]+))?$/);
+  if (!url.pathname.startsWith(base)) return null;
+  let capability = request.method === 'GET' ? 'accounting.view' : 'accounting.journals.create';
+  if (match?.[2] === 'post') capability = 'accounting.journals.post';
+  if (match?.[2] === 'reverse') capability = 'accounting.journals.reverse';
+  if (path === '/ledger/opening-balances') capability = 'accounting.opening_balances.manage';
+  if (path === '/ledger/initialize') capability = 'accounting.configure';
+  try {
+    const ctx = await accountingContext(request, env, parishId, capability);
+    if (!ctx) return reply({ error: 'Unauthorized' }, 401);
+    if (ctx.error) return ctx.error;
+    const data = (await request.json().catch(() => ({}))) as LedgerRouteBody;
+    if (request.method === 'POST' && path === '/simple/deposits')
+      return reply({ ok: true, entry: await recordSimpleDeposit(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+    if (request.method === 'POST' && path === '/simple/split-deposits')
+      return reply({ ok: true, entry: await recordSplitDeposit(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+    if (request.method === 'POST' && path === '/simple/in-kind-gifts')
+      return reply({ ok: true, entry: await recordInKindGift(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+    if (match) {
+      const id = match[1] ? decodeURIComponent(match[1]) : '',
+        action = match[2] || '';
+      if (request.method === 'GET' && !id)
+        return reply({
+          ok: true,
+          tier: ctx.tier,
+          entries: await searchJournalEntries(ctx.db, {
+            actor: ctx.actor,
+            query: url.searchParams.get('q') || '',
+            status: url.searchParams.get('status') || '',
+            sourceType: url.searchParams.get('sourceType') || '',
+            dateFrom: url.searchParams.get('from') || '',
+            dateTo: url.searchParams.get('to') || '',
+            limit: url.searchParams.get('limit') || 50,
+            offset: url.searchParams.get('offset') || 0,
+          }),
+        });
+      if (request.method === 'POST' && !id)
+        return reply({ ok: true, entry: await createJournalDraft(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+      if (request.method === 'GET' && id && !action)
+        return reply({ ok: true, entry: await getJournalEntry(ctx.db, { actor: ctx.actor, journalEntryId: id }) });
+      if (request.method === 'PATCH' && id)
+        return reply({
+          ok: true,
+          entry: await updateJournalDraft(ctx.db, { actor: ctx.actor, journalEntryId: id, ...data }),
+        });
+      if (request.method === 'POST' && action === 'validate')
+        return reply({
+          ok: true,
+          validation: await validateJournalEntryForPosting(ctx.db, {
+            journalEntryId: id,
+            expectedVersion: data.expectedVersion,
+          }),
+        });
+      if (request.method === 'POST' && action === 'post')
+        return reply({
+          ok: true,
+          entry: await postJournalEntry(ctx.db, { actor: ctx.actor, journalEntryId: id, ...data }),
+        });
+      if (request.method === 'POST' && action === 'reverse')
+        return reply({
+          ok: true,
+          entry: await reverseJournalEntry(ctx.db, {
+            actor: ctx.actor,
+            journalEntryId: id,
+            entryDate: data.entryDate,
+            reason: data.reason,
+            idempotencyKey: data.idempotencyKey,
+            requestHash: data.requestHash || data.idempotencyKey,
+            correlationId: data.correlationId,
+          }),
+        });
+      if (request.method === 'POST' && action === 'void')
+        return reply({
+          ok: true,
+          entry: await voidJournalDraft(ctx.db, {
+            actor: ctx.actor,
+            journalEntryId: id,
+            reason: data.reason,
+            correlationId: data.correlationId,
+          }),
+        });
+    }
+    if (request.method === 'POST' && path === '/ledger/opening-balances')
+      return reply(
+        {
+          ok: true,
+          entry: await postOpeningBalanceBatch(ctx.db, {
+            actor: ctx.actor,
+            effectiveDate: data.effectiveDate,
+            description: data.description,
+            lines: data.lines,
+            idempotencyKey: data.idempotencyKey,
+            requestHash: data.requestHash || data.idempotencyKey,
+            correlationId: data.correlationId,
+          }),
+        },
+        201
+      );
+    if (request.method === 'POST' && path === '/ledger/initialize')
+      return reply({
+        ok: true,
+        initialization: await initializeLedger(ctx.db, {
+          actor: ctx.actor,
+          date: data.date,
+          correlationId: data.correlationId,
+        }),
+      });
+    if (request.method === 'GET' && path === '/ledger/status')
+      return reply({ ok: true, status: await ledgerInitializationStatus(ctx.db) });
+    if (request.method === 'GET' && path === '/ledger/validate')
+      return reply({ ok: true, validation: await validateLedgerFoundation(ctx.db) });
+    const reg = path.match(/^\/(general-ledger|account-registers|fund-registers)(?:\/([^/]+))?$/);
+    if (request.method === 'GET' && reg) {
+      const rows = await ledgerRegister(ctx.db, {
+        actor: ctx.actor,
+        accountId: reg[1] === 'account-registers' ? decodeURIComponent(reg[2] || '') : '',
+        fundId: reg[1] === 'fund-registers' ? decodeURIComponent(reg[2] || '') : '',
+        dateFrom: url.searchParams.get('from') || '',
+        dateTo: url.searchParams.get('to') || '',
+      });
+      return reply({ ok: true, rows });
+    }
+    const exp = path.match(/^\/exports\/(general-ledger|accounts|funds)(?:\/([^/]+))?\.csv$/);
+    if (request.method === 'GET' && exp) {
+      const rows = await ledgerRegister(ctx.db, {
+        actor: ctx.actor,
+        accountId: exp[1] === 'accounts' ? decodeURIComponent(exp[2] || '') : '',
+        fundId: exp[1] === 'funds' ? decodeURIComponent(exp[2] || '') : '',
+      });
+      return new Response(ledgerRegisterCsv(rows), {
+        headers: {
+          ...HEADERS,
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename=agapay-ledger.csv',
+        },
+      });
+    }
+    if (request.method === 'GET' && path === '/print/general-ledger') {
+      const rows = await ledgerRegister(ctx.db, { actor: ctx.actor });
+      return new Response(printableLedger(rows), {
+        headers: { ...HEADERS, 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+    return reply({ error: 'Not found' }, 404);
+  } catch (error) {
+    return reply(
+      {
+        error: (error as { details?: { conflict?: boolean } } | null)?.details?.conflict
+          ? 'conflict'
+          : 'accounting_request_failed',
+        message: (error as Error | null)?.message || 'Accounting request failed.',
+      },
+      (error as { details?: { conflict?: boolean } } | null)?.details?.conflict ? 409 : 400
+    );
+  }
+}

@@ -1,6 +1,4 @@
-// src/handlers/parish-commerce.js
-// Parish bookstore operations, settlement profiles, and commerce webhooks.
-
+// Generated from src/handlers/parish-commerce.ts by npm run build:server. Do not edit.
 import {
   SETTLEMENT_PROFILE_TYPES,
   assignModuleProfile,
@@ -33,15 +31,13 @@ import {
   unauthorized,
   verifyParishDashboardBearer,
 } from './parish.js';
-
 import {
   applyBookstoreInventoryAtCompletion,
   changedRows,
   promotePaidScannedBooksToCatalog,
 } from './parish-bookstore-inventory.js';
-
-export {
-  applyBookstoreInventoryAtCompletion,
+import {
+  applyBookstoreInventoryAtCompletion as applyBookstoreInventoryAtCompletion2,
   closeBookstoreCountSession,
   getBookstoreCountSession,
   listBookstoreCountSessions,
@@ -51,38 +47,27 @@ export {
   receiveBookstoreStock,
   startBookstoreCountSession,
 } from './parish-bookstore-inventory.js';
-
-export { handleParishBookstore } from './parish-bookstore-handler.js';
-
+import { handleParishBookstore } from './parish-bookstore-handler.js';
 const commerceDatabase = (env) => env.AGAPAY_DB || env.DB || null;
-export async function handleParishSettlementProfiles(request, env, parishId, subpath = '') {
+async function handleParishSettlementProfiles(request, env, parishId, subpath = '') {
   const limited = await rateLimit(request, env, 'parish-settlement-profiles', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   if (!commerceDatabase(env)) return missingProductionStoreResponse();
-
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
-
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
-
   const segments = String(subpath || '')
     .replace(/^\/+/, '')
     .split('/')
     .filter(Boolean);
-
-  // Every request self-heals the parish's giving default, and its commerce
-  // default if Parish + is active, so the list is never empty for a
-  // verified parish — mirrors the "ensure a default profile exists" spec
-  // without needing a separate onboarding hook to have run first.
   await ensureDefaultGivingProfile(env, parishId);
   if (bookstoreEnabledFor(found.registration)) {
     await ensureDefaultCommerceProfile(env, parishId);
   }
-
   if (request.method === 'GET' && segments.length === 0) {
     const profiles = await listSettlementProfiles(env, parishId);
     return json({
@@ -91,7 +76,6 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
       stewardshipActive: bookstoreEnabledFor(found.registration),
     });
   }
-
   if (request.method === 'POST' && segments.length === 0) {
     let body = {};
     try {
@@ -99,14 +83,15 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     } catch {
       return json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    const result = await createSettlementProfile(env, parishId, { name: body.name, profileType: body.profileType });
+    const result = await createSettlementProfile(env, parishId, {
+      name: body.name,
+      profileType: body.profileType,
+    });
     if (result.error) return json({ error: result.error }, { status: 422 });
     return json({ profile: settlementProfileToJson(result.profile) });
   }
-
   const profileId = segments[0];
   if (!profileId) return json({ error: 'Not found' }, { status: 404 });
-
   if (request.method === 'PATCH' && segments.length === 1) {
     let body = {};
     try {
@@ -144,7 +129,6 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     }
     return json({ error: 'Nothing to update' }, { status: 400 });
   }
-
   if (request.method === 'POST' && segments[1] === 'default-giving') {
     const result = await setDefaultGivingProfile(env, parishId, profileId);
     if (result.error) return json({ error: result.error }, { status: 422 });
@@ -158,7 +142,6 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     });
     return json({ profile: settlementProfileToJson(result.profile) });
   }
-
   if (request.method === 'POST' && segments[1] === 'default-commerce') {
     const result = await setDefaultCommerceProfile(env, parishId, profileId);
     if (result.error) return json({ error: result.error }, { status: 422 });
@@ -172,7 +155,6 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     });
     return json({ profile: settlementProfileToJson(result.profile) });
   }
-
   if (request.method === 'POST' && segments[1] === 'assign-module') {
     let body = {};
     try {
@@ -193,22 +175,18 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     });
     return json(result);
   }
-
   return json({ error: 'Not found' }, { status: 404 });
 }
-
 function commerceMoney(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
 }
-
-export async function sendCommerceReceiptIfNeeded(env, orderId) {
+async function sendCommerceReceiptIfNeeded(env, orderId) {
   if (!commerceDatabase(env) || !orderId || !String(env.RESEND_API_KEY || '').trim()) {
     return { status: 'not_configured' };
   }
   const order = await d1First(env, 'SELECT * FROM commerce_orders WHERE id = ?', orderId);
   if (!order?.donor_email || !['paid', 'partially_refunded', 'refunded'].includes(order.payment_status)) return null;
-
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const claim = await d1Run(
     env,
     `
@@ -224,7 +202,6 @@ export async function sendCommerceReceiptIfNeeded(env, orderId) {
     order.id
   );
   if (changedRows(claim) !== 1) return { status: 'already_claimed' };
-
   try {
     const items = await d1All(
       env,
@@ -280,7 +257,11 @@ export async function sendCommerceReceiptIfNeeded(env, orderId) {
         <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#6F6A60;">This is a purchase receipt, not a charitable-contribution acknowledgment.</p>
       `
       ),
-      text: `${channelLabel} receipt from ${parishName}\nSubtotal: ${commerceMoney(order.subtotal_cents)}\nSales tax: ${commerceMoney(order.tax_cents)}\nTotal charged: ${commerceMoney(order.total_charged_cents)}\nThis is a purchase receipt, not a charitable-contribution acknowledgment.`,
+      text: `${channelLabel} receipt from ${parishName}
+Subtotal: ${commerceMoney(order.subtotal_cents)}
+Sales tax: ${commerceMoney(order.tax_cents)}
+Total charged: ${commerceMoney(order.total_charged_cents)}
+This is a purchase receipt, not a charitable-contribution acknowledgment.`,
     });
     const status = result?.status === 'sent' ? 'sent' : result?.status || 'failed';
     await d1Run(
@@ -301,29 +282,19 @@ export async function sendCommerceReceiptIfNeeded(env, orderId) {
     await d1Run(
       env,
       "UPDATE commerce_orders SET receipt_email_status = 'failed', updated_at = ? WHERE id = ?",
-      new Date().toISOString(),
+      /* @__PURE__ */ new Date().toISOString(),
       order.id
     );
     return { status: 'failed', detail: error?.message || String(error) };
   }
 }
-
-// Marks a commerce order paid once Stripe confirms, and reconciles
-// real Stripe fees / parish net from the balance transaction. Without this the
-// order sits at payment_status='pending' forever and never shows up in sales
-// reporting. Replays do not re-apply inventory; a later Checkout Session may
-// still reconcile automatic-tax facts after a PaymentIntent arrived first.
-// `object` is the Stripe checkout.session (kind='session') or payment_intent
-// (kind='payment_intent') from the webhook.
-export async function completeCommerceOrderFromStripe(env, object = {}, kind = 'session') {
+async function completeCommerceOrderFromStripe(env, object = {}, kind = 'session') {
   if (!commerceDatabase(env)) return null;
   const meta = object.metadata || {};
-
   const paymentIntentId =
     kind === 'payment_intent'
       ? object.id || ''
       : checkoutPaymentIntentId(object) || stripeObjectId(object.payment_intent) || '';
-
   let order = null;
   if (kind === 'session' && object.id) {
     order = await d1First(env, `SELECT * FROM commerce_orders WHERE checkout_session_id = ?`, object.id);
@@ -335,11 +306,8 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = '
     order = await d1First(env, `SELECT * FROM commerce_orders WHERE stripe_payment_intent_id = ?`, paymentIntentId);
   }
   if (!order) return null;
-  // Stripe does not guarantee webhook delivery order. A refund or dispute can
-  // be processed before a delayed payment/session completion event, so never
-  // let completion regress one of those later lifecycle states back to paid.
   if (['paid', 'partially_refunded', 'refunded', 'disputed', 'dispute_closed'].includes(order.payment_status)) {
-    const replayNow = new Date().toISOString();
+    const replayNow = /* @__PURE__ */ new Date().toISOString();
     let replayedOrder = order;
     if (kind === 'session') {
       const hasSessionTax = object.total_details?.amount_tax != null;
@@ -379,21 +347,19 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = '
     await promotePaidScannedBooksToCatalog(env, replayedOrder, replayNow);
     return replayedOrder;
   }
-
   const fees = paymentIntentId
     ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, order.parish_id, {
         chargeCents: numericCents(object.amount_total || object.amount_received || order.total_charged_cents),
         coverFees: order.cover_fees === 1,
       })
     : {};
-
   const totalCents =
     numericCents(object.amount_total || object.amount_received) ||
     Number(fees.chargeCents || 0) ||
     Number(order.subtotal_cents || 0);
   const taxCents = numericCents(object.total_details?.amount_tax) || Number(order.tax_cents || 0);
   const stripeFeeCents = Number(fees.stripeFeeCents || 0);
-  const agapayFeeCents = Number(fees.agapayFeeCents || 0); // bookstore takes no AGAPAY fee
+  const agapayFeeCents = Number(fees.agapayFeeCents || 0);
   const netCents = Number(fees.parishNetCents || Math.max(0, totalCents - stripeFeeCents - agapayFeeCents));
   const refundedCents = Number(fees.stripeRefundedCents || 0);
   const paymentStatus = fees.stripeDisputed
@@ -404,9 +370,8 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = '
         ? 'partially_refunded'
         : 'paid';
   const status = paymentStatus === 'paid' ? 'completed' : paymentStatus;
-  const now = new Date().toISOString();
-  const completedAt = object.created ? new Date(object.created * 1000).toISOString() : now;
-
+  const now = /* @__PURE__ */ new Date().toISOString();
+  const completedAt = object.created ? new Date(object.created * 1e3).toISOString() : now;
   await d1Run(
     env,
     `UPDATE commerce_orders
@@ -435,12 +400,10 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = '
     now,
     order.id
   );
-
   await promotePaidScannedBooksToCatalog(env, order, now);
   if (order.commerce_module === 'bookstore' || order.commerce_module === 'events') {
     await applyBookstoreInventoryAtCompletion(env, order, now, order.commerce_module);
   }
-
   return {
     ...order,
     payment_status: paymentStatus,
@@ -454,11 +417,7 @@ export async function completeCommerceOrderFromStripe(env, object = {}, kind = '
     completed_at: completedAt,
   };
 }
-
-// Reflects a Stripe refund back onto the bookstore order so sales reporting
-// stays honest. Safe to call for any charge — no-ops when the charge isn't a
-// bookstore order.
-export async function refundCommerceOrderFromStripe(env, charge = {}) {
+async function refundCommerceOrderFromStripe(env, charge = {}) {
   if (!commerceDatabase(env)) return null;
   const pi = stripeObjectId(charge.payment_intent);
   if (!pi) return null;
@@ -476,15 +435,12 @@ export async function refundCommerceOrderFromStripe(env, charge = {}) {
     `UPDATE commerce_orders SET payment_status = ?, status = ?, updated_at = ? WHERE id = ?`,
     state,
     state,
-    new Date().toISOString(),
+    /* @__PURE__ */ new Date().toISOString(),
     order.id
   );
   return order;
 }
-
-// Reflects Stripe disputes back onto commerce orders (any module). Safe to
-// call for any charge dispute: unknown payment intents no-op.
-export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = 'created') {
+async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = 'created') {
   if (!commerceDatabase(env)) return null;
   const pi = stripeObjectId(dispute.payment_intent);
   if (!pi) return null;
@@ -498,8 +454,25 @@ export async function disputeCommerceOrderFromStripe(env, dispute = {}, phase = 
     `UPDATE commerce_orders SET payment_status = ?, status = ?, updated_at = ? WHERE id = ?`,
     paymentStatus,
     state,
-    new Date().toISOString(),
+    /* @__PURE__ */ new Date().toISOString(),
     order.id
   );
   return order;
 }
+export {
+  applyBookstoreInventoryAtCompletion2 as applyBookstoreInventoryAtCompletion,
+  closeBookstoreCountSession,
+  completeCommerceOrderFromStripe,
+  disputeCommerceOrderFromStripe,
+  getBookstoreCountSession,
+  handleParishBookstore,
+  handleParishSettlementProfiles,
+  listBookstoreCountSessions,
+  listBookstoreLowStock,
+  patchBookstoreProduct,
+  patchBookstoreReorderThreshold,
+  receiveBookstoreStock,
+  refundCommerceOrderFromStripe,
+  sendCommerceReceiptIfNeeded,
+  startBookstoreCountSession,
+};

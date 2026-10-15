@@ -1,3 +1,4 @@
+// Generated from src/handlers/parish-outside-gifts.ts by npm run build:server. Do not edit.
 import { json, getBearerToken, resolveParishDashboardSession, rateLimit } from '../lib/core.js';
 import { findRegistrationByParishId } from './parish.js';
 import { givingFeatureAccess } from '../lib/entitlements.js';
@@ -15,7 +16,6 @@ import {
 } from '../lib/outside-gifts.js';
 import { validateOutsidePledge } from '../lib/outside-pledges.js';
 import { outsideAccountingAction } from './outside-gift-accounting.js';
-
 const reply = (body, status = 200) =>
   json(body, {
     status,
@@ -83,7 +83,7 @@ async function createGift(db, registration, actor, body) {
       409,
       'outside_gift_duplicate'
     );
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const row = {
     id: 'outside_' + crypto.randomUUID(),
     parish_id: parishId,
@@ -172,7 +172,6 @@ async function createGift(db, registration, actor, body) {
   }
   return { row: await outsideGiftRow(db, parishId, row.id), replayed: false };
 }
-
 async function changeGift(db, registration, actor, id, action, body) {
   const row = await outsideGiftRow(db, registration.parishId, id);
   if (!row) throw new OutsideGiftError('Gift not found.', 404);
@@ -190,7 +189,7 @@ async function changeGift(db, registration, actor, id, action, body) {
   const input = action === 'void' ? null : outsideGiftInput(body, registration);
   const giver = input ? await outsideGiver(db, registration.parishId, input.giverReferenceId) : null;
   if (input) await validateOutsidePledge(db, registration.parishId, input, giver);
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const next = { ...row, revision: row.revision + 1, updated_by: actor, updated_at: now };
   if (input)
     Object.assign(next, {
@@ -278,8 +277,7 @@ async function changeGift(db, registration, actor, id, action, body) {
   if (results[0].meta.changes !== 1) throw new OutsideGiftError('This record changed. Refresh before editing.', 409);
   return outsideGiftRow(db, registration.parishId, id);
 }
-
-export async function handleParishOutsideGifts(request, env, parishId, suffix = '') {
+async function handleParishOutsideGifts(request, env, parishId, suffix = '') {
   if (!['GET', 'POST'].includes(request.method)) return reply({ error: 'Method not allowed.' }, 405);
   const limited = await rateLimit(request, env, 'outside-gifts', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
@@ -309,10 +307,10 @@ export async function handleParishOutsideGifts(request, env, parishId, suffix = 
         )
         .bind(parishId, q, q)
         .all();
-      const givers = result.results.slice(0, 100).map((row) => {
-        const g = JSON.parse(row.data);
+      const givers = result.results.slice(0, 100).map((row2) => {
+        const g = JSON.parse(row2.data);
         return {
-          referenceId: row.id,
+          referenceId: row2.id,
           name: [g.firstName, g.lastName].filter(Boolean).join(' ') || g.donorName || 'Unnamed giver',
           email: g.email || g.donorEmail || '',
         };
@@ -323,28 +321,28 @@ export async function handleParishOutsideGifts(request, env, parishId, suffix = 
       return await outsideAccountingAction(request, env, registration, id, action, body);
     if (request.method === 'GET' && action) return reply({ error: 'Not found.' }, 404);
     if (request.method === 'GET' && id) {
-      const row = await outsideGiftRow(db, parishId, id);
-      if (!row) return reply({ error: 'Gift not found.' }, 404);
+      const row2 = await outsideGiftRow(db, parishId, id);
+      if (!row2) return reply({ error: 'Gift not found.' }, 404);
       const audit = await db
         .prepare(
           'SELECT revision,action,actor_id,reason,snapshot_json,created_at FROM outside_gift_audit WHERE parish_id=? AND gift_id=? ORDER BY revision DESC LIMIT 100'
         )
         .bind(parishId, id)
         .all();
-      return reply({ gift: await outsideGiftDto(db, row, registration), audit: audit.results });
+      return reply({ gift: await outsideGiftDto(db, row2, registration), audit: audit.results });
     }
     if (request.method === 'GET') {
       const params = new URL(request.url).searchParams;
-      const year = params.get('year') || new Date().getFullYear().toString();
+      const year = params.get('year') || /* @__PURE__ */ new Date().getFullYear().toString();
       if (!/^(19|20|21)\d{2}$/.test(year)) throw new OutsideGiftError('Choose a valid year.');
       const rows = await loadOutsideGiftRows(db, parishId, {
         start: year + '-01-01',
         end: year + '-12-31',
         includeVoided: true,
-        limit: 1000,
+        limit: 1e3,
       });
       const gifts = [];
-      for (const row of rows) gifts.push(await outsideGiftDto(db, row, registration));
+      for (const row2 of rows) gifts.push(await outsideGiftDto(db, row2, registration));
       return reply({ gifts, year, complete: true });
     }
     const actor = 'parish_session:' + session.id;
@@ -372,3 +370,4 @@ export async function handleParishOutsideGifts(request, env, parishId, suffix = 
     );
   }
 }
+export { handleParishOutsideGifts };

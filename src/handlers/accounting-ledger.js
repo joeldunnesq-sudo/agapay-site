@@ -1,3 +1,4 @@
+// Generated from src/handlers/accounting-ledger.ts by npm run build:server. Do not edit.
 import { postServiceInvoices } from '../accounting/service-costs.js';
 import { json } from '../lib/core.js';
 import { authorize } from '../lib/authorization.js';
@@ -65,13 +66,11 @@ async function resolveAccountingDatabaseForRegistration(env, parishId, registrat
     db: physical ? createD1DatabaseFacade(adapter, physical.providerId) : null,
   };
 }
-
-export async function resolveAccountingDatabaseForParish(env, parishId) {
+async function resolveAccountingDatabaseForParish(env, parishId) {
   const registration = (await findRegistrationByParishId(env, parishId))?.registration || null;
   return resolveAccountingDatabaseForRegistration(env, parishId, registration);
 }
-
-export async function accountingContext(request, env, parishId, capability, dependencies = {}) {
+async function accountingContext(request, env, parishId, capability, dependencies = {}) {
   const findRegistration = dependencies.findRegistrationByParishId || findRegistrationByParishId,
     authorizeLegacyParish = dependencies.authorize || authorize,
     requireLegacyStaff = dependencies.requireAccountingStaffProfile || requireAccountingStaffProfile,
@@ -127,13 +126,17 @@ export async function accountingContext(request, env, parishId, capability, depe
     registration,
     organization: auth.organization,
     organizationScope: auth.organizationScope,
-    actor: { id: auth.user.id, type: auth.actorType || 'platform_user', capabilities: auth.capabilities || [] },
+    actor: {
+      id: auth.user.id,
+      type: auth.actorType || 'platform_user',
+      capabilities: auth.capabilities || [],
+    },
     tier: accountingTierFor(registration),
     databaseStatus: registry.provisioningStatus,
     databaseHealth: registry.healthStatus,
   };
 }
-export async function handleAccountingLedger(request, env, parishId) {
+async function handleAccountingLedger(request, env, parishId) {
   const url = new URL(request.url),
     base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting`,
     path = url.pathname.slice(base.length),
@@ -291,3 +294,4 @@ export async function handleAccountingLedger(request, env, parishId) {
     );
   }
 }
+export { accountingContext, handleAccountingLedger, resolveAccountingDatabaseForParish };

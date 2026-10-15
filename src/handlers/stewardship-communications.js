@@ -1,6 +1,4 @@
-// src/handlers/stewardship-communications.js
-// Stewardship nudges and Stripe webhook-driven subscription updates.
-
+// Generated from src/handlers/stewardship-communications.ts by npm run build:server. Do not edit.
 import {
   claimStripeEvent,
   d1All,
@@ -20,7 +18,6 @@ import { invalidateOnboardingSignoffIfChanged } from '../lib/parish-onboarding.j
 import { findRegistrationByParishId, saveRegistrationRecord, verifyParishDashboardBearer } from './parish.js';
 import { verifyStripeWebhook } from './stripe.js';
 import { newId } from './stewardship-http.js';
-
 async function requireParishApiContext(request, env, parishId) {
   const token = getBearerToken(request);
   if (!parishId || !token) return { ok: false, response: unauthorized() };
@@ -31,8 +28,7 @@ async function requireParishApiContext(request, env, parishId) {
   }
   return { ok: true, registration: found.registration, key: found.key };
 }
-
-export async function handleStewardshipNudge(request, env, parishId) {
+async function handleStewardshipNudge(request, env, parishId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
@@ -43,26 +39,17 @@ export async function handleStewardshipNudge(request, env, parishId) {
   if (request.method !== 'GET' && request.method !== 'POST') {
     return json({ error: 'Method not allowed' }, { status: 405 });
   }
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   const dryRun = request.method === 'GET' || url.searchParams.get('dry_run') === 'true';
   const parishName = registration.parishName || registration.name || 'your parish';
-
-  // A donor is "3 months behind" if their actual giving is less than what
-  // they should have given by 3 months ago (92 days). This avoids nudging
-  // donors who are only a few weeks off pace.
-  const today = new Date();
-  const yearStart = new Date(`${year}-01-01`);
+  const today = /* @__PURE__ */ new Date();
+  const yearStart = /* @__PURE__ */ new Date(`${year}-01-01`);
   const daysInYear = year % 4 === 0 ? 366 : 365;
-  const threeMonthsAgo = new Date(today.getTime() - 92 * 86400000);
-  // If 3 months ago was before the fiscal year started, no one can be 3 months behind yet.
+  const threeMonthsAgo = new Date(today.getTime() - 92 * 864e5);
   const comparisonDate = threeMonthsAgo < yearStart ? yearStart : threeMonthsAgo;
-  const daysElapsed = Math.max(0, Math.ceil((comparisonDate - yearStart) / 86400000));
-  // Donors must be behind relative to what they should have given 3 months ago.
+  const daysElapsed = Math.max(0, Math.ceil((comparisonDate - yearStart) / 864e5));
   const expectedRate = daysElapsed / daysInYear;
-
-  // Load all pledges for this parish + year
   const pledges = await d1All(
     env,
     `SELECT donor_email, target_amount_cents FROM household_pledges
@@ -70,12 +57,9 @@ export async function handleStewardshipNudge(request, env, parishId) {
     parishId,
     year
   );
-
   if (!pledges.length) {
     return json({ ok: true, behind: [], message: 'No pledging donors found for ' + year + '.' });
   }
-
-  // Load actual giving for each pledging donor this year
   const yearEnd = year + '-12-31';
   const yearStartStr = year + '-01-01';
   const givenRows = await d1All(
@@ -97,46 +81,36 @@ export async function handleStewardshipNudge(request, env, parishId) {
     yearEnd,
     ...pledges.map((p) => p.donor_email)
   );
-
   const givenMap = {};
   for (const row of givenRows) {
     givenMap[row.donor_email] = Number(row.given_cents || 0);
   }
-
   for (const row of await outsidePledgeGiving(env, parishId, year))
     givenMap[row.donor_email] = (givenMap[row.donor_email] || 0) + Number(row.given_cents);
-  // Identify behind donors
   const behind = pledges
     .map((p) => {
       const given = givenMap[p.donor_email] || 0;
       const expected = Math.round(p.target_amount_cents * expectedRate);
-      const behind = given < expected;
+      const behind2 = given < expected;
       return {
         donorEmail: p.donor_email,
         pledgeCents: p.target_amount_cents,
         givenCents: given,
         expectedCents: expected,
-        behind,
+        behind: behind2,
       };
     })
     .filter((d) => d.behind);
-
   if (dryRun) {
     return json({ ok: true, behind, year, dryRun: true, parishName, thresholdActive: daysElapsed >= 1 });
   }
-
-  // Send: write a notification row for each behind donor
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const message =
     'Your stewardship campaign team at ' +
     parishName +
-    ' wanted to gently reach out. ' +
-    'Based on your ' +
+    ' wanted to gently reach out. Based on your ' +
     year +
-    ' pledge, you may be a little behind schedule. ' +
-    'If life has been full this season, please don’t be discouraged — ' +
-    'any gift, large or small, makes a difference. Thank you for your faithfulness.';
-
+    ' pledge, you may be a little behind schedule. If life has been full this season, please don’t be discouraged — any gift, large or small, makes a difference. Thank you for your faithfulness.';
   let sent = 0;
   for (const donor of behind) {
     await d1Run(
@@ -155,34 +129,26 @@ export async function handleStewardshipNudge(request, env, parishId) {
     );
     sent++;
   }
-
   return json({ ok: true, sent, year, parishName });
 }
-
-export async function handleStewardshipWebhook(request, env) {
+async function handleStewardshipWebhook(request, env) {
   const body = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
   const secret = env.STEWARDSHIP_STRIPE_WEBHOOK_SECRET;
-
   if (!secret) {
     return json({ error: 'STEWARDSHIP_STRIPE_WEBHOOK_SECRET is not configured' }, { status: 500 });
   }
   const valid = await verifyStripeWebhook(body, sig, secret);
   if (!valid) return json({ error: 'Invalid signature' }, { status: 400 });
-
   let event;
   try {
     event = JSON.parse(body);
   } catch {
     return json({ error: 'Invalid JSON' }, { status: 400 });
   }
-
-  // Deduplicate — claimStripeEvent expects an event object {id, type}, not a bare string.
-  // We namespace the id with "sw_" so stewardship events don't collide with the main webhook log.
   const syntheticEvent = { id: 'sw_' + event.id, type: event.type };
   const claim = await claimStripeEvent(env, syntheticEvent);
   if (!claim.claimed) return json({ received: true, duplicate: true });
-
   try {
     await processWebhookEvent(event, env);
     await finishStripeEvent(env, syntheticEvent.id, 'processed');
@@ -190,18 +156,13 @@ export async function handleStewardshipWebhook(request, env) {
     await finishStripeEvent(env, syntheticEvent.id, 'failed', err?.message || String(err));
     throw err;
   }
-
   return json({ received: true });
 }
-
 async function processWebhookEvent(event, env) {
   const obj = event.data?.object;
   if (!obj) return;
-
   const parishId = obj.metadata?.parish_id || obj.subscription_data?.metadata?.parish_id;
-
-  if (!parishId) return; // not a stewardship event
-
+  if (!parishId) return;
   switch (event.type) {
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
@@ -235,31 +196,23 @@ async function processWebhookEvent(event, env) {
     }
   }
 }
-
 async function updateStewardshipStatus(env, parishId, data) {
-  // Load the registration, update stewardship fields, save back
   const reg = await env.AGAPAY_REGISTRATIONS.get('parish_id_index:' + parishId, { type: 'json' });
   if (!reg) return;
-
   reg.stewardshipStatus = data.status;
   if (data.stripeSubscriptionId) reg.stewardshipStripeSubscriptionId = data.stripeSubscriptionId;
   if (data.stripeCustomerId) reg.stewardshipStripeCustomerId = data.stripeCustomerId;
   if (data.stripePriceId) reg.stewardshipStripePriceId = data.stripePriceId;
-  if (data.currentPeriodEnd !== undefined) reg.stewardshipPeriodEnd = data.currentPeriodEnd;
-  if (data.cancelAtPeriodEnd !== undefined) reg.stewardshipCancelAtPeriodEnd = data.cancelAtPeriodEnd;
-  if (data.trialEnd !== undefined) reg.stewardshipTrialEnd = data.trialEnd;
-
+  if (data.currentPeriodEnd !== void 0) reg.stewardshipPeriodEnd = data.currentPeriodEnd;
+  if (data.cancelAtPeriodEnd !== void 0) reg.stewardshipCancelAtPeriodEnd = data.cancelAtPeriodEnd;
+  if (data.trialEnd !== void 0) reg.stewardshipTrialEnd = data.trialEnd;
   await env.AGAPAY_REGISTRATIONS.put('parish_id_index:' + parishId, JSON.stringify(reg));
-
-  // Also maintain a reverse index: stripe customer → parish
   if (data.stripeCustomerId) {
     await env.AGAPAY_REGISTRATIONS.put(
       'stewardship_customer_index:' + data.stripeCustomerId,
       JSON.stringify({ parishId })
     );
   }
-
-  // Bundled AGAPAY Parish +: sync D1 feature flag with subscription status
   if (hasProductionStore(env)) {
     const isActive = ['active', 'trialing'].includes(data.status);
     if (isActive) {
@@ -276,8 +229,6 @@ async function updateStewardshipStatus(env, parishId, data) {
         .bind(parishId, data.stripeSubscriptionItemId || null)
         .run()
         .catch(() => {});
-
-      // Stewardship reporting and Funds & Alms must receive the same catalog.
       await env.AGAPAY_DB.batch(
         STEWARDSHIP_FUND_DEFAULTS.map((f) =>
           env.AGAPAY_DB.prepare(
@@ -288,7 +239,6 @@ async function updateStewardshipStatus(env, parishId, data) {
           ).bind(parishId, f.name, f.reportCode || f.id, f.isDefault ? 1 : 0, f.sortOrder)
         )
       ).catch(() => {});
-
       const found = await findRegistrationByParishId(env, parishId);
       if (found) {
         const merged = mergeStewardshipFundsIntoRegistration(found.registration);
@@ -297,7 +247,7 @@ async function updateStewardshipStatus(env, parishId, data) {
           const next = {
             ...merged.registration,
             funds: catalogSync.available ? catalogSync.funds : merged.registration.funds,
-            parishUpdatedAt: new Date().toISOString(),
+            parishUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
           };
           const updated = await invalidateOnboardingSignoffIfChanged(found.registration, next, {
             actor: 'stewardship-webhook',
@@ -321,12 +271,11 @@ async function updateStewardshipStatus(env, parishId, data) {
     }
   }
 }
-
 async function loadRegistrationByStripeCustomer(env, customerId) {
-  const idx = await env.AGAPAY_REGISTRATIONS.get('stewardship_customer_index:' + customerId, { type: 'json' });
+  const idx = await env.AGAPAY_REGISTRATIONS.get('stewardship_customer_index:' + customerId, {
+    type: 'json',
+  });
   if (!idx?.parishId) return null;
   return env.AGAPAY_REGISTRATIONS.get('parish_id_index:' + idx.parishId, { type: 'json' });
 }
-
-// Stripe webhook signature verification (HMAC-SHA256)
-// ─── D1 sub-record helpers ────────────────────────────────────────────────────
+export { handleStewardshipNudge, handleStewardshipWebhook };

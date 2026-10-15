@@ -3,6 +3,7 @@ import { createFundAllocationResolver, type FundCatalog, type FundDesignation } 
 import type { DatabaseReadEnv } from './database-reads.js';
 
 export interface OutsideGiftRow {
+  readonly contribution_eligible: number;
   readonly id: string;
   readonly parish_id: string;
   readonly entry_date: string;

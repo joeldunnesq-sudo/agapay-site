@@ -1,315 +1,357 @@
-import { communicationsEnabledFor, hasModuleAccess } from "../lib/entitlements.js";
-import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail, rateLimitByKey, unauthorized } from "../lib/core.js";
-import { validateSafeExternalUrl } from "../lib/safe-external-url.js";
-import { decodeXmlEntities, plainTextFromMarkup } from "../lib/xml-text.js";
-import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from "./parish.js";
-
+// Generated from src/handlers/parish-blog.ts by npm run build:server. Do not edit.
+import { communicationsEnabledFor, hasModuleAccess } from '../lib/entitlements.js';
+import {
+  getBearerToken,
+  hasProductionStore,
+  json,
+  missingProductionStoreResponse,
+  normalizeEmail,
+  rateLimitByKey,
+  unauthorized,
+} from '../lib/core.js';
+import { validateSafeExternalUrl } from '../lib/safe-external-url.js';
+import { decodeXmlEntities, plainTextFromMarkup } from '../lib/xml-text.js';
+import { findRegistrationByParishId, requireDonor, verifyParishDashboardBearer } from './parish.js';
 const BLOG_FEED_MAX_BYTES = 1024 * 1024;
 const BLOG_POST_LIMIT = 5;
-const OCA_NEWS_FEED_URL = "https://www.oca.org/news/feed";
-const ORTHOCHRISTIAN_FEED_URL = "https://orthochristian.com/xml/rss.xml";
-const SPZH_FEED_URL = "https://spzh.eu/en/rss";
-const ORTHODOX_TIMES_FEED_URL = "https://orthodoxtimes.com/feed/";
-const ORTHODOX_ETHOS_FEED_URL = "https://www.orthodoxethos.com/blog-feed.xml";
-const NEWS_SOURCE_KEYS = new Set(["parish_blog", "oca", "orthochristian", "spzh", "orthodoxtimes", "orthodoxethos"]);
-
+const OCA_NEWS_FEED_URL = 'https://www.oca.org/news/feed';
+const ORTHOCHRISTIAN_FEED_URL = 'https://orthochristian.com/xml/rss.xml';
+const SPZH_FEED_URL = 'https://spzh.eu/en/rss';
+const ORTHODOX_TIMES_FEED_URL = 'https://orthodoxtimes.com/feed/';
+const ORTHODOX_ETHOS_FEED_URL = 'https://www.orthodoxethos.com/blog-feed.xml';
+const NEWS_SOURCE_KEYS = /* @__PURE__ */ new Set([
+  'parish_blog',
+  'oca',
+  'orthochristian',
+  'spzh',
+  'orthodoxtimes',
+  'orthodoxethos',
+]);
 function database(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
-
-export function validateParishBlogUrl(value, base = undefined) {
+function validateParishBlogUrl(value, base = void 0) {
   return validateSafeExternalUrl(value, {
     base,
-    invalidMessage: "Enter a valid HTTPS blog or RSS address.",
-    unsafeMessage: "The blog must use a public HTTPS address.",
+    invalidMessage: 'Enter a valid HTTPS blog or RSS address.',
+    unsafeMessage: 'The blog must use a public HTTPS address.',
   });
 }
-
 function plainText(value, limit = 1200) {
   return plainTextFromMarkup(value, { limit });
 }
-
 function tagValue(block, names) {
   for (const name of names) {
-    const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, "i"));
+    const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i'));
     if (match) return match[1];
   }
-  return "";
+  return '';
 }
-
 function entryLink(block, feedUrl) {
   const atomLinks = [...block.matchAll(/<link\b([^>]*)\/?\s*>/gi)];
   for (const match of atomLinks) {
-    const attrs = match[1] || "";
+    const attrs = match[1] || '';
     if (/\brel\s*=\s*["'](?:self|enclosure)["']/i.test(attrs)) continue;
     const href = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
     if (href) {
-      try { return validateParishBlogUrl(decodeXmlEntities(href), feedUrl); } catch { /* Try the next link. */ }
+      try {
+        return validateParishBlogUrl(decodeXmlEntities(href), feedUrl);
+      } catch {}
     }
   }
-  const rssLink = plainText(tagValue(block, ["link"]), 2000);
-  try { return validateParishBlogUrl(rssLink, feedUrl); } catch { return ""; }
+  const rssLink = plainText(tagValue(block, ['link']), 2e3);
+  try {
+    return validateParishBlogUrl(rssLink, feedUrl);
+  } catch {
+    return '';
+  }
 }
-
 function xmlAttributeValue(attributes, name) {
-  const match = String(attributes || "").match(new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, "i"));
-  return match?.[2] || "";
+  const match = String(attributes || '').match(new RegExp(`\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i'));
+  return match?.[2] || '';
 }
-
 function normalizedArticleImageUrl(value, feedUrl) {
-  const raw = decodeXmlEntities(String(value || "").trim());
-  if (!raw) return "";
+  const raw = decodeXmlEntities(String(value || '').trim());
+  if (!raw) return '';
   try {
     const parsed = new URL(raw, feedUrl);
-    if (parsed.protocol === "http:") parsed.protocol = "https:";
+    if (parsed.protocol === 'http:') parsed.protocol = 'https:';
     return validateParishBlogUrl(parsed.toString());
   } catch {
-    return "";
+    return '';
   }
 }
-
 function entryImageUrl(block, feedUrl) {
-  for (const match of String(block || "").matchAll(/<media:(content|thumbnail)\b([^>]*)\/?\s*>/gi)) {
-    const attributes = match[2] || "";
-    const type = xmlAttributeValue(attributes, "type").toLowerCase();
-    const medium = xmlAttributeValue(attributes, "medium").toLowerCase();
-    if ((type && !type.startsWith("image/")) || (medium && medium !== "image")) continue;
-    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, "url"), feedUrl);
+  for (const match of String(block || '').matchAll(/<media:(content|thumbnail)\b([^>]*)\/?\s*>/gi)) {
+    const attributes = match[2] || '';
+    const type = xmlAttributeValue(attributes, 'type').toLowerCase();
+    const medium = xmlAttributeValue(attributes, 'medium').toLowerCase();
+    if ((type && !type.startsWith('image/')) || (medium && medium !== 'image')) continue;
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, 'url'), feedUrl);
     if (imageUrl) return imageUrl;
   }
-  for (const match of String(block || "").matchAll(/<(enclosure|link)\b([^>]*)\/?\s*>/gi)) {
+  for (const match of String(block || '').matchAll(/<(enclosure|link)\b([^>]*)\/?\s*>/gi)) {
     const tag = match[1].toLowerCase();
-    const attributes = match[2] || "";
-    const type = xmlAttributeValue(attributes, "type").toLowerCase();
-    const rel = xmlAttributeValue(attributes, "rel").toLowerCase();
-    if (tag === "link" && rel !== "enclosure") continue;
-    const rawUrl = xmlAttributeValue(attributes, tag === "link" ? "href" : "url");
-    if (type ? !type.startsWith("image/") : !/\.(?:avif|gif|jpe?g|png|webp)(?:[?#]|$)/i.test(rawUrl)) continue;
+    const attributes = match[2] || '';
+    const type = xmlAttributeValue(attributes, 'type').toLowerCase();
+    const rel = xmlAttributeValue(attributes, 'rel').toLowerCase();
+    if (tag === 'link' && rel !== 'enclosure') continue;
+    const rawUrl = xmlAttributeValue(attributes, tag === 'link' ? 'href' : 'url');
+    if (type ? !type.startsWith('image/') : !/\.(?:avif|gif|jpe?g|png|webp)(?:[?#]|$)/i.test(rawUrl)) continue;
     const imageUrl = normalizedArticleImageUrl(rawUrl, feedUrl);
     if (imageUrl) return imageUrl;
   }
-  for (const match of String(block || "").matchAll(/<img\b([^>]*)>/gi)) {
-    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(match[1], "src"), feedUrl);
+  for (const match of String(block || '').matchAll(/<img\b([^>]*)>/gi)) {
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(match[1], 'src'), feedUrl);
     if (imageUrl) return imageUrl;
   }
-  return "";
+  return '';
 }
-
 function articleMainImageUrl(html, articleUrl) {
-  for (const match of String(html || "").matchAll(/<meta\b([^>]*)>/gi)) {
-    const attributes = match[1] || "";
-    const key = (xmlAttributeValue(attributes, "property") || xmlAttributeValue(attributes, "name")).toLowerCase();
-    if (!["og:image", "og:image:url", "og:image:secure_url", "twitter:image", "twitter:image:src"].includes(key)) continue;
-    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, "content"), articleUrl);
+  for (const match of String(html || '').matchAll(/<meta\b([^>]*)>/gi)) {
+    const attributes = match[1] || '';
+    const key = (xmlAttributeValue(attributes, 'property') || xmlAttributeValue(attributes, 'name')).toLowerCase();
+    if (!['og:image', 'og:image:url', 'og:image:secure_url', 'twitter:image', 'twitter:image:src'].includes(key))
+      continue;
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, 'content'), articleUrl);
     if (imageUrl) return imageUrl;
   }
-  for (const match of String(html || "").matchAll(/<link\b([^>]*)>/gi)) {
-    const attributes = match[1] || "";
-    if (xmlAttributeValue(attributes, "rel").toLowerCase() !== "image_src") continue;
-    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, "href"), articleUrl);
+  for (const match of String(html || '').matchAll(/<link\b([^>]*)>/gi)) {
+    const attributes = match[1] || '';
+    if (xmlAttributeValue(attributes, 'rel').toLowerCase() !== 'image_src') continue;
+    const imageUrl = normalizedArticleImageUrl(xmlAttributeValue(attributes, 'href'), articleUrl);
     if (imageUrl) return imageUrl;
   }
-  return "";
+  return '';
 }
-
-export function parseParishBlogFeed(xml, feedUrl) {
-  const source = String(xml || "");
+function parseParishBlogFeed(xml, feedUrl) {
+  const source = String(xml || '');
   const blocks = [...source.matchAll(/<(item|entry)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((match) => match[2]);
-  return blocks.map((block) => {
-    const title = plainText(tagValue(block, ["title"]), 240);
-    const url = entryLink(block, feedUrl);
-    const excerpt = plainText(tagValue(block, ["description", "summary", "content:encoded", "content"]), 420);
-    const rawDate = plainText(tagValue(block, ["pubDate", "published", "updated", "dc:date"]), 120);
-    const parsedDate = new Date(rawDate);
-    return {
-      title,
-      url,
-      imageUrl: entryImageUrl(block, feedUrl),
-      excerpt,
-      publishedAt: Number.isNaN(parsedDate.getTime()) ? "" : parsedDate.toISOString(),
-    };
-  }).filter((post) => post.title && post.url).slice(0, BLOG_POST_LIMIT);
+  return blocks
+    .map((block) => {
+      const title = plainText(tagValue(block, ['title']), 240);
+      const url = entryLink(block, feedUrl);
+      const excerpt = plainText(tagValue(block, ['description', 'summary', 'content:encoded', 'content']), 420);
+      const rawDate = plainText(tagValue(block, ['pubDate', 'published', 'updated', 'dc:date']), 120);
+      const parsedDate = new Date(rawDate);
+      return {
+        title,
+        url,
+        imageUrl: entryImageUrl(block, feedUrl),
+        excerpt,
+        publishedAt: Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toISOString(),
+      };
+    })
+    .filter((post) => post.title && post.url)
+    .slice(0, BLOG_POST_LIMIT);
 }
-
 function discoveredFeedUrl(html, sourceUrl) {
-  for (const match of String(html || "").matchAll(/<link\b([^>]+)>/gi)) {
-    const attrs = match[1] || "";
+  for (const match of String(html || '').matchAll(/<link\b([^>]+)>/gi)) {
+    const attrs = match[1] || '';
     if (!/\brel\s*=\s*["'][^"']*alternate/i.test(attrs)) continue;
     if (!/\btype\s*=\s*["']application\/(?:rss|atom)\+xml["']/i.test(attrs)) continue;
     const href = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
     if (href) return validateParishBlogUrl(decodeXmlEntities(href), sourceUrl);
   }
-  return "";
+  return '';
 }
-
 async function fetchPublicBlogUrl(url, fetcher = fetch, redirects = 0) {
   const safeUrl = validateParishBlogUrl(url);
   const response = await fetcher(safeUrl, {
-    headers: { Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.8", "User-Agent": "AGAPAY-Koinonia-RSS/1.0" },
-    redirect: "manual",
-    signal: typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(7000) : undefined,
+    headers: {
+      Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.8',
+      'User-Agent': 'AGAPAY-Koinonia-RSS/1.0',
+    },
+    redirect: 'manual',
+    signal:
+      typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(7e3)
+        : void 0,
     cf: { cacheEverything: true, cacheTtl: 300 },
   });
-  if ([301, 302, 303, 307, 308].includes(response.status) && response.headers.get("location")) {
-    if (redirects >= 3) throw new Error("The blog redirected too many times.");
-    return fetchPublicBlogUrl(validateParishBlogUrl(response.headers.get("location"), safeUrl), fetcher, redirects + 1);
+  if ([301, 302, 303, 307, 308].includes(response.status) && response.headers.get('location')) {
+    if (redirects >= 3) throw new Error('The blog redirected too many times.');
+    return fetchPublicBlogUrl(validateParishBlogUrl(response.headers.get('location'), safeUrl), fetcher, redirects + 1);
   }
   if (!response.ok) throw new Error(`The blog returned HTTP ${response.status}.`);
-  const length = Number(response.headers.get("content-length") || 0);
-  if (length > BLOG_FEED_MAX_BYTES) throw new Error("The RSS feed is too large.");
+  const length = Number(response.headers.get('content-length') || 0);
+  if (length > BLOG_FEED_MAX_BYTES) throw new Error('The RSS feed is too large.');
   const body = await response.text();
-  if (new TextEncoder().encode(body).byteLength > BLOG_FEED_MAX_BYTES) throw new Error("The RSS feed is too large.");
-  return { body, contentType: response.headers.get("content-type") || "", url: safeUrl };
+  if (new TextEncoder().encode(body).byteLength > BLOG_FEED_MAX_BYTES) throw new Error('The RSS feed is too large.');
+  return { body, contentType: response.headers.get('content-type') || '', url: safeUrl };
 }
-
 async function enrichParishBlogPostImages(posts, fetcher) {
-  return Promise.all(posts.map(async (post) => {
-    try {
-      const article = await fetchPublicBlogUrl(post.url, fetcher);
-      const imageUrl = articleMainImageUrl(article.body, article.url);
-      return imageUrl ? { ...post, imageUrl } : post;
-    } catch {
-      return post;
-    }
-  }));
+  return Promise.all(
+    posts.map(async (post) => {
+      try {
+        const article = await fetchPublicBlogUrl(post.url, fetcher);
+        const imageUrl = articleMainImageUrl(article.body, article.url);
+        return imageUrl ? { ...post, imageUrl } : post;
+      } catch {
+        return post;
+      }
+    })
+  );
 }
-
-export async function resolveParishBlogFeed(sourceUrl, fetcher = fetch, options = {}) {
+async function resolveParishBlogFeed(sourceUrl, fetcher = fetch, options = {}) {
   const source = validateParishBlogUrl(sourceUrl);
   const first = await fetchPublicBlogUrl(source, fetcher);
   if (/<(?:rss|feed|rdf:RDF)\b/i.test(first.body)) {
-    let posts = parseParishBlogFeed(first.body, first.url);
-    if (!posts.length) throw new Error("No readable posts were found in this RSS or Atom feed.");
-    if (options.enrichImages) posts = await enrichParishBlogPostImages(posts, fetcher);
-    return { sourceUrl: source, feedUrl: first.url, posts };
+    let posts2 = parseParishBlogFeed(first.body, first.url);
+    if (!posts2.length) throw new Error('No readable posts were found in this RSS or Atom feed.');
+    if (options.enrichImages) posts2 = await enrichParishBlogPostImages(posts2, fetcher);
+    return { sourceUrl: source, feedUrl: first.url, posts: posts2 };
   }
   const feedUrl = discoveredFeedUrl(first.body, first.url);
-  if (!feedUrl) throw new Error("No RSS or Atom feed was advertised by this blog.");
+  if (!feedUrl) throw new Error('No RSS or Atom feed was advertised by this blog.');
   const feed = await fetchPublicBlogUrl(feedUrl, fetcher);
   let posts = parseParishBlogFeed(feed.body, feed.url);
-  if (!posts.length) throw new Error("No readable posts were found in this RSS or Atom feed.");
+  if (!posts.length) throw new Error('No readable posts were found in this RSS or Atom feed.');
   if (options.enrichImages) posts = await enrichParishBlogPostImages(posts, fetcher);
   return { sourceUrl: source, feedUrl: feed.url, posts };
 }
-
 async function readBlogSettings(db, parishId) {
-  const row = await db.prepare("SELECT enabled, source_url, feed_url, updated_at FROM parish_blog_feeds WHERE parish_id = ?").bind(parishId).first();
+  const row = await db
+    .prepare('SELECT enabled, source_url, feed_url, updated_at FROM parish_blog_feeds WHERE parish_id = ?')
+    .bind(parishId)
+    .first();
   return {
     enabled: Boolean(row?.enabled),
-    sourceUrl: row?.source_url || "",
-    feedUrl: row?.feed_url || "",
-    updatedAt: row?.updated_at || "",
+    sourceUrl: row?.source_url || '',
+    feedUrl: row?.feed_url || '',
+    updatedAt: row?.updated_at || '',
   };
 }
-
-export async function handleParishBlog(request, env, parishId) {
+async function handleParishBlog(request, env, parishId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = database(env);
   if (!db) return missingProductionStoreResponse();
   const found = await findRegistrationByParishId(env, parishId);
-  if (!found) return json({ error: "Parish not found" }, { status: 404 });
+  if (!found) return json({ error: 'Parish not found' }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
-  if (!hasModuleAccess(found.registration, "communications")) return json({ error: "Communications requires the Parish tier." }, { status: 403 });
-  if (request.method === "GET") return json({ blog: await readBlogSettings(db, parishId) });
-  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasModuleAccess(found.registration, 'communications'))
+    return json({ error: 'Communications requires the Parish tier.' }, { status: 403 });
+  if (request.method === 'GET') return json({ blog: await readBlogSettings(db, parishId) });
+  if (request.method !== 'PATCH') return json({ error: 'Method not allowed' }, { status: 405 });
   try {
     const input = await request.json();
     const enabled = Boolean(input.enabled);
-    const sourceUrl = String(input.sourceUrl || "").trim();
+    const sourceUrl = String(input.sourceUrl || '').trim();
     const existing = await readBlogSettings(db, parishId);
     let feedUrl = existing.feedUrl;
     if (sourceUrl) ({ feedUrl } = await resolveParishBlogFeed(sourceUrl));
-    if (enabled && (!sourceUrl || !feedUrl)) throw new Error("Enter a blog homepage or RSS feed before enabling the priest’s blog.");
-    const updatedBy = normalizeEmail(found.registration.treasurerEmail || found.registration.priestEmail) || `parish:${parishId}`;
-    await db.prepare(`
+    if (enabled && (!sourceUrl || !feedUrl))
+      throw new Error('Enter a blog homepage or RSS feed before enabling the priest’s blog.');
+    const updatedBy =
+      normalizeEmail(found.registration.treasurerEmail || found.registration.priestEmail) || `parish:${parishId}`;
+    await db
+      .prepare(
+        `
       INSERT INTO parish_blog_feeds (parish_id, enabled, source_url, feed_url, updated_by, updated_at)
       VALUES (?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(parish_id) DO UPDATE SET enabled = excluded.enabled, source_url = excluded.source_url,
         feed_url = excluded.feed_url, updated_by = excluded.updated_by, updated_at = datetime('now')
-    `).bind(parishId, enabled ? 1 : 0, sourceUrl, sourceUrl ? feedUrl : "", updatedBy).run();
+    `
+      )
+      .bind(parishId, enabled ? 1 : 0, sourceUrl, sourceUrl ? feedUrl : '', updatedBy)
+      .run();
     return json({ ok: true, blog: await readBlogSettings(db, parishId) });
   } catch (error) {
-    return json({ error: error.message || "Unable to save the priest’s blog." }, { status: 422 });
+    return json({ error: error.message || 'Unable to save the priest’s blog.' }, { status: 422 });
   }
 }
-
-export async function handleDonorBlog(request, env) {
-  return handleDonorExternalFeed(request, env, "parish_blog");
+async function handleDonorBlog(request, env) {
+  return handleDonorExternalFeed(request, env, 'parish_blog');
 }
-
-export function isOcaJurisdiction(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  return normalized === "oca" || normalized.includes("orthodox church in america");
+function isOcaJurisdiction(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
+  return normalized === 'oca' || normalized.includes('orthodox church in america');
 }
-
-export async function handleDonorOcaNews(request, env) {
-  return handleDonorExternalFeed(request, env, "oca");
+async function handleDonorOcaNews(request, env) {
+  return handleDonorExternalFeed(request, env, 'oca');
 }
-
-export async function handleDonorExternalFeed(request, env, feedKey) {
+async function handleDonorExternalFeed(request, env, feedKey) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = database(env);
   if (!db) return missingProductionStoreResponse();
-  if (!NEWS_SOURCE_KEYS.has(feedKey)) return json({ error: "News source not found" }, { status: 404 });
+  if (!NEWS_SOURCE_KEYS.has(feedKey)) return json({ error: 'News source not found' }, { status: 404 });
   const donor = await requireDonor(request, env);
   if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
+  const parishId = String(donor.defaultParishId || '').trim();
   const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
-  if (!found || !communicationsEnabledFor(found.registration)) return json({ available: false, subscribed: false, posts: [] });
+  if (!found || !communicationsEnabledFor(found.registration))
+    return json({ available: false, subscribed: false, posts: [] });
   const donorId = normalizeEmail(donor.email);
-  const settings = feedKey === "parish_blog" ? await readBlogSettings(db, parishId) : null;
+  const settings = feedKey === 'parish_blog' ? await readBlogSettings(db, parishId) : null;
   const sources = {
     parish_blog: {
       available: Boolean(settings?.enabled && settings?.feedUrl),
-      sourceLabel: "Priest’s Blog",
-      sourceUrl: settings?.sourceUrl || "",
-      feedUrl: settings?.feedUrl || "",
+      sourceLabel: 'Priest’s Blog',
+      sourceUrl: settings?.sourceUrl || '',
+      feedUrl: settings?.feedUrl || '',
     },
     oca: {
       available: isOcaJurisdiction(found.registration.jurisdiction),
-      sourceLabel: "OCA News",
-      sourceUrl: "https://www.oca.org/news",
+      sourceLabel: 'OCA News',
+      sourceUrl: 'https://www.oca.org/news',
       feedUrl: OCA_NEWS_FEED_URL,
     },
     orthochristian: {
       available: true,
-      sourceLabel: "OrthoChristian",
-      sourceUrl: "https://orthochristian.com",
+      sourceLabel: 'OrthoChristian',
+      sourceUrl: 'https://orthochristian.com',
       feedUrl: ORTHOCHRISTIAN_FEED_URL,
     },
     spzh: {
       available: true,
-      sourceLabel: "SPZH",
-      sourceUrl: "https://spzh.eu/en",
+      sourceLabel: 'SPZH',
+      sourceUrl: 'https://spzh.eu/en',
       feedUrl: SPZH_FEED_URL,
     },
     orthodoxtimes: {
       available: true,
-      sourceLabel: "Orthodox Times",
-      sourceUrl: "https://orthodoxtimes.com",
+      sourceLabel: 'Orthodox Times',
+      sourceUrl: 'https://orthodoxtimes.com',
       feedUrl: ORTHODOX_TIMES_FEED_URL,
     },
     orthodoxethos: {
       available: true,
-      sourceLabel: "Orthodox Ethos",
-      sourceUrl: "https://orthodoxethos.com",
+      sourceLabel: 'Orthodox Ethos',
+      sourceUrl: 'https://orthodoxethos.com',
       feedUrl: ORTHODOX_ETHOS_FEED_URL,
     },
   };
   const source = sources[feedKey];
-  if (request.method === "PATCH") {
+  if (request.method === 'PATCH') {
     const input = await request.json().catch(() => ({}));
-    const subscribed = Boolean(input.subscribed);
-    if (subscribed && !source.available) return json({ error: "This news source is not available for your parish." }, { status: 422 });
-    await db.prepare(`
+    const subscribed2 = Boolean(input.subscribed);
+    if (subscribed2 && !source.available)
+      return json({ error: 'This news source is not available for your parish.' }, { status: 422 });
+    await db
+      .prepare(
+        `
       INSERT INTO donor_news_source_subscriptions (donor_id, source_key, subscribed, updated_at)
       VALUES (?, ?, ?, datetime('now'))
       ON CONFLICT(donor_id, source_key) DO UPDATE SET subscribed = excluded.subscribed, updated_at = datetime('now')
-    `).bind(donorId, feedKey, subscribed ? 1 : 0).run();
-    return json({ ok: true, sourceKey: feedKey, sourceLabel: source.sourceLabel, available: source.available, subscribed });
+    `
+      )
+      .bind(donorId, feedKey, subscribed2 ? 1 : 0)
+      .run();
+    return json({
+      ok: true,
+      sourceKey: feedKey,
+      sourceLabel: source.sourceLabel,
+      available: source.available,
+      subscribed: subscribed2,
+    });
   }
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const row = await db.prepare("SELECT subscribed FROM donor_news_source_subscriptions WHERE donor_id = ? AND source_key = ?").bind(donorId, feedKey).first();
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
+  const row = await db
+    .prepare('SELECT subscribed FROM donor_news_source_subscriptions WHERE donor_id = ? AND source_key = ?')
+    .bind(donorId, feedKey)
+    .first();
   const subscribed = source.available && Boolean(row?.subscribed);
   const basePayload = {
     sourceKey: feedKey,
@@ -324,71 +366,104 @@ export async function handleDonorExternalFeed(request, env, feedKey) {
     const resolved = await resolveParishBlogFeed(source.feedUrl, fetch, { enrichImages: true });
     return json({ ...basePayload, posts: resolved.posts });
   } catch (error) {
-    console.warn("external_feed_unavailable", JSON.stringify({ feedKey, message: error.message || String(error) }));
+    console.warn('external_feed_unavailable', JSON.stringify({ feedKey, message: error.message || String(error) }));
     return json({ ...basePayload, posts: [] });
   }
 }
-
-export async function handleDonorCustomNewsFeeds(request, env, feedId = "") {
+async function handleDonorCustomNewsFeeds(request, env, feedId = '') {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = database(env);
   if (!db) return missingProductionStoreResponse();
   const donor = await requireDonor(request, env);
   if (!donor?.email) return unauthorized();
-  const parishId = String(donor.defaultParishId || "").trim();
+  const parishId = String(donor.defaultParishId || '').trim();
   const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
-  if (!found || !communicationsEnabledFor(found.registration)) return json({ error: "Koinonia news is unavailable for this parish." }, { status: 403 });
+  if (!found || !communicationsEnabledFor(found.registration))
+    return json({ error: 'Koinonia news is unavailable for this parish.' }, { status: 403 });
   const donorId = normalizeEmail(donor.email);
-
   if (feedId) {
-    if (request.method !== "DELETE") return json({ error: "Method not allowed" }, { status: 405 });
-    const result = await db.prepare("DELETE FROM donor_custom_news_feeds WHERE id = ? AND donor_id = ?").bind(feedId, donorId).run();
-    if (!Number(result.meta?.changes || 0)) return json({ error: "Custom news source not found" }, { status: 404 });
+    if (request.method !== 'DELETE') return json({ error: 'Method not allowed' }, { status: 405 });
+    const result2 = await db
+      .prepare('DELETE FROM donor_custom_news_feeds WHERE id = ? AND donor_id = ?')
+      .bind(feedId, donorId)
+      .run();
+    if (!Number(result2.meta?.changes || 0)) return json({ error: 'Custom news source not found' }, { status: 404 });
     return json({ ok: true });
   }
-
-  if (request.method === "POST") {
-    const limited = await rateLimitByKey(request, env, "donor-custom-news-feed", donorId, { limit: 10, windowSeconds: 3600 });
+  if (request.method === 'POST') {
+    const limited = await rateLimitByKey(request, env, 'donor-custom-news-feed', donorId, {
+      limit: 10,
+      windowSeconds: 3600,
+    });
     if (limited) return limited;
     try {
       const input = await request.json().catch(() => ({}));
       const sourceUrl = validateParishBlogUrl(input.url);
-      const countRow = await db.prepare("SELECT COUNT(*) AS count FROM donor_custom_news_feeds WHERE donor_id = ?").bind(donorId).first();
-      if (Number(countRow?.count || 0) >= 10) return json({ error: "You can follow up to 10 custom RSS feeds." }, { status: 422 });
+      const countRow = await db
+        .prepare('SELECT COUNT(*) AS count FROM donor_custom_news_feeds WHERE donor_id = ?')
+        .bind(donorId)
+        .first();
+      if (Number(countRow?.count || 0) >= 10)
+        return json({ error: 'You can follow up to 10 custom RSS feeds.' }, { status: 422 });
       const resolved = await resolveParishBlogFeed(sourceUrl);
-      const hostname = new URL(resolved.sourceUrl).hostname.replace(/^www\./i, "");
-      const id = `news_${crypto.randomUUID().replaceAll("-", "")}`;
-      await db.prepare(`
+      const hostname = new URL(resolved.sourceUrl).hostname.replace(/^www\./i, '');
+      const id = `news_${crypto.randomUUID().replaceAll('-', '')}`;
+      await db
+        .prepare(
+          `
         INSERT INTO donor_custom_news_feeds (id, donor_id, source_url, feed_url, source_label, created_at)
         VALUES (?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(donor_id, feed_url) DO UPDATE SET source_url = excluded.source_url, source_label = excluded.source_label
-      `).bind(id, donorId, resolved.sourceUrl, resolved.feedUrl, hostname).run();
+      `
+        )
+        .bind(id, donorId, resolved.sourceUrl, resolved.feedUrl, hostname)
+        .run();
       return json({ ok: true, sourceLabel: hostname }, { status: 201 });
     } catch (error) {
-      return json({ error: error.message || "Unable to add this RSS feed." }, { status: 422 });
+      return json({ error: error.message || 'Unable to add this RSS feed.' }, { status: 422 });
     }
   }
-
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const result = await db.prepare("SELECT id, source_url, feed_url, source_label, created_at FROM donor_custom_news_feeds WHERE donor_id = ? ORDER BY created_at DESC").bind(donorId).all();
-  const feeds = await Promise.all((result.results || []).map(async (row) => {
-    const base = {
-      id: row.id,
-      sourceKey: `custom:${row.id}`,
-      sourceLabel: row.source_label,
-      sourceUrl: row.source_url,
-      available: true,
-      subscribed: true,
-      custom: true,
-      posts: [],
-    };
-    try {
-      const resolved = await resolveParishBlogFeed(row.feed_url, fetch, { enrichImages: true });
-      return { ...base, posts: resolved.posts };
-    } catch (error) {
-      console.warn("custom_news_feed_unavailable", JSON.stringify({ feedId: row.id, message: error.message || String(error) }));
-      return base;
-    }
-  }));
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
+  const result = await db
+    .prepare(
+      'SELECT id, source_url, feed_url, source_label, created_at FROM donor_custom_news_feeds WHERE donor_id = ? ORDER BY created_at DESC'
+    )
+    .bind(donorId)
+    .all();
+  const feeds = await Promise.all(
+    (result.results || []).map(async (row) => {
+      const base = {
+        id: row.id,
+        sourceKey: `custom:${row.id}`,
+        sourceLabel: row.source_label,
+        sourceUrl: row.source_url,
+        available: true,
+        subscribed: true,
+        custom: true,
+        posts: [],
+      };
+      try {
+        const resolved = await resolveParishBlogFeed(row.feed_url, fetch, { enrichImages: true });
+        return { ...base, posts: resolved.posts };
+      } catch (error) {
+        console.warn(
+          'custom_news_feed_unavailable',
+          JSON.stringify({ feedId: row.id, message: error.message || String(error) })
+        );
+        return base;
+      }
+    })
+  );
   return json({ feeds });
 }
+export {
+  handleDonorBlog,
+  handleDonorCustomNewsFeeds,
+  handleDonorExternalFeed,
+  handleDonorOcaNews,
+  handleParishBlog,
+  isOcaJurisdiction,
+  parseParishBlogFeed,
+  resolveParishBlogFeed,
+  validateParishBlogUrl,
+};

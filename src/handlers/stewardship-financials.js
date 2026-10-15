@@ -1,8 +1,6 @@
+// Generated from src/handlers/stewardship-financials.ts by npm run build:server. Do not edit.
 import { readPlatformCosts } from '../stewardship/platform-costs.js';
 import { GIVING_GROSS_CENTS_SQL } from '../lib/giving-contributions.js';
-// src/handlers/stewardship-financials.js
-// Authoritative stewardship financial snapshots and compatibility handling.
-
 import {
   d1All,
   d1First,
@@ -17,7 +15,6 @@ import { stewardshipToolAccess as hasStewardshipToolAccess } from '../lib/entitl
 import { STEWARDSHIP_FUND_DEFAULTS } from '../lib/stewardship-funds.js';
 import { upsertStewardshipFinancialSnapshot } from '../stewardship/financial-snapshots.js';
 import { findRegistrationByParishId, verifyParishDashboardBearer } from './parish.js';
-
 function authoritativeFunds(value) {
   const rows = Array.isArray(value)
     ? value
@@ -43,7 +40,6 @@ function authoritativeFunds(value) {
     }))
     .filter((item) => item.fundName);
 }
-
 function normalizeExternalAssets(value) {
   const rows = Array.isArray(value)
     ? value
@@ -55,7 +51,7 @@ function normalizeExternalAssets(value) {
           return [];
         }
       })();
-  const allowedTypes = new Set(['investment', 'endowment', 'real_property', 'external_fund', 'other']);
+  const allowedTypes = /* @__PURE__ */ new Set(['investment', 'endowment', 'real_property', 'external_fund', 'other']);
   return rows
     .slice(0, 100)
     .map((item, index) => {
@@ -73,20 +69,18 @@ function normalizeExternalAssets(value) {
         asOfDate: /^\d{4}-\d{2}-\d{2}$/.test(String(item?.asOfDate || '')) ? String(item.asOfDate) : '',
         notes: String(item?.notes || legacyDetail || '')
           .trim()
-          .slice(0, 1000),
+          .slice(0, 1e3),
         sortOrder: index,
       };
     })
     .filter((item) => item.name);
 }
-
 const normalizedFundIdentity = (value) =>
   String(value || '')
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-
 function normalizeRestrictedFundAdjustments(value) {
   const rows = Array.isArray(value)
     ? value
@@ -108,11 +102,10 @@ function normalizeRestrictedFundAdjustments(value) {
       deductionsCents: Math.max(0, Math.round(Number(item?.deductionsCents || 0))),
       notes: String(item?.notes || '')
         .trim()
-        .slice(0, 1000),
+        .slice(0, 1e3),
     }))
     .filter((item) => item.fundId);
 }
-
 function normalizeRestrictedFundBalances(value) {
   const rows = Array.isArray(value)
     ? value
@@ -134,7 +127,6 @@ function normalizeRestrictedFundBalances(value) {
     }))
     .filter((item) => item.fundId);
 }
-
 async function automaticRestrictedFunds(
   env,
   parishId,
@@ -160,7 +152,6 @@ async function automaticRestrictedFunds(
   const adjustmentFor = (fund) =>
     adjustments.find((item) => fund.keys.has(normalizedFundIdentity(item.fundId))) || null;
   const priorFor = (fund) => priorBalances.find((item) => fund.keys.has(normalizedFundIdentity(item.fundId))) || null;
-
   const [agapayRows, outsideRows] = await Promise.all([
     d1All(
       env,
@@ -189,7 +180,6 @@ async function automaticRestrictedFunds(
       `${year}-12-31`
     ),
   ]);
-
   const totalFor = (rows, fund) =>
     rows.reduce(
       (summary, row) => {
@@ -200,7 +190,6 @@ async function automaticRestrictedFunds(
       },
       { amount: 0, count: 0 }
     );
-
   return catalog.map((fund) => {
     const agapay = totalFor(agapayRows, fund);
     const outside = totalFor(outsideRows, fund);
@@ -227,7 +216,6 @@ async function automaticRestrictedFunds(
     };
   });
 }
-
 async function authoritativeContributionTotals(env, parishId, year) {
   const start = `${year}-01-01`;
   const end = `${year}-12-31T23:59:59.999Z`;
@@ -256,7 +244,6 @@ async function authoritativeContributionTotals(env, parishId, year) {
     outsideContributionsCents: Number(outside?.total || 0),
   };
 }
-
 function authoritativeSnapshotDto(row, liveContributions, automaticCosts = 0) {
   if (!row) return null;
   const agapay = Number(liveContributions?.agapayContributionsCents ?? row.agapay_contributions_cents ?? 0);
@@ -287,7 +274,6 @@ function authoritativeSnapshotDto(row, liveContributions, automaticCosts = 0) {
     updatedAt: row.updated_at,
   };
 }
-
 async function loadAuthoritativeSnapshot(env, parishId, year) {
   return d1First(
     env,
@@ -297,24 +283,17 @@ async function loadAuthoritativeSnapshot(env, parishId, year) {
     year
   );
 }
-
-// One authoritative, versioned fiscal-year snapshot. Contribution totals are
-// always recalculated server-side; the browser may edit only other revenue,
-// expenses, externally held assets, and notes. AGAPAY restricted-fund
-// activity is calculated live from designated contribution records.
-export async function handleStewardshipFinancials(request, env, parishId) {
+async function handleStewardshipFinancials(request, env, parishId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish not found' }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
   if (!hasStewardshipToolAccess(found.registration))
     return json({ error: 'Stewardship requires the Stewardship or Parish plan.' }, { status: 403 });
-
   const url = new URL(request.url);
-  const requestedYear = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
+  const requestedYear = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   if (request.method === 'GET') {
-    const [row, contributions, priorRow, priorContributions] = await Promise.all([
+    const [row2, contributions2, priorRow, priorContributions] = await Promise.all([
       loadAuthoritativeSnapshot(env, parishId, requestedYear),
       authoritativeContributionTotals(env, parishId, requestedYear),
       loadAuthoritativeSnapshot(env, parishId, requestedYear - 1),
@@ -325,32 +304,32 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       parishId,
       requestedYear,
       found.registration,
-      row?.restricted_fund_adjustments_json || [],
+      row2?.restricted_fund_adjustments_json || [],
       priorRow?.restricted_fund_balances_json || []
     );
-    const platformCosts = await readPlatformCosts(env, parishId, requestedYear);
-    const snapshot = authoritativeSnapshotDto(row, contributions, platformCosts.totalCents);
+    const platformCosts2 = await readPlatformCosts(env, parishId, requestedYear);
+    const snapshot = authoritativeSnapshotDto(row2, contributions2, platformCosts2.totalCents);
     const priorYear = authoritativeSnapshotDto(
       priorRow,
       priorContributions,
       priorRow?.automatic_costs_excluded ? (await readPlatformCosts(env, parishId, requestedYear - 1)).totalCents : 0
     );
-    const revisions = row
+    const revisions = row2
       ? await d1All(
           env,
           `SELECT version,total_income_cents,total_expense_cents,net_cents,changed_by,created_at
       FROM stewardship_financial_snapshot_revisions
       WHERE snapshot_id = ? ORDER BY version DESC LIMIT 12`,
-          row.id
+          row2.id
         )
       : [];
-    const provisionalIncome = contributions.agapayContributionsCents + contributions.outsideContributionsCents;
+    const provisionalIncome = contributions2.agapayContributionsCents + contributions2.outsideContributionsCents;
     return json({
       year: requestedYear,
       snapshot,
-      contributionTotals: contributions,
-      platformCosts,
-      automaticCostsIncluded: !row || Boolean(row.automatic_costs_excluded),
+      contributionTotals: contributions2,
+      platformCosts: platformCosts2,
+      automaticCostsIncluded: !row2 || Boolean(row2.automatic_costs_excluded),
       totals: snapshot
         ? {
             totalIncomeCents: snapshot.totalIncomeCents,
@@ -359,8 +338,8 @@ export async function handleStewardshipFinancials(request, env, parishId) {
           }
         : {
             totalIncomeCents: provisionalIncome,
-            totalExpenseCents: platformCosts.totalCents,
-            netCents: provisionalIncome - platformCosts.totalCents,
+            totalExpenseCents: platformCosts2.totalCents,
+            netCents: provisionalIncome - platformCosts2.totalCents,
           },
       agapayRestrictedFunds: automaticFunds,
       agapayRestrictedInflowsTotalCents: automaticFunds.reduce((sum, fund) => sum + fund.receivedCents, 0),
@@ -379,12 +358,11 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       })),
     });
   }
-
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const body = await request.json().catch(() => null);
   if (!body) return json({ error: 'Invalid JSON' }, { status: 400 });
   const fiscalYear = parseInt(body.fiscalYear || requestedYear, 10);
-  if (!Number.isInteger(fiscalYear) || fiscalYear < 2000 || fiscalYear > 2100) {
+  if (!Number.isInteger(fiscalYear) || fiscalYear < 2e3 || fiscalYear > 2100) {
     return json({ error: 'Choose a valid fiscal year.' }, { status: 400 });
   }
   const otherRevenue = Math.round(Number(body.otherRevenueCents || 0));
@@ -419,12 +397,12 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   );
   const notes = String(body.notes || '')
     .trim()
-    .slice(0, 5000);
+    .slice(0, 5e3);
   const title =
     String(body.title || `${fiscalYear} Financial Snapshot`)
       .trim()
       .slice(0, 160) || `${fiscalYear} Financial Snapshot`;
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   let row = await loadAuthoritativeSnapshot(env, parishId, fiscalYear);
   if (row) {
     await d1Run(
@@ -514,9 +492,6 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   );
   return json({ ok: true, snapshot: authoritativeSnapshotDto(row, contributions, platformCosts.totalCents) });
 }
-
-// Legacy packet-summary handler retained only for historical route behavior.
-// New Stewardship Health traffic uses the authoritative handler above.
 async function handleLegacyStewardshipFinancials(request, env, parishId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const found = await findRegistrationByParishId(env, parishId);
@@ -524,13 +499,9 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
   if (!hasStewardshipToolAccess(found.registration))
     return json({ error: 'Stewardship requires the Stewardship or Parish plan.' }, { status: 403 });
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
-  // ── GET: return aggregated financials for the year ──────────────────────
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   if (request.method === 'GET') {
-    // Pull all meetings for this parish + year
     const meetings = await d1All(
       env,
       `SELECT id, title, fiscal_year, meeting_date, status FROM stewardship_annual_meetings
@@ -538,14 +509,11 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
       parishId,
       year
     );
-
     if (!meetings.length) {
       return json({ year, meetings: [], financialSummaries: [], restrictedFunds: [], totals: null });
     }
-
     const meetingIds = meetings.map((m) => m.id);
     const placeholders = meetingIds.map(() => '?').join(',');
-
     const [financialSummaries, restrictedFunds] = await Promise.all([
       d1All(
         env,
@@ -566,8 +534,6 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
         ...meetingIds
       ),
     ]);
-
-    // Aggregate totals across all summaries for the year
     const totals = financialSummaries.length
       ? financialSummaries.reduce(
           (acc, fs) => ({
@@ -578,10 +544,6 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
           { totalIncomeCents: 0, totalExpenseCents: 0, netCents: 0 }
         )
       : null;
-
-    // Prior-year totals, for year-over-year comparison badges on the KPI
-    // cards. Cheap enough to always fetch alongside the main query — a
-    // single aggregate SUM, not a full row fetch like the current year.
     const priorYearRow = await d1All(
       env,
       `SELECT
@@ -604,13 +566,9 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
             netCents: priorYearRow[0].net_cents || 0,
           }
         : null;
-
-    // Restricted fund balance as of the most recent packet this year — the
-    // running total parishes actually care about, not a per-packet figure.
     const restrictedFundsTotalCents = restrictedFunds.length
       ? restrictedFunds.reduce((sum, rf) => sum + (rf.ending_balance_cents || 0), 0)
       : 0;
-
     return json({
       year,
       meetings: meetings.map((m) => ({
@@ -649,8 +607,6 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
       restrictedFundsTotalCents,
     });
   }
-
-  // ── POST: save a standalone financial snapshot (not tied to a meeting packet) ──
   if (request.method === 'POST') {
     let body;
     try {
@@ -658,7 +614,6 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
     } catch {
       return json({ error: 'Invalid JSON' }, { status: 400 });
     }
-
     try {
       const saved = await upsertStewardshipFinancialSnapshot(env, {
         parishId,
@@ -679,11 +634,6 @@ async function handleLegacyStewardshipFinancials(request, env, parishId) {
       return json({ error: error.message || 'Unable to save financial snapshot' }, { status: error.status || 400 });
     }
   }
-
   return json({ error: 'Method not allowed' }, { status: 405 });
 }
-
-// POST /api/parish/dashboard/:parishId/stewardship/nudge
-// Identifies donors who are behind on their pledge and writes a notification
-// record for each. Returns a preview list before sending (dry_run=true) or
-// sends and returns the count (dry_run=false).
+export { handleStewardshipFinancials };

@@ -77,3 +77,16 @@ export function appendAdminAudit<T extends Record<string, unknown>>(
 ): T;
 
 export { normalizeSacramentPriests } from './parish-dashboard-handler.js';
+
+export { sacramentsEnabledFor } from '../lib/entitlements.js';
+
+export { d1All, d1First, d1Run, generateSecret } from '../lib/core.js';
+
+export { bookstoreEnabledFor } from '../lib/entitlements.js';
+export { recordAuditEvent } from '../lib/audit-log.js';
+export { stripePaymentIntentFinancialUpdates } from './parish-donor-offerings.js';
+
+export function findCheckoutParish(
+  env: Partial<Env>,
+  parishId: string
+): Promise<(CatalogParish & { stripeAccountId?: string }) | null>;

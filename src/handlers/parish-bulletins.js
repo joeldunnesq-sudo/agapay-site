@@ -1,11 +1,11 @@
+// Generated from src/handlers/parish-bulletins.ts by npm run build:server. Do not edit.
 import { d1, hasProductionStore, json, missingProductionStoreResponse, normalizeEmail } from '../lib/core.js';
 import { listDirectoryMilestones } from '../directory/milestones.js';
 import { enrichLiturgicalDayWithOrthocal } from '../learn/readings-source.js';
 import { loadPublishedCommerceCalendarEvents } from './parish-events.js';
 import { requireCommunicationsAdmin } from './parish-communications.js';
-
-const BULLETIN_TEMPLATES = new Set(['heritage', 'quiet', 'folded']);
-const BULLETIN_BLOCK_TYPES = new Set([
+const BULLETIN_TEMPLATES = /* @__PURE__ */ new Set(['heritage', 'quiet', 'folded']);
+const BULLETIN_BLOCK_TYPES = /* @__PURE__ */ new Set([
   'message',
   'liturgical',
   'hymns',
@@ -16,11 +16,9 @@ const BULLETIN_BLOCK_TYPES = new Set([
   'giving',
 ]);
 const MAX_BULLETIN_BYTES = 128 * 1024;
-
 function bulletinError(message, status = 422) {
   return Object.assign(new Error(message), { status });
 }
-
 function cleanText(value, max, { required = false, label = 'Text' } = {}) {
   const text = String(value ?? '')
     .trim()
@@ -28,17 +26,15 @@ function cleanText(value, max, { required = false, label = 'Text' } = {}) {
   if (required && !text) throw bulletinError(`${label} is required.`);
   return text;
 }
-
 function cleanBulletinDate(value) {
   const date = String(value || '').trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw bulletinError('Choose a valid bulletin date.');
-  const parsed = new Date(`${date}T12:00:00Z`);
+  const parsed = /* @__PURE__ */ new Date(`${date}T12:00:00Z`);
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
     throw bulletinError('Choose a valid bulletin date.');
   }
   return date;
 }
-
 function cleanBulletinItem(item = {}) {
   const requestedSource = String(item.source || '')
     .trim()
@@ -49,7 +45,6 @@ function cleanBulletinItem(item = {}) {
     source: requestedSource === 'directory' ? 'directory' : 'manual',
   };
 }
-
 function cleanTempleTroparion(item = {}, index = 0) {
   const requestedId = cleanText(item.id, 80);
   const requestedKind = String(item.kind || 'troparion')
@@ -61,11 +56,10 @@ function cleanTempleTroparion(item = {}, index = 0) {
     kind,
     title: cleanText(item.title, 120, { required: true, label: 'Troparion title' }),
     tone: cleanText(item.tone, 80, { label: 'Tone' }),
-    text: cleanText(item.text, 5000, { required: true, label: 'Troparion text' }),
+    text: cleanText(item.text, 5e3, { required: true, label: 'Troparion text' }),
     sortOrder: index,
   };
 }
-
 function cleanBulletinBlock(block = {}) {
   const type = String(block.type || '')
     .trim()
@@ -87,8 +81,8 @@ function cleanBulletinBlock(block = {}) {
     return {
       ...cleaned,
       saint: cleanText(block.saint, 500, { label: 'Saint or feast' }),
-      saintLife: cleanText(block.saintLife, 4000, { label: 'Life of the saint' }),
-      quoteText: cleanText(block.quoteText, 1000, { label: 'Saint quotation' }),
+      saintLife: cleanText(block.saintLife, 4e3, { label: 'Life of the saint' }),
+      quoteText: cleanText(block.quoteText, 1e3, { label: 'Saint quotation' }),
       quoteAttribution: cleanText(block.quoteAttribution, 200, { label: 'Quotation attribution' }),
       items,
       serviceDate,
@@ -101,10 +95,9 @@ function cleanBulletinBlock(block = {}) {
       : [];
     return { ...cleaned, hymns };
   }
-  return { ...cleaned, body: cleanText(block.body, 8000, { label: 'Block body' }) };
+  return { ...cleaned, body: cleanText(block.body, 8e3, { label: 'Block body' }) };
 }
-
-export function validateBulletinInput(input = {}) {
+function validateBulletinInput(input = {}) {
   const title = cleanText(input.title, 120, { required: true, label: 'Bulletin title' });
   const serviceDate = cleanBulletinDate(input.serviceDate);
   const template = String(input.template || 'heritage')
@@ -120,7 +113,6 @@ export function validateBulletinInput(input = {}) {
   }
   return { title, serviceDate, template, blocks, contentJson };
 }
-
 function parseBlocks(value) {
   try {
     const blocks = JSON.parse(String(value || '[]'));
@@ -129,8 +121,7 @@ function parseBlocks(value) {
     return [];
   }
 }
-
-export function bulletinFromRow(row = {}) {
+function bulletinFromRow(row = {}) {
   return {
     id: row.id || '',
     parishId: row.parish_id || '',
@@ -145,7 +136,6 @@ export function bulletinFromRow(row = {}) {
     updatedAt: row.updated_at || '',
   };
 }
-
 async function readBulletinBody(request) {
   const contentLength = Number(request.headers.get('content-length') || 0);
   if (contentLength > MAX_BULLETIN_BYTES + 16 * 1024) {
@@ -157,8 +147,7 @@ async function readBulletinBody(request) {
     throw bulletinError('The bulletin could not be read. Refresh and try again.', 400);
   }
 }
-
-export async function listParishBulletins(db, parishId) {
+async function listParishBulletins(db, parishId) {
   const rows = await db
     .prepare(
       `
@@ -172,8 +161,7 @@ export async function listParishBulletins(db, parishId) {
     .all();
   return (rows.results || []).map(bulletinFromRow);
 }
-
-export async function listParishTempleTroparia(db, parishId) {
+async function listParishTempleTroparia(db, parishId) {
   const rows = await db
     .prepare(
       `
@@ -194,8 +182,7 @@ export async function listParishTempleTroparia(db, parishId) {
     sortOrder: Number(row.sort_order || 0),
   }));
 }
-
-export async function saveParishTempleTroparia(db, { parishId, createdBy, input }) {
+async function saveParishTempleTroparia(db, { parishId, createdBy, input }) {
   if (!Array.isArray(input?.troparia)) throw bulletinError('Provide the temple troparia to save.');
   if (input.troparia.length > 12) throw bulletinError('A parish can save up to 12 temple troparia.');
   const troparia = input.troparia.map((item, index) => cleanTempleTroparion(item, index));
@@ -216,8 +203,7 @@ export async function saveParishTempleTroparia(db, { parishId, createdBy, input 
   await db.batch(statements);
   return listParishTempleTroparia(db, parishId);
 }
-
-export async function createParishBulletin(db, { parishId, createdBy, input }) {
+async function createParishBulletin(db, { parishId, createdBy, input }) {
   const bulletin = validateBulletinInput(input);
   const id = crypto.randomUUID();
   await db
@@ -236,8 +222,7 @@ export async function createParishBulletin(db, { parishId, createdBy, input }) {
     .first();
   return bulletinFromRow(row);
 }
-
-export async function updateParishBulletin(db, { parishId, bulletinId, input }) {
+async function updateParishBulletin(db, { parishId, bulletinId, input }) {
   const bulletin = validateBulletinInput(input);
   const result = await db
     .prepare(
@@ -256,8 +241,7 @@ export async function updateParishBulletin(db, { parishId, bulletinId, input }) 
     .first();
   return bulletinFromRow(row);
 }
-
-export async function archiveParishBulletin(db, { parishId, bulletinId }) {
+async function archiveParishBulletin(db, { parishId, bulletinId }) {
   const result = await db
     .prepare(
       `
@@ -270,25 +254,21 @@ export async function archiveParishBulletin(db, { parishId, bulletinId }) {
     .run();
   return Boolean(result.meta?.changes);
 }
-
 function bulletinExcerpt(value, max = 220) {
   const text = String(value || '').trim();
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
-
 function bulletinCalendarType(registration = {}) {
   const calendar = String(registration.liturgicalCalendar || 'julian')
     .trim()
     .toLowerCase();
   return calendar === 'gregorian' || calendar === 'revised-julian' ? 'revised-julian' : 'julian';
 }
-
 function capitalizeReadingType(value = '') {
   const text = String(value || '').trim();
   return text ? `${text[0].toUpperCase()}${text.slice(1)}` : 'Reading';
 }
-
-export async function buildSundayLiturgicalBlock({ serviceDate, registration = {}, fetcher = fetch } = {}) {
+async function buildSundayLiturgicalBlock({ serviceDate, registration = {}, fetcher = fetch } = {}) {
   const cleanServiceDate = cleanBulletinDate(serviceDate);
   const day = await enrichLiturgicalDayWithOrthocal(
     {
@@ -330,16 +310,14 @@ export async function buildSundayLiturgicalBlock({ serviceDate, registration = {
     sourceConnected: Boolean(day.sourceConnected),
   };
 }
-
 function shortCelebrationDate(value) {
-  const date = new Date(`${value}T12:00:00Z`);
+  const date = /* @__PURE__ */ new Date(`${value}T12:00:00Z`);
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
     date
   );
 }
-
-export async function buildBulletinCelebrationsBlock(
+async function buildBulletinCelebrationsBlock(
   env,
   parishId,
   serviceDate,
@@ -349,7 +327,7 @@ export async function buildBulletinCelebrationsBlock(
   const milestones = await milestoneLoader(env, {
     context: { parishId },
     days: 7,
-    fromDate: new Date(`${cleanServiceDate}T12:00:00Z`),
+    fromDate: /* @__PURE__ */ new Date(`${cleanServiceDate}T12:00:00Z`),
   });
   return {
     id: crypto.randomUUID(),
@@ -363,8 +341,7 @@ export async function buildBulletinCelebrationsBlock(
     })),
   };
 }
-
-export async function buildBulletinSuggestions(db, env, parishId, registration = {}, serviceDate = nextSundayDate()) {
+async function buildBulletinSuggestions(db, env, parishId, registration = {}, serviceDate = nextSundayDate()) {
   const announcementRows = await db
     .prepare(
       `
@@ -427,7 +404,12 @@ export async function buildBulletinSuggestions(db, env, parishId, registration =
       id: crypto.randomUUID(),
       type: 'announcements',
       title: 'Parish life',
-      body: announcements.map((item) => `${item.title}\n${bulletinExcerpt(item.body)}`).join('\n\n'),
+      body: announcements
+        .map(
+          (item) => `${item.title}
+${bulletinExcerpt(item.body)}`
+        )
+        .join('\n\n'),
       sourceIds: announcements.map((item) => item.id),
     });
   }
@@ -456,22 +438,19 @@ export async function buildBulletinSuggestions(db, env, parishId, registration =
     templeTroparia,
   };
 }
-
-function nextSundayDate(from = new Date()) {
+function nextSundayDate(from = /* @__PURE__ */ new Date()) {
   const date = new Date(from);
   date.setUTCHours(12, 0, 0, 0);
   date.setUTCDate(date.getUTCDate() + ((7 - date.getUTCDay()) % 7));
   return date.toISOString().slice(0, 10);
 }
-
-export async function handleParishBulletins(request, env, parishId, subpath = '') {
+async function handleParishBulletins(request, env, parishId, subpath = '') {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const db = d1(env);
   if (!db) return missingProductionStoreResponse();
   const auth = await requireCommunicationsAdmin(request, env, parishId);
   if (auth.error) return auth.error;
   const bulletinId = decodeURIComponent(String(subpath || '').replace(/^\/+|\/+$/g, ''));
-
   try {
     if (bulletinId === 'liturgical' && request.method === 'GET') {
       const serviceDate = new URL(request.url).searchParams.get('serviceDate');
@@ -539,3 +518,17 @@ export async function handleParishBulletins(request, env, parishId, subpath = ''
     return json({ error: error.message || 'Unable to save the bulletin.' }, { status: error.status || 422 });
   }
 }
+export {
+  archiveParishBulletin,
+  buildBulletinCelebrationsBlock,
+  buildBulletinSuggestions,
+  buildSundayLiturgicalBlock,
+  bulletinFromRow,
+  createParishBulletin,
+  handleParishBulletins,
+  listParishBulletins,
+  listParishTempleTroparia,
+  saveParishTempleTroparia,
+  updateParishBulletin,
+  validateBulletinInput,
+};
