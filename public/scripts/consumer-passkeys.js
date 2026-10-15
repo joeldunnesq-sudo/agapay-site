@@ -1,76 +1,79 @@
+// Generated from src/browser/scripts/consumer-passkeys.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-
   function supported() {
     return Boolean(window.PublicKeyCredential && navigator.credentials);
   }
-
   function b64urlToBytes(value) {
-    const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+    const normalized = String(value || '')
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
     const binary = atob(padded);
-    return Uint8Array.from(binary, character => character.charCodeAt(0));
+    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
   }
-
   function bytesToB64url(value) {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === void 0) return null;
     const bytes = value instanceof ArrayBuffer ? new Uint8Array(value) : new Uint8Array(value.buffer || value);
     let binary = '';
-    bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   }
-
   function creationOptionsFromJson(options) {
     return {
       ...options,
       challenge: b64urlToBytes(options.challenge),
       user: { ...options.user, id: b64urlToBytes(options.user.id) },
-      excludeCredentials: (options.excludeCredentials || []).map(item => ({ ...item, id: b64urlToBytes(item.id) })),
+      excludeCredentials: (options.excludeCredentials || []).map((item) => ({ ...item, id: b64urlToBytes(item.id) })),
     };
   }
-
   function requestOptionsFromJson(options) {
-    const converted = { ...options, challenge: b64urlToBytes(options.challenge) };
+    const converted = {
+      ...options,
+      challenge: b64urlToBytes(options.challenge),
+    };
     if (Array.isArray(options.allowCredentials) && options.allowCredentials.length) {
-      converted.allowCredentials = options.allowCredentials.map(item => ({ ...item, id: b64urlToBytes(item.id) }));
+      converted.allowCredentials = options.allowCredentials.map((item) => ({ ...item, id: b64urlToBytes(item.id) }));
     } else {
       delete converted.allowCredentials;
     }
     return converted;
   }
-
   function registrationToJson(credential) {
     return {
       id: credential.id,
       rawId: bytesToB64url(credential.rawId),
       type: credential.type,
-      authenticatorAttachment: credential.authenticatorAttachment || undefined,
+      authenticatorAttachment: credential.authenticatorAttachment || void 0,
       clientExtensionResults: credential.getClientExtensionResults(),
       response: {
         clientDataJSON: bytesToB64url(credential.response.clientDataJSON),
         attestationObject: bytesToB64url(credential.response.attestationObject),
         transports: typeof credential.response.getTransports === 'function' ? credential.response.getTransports() : [],
-        publicKeyAlgorithm: typeof credential.response.getPublicKeyAlgorithm === 'function' ? credential.response.getPublicKeyAlgorithm() : undefined,
+        publicKeyAlgorithm:
+          typeof credential.response.getPublicKeyAlgorithm === 'function'
+            ? credential.response.getPublicKeyAlgorithm()
+            : void 0,
       },
     };
   }
-
   function authenticationToJson(credential) {
     return {
       id: credential.id,
       rawId: bytesToB64url(credential.rawId),
       type: credential.type,
-      authenticatorAttachment: credential.authenticatorAttachment || undefined,
+      authenticatorAttachment: credential.authenticatorAttachment || void 0,
       clientExtensionResults: credential.getClientExtensionResults(),
       response: {
         clientDataJSON: bytesToB64url(credential.response.clientDataJSON),
         authenticatorData: bytesToB64url(credential.response.authenticatorData),
         signature: bytesToB64url(credential.response.signature),
-        userHandle: credential.response.userHandle ? bytesToB64url(credential.response.userHandle) : undefined,
+        userHandle: credential.response.userHandle ? bytesToB64url(credential.response.userHandle) : void 0,
       },
     };
   }
-
   function sessionHeaders() {
     const token = localStorage.getItem('agapayDonorToken') || '';
     const email = localStorage.getItem('agapayDonorEmail') || '';
@@ -79,17 +82,16 @@
       'X-AGAPAY-Donor-Email': email,
     };
   }
-
   async function api(path, { method = 'POST', body, authenticated = false, signal } = {}) {
     const response = await fetch(path, {
       method,
       signal,
       headers: {
         Accept: 'application/json',
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(body === void 0 ? {} : { 'Content-Type': 'application/json' }),
         ...(authenticated ? sessionHeaders() : {}),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === void 0 ? void 0 : JSON.stringify(body),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -99,13 +101,14 @@
     }
     return payload;
   }
-
   function friendlyCredentialError(error, fallback, operation = 'authentication') {
     if (error?.name === 'AbortError') return error;
     if (error?.name === 'NotAllowedError') {
-      const friendly = new Error(operation === 'registration'
-        ? 'Passkey setup was not completed. Keep this page open and try again when your device prompt appears.'
-        : 'No My AGAPAY passkey was selected.');
+      const friendly = new Error(
+        operation === 'registration'
+          ? 'Passkey setup was not completed. Keep this page open and try again when your device prompt appears.'
+          : 'No My AGAPAY passkey was selected.'
+      );
       friendly.name = 'NotAllowedError';
       friendly.code = operation === 'registration' ? 'passkey_setup_not_completed' : 'passkey_not_selected';
       return friendly;
@@ -113,7 +116,6 @@
     if (error?.name === 'InvalidStateError') return new Error('That passkey is already registered on this account.');
     return error instanceof Error ? error : new Error(fallback);
   }
-
   async function authenticate({ mediation, signal } = {}) {
     if (!supported()) throw new Error('Passkeys are not supported in this browser.');
     const started = await api('/api/donor/passkeys/authentication/options', { signal });
@@ -130,10 +132,12 @@
     if (!credential) throw new Error('No passkey was selected.');
     return api('/api/donor/passkeys/authentication/verify', {
       signal,
-      body: { pendingToken: started.pendingToken, credential: authenticationToJson(credential) },
+      body: {
+        pendingToken: started.pendingToken,
+        credential: authenticationToJson(credential),
+      },
     });
   }
-
   async function register(label = 'This device') {
     if (!supported()) throw new Error('Passkeys are not supported in this browser.');
     const started = await api('/api/donor/passkeys/registration/options', { authenticated: true });
@@ -148,16 +152,17 @@
       authenticated: true,
       body: {
         pendingToken: started.pendingToken,
-        label: String(label || 'Passkey').trim().slice(0, 80) || 'Passkey',
+        label:
+          String(label || 'Passkey')
+            .trim()
+            .slice(0, 80) || 'Passkey',
         credential: registrationToJson(credential),
       },
     });
   }
-
   function list() {
     return api('/api/donor/passkeys', { method: 'GET', authenticated: true });
   }
-
   function rename(id, label) {
     return api(`/api/donor/passkeys/${encodeURIComponent(id)}`, {
       method: 'PATCH',
@@ -165,24 +170,22 @@
       body: { label },
     });
   }
-
   function remove(id) {
     return api(`/api/donor/passkeys/${encodeURIComponent(id)}`, { method: 'DELETE', authenticated: true });
   }
-
   function formatDate(value) {
     if (!value) return 'Not used yet';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Not used yet' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return Number.isNaN(date.getTime())
+      ? 'Not used yet'
+      : date.toLocaleDateString(void 0, { month: 'short', day: 'numeric', year: 'numeric' });
   }
-
   function securityMessage(message, tone = '') {
     const target = document.getElementById('consumerPasskeyMessage');
     if (!target) return;
     target.textContent = message || '';
     target.className = `passkey-security-message ${tone}`.trim();
   }
-
   function renderPasskeyList(passkeys) {
     const listElement = document.getElementById('consumerPasskeyList');
     const countElement = document.getElementById('consumerPasskeyCount');
@@ -193,19 +196,18 @@
     if (!entries.length) {
       const empty = document.createElement('div');
       empty.className = 'passkey-empty-state';
-      empty.innerHTML = '<strong>No passkeys saved yet</strong><span>Add this phone or computer to unlock the installed My AGAPAY app automatically.</span>';
+      empty.innerHTML =
+        '<strong>No passkeys saved yet</strong><span>Add this phone or computer to unlock the installed My AGAPAY app automatically.</span>';
       listElement.appendChild(empty);
       return;
     }
-    entries.forEach(passkey => {
+    entries.forEach((passkey) => {
       const row = document.createElement('div');
       row.className = 'passkey-device-row';
-
       const icon = document.createElement('span');
       icon.className = 'passkey-device-icon';
       icon.setAttribute('aria-hidden', 'true');
       icon.textContent = '✓';
-
       const details = document.createElement('div');
       details.className = 'passkey-device-details';
       const label = document.createElement('input');
@@ -213,9 +215,10 @@
       label.value = passkey.label || 'Passkey';
       label.setAttribute('aria-label', 'Passkey name');
       const meta = document.createElement('span');
-      meta.textContent = passkey.lastUsedAt ? `Last used ${formatDate(passkey.lastUsedAt)}` : `Added ${formatDate(passkey.createdAt)}`;
+      meta.textContent = passkey.lastUsedAt
+        ? `Last used ${formatDate(passkey.lastUsedAt)}`
+        : `Added ${formatDate(passkey.createdAt)}`;
       details.append(label, meta);
-
       const actions = document.createElement('div');
       actions.className = 'passkey-device-actions';
       const save = document.createElement('button');
@@ -239,7 +242,10 @@
       removeButton.className = 'btn btn-ghost btn-sm passkey-remove-button';
       removeButton.textContent = 'Remove';
       removeButton.addEventListener('click', async () => {
-        if (!window.confirm(`Remove “${passkey.label || 'this passkey'}”? You can still sign in with email and password.`)) return;
+        if (
+          !window.confirm(`Remove “${passkey.label || 'this passkey'}”? You can still sign in with email and password.`)
+        )
+          return;
         removeButton.disabled = true;
         securityMessage('Removing passkey…');
         try {
@@ -256,7 +262,6 @@
       listElement.appendChild(row);
     });
   }
-
   async function initializeManagement() {
     const card = document.getElementById('consumerPasskeyCard');
     if (!card) return;
@@ -287,7 +292,6 @@
       }
     });
   }
-
   window.AgapayPasskeys = {
     authenticate,
     isSupported: supported,
@@ -299,6 +303,5 @@
       window.AGAPAYDonorSession.saveSession(payload);
     },
   };
-
   document.addEventListener('DOMContentLoaded', initializeManagement);
 })();

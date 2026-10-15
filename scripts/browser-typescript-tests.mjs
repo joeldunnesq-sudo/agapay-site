@@ -1,3 +1,5 @@
+import ts from 'typescript';
+import path from 'node:path';
 import { CURRENT_TERMS_VERSION } from '../src/lib/legal-acceptance.js';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -15,7 +17,66 @@ const sources = (await readdir(join(repoRoot, 'src/browser'), { recursive: true 
   .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'))
   .map((file) => `src/browser/${file}`);
 assert.deepEqual(sources.sort(), browserTypeScriptEntries.map(({ source }) => source).sort());
-for (const { output, externalEmbed } of browserTypeScriptEntries) {
+
+// Native module and Worker URLs retain their existing runtime import/registration paths.
+const runtimeReferences = new Map();
+for (const file of (await readdir(join(repoRoot, 'public'), { recursive: true })).filter(
+  (p) => p.endsWith('.js') && !p.replaceAll('\\', '/').startsWith('vendor/')
+)) {
+  const filename = 'public/' + file.replaceAll('\\', '/');
+  const source = await readFile(join(repoRoot, filename), 'utf8');
+  const parsed = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  function visit(node) {
+    if (ts.isStringLiteral(node)) {
+      const value = node.text.split(/[?#]/)[0];
+      if (value.endsWith('.js') && (value.startsWith('/') || value.startsWith('./') || value.startsWith('../'))) {
+        const target = value.startsWith('/')
+          ? 'public' + value
+          : path.posix.normalize(path.posix.join(path.posix.dirname(filename), value));
+        if (!runtimeReferences.has(target)) runtimeReferences.set(target, new Set());
+        runtimeReferences.get(target).add(filename);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(parsed);
+}
+for (const { output, externalEmbed, delivery, module: nativeModule } of browserTypeScriptEntries) {
+  if (delivery) {
+    const code = await readFile(join(repoRoot, output), 'utf8');
+    if (delivery === 'unreferenced-classic' || delivery === 'unreferenced-worker') {
+      assert.equal(
+        output,
+        delivery === 'unreferenced-classic' ? 'public/site-mobile-nav.js' : 'public/listen/service-worker.js',
+        'Only these two pre-existing standalone scripts have no runtime consumer'
+      );
+      if (delivery === 'unreferenced-worker') assert.match(code, /self\.addEventListener/);
+      assert.equal(nativeModule, undefined);
+      new vm.Script(code, { filename: output });
+      continue;
+    }
+    assert.ok(
+      (runtimeReferences.get(output)?.size || 0) > 0,
+      output + ' must retain a runtime import or Worker registration consumer'
+    );
+    if (delivery === 'native-module') {
+      assert.equal(nativeModule, true);
+      assert.throws(() => new vm.Script(code), /import|export/, output + ' must retain native module syntax');
+    } else {
+      assert.equal(delivery, 'worker');
+      assert.equal(nativeModule, undefined);
+      assert.ok(
+        [
+          'public/service-worker.js',
+          'public/listen/service-worker.js',
+          'public/parish/directory-import-file-worker.js',
+        ].includes(output)
+      );
+      new vm.Script(code, { filename: output });
+      assert.match(code, /self\.(?:addEventListener|onmessage)/);
+    }
+    continue;
+  }
   const asset = output.slice('public'.length);
   if (externalEmbed) {
     // Published third-party snippets keep the stable URL and their existing revalidation policy.
