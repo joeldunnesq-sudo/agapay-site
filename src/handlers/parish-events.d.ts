@@ -5,3 +5,24 @@ export function loadPublishedCommerceCalendarEvents(
   parishId: string,
   registration?: CatalogRegistration
 ): Promise<{ id: string; title: string; startsAt: string; endsAt?: string; [field: string]: unknown }[]>;
+
+/** Consumed ministry commerce boundary; implementation remains JavaScript. */
+export function listMinistryCommerceItems(
+  env: Partial<Env>,
+  parishId: string,
+  ministryId: string
+): Promise<Record<string, unknown>>;
+export function createMinistryCommerceItem(
+  request: Request,
+  env: Partial<Env>,
+  parishId: string,
+  ministryId: string,
+  personId: string
+): Promise<Record<string, unknown>>;
+export function patchMinistryCommerceItem(
+  request: Request,
+  env: Partial<Env>,
+  parishId: string,
+  ministryId: string,
+  productId: string
+): Promise<Record<string, unknown>>;

@@ -1,3 +1,4 @@
+// Generated from src/handlers/donor-sacraments.ts by npm run build:server. Do not edit.
 import {
   SCHEDULABLE_SACRAMENT_TYPES,
   computeAvailableSlots,
@@ -23,8 +24,7 @@ import { syncSacramentRequestToGoogleCalendar } from '../sacraments/google-calen
 import { attachPreparationToRequests } from '../sacraments/preparation.js';
 import { findRegistrationByParishId, requireDonor } from './parish.js';
 import { sacramentTypeLabel } from './parish-sacraments.js';
-
-const SACRAMENT_TYPES = new Set([
+const SACRAMENT_TYPES = /* @__PURE__ */ new Set([
   'house_blessing',
   'baptism',
   'chrismation',
@@ -38,8 +38,7 @@ const SACRAMENT_TYPES = new Set([
   'counseling',
   'other',
 ]);
-const SACRAMENT_ACTIVE_STATUSES = new Set(['requested', 'acknowledged', 'scheduled']);
-
+const SACRAMENT_ACTIVE_STATUSES = /* @__PURE__ */ new Set(['requested', 'acknowledged', 'scheduled']);
 function publicSacramentRequest(row = {}) {
   return {
     id: row.id,
@@ -63,15 +62,14 @@ function publicSacramentRequest(row = {}) {
     // parish_notes is intentionally omitted — internal to the parish only.
   };
 }
-
 function donorSacramentOfferings(registration = {}) {
   const defaults = ['house_blessing', 'confession', 'counseling', 'baptism', 'wedding'];
   const priests =
     Array.isArray(registration.sacramentPriests) && registration.sacramentPriests.length
       ? registration.sacramentPriests
       : [{ serviceTypes: defaults, customServices: [] }];
-  const types = new Set();
-  const customById = new Map();
+  const types = /* @__PURE__ */ new Set();
+  const customById = /* @__PURE__ */ new Map();
   for (const priest of priests) {
     const serviceTypes = Array.isArray(priest?.serviceTypes) ? priest.serviceTypes : defaults;
     serviceTypes.forEach((type) => types.add(String(type || '')));
@@ -84,12 +82,6 @@ function donorSacramentOfferings(registration = {}) {
   }
   return { types: [...types], custom: [...customById.values()] };
 }
-
-// Structured detail for baptism/chrismation and wedding requests. Lives in
-// satellite tables keyed on sacrament_requests.id — see
-// migration_sacrament_details.sql. Every other sacrament type has no detail
-// row, which is fine; attachSacramentDetails() just returns null for them.
-
 function publicBaptismDetails(row) {
   if (!row) return null;
   return {
@@ -106,7 +98,6 @@ function publicBaptismDetails(row) {
     godparent2OrthodoxAttested: !!row.godparent_2_orthodox_attested,
   };
 }
-
 function publicWeddingDetails(row) {
   if (!row) return null;
   return {
@@ -122,7 +113,6 @@ function publicWeddingDetails(row) {
     premaritalCounselComplete: !!row.premarital_counsel_complete,
   };
 }
-
 async function attachSacramentDetails(env, row) {
   const base = publicSacramentRequest(row);
   if (!row) return base;
@@ -142,15 +132,10 @@ async function attachSacramentDetails(env, row) {
   const [prepared] = await attachPreparationToRequests(env, [detailed]);
   return prepared;
 }
-
-// Batched version for lists -- at most two IN(...) queries total instead of
-// one extra D1 round-trip per baptism/wedding row. See the matching helper
-// in src/handlers/parish.js for why this matters (N+1 was slow to load).
 async function attachSacramentDetailsBatch(env, rows = []) {
   const baptismRows = rows.filter((r) => r.sacrament_type === 'baptism' || r.sacrament_type === 'chrismation');
   const weddingRows = rows.filter((r) => r.sacrament_type === 'wedding');
-
-  const baptismDetailsById = new Map();
+  const baptismDetailsById = /* @__PURE__ */ new Map();
   if (baptismRows.length) {
     const placeholders = baptismRows.map(() => '?').join(',');
     const details = await d1All(
@@ -160,8 +145,7 @@ async function attachSacramentDetailsBatch(env, rows = []) {
     ).catch(() => []);
     for (const detail of details) baptismDetailsById.set(detail.request_id, detail);
   }
-
-  const weddingDetailsById = new Map();
+  const weddingDetailsById = /* @__PURE__ */ new Map();
   if (weddingRows.length) {
     const placeholders = weddingRows.map(() => '?').join(',');
     const details = await d1All(
@@ -171,7 +155,6 @@ async function attachSacramentDetailsBatch(env, rows = []) {
     ).catch(() => []);
     for (const detail of details) weddingDetailsById.set(detail.request_id, detail);
   }
-
   const detailedRows = rows.map((row) => {
     const base = publicSacramentRequest(row);
     if (row.sacrament_type === 'baptism' || row.sacrament_type === 'chrismation') {
@@ -184,54 +167,36 @@ async function attachSacramentDetailsBatch(env, rows = []) {
   });
   return attachPreparationToRequests(env, detailedRows);
 }
-
-// GET  /api/donor/sacraments        — list the signed-in donor's own requests
-//   ?parishId= also returns { available } for that parish's AGAPAY Parish + status,
-//   so the frontend knows whether to show the "Request a sacrament" form at all.
-// POST /api/donor/sacraments        — submit a new request
-export async function handleDonorSacraments(request, env) {
+async function handleDonorSacraments(request, env) {
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   if (request.method === 'GET') {
     const rows = await d1All(
       env,
       'SELECT * FROM sacrament_requests WHERE donor_email = ? ORDER BY created_at DESC LIMIT 100',
       normalizeEmail(donor.email)
     ).catch(() => []);
-
-    // Sacraments & Services is an AGAPAY Parish + feature, currently in
-    // soft rollout — only tell the donor it's available if their home
-    // parish both has active AGAPAY Parish + access AND has been enabled by
-    // an AGAPAY admin. This is purely informational for the GET (so the UI
-    // can show/hide the "new request" form); it never blocks viewing
-    // requests already on file, even from a parish no longer enabled.
     let available = false;
     let offerings = donorSacramentOfferings();
-    const parishId = String(request.headers.get('X-AGAPAY-Parish-Id') || donor.defaultParishId || '').trim();
-    if (parishId) {
-      const found = await findRegistrationByParishId(env, parishId);
-      available = Boolean(found && sacramentsEnabledFor(found.registration));
-      if (found) offerings = donorSacramentOfferings(found.registration);
+    const parishId2 = String(request.headers.get('X-AGAPAY-Parish-Id') || donor.defaultParishId || '').trim();
+    if (parishId2) {
+      const found2 = await findRegistrationByParishId(env, parishId2);
+      available = Boolean(found2 && sacramentsEnabledFor(found2.registration));
+      if (found2) offerings = donorSacramentOfferings(found2.registration);
     }
-
     const requestsWithDetails = await attachSacramentDetailsBatch(env, rows || []);
-    return json({ requests: requestsWithDetails, available, parishId, offerings });
+    return json({ requests: requestsWithDetails, available, parishId: parishId2, offerings });
   }
-
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
-
   const limited = await rateLimit(request, env, 'donor-sacrament-request', { limit: 10, windowSeconds: 3600 });
   if (limited) return limited;
-
   let body = {};
   try {
     body = await request.json();
   } catch {
     body = {};
   }
-
   const parishId = String(body.parishId || donor.defaultParishId || '').trim();
   if (!parishId) {
     return json(
@@ -244,10 +209,6 @@ export async function handleDonorSacraments(request, env) {
   }
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish not found.' }, { status: 404 });
-
-  // Gate: Sacraments & Services requires both active AGAPAY Parish + access
-  // (paid subscription, trial, or a comp grant) AND an admin having flipped
-  // on the soft-rollout flag for this specific parish.
   if (!sacramentsEnabledFor(found.registration)) {
     return json(
       {
@@ -259,7 +220,6 @@ export async function handleDonorSacraments(request, env) {
       { status: 402 }
     );
   }
-
   const sacramentType = String(body.sacramentType || '').trim();
   if (!SACRAMENT_TYPES.has(sacramentType)) {
     return json({ error: 'Choose a valid sacrament or service type.' }, { status: 400 });
@@ -276,7 +236,6 @@ export async function handleDonorSacraments(request, env) {
   if (sacramentType === 'other' && !otherTypeLabel) {
     return json({ error: "Describe what you're requesting." }, { status: 400 });
   }
-
   const locationType = ['church', 'home', 'other'].includes(body.locationType) ? body.locationType : 'church';
   const locationAddress = String(body.locationAddress || '')
     .trim()
@@ -287,7 +246,6 @@ export async function handleDonorSacraments(request, env) {
   ) {
     return json({ error: 'An address is required for a house blessing or home visit.' }, { status: 400 });
   }
-
   const requestedDate = String(body.requestedDate || '')
     .trim()
     .slice(0, 10);
@@ -296,15 +254,13 @@ export async function handleDonorSacraments(request, env) {
     .slice(0, 200);
   const notes = String(body.notes || '')
     .trim()
-    .slice(0, 2000);
+    .slice(0, 2e3);
   const phone = String(body.phone || '')
     .trim()
     .slice(0, 40);
-
   const baptismDetails =
     sacramentType === 'baptism' || sacramentType === 'chrismation' ? body.baptismDetails || {} : null;
   const weddingDetails = sacramentType === 'wedding' ? body.weddingDetails || {} : null;
-
   if (baptismDetails && !String(baptismDetails.candidateName || '').trim()) {
     return json({ error: 'Candidate name is required.' }, { status: 400 });
   }
@@ -314,25 +270,19 @@ export async function handleDonorSacraments(request, env) {
   ) {
     return json({ error: "Both parties' names are required." }, { status: 400 });
   }
-
-  // Fall back to a derived label so existing dashboard views that only know
-  // about participant_names (not yet updated to read the detail tables)
-  // still show something sensible.
   let participantNames = String(body.participantNames || '')
     .trim()
-    .slice(0, 1000);
+    .slice(0, 1e3);
   if (!participantNames && baptismDetails) {
     participantNames = String(baptismDetails.candidateName || '')
       .trim()
-      .slice(0, 1000);
+      .slice(0, 1e3);
   }
   if (!participantNames && weddingDetails) {
-    participantNames = `${weddingDetails.partyAName || ''} & ${weddingDetails.partyBName || ''}`.trim().slice(0, 1000);
+    participantNames = `${weddingDetails.partyAName || ''} & ${weddingDetails.partyBName || ''}`.trim().slice(0, 1e3);
   }
-
   const id = generateSecret('sac');
-  const now = new Date().toISOString();
-
+  const now = /* @__PURE__ */ new Date().toISOString();
   await d1Run(
     env,
     `
@@ -357,7 +307,6 @@ export async function handleDonorSacraments(request, env) {
     now,
     now
   );
-
   if (baptismDetails) {
     await d1Run(
       env,
@@ -399,7 +348,6 @@ export async function handleDonorSacraments(request, env) {
       baptismDetails.godparent2OrthodoxAttested ? 1 : 0
     );
   }
-
   if (weddingDetails) {
     await d1Run(
       env,
@@ -434,8 +382,6 @@ export async function handleDonorSacraments(request, env) {
       weddingDetails.premaritalCounselComplete ? 1 : 0
     );
   }
-
-  // Best-effort notification to the parish — never blocks the request itself.
   try {
     await notifyParishOfNewSacramentRequest(env, {
       request,
@@ -450,20 +396,10 @@ export async function handleDonorSacraments(request, env) {
       notes,
       phone,
     });
-  } catch {
-    /* notification failure never blocks the request */
-  }
-
+  } catch {}
   const row = await d1First(env, 'SELECT * FROM sacrament_requests WHERE id = ?', id);
   return json({ ok: true, request: await attachSacramentDetails(env, row) });
 }
-
-/**
- * Best-effort "new sacrament request" email to the parish/priest. Shared by
- * the regular request POST above and the native availability booking
- * endpoint below -- `booked` swaps the copy from "requested" to "booked and
- * confirmed" since a booking skips the acknowledge/schedule review step.
- */
 async function notifyParishOfNewSacramentRequest(
   env,
   {
@@ -490,13 +426,11 @@ async function notifyParishOfNewSacramentRequest(
     registration.contactEmail,
   ].filter(Boolean);
   if (!to.length) return;
-
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const typeLabel = otherTypeLabel || sacramentTypeLabel(sacramentType);
   const heading = booked ? 'New Sacrament Booking' : 'New Sacrament Request';
   const verb = booked ? 'booked' : 'requested';
   const when = booked && confirmedDate ? `${confirmedDate}${confirmedTime ? ` at ${confirmedTime}` : ''}` : '';
-
   await sendEmail(env, {
     from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>',
     to: [...new Set(to.map((a) => String(a).trim().toLowerCase()))],
@@ -519,27 +453,22 @@ async function notifyParishOfNewSacramentRequest(
       <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">${booked ? 'This slot was booked automatically from your published availability.' : 'Review and respond to this request'} from your parish dashboard, under Sacraments &amp; Services.</p>
     `
     ),
-    text: `${booked ? 'New sacrament booking' : 'New sacrament request'}: ${typeLabel}${when ? ' (' + when + ')' : ''}\nFrom: ${donor.donorName || donor.email} <${donor.email}>${phone ? ' / ' + phone : ''}\n${participantNames ? 'For: ' + participantNames + '\n' : ''}${!booked && requestedDate ? 'Preferred date: ' + requestedDate + '\n' : ''}${notes ? '\nNotes:\n' + notes : ''}`,
+    text: `${booked ? 'New sacrament booking' : 'New sacrament request'}: ${typeLabel}${when ? ' (' + when + ')' : ''}
+From: ${donor.donorName || donor.email} <${donor.email}>${phone ? ' / ' + phone : ''}
+${participantNames ? 'For: ' + participantNames + '\n' : ''}${!booked && requestedDate ? 'Preferred date: ' + requestedDate + '\n' : ''}${notes ? '\nNotes:\n' + notes : ''}`,
   });
 }
-
-// GET /api/donor/sacraments/availability?parishId=&sacramentType=
-// Real-time open slots for the "schedulable" types, computed natively (no
-// third-party calendar). Empty slots (no error) means the donor UI should
-// fall back to the free-text preferred-date/time fields.
-export async function handleDonorSacramentAvailability(request, env) {
+async function handleDonorSacramentAvailability(request, env) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const url = new URL(request.url);
   const parishId = String(url.searchParams.get('parishId') || donor.defaultParishId || '').trim();
   const offeringKey = String(url.searchParams.get('sacramentType') || '').trim();
   if (!parishId || !isSchedulableOfferingKey(offeringKey)) {
     return json({ slots: [], timezone: '' });
   }
-
   const found = await findRegistrationByParishId(env, parishId);
   if (!found || !sacramentsEnabledFor(found.registration)) {
     return json({ slots: [], timezone: '' });
@@ -552,7 +481,6 @@ export async function handleDonorSacramentAvailability(request, env) {
   if (!isBuiltInOffering && !isCustomScheduledOffering) {
     return json({ slots: [], timezone: found.registration.timezone || '' });
   }
-
   const result = await computeAvailableSlots(env, {
     parishId,
     sacramentType: offeringKey,
@@ -560,28 +488,19 @@ export async function handleDonorSacramentAvailability(request, env) {
   });
   return json(result);
 }
-
-// POST /api/donor/sacraments/book
-// Books a real open slot directly -- for configured schedulable service types.
-// only. Skips the requested->acknowledged->scheduled review step entirely:
-// the row is created as status='scheduled' with confirmed_date/confirmed_time
-// already set, since the slot was only offered because it was open.
-export async function handleDonorSacramentBook(request, env) {
+async function handleDonorSacramentBook(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const limited = await rateLimit(request, env, 'donor-sacrament-request', { limit: 10, windowSeconds: 3600 });
   if (limited) return limited;
-
   let body = {};
   try {
     body = await request.json();
   } catch {
     body = {};
   }
-
   const parishId = String(body.parishId || donor.defaultParishId || '').trim();
   if (!parishId) {
     return json({ error: 'Choose a parish before booking.' }, { status: 400 });
@@ -591,7 +510,6 @@ export async function handleDonorSacramentBook(request, env) {
   if (!sacramentsEnabledFor(found.registration)) {
     return json({ error: 'Sacraments & Services is not enabled for this parish.' }, { status: 402 });
   }
-
   const sacramentType = String(body.sacramentType || '').trim();
   const schedulingType = String(body.schedulingType || sacramentType).trim();
   const offerings = donorSacramentOfferings(found.registration);
@@ -613,7 +531,6 @@ export async function handleDonorSacramentBook(request, env) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
     return json({ error: 'Choose a valid date and time.' }, { status: 400 });
   }
-
   const locationType = ['church', 'home', 'other'].includes(body.locationType) ? body.locationType : 'church';
   const locationAddress = String(body.locationAddress || '')
     .trim()
@@ -623,26 +540,22 @@ export async function handleDonorSacramentBook(request, env) {
   }
   const participantNames = String(body.participantNames || '')
     .trim()
-    .slice(0, 1000);
+    .slice(0, 1e3);
   const phone = String(body.phone || '')
     .trim()
     .slice(0, 40);
   const notes = String(body.notes || '')
     .trim()
-    .slice(0, 2000);
+    .slice(0, 2e3);
   const priestName = String(body.priestName || '')
     .trim()
     .slice(0, 120);
-
-  // Soft pre-check (nice error message on the common case) -- the real,
-  // race-safe guarantee is the DB-level unique index caught below.
   const stillOpen = await isSlotStillOpen(env, { parishId, date, time, priestName });
   if (!stillOpen) {
     return json({ error: 'That time was just taken — please pick another.', slotTaken: true }, { status: 409 });
   }
-
   const id = generateSecret('sac');
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   try {
     await d1Run(
       env,
@@ -676,8 +589,6 @@ export async function handleDonorSacramentBook(request, env) {
     }
     throw error;
   }
-
-  // Best-effort notification to the parish — never blocks the booking itself.
   try {
     await notifyParishOfNewSacramentRequest(env, {
       request,
@@ -693,26 +604,16 @@ export async function handleDonorSacramentBook(request, env) {
       confirmedDate: date,
       confirmedTime: time,
     });
-  } catch {
-    /* notification failure never blocks the booking */
-  }
-
+  } catch {}
   const row = await d1First(env, 'SELECT * FROM sacrament_requests WHERE id = ?', id);
   const calendarSync = await syncSacramentRequestToGoogleCalendar(env, found.registration, row);
   return json({ ok: true, request: await attachSacramentDetails(env, row), calendarSync });
 }
-
-// POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
-export async function handleDonorSacramentCancel(request, env, requestId) {
-  // No rollout-allowlist check needed here: a request can only exist in the
-  // table if it was created via handleDonorSacraments' POST gate, which
-  // already restricts creation to allowlisted parishes. Cancelling an
-  // existing request is safe regardless of the parish's current rollout status.
+async function handleDonorSacramentCancel(request, env, requestId) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const row = await d1First(
     env,
     'SELECT * FROM sacrament_requests WHERE id = ? AND donor_email = ?',
@@ -723,8 +624,7 @@ export async function handleDonorSacramentCancel(request, env, requestId) {
   if (!SACRAMENT_ACTIVE_STATUSES.has(row.status)) {
     return json({ error: 'This request can no longer be cancelled.' }, { status: 409 });
   }
-
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   await d1Run(env, "UPDATE sacrament_requests SET status = 'cancelled', updated_at = ? WHERE id = ?", now, requestId);
   const updated = await d1First(env, 'SELECT * FROM sacrament_requests WHERE id = ?', requestId);
   const found = await findRegistrationByParishId(env, row.parish_id);
@@ -733,3 +633,9 @@ export async function handleDonorSacramentCancel(request, env, requestId) {
     : { status: 'parish_not_found' };
   return json({ ok: true, request: await attachSacramentDetails(env, updated), calendarSync });
 }
+export {
+  handleDonorSacramentAvailability,
+  handleDonorSacramentBook,
+  handleDonorSacramentCancel,
+  handleDonorSacraments,
+};

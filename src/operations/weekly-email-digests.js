@@ -1,3 +1,4 @@
+// Generated from src/operations/weekly-email-digests.ts by npm run build:server. Do not edit.
 import {
   d1,
   d1All,
@@ -19,21 +20,17 @@ import { loadAllRegistrations } from '../lib/registrations.js';
 import { requireAdmin } from '../handlers/admin.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
-
 function formatCommemorationNames(entries, field) {
   const names = entries.flatMap((entry) => (Array.isArray(entry[field]) ? entry[field] : []));
   if (!names.length) return '<p style="margin:0;color:#6F6A60;">No names submitted.</p>';
   return `<ul style="margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;">${names.map((name) => `<li>${htmlEscape(name)}</li>`).join('')}</ul>`;
 }
-
 function formatUsd(cents) {
   return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
-
 function commerceWeeklyReportKey(module, start, end) {
   return `${String(module || 'bookstore')}:${start.toISOString().slice(0, 10)}:${end.toISOString().slice(0, 10)}`;
 }
-
 function emailIdFromSendResult(email = {}) {
   if (!email.body) return '';
   try {
@@ -43,14 +40,12 @@ function emailIdFromSendResult(email = {}) {
     return '';
   }
 }
-
-export async function sendWeeklyCommemorationEmails(env, scheduledTime, options = {}) {
+async function sendWeeklyCommemorationEmails(env, scheduledTime, options = {}) {
   const registrations = await loadAllRegistrations(env, { status: 'verified' });
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
   const { start, end } = weekWindow(new Date(scheduledTime || Date.now()));
   const parishFilter = String(options.parishId || '').trim();
   const dryRun = Boolean(options.dryRun);
-
   const results = [];
   for (const registration of registrations) {
     if (!registration.parishId) continue;
@@ -109,7 +104,13 @@ export async function sendWeeklyCommemorationEmails(env, scheduledTime, options 
         <p style="margin:0;font-size:13px;line-height:1.7;color:#6F6A60;">This message is sent every Saturday morning, even when no names were submitted.</p>
       `
       ),
-      text: `Weekly AGAPAY commemorations for ${registration.parishName || 'your parish'}\n\nLiving:\n${entries.flatMap((entry) => entry.living || []).join('\n') || 'No names submitted.'}\n\nDeparted:\n${entries.flatMap((entry) => entry.departed || []).join('\n') || 'No names submitted.'}`,
+      text: `Weekly AGAPAY commemorations for ${registration.parishName || 'your parish'}
+
+Living:
+${entries.flatMap((entry) => entry.living || []).join('\n') || 'No names submitted.'}
+
+Departed:
+${entries.flatMap((entry) => entry.departed || []).join('\n') || 'No names submitted.'}`,
     });
     results.push({
       parishId: registration.parishId,
@@ -124,19 +125,16 @@ export async function sendWeeklyCommemorationEmails(env, scheduledTime, options 
       windowEnd: end.toISOString(),
     });
   }
-
   return results;
 }
-
-export async function handleAdminWeeklyCommemorationEmails(request, env) {
+async function handleAdminWeeklyCommemorationEmails(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-maintenance', { limit: 12, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const body = await request.json().catch(() => ({}));
-  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const scheduledTime = body.scheduledTime || /* @__PURE__ */ new Date().toISOString();
   const results = await sendWeeklyCommemorationEmails(env, scheduledTime, {
     dryRun: body.dryRun !== false,
     parishId: body.parishId || '',
@@ -148,7 +146,6 @@ export async function handleAdminWeeklyCommemorationEmails(request, env) {
     results,
   });
 }
-
 async function loadWeeklyCommerceReport(env, parishId, start, end) {
   if (!d1(env) || !parishId) return null;
   const orders = await d1All(
@@ -211,7 +208,6 @@ async function loadWeeklyCommerceReport(env, parishId, start, end) {
     totals,
   };
 }
-
 function commerceOrdersHtml(orders = []) {
   if (!orders.length) return '<p style="margin:0;color:#6F6A60;">No paid bookstore orders this week.</p>';
   return `<table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;color:#171715;font-size:13px;">
@@ -234,15 +230,13 @@ function commerceOrdersHtml(orders = []) {
       .join('')}</tbody>
   </table>`;
 }
-
 function commerceTopItemsHtml(items = []) {
   if (!items.length) return '<p style="margin:0;color:#6F6A60;">No top items to report yet.</p>';
   return `<ul style="margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;">${items.map((item) => `<li>${htmlEscape(item.name)} &mdash; ${item.units} sold, ${formatUsd(item.grossCents)}</li>`).join('')}</ul>`;
 }
-
 async function recordCommerceWeeklyReport(env, report) {
   if (!d1(env)) return;
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   await d1Run(
     env,
     `INSERT INTO commerce_weekly_reports
@@ -283,8 +277,7 @@ async function recordCommerceWeeklyReport(env, report) {
     now
   );
 }
-
-export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, options = {}) {
+async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, options = {}) {
   const registrations = await loadAllRegistrations(env, { status: 'verified' });
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
   const { start, end } = weekWindow(new Date(scheduledTime || Date.now()));
@@ -293,7 +286,6 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
   const force = Boolean(options.force);
   const reportKey = commerceWeeklyReportKey('bookstore', start, end);
   const results = [];
-
   for (const registration of registrations) {
     if (!registration.parishId) continue;
     if (parishFilter && registration.parishId !== parishFilter) continue;
@@ -308,7 +300,6 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
       });
       continue;
     }
-
     const existing = d1(env)
       ? await d1First(
           env,
@@ -328,7 +319,6 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
       });
       continue;
     }
-
     const report = await loadWeeklyCommerceReport(env, registration.parishId, start, end);
     const totals = report?.totals || {};
     const orderCount = report?.orders?.length || 0;
@@ -345,7 +335,6 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
       });
       continue;
     }
-
     const subject = `Weekly AGAPAY bookstore report for ${registration.parishName || 'your parish'}`;
     const resultBase = {
       parishId: registration.parishId,
@@ -364,7 +353,6 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
       results.push({ ...resultBase, status: 'dry_run' });
       continue;
     }
-
     const email = await sendEmail(env, {
       from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>',
       to: [recipient],
@@ -413,7 +401,7 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
           : ['No top items to report.']),
       ].join('\n'),
     });
-    const sentAt = email.status === 'sent' ? new Date().toISOString() : '';
+    const sentAt = email.status === 'sent' ? /* @__PURE__ */ new Date().toISOString() : '';
     await recordCommerceWeeklyReport(env, {
       id: `commerce_report_${registration.parishId}_${reportKey}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
       ...resultBase,
@@ -428,19 +416,16 @@ export async function sendWeeklyTreasurerCommerceEmails(env, scheduledTime, opti
     });
     results.push({ ...resultBase, status: email.status, httpStatus: email.httpStatus || 0, sentAt });
   }
-
   return results;
 }
-
-export async function handleAdminWeeklyTreasurerCommerceEmails(request, env) {
+async function handleAdminWeeklyTreasurerCommerceEmails(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-maintenance', { limit: 12, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const body = await request.json().catch(() => ({}));
-  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const scheduledTime = body.scheduledTime || /* @__PURE__ */ new Date().toISOString();
   const results = await sendWeeklyTreasurerCommerceEmails(env, scheduledTime, {
     dryRun: body.dryRun !== false,
     parishId: body.parishId || '',
@@ -453,25 +438,17 @@ export async function handleAdminWeeklyTreasurerCommerceEmails(request, env) {
     results,
   });
 }
-
-// Weekly digest to the priest/treasurer for each Sacraments & Services
-// enabled parish, summarizing what needs attention: unacknowledged
-// requests (flagging ones over 48h old as overdue) and anything scheduled
-// in the coming week. Deliberately weekly, not daily -- a per-parish
-// reminder cadence the user asked to keep low-noise. If a parish has
-// nothing pending, no email is sent at all that week.
-export async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {}) {
+async function sendWeeklySacramentDigestEmails(env, scheduledTime, options = {}) {
   if (!d1(env)) return [];
   const registrations = await loadAllRegistrations(env, { status: 'verified' });
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
   const now = new Date(scheduledTime || Date.now());
-  const overdueThreshold = new Date(now.getTime() - 48 * 3600 * 1000).toISOString();
+  const overdueThreshold = new Date(now.getTime() - 48 * 3600 * 1e3).toISOString();
   const todayIso = now.toISOString().slice(0, 10);
-  const weekAheadIso = new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  const weekAheadIso = new Date(now.getTime() + 7 * 864e5).toISOString().slice(0, 10);
   const parishFilter = String(options.parishId || '').trim();
   const dryRun = Boolean(options.dryRun);
   const results = [];
-
   for (const registration of registrations) {
     if (!registration.parishId) continue;
     if (parishFilter && registration.parishId !== parishFilter) continue;
@@ -486,7 +463,6 @@ export async function sendWeeklySacramentDigestEmails(env, scheduledTime, option
       });
       continue;
     }
-
     const needsResponse = await d1All(
       env,
       `SELECT id, sacrament_type, other_type_label, created_at FROM sacrament_requests
@@ -523,7 +499,6 @@ export async function sendWeeklySacramentDigestEmails(env, scheduledTime, option
       ...new Set(memorials.map((row) => normalizeEmail(row.assigned_priest_email)).filter(Boolean)),
     ];
     const recipients = [...new Set([recipient, ...pastoralRecipients].filter(Boolean))];
-
     if (!needsResponse.length && !thisWeek.length && !memorials.length) {
       results.push({
         parishId: registration.parishId,
@@ -552,7 +527,6 @@ export async function sendWeeklySacramentDigestEmails(env, scheduledTime, option
       }
       continue;
     }
-
     const typeLabel = (row) => htmlEscape(row.other_type_label || sacramentTypeLabel(row.sacrament_type));
     const listItem = (label, meta) =>
       `<li style="margin:0 0 6px;">${label}${meta ? ` <span style="color:#6F6A60;">— ${htmlEscape(meta)}</span>` : ''}</li>`;
@@ -560,7 +534,6 @@ export async function sendWeeklySacramentDigestEmails(env, scheduledTime, option
       rows.length
         ? `<p style="margin:18px 0 6px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">${title}</p><ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:#171715;">${rows.map((r) => listItem(labelFn(r), metaFn(r))).join('')}</ul>`
         : '';
-
     const memorialLabel = (row) =>
       ({
         third_day: '3rd-day memorial',
@@ -636,34 +609,30 @@ export async function sendWeeklySacramentDigestEmails(env, scheduledTime, option
       });
     }
   }
-
   return results;
 }
-export async function handleAdminWeeklySacramentDigest(request, env) {
+async function handleAdminWeeklySacramentDigest(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-maintenance', { limit: 12, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const body = await request.json().catch(() => ({}));
-  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const scheduledTime = body.scheduledTime || /* @__PURE__ */ new Date().toISOString();
   const results = await sendWeeklySacramentDigestEmails(env, scheduledTime, {
     dryRun: body.dryRun !== false,
     parishId: body.parishId || '',
   });
   return json({ ok: true, dryRun: body.dryRun !== false, scheduledTime, results });
 }
-
-export async function handleAdminWeeklyAnnouncementDigest(request, env) {
+async function handleAdminWeeklyAnnouncementDigest(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-maintenance', { limit: 12, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const body = await request.json().catch(() => ({}));
-  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const scheduledTime = body.scheduledTime || /* @__PURE__ */ new Date().toISOString();
   const results = await sendWeeklyAnnouncementDigestEmails(env, scheduledTime, {
     dryRun: body.dryRun !== false,
     parishId: body.parishId || '',
@@ -671,32 +640,20 @@ export async function handleAdminWeeklyAnnouncementDigest(request, env) {
   });
   return json({ ok: true, dryRun: body.dryRun !== false, scheduledTime, results });
 }
-
-// Sends a one-time heads-up email roughly 30 days before a parish's
-// "Founding 20" free-year AGAPAY Parish + comp grant expires, so nobody
-// is surprised when access lapses. Marks the grant with reminderSentAt so
-// this never fires twice for the same grant, even though this function
-// runs every week.
-export async function sendStewardshipCompExpiryReminders(env) {
+async function sendStewardshipCompExpiryReminders(env) {
   const registrations = await loadAllRegistrations(env, { status: 'verified' });
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
   const now = Date.now();
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1e3;
   const results = [];
   for (const registration of registrations) {
     const comp = registration.stewardshipComp;
     if (!comp?.active || !comp?.expiresAt) continue;
-    if (comp.reminderSentAt) continue; // already reminded for this grant
-
+    if (comp.reminderSentAt) continue;
     const expiresAt = new Date(comp.expiresAt).getTime();
     if (!Number.isFinite(expiresAt)) continue;
     const msUntilExpiry = expiresAt - now;
-    // Fire once the grant is within 30 days of expiring (and hasn't already
-    // expired outright — an already-lapsed grant gets no reminder, since a
-    // "heads up, this expired a while ago" email isn't useful).
     if (msUntilExpiry > THIRTY_DAYS_MS || msUntilExpiry < 0) continue;
-
     const to = [
       ...new Set(
         [registration.priestEmail, registration.treasurerEmail, registration.email, registration.contactEmail]
@@ -705,14 +662,12 @@ export async function sendStewardshipCompExpiryReminders(env) {
       ),
     ];
     if (!to.length) continue;
-
     const expiresLabel = new Date(comp.expiresAt).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const daysLeft = Math.max(1, Math.round(msUntilExpiry / (24 * 60 * 60 * 1000)));
-
+    const daysLeft = Math.max(1, Math.round(msUntilExpiry / (24 * 60 * 60 * 1e3)));
     const email = await sendEmail(env, {
       from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>',
       to,
@@ -739,16 +694,29 @@ export async function sendStewardshipCompExpiryReminders(env) {
         </p>
       `
       ),
-      text: `Your free year of AGAPAY Parish + ends ${expiresLabel}\n\nAs one of our founding 20 parishes, ${registration.parishName || 'your parish'} received a free year of AGAPAY Parish +, ending ${expiresLabel} (about ${daysLeft} days from now).\n\nNo action is needed if you'd like to let it lapse. If you'd like to continue afterward, you can add AGAPAY Parish + as a paid add-on any time from your dashboard.\n\nThank you for being one of the first parishes to use it.`,
-    });
+      text: `Your free year of AGAPAY Parish + ends ${expiresLabel}
 
+As one of our founding 20 parishes, ${registration.parishName || 'your parish'} received a free year of AGAPAY Parish +, ending ${expiresLabel} (about ${daysLeft} days from now).
+
+No action is needed if you'd like to let it lapse. If you'd like to continue afterward, you can add AGAPAY Parish + as a paid add-on any time from your dashboard.
+
+Thank you for being one of the first parishes to use it.`,
+    });
     if (email.status !== 'not_configured') {
-      registration.stewardshipComp = { ...comp, reminderSentAt: new Date().toISOString() };
+      registration.stewardshipComp = { ...comp, reminderSentAt: /* @__PURE__ */ new Date().toISOString() };
       await saveRegistrationRecord(env, registration.reference, registration);
     }
-
     results.push({ parishId: registration.parishId, status: email.status });
   }
-
   return results;
 }
+export {
+  handleAdminWeeklyAnnouncementDigest,
+  handleAdminWeeklyCommemorationEmails,
+  handleAdminWeeklySacramentDigest,
+  handleAdminWeeklyTreasurerCommerceEmails,
+  sendStewardshipCompExpiryReminders,
+  sendWeeklyCommemorationEmails,
+  sendWeeklySacramentDigestEmails,
+  sendWeeklyTreasurerCommerceEmails,
+};

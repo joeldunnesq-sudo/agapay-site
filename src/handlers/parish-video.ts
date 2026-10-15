@@ -1,0 +1,846 @@
+interface StreamDetails {
+  readyToStream?: boolean;
+  status?: { state?: string; pctComplete?: string };
+  duration?: number;
+  requireSignedURLs?: boolean;
+  playback?: { hls?: string };
+  token: string;
+  uid: string;
+  uploadURL: string;
+}
+
+type ContentEnv = Partial<Env> & {
+  DB?: D1Database;
+  TEACHING_ASSETS?: R2Bucket;
+  TEACHING_ASSETS_URL?: string;
+  CLOUDFLARE_STREAM_API_TOKEN?: string;
+  AGAPAY_PUBLIC_URL?: string;
+};
+interface ContentRow {
+  id: string;
+  parish_id: string;
+  title: string;
+  description: string;
+  stream_video_id: string;
+  status: string;
+  pinned: number;
+  published_at: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  youtube_url: string;
+  thumbnail_url: string;
+  added_by: string;
+  added_at: string;
+  channel_id: string;
+  channel_url: string;
+  channel_title: string;
+}
+type ContentInput = Record<string, unknown>;
+import { getReadContentIds, getReadReceipts, markContentRead } from '../lib/content-reads.js';
+import { communicationsEnabledFor } from '../lib/entitlements.js';
+import {
+  generateSecret,
+  hasProductionStore,
+  json,
+  missingProductionStoreResponse,
+  normalizeEmail,
+  rateLimit,
+} from '../lib/core.js';
+import { renderBoundedRichText } from '../lib/rich-text.js';
+import { findRegistrationByParishId } from './parish.js';
+import { verifiedHouseholdAccess } from './koinonia-access.js';
+import { requireCommunicationsAdmin } from './parish-communications.js';
+
+const CONTENT_TYPE = 'video';
+const STREAM_API_ROOT = 'https://api.cloudflare.com/client/v4/accounts';
+export const VIDEO_ALLOWED_TAGS = Object.freeze(['strong', 'em', 'a', 'ul', 'li', 'br']);
+export const VIDEO_MAX_DURATION_SECONDS = 4 * 60 * 60;
+
+export function renderVideoDescription(value: unknown) {
+  return renderBoundedRichText(value, VIDEO_ALLOWED_TAGS);
+}
+
+function videoFromRow(row: Partial<ContentRow> = {}) {
+  return {
+    id: row.id || '',
+    parishId: row.parish_id || '',
+    title: row.title || '',
+    description: row.description || '',
+    descriptionHtml: renderVideoDescription(row.description || ''),
+    streamVideoId: row.stream_video_id || '',
+    status: row.status || 'draft',
+    pinned: Boolean(row.pinned),
+    publishedAt: row.published_at || '',
+    createdBy: row.created_by || '',
+    createdAt: row.created_at || '',
+    updatedAt: row.updated_at || '',
+  };
+}
+
+function youtubeFromRow(row: Partial<ContentRow> = {}) {
+  return {
+    id: row.id || '',
+    parishId: row.parish_id || '',
+    youtubeUrl: row.youtube_url || '',
+    title: row.title || '',
+    thumbnailUrl: row.thumbnail_url || '',
+    pinned: Boolean(row.pinned),
+    addedBy: row.added_by || '',
+    addedAt: row.added_at || '',
+    external: true,
+  };
+}
+
+function youtubeChannelFromRow(row: Partial<ContentRow> = {}) {
+  const channelId = String(row.channel_id || '');
+  return {
+    channelId,
+    channelUrl: row.channel_url || '',
+    channelTitle: row.channel_title || '',
+    uploadsPlaylistId: channelId.startsWith('UC') ? `UU${channelId.slice(2)}` : '',
+    addedBy: row.added_by || '',
+    addedAt: row.added_at || '',
+    updatedAt: row.updated_at || '',
+  };
+}
+
+function validateVideoInput(input: ContentInput = {}, { partial = false } = {}) {
+  const result: {
+    title?: string;
+    body?: string;
+    description?: string;
+    pinned?: number;
+    category?: string;
+    audioUrl?: string;
+  } = {};
+  if (!partial || Object.prototype.hasOwnProperty.call(input, 'title')) {
+    result.title = String(input.title || '')
+      .trim()
+      .slice(0, 180);
+    if (!result.title) throw new Error('Video title is required.');
+  }
+  if (!partial || Object.prototype.hasOwnProperty.call(input, 'description')) {
+    result.description = String(input.description || '')
+      .trim()
+      .slice(0, 20000);
+  }
+  if (!partial || Object.prototype.hasOwnProperty.call(input, 'pinned')) {
+    result.pinned = input.pinned ? 1 : 0;
+  }
+  return result;
+}
+
+function streamConfiguration(env: ContentEnv) {
+  const accountId = String(env.CLOUDFLARE_ACCOUNT_ID || '').trim();
+  const apiToken = String(env.CLOUDFLARE_STREAM_API_TOKEN || '').trim();
+  if (!accountId || !apiToken) throw new Error('Cloudflare Stream is not configured.');
+  return { accountId, apiToken };
+}
+
+export async function callStreamApi(env: ContentEnv, path: string, init: RequestInit = {}, fetchImpl = fetch) {
+  const { accountId, apiToken } = streamConfiguration(env);
+  const response = await fetchImpl(`${STREAM_API_ROOT}/${encodeURIComponent(accountId)}/stream${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init.headers || {}),
+    },
+  });
+  const payload = (await response.json().catch(() => ({}))) as {
+    success?: boolean;
+    errors?: { message?: string }[];
+    result: StreamDetails;
+  };
+  if (!response.ok || payload.success === false) {
+    const message = payload.errors?.[0]?.message || `Cloudflare Stream request failed (${response.status}).`;
+    const error = new Error(message);
+    (error as Error & { status?: number }).status = response.status || 502;
+    throw error;
+  }
+  return payload.result;
+}
+
+export function streamIsReady(details: Partial<StreamDetails> = {}) {
+  return details.readyToStream === true && String(details.status?.state || '').toLowerCase() === 'ready';
+}
+
+function allowedOrigins(request: Request, env: ContentEnv) {
+  const hosts = new Set();
+  for (const candidate of [request.url, env.AGAPAY_APP_URL, env.AGAPAY_PUBLIC_URL]) {
+    try {
+      hosts.add(new URL(candidate!).hostname);
+    } catch {}
+  }
+  return [...hosts].filter(Boolean);
+}
+
+export async function createStreamUpload(
+  env: ContentEnv,
+  {
+    request,
+    parishId,
+    createdBy,
+    maxDurationSeconds = VIDEO_MAX_DURATION_SECONDS,
+  }: { request: Request; parishId: string; createdBy: string; maxDurationSeconds?: number },
+  fetchImpl = fetch
+) {
+  return callStreamApi(
+    env,
+    '/direct_upload',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        maxDurationSeconds,
+        expiry: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        requireSignedURLs: true,
+        allowedOrigins: allowedOrigins(request, env),
+        creator: String(createdBy || parishId).slice(0, 64),
+        meta: { parishId },
+        thumbnailTimestampPct: 0.15,
+      }),
+    },
+    fetchImpl
+  );
+}
+
+export async function createVideoDraft(
+  db: D1Database,
+  {
+    parishId,
+    createdBy,
+    streamVideoId,
+    input,
+  }: { parishId: string; createdBy: string; streamVideoId: string; input: ContentInput }
+) {
+  const fields = validateVideoInput(input);
+  const id = generateSecret('video');
+  await db
+    .prepare(
+      `
+    INSERT INTO parish_video_posts (id, parish_id, title, description, stream_video_id, status, pinned, created_by)
+    VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)
+  `
+    )
+    .bind(id, parishId, fields.title, fields.description, streamVideoId, fields.pinned, createdBy)
+    .run();
+  return videoFromRow(
+    (await db.prepare('SELECT * FROM parish_video_posts WHERE id = ?').bind(id).first<ContentRow>())!
+  );
+}
+
+export async function updateVideoPost(
+  db: D1Database,
+  {
+    parishId,
+    videoId,
+    input,
+    streamDetails = null,
+  }: { parishId: string; videoId: string; input: ContentInput; streamDetails?: StreamDetails | null }
+) {
+  const current = await db
+    .prepare('SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?')
+    .bind(videoId, parishId)
+    .first<ContentRow>();
+  if (!current) return null;
+  if (current.status === 'archived') throw new Error('Archived videos cannot be edited.');
+  const fields = validateVideoInput(input, { partial: true });
+  const requestedStatus = Object.prototype.hasOwnProperty.call(input, 'status')
+    ? String(input.status || '').toLowerCase()
+    : current.status;
+  if (!['draft', 'published'].includes(requestedStatus)) throw new Error('Invalid video status.');
+  if (current.status === 'published' && requestedStatus === 'draft')
+    throw new Error('Published videos cannot return to draft.');
+  if (requestedStatus === 'published' && current.status !== 'published' && !streamIsReady(streamDetails || {})) {
+    throw new Error('This video is still processing and cannot be published yet.');
+  }
+  const publishedAt = requestedStatus === 'published' ? current.published_at || new Date().toISOString() : null;
+  await db
+    .prepare(
+      `
+    UPDATE parish_video_posts SET title = ?, description = ?, pinned = ?, status = ?, published_at = ?, updated_at = datetime('now')
+    WHERE id = ? AND parish_id = ?
+  `
+    )
+    .bind(
+      fields.title ?? current.title,
+      fields.description ?? current.description,
+      fields.pinned ?? current.pinned,
+      requestedStatus,
+      publishedAt,
+      videoId,
+      parishId
+    )
+    .run();
+  return videoFromRow(
+    (await db.prepare('SELECT * FROM parish_video_posts WHERE id = ?').bind(videoId).first<ContentRow>())!
+  );
+}
+
+export async function archiveVideoPost(db: D1Database, { parishId, videoId }: { parishId: string; videoId: string }) {
+  await db
+    .prepare(
+      "UPDATE parish_video_posts SET status = 'archived', updated_at = datetime('now') WHERE id = ? AND parish_id = ?"
+    )
+    .bind(videoId, parishId)
+    .run();
+  const row = await db
+    .prepare('SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?')
+    .bind(videoId, parishId)
+    .first<ContentRow>();
+  return row ? videoFromRow(row) : null;
+}
+
+export async function listVideoPosts(db: D1Database, parishId: string) {
+  const result = await db
+    .prepare('SELECT * FROM parish_video_posts WHERE parish_id = ? ORDER BY pinned DESC, updated_at DESC')
+    .bind(parishId)
+    .all<ContentRow>();
+  return Promise.all(
+    (result.results || []).map(async (row) => {
+      const post = videoFromRow(row);
+      const receipts =
+        post.status === 'published'
+          ? await getReadReceipts(db, { parishId, contentType: CONTENT_TYPE, contentId: post.id })
+          : [];
+      return { ...post, watchCount: receipts.length };
+    })
+  );
+}
+
+export async function getDonorVideoFeed(
+  db: D1Database,
+  { parishId, donorId }: { parishId: string; donorId: string; category?: string }
+) {
+  const result = await db
+    .prepare(
+      `
+    SELECT * FROM parish_video_posts WHERE parish_id = ? AND status = 'published'
+    ORDER BY pinned DESC, published_at DESC, created_at DESC
+  `
+    )
+    .bind(parishId)
+    .all<ContentRow>();
+  const posts = (result.results || []).map(videoFromRow);
+  const ids = posts.map(({ id }) => id);
+  const watchedIds = await getReadContentIds(db, { parishId, contentType: CONTENT_TYPE, donorId, contentIds: ids });
+  const watched = new Set(watchedIds);
+  return Promise.all(
+    posts.map(async (post) => {
+      const receipts = await getReadReceipts(db, { parishId, contentType: CONTENT_TYPE, contentId: post.id });
+      return { ...post, watched: watched.has(post.id), watchCount: receipts.length };
+    })
+  );
+}
+
+export async function markVideoWatched(
+  db: D1Database,
+  { parishId, videoId, donorId }: { parishId: string; videoId: string; donorId: string }
+) {
+  const row = await db
+    .prepare("SELECT id FROM parish_video_posts WHERE id = ? AND parish_id = ? AND status = 'published'")
+    .bind(videoId, parishId)
+    .first<ContentRow>();
+  if (!row) return false;
+  await markContentRead(db, { parishId, contentType: CONTENT_TYPE, contentId: videoId, donorId });
+  return true;
+}
+
+function signedAssetUrls(details: StreamDetails, token: string) {
+  const playback = new URL(details.playback?.hls || '');
+  const host = `${playback.protocol}//${playback.host}`;
+  return {
+    hlsUrl: `${host}/${token}/manifest/video.m3u8`,
+    thumbnailUrl: `${host}/${token}/thumbnails/thumbnail.jpg?height=720&fit=crop`,
+    durationSeconds: Math.max(0, Number(details.duration) || 0),
+  };
+}
+
+export async function privateStreamAssets(env: ContentEnv, streamVideoId: string, fetchImpl = fetch) {
+  const [details, tokenResult] = await Promise.all([
+    callStreamApi(env, `/${encodeURIComponent(streamVideoId)}`, {}, fetchImpl),
+    callStreamApi(
+      env,
+      `/${encodeURIComponent(streamVideoId)}/token`,
+      { method: 'POST', body: JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 60 * 60 }) },
+      fetchImpl
+    ),
+  ]);
+  if (!streamIsReady(details)) throw new Error('This video is still processing.');
+  if (!details.requireSignedURLs) throw new Error('This video is not configured for private playback.');
+  return { ...signedAssetUrls(details, tokenResult.token), streamState: details.status?.state || '' };
+}
+
+export function normalizeYouTubeUrl(value: unknown) {
+  let parsed;
+  try {
+    parsed = new URL(String(value || '').trim());
+  } catch {
+    throw new Error('Enter a valid YouTube video URL.');
+  }
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+  let videoId = '';
+  if (host === 'youtu.be') videoId = parsed.pathname.split('/').filter(Boolean)[0] || '';
+  else if (['youtube.com', 'm.youtube.com'].includes(host)) {
+    if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') || '';
+    else if (parsed.pathname.startsWith('/shorts/') || parsed.pathname.startsWith('/live/'))
+      videoId = parsed.pathname.split('/')[2] || '';
+  }
+  if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) throw new Error('Enter a direct YouTube video URL.');
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+export async function resolveYouTubeVideo(value: unknown, fetchImpl = fetch) {
+  const youtubeUrl = normalizeYouTubeUrl(value);
+  const endpoint = new URL('https://www.youtube.com/oembed');
+  endpoint.searchParams.set('url', youtubeUrl);
+  endpoint.searchParams.set('format', 'json');
+  const response = await fetchImpl(endpoint.toString(), { headers: { Accept: 'application/json' } });
+  const payload = (await response.json().catch(() => ({}))) as {
+    provider_name?: unknown;
+    title?: unknown;
+    thumbnail_url?: unknown;
+  };
+  if (!response.ok || payload.provider_name !== 'YouTube' || !payload.title || !payload.thumbnail_url) {
+    throw new Error('YouTube could not resolve that embeddable video.');
+  }
+  return {
+    youtubeUrl,
+    title: String(payload.title).slice(0, 240),
+    thumbnailUrl: String(payload.thumbnail_url).slice(0, 1000),
+  };
+}
+
+export async function addYouTubeLink(
+  db: D1Database,
+  {
+    parishId,
+    addedBy,
+    value,
+    pinned = false,
+    fetchImpl = fetch,
+  }: { parishId: string; addedBy: string; value: unknown; pinned?: boolean; fetchImpl?: typeof fetch }
+) {
+  const resolved = await resolveYouTubeVideo(value, fetchImpl);
+  const id = generateSecret('youtube');
+  if (pinned) await db.prepare('UPDATE parish_youtube_links SET pinned = 0 WHERE parish_id = ?').bind(parishId).run();
+  await db
+    .prepare(
+      `INSERT INTO parish_youtube_links (id, parish_id, youtube_url, title, thumbnail_url, pinned, added_by) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(id, parishId, resolved.youtubeUrl, resolved.title, resolved.thumbnailUrl, pinned ? 1 : 0, addedBy)
+    .run();
+  return youtubeFromRow(
+    (await db.prepare('SELECT * FROM parish_youtube_links WHERE id = ?').bind(id).first<ContentRow>())!
+  );
+}
+
+export async function listYouTubeLinks(db: D1Database, parishId: string) {
+  const result = await db
+    .prepare('SELECT * FROM parish_youtube_links WHERE parish_id = ? ORDER BY pinned DESC, added_at DESC')
+    .bind(parishId)
+    .all<ContentRow>();
+  return (result.results || []).map(youtubeFromRow);
+}
+
+async function donorVideoContext(request: Request, env: ContentEnv) {
+  const access = await verifiedHouseholdAccess(request, env);
+  if (access.response) return { error: access.response };
+  const { donor, donorId, parishId } = access.context;
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return { error: json({ error: 'Your selected parish could not be found.' }, { status: 404 }) };
+  if (!communicationsEnabledFor(found.registration)) return { disabled: true, parishId, found, donor };
+  return { parishId, found, donor, donorId };
+}
+
+export async function deleteVideoPost(
+  db: D1Database,
+  env: ContentEnv,
+  { parishId, videoId }: { parishId: string; videoId: string },
+  fetchImpl = fetch
+) {
+  const current = await db
+    .prepare('SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?')
+    .bind(videoId, parishId)
+    .first<ContentRow>();
+  if (!current) return null;
+  try {
+    await callStreamApi(env, `/${encodeURIComponent(current.stream_video_id)}`, { method: 'DELETE' }, fetchImpl);
+  } catch (error) {
+    if ((error as Error & { status?: number })?.status !== 404) throw error;
+  }
+  await db
+    .prepare('DELETE FROM parish_content_reads WHERE parish_id = ? AND content_type = ? AND content_id = ?')
+    .bind(parishId, CONTENT_TYPE, videoId)
+    .run();
+  await db.prepare('DELETE FROM parish_video_posts WHERE id = ? AND parish_id = ?').bind(videoId, parishId).run();
+  return videoFromRow(current);
+}
+
+export async function setYouTubeLinkPinned(
+  db: D1Database,
+  { parishId, linkId, pinned }: { parishId: string; linkId: string; pinned: boolean }
+) {
+  const current = await db
+    .prepare('SELECT id FROM parish_youtube_links WHERE id = ? AND parish_id = ?')
+    .bind(linkId, parishId)
+    .first<ContentRow>();
+  if (!current) return null;
+  if (pinned) await db.prepare('UPDATE parish_youtube_links SET pinned = 0 WHERE parish_id = ?').bind(parishId).run();
+  await db
+    .prepare('UPDATE parish_youtube_links SET pinned = ? WHERE id = ? AND parish_id = ?')
+    .bind(pinned ? 1 : 0, linkId, parishId)
+    .run();
+  return youtubeFromRow(
+    (await db
+      .prepare('SELECT * FROM parish_youtube_links WHERE id = ? AND parish_id = ?')
+      .bind(linkId, parishId)
+      .first<ContentRow>())!
+  );
+}
+
+function decodeYouTubeHtml(value: unknown = '') {
+  return String(value)
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
+}
+
+function youtubeFeedValue(xml: string, tag: string) {
+  return decodeYouTubeHtml(
+    xml.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'i'))?.[1] || ''
+  ).trim();
+}
+
+export function parseLatestYouTubeChannelVideo(xml: string = '') {
+  const entry = String(xml).match(/<entry(?:\s[^>]*)?>[\s\S]*?<\/entry>/i)?.[0] || '';
+  const videoId = youtubeFeedValue(entry, 'yt:videoId');
+  if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return null;
+  return {
+    id: `youtube-channel-${videoId}`,
+    youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+    title: youtubeFeedValue(entry, 'title') || 'Latest parish video',
+    thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    publishedAt: youtubeFeedValue(entry, 'published'),
+    external: true,
+    channelUpload: true,
+  };
+}
+
+export async function fetchLatestYouTubeChannelVideo(channel: { channelId?: string } | null, fetchImpl = fetch) {
+  const channelId = String(channel?.channelId || '');
+  if (!/^UC[A-Za-z0-9_-]{20,40}$/.test(channelId)) return null;
+  const response = await fetchImpl(
+    `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`,
+    {
+      headers: { Accept: 'application/atom+xml, application/xml;q=0.9, text/xml;q=0.8' },
+      cf: { cacheEverything: true, cacheTtl: 900 },
+    }
+  );
+  if (!response.ok) throw new Error("YouTube's channel feed is temporarily unavailable.");
+  return parseLatestYouTubeChannelVideo((await response.text()).slice(0, 1_000_000));
+}
+
+export async function resolveYouTubeChannel(value: unknown, fetchImpl = fetch) {
+  const raw = String(value || '').trim();
+  let channelId = /^UC[A-Za-z0-9_-]{20,40}$/.test(raw) ? raw : '';
+  let pageUrl = channelId ? `https://www.youtube.com/channel/${channelId}` : '';
+  if (!channelId) {
+    let parsed;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      throw new Error('Enter a valid YouTube channel URL or channel ID.');
+    }
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (!['youtube.com', 'm.youtube.com'].includes(host)) throw new Error('Enter a YouTube channel URL.');
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts[0] === 'channel' && /^UC[A-Za-z0-9_-]{20,40}$/.test(parts[1] || '')) channelId = parts[1];
+    if (!channelId && !/^@[A-Za-z0-9._-]{3,100}$/.test(parts[0] || '') && !['c', 'user'].includes(parts[0])) {
+      throw new Error('Enter a YouTube channel URL, such as youtube.com/@yourparish.');
+    }
+    pageUrl = channelId
+      ? `https://www.youtube.com/channel/${channelId}`
+      : `https://www.youtube.com/${parts.slice(0, 2).join('/')}`;
+  }
+  const response = await fetchImpl(pageUrl, {
+    headers: { Accept: 'text/html', 'User-Agent': 'Mozilla/5.0 (compatible; AGAPAY/1.0)' },
+  });
+  if (!response.ok) throw new Error('YouTube could not resolve that channel.');
+  const html = (await response.text()).slice(0, 2_000_000);
+  const resolvedId =
+    channelId ||
+    html.match(/"channelId"\s*:\s*"(UC[A-Za-z0-9_-]{20,40})"/)?.[1] ||
+    html.match(/itemprop=["']channelId["'][^>]+content=["'](UC[A-Za-z0-9_-]{20,40})["']/i)?.[1] ||
+    html.match(/youtube\.com\/channel\/(UC[A-Za-z0-9_-]{20,40})/)?.[1] ||
+    '';
+  if (!resolvedId) throw new Error('YouTube could not find a channel ID at that address.');
+  const title = decodeYouTubeHtml(
+    html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1] ||
+      html.match(/<title>([^<]+)<\/title>/i)?.[1] ||
+      'YouTube channel'
+  )
+    .replace(/\s+-\s+YouTube\s*$/i, '')
+    .trim()
+    .slice(0, 240);
+  return {
+    channelId: resolvedId,
+    channelUrl: `https://www.youtube.com/channel/${resolvedId}`,
+    channelTitle: title || 'YouTube channel',
+    uploadsPlaylistId: `UU${resolvedId.slice(2)}`,
+  };
+}
+
+export async function saveYouTubeChannel(
+  db: D1Database,
+  {
+    parishId,
+    addedBy,
+    value,
+    fetchImpl = fetch,
+  }: { parishId: string; addedBy: string; value: unknown; fetchImpl?: typeof fetch }
+) {
+  const channel = await resolveYouTubeChannel(value, fetchImpl);
+  await db
+    .prepare(
+      `
+    INSERT INTO parish_youtube_channels (parish_id, channel_id, channel_url, channel_title, added_by)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(parish_id) DO UPDATE SET
+      channel_id = excluded.channel_id, channel_url = excluded.channel_url,
+      channel_title = excluded.channel_title, added_by = excluded.added_by,
+      updated_at = datetime('now')
+  `
+    )
+    .bind(parishId, channel.channelId, channel.channelUrl, channel.channelTitle, addedBy)
+    .run();
+  return youtubeChannelFromRow(
+    (await db.prepare('SELECT * FROM parish_youtube_channels WHERE parish_id = ?').bind(parishId).first<ContentRow>())!
+  );
+}
+
+export async function getYouTubeChannel(db: D1Database, parishId: string) {
+  const row = await db
+    .prepare('SELECT * FROM parish_youtube_channels WHERE parish_id = ?')
+    .bind(parishId)
+    .first<ContentRow>();
+  return row ? youtubeChannelFromRow(row) : null;
+}
+
+export async function handleDonorVideo(request: Request, env: ContentEnv, videoId: string = '', action = '') {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const db = (env.AGAPAY_DB || env.DB)!;
+  const context = await donorVideoContext(request, env);
+  if (context.error) return context.error;
+  const parish = { id: context.parishId, name: context.found.registration.parishName || '' };
+  if (context.disabled)
+    return json({ available: false, parish, videos: [], youtube: [], youtubeChannel: null, youtubeLatest: null });
+  try {
+    if (!videoId && request.method === 'GET') {
+      const [posts, youtube, youtubeChannel] = await Promise.all([
+        getDonorVideoFeed(db, context as { parishId: string; donorId: string }),
+        listYouTubeLinks(db, context.parishId),
+        getYouTubeChannel(db, context.parishId),
+      ]);
+      let youtubeLatest = null;
+      if (youtubeChannel) {
+        try {
+          youtubeLatest = await fetchLatestYouTubeChannelVideo(youtubeChannel);
+        } catch (error) {
+          console.warn('[koinonia-video] Unable to refresh latest YouTube upload', {
+            parishId: context.parishId,
+            error: (error as Error).message,
+          });
+        }
+      }
+      const videos = (
+        (
+          await Promise.all(
+            posts.map(async (post) => {
+              try {
+                return { ...post, ...(await privateStreamAssets(env, post.streamVideoId)) };
+              } catch {
+                return null;
+              }
+            })
+          )
+        ).filter(Boolean) as (Awaited<ReturnType<typeof privateStreamAssets>> & (typeof posts)[number])[]
+      ).map(({ hlsUrl, ...post }) => post);
+      return json({ available: true, parish, videos, youtube, youtubeChannel, youtubeLatest });
+    }
+    const post = await db
+      .prepare("SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ? AND status = 'published'")
+      .bind(videoId, context.parishId)
+      .first<ContentRow>();
+    if (!post) return json({ error: 'Published video not found' }, { status: 404 });
+    if (action === 'playback' && request.method === 'GET') {
+      return json({
+        ok: true,
+        video: { ...videoFromRow(post), ...(await privateStreamAssets(env, post.stream_video_id)) },
+      });
+    }
+    if (action === 'watch' && request.method === 'POST') {
+      await markVideoWatched(db, { parishId: context.parishId, videoId, donorId: context.donorId! });
+      const receipts = await getReadReceipts(db, {
+        parishId: context.parishId,
+        contentType: CONTENT_TYPE,
+        contentId: videoId,
+      });
+      return json({ ok: true, watchCount: receipts.length });
+    }
+    return json({ error: 'Method not allowed' }, { status: 405 });
+  } catch (error) {
+    return json(
+      { error: (error as Error).message || 'Unable to load parish video.' },
+      { status: (error as Error & { status?: number }).status || 502 }
+    );
+  }
+}
+
+export async function handleParishVideo(request: Request, env: ContentEnv, parishId: string, subpath = '') {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const limited =
+    request.method === 'POST'
+      ? await rateLimit(request, env, 'parish-video-write', { limit: 20, windowSeconds: 300 })
+      : null;
+  if (limited) return limited;
+  const db = (env.AGAPAY_DB || env.DB)!;
+  const auth = await requireCommunicationsAdmin(request, env, parishId);
+  if (auth.error) return auth.error;
+  const createdBy =
+    normalizeEmail(auth.found.registration.treasurerEmail || auth.found.registration.priestEmail) ||
+    `parish:${parishId}`;
+  const parts = String(subpath || '')
+    .replace(/^\/+|\/+$/g, '')
+    .split('/')
+    .filter(Boolean);
+  try {
+    if (!parts.length && request.method === 'GET') {
+      const posts = await listVideoPosts(db, parishId);
+      const videos = await Promise.all(
+        posts.map(async (post) => {
+          try {
+            const details = await callStreamApi(env, `/${encodeURIComponent(post.streamVideoId)}`);
+            return {
+              ...post,
+              streamState: details.status?.state || 'pending',
+              readyToStream: streamIsReady(details),
+              durationSeconds: Number(details.duration) || 0,
+            };
+          } catch (error) {
+            return { ...post, streamState: 'unavailable', readyToStream: false, streamError: (error as Error).message };
+          }
+        })
+      );
+      const [youtube, youtubeChannel] = await Promise.all([
+        listYouTubeLinks(db, parishId),
+        getYouTubeChannel(db, parishId),
+      ]);
+      return json({ videos, youtube, youtubeChannel });
+    }
+    if (parts[0] === 'upload-url' && parts.length === 1 && request.method === 'POST') {
+      const input = (await request.json()) as ContentInput;
+      const upload = await createStreamUpload(env, { request, parishId, createdBy });
+      const post = await createVideoDraft(db, { parishId, createdBy, streamVideoId: upload.uid, input });
+      return json({ ok: true, post, uploadUrl: upload.uploadURL }, { status: 201 });
+    }
+    if (parts[0] === 'youtube' && parts.length === 1 && request.method === 'POST') {
+      const input = (await request.json()) as ContentInput;
+      return json(
+        {
+          ok: true,
+          link: await addYouTubeLink(db, {
+            parishId,
+            addedBy: createdBy,
+            value: input.youtubeUrl,
+            pinned: Boolean(input.pinned),
+          }),
+        },
+        { status: 201 }
+      );
+    }
+    if (parts[0] === 'youtube' && parts.length === 2 && request.method === 'DELETE') {
+      await db
+        .prepare('DELETE FROM parish_youtube_links WHERE id = ? AND parish_id = ?')
+        .bind(decodeURIComponent(parts[1]), parishId)
+        .run();
+      return json({ ok: true });
+    }
+    if (parts[0] === 'youtube' && parts.length === 3 && parts[2] === 'pin' && request.method === 'PATCH') {
+      const input = (await request.json()) as ContentInput;
+      const link = await setYouTubeLinkPinned(db, {
+        parishId,
+        linkId: decodeURIComponent(parts[1]),
+        pinned: Boolean(input.pinned),
+      });
+      return link ? json({ ok: true, link }) : json({ error: 'YouTube video not found' }, { status: 404 });
+    }
+    if (parts[0] === 'youtube-channel' && parts.length === 1 && request.method === 'POST') {
+      const input = (await request.json()) as ContentInput;
+      return json({
+        ok: true,
+        channel: await saveYouTubeChannel(db, { parishId, addedBy: createdBy, value: input.channelUrl }),
+      });
+    }
+    if (parts[0] === 'youtube-channel' && parts.length === 1 && request.method === 'DELETE') {
+      await db.prepare('DELETE FROM parish_youtube_channels WHERE parish_id = ?').bind(parishId).run();
+      return json({ ok: true });
+    }
+    if (parts.length === 1 && request.method === 'PATCH') {
+      const id = decodeURIComponent(parts[0]);
+      const current = await db
+        .prepare('SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?')
+        .bind(id, parishId)
+        .first<ContentRow>();
+      if (!current) return json({ error: 'Video not found' }, { status: 404 });
+      const input = (await request.json()) as ContentInput;
+      const details =
+        input.status === 'published'
+          ? await callStreamApi(env, `/${encodeURIComponent(current.stream_video_id)}`)
+          : null;
+      return json({
+        ok: true,
+        post: await updateVideoPost(db, { parishId, videoId: id, input, streamDetails: details }),
+      });
+    }
+    if (parts.length === 1 && request.method === 'DELETE') {
+      const post = await deleteVideoPost(db, env, { parishId, videoId: decodeURIComponent(parts[0]) });
+      return post ? json({ ok: true, post }) : json({ error: 'Video not found' }, { status: 404 });
+    }
+    if (parts.length === 2 && parts[1] === 'status' && request.method === 'GET') {
+      const post = await db
+        .prepare('SELECT * FROM parish_video_posts WHERE id = ? AND parish_id = ?')
+        .bind(decodeURIComponent(parts[0]), parishId)
+        .first<ContentRow>();
+      if (!post) return json({ error: 'Video not found' }, { status: 404 });
+      const details = await callStreamApi(env, `/${encodeURIComponent(post.stream_video_id)}`);
+      return json({
+        ok: true,
+        readyToStream: streamIsReady(details),
+        streamState: details.status?.state || 'pending',
+        pctComplete: details.status?.pctComplete || '',
+        durationSeconds: Number(details.duration) || 0,
+      });
+    }
+    if (parts.length === 2 && parts[1] === 'archive' && request.method === 'POST') {
+      const post = await archiveVideoPost(db, { parishId, videoId: decodeURIComponent(parts[0]) });
+      return post ? json({ ok: true, post }) : json({ error: 'Video not found' }, { status: 404 });
+    }
+    return json({ error: 'Method not allowed' }, { status: 405 });
+  } catch (error) {
+    return json(
+      { error: (error as Error).message || 'Unable to manage parish video.' },
+      {
+        status:
+          (error as Error & { status?: number }).status === 401 || (error as Error & { status?: number }).status === 403
+            ? 502
+            : (error as Error & { status?: number }).status || 422,
+      }
+    );
+  }
+}

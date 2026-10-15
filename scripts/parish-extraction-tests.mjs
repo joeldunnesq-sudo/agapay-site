@@ -9,6 +9,7 @@ import * as notifications from '../src/lib/parish-notifications.js';
 import * as stripeConnect from '../src/lib/stripe-connect.js';
 import * as stripeFees from '../src/lib/stripe-fees.js';
 import * as givingReportExports from '../src/handlers/parish-giving-reports.js';
+import * as commerceExports from '../src/handlers/parish-commerce.js';
 
 const stripeExports = [
   'MAX_DONATION_CENTS',
@@ -131,7 +132,7 @@ try {
 const parishFacade = await readFile(new URL('../src/handlers/parish.js', import.meta.url), 'utf8');
 const parish = readParishHandlerSource();
 const parishCommemorations = await readServerModuleSource('src/handlers/parish-commemorations.js');
-const parishSacraments = await readFile(new URL('../src/handlers/parish-sacraments.js', import.meta.url), 'utf8');
+const parishSacraments = await readServerModuleSource('src/handlers/parish-sacraments.js');
 const parishCommerce = readParishCommerceSource();
 const parishReconciliation = await readFile(
   new URL('../src/handlers/parish-reconciliation.js', import.meta.url),
@@ -329,9 +330,10 @@ for (const name of commercePublicFunctions) {
   );
   assert.match(
     parishCommerce,
-    new RegExp(`export\\s+async\\s+function\\s+${name}\\b`),
+    new RegExp(`async\\s+function\\s+${name}\\b`),
     `${name} should live in parish-commerce.js`
   );
+  assert.equal(typeof commerceExports[name], 'function', `${name} should remain publicly exported`);
 }
 for (const name of ['handleParishBookstore', 'handleParishSettlementProfiles']) {
   assert.ok(!parishWorkerImports.has(name), `worker should no longer import ${name} from parish.js`);

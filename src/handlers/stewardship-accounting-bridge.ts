@@ -1,7 +1,7 @@
 import type { CatalogRegistration } from './parish-giving-catalog.js';
 interface SnapshotStatement {
   totals: { revenue?: unknown; expenses?: unknown; changeInNetAssets?: unknown };
-  rows?: { category: string; [key: string]: unknown }[];
+  rows?: { category: string; accountNumber?: unknown; amount?: unknown; [key: string]: unknown }[];
 }
 interface SnapshotFunds {
   rows?: {

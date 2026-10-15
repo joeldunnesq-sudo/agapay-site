@@ -1,3 +1,4 @@
+// Generated from src/handlers/parish-donor-offerings.ts by npm run build:server. Do not edit.
 import { subscriptionSetupUpdates, visibleDonationRecords } from '../payments/donation-events.js';
 import {
   COMMEMORATION_KEY_PREFIX,
@@ -29,18 +30,15 @@ import {
 } from './parish-commemorations.js';
 import { publicComment } from './parish-giving-catalog.js';
 import { findCheckoutParish } from './parish.js';
-
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
-
 async function sendDonationReceiptIfNeeded(env, offering = {}) {
   if (!paidOfferingStatus(offering)) return { status: 'not_paid' };
   const donorModule = await import('./donor.js');
   return donorModule.sendDonationReceiptIfNeeded(env, offering);
 }
-
-export async function storeDonorOffering(env, offering) {
+async function storeDonorOffering(env, offering) {
   if (!hasProductionStore(env) || !offering?.donorEmail) return null;
   const email = normalizeEmail(offering.donorEmail);
   const id = offering.id || crypto.randomUUID();
@@ -121,10 +119,9 @@ export async function storeDonorOffering(env, offering) {
     failureMessage: offering.failureMessage || '',
     failedAt: offering.failedAt || '',
     cancelledAt: offering.cancelledAt || '',
-    createdAt: offering.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: offering.createdAt || /* @__PURE__ */ new Date().toISOString(),
+    updatedAt: /* @__PURE__ */ new Date().toISOString(),
   };
-  // A Checkout Session configures a subscription; only its invoices are gifts.
   if (record.recordType === 'subscription_setup') {
     record.status = ['failed', 'expired', 'cancelled'].includes(record.status) ? record.status : 'subscription_setup';
     record.paymentStatus = 'pending';
@@ -182,21 +179,18 @@ export async function storeDonorOffering(env, offering) {
   }
   return record;
 }
-
 async function loadDonorOfferingById(env, id, email = '') {
   if (d1(env)) return parseJsonRow(await d1First(env, 'SELECT data FROM donor_offerings WHERE id = ?1', id));
   if (!env.AGAPAY_REGISTRATIONS || !email) return null;
   const raw = await env.AGAPAY_REGISTRATIONS.get(donorOfferingKey(normalizeEmail(email), id));
   return raw ? JSON.parse(raw) : null;
 }
-
-export async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {}) {
+async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {}) {
   if (!hasProductionStore(env) || !checkoutSessionId) return null;
   const current = await loadDonorOfferingByCheckout(env, checkoutSessionId);
   return current ? storeDonorOffering(env, { ...current, ...updates }) : null;
 }
-
-export async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
+async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
   if (!hasProductionStore(env) || !checkoutSessionId) return null;
   if (d1(env)) {
     const row = await d1First(
@@ -206,20 +200,17 @@ export async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
     );
     return parseJsonRow(row);
   }
-
   const key = await env.AGAPAY_REGISTRATIONS.get(donorCheckoutIndexKey(checkoutSessionId));
   if (!key) return null;
   const raw = await env.AGAPAY_REGISTRATIONS.get(key);
   return raw ? JSON.parse(raw) : null;
 }
-
-export async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}) {
+async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;
   const current = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
   return current ? storeDonorOffering(env, { ...current, ...updates }) : null;
 }
-
-export async function loadDonorOfferingByPaymentIntent(env, paymentIntentId) {
+async function loadDonorOfferingByPaymentIntent(env, paymentIntentId) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;
   if (d1(env)) {
     const row = await d1First(
@@ -229,14 +220,12 @@ export async function loadDonorOfferingByPaymentIntent(env, paymentIntentId) {
     );
     return parseJsonRow(row);
   }
-
   const key = await env.AGAPAY_REGISTRATIONS.get(stripePaymentIntentIndexKey(paymentIntentId));
   if (!key) return null;
   const raw = await env.AGAPAY_REGISTRATIONS.get(key);
   return raw ? JSON.parse(raw) : null;
 }
-
-export async function loadDonorOfferings(env, email, limit = 100) {
+async function loadDonorOfferings(env, email, limit = 100) {
   if (d1(env)) {
     const rows = await d1All(
       env,
@@ -246,7 +235,6 @@ export async function loadDonorOfferings(env, email, limit = 100) {
     );
     return visibleDonationRecords(rows.map(parseJsonRow).filter(Boolean));
   }
-
   if (!env.AGAPAY_REGISTRATIONS) return [];
   const prefix = donorOfferingKey(email, '');
   const keys = await listKvKeys(env, { prefix, limit });
@@ -256,16 +244,13 @@ export async function loadDonorOfferings(env, email, limit = 100) {
     if (!raw) continue;
     try {
       offerings.push(JSON.parse(raw));
-    } catch {
-      // Ignore malformed donor offering records.
-    }
+    } catch {}
   }
   return visibleDonationRecords(
     offerings.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
   );
 }
-
-export async function loadDonorCommemorations(env, email, limit = 100) {
+async function loadDonorCommemorations(env, email, limit = 100) {
   const normalized = normalizeEmail(email);
   if (d1(env)) {
     const rows = await d1All(
@@ -276,9 +261,8 @@ export async function loadDonorCommemorations(env, email, limit = 100) {
     );
     return rows.map(parseJsonRow).filter(Boolean);
   }
-
   if (!env.AGAPAY_REGISTRATIONS) return [];
-  const keys = await listKvKeys(env, { prefix: COMMEMORATION_KEY_PREFIX, limit: Math.max(limit, 1000) });
+  const keys = await listKvKeys(env, { prefix: COMMEMORATION_KEY_PREFIX, limit: Math.max(limit, 1e3) });
   const entries = [];
   for (const key of keys) {
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
@@ -286,17 +270,13 @@ export async function loadDonorCommemorations(env, email, limit = 100) {
     try {
       const entry = JSON.parse(raw);
       if (normalizeEmail(entry.donorEmail) === normalized) entries.push(entry);
-    } catch {
-      // Ignore malformed commemoration records.
-    }
+    } catch {}
   }
   return entries.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }
-
 import { paidOfferingStatus } from '../lib/paid-offering-status.js';
-export { paidOfferingStatus } from '../lib/paid-offering-status.js';
-
-export function stripeObjectMetadata(...objects) {
+import { paidOfferingStatus as paidOfferingStatus2 } from '../lib/paid-offering-status.js';
+function stripeObjectMetadata(...objects) {
   return objects.reduce(
     (metadata, object) => ({
       ...metadata,
@@ -305,19 +285,16 @@ export function stripeObjectMetadata(...objects) {
     {}
   );
 }
-
-export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, parishId, fallback = {}) {
+async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, parishId, fallback = {}) {
   if (!paymentIntentId || !parishId) return {};
   const parish = await findCheckoutParish(env, parishId);
   if (!parish?.stripeAccountId) return {};
-
   const paymentIntent = await stripeGetConnectedRequest(
     env,
     `/v1/payment_intents/${encodeURIComponent(paymentIntentId)}?expand[]=latest_charge.balance_transaction`,
     parish.stripeAccountId
   );
   if (!paymentIntent.ok) return {};
-
   const intent = paymentIntent.body || {};
   let charge = typeof intent.latest_charge === 'object' ? intent.latest_charge : null;
   const chargeId = stripeObjectId(intent.latest_charge);
@@ -329,7 +306,6 @@ export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, 
     );
     if (chargeResult.ok) charge = chargeResult.body || null;
   }
-
   const metadata = stripeObjectMetadata(fallback, intent, charge);
   const balanceTransaction = typeof charge?.balance_transaction === 'object' ? charge.balance_transaction : null;
   const giftAmountCents =
@@ -352,7 +328,6 @@ export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, 
   const balanceNetCents = numericCents(balanceTransaction?.net);
   const parishNetCents = balanceTransaction ? balanceNetCents : Math.max(0, chargeCents - totalFeeCents);
   const paymentMethod = charge?.payment_method_details?.type || fallback.paymentMethod || '';
-
   return {
     amountCents: giftAmountCents,
     giftAmountCents,
@@ -370,23 +345,19 @@ export async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, 
     stripeRefundedCents: numericCents(charge?.amount_refunded),
     stripeBalanceTransactionId: balanceTransaction?.id || fallback.stripeBalanceTransactionId || '',
     stripeFeeSource: balanceTransaction ? 'balance_transaction' : 'estimated',
-    feeReconciledAt: new Date().toISOString(),
+    feeReconciledAt: /* @__PURE__ */ new Date().toISOString(),
   };
 }
-
-export async function refreshDonorOfferingFromStripeCheckout(env, offering = {}) {
+async function refreshDonorOfferingFromStripeCheckout(env, offering = {}) {
   if (!offering.checkoutSessionId || paidOfferingStatus(offering)) return offering;
-
   const parish = await findCheckoutParish(env, offering.parishId);
   if (!parish?.stripeAccountId) return offering;
-
   const stripe = await stripeGetConnectedRequest(
     env,
     `/v1/checkout/sessions/${encodeURIComponent(offering.checkoutSessionId)}`,
     parish.stripeAccountId
   );
   if (!stripe.ok) return offering;
-
   const session = stripe.body || {};
   const setup = subscriptionSetupUpdates(session, offering);
   if (setup) return updateDonorOfferingByCheckout(env, offering.checkoutSessionId, setup);
@@ -399,33 +370,31 @@ export async function refreshDonorOfferingFromStripeCheckout(env, offering = {})
     status === 'completed' || paymentStatus === 'paid'
       ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering)
       : {};
-
   const updated = await updateDonorOfferingByCheckout(env, offering.checkoutSessionId, {
     status,
     paymentStatus,
     stripeCustomerId: session.customer || offering.stripeCustomerId || '',
     stripePaymentIntentId: paymentIntentId,
     stripeSubscriptionId: session.subscription || offering.stripeSubscriptionId || '',
-    completedAt: status === 'completed' ? offering.completedAt || new Date().toISOString() : offering.completedAt || '',
+    completedAt:
+      status === 'completed'
+        ? offering.completedAt || /* @__PURE__ */ new Date().toISOString()
+        : offering.completedAt || '',
     ...feeUpdates,
   });
-
   if (status === 'completed' || paymentStatus === 'paid') {
     await ensureCommemorationEntryFromOffering(env, updated || offering, {
       createdAt: session.created
-        ? new Date(session.created * 1000).toISOString()
-        : offering.createdAt || new Date().toISOString(),
+        ? new Date(session.created * 1e3).toISOString()
+        : offering.createdAt || /* @__PURE__ */ new Date().toISOString(),
     });
     await sendDonationReceiptIfNeeded(env, updated || offering);
   }
-
   return updated || offering;
 }
-
-export async function reconcilePendingDonorOfferings(env, offerings = [], limit = 8) {
+async function reconcilePendingDonorOfferings(env, offerings = [], limit = 8) {
   const reconciled = [];
   let checked = 0;
-
   for (const offering of offerings) {
     if (
       checked < limit &&
@@ -441,11 +410,9 @@ export async function reconcilePendingDonorOfferings(env, offerings = [], limit 
       reconciled.push(offering);
     }
   }
-
   return reconciled.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }
-
-export function paidCommemorationOfferingWithNames(offering = {}) {
+function paidCommemorationOfferingWithNames(offering = {}) {
   const giftType = String(offering.giftType || '').toLowerCase();
   if (giftType !== 'commemoration') return false;
   if (!paidOfferingStatus(offering)) return false;
@@ -453,15 +420,12 @@ export function paidCommemorationOfferingWithNames(offering = {}) {
     splitSubmittedNames(offering.namesLiving).length || splitSubmittedNames(offering.namesDeparted).length
   );
 }
-
-export async function repairMissingDonorCommemorationsFromOfferings(env, email, offerings = []) {
+async function repairMissingDonorCommemorationsFromOfferings(env, email, offerings = []) {
   const paidCommemorations = offerings.filter(paidCommemorationOfferingWithNames);
   if (!paidCommemorations.length) return [];
-
-  const existing = await loadDonorCommemorations(env, email, Math.max(1000, paidCommemorations.length + 100));
+  const existing = await loadDonorCommemorations(env, email, Math.max(1e3, paidCommemorations.length + 100));
   const existingSources = new Set(existing.map((entry) => entry.sourceId || entry.id).filter(Boolean));
   const repaired = [];
-
   for (const offering of paidCommemorations) {
     const sourceId = commemorationSourceIdFromOffering(offering);
     if (existingSources.has(sourceId)) continue;
@@ -477,25 +441,22 @@ export async function repairMissingDonorCommemorationsFromOfferings(env, email, 
       amountCents: offering.amountCents || 0,
       namesLiving: offering.namesLiving || '',
       namesDeparted: offering.namesDeparted || '',
-      createdAt: offering.completedAt || offering.createdAt || new Date().toISOString(),
+      createdAt: offering.completedAt || offering.createdAt || /* @__PURE__ */ new Date().toISOString(),
     });
     if (entry) {
       existingSources.add(entry.sourceId || entry.id);
       repaired.push(entry);
     }
   }
-
   return repaired;
 }
-
-export async function loadReconciledDonorCommemorations(env, email, offerings = null, limit = 100) {
+async function loadReconciledDonorCommemorations(env, email, offerings = null, limit = 100) {
   const donorOfferings = offerings || (await loadDonorOfferings(env, email, Math.max(limit, 100)));
   await repairMissingDonorCommemorationsFromOfferings(env, email, donorOfferings);
   return loadDonorCommemorations(env, email, limit);
 }
-
-export function donorSummaryFromOfferings(offerings, commemorations = []) {
-  const now = new Date();
+function donorSummaryFromOfferings(offerings, commemorations = []) {
+  const now = /* @__PURE__ */ new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
@@ -505,11 +466,6 @@ export function donorSummaryFromOfferings(offerings, commemorations = []) {
   const parishNetYtdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
   const feeSavingsCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).donorCoveredFeeCents, 0);
   const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
-  // "Stewardship" giving = tithes / general parish offerings only. Excludes designated
-  // funds, campaigns, candles, and commemorations — those are separate offering types
-  // and should not count toward a donor's annual pledge progress. Offerings without a
-  // giftType predate giftType tracking and are treated as stewardship, matching how
-  // they're normalized everywhere else in the app.
   const isStewardshipOffering = (item) =>
     ['stewardship', 'general'].includes(String(item.giftType || 'stewardship').toLowerCase());
   const stewardshipPaid = paid.filter(isStewardshipOffering);
@@ -555,8 +511,7 @@ export function donorSummaryFromOfferings(offerings, commemorations = []) {
     lastOfferingAt: offerings[0]?.createdAt || '',
   };
 }
-
-export function publicDonorOffering(offering = {}) {
+function publicDonorOffering(offering = {}) {
   const fees = offeringFeeBreakdown(offering);
   return {
     ...offering,
@@ -572,3 +527,22 @@ export function publicDonorOffering(offering = {}) {
     coverFees: fees.coverFees,
   };
 }
+export {
+  donorSummaryFromOfferings,
+  loadDonorCommemorations,
+  loadDonorOfferingByCheckout,
+  loadDonorOfferingByPaymentIntent,
+  loadDonorOfferings,
+  loadReconciledDonorCommemorations,
+  paidCommemorationOfferingWithNames,
+  paidOfferingStatus2 as paidOfferingStatus,
+  publicDonorOffering,
+  reconcilePendingDonorOfferings,
+  refreshDonorOfferingFromStripeCheckout,
+  repairMissingDonorCommemorationsFromOfferings,
+  storeDonorOffering,
+  stripeObjectMetadata,
+  stripePaymentIntentFinancialUpdates,
+  updateDonorOfferingByCheckout,
+  updateDonorOfferingByPaymentIntent,
+};

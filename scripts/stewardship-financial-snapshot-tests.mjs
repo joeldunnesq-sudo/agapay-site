@@ -1,3 +1,4 @@
+import { handleStewardshipFinancials } from '../src/handlers/stewardship-financials.js';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -109,7 +110,8 @@ assert.match(migration, /stewardship_financial_snapshot_revisions/);
 assert.match(externalAssetsMigration, /external_assets_json/);
 assert.match(restrictedAdjustmentsMigration, /restricted_fund_adjustments_json/);
 assert.match(restrictedAdjustmentsMigration, /restricted_fund_balances_json/);
-assert.match(handler, /export async function handleStewardshipFinancials/);
+assert.equal(typeof handleStewardshipFinancials, 'function');
+assert.match(handler, /async function handleStewardshipFinancials/);
 assert.match(handler, /authoritativeContributionTotals/);
 assert.match(handler, /automaticRestrictedFunds/);
 assert.match(handler, /trackingBasis: "fiscal_year_inflows"/);
@@ -120,7 +122,7 @@ assert.match(handler, /restrictedFundBalancesTotalCents/);
 assert.match(handler, /agapayContributionsCents \+ contributions\.outsideContributionsCents \+ otherRevenue/);
 assert.match(handler, /version=version\+1/);
 assert.match(handler, /INSERT INTO stewardship_financial_snapshot_revisions/);
-assert.equal((financialHandler.match(/export async function handleStewardshipFinancials/g) || []).length, 1);
+assert.equal((financialHandler.match(/async function handleStewardshipFinancials/g) || []).length, 1);
 
 assert.match(worker, /other_giving_platform/);
 assert.match(worker, /contribution_eligible = 1/);

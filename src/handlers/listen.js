@@ -1,30 +1,18 @@
-/**
- * AGAPAY Listen — Worker API handlers
- * Add to src/worker.js (see DEPLOY.md for exact insertion points).
- *
- * Provides two endpoints:
- *   GET /api/listen/search?q=...   → Podcast Index search (HMAC auth)
- *   GET /api/listen/rss?url=...    → RSS feed proxy (CORS bypass)
- *   GET /api/listen/audio?url=...  → authenticated episode download proxy
- *   GET/POST /api/listen/progress → private donor playback memory
- */
-
+// Generated from src/handlers/listen.ts by npm run build:server. Do not edit.
 import { json, missingProductionStoreResponse, normalizeEmail, unauthorized } from '../lib/core.js';
 import { requireDonor } from './parish.js';
-
 const PODCAST_PROGRESS_LIMIT = 50;
 const PODCAST_COMPLETE_WINDOW_SECONDS = 5;
-const PODCAST_PLAYBACK_RATES = new Set([1, 1.25, 1.5, 1.75, 2]);
+const PODCAST_PLAYBACK_RATES = /* @__PURE__ */ new Set([1, 1.25, 1.5, 1.75, 2]);
 const PODCAST_MEDIA_LIMIT_BYTES = 250 * 1024 * 1024;
-
 function podcastDatabase(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
-
 function boundedText(value, maxLength) {
-  return String(value || '').trim().slice(0, maxLength);
+  return String(value || '')
+    .trim()
+    .slice(0, maxLength);
 }
-
 function podcastUrl(value) {
   const raw = boundedText(value, 4096);
   try {
@@ -34,22 +22,35 @@ function podcastUrl(value) {
     return '';
   }
 }
-
 function isPrivatePodcastHost(hostname) {
-  const host = String(hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
-  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.internal') || host === '::1') return true;
+  const host = String(hostname || '')
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '');
+  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.internal') || host === '::1')
+    return true;
   const parts = host.split('.').map(Number);
   if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) {
-    return host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe8') || host.startsWith('fe9') || host.startsWith('fea') || host.startsWith('feb');
+    return (
+      host.startsWith('fc') ||
+      host.startsWith('fd') ||
+      host.startsWith('fe8') ||
+      host.startsWith('fe9') ||
+      host.startsWith('fea') ||
+      host.startsWith('feb')
+    );
   }
   const [a, b] = parts;
-  return a === 0 || a === 10 || a === 127 || a >= 224
-    || (a === 100 && b >= 64 && b <= 127)
-    || (a === 169 && b === 254)
-    || (a === 172 && b >= 16 && b <= 31)
-    || (a === 192 && b === 168);
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    a >= 224 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
 }
-
 function downloadablePodcastUrl(value) {
   const normalized = podcastUrl(value);
   if (!normalized) return '';
@@ -57,18 +58,19 @@ function downloadablePodcastUrl(value) {
   if (isPrivatePodcastHost(parsed.hostname) || !['', '80', '443'].includes(parsed.port)) return '';
   return parsed.toString();
 }
-
-export async function handleListenAudio(request, env, dependencies = {}) {
+async function handleListenAudio(request, env, dependencies = {}) {
   const authenticate = dependencies.requireDonor || requireDonor;
   const donor = await authenticate(request, env);
   if (!donor?.email) return unauthorized();
   const mediaUrl = downloadablePodcastUrl(new URL(request.url).searchParams.get('url'));
   if (!mediaUrl) return json({ error: 'A valid public podcast audio URL is required' }, { status: 400 });
-
   let remote;
   try {
     remote = await fetch(mediaUrl, {
-      headers: { 'User-Agent': 'AGAPAYListen/1.0 (+https://agapay.app)', Accept: 'audio/*, application/octet-stream;q=0.8' },
+      headers: {
+        'User-Agent': 'AGAPAYListen/1.0 (+https://agapay.app)',
+        Accept: 'audio/*, application/octet-stream;q=0.8',
+      },
       redirect: 'follow',
     });
   } catch {
@@ -94,7 +96,9 @@ export async function handleListenAudio(request, env, dependencies = {}) {
       }
       controller.enqueue(chunk.value);
     },
-    cancel(reason) { return reader.cancel(reason); },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
   });
   const contentType = remote.headers.get('Content-Type') || 'audio/mpeg';
   return new Response(body, {
@@ -106,12 +110,10 @@ export async function handleListenAudio(request, env, dependencies = {}) {
     },
   });
 }
-
 function playbackRate(value) {
   const parsed = Number(value);
   return PODCAST_PLAYBACK_RATES.has(parsed) ? parsed : null;
 }
-
 function progressRow(row) {
   return {
     episodeKey: row.episode_key,
@@ -119,13 +121,13 @@ function progressRow(row) {
     showTitle: row.show_title || '',
     episodeTitle: row.episode_title || '',
     positionSeconds: Math.max(0, Number(row.position_seconds) || 0),
-    durationSeconds: row.duration_seconds === null || row.duration_seconds === undefined
-      ? null
-      : Math.max(0, Number(row.duration_seconds) || 0),
+    durationSeconds:
+      row.duration_seconds === null || row.duration_seconds === void 0
+        ? null
+        : Math.max(0, Number(row.duration_seconds) || 0),
     updatedAt: row.updated_at,
   };
 }
-
 function subscriptionRow(row) {
   return {
     feedUrl: row.feed_url,
@@ -137,26 +139,28 @@ function subscriptionRow(row) {
     updatedAt: row.updated_at,
   };
 }
-
-export async function handleListenSubscriptions(request, env, dependencies = {}) {
+async function handleListenSubscriptions(request, env, dependencies = {}) {
   const db = podcastDatabase(env);
   if (!db) return missingProductionStoreResponse();
   const authenticate = dependencies.requireDonor || requireDonor;
   const donor = await authenticate(request, env);
   if (!donor?.email) return unauthorized();
   const donorId = normalizeEmail(donor.email);
-
   if (request.method === 'GET') {
-    const result = await db.prepare(`
+    const result = await db
+      .prepare(
+        `
       SELECT feed_url, show_title, artwork_url, website_url, author, subscribed_at, updated_at
       FROM donor_podcast_subscriptions
       WHERE donor_id = ?
       ORDER BY updated_at DESC
       LIMIT 100
-    `).bind(donorId).all();
+    `
+      )
+      .bind(donorId)
+      .all();
     return json({ subscriptions: (result.results || []).map(subscriptionRow) });
   }
-
   if (request.method === 'POST') {
     const input = await request.json().catch(() => ({}));
     const feedUrl = podcastUrl(input.feedUrl);
@@ -165,7 +169,9 @@ export async function handleListenSubscriptions(request, env, dependencies = {})
     const artwork = podcastUrl(input.artwork);
     const website = podcastUrl(input.website);
     const author = boundedText(input.author, 300);
-    await db.prepare(`
+    await db
+      .prepare(
+        `
       INSERT INTO donor_podcast_subscriptions (
         donor_id, feed_url, show_title, artwork_url, website_url, author, subscribed_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
@@ -175,41 +181,53 @@ export async function handleListenSubscriptions(request, env, dependencies = {})
         website_url = excluded.website_url,
         author = excluded.author,
         updated_at = datetime('now')
-    `).bind(donorId, feedUrl, title, artwork || null, website || null, author || null).run();
-    const row = await db.prepare(`
+    `
+      )
+      .bind(donorId, feedUrl, title, artwork || null, website || null, author || null)
+      .run();
+    const row = await db
+      .prepare(
+        `
       SELECT feed_url, show_title, artwork_url, website_url, author, subscribed_at, updated_at
       FROM donor_podcast_subscriptions WHERE donor_id = ? AND feed_url = ?
-    `).bind(donorId, feedUrl).first();
+    `
+      )
+      .bind(donorId, feedUrl)
+      .first();
     return json({ ok: true, subscription: subscriptionRow(row) }, { status: 201 });
   }
-
   if (request.method === 'DELETE') {
     const feedUrl = podcastUrl(new URL(request.url).searchParams.get('url'));
     if (!feedUrl) return json({ error: 'A valid podcast feed URL is required' }, { status: 400 });
-    await db.prepare('DELETE FROM donor_podcast_subscriptions WHERE donor_id = ? AND feed_url = ?').bind(donorId, feedUrl).run();
+    await db
+      .prepare('DELETE FROM donor_podcast_subscriptions WHERE donor_id = ? AND feed_url = ?')
+      .bind(donorId, feedUrl)
+      .run();
     return json({ ok: true });
   }
-
   return json({ error: 'Method not allowed' }, { status: 405 });
 }
-
-export async function handleListenProgress(request, env, dependencies = {}) {
+async function handleListenProgress(request, env, dependencies = {}) {
   const db = podcastDatabase(env);
   if (!db) return missingProductionStoreResponse();
   const authenticate = dependencies.requireDonor || requireDonor;
   const donor = await authenticate(request, env);
   if (!donor?.email) return unauthorized();
   const donorId = normalizeEmail(donor.email);
-
   if (request.method === 'GET') {
     const [progressResult, preference] = await Promise.all([
-      db.prepare(`
+      db
+        .prepare(
+          `
         SELECT episode_key, feed_url, show_title, episode_title, position_seconds, duration_seconds, updated_at
         FROM donor_podcast_progress
         WHERE donor_id = ?
         ORDER BY updated_at DESC
         LIMIT ?
-      `).bind(donorId, PODCAST_PROGRESS_LIMIT).all(),
+      `
+        )
+        .bind(donorId, PODCAST_PROGRESS_LIMIT)
+        .all(),
       db.prepare('SELECT playback_rate FROM donor_podcast_preferences WHERE donor_id = ?').bind(donorId).first(),
     ]);
     return json({
@@ -217,17 +235,21 @@ export async function handleListenProgress(request, env, dependencies = {}) {
       playbackRate: playbackRate(preference?.playback_rate) || 1,
     });
   }
-
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const input = await request.json().catch(() => ({}));
   const rate = playbackRate(input.playbackRate);
   if (input.preferenceOnly) {
     if (!rate) return json({ error: 'A supported playbackRate is required' }, { status: 400 });
-    await db.prepare(`
+    await db
+      .prepare(
+        `
       INSERT INTO donor_podcast_preferences (donor_id, playback_rate, updated_at)
       VALUES (?, ?, datetime('now'))
       ON CONFLICT(donor_id) DO UPDATE SET playback_rate = excluded.playback_rate, updated_at = datetime('now')
-    `).bind(donorId, rate).run();
+    `
+      )
+      .bind(donorId, rate)
+      .run();
     return json({ ok: true, playbackRate: rate });
   }
   const episodeKey = boundedText(input.episodeKey, 2048);
@@ -236,28 +258,34 @@ export async function handleListenProgress(request, env, dependencies = {}) {
   const episodeTitle = boundedText(input.episodeTitle, 500);
   const positionSeconds = Math.max(0, Math.min(2678400, Math.round(Number(input.positionSeconds) || 0)));
   const rawDuration = Number(input.durationSeconds);
-  const durationSeconds = Number.isFinite(rawDuration) && rawDuration > 0
-    ? Math.min(2678400, Math.round(rawDuration))
-    : null;
-  const completed = Boolean(input.completed)
-    || Boolean(durationSeconds && positionSeconds >= Math.max(0, durationSeconds - PODCAST_COMPLETE_WINDOW_SECONDS));
-
+  const durationSeconds =
+    Number.isFinite(rawDuration) && rawDuration > 0 ? Math.min(2678400, Math.round(rawDuration)) : null;
+  const completed =
+    Boolean(input.completed) ||
+    Boolean(durationSeconds && positionSeconds >= Math.max(0, durationSeconds - PODCAST_COMPLETE_WINDOW_SECONDS));
   if (!episodeKey || !feedUrl) return json({ error: 'episodeKey and a valid feedUrl are required' }, { status: 400 });
-
   if (rate) {
-    await db.prepare(`
+    await db
+      .prepare(
+        `
       INSERT INTO donor_podcast_preferences (donor_id, playback_rate, updated_at)
       VALUES (?, ?, datetime('now'))
       ON CONFLICT(donor_id) DO UPDATE SET playback_rate = excluded.playback_rate, updated_at = datetime('now')
-    `).bind(donorId, rate).run();
+    `
+      )
+      .bind(donorId, rate)
+      .run();
   }
-
   if (completed) {
-    await db.prepare('DELETE FROM donor_podcast_progress WHERE donor_id = ? AND episode_key = ?').bind(donorId, episodeKey).run();
+    await db
+      .prepare('DELETE FROM donor_podcast_progress WHERE donor_id = ? AND episode_key = ?')
+      .bind(donorId, episodeKey)
+      .run();
     return json({ ok: true, completed: true });
   }
-
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     INSERT INTO donor_podcast_progress (
       donor_id, episode_key, feed_url, show_title, episode_title,
       position_seconds, duration_seconds, updated_at
@@ -269,29 +297,21 @@ export async function handleListenProgress(request, env, dependencies = {}) {
       position_seconds = excluded.position_seconds,
       duration_seconds = excluded.duration_seconds,
       updated_at = datetime('now')
-  `).bind(donorId, episodeKey, feedUrl, showTitle, episodeTitle, positionSeconds, durationSeconds).run();
+  `
+    )
+    .bind(donorId, episodeKey, feedUrl, showTitle, episodeTitle, positionSeconds, durationSeconds)
+    .run();
   return json({ ok: true, completed: false });
 }
-
-// ─── /api/listen/search ───────────────────────────────────────────────────────
-/**
- * Sign in at podcastindex.org to get an API key + secret.
- * Add to wrangler.toml [vars]:
- *   PODCAST_INDEX_KEY = "your-key"
- *   PODCAST_INDEX_SECRET = "your-secret"
- */
-export async function handleListenSearch(request, env) {
+async function handleListenSearch(request, env) {
   const url = new URL(request.url);
-  const q   = (url.searchParams.get('q') || '').trim();
-
+  const q = (url.searchParams.get('q') || '').trim();
   if (!q) {
     return new Response(JSON.stringify({ feeds: [] }), {
       headers: corsJson(),
     });
   }
-
-  // Podcast Index requires HMAC-SHA1: SHA1(apiKey + apiSecret + unixTime)
-  const apiKey    = env.PODCAST_INDEX_KEY    || '';
+  const apiKey = env.PODCAST_INDEX_KEY || '';
   const apiSecret = env.PODCAST_INDEX_SECRET || '';
   if (!apiKey || !apiSecret) {
     return new Response(JSON.stringify({ feeds: [], error: 'Podcast search is not configured.' }), {
@@ -299,44 +319,43 @@ export async function handleListenSearch(request, env) {
       headers: corsJson(),
     });
   }
-  const ts        = Math.floor(Date.now() / 1000).toString();
-
-  // Web Crypto HMAC-SHA1
+  const ts = Math.floor(Date.now() / 1e3).toString();
   const encoder = new TextEncoder();
   const sigData = encoder.encode(apiKey + apiSecret + ts);
   const hashBuf = await crypto.subtle.digest('SHA-1', sigData);
   const authHash = Array.from(new Uint8Array(hashBuf))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
   const apiUrl = `https://api.podcastindex.org/api/1.0/search/byterm?q=${encodeURIComponent(q)}&max=20&clean`;
-
   try {
     const resp = await fetch(apiUrl, {
       headers: {
-        'User-Agent':      'AGAPAYListen/1.0',
-        'X-Auth-Key':      apiKey,
-        'X-Auth-Date':     ts,
-        'Authorization':   authHash,
+        'User-Agent': 'AGAPAYListen/1.0',
+        'X-Auth-Key': apiKey,
+        'X-Auth-Date': ts,
+        Authorization: authHash,
       },
     });
-
     if (!resp.ok) {
       console.error('Podcast Index search failed:', resp.status);
-      return new Response(JSON.stringify({ feeds: [], error: 'Podcast search is temporarily unavailable.' }), { status: 502, headers: corsJson() });
+      return new Response(JSON.stringify({ feeds: [], error: 'Podcast search is temporarily unavailable.' }), {
+        status: 502,
+        headers: corsJson(),
+      });
     }
-
-    const data  = await resp.json();
-    const feeds = (data.feeds || []).map(f => ({
-      id:       f.id,
-      title:    f.title,
-      author:   f.author,
-      url:      f.url,          // RSS feed URL
-      link:     f.link,         // Website
-      artwork:  f.artwork || f.image,
+    const data = await resp.json();
+    const feeds = (data.feeds || []).map((f) => ({
+      id: f.id,
+      title: f.title,
+      author: f.author,
+      url: f.url,
+      // RSS feed URL
+      link: f.link,
+      // Website
+      artwork: f.artwork || f.image,
       category: f.categories ? Object.values(f.categories)[0] : '',
       episodeCount: f.episodeCount,
     }));
-
     return new Response(JSON.stringify({ feeds }), { headers: corsJson() });
   } catch (err) {
     console.error('Podcast Index error:', err);
@@ -346,22 +365,12 @@ export async function handleListenSearch(request, env) {
     });
   }
 }
-
-// ─── /api/listen/rss ─────────────────────────────────────────────────────────
-/**
- * RSS proxy — fetches a remote feed and returns it with CORS headers.
- * This avoids CORS errors when fetching podcasts from the browser.
- * Only fetches from http/https URLs; rejects others.
- */
-export async function handleListenRss(request, env) {
-  const url     = new URL(request.url);
+async function handleListenRss(request, env) {
+  const url = new URL(request.url);
   const feedUrl = (url.searchParams.get('url') || '').trim();
-
   if (!feedUrl.startsWith('http://') && !feedUrl.startsWith('https://')) {
     return new Response('Invalid feed URL', { status: 400 });
   }
-
-  // Basic SSRF protection: block internal/private IP ranges
   try {
     const feedHost = new URL(feedUrl).hostname;
     if (
@@ -377,28 +386,25 @@ export async function handleListenRss(request, env) {
   } catch {
     return new Response('Invalid URL', { status: 400 });
   }
-
   try {
     const feedResp = await fetch(feedUrl, {
       headers: {
         'User-Agent': 'AGAPAYListen/1.0 (+https://agapay.app)',
-        'Accept':     'application/rss+xml, application/xml, text/xml, */*',
+        Accept: 'application/rss+xml, application/xml, text/xml, */*',
       },
       redirect: 'follow',
-      cf: { cacheTtl: 300, cacheEverything: true },  // Cache at Cloudflare edge for 5 min
+      cf: { cacheTtl: 300, cacheEverything: true },
+      // Cache at Cloudflare edge for 5 min
     });
-
     if (!feedResp.ok) {
       return new Response('Feed fetch failed', { status: 502 });
     }
-
     const xml = await feedResp.text();
-
     return new Response(xml, {
       headers: {
-        'Content-Type':                'application/xml; charset=utf-8',
+        'Content-Type': 'application/xml; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
-        'Cache-Control':               'public, max-age=300',
+        'Cache-Control': 'public, max-age=300',
       },
     });
   } catch (err) {
@@ -406,11 +412,10 @@ export async function handleListenRss(request, env) {
     return new Response('Feed unavailable', { status: 502 });
   }
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function corsJson() {
   return {
-    'Content-Type':                'application/json',
+    'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
 }
+export { handleListenAudio, handleListenProgress, handleListenRss, handleListenSearch, handleListenSubscriptions };

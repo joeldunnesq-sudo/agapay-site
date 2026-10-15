@@ -9,3 +9,5 @@ export function refreshStripeStatusForRegistration<T extends CatalogRegistration
   | { ok: false; status: number; body: { error: string; code: string; retryable: boolean; detail: string } }
   | { ok: true; registration: T }
 >;
+
+export function verifyStripeWebhook(payload: string, signature: string, secret: string): Promise<boolean>;

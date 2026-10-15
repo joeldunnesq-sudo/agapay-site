@@ -248,8 +248,8 @@ export async function searchJournalEntries(
     sourceType?: string;
     dateFrom?: string;
     dateTo?: string;
-    limit?: number;
-    offset?: number;
+    limit?: number | string;
+    offset?: number | string;
   } = {}
 ) {
   capability(actor, 'accounting.view');

@@ -1,3 +1,5 @@
+import ts from 'typescript';
+import { handleStewardshipGivingRecurring } from '../src/handlers/stewardship-giving.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
@@ -6,21 +8,27 @@ import { readStewardshipGivingMix } from '../src/lib/stewardship-giving.js';
 
 // Exercise the real handler and SQL against SQLite without calling parish services.
 const source = readFileSync(new URL('../src/handlers/stewardship-giving.js', import.meta.url), 'utf8');
-const start = source.indexOf('async function handleStewardshipGivingRecurring(');
-const end = source.indexOf('// GET /api/parish/dashboard/:parishId/stewardship/giving/health-score', start);
-assert.ok(start > 0 && end > start);
+const ast = ts.createSourceFile('stewardship-giving.js', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+const recurring = ast.statements.find(
+  (node) => ts.isFunctionDeclaration(node) && node.name?.text === 'handleStewardshipGivingRecurring'
+);
+assert.ok(recurring, 'The real recurring handler declaration must exist');
+assert.equal(typeof handleStewardshipGivingRecurring, 'function');
 let authorized = true;
 let locked = false;
-const handler = runInNewContext(source.slice(start, end) + '\nhandleStewardshipGivingRecurring', {
-  URL,
-  Date,
-  Request,
-  readStewardshipGivingMix,
-  verifyParishDashboard: async () => authorized,
-  unauthorized: () => new Response(null, { status: 401 }),
-  requireStewardshipFeature: async () => (locked ? new Response(null, { status: 403 }) : null),
-  json: (body) => Response.json(body),
-});
+const handler = runInNewContext(
+  recurring.getText(ast).replace(/^export\s+/, '') + '\nhandleStewardshipGivingRecurring',
+  {
+    URL,
+    Date,
+    Request,
+    readStewardshipGivingMix,
+    verifyParishDashboard: async () => authorized,
+    unauthorized: () => new Response(null, { status: 401 }),
+    requireStewardshipFeature: async () => (locked ? new Response(null, { status: 403 }) : null),
+    json: (body) => Response.json(body),
+  }
+);
 const db = new DatabaseSync(':memory:');
 db.exec(`CREATE TABLE donor_offerings (
   parish_id TEXT, donor_email TEXT, payment_status TEXT,

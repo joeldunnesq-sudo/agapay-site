@@ -193,3 +193,33 @@ export function recordCheckPrint(
 export { vendor1099Summary } from './payables/vendor-reporting.js';
 export { vendor1099SummaryCsv } from './payables/vendor-reporting.js';
 export function voidPayment(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
+
+export { createD1DatabaseFacade, resolveCloudflareD1Adapter } from './provisioning/adapters.js';
+export { detectAccountingEnvironment } from './environment.js';
+export {
+  loadAccountingEntityByParish,
+  loadAccountingDatabaseForEntity,
+  loadAccountingDatabaseProviderRecord,
+} from './control-plane.js';
+export {
+  createJournalDraft,
+  initializeLedger,
+  ledgerInitializationStatus,
+  postJournalEntry,
+  postOpeningBalanceBatch,
+  recordInKindGift,
+  recordSimpleDeposit,
+  recordSplitDeposit,
+  reverseJournalEntry,
+  validateJournalEntryForPosting,
+  validateLedgerFoundation,
+} from './ledger/service.js';
+export {
+  getJournalEntry,
+  ledgerRegister,
+  ledgerRegisterCsv,
+  printableLedger,
+  searchJournalEntries,
+  updateJournalDraft,
+  voidJournalDraft,
+} from './ledger/workspace.js';

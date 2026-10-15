@@ -1,3 +1,4 @@
+// Generated from src/handlers/stewardship-giving.ts by npm run build:server. Do not edit.
 import { stewardshipGivingSummary } from '../lib/stewardship-summary.js';
 import { readGivingFeeReport } from '../lib/giving-fee-report.js';
 import { manualIncomeTotalCents } from '../lib/stewardship-income.js';
@@ -17,8 +18,7 @@ import { STEWARDSHIP_FUND_DEFAULTS, mergeStewardshipFundsIntoRegistration } from
 import { verifyParishDashboardBearer, findRegistrationByParishId, saveRegistrationRecord } from './parish.js';
 import { invalidateOnboardingSignoffIfChanged } from '../lib/parish-onboarding.js';
 import { requireAdmin } from './admin.js';
-
-export function addCorsHeaders(response, env) {
+function addCorsHeaders(response, env) {
   const headers = new Headers(response.headers);
   const cors = corsHeaders(env);
   for (const [k, v] of Object.entries(cors)) {
@@ -26,23 +26,14 @@ export function addCorsHeaders(response, env) {
   }
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// STEWARDSHIP GIVING SUITE — inline handlers
-// These power the real-time pledge tracking add-on in the Parish dashboard.
-// Reads from: household_pledges, giving_funds, donor_offerings, donors (D1).
-// Feature-gated by parish_stewardship_settings.has_stewardship_suite = 1.
-// ═══════════════════════════════════════════════════════════════════════════
-
-export async function verifyParishDashboard(request, env, parishId) {
+async function verifyParishDashboard(request, env, parishId) {
   const token = getBearerToken(request);
   if (!parishId || !token) return false;
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return false;
   return verifyParishDashboardBearer(found.registration, token);
 }
-
-export async function requireStewardshipFeature(env, parishId) {
+async function requireStewardshipFeature(env, parishId) {
   const row = await env.AGAPAY_DB.prepare(
     `SELECT has_stewardship_suite FROM parish_stewardship_settings WHERE parish_id = ?`
   )
@@ -51,21 +42,14 @@ export async function requireStewardshipFeature(env, parishId) {
   if (!row || !row.has_stewardship_suite) {
     return json({ error: 'AGAPAY Parish + not activated for this parish.' }, { status: 403 });
   }
-  return null; // null = access granted
+  return null;
 }
-
-// ── GET /api/admin/recent-activity ────────────────────────────────────────────
-// Returns a merged, chronological feed of recent donors and stewardship
-// activations for the admin overview tab. Limit 20 events.
-export async function handleAdminRecentActivity(request, env) {
+async function handleAdminRecentActivity(request, env) {
   const limited = await rateLimit(request, env, 'admin-auth', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const events = [];
-
-  // Recent My AGAPAY user signups
   try {
     const donors = await d1All(
       env,
@@ -100,8 +84,6 @@ export async function handleAdminRecentActivity(request, env) {
       });
     }
   } catch {}
-
-  // Recent stewardship activations
   try {
     const activations = await d1All(
       env,
@@ -119,17 +101,13 @@ export async function handleAdminRecentActivity(request, env) {
       });
     }
   } catch {}
-
-  // Sort merged feed newest-first, cap at 20
   events.sort((a, b) => {
     const ta = a.time ? new Date(a.time).getTime() : 0;
     const tb = b.time ? new Date(b.time).getTime() : 0;
     return tb - ta;
   });
-
   return json({ ok: true, events: events.slice(0, 20) });
 }
-
 async function seedStewardshipFunds(env, parishId) {
   const stmts = STEWARDSHIP_FUND_DEFAULTS.map((f) =>
     env.AGAPAY_DB.prepare(
@@ -141,25 +119,21 @@ async function seedStewardshipFunds(env, parishId) {
   );
   await env.AGAPAY_DB.batch(stmts);
 }
-
-// POST /api/parish/dashboard/:parishId/stewardship/giving/activate
-export async function handleStewardshipGivingActivate(request, env, parishId) {
+async function handleStewardshipGivingActivate(request, env, parishId) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
-
   const body = await request.json().catch(() => ({}));
   const { stripeSubscriptionItemId } = body;
-
   const merged = mergeStewardshipFundsIntoRegistration(found.registration);
   if (merged.changed) {
     const catalogSync = await synchronizeGivingCatalogWithAccounting(env, parishId, merged.registration);
     const next = {
       ...merged.registration,
       funds: catalogSync.available ? catalogSync.funds : merged.registration.funds,
-      parishUpdatedAt: new Date().toISOString(),
+      parishUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
     };
     const updated = await invalidateOnboardingSignoffIfChanged(found.registration, next, {
       actor: found.registration.treasurerEmail || found.registration.priestEmail || 'parish',
@@ -168,7 +142,6 @@ export async function handleStewardshipGivingActivate(request, env, parishId) {
     });
     await saveRegistrationRecord(env, found.key, updated, found.registration);
   }
-
   await env.AGAPAY_DB.prepare(
     `
     INSERT INTO parish_stewardship_settings (parish_id, has_stewardship_suite, stripe_subscription_item_id)
@@ -181,35 +154,25 @@ export async function handleStewardshipGivingActivate(request, env, parishId) {
   )
     .bind(parishId, stripeSubscriptionItemId || null)
     .run();
-
   await seedStewardshipFunds(env, parishId);
   return json({ ok: true, fundsAdded: merged.added.length, fundsRemoved: merged.removed.length });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/summary
-// Pledge vs actual, run rate, household/donor counts, fulfillment rate.
-export async function handleStewardshipGivingSummary(request, env, parishId) {
+async function handleStewardshipGivingSummary(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   return json(await stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCents));
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/funds
-// Giving totals broken down by fund (matches giftType in donor_offerings.data).
-export async function handleStewardshipGivingFunds(request, env, parishId) {
+async function handleStewardshipGivingFunds(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   const rows = await env.AGAPAY_DB.prepare(
     `
     SELECT
@@ -235,9 +198,7 @@ export async function handleStewardshipGivingFunds(request, env, parishId) {
   )
     .bind(parishId, `${year}-01-01`, `${year}-12-31`, parishId)
     .all();
-
   const totalCents = rows.results.reduce((s, r) => s + (r.total_cents || 0), 0);
-
   return json({
     fiscal_year: year,
     total_cents: totalCents,
@@ -250,18 +211,13 @@ export async function handleStewardshipGivingFunds(request, env, parishId) {
     })),
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/distribution
-// Anonymized donor giving tier histogram (no individual identities exposed).
-export async function handleStewardshipGivingDistribution(request, env, parishId) {
+async function handleStewardshipGivingDistribution(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   const rows = await env.AGAPAY_DB.prepare(
     `
     SELECT
@@ -275,40 +231,32 @@ export async function handleStewardshipGivingDistribution(request, env, parishId
   )
     .bind(parishId, `${year}-01-01`, `${year}-12-31`)
     .all();
-
   const TIERS = [
     { label: '$0–$500', min: 0, max: 49999 },
-    { label: '$500–$2,000', min: 50000, max: 199999 },
-    { label: '$2,000–$5,000', min: 200000, max: 499999 },
-    { label: '$5,000–$10,000', min: 500000, max: 999999 },
-    { label: '$10,000+', min: 1000000, max: Infinity },
+    { label: '$500–$2,000', min: 5e4, max: 199999 },
+    { label: '$2,000–$5,000', min: 2e5, max: 499999 },
+    { label: '$5,000–$10,000', min: 5e5, max: 999999 },
+    { label: '$10,000+', min: 1e6, max: Infinity },
   ];
-
   const tiers = TIERS.map((t) => ({ ...t, count: 0 }));
   for (const row of rows.results) {
     const amt = row.donor_total_cents || 0;
     const tier = tiers.find((t) => amt >= t.min && amt <= t.max);
     if (tier) tier.count++;
   }
-
   return json({
     fiscal_year: year,
     total_donors: rows.results.length,
     tiers: tiers.map(({ label, count }) => ({ label, count })),
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/retention
-// Current vs prior year donor comparison.
-export async function handleStewardshipGivingRetention(request, env, parishId) {
+async function handleStewardshipGivingRetention(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   const [curRows, priorRows] = await Promise.all([
     env.AGAPAY_DB.prepare(
       `
@@ -319,7 +267,6 @@ export async function handleStewardshipGivingRetention(request, env, parishId) {
     )
       .bind(parishId, `${year}-01-01`, `${year}-12-31`)
       .all(),
-
     env.AGAPAY_DB.prepare(
       `
       SELECT DISTINCT donor_email FROM donor_offerings
@@ -330,15 +277,12 @@ export async function handleStewardshipGivingRetention(request, env, parishId) {
       .bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`)
       .all(),
   ]);
-
   const cur = new Set(curRows.results.map((r) => r.donor_email));
   const prior = new Set(priorRows.results.map((r) => r.donor_email));
-
   const retained = [...prior].filter((e) => cur.has(e)).length;
   const lapsed = [...prior].filter((e) => !cur.has(e)).length;
   const newDonors = [...cur].filter((e) => !prior.has(e)).length;
   const retention = prior.size > 0 ? Math.round((retained / prior.size) * 100) : null;
-
   return json({
     fiscal_year: year,
     prior_year: year - 1,
@@ -350,21 +294,13 @@ export async function handleStewardshipGivingRetention(request, env, parishId) {
     retention_rate_pct: retention,
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/concentration
-// Board-level concentration risk: what share of annual giving comes from
-// the top 5 / top 10 households. Anonymized — same aggregation as the
-// distribution histogram, just ranked instead of bucketed, and never
-// returns anything more identifying than a rank position.
-export async function handleStewardshipGivingConcentration(request, env, parishId) {
+async function handleStewardshipGivingConcentration(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   const rows = await env.AGAPAY_DB.prepare(
     `
     SELECT
@@ -379,20 +315,12 @@ export async function handleStewardshipGivingConcentration(request, env, parishI
   )
     .bind(parishId, `${year}-01-01`, `${year}-12-31`)
     .all();
-
   const totals = rows.results.map((r) => r.donor_total_cents || 0).sort((a, b) => b - a);
   const grandTotal = totals.reduce((s, v) => s + v, 0);
   const sumTopN = (n) => totals.slice(0, n).reduce((s, v) => s + v, 0);
   const pctTopN = (n) => (grandTotal > 0 ? Math.round((sumTopN(n) / grandTotal) * 100) : null);
-
-  // A simple, standard risk band: >60% from the top 10 households is a
-  // real fragility signal for a parish (loss of 1-2 major donors would be
-  // materially destabilizing); 40-60% is worth watching; under 40% is
-  // healthy diversification. Thresholds are conservative/commonly-cited
-  // nonprofit stewardship guidance, not a proprietary formula.
   const top10Pct = pctTopN(10);
   const riskLevel = top10Pct === null ? null : top10Pct >= 60 ? 'high' : top10Pct >= 40 ? 'moderate' : 'low';
-
   return json({
     fiscal_year: year,
     total_donors: totals.length,
@@ -404,30 +332,17 @@ export async function handleStewardshipGivingConcentration(request, env, parishI
     risk_level: riskLevel,
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/recurring
-// Recurring-gift stability: active recurring donors, monthly-equivalent
-// recurring revenue, failed/canceled events, and how much of total giving
-// is recurring vs one-time. This is the "cash flow stability" story.
-//
-// Note: card-expiration data isn't tracked here — that needs a Stripe
-// `customer.source.expiring` (or payment-method) webhook subscription that
-// isn't currently wired up, not something derivable from data already on
-// file. Left out rather than estimated.
-export async function handleStewardshipGivingRecurring(request, env, parishId) {
+async function handleStewardshipGivingRecurring(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
-  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 86400000).toISOString();
-
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 864e5).toISOString();
+  const fortyFiveDaysAgo = new Date(Date.now() - 45 * 864e5).toISOString();
   const [totalRow, recurringPaidRows, failedRow, canceledRow] = await Promise.all([
     readStewardshipGivingMix(env, parishId, year),
-
     // Most recent successful charge per active recurring subscription —
     // used both to count active recurring donors and to build a
     // monthly-equivalent revenue figure (normalizing quarterly/annual
@@ -450,7 +365,6 @@ export async function handleStewardshipGivingRecurring(request, env, parishId) {
     )
       .bind(parishId, fortyFiveDaysAgo)
       .all(),
-
     env.AGAPAY_DB.prepare(
       `
       SELECT COUNT(*) AS n FROM donor_offerings
@@ -459,7 +373,6 @@ export async function handleStewardshipGivingRecurring(request, env, parishId) {
     )
       .bind(parishId, ninetyDaysAgo)
       .first(),
-
     env.AGAPAY_DB.prepare(
       `
       SELECT COUNT(*) AS n FROM donor_offerings
@@ -469,15 +382,13 @@ export async function handleStewardshipGivingRecurring(request, env, parishId) {
       .bind(parishId, ninetyDaysAgo)
       .first(),
   ]);
-
   const monthlyEquivFor = (amountCents, frequency) => {
     const f = String(frequency || '').toLowerCase();
     if (f === 'annual' || f === 'yearly' || f === 'annually') return amountCents / 12;
     if (f === 'quarterly') return amountCents / 3;
     if (f === 'weekly') return amountCents * (52 / 12);
-    return amountCents; // monthly, or unspecified recurring — treated as monthly
+    return amountCents;
   };
-
   const activeRecurring = recurringPaidRows.results || [];
   const recurringDonorCount = new Set(activeRecurring.map((r) => r.donor_email)).size;
   const mrrCents = Math.round(
@@ -485,12 +396,9 @@ export async function handleStewardshipGivingRecurring(request, env, parishId) {
   );
   const avgRecurringGiftCents = recurringDonorCount > 0 ? Math.round(mrrCents / recurringDonorCount) : 0;
   const totalGivingCents = totalRow?.total_cents || 0;
-  // The chart compares gifts received in the same year. Annualized MRR is
-  // a projection and can otherwise make a partial year appear 100% recurring.
   const recurringReceivedCents = totalRow?.recurring_received_cents || 0;
   const pctRecurringOfTotal =
     totalGivingCents > 0 ? Math.round((recurringReceivedCents / totalGivingCents) * 100) : null;
-
   return json({
     fiscal_year: year,
     recurring_donor_count: recurringDonorCount,
@@ -499,37 +407,27 @@ export async function handleStewardshipGivingRecurring(request, env, parishId) {
     failed_payments_90d: failedRow?.n || 0,
     canceled_gifts_90d: canceledRow?.n || 0,
     pct_of_total_giving_recurring: pctRecurringOfTotal,
-    expiring_cards: null, // not tracked — see function comment
+    expiring_cards: null,
+    // not tracked — see function comment
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/giving/health-score
-// A single composite 0-100 score parish leaders can read at a glance.
-// Keep this intentionally light: it uses the giving summary only so the
-// Stewardship tab can load without chaining several dashboard reports.
-export async function handleStewardshipGivingHealthScore(request, env, parishId) {
+async function handleStewardshipGivingHealthScore(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-  if (!Number.isInteger(year) || year < 2000 || year > 2200) return json({ error: 'Choose a valid reporting year.' }, { status: 422 });
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
+  if (!Number.isInteger(year) || year < 2e3 || year > 2200)
+    return json({ error: 'Choose a valid reporting year.' }, { status: 422 });
   const summaryRes = await handleStewardshipGivingSummary(
     new Request(`${url.origin}${url.pathname.replace(/\/health-score$/, '/summary')}?year=${year}`, request),
     env,
     parishId
   );
   const summary = summaryRes.ok ? await summaryRes.json() : {};
-
-  // Each component scores 0-100; overall score is a weighted average of
-  // whichever components have real data (a brand-new parish with no prior
-  // year won't have a retention number yet, for example — it's excluded
-  // from the average rather than penalizing the score for missing data).
   const components = [];
-
-  if (summary.fulfillment_rate_pct !== null && summary.fulfillment_rate_pct !== undefined) {
+  if (summary.fulfillment_rate_pct !== null && summary.fulfillment_rate_pct !== void 0) {
     components.push({
       key: 'pledge_fulfillment',
       label: 'Pledge fulfillment',
@@ -546,14 +444,11 @@ export async function handleStewardshipGivingHealthScore(request, env, parishId)
       score: Math.min(100, projectionPct),
     });
   }
-
   const totalWeight = components.reduce((s, c) => s + c.weight, 0);
   const score =
     totalWeight > 0 ? Math.round(components.reduce((s, c) => s + c.score * c.weight, 0) / totalWeight) : null;
-
   const status =
     score === null ? 'Not enough data yet' : score >= 80 ? 'On Track' : score >= 60 ? 'Needs Attention' : 'At Risk';
-
   return json({
     fiscal_year: year,
     score,
@@ -562,22 +457,18 @@ export async function handleStewardshipGivingHealthScore(request, env, parishId)
     processing_fees: await readGivingFeeReport(env, parishId, year),
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/report/monthly
-// A parish-council-ready HTML report (print-to-PDF via the browser, same
-// convention as the annual meeting packet) pulling together everything the
-// tab already tracks: giving this month, YTD, pledge progress, budget
-// pace, restricted funds, recurring giving health, lapsed/new donors, and
-// a short list of rule-based follow-up suggestions derived directly from
-// the numbers (not invented copy).
-const MANUAL_INCOME_SOURCES = new Set(['cash_and_checks', 'tithely', 'paypal', 'other_giving_platform']);
+const MANUAL_INCOME_SOURCES = /* @__PURE__ */ new Set([
+  'cash_and_checks',
+  'tithely',
+  'paypal',
+  'other_giving_platform',
+]);
 const MANUAL_INCOME_SOURCE_LABELS = {
   cash_and_checks: 'Cash/Check Collection',
   tithely: 'Tithe.ly',
   paypal: 'PayPal',
   other_giving_platform: 'Another Giving Platform',
 };
-
 function manualIncomeRowToJson(row) {
   return {
     id: row.id,
@@ -595,21 +486,13 @@ function manualIncomeRowToJson(row) {
     createdAt: row.created_at,
   };
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/income/manual?year=YYYY
-// List this year's manually logged outside-AGAPAY contributions (cash/check
-// deposits and giving platforms), with totals by source. This is what lets
-// a treasurer see the offline/other-platform picture alongside what
-// AGAPAY Give collected online.
-export async function handleStewardshipManualIncomeList(request, env, parishId) {
+async function handleStewardshipManualIncomeList(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const url = new URL(request.url);
-  const year = parseInt(url.searchParams.get('year') || new Date().getFullYear(), 10);
-
+  const year = parseInt(url.searchParams.get('year') || /* @__PURE__ */ new Date().getFullYear(), 10);
   const rows = await env.AGAPAY_DB.prepare(
     `
     SELECT * FROM manual_income_entries
@@ -619,14 +502,12 @@ export async function handleStewardshipManualIncomeList(request, env, parishId) 
   )
     .bind(parishId, `${year}-01-01`, `${year}-12-31`)
     .all();
-
   const entries = (rows.results || []).map(manualIncomeRowToJson);
   const totalCents = entries.reduce((s, e) => s + e.amountCents, 0);
   const bySource = {};
   for (const e of entries) {
     bySource[e.source] = (bySource[e.source] || 0) + e.amountCents;
   }
-
   return json({
     fiscal_year: year,
     entries,
@@ -634,24 +515,16 @@ export async function handleStewardshipManualIncomeList(request, env, parishId) 
     by_source_cents: bySource,
   });
 }
-
-// POST /api/parish/dashboard/:parishId/stewardship/income/manual
-// Add one outside-AGAPAY contribution. Deliberately simple — a treasurer logging
-// this Sunday's cash-and-check count, or a month's Tithe.ly total, should
-// take seconds, not require itemizing individual donors.
-export async function handleStewardshipManualIncomeCreate(request, env, parishId) {
+async function handleStewardshipManualIncomeCreate(request, env, parishId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const body = await request.json().catch(() => null);
   if (!body) return json({ error: 'Invalid request body.' }, { status: 400 });
-
   const entryDate = String(body.entryDate || '').trim();
   const source = String(body.source || '').trim();
   const amountCents = Math.round(Number(body.amountCents));
-
   if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
     return json({ error: 'A valid entry date is required.' }, { status: 400 });
   }
@@ -661,9 +534,8 @@ export async function handleStewardshipManualIncomeCreate(request, env, parishId
   if (!Number.isFinite(amountCents) || amountCents <= 0) {
     return json({ error: 'Enter an amount greater than zero.' }, { status: 400 });
   }
-
   const id = `manual_income_${parishId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const sourceLabel =
     source === 'other_giving_platform'
       ? String(body.sourceLabel || '')
@@ -688,7 +560,6 @@ export async function handleStewardshipManualIncomeCreate(request, env, parishId
   if (!fundCode) {
     return json({ error: 'Choose or enter a fund/designation.' }, { status: 400 });
   }
-
   await env.AGAPAY_DB.prepare(
     `
     INSERT INTO manual_income_entries
@@ -712,7 +583,6 @@ export async function handleStewardshipManualIncomeCreate(request, env, parishId
       now
     )
     .run();
-
   return json({
     ok: true,
     entry: manualIncomeRowToJson({
@@ -729,9 +599,7 @@ export async function handleStewardshipManualIncomeCreate(request, env, parishId
     }),
   });
 }
-
-// DELETE /api/parish/dashboard/:parishId/stewardship/income/manual/:entryId
-export async function handleStewardshipManualIncomeDelete(request, env, parishId, entryId) {
+async function handleStewardshipManualIncomeDelete(request, env, parishId, entryId) {
   const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
@@ -742,14 +610,25 @@ export async function handleStewardshipManualIncomeDelete(request, env, parishId
       { error: 'Use Givers to correct or void this individual gift; its audit history must be retained.' },
       { status: 409 }
     );
-
   await env.AGAPAY_DB.prepare(`DELETE FROM manual_income_entries WHERE id = ? AND parish_id = ?`)
     .bind(entryId, parishId)
     .run();
-
   return json({ ok: true });
 }
-
-// Sums contribution-qualified outside giving within a date range — shared by the
-// summary/budget-pace figures and the monthly report, so both stay
-// consistent with what the treasurer has actually logged.
+export {
+  addCorsHeaders,
+  handleAdminRecentActivity,
+  handleStewardshipGivingActivate,
+  handleStewardshipGivingConcentration,
+  handleStewardshipGivingDistribution,
+  handleStewardshipGivingFunds,
+  handleStewardshipGivingHealthScore,
+  handleStewardshipGivingRecurring,
+  handleStewardshipGivingRetention,
+  handleStewardshipGivingSummary,
+  handleStewardshipManualIncomeCreate,
+  handleStewardshipManualIncomeDelete,
+  handleStewardshipManualIncomeList,
+  requireStewardshipFeature,
+  verifyParishDashboard,
+};

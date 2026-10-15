@@ -31,7 +31,10 @@ export interface OnboardingRegistration extends EntitlementRegistration {
   feastCampaigns?: OnboardingFund[] | null;
   generalFundLegacyException?: ApprovedException | null;
   legacySharedAccessAllowed?: ApprovedException | null;
-  onboardingAccess?: Record<string, { status?: unknown; email?: unknown; membershipId?: unknown } | null> | null;
+  onboardingAccess?: Record<
+    string,
+    { status?: unknown; email?: unknown; membershipId?: unknown; acceptedAt?: string } | null
+  > | null;
   treasurerSignoff?: TreasurerSignoff | null;
   onboardingChecks?: OnboardingChecks | null;
   stripeStatusCheckedAt?: string | number | null;

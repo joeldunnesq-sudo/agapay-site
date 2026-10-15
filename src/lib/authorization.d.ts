@@ -32,3 +32,7 @@ export function requireActiveMembership(
   membership: { id: string; parishId: string };
   capabilities: readonly string[];
 } | null>;
+
+export const CAPABILITY_CATALOG: readonly string[];
+export const ROLE_TEMPLATES: Readonly<Record<string, readonly string[] | undefined>>;
+export function sanitizeGrantableCapabilities(capabilities: readonly unknown[]): string[];

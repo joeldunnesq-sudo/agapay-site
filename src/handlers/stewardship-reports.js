@@ -1,3 +1,4 @@
+// Generated from src/handlers/stewardship-reports.ts by npm run build:server. Do not edit.
 import { platformCostTable } from '../stewardship/platform-costs.js';
 import { GIVING_GROSS_CENTS_SQL } from '../lib/giving-contributions.js';
 import { readGivingFeeReport } from '../lib/giving-fee-report.js';
@@ -9,7 +10,6 @@ import { htmlEscape } from '../lib/format.js';
 import { manualIncomeTotalCents } from '../lib/stewardship-income.js';
 import { readStewardshipAccountingSnapshot } from './stewardship-accounting-bridge.js';
 import { councilReportPeriod, accountingCouncilReport } from '../stewardship/council-reports.js';
-
 import {
   requireStewardshipFeature,
   handleStewardshipGivingSummary,
@@ -18,13 +18,11 @@ import {
   handleStewardshipGivingHealthScore,
   handleStewardshipGivingFunds,
 } from './stewardship-giving.js';
-
 async function reportJson(response) {
   if (!response.ok) throw new Error('A required stewardship report could not be loaded.');
   return response.json();
 }
-
-export async function handleStewardshipMonthlyReport(
+async function handleStewardshipMonthlyReport(
   request,
   env,
   parishId,
@@ -47,29 +45,22 @@ export async function handleStewardshipMonthlyReport(
   }
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const found = await findRegistrationByParishId(env, parishId);
   const registration = found?.registration || {};
   const parishName = registration.parishName || registration.name || 'Parish';
-
   const url = new URL(request.url);
-  const now = new Date();
+  const now = /* @__PURE__ */ new Date();
   const period = councilReportPeriod(url, now);
   if (!period) return json({ error: 'Choose a valid report month and matching year.' }, { status: 422 });
   const { year, monthStart, monthEnd, nextMonthStart, monthLabel } = period;
   const accounting = await readAccounting(env, parishId, registration, { startDate: monthStart, endDate: monthEnd });
   if (accounting.reason === 'unavailable')
     return json({ error: 'Accounting is temporarily unavailable. Please try again.' }, { status: 503 });
-
-  // Internal calls to the JSON endpoints below still need a bearer header
-  // (they don't accept the ?t= query param), so build those forwarded
-  // requests with the token attached as a header explicitly.
   const forwardedUrl = `${url.origin}${url.pathname.replace(/\/report\/monthly$/, '')}`;
   const withYear = (path) =>
     new Request(`${forwardedUrl}/${path}?year=${year}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
   const [summaryRes, recurringRes, retentionRes, healthRes, fundsRes, monthRow, fundsRows, manualMonthCents] =
     await Promise.all([
       handleStewardshipGivingSummary(withYear('summary'), env, parishId).then(reportJson),
@@ -92,17 +83,13 @@ export async function handleStewardshipMonthlyReport(
         : handleStewardshipFinancials(withYear('financials'), env, parishId).then(reportJson),
       manualIncomeTotalCents(env, parishId, monthStart, monthEnd),
     ]);
-
   const fmt = (c) =>
     '$' + ((c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const monthTotalCents = (monthRow?.total_cents || 0) + manualMonthCents;
-
-  // Budget pace — same math as the Stewardship Reports card.
   const goalCents = summaryRes.total_pledged_cents || 0;
   const expectedByTodayCents =
     goalCents > 0 ? Math.round(goalCents * (summaryRes.day_of_year / summaryRes.days_in_year)) : 0;
   const behindPaceCents = expectedByTodayCents - summaryRes.total_actual_cents;
-
   const restrictedFunds = accounting.available
     ? accounting.restrictedFunds
         .filter((f) => f.endingBalanceCents || f.totalReceivedCents || f.totalDisbursedCents)
@@ -112,9 +99,6 @@ export async function handleStewardshipMonthlyReport(
         ending_balance_cents: f.endingBalanceCents,
       }));
   const restrictedTotalCents = restrictedFunds.reduce((s, f) => s + (f.ending_balance_cents || 0), 0);
-
-  // Rule-based follow-up suggestions — every line ties directly back to a
-  // number already shown above it, nothing generated freeform.
   const actions = [];
   if (behindPaceCents > 0) {
     actions.push(
@@ -146,10 +130,8 @@ export async function handleStewardshipMonthlyReport(
       "No urgent follow-ups from this month's numbers — giving, pledges, and recurring gifts all look steady."
     );
   }
-
   const scoreTone =
     healthRes.score === null ? 'gold' : healthRes.score >= 80 ? 'green' : healthRes.score >= 60 ? 'gold' : 'red';
-
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -320,7 +302,6 @@ export async function handleStewardshipMonthlyReport(
   </div>
 </body>
 </html>`;
-
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html;charset=utf-8',
@@ -329,11 +310,7 @@ export async function handleStewardshipMonthlyReport(
     },
   });
 }
-
-// GET /api/parish/dashboard/:parishId/stewardship/report/monthly-financial
-// Accounting parishes use posted monthly and year-to-date ledger activity.
-// Other parishes retain the explicitly labeled authoritative fiscal-year snapshot.
-export async function handleStewardshipMonthlyFinancialReport(
+async function handleStewardshipMonthlyFinancialReport(
   request,
   env,
   parishId,
@@ -351,7 +328,6 @@ export async function handleStewardshipMonthlyFinancialReport(
   if (!found || !(await verifyParishDashboardBearer(found.registration, token))) return expired();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
-
   const period = councilReportPeriod(url);
   if (!period) return json({ error: 'Choose a valid report month and matching year.' }, { status: 422 });
   const { year, requestedMonth, monthStart, nextMonthStart, monthEnd, monthLabel } = period;
@@ -366,15 +342,17 @@ export async function handleStewardshipMonthlyFinancialReport(
     });
     if (!yearToDate.available)
       return json({ error: 'Accounting is temporarily unavailable. Please try again.' }, { status: 503 });
-    return appendGivingFeeReport(accountingCouncilReport(parishName, period, monthly, yearToDate), await readGivingFeeReport(env, parishId, year));
+    return appendGivingFeeReport(
+      accountingCouncilReport(parishName, period, monthly, yearToDate),
+      await readGivingFeeReport(env, parishId, year)
+    );
   }
-  const generatedOn = new Date();
+  const generatedOn = /* @__PURE__ */ new Date();
   const feeReport = await readGivingFeeReport(env, parishId, year);
   const authRequest = new Request(
     `${url.origin}/api/parish/dashboard/${encodeURIComponent(parishId)}/stewardship/financials?year=${year}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
-
   const [financialResponse, agapayMonth, outsideMonth] = await Promise.all([
     handleStewardshipFinancials(authRequest, env, parishId),
     d1First(
@@ -407,7 +385,6 @@ export async function handleStewardshipMonthlyFinancialReport(
       headers: { 'Content-Type': 'text/html;charset=utf-8' },
     });
   }
-
   const snapshot = financials.snapshot || null;
   const totals = financials.totals || {};
   const contributions = financials.contributionTotals || {};
@@ -541,21 +518,9 @@ export async function handleStewardshipMonthlyFinancialReport(
     },
   });
 }
-
-// ── PLEDGE SYNC HELPER ───────────────────────────────────────────────────────
-// Call this from handleDonorDashboard (in handlers/donor.js) whenever a donor
-// saves their pledge amount. Pass the donor's email, their default_parish_id,
-// and the new pledgeAmountCents value.
-//
-// Usage (in handlers/donor.js, after writing pledgeAmountCents to donor row):
-//
-//   if (donorRow.default_parish_id) {
-//     await syncPledgeToHousehold(env, donorEmail, donorRow.default_parish_id, pledgeAmountCents);
-//   }
-//
-export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmountCents) {
+async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmountCents) {
   if (!parishId || !parishId.trim()) return;
-  const year = new Date().getFullYear();
+  const year = /* @__PURE__ */ new Date().getFullYear();
   await env.AGAPAY_DB.prepare(
     `
     INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
@@ -569,3 +534,4 @@ export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmo
     .bind(donorEmail, parishId, year, pledgeAmountCents)
     .run();
 }
+export { handleStewardshipMonthlyFinancialReport, handleStewardshipMonthlyReport, syncPledgeToHousehold };

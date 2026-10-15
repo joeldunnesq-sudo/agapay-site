@@ -5,6 +5,7 @@ export interface EmailAttachment {
   content: string;
 }
 export interface EmailMessage {
+  headers?: Record<string, string>;
   from: string;
   to: string | readonly string[];
   subject: string;

@@ -15,3 +15,10 @@ export function issueDonorSession(
   env: Partial<Env>,
   donor: DonorRecord
 ): Promise<{ token: string; donor: DonorRecord }>;
+
+export function offeringLabel(offering: Record<string, unknown>): string;
+
+export function sendDonationReceiptIfNeeded(
+  env: Partial<Env>,
+  offering: import('./parish-donor-offerings.js').ReceiptOffering
+): Promise<import('./parish-donor-offerings.js').ReceiptOffering | null>;
