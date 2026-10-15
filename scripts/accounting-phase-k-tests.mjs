@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -23,7 +24,7 @@ const setupHandler = read("src/handlers/accounting-setup-reports.js");
 const payablesService = read("src/accounting/payables/service.js");
 const setupService = read("src/accounting/setup/service.js");
 const parishApp = readParishDashboardSource();
-const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
+const has = (source, needles, label) => needles.forEach((needle) => assert.ok(includesJavaScriptFragment(source, needle), `${label} must include ${needle}`));
 
 has(payablesHandler, ["/payables/vendors", "updateVendor", "archiveVendor", "unarchiveVendor", '"ap.enter"'], "vendor lifecycle routes");
 has(setupHandler, ["archive|unarchive", "archiveAccount", "unarchiveAccount", '"accounting.configure"'], "account lifecycle routes");

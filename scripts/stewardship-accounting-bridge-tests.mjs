@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -187,7 +188,7 @@ assert.ok(worker.includes("stewardshipGivingSummary(env"), "Giving Metrics must 
 assert.ok(givingSummary.replaceAll("\r\n", "\n").includes(pledgeAggregation), "Giving Metrics pledged-total aggregation must remain unchanged");
 assert.ok(budgets.replaceAll("\r\n", "\n").includes(pledgeAggregation), "budget comparison must use the identical pledge aggregation");
 assert.ok(budgets.includes("/pledge-comparison"));
-assert.ok(budgets.includes('if (method === "GET") return path.startsWith("/payables") ? "ap.view" : "budgets.view"'));
+assert.ok(includesJavaScriptFragment(budgets, 'if (method === "GET") return path.startsWith("/payables") ? "ap.view" : "budgets.view"'));
 const comparisonSource = budgets.slice(budgets.indexOf("async function budgetPledgeComparison"), budgets.indexOf("function requiredCapability"));
 assert.doesNotMatch(comparisonSource, /INSERT INTO accounting_budget_lines|UPDATE accounting_budget_lines|DELETE FROM accounting_budget_lines/, "pledge comparison must be read-only");
 assert.ok(setup.includes("pledgeComparisonAccountId"));

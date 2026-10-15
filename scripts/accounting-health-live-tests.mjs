@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { runAccountingHealth } from './accounting-health-live.mjs';
 import { ACCOUNTING_READ_SMOKE_PATHS } from './lib/accounting-release-gates.mjs';
@@ -98,7 +99,7 @@ const reportsSource = await readFile(new URL('../src/handlers/accounting-setup-r
 assert.equal(ACCOUNTING_READ_SMOKE_PATHS.find(([name]) => name === 'ledger')[1], '/general-ledger');
 assert.match(ledgerSource, /general-ledger\|account-registers\|fund-registers/);
 const reportPath = ACCOUNTING_READ_SMOKE_PATHS.find(([name]) => name === 'reports')[1];
-assert.ok(reportsSource.includes(`path === "${reportPath}"`));
+assert.ok(includesJavaScriptFragment(reportsSource, `path === "${reportPath}"`));
 const attached = await run({
   override: (path, options) => {
     if (path.endsWith('/payables/bills')) return Response.json({ ok: true, bills: [{ id: 'existing-bill' }] });

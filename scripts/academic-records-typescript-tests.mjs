@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import {
   closeLearnTerm,
@@ -145,4 +146,17 @@ assert.ok(transcript.includes('High school'));
 assert.ok(!transcript.includes('Excluded middle school'));
 console.log(
   'PASS - term closure preserves child/household/term scope, grades/credits, idempotent KV persistence, D1-to-KV fallback, authoritative SQL identity, transcript grouping and escaped print output'
+);
+
+assert.ok(includesJavaScriptFragment("if (path === '/payables') {}", 'path==="/payables"'));
+assert.ok(!includesJavaScriptFragment("capability='ap.view'", 'capability="ap.pay"'));
+assert.ok(!includesJavaScriptFragment("method==='GET'", 'method==="POST"'));
+assert.ok(!includesJavaScriptFragment('version == expected', 'version === expected'));
+assert.ok(!includesJavaScriptFragment("query('a b')", 'query("ab")'));
+assert.ok(!includesJavaScriptFragment('first(); second();', 'second(); first();'));
+assert.ok(
+  includesJavaScriptFragment(
+    "const route=/a\\/b/; const label=`${path}`; capability === 'ap.pay';",
+    'capability === "ap.pay"'
+  )
 );

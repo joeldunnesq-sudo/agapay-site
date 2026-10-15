@@ -665,7 +665,8 @@
     "src/learn/billing.d.ts",
     "src/lib/mfa.d.ts",
     "scripts/academic-records-typescript-tests.mjs",
-    "scripts/typecheck/academic-http-contracts.ts"
+    "scripts/typecheck/academic-http-contracts.ts",
+    "scripts/lib/javascript-source-contract.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -1364,6 +1365,7 @@
     "src/learn/billing.d.ts",
     "src/lib/mfa.d.ts",
     "scripts/academic-records-typescript-tests.mjs",
-    "scripts/typecheck/academic-http-contracts.ts"
+    "scripts/typecheck/academic-http-contracts.ts",
+    "scripts/lib/javascript-source-contract.mjs"
   ]
 }
