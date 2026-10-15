@@ -1,6 +1,6 @@
+// Generated from src/browser/parish/accounting-report-pdf.ts by npm run build:browser. Do not edit.
 import { PDFDocument, rgb } from '../vendor/pdf-lib/pdf-lib-1.17.1.esm.min.js';
 import fontkit from '../vendor/pdf-lib/fontkit-1.1.1.es.min.js';
-
 const navy = rgb(0.06, 0.14, 0.21),
   muted = rgb(0.36, 0.41, 0.46);
 const rule = rgb(0.78, 0.81, 0.83),
@@ -15,14 +15,12 @@ const money = (value) => {
   const text = (Math.abs(amount) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return amount < 0 ? `(${text})` : text;
 };
-
 async function fontBytes(name) {
   const response = await fetch(`/vendor/accounting-fonts/NotoSans-${name}.ttf`);
   if (!response.ok) throw new Error('The report font could not load. Please try the PDF download again.');
   return response.arrayBuffer();
 }
-
-export async function createAccountingReportPdf(report, fonts = null) {
+async function createAccountingReportPdf(report, fonts = null) {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const [regularBytes, boldBytes] = fonts || (await Promise.all([fontBytes('Regular'), fontBytes('Bold')]));
@@ -59,25 +57,25 @@ export async function createAccountingReportPdf(report, fonts = null) {
   function wrap(value, font, fontSize, maxWidth) {
     const lines = [];
     for (const paragraph of clean(value).split('\n')) {
-      let line = '';
+      let line2 = '';
       for (const word of paragraph.split(/\s+/)) {
         if (!word) continue;
-        const candidate = line ? `${line} ${word}` : word;
+        const candidate = line2 ? `${line2} ${word}` : word;
         if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
-          line = candidate;
+          line2 = candidate;
           continue;
         }
-        if (line) lines.push(line);
-        line = '';
+        if (line2) lines.push(line2);
+        line2 = '';
         for (const char of word) {
-          if (line && font.widthOfTextAtSize(line + char, fontSize) > maxWidth) {
-            lines.push(line);
-            line = '';
+          if (line2 && font.widthOfTextAtSize(line2 + char, fontSize) > maxWidth) {
+            lines.push(line2);
+            line2 = '';
           }
-          line += char;
+          line2 += char;
         }
       }
-      lines.push(line);
+      lines.push(line2);
     }
     return lines.length ? lines : [''];
   }
@@ -91,8 +89,8 @@ export async function createAccountingReportPdf(report, fonts = null) {
     const labels = report.columns.map((col, i) => wrap(col.label, bold, 8, widths[i] - 14));
     const h = Math.max(...labels.map((entry) => entry.length)) * 11 + 14;
     page.drawRectangle({ x: margin, y: y - h, width: usable, height: h, color: wash });
-    labels.forEach((labels, i) =>
-      labels.forEach((label, n) =>
+    labels.forEach((labels2, i) =>
+      labels2.forEach((label, n) =>
         text(
           label,
           report.columns[i].money ? offsets[i] + widths[i] - 7 - bold.widthOfTextAtSize(label, 8) : offsets[i] + 7,
@@ -161,11 +159,11 @@ export async function createAccountingReportPdf(report, fonts = null) {
       if (['subtotal', 'grand'].includes(item.kind)) line(y, item.kind === 'grand' ? 1 : 0.6, navy);
       values.forEach((labels, i) =>
         labels.slice(offset, offset + take).forEach((label, n) => {
-          const numeric = !heading && report.columns[i].money;
-          const fontSize = numeric
+          const numeric2 = !heading && report.columns[i].money;
+          const fontSize = numeric2
             ? Math.min(size, (size * (widths[i] - 14)) / Math.max(1, font.widthOfTextAtSize(label, size)))
             : size;
-          const x = numeric ? offsets[i] + widths[i] - 7 - font.widthOfTextAtSize(label, fontSize) : offsets[i] + 7;
+          const x = numeric2 ? offsets[i] + widths[i] - 7 - font.widthOfTextAtSize(label, fontSize) : offsets[i] + 7;
           text(label, x, y - 7 - n * 13, font, fontSize);
         })
       );
@@ -204,3 +202,4 @@ export async function createAccountingReportPdf(report, fonts = null) {
   });
   return pdf.save();
 }
+export { createAccountingReportPdf };

@@ -1,3 +1,4 @@
+// Generated from src/handlers/admin-learning-support.ts by npm run build:server. Do not edit.
 import {
   d1,
   d1All,
@@ -21,9 +22,7 @@ import {
 } from '../learn/community-store.js';
 import { listLearnFeedback, updateLearnFeedbackStatus } from '../learn/feedback-store.js';
 import { requireAdmin, requireAdminContext } from './parish.js';
-
 const LEARN_SCHOLARSHIP_KV_PREFIX = '__agapay_learn_scholarship:';
-
 function learnPlanMonthlyCents(plan = 'family') {
   return String(plan || '')
     .toLowerCase()
@@ -31,7 +30,6 @@ function learnPlanMonthlyCents(plan = 'family') {
     ? Math.round(4900 / 12)
     : Math.round(5900 / 12);
 }
-
 function learnSubscriptionStatus(value) {
   const status = String(value || 'active')
     .trim()
@@ -41,11 +39,9 @@ function learnSubscriptionStatus(value) {
   }
   return 'active';
 }
-
 function learnScholarshipKey(id) {
   return `${LEARN_SCHOLARSHIP_KV_PREFIX}${id}`;
 }
-
 function learnScholarshipCode(prefix = 'AGAPAYLEARN') {
   const bytes = crypto.getRandomValues(new Uint8Array(4));
   const suffix = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'))
@@ -58,7 +54,6 @@ function learnScholarshipCode(prefix = 'AGAPAYLEARN') {
       .slice(0, 18) || 'AGAPAYLEARN'
   }-${suffix}`;
 }
-
 async function saveLearnScholarship(env, record) {
   const raw = JSON.stringify(record);
   if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.put(learnScholarshipKey(record.id), raw);
@@ -68,11 +63,10 @@ async function saveLearnScholarship(env, record) {
     } catch {}
   }
 }
-
 async function listLearnScholarships(env) {
-  const byId = new Map();
+  const byId = /* @__PURE__ */ new Map();
   if (env.AGAPAY_REGISTRATIONS) {
-    const keys = await listKvKeys(env, { prefix: LEARN_SCHOLARSHIP_KV_PREFIX, limit: 1000 });
+    const keys = await listKvKeys(env, { prefix: LEARN_SCHOLARSHIP_KV_PREFIX, limit: 1e3 });
     for (const key of keys) {
       const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
       if (!raw) continue;
@@ -99,8 +93,7 @@ async function listLearnScholarships(env) {
   }
   return [...byId.values()].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
 }
-
-function learnBillingMetrics(records = [], now = new Date()) {
+function learnBillingMetrics(records = [], now = /* @__PURE__ */ new Date()) {
   const monthly = Array.from({ length: 12 }, (_, index) => ({
     month: index + 1,
     label: monthLabel(index),
@@ -110,7 +103,6 @@ function learnBillingMetrics(records = [], now = new Date()) {
   }));
   const counts = { active: 0, trialing: 0, pastDue: 0, cancelled: 0, freeForever: 0 };
   let monthlyRecurringCents = 0;
-
   for (const record of records) {
     const status =
       record.cancelAtPeriodEnd || record.cancelledAt || record.canceledAt
@@ -127,7 +119,6 @@ function learnBillingMetrics(records = [], now = new Date()) {
         Number(record.monthlyEquivalentCents || record.monthlyCents || learnPlanMonthlyCents(record.plan))
       );
     }
-
     const created = record.createdAt ? new Date(record.createdAt) : null;
     if (created && !Number.isNaN(created.getTime()) && created.getUTCFullYear() === now.getUTCFullYear()) {
       monthly[created.getUTCMonth()].newSubscriptions += 1;
@@ -142,13 +133,11 @@ function learnBillingMetrics(records = [], now = new Date()) {
       monthly[cancelledDate.getUTCMonth()].cancellations += 1;
     }
   }
-
   let running = 0;
   for (const month of monthly) {
     running += month.newSubscriptions - month.cancellations;
     month.active = Math.max(0, running);
   }
-
   return {
     year: now.getUTCFullYear(),
     generatedAt: now.toISOString(),
@@ -173,8 +162,7 @@ function learnBillingMetrics(records = [], now = new Date()) {
       })),
   };
 }
-
-export async function handleAdminLearnSummary(request, env) {
+async function handleAdminLearnSummary(request, env) {
   const limited = await rateLimit(request, env, 'admin-auth', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
@@ -216,8 +204,7 @@ export async function handleAdminLearnSummary(request, env) {
     },
   });
 }
-
-export async function handleAdminLearnFeedback(request, env, feedbackId = '') {
+async function handleAdminLearnFeedback(request, env, feedbackId = '') {
   if (request.method !== 'PATCH') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-learn-feedback', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
@@ -229,8 +216,7 @@ export async function handleAdminLearnFeedback(request, env, feedbackId = '') {
   const result = await updateLearnFeedbackStatus(env, request, adminContext, feedbackId, body);
   return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
-
-export async function handleAdminParishSupportTickets(request, env, ticketId = '') {
+async function handleAdminParishSupportTickets(request, env, ticketId = '') {
   const limited = await rateLimit(request, env, 'admin-parish-support', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
   const adminContext = await requireAdminContext(request, env);
@@ -257,8 +243,7 @@ export async function handleAdminParishSupportTickets(request, env, ticketId = '
   const result = await updateParishSupportTicket(env, adminContext, ticketId, body);
   return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
-
-export async function handleAdminLearnCommunity(request, env, resourceId = '') {
+async function handleAdminLearnCommunity(request, env, resourceId = '') {
   if (!['POST', 'PATCH'].includes(request.method)) return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-learn-community', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
@@ -268,18 +253,17 @@ export async function handleAdminLearnCommunity(request, env, resourceId = '') {
   if (!body || typeof body !== 'object')
     return json({ ok: false, error: 'Moderation update was invalid.' }, { status: 400 });
   if (request.method === 'POST') {
-    const result = await createCuratedLearnCommunityResource(env, adminContext, body);
-    return json(result, { status: result.ok ? 201 : result.status || 500 });
+    const result2 = await createCuratedLearnCommunityResource(env, adminContext, body);
+    return json(result2, { status: result2.ok ? 201 : result2.status || 500 });
   }
   if (body.action === 'update') {
-    const result = await updateCuratedLearnCommunityResource(env, adminContext, resourceId, body);
-    return json(result, { status: result.ok ? 200 : result.status || 500 });
+    const result2 = await updateCuratedLearnCommunityResource(env, adminContext, resourceId, body);
+    return json(result2, { status: result2.ok ? 200 : result2.status || 500 });
   }
   const result = await moderateLearnCommunityResource(env, adminContext, resourceId, body);
   return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
-
-export async function handleAdminLearnScholarship(request, env) {
+async function handleAdminLearnScholarship(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-learn-scholarship', { limit: 10, windowSeconds: 300 });
   if (limited) return limited;
@@ -293,7 +277,7 @@ export async function handleAdminLearnScholarship(request, env) {
     .trim()
     .toUpperCase();
   const label = String(body.label || 'AGAPAY Learn scholarship').trim();
-  const createdAt = new Date().toISOString();
+  const createdAt = /* @__PURE__ */ new Date().toISOString();
   const record = {
     id: generateSecret('learn_scholarship'),
     product: 'learn',
@@ -309,7 +293,6 @@ export async function handleAdminLearnScholarship(request, env) {
     createdAt,
     createdBy: adminContext.actor || 'Admin',
   };
-
   if (env.STRIPE_SECRET_KEY) {
     const couponParams = new URLSearchParams();
     couponParams.set('percent_off', String(percentOff));
@@ -358,7 +341,13 @@ export async function handleAdminLearnScholarship(request, env) {
     record.stripeCouponId = coupon.id;
     record.stripePromotionCodeId = promotion.id;
   }
-
   await saveLearnScholarship(env, record);
   return json({ ok: true, scholarship: record });
 }
+export {
+  handleAdminLearnCommunity,
+  handleAdminLearnFeedback,
+  handleAdminLearnScholarship,
+  handleAdminLearnSummary,
+  handleAdminParishSupportTickets,
+};

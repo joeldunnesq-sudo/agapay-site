@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "WebWorker"],
+    "moduleDetection": "legacy"
+  },
+  "include": [
+    "src/browser/service-worker.ts",
+    "src/browser/listen/service-worker.ts",
+    "src/browser/parish/directory-import-file-worker.ts"
+  ]
+}

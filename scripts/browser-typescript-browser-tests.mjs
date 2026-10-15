@@ -9,7 +9,7 @@ import { repoRoot } from './lib/server-typescript.mjs';
 
 const publicRoot = resolve(repoRoot, 'public');
 const workerSource = await readFile(resolve(publicRoot, 'service-worker.js'), 'utf8');
-const cacheName = workerSource.match(/const AGAPAY_CACHE = "([^"]+)"/)[1];
+const cacheName = workerSource.match(/const AGAPAY_CACHE = ['"]([^'"]+)['"]/)[1];
 let previousRelease = true;
 const requests = new Map();
 const bookstoreUrl = appAssetUrl('/donor/bookstore-presentation.js');
@@ -18,6 +18,11 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   requests.set(req.url, (requests.get(req.url) || 0) + 1);
   res.setHeader('Cache-Control', 'no-store');
+  if (url.pathname === '/__native_audio__') {
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.end(Buffer.from([1, 2, 3, 4]));
+    return;
+  }
   if (url.pathname === '/service-worker.js') {
     res.setHeader('Content-Type', 'text/javascript');
     res.end(previousRelease ? workerSource.replace(cacheName, `${cacheName}-typescript-old`) : workerSource);
@@ -46,7 +51,7 @@ const server = createServer(async (req, res) => {
     const bytes = await readFile(file);
     res.setHeader(
       'Content-Type',
-      file.endsWith('.js')
+      file.endsWith('.js') || file.endsWith('.mjs')
         ? 'text/javascript'
         : file.endsWith('.css')
           ? 'text/css'
@@ -78,6 +83,51 @@ try {
   await page.goto(`${origin}/__typescript_test__`);
   assert.equal(await page.evaluate(() => window.formatCentsAsDollars(1250)), '$12.50');
   assert.equal(await page.evaluate('BOOKSTORE_CATEGORY_LABELS.book'), 'Book');
+  const native = await page.evaluate(async () => {
+    const { ListenDB } = await import('/listen/db.js');
+    const { AudioPlayer } = await import('/listen/player.js');
+    const { exportOpml, importOpml } = await import('/listen/opml.js');
+    const { parseDirectoryCsv, mapImportRows } = await import('/parish/directory-import-format.js');
+    const { renderSanitizedMarkup } = await import('/learn/sanitized-render.js');
+    const db = new ListenDB();
+    await db.saveProgress('native-probe', 20, 300);
+    const progress = await db.getProgress('native-probe');
+    await db.downloadEpisode({ guid: 'native-probe', url: '/__native_audio__' });
+    const blobUrl = await db.getDownload('native-probe');
+    const bytes = Array.from(new Uint8Array(await (await fetch(blobUrl)).arrayBuffer()));
+    URL.revokeObjectURL(blobUrl);
+    const downloads = await db.getAllDownloads();
+    await db.deleteDownload('native-probe');
+    const removed = await db.getDownload('native-probe');
+    const player = new AudioPlayer();
+    player.setSpeed(1.25);
+    const subscriptions = importOpml(exportOpml([{ title: 'Example', xmlUrl: 'https://example.test/feed' }]));
+    const table = parseDirectoryCsv('name,email\nExample,person@example.test');
+    const rows = mapImportRows(table, { name: 0, email: 1 });
+    const target = document.createElement('div');
+    renderSanitizedMarkup(target, '<b>Example</b><img src=x onerror=alert(1)><script>alert(1)</script>');
+    return {
+      position: progress.position,
+      duration: progress.duration,
+      bytes,
+      downloadGuid: downloads[0].guid,
+      removed,
+      paused: player.paused,
+      subscription: subscriptions[0].xmlUrl,
+      email: rows[0].email,
+      sanitized: target.innerHTML,
+    };
+  });
+  assert.equal(native.position, 20);
+  assert.equal(native.duration, 300);
+  assert.deepEqual(native.bytes, [1, 2, 3, 4]);
+  assert.equal(native.downloadGuid, 'native-probe');
+  assert.equal(native.removed, null);
+  assert.equal(native.paused, true);
+  assert.equal(native.subscription, 'https://example.test/feed');
+  assert.equal(native.email, 'person@example.test');
+  assert.doesNotMatch(native.sanitized, /<script|onerror=/i);
+  assert.match(native.sanitized, /<b>Example<\/b>/);
   await page.evaluate(
     async ({ cacheName, oldUrl }) => {
       window.AGAPAYDonorSession.saveSession({ token: 'migration-fixture', donor: { email: 'migration@example.test' } });

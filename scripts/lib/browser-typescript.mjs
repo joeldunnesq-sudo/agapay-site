@@ -5,8 +5,60 @@ import { transform } from 'esbuild';
 import { format } from 'prettier';
 import { repoRoot } from './server-typescript.mjs';
 
-// These are classic scripts: no bundling, module wrapper, exports, or global renaming.
+// Classic scripts retain lexical globals; explicitly marked native modules retain ESM.
+// Neither delivery mode bundles, wraps, or renames runtime bindings.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/attribution.ts', output: 'public/attribution.js', module: true, delivery: 'native-module' },
+  {
+    source: 'src/browser/attribution-core.ts',
+    output: 'public/attribution-core.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  { source: 'src/browser/listen/db.ts', output: 'public/listen/db.js', module: true, delivery: 'native-module' },
+  { source: 'src/browser/listen/opml.ts', output: 'public/listen/opml.js', module: true, delivery: 'native-module' },
+  {
+    source: 'src/browser/listen/player.ts',
+    output: 'public/listen/player.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/sanitized-render.ts',
+    output: 'public/learn/sanitized-render.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/parish/directory-import-format.ts',
+    output: 'public/parish/directory-import-format.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/parish/accounting-report-pdf.ts',
+    output: 'public/parish/accounting-report-pdf.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/parish/directory-import-file-worker.ts',
+    output: 'public/parish/directory-import-file-worker.js',
+    delivery: 'worker',
+  },
+  {
+    source: 'src/browser/listen/service-worker.ts',
+    output: 'public/listen/service-worker.js',
+    delivery: 'unreferenced-worker',
+  },
+  { source: 'src/browser/service-worker.ts', output: 'public/service-worker.js', delivery: 'worker' },
+  { source: 'src/browser/site-mobile-nav.ts', output: 'public/site-mobile-nav.js', delivery: 'unreferenced-classic' },
+  { source: 'src/browser/events/app.ts', output: 'public/events/app.js' },
+  { source: 'src/browser/myagapay/events.ts', output: 'public/myagapay/events.js' },
+  { source: 'src/browser/scripts/consumer-passkeys.ts', output: 'public/scripts/consumer-passkeys.js' },
+  { source: 'src/browser/scripts/privileged-mfa.ts', output: 'public/scripts/privileged-mfa.js' },
+  { source: 'src/browser/bookstore/app.ts', output: 'public/bookstore/app.js' },
+  { source: 'src/browser/give/parish-giving/app.ts', output: 'public/give/parish-giving/app.js' },
   { source: 'src/browser/parish/features/campaigns.ts', output: 'public/parish/features/campaigns.js' },
   {
     source: 'src/browser/parish/features/sacraments/preparation.ts',
@@ -190,15 +242,16 @@ export const browserTypeScriptEntries = Object.freeze([
 export async function synchronizeBrowserTypeScript({ check = true, root = repoRoot } = {}) {
   const prettier = JSON.parse(await readFile(resolve(root, '.prettierrc.json'), 'utf8'));
   const stale = [];
-  for (const { source, output } of browserTypeScriptEntries) {
+  for (const { source, output, module: nativeModule } of browserTypeScriptEntries) {
     const { code } = await transform(await readFile(resolve(root, source), 'utf8'), {
       loader: 'ts',
+      ...(nativeModule ? { format: 'esm' } : {}),
       target: 'es2022',
       charset: 'utf8',
       legalComments: 'none',
     });
     // Fail before writing if a runtime import/export would turn a classic script into a module.
-    new Script(code, { filename: output });
+    if (!nativeModule) new Script(code, { filename: output });
     const generated = await format(`// Generated from ${source} by npm run build:browser. Do not edit.\n${code}`, {
       ...prettier,
       parser: 'babel',

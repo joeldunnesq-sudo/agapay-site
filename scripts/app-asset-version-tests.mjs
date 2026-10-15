@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import ts from 'typescript';
 import { appAssets, contentVersion, versionAppAssetReferences } from './lib/app-asset-versions.mjs';
 
 assert.equal(contentVersion('a\r\nb\r\n'), contentVersion('a\nb\n'));
@@ -17,8 +18,18 @@ assert.equal(versionAppAssetReferences(updated, urls), updated, 'versioning is i
 const serviceWorker = readFileSync(new URL('../public/service-worker.js', import.meta.url), 'utf8');
 const headers = readFileSync(new URL('../public/_headers', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
 const sandbox = { self: { location: { origin: 'https://agapay.test' } } };
-const start = serviceWorker.indexOf('function isVersionedStaticAsset');
-vm.runInNewContext(serviceWorker.slice(start, serviceWorker.indexOf('self.addEventListener("fetch"', start)), sandbox);
+const parsedWorker = ts.createSourceFile(
+  'service-worker.js',
+  serviceWorker,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.JS
+);
+const versionedAssetFunction = parsedWorker.statements.find(
+  (node) => ts.isFunctionDeclaration(node) && node.name?.text === 'isVersionedStaticAsset'
+);
+assert.ok(versionedAssetFunction, 'The Worker must define its versioned asset predicate');
+vm.runInNewContext(versionedAssetFunction.getText(parsedWorker), sandbox);
 for (const asset of appAssets) {
   assert.equal(
     sandbox.isVersionedStaticAsset({ method: 'GET' }, new URL(`${asset}?v=abc`, 'https://agapay.test')),

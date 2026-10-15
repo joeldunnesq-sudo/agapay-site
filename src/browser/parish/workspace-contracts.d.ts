@@ -35,6 +35,8 @@ interface Window {
   ParishDashboardFeatures?: Record<string, Readonly<ParishRegisteredFeature>>;
   AgapayDiagnostics: { report(error: unknown, operation: unknown): string; recent(): ParishDiagnosticEntry[] };
   AgapayMfa: {
+    installFetchStepUp(): void;
+    isSupported(): boolean;
     runFlow(
       input: Record<string, unknown>,
       options?: { displayName?: string; enrollmentMethod?: 'totp'; required?: boolean }

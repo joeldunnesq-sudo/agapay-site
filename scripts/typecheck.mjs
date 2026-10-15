@@ -23,6 +23,7 @@ const commands = [
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.worker.json'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.learn.json'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.browser.json'],
+  ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.browser-workers.json'],
 ];
 
 for (const args of commands) {

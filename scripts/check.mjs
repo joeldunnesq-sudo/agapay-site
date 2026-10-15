@@ -246,16 +246,16 @@ assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("ru
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
 assert.ok(serviceWorker.includes('agapay-static-v38'), "service worker cache version should advance when PWA shell caching behavior changes");
 assert.ok(
-  serviceWorker.includes('url.pathname === "/styles/platform-preview.css"')
-    && serviceWorker.includes('url.pathname === "/styles/koinonia-preview.css"'),
+  includesJavaScriptFragment(serviceWorker, 'url.pathname === "/styles/platform-preview.css"')
+    && includesJavaScriptFragment(serviceWorker, 'url.pathname === "/styles/koinonia-preview.css"'),
   "preloaded homepage styles should bypass service-worker caching so the browser can reuse each preload",
 );
 assert.ok(
-  serviceWorker.includes('"/myagapay/teaching.html"')
-    && serviceWorker.includes('url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html")'),
+  includesJavaScriptFragment(serviceWorker, '"/myagapay/teaching.html"')
+    && includesJavaScriptFragment(serviceWorker, 'url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html")'),
   "the Koinonia podcast shell should reopen offline on Android and iOS PWAs"
 );
-assert.ok(serviceWorker.includes('url.pathname.startsWith("/api/") return true') || serviceWorker.includes('url.pathname.startsWith("/api/")) return true'), "service worker should bypass API responses, including private Directory JSON");
+assert.ok(includesJavaScriptFragment(serviceWorker, 'if (url.pathname.startsWith("/api/")) return true;'), "service worker should bypass API responses, including private Directory JSON");
 assert.ok(parishDashboardApp.includes("fetch(directoryAdminApi('/dashboard'), { headers })"), "Parish Dashboard Directory should use the parish dashboard auth headers");
 assert.doesNotMatch(parishLoginPage, /terms|privacy|acceptingName|parishAgreeTerms/i, "parish login must not request legal acceptance");
 assert.doesNotMatch(parishDashboardApp, /terms_acceptance_required|requireParishTermsAcceptance|parishAgreeTerms/, "parish login logic must submit credentials without a legal-acceptance branch");
@@ -701,8 +701,8 @@ assert.ok(
 const campaignPage = await readFile("public/give/parish-giving/app.js", "utf8");
 assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should load campaign data from the Worker API");
 assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should resolve campaign names that already end in Campaign without breaking lookup");
-assert.ok(campaignPage.includes("/api/create-checkout-session") && campaignPage.includes('giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
-assert.ok(campaignPage.includes('"/give/"') && campaignPage.includes('"-campaign"'), "campaign share page should build canonical nested campaign URLs");
+assert.ok(campaignPage.includes("/api/create-checkout-session") && includesJavaScriptFragment(campaignPage, 'giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
+assert.ok(includesJavaScriptFragment(campaignPage, '"/give/"') && includesJavaScriptFragment(campaignPage, '"-campaign"'), "campaign share page should build canonical nested campaign URLs");
 assert.ok(hasWorkerRoute("/api/campaign"), "worker should route public campaign lookup API");
 assert.ok(hasWorkerRoute("/campaign-upload") && worker.includes("handleParishCampaignUpload"), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
@@ -848,12 +848,12 @@ assert.match(worker, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?url\
 assert.match(localServerSource, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?requestUrl\.pathname = "\/about";[\s\S]*?writeHead\(301/, "the local server must mirror the retired Vision redirects");
 const siteMobileNav = await readFile("public/site-mobile-nav.js", "utf8");
 for (const [href, label] of [["/give#pricing", "Pricing"], ["/give#security", "Security"], ["/give#platform", "Platform"]]) {
-  assert.ok(siteMobileNav.includes(`{ href: "${href}", label: "${label}" }`), `legacy mobile navigation should include ${label}`);
+  assert.ok(includesJavaScriptFragment(siteMobileNav, `{ href: "${href}", label: "${label}" }`), `legacy mobile navigation should include ${label}`);
 }
-assert.ok(!siteMobileNav.includes('{ href: "/give#why", label: "Why AGAPAY" }'), "legacy mobile navigation should not duplicate the Why section integrated into /give");
+assert.ok(!includesJavaScriptFragment(siteMobileNav, '{ href: "/give#why", label: "Why AGAPAY" }'), "legacy mobile navigation should not duplicate the Why section integrated into /give");
 const learnOverview = await readFile("public/learn/index.html", "utf8");
 for (const [label, source] of [["homepage", platformHome], ["canonical chrome", canonicalChrome], ["mobile navigation", siteMobileNav], ["registration", registerHtml], ["Directory intake", directoryPage], ["Learn overview", learnOverview]]) {
-  assert.ok(!source.includes('href="/vision"') && !source.includes('{ href: "/vision"'), `${label} must not link to the retired Vision page`);
+  assert.ok(!source.includes('href="/vision"') && !includesJavaScriptFragment(source, 'href: "/vision"'), `${label} must not link to the retired Vision page`);
 }
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 const sitemapLocations = new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]));
@@ -990,7 +990,7 @@ assert.ok(typeof taxReadinessRuntime.subscriptionCheckoutReadinessGate === "func
 assert.ok(typeof taxReadinessRuntime.withTaxReadinessDefaults === "function", "tax-readiness.js should export a non-destructive defaults helper");
 assert.ok(subscriptionCheckoutLib.includes("subscriptionCheckoutReadinessGate(billingRegistration)"), "subscription-checkout.js should validate inherited registration billing fields");
 assert.ok(!subscriptionCheckoutLib.includes("tax_readiness_required"), "manual per-parish tax status must not block Stripe subscription checkout");
-assert.ok(subscriptionCheckoutLib.includes('"subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel"'), "demo checkout should cancel at trial end when no payment method was added");
+assert.ok(includesJavaScriptFragment(subscriptionCheckoutLib, 'checkoutForm.set("subscription_data[trial_settings][end_behavior][missing_payment_method]", "cancel")'), "demo checkout should cancel at trial end when no payment method was added");
 assert.ok(stripeHandler.includes("allowTrial: true"), "the authenticated admin checkout route should be authorized to create demos");
 assert.ok(parishHandler.includes("introductoryTrialDays: parishIntroDemoEligible(found.registration) ? PARISH_INTRO_DEMO_DAYS : 0"), "the parish route should grant the server-controlled introductory demo only when eligible");
 assert.ok(parishAppJs.includes("Start free 30-day demo") && parishAppJs.includes("No card is required"), "the parish dashboard should explain the no-card 30-day demo");
@@ -1000,7 +1000,7 @@ assert.ok(
 );
 assert.ok(!adminApp.includes('id="taxReadinessStatus"') && !adminApp.includes("renderTaxReadinessPanel"), "admin onboarding must not require a manual parish tax-readiness review");
 assert.ok(adminApp.includes("Subscription billing address") && adminApp.includes("billingAddressLine1"), "admin subscription setup should retain an editable billing address inherited from registration");
-assert.ok(subscriptionCheckoutLib.includes('"automatic_tax[enabled]": "true"'), "AGAPAY subscription checkout should rely on platform-level Stripe automatic tax");
+assert.ok(includesJavaScriptFragment(subscriptionCheckoutLib, '"automatic_tax[enabled]": "true"'), "AGAPAY subscription checkout should rely on platform-level Stripe automatic tax");
 assert.ok(!worker.includes('startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")'), "Admin must not expose a Stripe onboarding-link route");
 assert.ok(adminHandler.includes('stripeAccountId: current.stripeAccountId || ""'), "Admin saves must preserve parish-created Stripe account IDs");
 assert.ok(adminHandler.includes('stripeAccountStatus: current.stripeAccountStatus || "not_started"'), "Admin saves must preserve server-confirmed Stripe status");

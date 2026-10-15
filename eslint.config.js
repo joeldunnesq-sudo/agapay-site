@@ -6,6 +6,31 @@ const handwrittenIgnores = ['node_modules/**', 'public/vendor/**', 'tmp/**', 'tm
 const recommendedRules = js.configs.recommended.rules;
 
 export default [
+  // Classic inline HTML handlers remain lexical globals after type erasure.
+  {
+    files: ['src/browser/bookstore/app.ts'],
+    rules: {
+      'prefer-const': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(selectCategory|changeQuantity|removeItem|lookupEnteredIsbn|addBuyerBook|openBookScanner)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/events/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(changeItemQuantity|removeItem)$' }],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/events.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^myEventsChangeQuantity$' }] },
+  },
+  { files: ['src/handlers/nonprofit-pricing.ts'], rules: { 'prefer-const': 'off' } },
   // Preserve unused legacy declarations during the type-only migration.
   {
     files: ['src/accounting/ledger/workspace.ts'],
@@ -1633,4 +1658,5 @@ export default [
       ],
     },
   },
+  { files: ['src/browser/bookstore/app.ts', 'src/handlers/nonprofit-pricing.ts'], rules: { 'prefer-const': 'off' } },
 ];

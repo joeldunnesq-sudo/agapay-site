@@ -1,74 +1,74 @@
+// Generated from src/browser/scripts/privileged-mfa.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-
   const nativeFetch = window.fetch.bind(window);
   let activeFlow = null;
   let stepUpPromise = null;
-
   function b64urlToBytes(value) {
-    const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+    const normalized = String(value || '')
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
     const binary = atob(padded);
-    return Uint8Array.from(binary, char => char.charCodeAt(0));
+    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
   }
-
   function bytesToB64url(value) {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === void 0) return null;
     const bytes = value instanceof ArrayBuffer ? new Uint8Array(value) : new Uint8Array(value.buffer || value);
     let binary = '';
-    bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   }
-
   function creationOptionsFromJson(options) {
     return {
       ...options,
       challenge: b64urlToBytes(options.challenge),
       user: { ...options.user, id: b64urlToBytes(options.user.id) },
-      excludeCredentials: (options.excludeCredentials || []).map(item => ({ ...item, id: b64urlToBytes(item.id) })),
+      excludeCredentials: (options.excludeCredentials || []).map((item) => ({ ...item, id: b64urlToBytes(item.id) })),
     };
   }
-
   function requestOptionsFromJson(options) {
     return {
       ...options,
       challenge: b64urlToBytes(options.challenge),
-      allowCredentials: (options.allowCredentials || []).map(item => ({ ...item, id: b64urlToBytes(item.id) })),
+      allowCredentials: (options.allowCredentials || []).map((item) => ({ ...item, id: b64urlToBytes(item.id) })),
     };
   }
-
   function registrationToJson(credential) {
     return {
       id: credential.id,
       rawId: bytesToB64url(credential.rawId),
       type: credential.type,
-      authenticatorAttachment: credential.authenticatorAttachment || undefined,
+      authenticatorAttachment: credential.authenticatorAttachment || void 0,
       clientExtensionResults: credential.getClientExtensionResults(),
       response: {
         clientDataJSON: bytesToB64url(credential.response.clientDataJSON),
         attestationObject: bytesToB64url(credential.response.attestationObject),
         transports: typeof credential.response.getTransports === 'function' ? credential.response.getTransports() : [],
-        publicKeyAlgorithm: typeof credential.response.getPublicKeyAlgorithm === 'function' ? credential.response.getPublicKeyAlgorithm() : undefined,
+        publicKeyAlgorithm:
+          typeof credential.response.getPublicKeyAlgorithm === 'function'
+            ? credential.response.getPublicKeyAlgorithm()
+            : void 0,
       },
     };
   }
-
   function authenticationToJson(credential) {
     return {
       id: credential.id,
       rawId: bytesToB64url(credential.rawId),
       type: credential.type,
-      authenticatorAttachment: credential.authenticatorAttachment || undefined,
+      authenticatorAttachment: credential.authenticatorAttachment || void 0,
       clientExtensionResults: credential.getClientExtensionResults(),
       response: {
         clientDataJSON: bytesToB64url(credential.response.clientDataJSON),
         authenticatorData: bytesToB64url(credential.response.authenticatorData),
         signature: bytesToB64url(credential.response.signature),
-        userHandle: credential.response.userHandle ? bytesToB64url(credential.response.userHandle) : undefined,
+        userHandle: credential.response.userHandle ? bytesToB64url(credential.response.userHandle) : void 0,
       },
     };
   }
-
   async function api(path, body, headers = {}) {
     const response = await nativeFetch(path, {
       method: 'POST',
@@ -82,7 +82,6 @@
     }
     return payload;
   }
-
   function ensureDialog() {
     let dialog = document.getElementById('agapayMfaDialog');
     if (dialog) return dialog;
@@ -90,33 +89,30 @@
     dialog.id = 'agapayMfaDialog';
     dialog.className = 'agapay-mfa-dialog';
     dialog.setAttribute('aria-labelledby', 'agapayMfaTitle');
-    dialog.innerHTML = '<div class="agapay-mfa-card"><div class="agapay-mfa-mark"><img src="/mark.png" alt=""></div><div id="agapayMfaBody"></div></div>';
-    dialog.addEventListener('cancel', event => {
+    dialog.innerHTML =
+      '<div class="agapay-mfa-card"><div class="agapay-mfa-mark"><img src="/mark.png" alt=""></div><div id="agapayMfaBody"></div></div>';
+    dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
       if (!activeFlow?.required) cancelFlow();
     });
     document.body.appendChild(dialog);
     return dialog;
   }
-
   function setBody(html) {
     const dialog = ensureDialog();
     dialog.querySelector('#agapayMfaBody').innerHTML = html;
     if (!dialog.open) dialog.showModal();
   }
-
   function setMessage(message, tone = '') {
     const target = document.getElementById('agapayMfaMessage');
     if (!target) return;
     target.textContent = message || '';
     target.className = `agapay-mfa-message ${tone}`.trim();
   }
-
   function closeDialog() {
     const dialog = document.getElementById('agapayMfaDialog');
     if (dialog?.open) dialog.close();
   }
-
   function cancelFlow() {
     if (activeFlow?.verifying) return;
     const flow = activeFlow;
@@ -124,9 +120,12 @@
     closeDialog();
     flow?.reject(new Error('Authenticator setup cancelled.'));
   }
-
   function methodButtons(flow) {
-    const passkey = flow.enrollmentMethod !== 'totp' && window.PublicKeyCredential && navigator.credentials && (flow.enrollmentRequired || flow.methods.includes('passkey'));
+    const passkey =
+      flow.enrollmentMethod !== 'totp' &&
+      window.PublicKeyCredential &&
+      navigator.credentials &&
+      (flow.enrollmentRequired || flow.methods.includes('passkey'));
     const totp = flow.enrollmentRequired || flow.methods.includes('totp');
     return `<div class="agapay-mfa-methods">
       ${passkey ? '<button type="button" class="agapay-mfa-primary" data-mfa-action="passkey">Use a passkey<span>Face ID, fingerprint, device PIN, or security key</span></button>' : ''}
@@ -134,7 +133,6 @@
       ${!flow.enrollmentRequired && flow.methods.includes('recovery') ? '<button type="button" data-mfa-action="recovery">Use a recovery code<span>Single-use emergency access</span></button>' : ''}
     </div>`;
   }
-
   function renderChoice(flow) {
     setBody(`<div class="agapay-mfa-eyebrow">Protected administrator access</div>
       <h2 id="agapayMfaTitle">${flow.enrollmentMethod === 'totp' ? 'Add an authenticator app' : flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
@@ -144,11 +142,10 @@
       <div id="agapayMfaMessage" class="agapay-mfa-message"></div>`);
     const cancel = document.getElementById('agapayMfaCancel');
     if (cancel) cancel.onclick = cancelFlow;
-    document.querySelectorAll('[data-mfa-action]').forEach(button => {
+    document.querySelectorAll('[data-mfa-action]').forEach((button) => {
       button.addEventListener('click', () => chooseMethod(button.dataset.mfaAction));
     });
   }
-
   async function chooseMethod(method) {
     if (!activeFlow) return;
     setMessage('Preparing secure verification…');
@@ -170,7 +167,6 @@
       setMessage(error.message, 'error');
     }
   }
-
   async function enrollPasskey() {
     const started = await api('/api/mfa/enrollment/options', {
       pendingToken: activeFlow.pendingToken,
@@ -187,10 +183,11 @@
     });
     finishFlow(completed);
   }
-
   async function authenticatePasskey() {
     if (!activeFlow.passkeyOptions) throw new Error('No registered passkey is available.');
-    const credential = await navigator.credentials.get({ publicKey: requestOptionsFromJson(activeFlow.passkeyOptions) });
+    const credential = await navigator.credentials.get({
+      publicKey: requestOptionsFromJson(activeFlow.passkeyOptions),
+    });
     if (!credential) throw new Error('Passkey verification was cancelled.');
     const completed = await api('/api/mfa/verify', {
       pendingToken: activeFlow.pendingToken,
@@ -199,7 +196,6 @@
     });
     finishFlow(completed);
   }
-
   async function beginTotpEnrollment() {
     const flow = activeFlow;
     const started = await api('/api/mfa/enrollment/options', {
@@ -226,9 +222,8 @@
       back.textContent = 'Cancel setup';
       back.onclick = cancelFlow;
     }
-    document.getElementById('agapayMfaCodeForm').onsubmit = event => submitCode(event, 'totp', true);
+    document.getElementById('agapayMfaCodeForm').onsubmit = (event) => submitCode(event, 'totp', true);
   }
-
   function renderCodeEntry(method) {
     const recovery = method === 'recovery';
     setBody(`<div class="agapay-mfa-eyebrow">${recovery ? 'Emergency access' : 'Authenticator app'}</div>
@@ -238,9 +233,8 @@
       <button type="button" class="agapay-mfa-back" id="agapayMfaBack">Choose another method</button>
       <div id="agapayMfaMessage" class="agapay-mfa-message"></div>`);
     document.getElementById('agapayMfaBack').onclick = () => renderChoice(activeFlow);
-    document.getElementById('agapayMfaCodeForm').onsubmit = event => submitCode(event, method, false);
+    document.getElementById('agapayMfaCodeForm').onsubmit = (event) => submitCode(event, method, false);
   }
-
   async function submitCode(event, method, enrollment) {
     event.preventDefault();
     const code = document.getElementById('agapayMfaCode').value.trim();
@@ -262,56 +256,74 @@
       document.getElementById('agapayMfaCode')?.focus();
     }
   }
-
   function finishFlow(payload) {
     if (Array.isArray(payload.recoveryCodes) && payload.recoveryCodes.length) {
       const codes = payload.recoveryCodes;
       setBody(`<div class="agapay-mfa-eyebrow">Account recovery</div>
         <h2 id="agapayMfaTitle">Save these recovery codes</h2>
         <p>Store them somewhere secure. Each code works once, and AGAPAY will not display this set again.</p>
-        <div class="agapay-mfa-recovery-codes">${codes.map(code => `<code>${code}</code>`).join('')}</div>
+        <div class="agapay-mfa-recovery-codes">${codes.map((code) => `<code>${code}</code>`).join('')}</div>
         <div class="agapay-mfa-actions"><button type="button" id="agapayMfaCopyCodes">Copy codes</button><button type="button" id="agapayMfaDownloadCodes">Download</button></div>
         <label class="agapay-mfa-confirm"><input type="checkbox" id="agapayMfaCodesSaved"> I saved these codes securely.</label>
         <button type="button" class="agapay-mfa-primary" id="agapayMfaContinue" disabled>Continue</button>`);
       document.getElementById('agapayMfaCopyCodes').onclick = () => navigator.clipboard.writeText(codes.join('\n'));
       document.getElementById('agapayMfaDownloadCodes').onclick = () => {
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(new Blob([`AGAPAY recovery codes\n\n${codes.join('\n')}\n`], { type: 'text/plain' }));
+        link.href = URL.createObjectURL(
+          new Blob(
+            [
+              `AGAPAY recovery codes
+
+${codes.join('\n')}
+`,
+            ],
+            { type: 'text/plain' }
+          )
+        );
         link.download = 'agapay-recovery-codes.txt';
         link.click();
-        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        setTimeout(() => URL.revokeObjectURL(link.href), 1e3);
       };
-      document.getElementById('agapayMfaCodesSaved').onchange = event => { document.getElementById('agapayMfaContinue').disabled = !event.target.checked; };
+      document.getElementById('agapayMfaCodesSaved').onchange = (event) => {
+        document.getElementById('agapayMfaContinue').disabled = !event.target.checked;
+      };
       document.getElementById('agapayMfaContinue').onclick = () => resolveFlow(payload);
       return;
     }
     resolveFlow(payload);
   }
-
   function resolveFlow(payload) {
     const flow = activeFlow;
     activeFlow = null;
     closeDialog();
     flow?.resolve(payload);
   }
-
   function runFlow(flow, options = {}) {
     if (!flow?.mfaRequired) return Promise.resolve(flow);
     if (activeFlow) return Promise.reject(new Error('Another security verification is already open.'));
     return new Promise((resolve, reject) => {
-      activeFlow = { ...flow, displayName: options.displayName || '', required: options.required !== false, enrollmentMethod: options.enrollmentMethod, resolve, reject };
+      activeFlow = {
+        ...flow,
+        displayName: options.displayName || '',
+        required: options.required !== false,
+        enrollmentMethod: options.enrollmentMethod,
+        resolve,
+        reject,
+      };
       renderChoice(activeFlow);
       if (options.enrollmentMethod === 'totp' && activeFlow.enrollmentRequired) chooseMethod('totp');
     });
   }
-
   function installFetchStepUp() {
     if (window.fetch.__agapayMfaWrapped) return;
     const wrapped = async function (input, init) {
       const request = new Request(input, init);
       const response = await nativeFetch(request.clone());
       if (response.status !== 428 || request.url.includes('/api/mfa/')) return response;
-      const payload = await response.clone().json().catch(() => ({}));
+      const payload = await response
+        .clone()
+        .json()
+        .catch(() => ({}));
       if (payload.code !== 'mfa_step_up_required') return response;
       if (!stepUpPromise) {
         const authorization = request.headers.get('Authorization') || '';
@@ -321,10 +333,18 @@
         if (authorization) stepUpHeaders.Authorization = authorization;
         if (identityEmail) stepUpHeaders['X-AGAPAY-User-Email'] = identityEmail;
         if (donorEmail) stepUpHeaders['X-AGAPAY-Donor-Email'] = donorEmail;
-        stepUpPromise = api('/api/mfa/step-up', {
-          principalType: payload.principalType,
-          principalId: payload.principalId,
-        }, stepUpHeaders).then(flow => runFlow(flow)).finally(() => { stepUpPromise = null; });
+        stepUpPromise = api(
+          '/api/mfa/step-up',
+          {
+            principalType: payload.principalType,
+            principalId: payload.principalId,
+          },
+          stepUpHeaders
+        )
+          .then((flow) => runFlow(flow))
+          .finally(() => {
+            stepUpPromise = null;
+          });
       }
       await stepUpPromise;
       return nativeFetch(request.clone());
@@ -332,7 +352,6 @@
     wrapped.__agapayMfaWrapped = true;
     window.fetch = wrapped;
   }
-
   window.AgapayMfa = {
     runFlow,
     installFetchStepUp,

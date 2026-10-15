@@ -1,5 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "lib": ["ES2022", "DOM"], "moduleDetection": "legacy" },
-  "include": ["src/browser/**/*.ts", "scripts/typecheck-browser/**/*.ts"]
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "moduleDetection": "legacy"
+  },
+  "include": ["src/browser/**/*.ts", "scripts/typecheck-browser/**/*.ts"],
+  "exclude": [
+    "src/browser/service-worker.ts",
+    "src/browser/listen/service-worker.ts",
+    "src/browser/parish/directory-import-file-worker.ts"
+  ]
 }
