@@ -703,7 +703,6 @@
     "src/browser/security.ts",
     "public/security.js",
     "src/browser/learn/mobile-gate.ts",
-    "public/site-mobile-nav.js",
     "src/browser/pwa-home-install.ts",
     "public/pwa-home-install.js",
     "src/browser/koinonia-preview.ts",
@@ -717,7 +716,9 @@
     "src/handlers/stewardship-meeting-contracts.d.ts",
     "src/lib/identity-contracts.d.ts",
     "scripts/typecheck/identity-giving-http.ts",
-    "scripts/typecheck-browser/mobile-public.ts"
+    "scripts/typecheck-browser/mobile-public.ts",
+    "scripts/platform-preview-tests.mjs",
+    "scripts/meta-referral-tracking-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -1454,7 +1455,6 @@
     "src/browser/security.ts",
     "public/security.js",
     "src/browser/learn/mobile-gate.ts",
-    "public/site-mobile-nav.js",
     "src/browser/pwa-home-install.ts",
     "public/pwa-home-install.js",
     "src/browser/koinonia-preview.ts",
@@ -1468,6 +1468,8 @@
     "src/handlers/stewardship-meeting-contracts.d.ts",
     "src/lib/identity-contracts.d.ts",
     "scripts/typecheck/identity-giving-http.ts",
-    "scripts/typecheck-browser/mobile-public.ts"
+    "scripts/typecheck-browser/mobile-public.ts",
+    "scripts/platform-preview-tests.mjs",
+    "scripts/meta-referral-tracking-tests.mjs"
   ]
 }
