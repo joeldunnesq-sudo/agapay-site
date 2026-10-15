@@ -1,16 +1,9 @@
+// Generated from src/browser/parish/features/accounting.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: accounting.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 let accountingView = 'overview';
-
 let accountingReportView = 'library';
-
 let accountingCustomReport = null;
-
 let accountingDepthComparative = true;
-
 let accountingData = {
   setup: null,
   journals: [],
@@ -29,62 +22,42 @@ let accountingData = {
   governance: null,
   tier: '',
 };
-
 let accountingBankPreview = null;
-
 let accountingFundCatalog = null;
-
 let accountingShowInactiveFunds = false;
-
-let accountingFundAccountSections = new Set(['net_asset']);
-
+let accountingFundAccountSections = /* @__PURE__ */ new Set(['net_asset']);
 let accountingExpenseAccountEditor = null;
-
 let accountingVendorLifecycleConfirm = null;
-
 let accountingAccountLifecycleConfirm = null;
-
 let accountingLifecycleMessage = null;
-
 let accountingReconciliationView = 'giving';
-
 let accountingCloseDetail = null;
-
 let accountingJournalEditor = null;
-
 let accountingLedgerNewestFirst = false;
-
 let accountingLedgerAccountNumber = '';
-
 let accountingLedgerSearch = '';
-
 let accountingRegisterEntryMode = 'transaction';
-
 let accountingRecurringEditor = null;
-
 let accountingPayablesView = 'bills';
-
 let accountingBudgetReport = null;
-
 let accountingBudgetEditor = null;
-
-let accountingMigration = { active: false, session: null, sessions: [], step: 'source', previews: {}, advanced: false };
-
+let accountingMigration = {
+  active: false,
+  session: null,
+  sessions: [],
+  step: 'source',
+  previews: {},
+  advanced: false,
+};
 let accountingExperienceMode = 'treasurer';
-
 let accountingAdvancedNavExpanded = false;
-
 let accountingSimpleIncomeMessage = '';
-
 let accountingSimpleEntryMode = 'income';
-
 let accountingInKindGiftMessage = '';
-
 try {
   if (sessionStorage.getItem('agapay.accountingExperienceMode') === 'accountant')
     accountingExperienceMode = 'accountant';
 } catch {}
-
 const ACCOUNTING_SIMPLE_REVENUE_LABELS = Object.freeze({
   acct_4000: 'Stewardship & Tithes',
   acct_4010: 'General Donations',
@@ -92,13 +65,11 @@ const ACCOUNTING_SIMPLE_REVENUE_LABELS = Object.freeze({
   acct_4040: 'Commemorations',
   acct_4300: 'Bookstore Sales',
 });
-
 function accountingAccessApi(path = '') {
   return currentParish?.parishId
     ? `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/accounting-access${path}`
     : '';
 }
-
 async function accountingAccessRequest(path, body) {
   const response = await fetch(accountingAccessApi(path), {
     method: 'POST',
@@ -109,7 +80,6 @@ async function accountingAccessRequest(path, body) {
   if (!response.ok) throw new Error(payload.error || 'Unable to update Accounting access.');
   return payload;
 }
-
 async function renderAccountingAccess(message = '') {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
@@ -129,7 +99,6 @@ async function renderAccountingAccess(message = '') {
     pane.innerHTML = accountingEmpty('Accounting access needs attention', error.message);
   }
 }
-
 async function bootstrapAccountingStaff(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -149,7 +118,6 @@ async function bootstrapAccountingStaff(event) {
     status.textContent = error.message;
   }
 }
-
 async function verifyAccountingStaff(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -168,7 +136,6 @@ async function verifyAccountingStaff(event) {
     status.textContent = error.message;
   }
 }
-
 async function addAccountingStaff(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -182,7 +149,6 @@ async function addAccountingStaff(event) {
     status.textContent = error.message;
   }
 }
-
 async function changeAccountingPin(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -195,37 +161,31 @@ async function changeAccountingPin(event) {
     status.textContent = error.message;
   }
 }
-
 async function lockAccountingWorkspace() {
   const session = accountingStaffSession();
   if (session) await accountingAccessRequest('/logout', { profileId: session.profile.id }).catch(() => {});
   sessionStorage.removeItem(accountingStaffSessionKey());
   await renderAccountingAccess('Accounting has been locked.');
 }
-
 function accountingApi(path = '') {
   return currentParish?.parishId
     ? `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/accounting${path}`
     : '';
 }
-
 function accountingMoney(value) {
   const number = Number(value || 0);
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
     Number.isInteger(number) ? number / 100 : number
   );
 }
-
 function accountingDate(value) {
   if (!value) return '—';
   const date = new Date(String(value).length === 10 ? `${value}T12:00:00` : value);
   return Number.isNaN(date.getTime()) ? escapeHtml(value) : date.toLocaleDateString();
 }
-
 function accountingEmpty(title, copy) {
   return `<div class="acct-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div>`;
 }
-
 window.ParishFeatureRegistry.register('accounting', {
   load: loadAccountingTab,
   refresh: () => loadAccountingTab(true),

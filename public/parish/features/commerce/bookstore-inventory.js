@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/commerce/bookstore-inventory.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: bookstore-inventory.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function renderBookstoreCurrentItems(products) {
   const pane = document.getElementById('bookstoreCurrentItems');
   if (!pane) return;
@@ -66,12 +63,10 @@ function renderBookstoreCurrentItems(products) {
           : `<p class="bookstore-empty">No items are at or below a reorder threshold. Items with a threshold of zero are not treated as low stock.</p>`
       }`;
 }
-
 function setBookstoreLowStockFilter(enabled) {
   bookstoreLowStockOnly = Boolean(enabled);
   renderBookstoreCurrentItems(bookstoreCatalogState.products || []);
 }
-
 async function saveBookstoreReorderThreshold(event, productId) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -105,7 +100,6 @@ async function saveBookstoreReorderThreshold(event, productId) {
     }
   }
 }
-
 function buildBookstoreItemModal() {
   const existing = document.getElementById('bookstoreItemModal');
   if (existing) return existing;
@@ -168,7 +162,6 @@ function buildBookstoreItemModal() {
   document.body.appendChild(modal);
   return modal;
 }
-
 function openBookstoreItemModal(productId, focusSection = 'edit') {
   const product = bookstoreCatalogState.products.find((p) => p.id === productId);
   if (!product) {
@@ -214,14 +207,12 @@ function openBookstoreItemModal(productId, focusSection = 'edit') {
     0
   );
 }
-
 function closeBookstoreItemModal() {
   const modal = document.getElementById('bookstoreItemModal');
   if (modal) modal.hidden = true;
   document.body.classList.remove('bookstore-modal-open');
   bookstoreEditingProductId = null;
 }
-
 function syncBookstoreStockReason() {
   const changed = Number(document.getElementById('bookstoreModalStock')?.value || 0) !== bookstoreEditingOriginalStock;
   const field = document.getElementById('bookstoreStockReasonField');
@@ -229,7 +220,6 @@ function syncBookstoreStockReason() {
   if (field) field.hidden = !changed;
   if (input) input.required = changed;
 }
-
 function syncBookstoreSaleEditor() {
   const enabled = Boolean(document.getElementById('bookstoreModalOnSale')?.checked);
   const field = document.getElementById('bookstoreSalePriceField');
@@ -237,14 +227,12 @@ function syncBookstoreSaleEditor() {
   if (field) field.hidden = !enabled;
   if (input) input.required = enabled;
 }
-
 function bookstoreMovementDate(value) {
   const date = new Date(value || '');
   return Number.isNaN(date.getTime())
     ? 'Date unavailable'
-    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    : date.toLocaleDateString(void 0, { month: 'short', day: 'numeric', year: 'numeric' });
 }
-
 function renderBookstoreMovementHistory(movements) {
   const pane = document.getElementById('bookstoreMovementHistory');
   if (!pane) return;
@@ -273,7 +261,6 @@ function renderBookstoreMovementHistory(movements) {
     })
     .join('');
 }
-
 async function loadBookstoreMovementHistory(productId) {
   const pane = document.getElementById('bookstoreMovementHistory');
   if (pane) pane.innerHTML = '<p>Loading stock history…</p>';
@@ -289,7 +276,6 @@ async function loadBookstoreMovementHistory(productId) {
       pane.innerHTML = `<p class="bookstore-movement-error">${escapeHtml(err.message)}</p>`;
   }
 }
-
 async function submitBookstoreReceiving(btn) {
   const productId = bookstoreEditingProductId;
   const quantity = Number(document.getElementById('bookstoreReceiveQuantity')?.value || 0);
@@ -341,7 +327,6 @@ async function submitBookstoreReceiving(btn) {
     }
   }
 }
-
 function renderBookstoreStarterCatalogUI(catalog) {
   const pane = document.getElementById('bookstoreStarterCatalog');
   if (!pane) return;
@@ -349,7 +334,6 @@ function renderBookstoreStarterCatalogUI(catalog) {
     pane.innerHTML = '<p style="margin:0;">No starter items available.</p>';
     return;
   }
-
   pane.innerHTML = catalog
     .map(
       (group) => `
@@ -385,7 +369,6 @@ function renderBookstoreStarterCatalogUI(catalog) {
     )
     .join('');
 }
-
 async function submitBookstoreStarterCatalog(btn) {
   const checked = Array.from(
     document.querySelectorAll(
@@ -396,7 +379,6 @@ async function submitBookstoreStarterCatalog(btn) {
     setStatus('Check off at least one item to add.', 'error');
     return;
   }
-
   const items = checked.map((box) => {
     const key = box.getAttribute('data-starter-key');
     const nameInput = document.querySelector(`[data-starter-name="${CSS.escape(key)}"]`);
@@ -404,7 +386,7 @@ async function submitBookstoreStarterCatalog(btn) {
     const skuInput = document.querySelector(`[data-starter-sku="${CSS.escape(key)}"]`);
     const priceInput = document.querySelector(`[data-starter-price="${CSS.escape(key)}"]`);
     const stockInput = document.querySelector(`[data-starter-stock="${CSS.escape(key)}"]`);
-    const priceCents = priceInput ? Math.round(Number(priceInput.value || 0) * 100) : undefined;
+    const priceCents = priceInput ? Math.round(Number(priceInput.value || 0) * 100) : void 0;
     const stockQuantity = stockInput ? Number(stockInput.value || 0) : 0;
     return {
       key,
@@ -415,7 +397,6 @@ async function submitBookstoreStarterCatalog(btn) {
       stockQuantity,
     };
   });
-
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Adding…';
@@ -439,7 +420,6 @@ async function submitBookstoreStarterCatalog(btn) {
     }
   }
 }
-
 async function submitBookstoreManualItem(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -482,7 +462,6 @@ async function submitBookstoreManualItem(event) {
     }
   }
 }
-
 async function saveBookstoreItemFromModal(event) {
   event.preventDefault();
   const productId = bookstoreEditingProductId;
@@ -543,7 +522,6 @@ async function saveBookstoreItemFromModal(event) {
     }
   }
 }
-
 async function archiveBookstoreItem(productId, btn) {
   if (!confirm('Archive this bookstore item? Parishioners will no longer see it.')) return;
   if (btn) {

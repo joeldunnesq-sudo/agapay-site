@@ -1,10 +1,13 @@
+// Generated from src/browser/parish/features/commerce/bookstore-sales.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: bookstore-sales.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
-let bookstoreSalesState = { loaded: false, loading: false, range: '90d', data: null, orders: [], nextCursor: null };
-
+let bookstoreSalesState = {
+  loaded: false,
+  loading: false,
+  range: '90d',
+  data: null,
+  orders: [],
+  nextCursor: null,
+};
 function setBookstoreSalesRange(range) {
   if (bookstoreSalesState.range === range && bookstoreSalesState.loaded) return;
   bookstoreSalesState.range = range;
@@ -13,7 +16,6 @@ function setBookstoreSalesRange(range) {
     .forEach((b) => b.classList.toggle('is-active', b.getAttribute('data-range') === range));
   loadBookstoreSalesPanel(true);
 }
-
 async function loadBookstoreSalesPanel(force = false) {
   const body = document.getElementById('bookstoreSalesBody');
   if (!body || !currentParish) return;
@@ -42,12 +44,11 @@ async function loadBookstoreSalesPanel(force = false) {
     bookstoreSalesState.loading = false;
   }
 }
-
 function bkAgo(iso) {
   if (!iso) return '';
   const then = new Date(iso).getTime();
   if (!then) return '';
-  const secs = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  const secs = Math.max(0, Math.floor((Date.now() - then) / 1e3));
   if (secs < 60) return 'just now';
   const mins = Math.floor(secs / 60);
   if (mins < 60) return mins + 'm ago';
@@ -57,7 +58,6 @@ function bkAgo(iso) {
   if (days < 30) return days + 'd ago';
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
-
 function bkInitials(name) {
   const parts = String(name || '')
     .trim()
@@ -66,7 +66,6 @@ function bkInitials(name) {
   if (!parts.length) return '•';
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 }
-
 function bkPaymentPill(status) {
   const map = {
     paid: ['Paid', 'ok'],
@@ -76,7 +75,6 @@ function bkPaymentPill(status) {
   const [label, tone] = map[status] || [status || '—', 'muted'];
   return `<span class="bk-pill bk-pill--${tone}">${escapeHtml(label)}</span>`;
 }
-
 function bkFulfillPill(status) {
   if (!status || status === 'none') return '';
   const map = {
@@ -90,7 +88,6 @@ function bkFulfillPill(status) {
   const [label, tone] = map[status] || [status, 'muted'];
   return `<span class="bk-pill bk-pill--${tone}">${escapeHtml(label)}</span>`;
 }
-
 function bkSparkline(trend) {
   const max = Math.max(1, ...trend.map((t) => t.grossCents));
   return `
@@ -106,7 +103,6 @@ function bkSparkline(trend) {
           .join('')}
       </div>`;
 }
-
 function renderBookstoreSalesPanel() {
   const body = document.getElementById('bookstoreSalesBody');
   const d = bookstoreSalesState.data;
@@ -114,7 +110,6 @@ function renderBookstoreSalesPanel() {
   const k = d.kpis || {};
   const at = d.allTime || {};
   const hasSales = (k.orderCount || 0) > 0 || (bookstoreSalesState.orders || []).length > 0;
-
   if (!hasSales) {
     body.innerHTML = `
         <div class="bk-empty">
@@ -125,12 +120,10 @@ function renderBookstoreSalesPanel() {
         </div>`;
     return;
   }
-
   const refundNote =
     d.refunds && d.refunds.orderCount
       ? `<span class="bk-refund-note">${d.refunds.orderCount} refund${d.refunds.orderCount === 1 ? '' : 's'} · ${money(d.refunds.grossCents)}</span>`
       : '';
-
   body.innerHTML = `
       <div class="bk-kpis">
         <div class="bk-kpi bk-kpi--hero">
@@ -207,14 +200,9 @@ function renderBookstoreSalesPanel() {
           </div>
         </header>
         <div id="bookstoreOrderList" class="bk-order-list">${renderBookstoreOrderRows(bookstoreSalesState.orders)}</div>
-        <div class="bk-ledger-foot">${
-          bookstoreSalesState.nextCursor
-            ? '<button class="btn btn-ghost btn-sm" type="button" onclick="loadMoreBookstoreOrders(this)">Load more orders</button>'
-            : '<span class="bk-ledger-end">End of orders</span>'
-        }</div>
+        <div class="bk-ledger-foot">${bookstoreSalesState.nextCursor ? '<button class="btn btn-ghost btn-sm" type="button" onclick="loadMoreBookstoreOrders(this)">Load more orders</button>' : '<span class="bk-ledger-end">End of orders</span>'}</div>
       </section>`;
 }
-
 function renderBookstoreOrderRows(orders) {
   if (!orders || !orders.length) return '<p class="bk-panel-empty">No orders match.</p>';
   return orders
@@ -271,7 +259,6 @@ function renderBookstoreOrderRows(orders) {
     })
     .join('');
 }
-
 async function searchBookstoreOrders(query) {
   if (!currentParish) return;
   bookstoreSalesState.query = (query || '').trim();
@@ -299,7 +286,6 @@ async function searchBookstoreOrders(query) {
     if (list) list.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
   }
 }
-
 async function loadMoreBookstoreOrders(btn) {
   if (!currentParish || !bookstoreSalesState.nextCursor) return;
   if (btn) {

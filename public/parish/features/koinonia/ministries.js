@@ -1,24 +1,18 @@
+// Generated from src/browser/parish/features/koinonia/ministries.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard koinonia: ministries.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function toggleKoinoniaMinistryComposer(show) {
   const form = document.getElementById('koinoniaMinistryComposer');
   if (!form) return;
   form.hidden = !show;
   if (show) requestAnimationFrame(() => form.elements.displayName?.focus());
 }
-
 function koinoniaGeneralInterestRequest() {
   return parishFeatureRequests.find((item) => item?.featureId === 'ministry-service') || null;
 }
-
 function koinoniaMinistryAvatar(ministry, className = '') {
   const image = ministry.hasImage ? `<img data-koinonia-ministry-image="${escapeAttr(ministry.id)}" alt="" />` : '';
   return `<span class="koinonia-ministry-list-mark ${className}">${image}<b>${escapeHtml((ministry.displayName || 'M').slice(0, 1))}</b></span>`;
 }
-
 async function hydrateKoinoniaMinistryImages() {
   const images = [...document.querySelectorAll('[data-koinonia-ministry-image]')];
   await Promise.all(
@@ -43,7 +37,6 @@ async function hydrateKoinoniaMinistryImages() {
     })
   );
 }
-
 function renderKoinoniaMinistries() {
   const state = koinoniaMinistriesState;
   const active = state.ministries.filter((item) => item.ministry?.status === 'active');
@@ -88,7 +81,6 @@ function renderKoinoniaMinistries() {
   renderKoinoniaMinistryDetail();
   void hydrateKoinoniaMinistryImages();
 }
-
 function renderKoinoniaMinistryDetail() {
   const target = document.getElementById('koinoniaMinistryDetail');
   if (!target) return;
@@ -145,7 +137,6 @@ function renderKoinoniaMinistryDetail() {
       <section class="koinonia-ministry-danger"><div><strong>Delete ministry group</strong><p>This permanently erases the group, its memberships, requests, messages, photos, and voice notes.</p></div><button type="button" onclick="deleteKoinoniaMinistry('${escapeAttr(ministry.id)}','${escapeAttr(ministry.displayName)}')">Delete group</button></section>`;
   void hydrateKoinoniaMinistryImages();
 }
-
 async function uploadKoinoniaMinistryImage(event, ministryId) {
   const file = event.target.files?.[0];
   event.target.value = '';
@@ -176,7 +167,6 @@ async function uploadKoinoniaMinistryImage(event, ministryId) {
     setStatus(error.message, 'error');
   }
 }
-
 async function removeKoinoniaMinistryImage(ministryId) {
   if (!window.confirm('Remove this ministry group image?')) return;
   try {
@@ -196,7 +186,6 @@ async function removeKoinoniaMinistryImage(ministryId) {
     setStatus(error.message, 'error');
   }
 }
-
 async function deleteKoinoniaMinistry(ministryId, ministryName) {
   if (
     !window.confirm(
@@ -221,7 +210,6 @@ async function deleteKoinoniaMinistry(ministryId, ministryName) {
     setStatus(error.message, 'error');
   }
 }
-
 async function loadKoinoniaMinistries(force = false) {
   if (!currentParish?.parishId || (koinoniaMinistriesState.loaded && !force)) {
     if (koinoniaMinistriesState.loaded) renderKoinoniaMinistries();
@@ -255,20 +243,17 @@ async function loadKoinoniaMinistries(force = false) {
       list.innerHTML = `<div class="communications-empty"><strong>Ministries are unavailable</strong><p>${escapeHtml(error.message)}</p><button class="btn btn-gold" type="button" onclick="loadKoinoniaMinistries(true)">Try again</button></div>`;
   }
 }
-
 function selectKoinoniaMinistry(id) {
   koinoniaMinistriesState.selectedId = id;
   koinoniaMinistriesState.editingId = '';
   renderKoinoniaMinistries();
 }
-
 function toggleKoinoniaMinistryEditor(ministryId, show) {
   koinoniaMinistriesState.editingId = show ? ministryId : '';
   renderKoinoniaMinistryDetail();
   if (show)
     requestAnimationFrame(() => document.querySelector('.koinonia-ministry-editor input[name="displayName"]')?.focus());
 }
-
 async function updateKoinoniaMinistry(event, ministryId) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -294,7 +279,6 @@ async function updateKoinoniaMinistry(event, ministryId) {
     button.textContent = 'Save changes';
   }
 }
-
 async function createKoinoniaMinistry(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -321,7 +305,6 @@ async function createKoinoniaMinistry(event) {
     button.disabled = false;
   }
 }
-
 async function searchKoinoniaMinistryPeople(event, ministryId) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -353,7 +336,6 @@ async function searchKoinoniaMinistryPeople(event, ministryId) {
     target.innerHTML = `<p class="koinonia-search-empty">${escapeHtml(error.message)}</p>`;
   }
 }
-
 async function addKoinoniaMinistryMember(ministryId, candidateId) {
   try {
     const response = await fetch(directoryAdminApi('/ministries/' + encodeURIComponent(ministryId) + '/participants'), {
@@ -370,7 +352,6 @@ async function addKoinoniaMinistryMember(ministryId, candidateId) {
     setStatus(error.message, 'error');
   }
 }
-
 async function removeKoinoniaMinistryMember(ministryId, participantId) {
   if (!window.confirm('Remove this parishioner from the ministry group?')) return;
   try {
@@ -393,7 +374,6 @@ async function removeKoinoniaMinistryMember(ministryId, participantId) {
     setStatus(error.message, 'error');
   }
 }
-
 async function setKoinoniaMinistryDirectoryBadge(ministryId, participantId, visible) {
   try {
     const response = await fetch(
@@ -423,7 +403,6 @@ async function setKoinoniaMinistryDirectoryBadge(ministryId, participantId, visi
     setStatus(error.message, 'error');
   }
 }
-
 async function reviewKoinoniaMinistryRequest(requestId, decision) {
   try {
     const response = await fetch(
@@ -447,7 +426,6 @@ async function reviewKoinoniaMinistryRequest(requestId, decision) {
     setStatus(error.message, 'error');
   }
 }
-
 async function acknowledgeKoinoniaGeneralInterest() {
   const request = koinoniaGeneralInterestRequest();
   if (!request) return;
@@ -456,7 +434,6 @@ async function acknowledgeKoinoniaGeneralInterest() {
   parishFeatureRequests = parishFeatureRequests.filter((item) => item.featureId !== 'ministry-service');
   renderKoinoniaMinistries();
 }
-
 async function saveKoinoniaCalendar(event) {
   event.preventDefault();
   const form = event.currentTarget;

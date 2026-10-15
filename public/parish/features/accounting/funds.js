@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/accounting/funds.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: funds.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 async function loadAccountingFunds() {
   const pane = document.getElementById('accountingPane');
   try {
@@ -16,7 +13,6 @@ async function loadAccountingFunds() {
     if (pane) pane.innerHTML = accountingEmpty('Funds need attention', error.message);
   }
 }
-
 function restrictionLabel(value) {
   return (
     {
@@ -27,14 +23,12 @@ function restrictionLabel(value) {
     }[value] || value
   );
 }
-
 function toggleAccountingFundAccountSection(category) {
   accountingFundAccountSections.has(category)
     ? accountingFundAccountSections.delete(category)
     : accountingFundAccountSections.add(category);
   renderAccountingPane();
 }
-
 function renderAccountingFunds(pane) {
   if (!accountingFundCatalog) {
     pane.innerHTML = '<p class="sw-tool-loading">Loading funds...</p>';
@@ -145,12 +139,10 @@ function renderAccountingFunds(pane) {
       <div class="acct-fund-tools"><label>Find a fund<input type="search" placeholder="Search by name, number, or purpose" oninput="filterAccountingFunds(this.value)"></label><div class="acct-fund-directory-actions"><span>${active.length} current${inactive.length ? ` · ${inactive.length} archived or unused` : ''}</span>${inactive.length ? `<button type="button" class="acct-fund-visibility-toggle ${accountingShowInactiveFunds ? 'active' : ''}" aria-pressed="${accountingShowInactiveFunds}" onclick="toggleAccountingInactiveFunds()"><b>${accountingShowInactiveFunds ? '✓' : '⌁'}</b><span><strong>${accountingShowInactiveFunds ? 'Hide archived &amp; unused' : 'Show archived &amp; unused'}</strong><small>${inactive.length} fund${inactive.length === 1 ? '' : 's'}</small></span></button>` : ''}</div></div>
       <div class="acct-funds-directory-grid">${directoryFunds.map((fund) => `<div class="acct-fund-directory-card ${isCurrentFund(fund) ? '' : 'retired'}" data-fund-search="${escapeAttr(`${fund.code} ${fund.name} ${fund.purpose || ''} ${fund.description || ''}`.toLowerCase())}"><span>${escapeHtml(fund.code)}</span><strong>${escapeHtml(fund.name)}</strong><small>${escapeHtml(restrictionLabel(fund.restrictionType))}${Number(fund.isDefault) ? ' · Default' : ''}${isCurrentFund(fund) ? '' : ' · Archived / unused'}</small></div>`).join('') || accountingEmpty(accountingShowInactiveFunds ? 'No funds' : 'No current funds', inactive.length ? 'Use “Show archived & unused” to review historical funds.' : 'Add the first fund in Funds & Alms.')}</div></section>`;
 }
-
 function toggleAccountingInactiveFunds() {
   accountingShowInactiveFunds = !accountingShowInactiveFunds;
   renderAccountingPane();
 }
-
 function filterAccountingFunds(query) {
   const needle = String(query || '')
     .trim()
@@ -159,7 +151,6 @@ function filterAccountingFunds(query) {
     row.hidden = needle && !row.dataset.fundSearch.includes(needle);
   });
 }
-
 function showAccountingExpenseAccountForm(group = 'other', id = '') {
   const existing = id
     ? (accountingData.accountCatalog || accountingData.accounts).find((account) => account.id === id)
@@ -170,7 +161,6 @@ function showAccountingExpenseAccountForm(group = 'other', id = '') {
   accountingFundAccountSections.add('expense');
   renderAccountingPane();
 }
-
 function showAccountingAccountForm(id) {
   const existing = (accountingData.accountCatalog || accountingData.accounts).find((account) => account.id === id);
   if (!existing) return;
@@ -178,7 +168,6 @@ function showAccountingAccountForm(id) {
   accountingFundAccountSections.add(existing.category);
   renderAccountingPane();
 }
-
 async function saveAccountingExpenseAccount(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -211,20 +200,17 @@ async function saveAccountingExpenseAccount(event) {
   accountingExpenseAccountEditor = null;
   renderAccountingPane();
 }
-
 function beginAccountingAccountLifecycle(id, action) {
   accountingAccountLifecycleConfirm = { id, action };
   accountingLifecycleMessage = null;
   renderAccountingPane();
 }
-
 function cancelAccountingLifecycle() {
   accountingAccountLifecycleConfirm = null;
   accountingVendorLifecycleConfirm = null;
   accountingLifecycleMessage = null;
   renderAccountingPane();
 }
-
 async function changeAccountingAccountLifecycle(id, action, expectedVersion) {
   const response = await fetch(accountingApi(`/accounts/${encodeURIComponent(id)}/${action}`), {
     method: 'POST',

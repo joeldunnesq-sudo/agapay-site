@@ -1,18 +1,6 @@
+// Generated from src/browser/parish/features/stewardship/metrics.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global currentParish, stewardshipApi, authHeaders, checkNudgeEligibility, escapeHtml,
-  parishSessionStorageKey, renderGivingMetrics, ensureOutsideGivingCard */
-/* exported loadGivingMetricsPanel, loadStewardshipHealthScorePanel, loadDonorConcentrationPanel,
-  loadRecurringGivingPanel, loadGivingIntelligencePanels, loadStewardshipAttendancePanel,
-  saveStewardshipAttendance, saveAttendanceDelegate, syncAttendanceEntryFromWeek,
-  openStewardshipMonthlyReport, setStewardshipReportMonth, selectedStewardshipReportMonth */
-
-// Giving metrics, health, concentration, recurring gifts, and monthly reports.
-// Read shared parish identity and authentication only when actions run.
-
-// ── Giving Metrics Panel ─────────────────────────────────────────────────
-let givingMetricsState = { loaded: false, year: new Date().getFullYear() };
-
+let givingMetricsState = { loaded: false, year: /* @__PURE__ */ new Date().getFullYear() };
 async function loadGivingMetricsPanel(year) {
   const pane = document.getElementById('givingMetricsPane');
   if (!pane || !currentParish) return;
@@ -42,31 +30,24 @@ async function loadGivingMetricsPanel(year) {
     }
     givingMetricsState.loaded = true;
     pane.innerHTML = renderGivingMetrics(summary, funds, y);
-    // Background check — enable nudge button only if donors are 3+ months behind
     checkNudgeEligibility();
   } catch (e) {
     pane.innerHTML =
       '<p class="muted">Giving metrics unavailable' + (e.message ? ': ' + escapeHtml(e.message) : '.') + '</p>';
   }
 }
-
 function fmtDollars(cents) {
   return '$' + ((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
-
-// Keep missing percentages distinct from a measured zero.
 function swPercent(value) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : null;
 }
-
 function swNumber(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('en-US') : '—';
 }
-
 function swMetric(value, label, secondary = '') {
   return `<div class="sw-intelligence-metric"><div><strong>${escapeHtml(String(value))}</strong><span>${escapeHtml(label)}</span></div>${secondary}</div>`;
 }
-
 function swStackedChart(segments, description) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   if (!total) return '<p class="sw-chart-empty">No giving recorded for this comparison yet.</p>';
@@ -81,10 +62,11 @@ function swStackedChart(segments, description) {
     .join('');
   return `<div class="sw-stacked-chart" role="img" aria-label="${escapeHtml(description)}">${bars}</div><ul class="sw-chart-legend">${legend}</ul>`;
 }
-
-// ── Weekly parish attendance ─────────────────────────────────────────────
-let attendanceState = { weeks: 52, data: null, message: '' };
-
+let attendanceState = {
+  weeks: 52,
+  data: null,
+  message: '',
+};
 function ensureStewardshipAttendanceCard() {
   let pane = document.getElementById('stewardshipAttendancePane');
   if (pane) return pane;
@@ -94,12 +76,10 @@ function ensureStewardshipAttendanceCard() {
   pane = document.getElementById('stewardshipAttendancePane');
   return pane;
 }
-
 function swAttendanceDate(value, options = { month: 'short', day: 'numeric' }) {
-  const date = new Date(`${value}T12:00:00.000Z`);
+  const date = /* @__PURE__ */ new Date(`${value}T12:00:00.000Z`);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-US', options);
 }
-
 function swTrendChart(points) {
   const measured = points.filter((point) => typeof point.headcount === 'number');
   if (!measured.length) {
@@ -159,7 +139,12 @@ function swTrendChart(points) {
     })
     .join('');
   const tickIndexes = [
-    ...new Set([0, Math.floor((points.length - 1) / 3), Math.floor(((points.length - 1) * 2) / 3), points.length - 1]),
+    .../* @__PURE__ */ new Set([
+      0,
+      Math.floor((points.length - 1) / 3),
+      Math.floor(((points.length - 1) * 2) / 3),
+      points.length - 1,
+    ]),
   ];
   const ticks = tickIndexes
     .map(
@@ -172,11 +157,9 @@ function swTrendChart(points) {
   const description = `${measured.length} of ${points.length} Sundays reported. Latest attendance ${latest.headcount} on ${swAttendanceDate(latest.weekOf, { month: 'long', day: 'numeric', year: 'numeric' })}. Gaps indicate weeks with no report.`;
   return `<div class="sw-attendance-chart-wrap"><svg class="sw-attendance-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(description)}"><g class="sw-attendance-grid">${grid}${ticks}</g>${weeklyPaths}${rollingPaths}<circle class="sw-attendance-latest" cx="${x(latestIndex)}" cy="${y(latest.headcount)}" r="6"/><circle class="sw-attendance-latest-core" cx="${x(latestIndex)}" cy="${y(latest.headcount)}" r="2.5"/></svg><div class="sw-attendance-legend" aria-hidden="true"><span><i class="is-weekly"></i>Weekly headcount</span><span><i class="is-average"></i>8-week rolling average</span></div><p class="sw-chart-note">${escapeHtml(description)}</p></div>`;
 }
-
 function attendanceMetric(label, value, detail) {
   return `<div class="sw-attendance-kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></div>`;
 }
-
 function renderStewardshipAttendance(data) {
   const summary = data.summary || {};
   const latest = summary.latestHeadcount === null ? '—' : Number(summary.latestHeadcount).toLocaleString('en-US');
@@ -202,7 +185,6 @@ function renderStewardshipAttendance(data) {
     : '<p class="sw-attendance-status" id="attendanceSaveStatus" role="status"></p>';
   return `<div class="sw-attendance-kpis">${attendanceMetric('Latest Sunday', latest, summary.latestWeekOf ? swAttendanceDate(summary.latestWeekOf, { month: 'short', day: 'numeric', year: 'numeric' }) : 'No report yet')}${attendanceMetric('8-week average', average, 'Reported Sundays')}${attendanceMetric('Change', change, 'Prior 8-week average')}${attendanceMetric('Reporting coverage', coverage, `${summary.weeksReported || 0} of ${summary.expectedWeeks || 0} Sundays`)}</div><div class="sw-attendance-controls"><form class="sw-attendance-entry" onsubmit="saveStewardshipAttendance(event)"><div><span class="sw-attendance-control-label">Record this week</span><p>Staff can enter or correct any Sunday.</p></div><label>Sunday<input id="attendanceWeekOf" name="weekOf" type="date" min="${escapeHtml(data.range?.startWeekOf || '')}" max="${escapeHtml(data.range?.endWeekOf || '')}" value="${escapeHtml(selectedWeek)}" onchange="syncAttendanceEntryFromWeek(this.value)" required></label><label>Headcount<input id="attendanceHeadcount" name="headcount" type="number" min="0" step="1" value="${typeof selectedPoint?.headcount === 'number' ? selectedPoint.headcount : ''}" placeholder="0" required></label><button type="submit">Save attendance</button></form><form class="sw-attendance-delegation" onsubmit="saveAttendanceDelegate(event)"><div><span class="sw-attendance-control-label">Entry delegation</span><p>Parish staff always retain access. Delegation only lets active leaders submit.</p></div><label>Ministry<select name="ministryId"><option value="">Parish staff only</option>${delegateOptions}</select></label><button type="submit">Save delegation</button></form></div>${message}${swTrendChart(data.points || [])}`;
 }
-
 async function loadStewardshipAttendancePanel(weeks = attendanceState.weeks) {
   const pane = ensureStewardshipAttendanceCard();
   if (!pane || !currentParish) return;
@@ -227,13 +209,11 @@ async function loadStewardshipAttendancePanel(weeks = attendanceState.weeks) {
     pane.removeAttribute('aria-busy');
   }
 }
-
 function syncAttendanceEntryFromWeek(weekOf) {
   const input = document.getElementById('attendanceHeadcount');
   const point = attendanceState.data?.points?.find((entry) => entry.weekOf === weekOf);
   if (input) input.value = typeof point?.headcount === 'number' ? point.headcount : '';
 }
-
 async function saveStewardshipAttendance(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -260,7 +240,6 @@ async function saveStewardshipAttendance(event) {
     button.disabled = false;
   }
 }
-
 async function saveAttendanceDelegate(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -289,7 +268,6 @@ async function saveAttendanceDelegate(event) {
     button.disabled = false;
   }
 }
-
 async function loadGivingIntelligencePanels(year) {
   const y = year || givingMetricsState.year;
   await Promise.all(
@@ -315,7 +293,6 @@ async function loadGivingIntelligencePanels(year) {
     })
   );
 }
-
 function renderGivingDistribution(d) {
   if (!Array.isArray(d.tiers) || !d.total_donors) {
     return '<p class="sw-chart-empty">No giving recorded yet. Donor counts by annual giving level will appear here.</p>';
@@ -335,11 +312,9 @@ function renderGivingDistribution(d) {
       'giving donors',
       `<span class="sw-chart-period">${escapeHtml(String(d.fiscal_year || givingMetricsState.year))} giving</span>`
     ) +
-    `<div class="sw-distribution-chart" role="img" aria-label="${escapeHtml(description)}">${chart}</div>` +
-    '<p class="sw-chart-note">Number of donors by total annual giving. Each donor appears in one band.</p>'
+    `<div class="sw-distribution-chart" role="img" aria-label="${escapeHtml(description)}">${chart}</div><p class="sw-chart-note">Number of donors by total annual giving. Each donor appears in one band.</p>`
   );
 }
-
 function renderDonorRetention(d) {
   const rate = swPercent(d.retention_rate_pct);
   const retained = d.retained || 0;
@@ -362,33 +337,20 @@ function renderDonorRetention(d) {
     `<p class="sw-chart-note">${rate === null ? 'No prior-year donors to compare yet.' : `${swNumber(retained)} of ${swNumber(d.prior_donors)} prior-year donors have given again.`} Lapsed means no recorded gift in the selected year.</p>`
   );
 }
-
 function gmKpi(label, value, sub) {
   return (
-    '<div class="sw-kpi-card">' +
-    '<span class="sw-kpi-label">' +
+    '<div class="sw-kpi-card"><span class="sw-kpi-label">' +
     label +
-    '</span>' +
-    '<strong class="sw-kpi-value">' +
+    '</span><strong class="sw-kpi-value">' +
     value +
-    '</strong>' +
-    '<span class="sw-kpi-sub">' +
+    '</strong><span class="sw-kpi-sub">' +
     sub +
-    '</span>' +
-    '</div>'
+    '</span></div>'
   );
 }
-
 function renderGivingMetricsUpgrade() {
-  return (
-    '<div class="sw-upgrade-nudge">' +
-    '<p>Stewardship reports are included with the Stewardship and Parish plans.</p>' +
-    '<button type="button" class="sw-upgrade-btn" onclick="switchTab(\'settings\')">Review parish tier</button>' +
-    '</div>'
-  );
+  return `<div class="sw-upgrade-nudge"><p>Stewardship reports are included with the Stewardship and Parish plans.</p><button type="button" class="sw-upgrade-btn" onclick="switchTab('settings')">Review parish tier</button></div>`;
 }
-
-// page of disconnected numbers.
 async function loadStewardshipHealthScorePanel(year) {
   ensureOutsideGivingCard();
   const pane = document.getElementById('stewardshipHealthScorePane');
@@ -411,24 +373,22 @@ async function loadStewardshipHealthScorePanel(year) {
       '</p>';
   }
 }
-
 function renderStewardshipHealthScore(d) {
   const score = swPercent(d.score);
   const tone = score === null ? 'gold' : score >= 80 ? 'green' : score >= 60 ? 'gold' : 'red';
-
   const componentTips = {
     pledge_fulfillment:
       'Pledges are behind where they should be by now — a personal reminder to households who pledged usually works better than a mass email.',
     recurring_stability:
       'Recurring gifts are failing or being canceled — reaching out to update payment info can recover this before it becomes a bigger gap.',
     donor_retention:
-      'Fewer of last year\u2019s donors have given again this year — a short personal check-in tends to bring people back faster than a form letter.',
+      'Fewer of last year’s donors have given again this year — a short personal check-in tends to bring people back faster than a form letter.',
     lapsed_donors:
-      'A number of last year\u2019s donors haven\u2019t given yet this year — a warm, specific "we missed you" note outperforms a generic reminder.',
+      'A number of last year’s donors haven’t given yet this year — a warm, specific "we missed you" note outperforms a generic reminder.',
     year_end_projection:
       'At the current pace, giving is on track to fall short of the annual goal — a mid-year appeal or campaign can close the gap before year-end.',
     concentration_risk:
-      'A large share of annual giving comes from just a few households — growing the base of regular, smaller donors reduces how exposed the parish is if one household\u2019s giving changes.',
+      'A large share of annual giving comes from just a few households — growing the base of regular, smaller donors reduces how exposed the parish is if one household’s giving changes.',
   };
   const statusExplainer = {
     'On Track': 'Giving, retention, and recurring gifts are all healthy — no urgent follow-up needed this month.',
@@ -437,9 +397,8 @@ function renderStewardshipHealthScore(d) {
     'At Risk':
       'Multiple signals below are struggling at once. The tips under each low score are the fastest way to move this number.',
     'Not enough data yet':
-      'This parish doesn\u2019t have enough giving history yet — the score fills in automatically as the year of data builds up.',
+      'This parish doesn’t have enough giving history yet — the score fills in automatically as the year of data builds up.',
   };
-
   const chips = (d.components || [])
     .map((c) => {
       const isLow = c.score < 75;
@@ -447,17 +406,13 @@ function renderStewardshipHealthScore(d) {
       return (
         '<div class="sw-health-chip' +
         (isLow ? ' sw-health-chip--low' : '') +
-        '">' +
-        '<div class="sw-health-chip-top">' +
-        '<span class="sw-health-chip-label">' +
+        '"><div class="sw-health-chip-top"><span class="sw-health-chip-label">' +
         escapeHtml(c.label) +
-        '</span>' +
-        '<span class="sw-health-chip-score tone-' +
+        '</span><span class="sw-health-chip-score tone-' +
         (c.score >= 75 ? 'green' : c.score >= 50 ? 'gold' : 'red') +
         '">' +
         c.score +
-        '</span>' +
-        '</div><div class="sw-signal-track" aria-hidden="true"><i style="width:' +
+        '</span></div><div class="sw-signal-track" aria-hidden="true"><i style="width:' +
         (swPercent(c.score) || 0) +
         '%"></i></div>' +
         (isLow && tip ? '<p class="sw-health-chip-tip">' + escapeHtml(tip) + '</p>' : '') +
@@ -465,34 +420,23 @@ function renderStewardshipHealthScore(d) {
       );
     })
     .join('');
-
   const explainer = statusExplainer[d.status] || '';
-
   return (
-    '<div class="sw-health-score-row">' +
-    '<div class="sw-health-score-badge tone-' +
+    '<div class="sw-health-score-row"><div class="sw-health-score-badge tone-' +
     tone +
     '" style="--sw-score:' +
     (score || 0) +
-    '%">' +
-    '<strong>' +
+    '%"><strong>' +
     (score === null ? '—' : score) +
-    '</strong>' +
-    '<span>/ 100</span>' +
-    '</div>' +
-    '<div class="sw-health-score-copy">' +
-    '<div class="sw-health-score-headline">' +
+    '</strong><span>/ 100</span></div><div class="sw-health-score-copy"><div class="sw-health-score-headline">' +
     escapeHtml(d.status || (score === null ? 'Not enough data yet' : 'Stewardship health score')) +
-    '</div>' +
-    '<p class="sw-health-score-sub">' +
+    '</div><p class="sw-health-score-sub">' +
     (d.components && d.components.length
       ? 'Calculated from ' +
         d.components.length +
         ' giving signals. Open the breakdown to see what is working and where to follow up.'
       : escapeHtml(explainer)) +
-    '</p>' +
-    '</div>' +
-    '</div>' +
+    '</p></div></div>' +
     (chips
       ? '<details class="sw-health-details"><summary>Explore the health score <span>' +
         d.components.length +
@@ -505,9 +449,6 @@ function renderStewardshipHealthScore(d) {
       : '')
   );
 }
-
-// ── Donor Concentration Risk Panel ──────────────────────────────────────
-// The same anonymous giving data, ranked to show dependence on top households.
 async function loadDonorConcentrationPanel(year) {
   const pane = document.getElementById('stewardshipConcentrationPane');
   if (!pane || !currentParish) return;
@@ -526,7 +467,6 @@ async function loadDonorConcentrationPanel(year) {
     pane.innerHTML = '<p class="muted">Concentration data unavailable.</p>';
   }
 }
-
 function renderDonorConcentration(d) {
   if (!d.total_donors) {
     return '<p class="muted" style="font-size:.85rem;">No giving recorded yet for this fiscal year.</p>';
@@ -535,21 +475,11 @@ function renderDonorConcentration(d) {
   const riskTone = d.risk_level === 'high' ? 'red' : d.risk_level === 'moderate' ? 'gold' : 'green';
   const top10 = swPercent(d.top10_pct);
   return (
-    '<div class="sw-concentration-row">' +
-    '<div class="sw-concentration-stat">' +
-    '<strong>' +
+    '<div class="sw-concentration-row"><div class="sw-concentration-stat"><strong>' +
     (d.top5_pct === null ? '—' : d.top5_pct + '%') +
-    '</strong>' +
-    '<span>Top 5 households provide</span>' +
-    '</div>' +
-    '<div class="sw-concentration-stat">' +
-    '<strong>' +
+    '</strong><span>Top 5 households provide</span></div><div class="sw-concentration-stat"><strong>' +
     (d.top10_pct === null ? '—' : d.top10_pct + '%') +
-    '</strong>' +
-    '<span>Top 10 households provide</span>' +
-    '</div>' +
-    '</div>' +
-    '<div class="sw-concentration-risk-badge tone-' +
+    '</strong><span>Top 10 households provide</span></div></div><div class="sw-concentration-risk-badge tone-' +
     riskTone +
     '">' +
     riskLabel +
@@ -570,8 +500,6 @@ function renderDonorConcentration(d) {
     ' this fiscal year. No individual identities shown.</p>'
   );
 }
-
-// ── Recurring Giving Health Panel ───────────────────────────────────────
 async function loadRecurringGivingPanel(year) {
   const pane = document.getElementById('stewardshipRecurringPane');
   if (!pane || !currentParish) return;
@@ -590,7 +518,6 @@ async function loadRecurringGivingPanel(year) {
     pane.innerHTML = '<p class="muted">Recurring giving data unavailable.</p>';
   }
 }
-
 function renderRecurringGiving(d) {
   const pct = swPercent(d.pct_of_total_giving_recurring);
   return (
@@ -612,36 +539,25 @@ function renderRecurringGiving(d) {
     gmKpi('Active donors', swNumber(d.recurring_donor_count), 'recurring') +
     gmKpi('Monthly Revenue', fmtDollars(d.monthly_recurring_revenue_cents), 'recurring, normalized to monthly') +
     gmKpi('Average gift', fmtDollars(d.avg_recurring_gift_cents), 'monthly-equivalent') +
-    '</div>' +
-    '<div class="sw-recurring-alert-row">' +
-    '<div class="sw-recurring-alert' +
+    '</div><div class="sw-recurring-alert-row"><div class="sw-recurring-alert' +
     (d.failed_payments_90d > 0 ? ' sw-recurring-alert--warn' : '') +
-    '">' +
-    '<strong>' +
+    '"><strong>' +
     swNumber(d.failed_payments_90d) +
-    '</strong><span>Failed payments (90d)</span>' +
-    '</div>' +
-    '<div class="sw-recurring-alert' +
+    '</strong><span>Failed payments (90d)</span></div><div class="sw-recurring-alert' +
     (d.canceled_gifts_90d > 0 ? ' sw-recurring-alert--warn' : '') +
-    '">' +
-    '<strong>' +
+    '"><strong>' +
     swNumber(d.canceled_gifts_90d) +
-    '</strong><span>Canceled gifts (90d)</span>' +
-    '</div>' +
-    '</div>'
+    '</strong><span>Canceled gifts (90d)</span></div></div>'
   );
 }
-
 let stewardshipReportMonth = '';
-
 function selectedStewardshipReportMonth() {
   if (!stewardshipReportMonth) {
-    const now = new Date();
+    const now = /* @__PURE__ */ new Date();
     stewardshipReportMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
   return stewardshipReportMonth;
 }
-
 function setStewardshipReportMonth(value = selectedStewardshipReportMonth()) {
   if (!/^(20\d{2}|2100)-(0[1-9]|1[0-2])$/.test(value)) value = selectedStewardshipReportMonth();
   stewardshipReportMonth = value;
@@ -650,7 +566,6 @@ function setStewardshipReportMonth(value = selectedStewardshipReportMonth()) {
     if (input) input.value = value;
   }
 }
-
 function stewardshipMonthlyReportUrl() {
   const token =
     document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
@@ -664,7 +579,6 @@ function stewardshipMonthlyReportUrl() {
   url.searchParams.set('t', token);
   return url.pathname + url.search;
 }
-
 function openStewardshipMonthlyReport() {
   if (!currentParish) return;
   window.open(stewardshipMonthlyReportUrl(), '_blank');

@@ -7,6 +7,76 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/parish/features/campaigns.ts', output: 'public/parish/features/campaigns.js' },
+  {
+    source: 'src/browser/parish/features/sacraments/preparation.ts',
+    output: 'public/parish/features/sacraments/preparation.js',
+  },
+  { source: 'src/browser/parish/recovery.ts', output: 'public/parish/recovery.js' },
+  { source: 'src/browser/parish/directory-import.ts', output: 'public/parish/directory-import.js' },
+  { source: 'src/browser/parish/features/koinonia/media.ts', output: 'public/parish/features/koinonia/media.js' },
+  {
+    source: 'src/browser/parish/features/koinonia/ministries.ts',
+    output: 'public/parish/features/koinonia/ministries.js',
+  },
+  { source: 'src/browser/parish/features/stewardship.ts', output: 'public/parish/features/stewardship.js' },
+  {
+    source: 'src/browser/parish/features/stewardship/metrics.ts',
+    output: 'public/parish/features/stewardship/metrics.js',
+  },
+  {
+    source: 'src/browser/parish/features/stewardship/financials.ts',
+    output: 'public/parish/features/stewardship/financials.js',
+  },
+  {
+    source: 'src/browser/parish/features/stewardship/meetings.ts',
+    output: 'public/parish/features/stewardship/meetings.js',
+  },
+  { source: 'src/browser/parish/features/koinonia.ts', output: 'public/parish/features/koinonia.js' },
+  { source: 'src/browser/parish/features/koinonia/prayers.ts', output: 'public/parish/features/koinonia/prayers.js' },
+  {
+    source: 'src/browser/parish/features/koinonia/announcements.ts',
+    output: 'public/parish/features/koinonia/announcements.js',
+  },
+  {
+    source: 'src/browser/parish/features/commerce/bookstore-catalog.ts',
+    output: 'public/parish/features/commerce/bookstore-catalog.js',
+  },
+  {
+    source: 'src/browser/parish/features/commerce/bookstore-counts.ts',
+    output: 'public/parish/features/commerce/bookstore-counts.js',
+  },
+  {
+    source: 'src/browser/parish/features/commerce/bookstore-inventory.ts',
+    output: 'public/parish/features/commerce/bookstore-inventory.js',
+  },
+  {
+    source: 'src/browser/parish/features/commerce/bookstore-sales.ts',
+    output: 'public/parish/features/commerce/bookstore-sales.js',
+  },
+  {
+    source: 'src/browser/parish/features/commerce/offerings.ts',
+    output: 'public/parish/features/commerce/offerings.js',
+  },
+  {
+    source: 'src/browser/parish/features/accounting/activation.ts',
+    output: 'public/parish/features/accounting/activation.js',
+  },
+  { source: 'src/browser/parish/features/accounting/close.ts', output: 'public/parish/features/accounting/close.js' },
+  {
+    source: 'src/browser/parish/features/accounting/migration.ts',
+    output: 'public/parish/features/accounting/migration.js',
+  },
+  { source: 'src/browser/parish/features/accounting/funds.ts', output: 'public/parish/features/accounting/funds.js' },
+  { source: 'src/browser/parish/features/accounting.ts', output: 'public/parish/features/accounting.js' },
+  {
+    source: 'src/browser/parish/features/accounting/report-loaders.ts',
+    output: 'public/parish/features/accounting/report-loaders.js',
+  },
+  {
+    source: 'src/browser/parish/features/accounting/report-documents.ts',
+    output: 'public/parish/features/accounting/report-documents.js',
+  },
   { source: 'src/browser/giving-box.ts', output: 'public/giving-box.js', externalEmbed: true },
   { source: 'src/browser/admin/relationships.ts', output: 'public/admin/relationships.js' },
   { source: 'src/browser/site-chrome.ts', output: 'public/site-chrome.js' },

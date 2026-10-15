@@ -1,22 +1,16 @@
+// Generated from src/browser/parish/features/commerce/offerings.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: offerings.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function eventsApi(path = '') {
   if (!currentParish?.parishId) throw new Error('Load a parish first.');
   return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/events' + path;
 }
-
 const eventsOversightState = {
   event: { loaded: false, loading: false, items: [], sales: { kpis: {}, orders: [] } },
   meal: { loaded: false, loading: false, items: [], sales: { kpis: {}, orders: [] } },
 };
-
 function commerceOfferingKind(value) {
   return value === 'meal' ? 'meal' : 'event';
 }
-
 function commerceOfferingCopy(value) {
   return commerceOfferingKind(value) === 'meal'
     ? {
@@ -27,7 +21,6 @@ function commerceOfferingCopy(value) {
       }
     : { singular: 'Event', plural: 'Events', namePlaceholder: 'Parish festival admission', dateLabel: 'Event date' };
 }
-
 function renderCommerceOfferingFeatureToggle(offeringKind = 'event') {
   const kind = commerceOfferingKind(offeringKind);
   const copy = commerceOfferingCopy(kind);
@@ -41,7 +34,6 @@ function renderCommerceOfferingFeatureToggle(offeringKind = 'event') {
       <em>${enabled ? 'On' : 'Off'}</em>
     </label>`;
 }
-
 async function toggleCommerceOfferingFeature(input, offeringKind = 'event') {
   if (!currentParish) return;
   const kind = commerceOfferingKind(offeringKind);
@@ -73,11 +65,9 @@ async function toggleCommerceOfferingFeature(input, offeringKind = 'event') {
     if (input) input.disabled = false;
   }
 }
-
 function eventsMoney(cents) {
   return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
-
 async function loadEventsOversightPanel(offeringKind = 'event', force = false) {
   const kind = commerceOfferingKind(offeringKind);
   const copy = commerceOfferingCopy(kind);
@@ -110,7 +100,6 @@ async function loadEventsOversightPanel(offeringKind = 'event', force = false) {
     state.loading = false;
   }
 }
-
 function renderEventsOversightPanel(offeringKind = 'event') {
   const kind = commerceOfferingKind(offeringKind);
   const copy = commerceOfferingCopy(kind);
@@ -187,7 +176,6 @@ function renderEventsOversightPanel(offeringKind = 'event') {
     <div class="acct-list-head"><div><span class="acct-kicker">Recent activity</span><h2>${copy.plural} sales</h2><p>Checkout tax, receipt state, and fulfillment are shown for the latest paid orders.</p></div></div>
     ${orderRows ? `<div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Order</th><th>Customer</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Fulfillment</th><th>Receipt</th></tr></thead><tbody>${orderRows}</tbody></table></div>` : `<p class="bk-panel-empty">No paid ${copy.plural.toLowerCase()} orders yet.</p>`}`;
 }
-
 async function submitParishCommerceOffering(event, offeringKind) {
   event.preventDefault();
   const kind = commerceOfferingKind(offeringKind);
@@ -238,7 +226,6 @@ async function submitParishCommerceOffering(event, offeringKind) {
     if (button) button.disabled = false;
   }
 }
-
 async function moveParishCommerceOffering(productId, nextKind, currentKind) {
   const destination = commerceOfferingCopy(nextKind);
   try {
@@ -256,7 +243,6 @@ async function moveParishCommerceOffering(productId, nextKind, currentKind) {
     setStatus(error.message, 'error');
   }
 }
-
 async function toggleEventsOversightStatus(productId, nextStatus, offeringKind = 'event') {
   try {
     const res = await fetch(eventsApi('/' + encodeURIComponent(productId)), {
@@ -272,7 +258,6 @@ async function toggleEventsOversightStatus(productId, nextStatus, offeringKind =
     setStatus(err.message, 'error');
   }
 }
-
 async function toggleEventsCalendarVisibility(productId, showOnCalendar, offeringKind = 'event') {
   try {
     const res = await fetch(eventsApi('/' + encodeURIComponent(productId)), {

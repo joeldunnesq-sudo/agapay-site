@@ -1,6 +1,4 @@
-// Sacrament preparation template workspace.
-// Loaded before sacraments.js and intentionally uses its shared dashboard state/helpers at interaction time.
-
+// Generated from src/browser/parish/features/sacraments/preparation.ts by npm run build:browser. Do not edit.
 function preparationItemEditorRow(item = {}, index = 0) {
   const type = item.itemType || 'confirmation';
   return `<div class="sac-prep-editor-item" data-prep-item data-item-id="${escapeAttr(item.id || '')}">
@@ -25,7 +23,6 @@ function preparationItemEditorRow(item = {}, index = 0) {
       </div>
     </div>`;
 }
-
 function preparationTemplateEditor(template) {
   const type = template.sacramentType;
   const typeLabel = sacramentTypeLabel({ sacramentType: type });
@@ -76,7 +73,6 @@ function preparationTemplateEditor(template) {
       </div>
     </details>`;
 }
-
 function renderSacramentsPreparationTemplates() {
   const templates = sacramentsState.preparationTemplates || [];
   if (!templates.length)
@@ -96,13 +92,11 @@ function renderSacramentsPreparationTemplates() {
       <div class="sac-prep-template-grid">${templates.map(preparationTemplateEditor).join('')}</div>
     </div>`;
 }
-
 function addPreparationTemplateItem(type) {
   const list = document.querySelector(`[data-prep-template="${type}"] [data-prep-item-list]`);
   if (!list) return;
   list.insertAdjacentHTML('beforeend', preparationItemEditorRow({}, list.querySelectorAll('[data-prep-item]').length));
 }
-
 function removePreparationTemplateItem(button) {
   const row = button.closest('[data-prep-item]');
   const list = row?.parentElement;
@@ -111,7 +105,6 @@ function removePreparationTemplateItem(button) {
     node.textContent = String(index + 1);
   });
 }
-
 async function savePreparationTemplate(type, button) {
   const root = document.querySelector(`[data-prep-template="${type}"]`);
   if (!root) return;
@@ -147,7 +140,6 @@ async function savePreparationTemplate(type, button) {
     if (button) button.disabled = false;
   }
 }
-
 async function uploadPreparationGuide(event, type) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -170,7 +162,6 @@ async function uploadPreparationGuide(event, type) {
     if (button) button.disabled = false;
   }
 }
-
 async function deletePreparationGuide(documentId) {
   if (!confirm('Remove this preparation guide?')) return;
   try {

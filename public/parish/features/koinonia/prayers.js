@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/koinonia/prayers.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard koinonia: prayers.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function parishPrayerStatusLabel(status) {
   return (
     {
@@ -15,13 +12,11 @@ function parishPrayerStatusLabel(status) {
     }[status] || contentCategoryLabel(status)
   );
 }
-
 function parishPrayerDate(value) {
   const date = new Date(Number(value));
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+  return new Intl.DateTimeFormat(void 0, { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 }
-
 function filteredParishPrayerRequests() {
   const rows = prayerAdminState.requests || [];
   if (prayerAdminState.filter === 'review')
@@ -33,7 +28,6 @@ function filteredParishPrayerRequests() {
   if (prayerAdminState.filter === 'answered') return rows.filter((item) => item.status === 'answered');
   return rows;
 }
-
 function renderParishPrayerRequests() {
   const metrics = prayerAdminState.metrics || {};
   const setMetric = (id, value) => {
@@ -73,7 +67,6 @@ function renderParishPrayerRequests() {
     })
     .join('');
 }
-
 function setParishPrayerFilter(filter, button) {
   prayerAdminState.filter = ['review', 'active', 'clergy', 'answered', 'all'].includes(filter) ? filter : 'review';
   document
@@ -81,7 +74,6 @@ function setParishPrayerFilter(filter, button) {
     .forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
   renderParishPrayerRequests();
 }
-
 async function loadParishPrayerRequests(force = false) {
   if (!currentParish?.parishId || (prayerAdminState.loaded && !force)) {
     if (prayerAdminState.loaded) renderParishPrayerRequests();
@@ -106,7 +98,6 @@ async function loadParishPrayerRequests(force = false) {
       target.innerHTML = `<div class="prayer-admin-empty"><strong>Unable to load requests</strong><p>${escapeHtml(error.message)}</p></div>`;
   }
 }
-
 async function patchParishPrayerRequest(requestId, changes) {
   const response = await fetch(prayerAdminApi('/' + encodeURIComponent(requestId)), {
     method: 'PATCH',
@@ -119,7 +110,6 @@ async function patchParishPrayerRequest(requestId, changes) {
   await loadParishPrayerRequests(true);
   return payload;
 }
-
 async function quickApproveParishPrayer(requestId) {
   const item = prayerAdminState.requests.find((row) => row.id === requestId);
   if (!item) return;
@@ -134,7 +124,6 @@ async function quickApproveParishPrayer(requestId) {
     setStatus(error.message, 'error');
   }
 }
-
 function openParishPrayerReview(requestId) {
   const item = prayerAdminState.requests.find((row) => row.id === requestId);
   const dialog = document.getElementById('prayerAdminReviewDialog');
@@ -151,7 +140,6 @@ function openParishPrayerReview(requestId) {
   if (typeof dialog.showModal === 'function') dialog.showModal();
   else dialog.setAttribute('open', '');
 }
-
 function closeParishPrayerReview() {
   const dialog = document.getElementById('prayerAdminReviewDialog');
   prayerAdminState.selectedId = '';
@@ -159,7 +147,6 @@ function closeParishPrayerReview() {
   if (typeof dialog.close === 'function') dialog.close();
   else dialog.removeAttribute('open');
 }
-
 async function submitParishPrayerReview(event) {
   event.preventDefault();
   const dialog = document.getElementById('prayerAdminReviewDialog');
@@ -189,7 +176,6 @@ async function submitParishPrayerReview(event) {
     }
   }
 }
-
 async function saveParishPrayerSettings(event) {
   event.preventDefault();
   const button = event.currentTarget.querySelector('button[type="submit"]');

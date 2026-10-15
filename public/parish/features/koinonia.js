@@ -1,10 +1,6 @@
+// Generated from src/browser/parish/features/koinonia.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard koinonia: koinonia.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 const KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE = false;
-
 let communicationsState = {
   loaded: false,
   announcements: [],
@@ -15,7 +11,6 @@ let communicationsState = {
   blog: null,
   readers: {},
 };
-
 function syncKoinoniaVideoAdminAvailability() {
   document.querySelectorAll('[data-native-video-upload]').forEach((element) => {
     element.hidden = !KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE;
@@ -26,35 +21,39 @@ function syncKoinoniaVideoAdminAvailability() {
     management.classList.toggle('is-list-only', !KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE);
   }
 }
-
-let koinoniaMinistriesState = { loaded: false, ministries: [], selectedId: '', editingId: '', people: [] };
-
-let prayerAdminState = { loaded: false, requests: [], settings: null, metrics: {}, filter: 'review', selectedId: '' };
-
-const koinoniaMinistryImageUrls = new Map();
-
+let koinoniaMinistriesState = {
+  loaded: false,
+  ministries: [],
+  selectedId: '',
+  editingId: '',
+  people: [],
+};
+let prayerAdminState = {
+  loaded: false,
+  requests: [],
+  settings: null,
+  metrics: {},
+  filter: 'review',
+  selectedId: '',
+};
+const koinoniaMinistryImageUrls = /* @__PURE__ */ new Map();
 let koinoniaStudioView = 'overview';
-
 function communicationsApi(path = '') {
   return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/communications' + path;
 }
-
 function prayerAdminApi(path = '') {
   return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/prayer-requests' + path;
 }
-
 function announcementStatusLabel(status) {
   return status === 'published' ? 'Published' : status === 'archived' ? 'Archived' : 'Draft';
 }
-
 function contentCategoryLabel(category) {
   return String(category || '')
     .replaceAll('_', ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
-
 function setKoinoniaStudioView(view = 'overview') {
-  const allowed = new Set([
+  const allowed = /* @__PURE__ */ new Set([
     'overview',
     'bulletins',
     'announcements',
@@ -78,7 +77,6 @@ function setKoinoniaStudioView(view = 'overview') {
   if (koinoniaStudioView === 'ministries') loadKoinoniaMinistries();
   if (koinoniaStudioView === 'prayers') loadParishPrayerRequests();
 }
-
 async function loadCommunicationsTab(force = false) {
   syncKoinoniaVideoAdminAvailability();
   if (!currentParish) return;
@@ -174,7 +172,6 @@ async function loadCommunicationsTab(force = false) {
   if (koinoniaStudioView === 'prayers') loadParishPrayerRequests(true);
   setKoinoniaStudioView(koinoniaStudioView);
 }
-
 async function saveParishBlogSettings(event) {
   event.preventDefault();
   if (!currentParish || !moduleIncluded('communications')) return;
@@ -212,7 +209,6 @@ async function saveParishBlogSettings(event) {
     }
   }
 }
-
 async function toggleCommunicationsFeature(input) {
   if (!currentParish || !moduleIncluded('communications')) return;
   const enabled = Boolean(input?.checked);
@@ -245,9 +241,12 @@ async function toggleCommunicationsFeature(input) {
     if (input) input.disabled = false;
   }
 }
-
 async function toggleKoinoniaSubfeature(feature, input) {
-  const fields = { signups: 'signupsEnabled', exchange: 'exchangeEnabled', prayers: 'prayerRequestsEnabled' };
+  const fields = {
+    signups: 'signupsEnabled',
+    exchange: 'exchangeEnabled',
+    prayers: 'prayerRequestsEnabled',
+  };
   const labels = { signups: 'Parish Signups', exchange: 'Parish Exchange', prayers: 'Prayer Requests' };
   const field = fields[feature];
   if (!field || !currentParish || !moduleIncluded('communications')) return;
@@ -283,7 +282,6 @@ async function toggleKoinoniaSubfeature(feature, input) {
     if (input) input.disabled = false;
   }
 }
-
 window.ParishFeatureRegistry.register('koinonia', {
   load: loadCommunicationsTab,
   refresh: () => loadCommunicationsTab(true),

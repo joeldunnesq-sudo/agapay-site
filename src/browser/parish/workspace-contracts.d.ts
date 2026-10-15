@@ -100,8 +100,8 @@ interface ParishBookstoreCatalogState {
   loaded: boolean;
   products: ParishBookstoreProduct[];
   lowStockProducts: ParishBookstoreProduct[];
-  countSessions: Record<string, unknown>[];
-  starterCatalog: Record<string, unknown>[];
+  countSessions: ParishBookstoreCountSession[];
+  starterCatalog: ParishBookstoreStarterGroup[];
 }
 interface ParishCommerceKpis {
   netCents?: number;
@@ -118,25 +118,13 @@ interface ParishCommerceOrder {
   createdAt?: string;
   grossCents?: number;
 }
-declare let bookstoreSalesState: {
-  range: string;
-  data: { kpis?: ParishCommerceKpis } | null;
-  orders: ParishCommerceOrder[];
-};
 declare let dashboardLoadPromise: Promise<void> | null;
 declare let parishFeatureRequests: Record<string, unknown>[];
-declare function loadEventsOversightPanel(kind: 'event' | 'meal'): unknown;
-declare function loadBookstoreSalesPanel(force?: boolean): unknown;
-declare function loadBookstoreCatalogTab(force?: boolean): unknown;
-declare function bkInitials(name?: string): string;
-declare function bkAgo(date?: string): string;
 declare function refreshSubscriptionStatus(options: { quiet: boolean }): Promise<unknown>;
 declare function refreshStripeStatus(options: { quiet: boolean }): Promise<unknown>;
 declare function saveSession(): void;
 declare function renderDashboard(): void;
-declare function syncBookstoreLowStockNavigation(): void;
-declare function loadBookstoreLowStockBadge(): unknown;
-declare function switchTab(tab: 'sacraments' | 'stewardship'): void;
+declare function switchTab(tab: 'sacraments' | 'stewardship' | 'accounting'): void;
 declare function setSacramentsDashboardTab(tab: 'calendar'): void;
 declare function showParishFeatureRequestPopup(items: Record<string, unknown>[]): void;
 declare function updateStewardshipBadges(included: boolean, options: { renderPanel: boolean }): void;
@@ -199,11 +187,7 @@ interface DiocesanStatisticsView {
   manualAdditions?: Record<string, number | null>;
   automaticTotals?: Record<string, number>;
 }
-declare function fmtDollars(cents: number): string;
-declare function swNumber(value: number | undefined): string;
-declare function gmKpi(label: string, value: string, note: string): string;
 
-declare function stewardshipApi(path: string): string;
 interface StewardshipRestrictedFund {
   id?: string;
   code?: string;
@@ -233,22 +217,7 @@ interface StewardshipSnapshotView {
   automaticCostsExcluded?: boolean;
   notes?: string;
 }
-declare let financialsState: {
-  year: number;
-  loaded: boolean;
-  data: {
-    snapshot?: StewardshipSnapshotView;
-    contributionTotals?: { agapayContributionsCents?: number; outsideContributionsCents?: number };
-    agapayRestrictedFunds?: StewardshipRestrictedFund[];
-    externalAssets?: StewardshipExternalAsset[];
-  } | null;
-};
-declare let givingMetricsState: { year: number };
-declare function loadFinancialSnapshotsPanel(): unknown;
-declare function loadGivingMetricsPanel(): unknown;
-declare function loadStewardshipHealthScorePanel(): unknown;
 declare function isParishTier(): boolean;
-declare function renderGivingMetricsUpgrade(): string;
 interface StewardshipManualEntry {
   id: string;
   entryDate: string;
@@ -302,7 +271,7 @@ interface ParishPortabilityState {
 }
 interface Window {
   ParishBackup: { mount(context: ParishPortabilityContext & { element: HTMLElement }): void };
-  ParishRecovery?: { mount(context: ParishPortabilityContext & { element: HTMLElement; scope: 'parish' }): unknown };
+  ParishRecovery?: ParishRecoveryApi;
   ParishPortability: { open(context: ParishPortabilityContext): Promise<void> };
 }
 interface ParishLibraryResource {
