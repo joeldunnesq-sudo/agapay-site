@@ -1067,7 +1067,6 @@ A temporary network interruption prevented GitHub and automatic approval review 
 
 Main Worker: 2ec22c11-fbac-4200-a924-ae3aee250c4b. Private provisioner: 461e1d4a-579f-42ca-bc00-8480c16be714. Rollback baseline: commit b6666da71afc3a5c48603f36084b0674a277a325, main 850160b7-fc75-439c-9468-27cc7ea9f23d and private 34ff1f72-f7cc-4017-b55c-656f7e960ccd. Evidence is retained in tmp-typescript-45/ and tmp-release-79/. The production merge is integrated back into the migration branch; the subsequent acceptance commit changes documentation only. Original-checkout changes were preserved.
 
-
 ### Stage 6 batch 80: directory services, recovery orchestration and Learn stores (50% checkpoint; release pending)
 
 Twenty-five existing runtime modules now have authoritative TypeScript sources: recovery database/file handling and orchestration; export orchestration and the parish portability/public-media HTTP handlers; directory foundation/shared contracts, settings, privacy, publication, contacts, projections, milestones, invitations, imports, household sharing, child-publication requests, review correspondence and duplicate review/merges; parish milestone delivery; Learn feedback, community resources and test-score persistence; and the existing SQLite-backed rate limiter. The larger Learn academic-record lifecycle remains a connected future batch. No runtime module was introduced to increase the migration count.
