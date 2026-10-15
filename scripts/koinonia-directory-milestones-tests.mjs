@@ -78,7 +78,7 @@ assert.match(directory, /id="childAddForm"[\s\S]*name="dateOfBirth"/);
 assert.match(privacy, /adult_birthday[\s\S]*household_anniversary/);
 assert.match(selfService, /anniversary_date[\s\S]*household_anniversary/);
 assert.match(handler, /\/api\/directory\/member\/milestones[\s\S]*listDirectoryMilestones/);
-assert.match(handler, /fromDate: milestoneFromDate\(url\.searchParams\.get\("from"\)\)/, "the calendar endpoint should accept a validated month-range start date");
+assert.match(handler, /fromDate: milestoneFromDate\(url\.searchParams\.get\(['"]from['"]\)\)/, "the calendar endpoint should accept a validated month-range start date");
 assert.match(migration, /ALTER TABLE directory_households ADD COLUMN anniversary_date TEXT/);
 
 console.log("Koinonia directory milestone checks passed.");

@@ -52,3 +52,11 @@ export function requireDonor(
   request: Request,
   env: Partial<Env>
 ): Promise<{ defaultParishId?: unknown; [field: string]: unknown } | null>;
+
+export function requireAdminContext(
+  request: Request,
+  env: Partial<Env>
+): Promise<{ actor: string; authType: string; expiresAt: string; sessionId: string; mfaVerifiedAt: string } | null>;
+export function requireAdmin(request: Request, env: Partial<Env>): Promise<boolean>;
+
+export function handleParishDashboard(request: Request, env: Partial<Env>, parishId: string): Promise<Response>;

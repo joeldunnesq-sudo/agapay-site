@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readServerModuleSource } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
@@ -16,7 +17,7 @@ const service = read("src/accounting/payables/service.js");
 const vendorReporting = await readServerModuleSource("src/accounting/payables/vendor-reporting.js");
 const handler = read("src/handlers/accounting-payables-budgets.js");
 const parishApp = readParishDashboardSource();
-const has = (source, needles, label) => needles.forEach((needle) => assert.ok(source.includes(needle), `${label} must include ${needle}`));
+const has = (source, needles, label) => needles.forEach((needle) => assert.ok(includesJavaScriptFragment(source, needle), `${label} must include ${needle}`));
 
 has(migration, [
   "CREATE TABLE IF NOT EXISTS accounting_payment_runs",

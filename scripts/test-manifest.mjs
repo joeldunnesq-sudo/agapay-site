@@ -68,6 +68,7 @@ const core = [
   'scripts/mobile-store-readiness-tests.mjs',
   'scripts/check.mjs',
   'scripts/check-learn.mjs',
+  'scripts/academic-records-typescript-tests.mjs',
   'scripts/learn-html-sanitization-tests.mjs',
   'scripts/koinonia-ministries-calendar-tests.mjs',
   'scripts/content-services-typescript-tests.mjs',

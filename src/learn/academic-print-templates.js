@@ -1,46 +1,38 @@
-import { calculateCumulativeGPA } from "./gpa.js";
-
+// Generated from src/learn/academic-print-templates.ts by npm run build:server. Do not edit.
+import { calculateCumulativeGPA } from './gpa.js';
 function text(value) {
-  return String(value ?? "").trim();
+  return String(value ?? '').trim();
 }
-
 function escapeHtml(value) {
   return text(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
-
 function list(value) {
   return Array.isArray(value) ? value : [];
 }
-
 function number(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
-
 function formatCredits(value) {
   return number(value, 0).toFixed(1);
 }
-
 function formatAttendance(value) {
   const days = Math.max(0, Math.trunc(number(value, 0)));
-  return `${days} ${days === 1 ? "day" : "days"}`;
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
 }
-
 function formatTermLabel(termIndex) {
   return `Term ${Math.max(1, Math.min(3, Math.trunc(number(termIndex, 1))))}`;
 }
-
 function formatGradeLevel(gradeLevel) {
   const grade = Math.max(9, Math.min(12, Math.trunc(number(gradeLevel, 9))));
-  const suffix = grade === 11 || grade === 12 ? "th" : grade === 10 ? "th" : "th";
+  const suffix = grade === 11 || grade === 12 ? 'th' : grade === 10 ? 'th' : 'th';
   return `${grade}${suffix} Grade`;
 }
-
 function courseGradeRows(courses = []) {
   return list(courses).flatMap((course) =>
     list(course.grades || course.gradesAndProgress || course.progress).map((grade) => ({
@@ -52,13 +44,12 @@ function courseGradeRows(courses = []) {
       numericScore: grade.numericScore ?? grade.numeric_score,
       letterGrade: text(grade.letterGrade || grade.letter_grade),
       teacherNotes: text(grade.teacherNotes || grade.teacher_notes),
-      attendanceDays: number(grade.attendanceDays ?? grade.attendance_days, 0)
+      attendanceDays: number(grade.attendanceDays ?? grade.attendance_days, 0),
     }))
   );
 }
-
 function groupBy(rows, keyFn) {
-  const groups = new Map();
+  const groups = /* @__PURE__ */ new Map();
   rows.forEach((row) => {
     const key = keyFn(row);
     if (!groups.has(key)) groups.set(key, []);
@@ -66,7 +57,6 @@ function groupBy(rows, keyFn) {
   });
   return groups;
 }
-
 function renderReportCardTerm(termIndex, rows = []) {
   return `
     <section class="print-section report-term" aria-labelledby="report-term-${termIndex}">
@@ -82,31 +72,35 @@ function renderReportCardTerm(termIndex, rows = []) {
           </tr>
         </thead>
         <tbody>
-          ${rows.map((row) => `
+          ${rows
+            .map(
+              (row) => `
             <tr>
               <th scope="row">${escapeHtml(row.courseTitle)}</th>
               <td>${escapeHtml(row.subjectCategory)}</td>
-              <td>${escapeHtml(row.letterGrade || String(row.numericScore ?? ""))}</td>
+              <td>${escapeHtml(row.letterGrade || String(row.numericScore ?? ''))}</td>
               <td>${escapeHtml(formatAttendance(row.attendanceDays))}</td>
             </tr>
-          `).join("")}
+          `
+            )
+            .join('')}
         </tbody>
       </table>
     </section>
   `;
 }
-
 function renderReportCardNarrativeNotes(rows = []) {
   const notes = rows
     .filter((row) => row.teacherNotes)
-    .map((row) => `
+    .map(
+      (row) => `
       <article>
         <h3>${escapeHtml(formatTermLabel(row.termIndex))}: ${escapeHtml(row.courseTitle)}</h3>
         <p>${escapeHtml(row.teacherNotes)}</p>
       </article>
-    `)
-    .join("");
-
+    `
+    )
+    .join('');
   return `
     <section class="narrative-notes" aria-labelledby="report-narrative-evaluation">
       <h2 id="report-narrative-evaluation">Narrative Evaluation Notes</h2>
@@ -114,7 +108,6 @@ function renderReportCardNarrativeNotes(rows = []) {
     </section>
   `;
 }
-
 function renderTranscriptGradeGroup(gradeLevel, rows = []) {
   return `
     <section class="transcript-grade" aria-labelledby="transcript-grade-${gradeLevel}">
@@ -130,20 +123,23 @@ function renderTranscriptGradeGroup(gradeLevel, rows = []) {
           </tr>
         </thead>
         <tbody>
-          ${rows.map((row) => `
+          ${rows
+            .map(
+              (row) => `
             <tr>
               <th scope="row">${escapeHtml(row.courseTitle)}</th>
               <td>${escapeHtml(row.subjectCategory)}</td>
               <td>${escapeHtml(formatCredits(row.creditHours))}</td>
               <td>${escapeHtml(row.letterGrade)}</td>
             </tr>
-          `).join("")}
+          `
+            )
+            .join('')}
         </tbody>
       </table>
     </section>
   `;
 }
-
 function printStyles() {
   return `
     <style>
@@ -369,16 +365,11 @@ function printStyles() {
     </style>
   `;
 }
-
-export function renderReportCardTemplate({
-  studentName,
-  academicYear,
-  householdName,
-  courses = []
-} = {}) {
-  const rows = courseGradeRows(courses).sort((a, b) => a.termIndex - b.termIndex || a.courseTitle.localeCompare(b.courseTitle));
+function renderReportCardTemplate({ studentName, academicYear, householdName, courses = [] } = {}) {
+  const rows = courseGradeRows(courses).sort(
+    (a, b) => a.termIndex - b.termIndex || a.courseTitle.localeCompare(b.courseTitle)
+  );
   const byTerm = groupBy(rows, (row) => row.termIndex || 1);
-
   return `<!doctype html>
     <html lang="en">
       <head>
@@ -398,19 +389,21 @@ export function renderReportCardTemplate({
               <div><dt>Calendar Rhythm</dt><dd>Three 12-week terms</dd></div>
             </dl>
           </header>
-          ${[1, 2, 3].filter((termIndex) => byTerm.has(termIndex)).map((termIndex) => renderReportCardTerm(termIndex, byTerm.get(termIndex))).join("")}
+          ${[1, 2, 3]
+            .filter((termIndex) => byTerm.has(termIndex))
+            .map((termIndex) => renderReportCardTerm(termIndex, byTerm.get(termIndex)))
+            .join('')}
           ${renderReportCardNarrativeNotes(rows)}
         </article>
       </body>
     </html>`;
 }
-
-export function renderHighSchoolTranscriptTemplate({
+function renderHighSchoolTranscriptTemplate({
   studentName,
   academicYear,
   householdName,
   dateOfGraduation,
-  courses = []
+  courses = [],
 } = {}) {
   const rows = list(courses)
     .map((course) => ({
@@ -418,14 +411,20 @@ export function renderHighSchoolTranscriptTemplate({
       subjectCategory: text(course.subjectCategory || course.subject_category),
       gradeLevel: number(course.gradeLevel ?? course.grade_level, 0),
       creditHours: number(course.creditHours ?? course.credit_hours, 0),
-      letterGrade: text(course.letterGrade || course.letter_grade || course.finalLetterGrade || course.final_letter_grade)
+      letterGrade: text(
+        course.letterGrade || course.letter_grade || course.finalLetterGrade || course.final_letter_grade
+      ),
     }))
     .filter((row) => row.gradeLevel >= 9 && row.gradeLevel <= 12)
-    .sort((a, b) => a.gradeLevel - b.gradeLevel || a.subjectCategory.localeCompare(b.subjectCategory) || a.courseTitle.localeCompare(b.courseTitle));
+    .sort(
+      (a, b) =>
+        a.gradeLevel - b.gradeLevel ||
+        a.subjectCategory.localeCompare(b.subjectCategory) ||
+        a.courseTitle.localeCompare(b.courseTitle)
+    );
   const byGrade = groupBy(rows, (row) => row.gradeLevel);
-  const totalCredits = rows.reduce((sum, row) => row.letterGrade ? sum + row.creditHours : sum, 0);
+  const totalCredits = rows.reduce((sum, row) => (row.letterGrade ? sum + row.creditHours : sum), 0);
   const cumulativeGpa = calculateCumulativeGPA(rows);
-
   return `<!doctype html>
     <html lang="en">
       <head>
@@ -446,7 +445,10 @@ export function renderHighSchoolTranscriptTemplate({
             </dl>
           </header>
           <main class="transcript-grid">
-            ${[9, 10, 11, 12].filter((gradeLevel) => byGrade.has(gradeLevel)).map((gradeLevel) => renderTranscriptGradeGroup(gradeLevel, byGrade.get(gradeLevel))).join("")}
+            ${[9, 10, 11, 12]
+              .filter((gradeLevel) => byGrade.has(gradeLevel))
+              .map((gradeLevel) => renderTranscriptGradeGroup(gradeLevel, byGrade.get(gradeLevel)))
+              .join('')}
           </main>
           <footer class="transcript-footer">
             <section class="signature-row" aria-label="Compliance signatures">
@@ -462,3 +464,4 @@ export function renderHighSchoolTranscriptTemplate({
       </body>
     </html>`;
 }
+export { renderHighSchoolTranscriptTemplate, renderReportCardTemplate };

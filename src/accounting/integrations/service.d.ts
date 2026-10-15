@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
 export interface AccountingIntegrationActor {
   id: string;
   type?: string;
@@ -33,10 +34,10 @@ export interface IntegrationEvent {
   [field: string]: unknown;
 }
 export function ingestAccountingSourceEvent(
-  db: D1Database,
+  db: PortabilityDatabase,
   options: { actor: AccountingIntegrationActor; entitlementTier: string; event: IntegrationEvent }
 ): Promise<{ id: string }>;
 export function processAccountingSourceEvent(
-  db: D1Database,
-  options: { actor: AccountingIntegrationActor; entitlementTier: string; sourceEventId: string }
+  db: PortabilityDatabase,
+  options: { actor: AccountingIntegrationActor; entitlementTier: string; sourceEventId: string; approve?: boolean }
 ): Promise<{ status: string; exceptionMessage?: string }>;

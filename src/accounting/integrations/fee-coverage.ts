@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
 import type { AccountingIntegrationActor, IntegrationSourceRow } from './service.js';
 import type { GivingContributionInput } from '../../lib/giving-contributions.js';
 export interface FeeCoverageBackfillOptions {
@@ -14,7 +15,7 @@ import { givingContribution } from '../../lib/giving-contributions.js';
 import { d1All } from '../../lib/core.js';
 
 export async function recognizeGivingFeeCoverage(
-  db: D1Database,
+  db: PortabilityDatabase,
   {
     actor,
     entitlementTier,
@@ -70,7 +71,7 @@ export async function recognizeGivingFeeCoverage(
 // recognizes only missing additions and respects the ledger's review/closed-period rules.
 export async function givingFeeCoverageBackfill(
   env: Partial<Env>,
-  db: D1Database,
+  db: PortabilityDatabase,
   {
     actor,
     entitlementTier,

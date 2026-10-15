@@ -1,8 +1,8 @@
+// Generated from src/handlers/platform-actions.ts by npm run build:server. Do not edit.
 import { d1, json } from '../lib/core.js';
 import { mfaReadiness } from '../lib/mfa.js';
 import { activateLearnOdysseyAccount } from '../learn/billing.js';
-
-export async function handleLearnOdysseyActivate(request, env) {
+async function handleLearnOdysseyActivate(request, env) {
   let body;
   try {
     body = await request.json();
@@ -17,7 +17,6 @@ export async function handleLearnOdysseyActivate(request, env) {
   if (!email || !password || !odysseyRef) {
     return Response.json({ ok: false, error: 'Email, password, and Odyssey reference are required.' }, { status: 400 });
   }
-  // Authenticate against the existing My AGAPAY donor account
   const loginRes = await fetch(
     new Request(new URL('/api/donor/login', request.url), {
       method: 'POST',
@@ -29,7 +28,6 @@ export async function handleLearnOdysseyActivate(request, env) {
   if (!loginRes.ok || !loginData.token) {
     return Response.json({ ok: false, error: loginData.error || 'Invalid email or password.' }, { status: 401 });
   }
-  // Activate Odyssey Learn plan
   const result = await activateLearnOdysseyAccount(env, email, odysseyRef);
   if (!result.ok) return Response.json({ ok: false, error: result.error }, { status: 500 });
   return Response.json({
@@ -41,9 +39,8 @@ export async function handleLearnOdysseyActivate(request, env) {
     alreadyActive: result.alreadyActive || false,
   });
 }
-
-export async function handleHealth(env) {
-  const now = new Date().toISOString();
+async function handleHealth(env) {
+  const now = /* @__PURE__ */ new Date().toISOString();
   const checks = {
     worker: { ok: true },
     mfa: await mfaReadiness(env),
@@ -61,7 +58,6 @@ export async function handleHealth(env) {
       sacramentDocuments: Boolean(env.SACRAMENT_DOCUMENTS),
     },
   };
-
   try {
     const db = d1(env);
     if (db) {
@@ -73,7 +69,6 @@ export async function handleHealth(env) {
   } catch (error) {
     checks.d1.error = error?.message || 'unavailable';
   }
-
   try {
     if (env.AGAPAY_REGISTRATIONS?.get) {
       await env.AGAPAY_REGISTRATIONS.get('__agapay_healthcheck__');
@@ -84,7 +79,6 @@ export async function handleHealth(env) {
   } catch (error) {
     checks.kv.error = error?.message || 'unavailable';
   }
-
   const ok = Boolean(checks.worker.ok && checks.d1.ok && checks.kv.ok && (!checks.mfa.required || checks.mfa.ok));
   return json(
     {
@@ -97,3 +91,4 @@ export async function handleHealth(env) {
     { status: ok ? 200 : 503 }
   );
 }
+export { handleHealth, handleLearnOdysseyActivate };

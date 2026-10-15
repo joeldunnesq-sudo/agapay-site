@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
 export interface ChartImportActor {
   id: string;
   type?: string;
@@ -68,7 +69,7 @@ const suggestions: Record<string, string> = {
   'other expense': 'expense',
   'cost of goods sold': 'expense',
 };
-const accountRows = async (db: D1Database) =>
+const accountRows = async (db: PortabilityDatabase) =>
   (
     await db
       .prepare(
@@ -83,7 +84,7 @@ const requireImporter = (actor: ChartImportActor | null | undefined) => {
 };
 
 export async function previewActivationChart(
-  db: D1Database,
+  db: PortabilityDatabase,
   { actor, filename, csv, columnMap = {}, typeMap = {} }: ChartPreviewInput
 ) {
   requireImporter(actor);
@@ -189,7 +190,7 @@ export async function previewActivationChart(
   };
 }
 
-export async function commitActivationChart(db: D1Database, input: ChartCommitInput) {
+export async function commitActivationChart(db: PortabilityDatabase, input: ChartCommitInput) {
   requireImporter(input.actor);
   const session = await db
     .prepare("SELECT * FROM accounting_migration_sessions WHERE id=? AND status='in_progress'")

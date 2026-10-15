@@ -241,7 +241,7 @@ console.log("PASS - chart import rejects an unconfirmed source type, links an ex
   assert.match(handlerSource, /accounting\.migration\.import/);
   assert.ok(workerSource.indexOf("actions.handleAccountingMigration") < workerSource.indexOf("actions.handleAccountingLedger"));
   assert.match(handlerSource, /handleParishDashboard/);
-  assert.match(handlerSource, /method:\s*"PATCH"/);
+  assert.match(handlerSource, /method:\s*['"]PATCH['"]/);
   assert.match(authorizationSource, /"accounting\.migration\.import"/);
   assert.match(capabilityMigration, /pm\.role_template='treasurer'/);
   assert.match(capabilityMigration, /accounting_staff_profiles/);

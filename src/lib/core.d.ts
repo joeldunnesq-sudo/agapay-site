@@ -80,3 +80,9 @@ export function resolveParishDashboardSession(
 ): Promise<ResolvedParishDashboardSession | null>;
 
 export function randomHex(bytes?: number): string;
+
+export function verifyTurnstileIfConfigured(
+  request: Request,
+  env: Partial<Env>,
+  token: unknown
+): Promise<Response | null>;

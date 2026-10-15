@@ -1,12 +1,11 @@
+// Generated from src/handlers/admin-email-diagnostics.ts by npm run build:server. Do not edit.
 import { json, normalizeEmail, rateLimit, unauthorized } from '../lib/core.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { sendAdminRegistrationNotice, sendDashboardInvite } from '../lib/parish-notifications.js';
 import { recordAuditEvent } from '../lib/audit-log.js';
 import { sendDonorDonationReceiptEmail, sendDonorVerificationEmail } from './donor.js';
 import { requireAdminContext } from './parish.js';
-
-const EMAIL_DIAGNOSTIC_KINDS = new Set(['verification', 'invitation', 'receipt', 'administrative']);
-
+const EMAIL_DIAGNOSTIC_KINDS = /* @__PURE__ */ new Set(['verification', 'invitation', 'receipt', 'administrative']);
 function configuredEmailDiagnosticRecipients(env) {
   return new Set(
     [env.AGAPAY_OPS_ALERT_EMAIL, env.AGAPAY_REGISTRATION_NOTIFY_EMAIL, env.AGAPAY_REPLY_TO_EMAIL]
@@ -14,7 +13,6 @@ function configuredEmailDiagnosticRecipients(env) {
       .filter(Boolean)
   );
 }
-
 function diagnosticRegistration(recipient, stamp) {
   return {
     reference: `EMAIL-DIAGNOSTIC-${stamp}`,
@@ -39,21 +37,18 @@ function diagnosticRegistration(recipient, stamp) {
     treasurerEmail: '',
   };
 }
-
-export async function handleAdminEmailDiagnostics(request, env) {
+async function handleAdminEmailDiagnostics(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const admin = await requireAdminContext(request, env);
   if (!admin) return unauthorized();
   const limited = await rateLimit(request, env, 'admin-email-diagnostics', { limit: 4, windowSeconds: 3600 });
   if (limited) return limited;
-
   const body = await request.json().catch(() => ({}));
   const allowedRecipients = configuredEmailDiagnosticRecipients(env);
   const recipient = normalizeEmail(body.recipient || env.AGAPAY_OPS_ALERT_EMAIL || env.AGAPAY_REPLY_TO_EMAIL);
   if (!recipient || !allowedRecipients.has(recipient)) {
     return json({ error: 'Diagnostics may only be sent to a configured AGAPAY operations address.' }, { status: 422 });
   }
-
   const requestedKinds =
     Array.isArray(body.kinds) && body.kinds.length
       ? [...new Set(body.kinds.map((value) => String(value).trim().toLowerCase()))]
@@ -61,15 +56,13 @@ export async function handleAdminEmailDiagnostics(request, env) {
   if (requestedKinds.some((kind) => !EMAIL_DIAGNOSTIC_KINDS.has(kind))) {
     return json({ error: 'Unknown email diagnostic kind.' }, { status: 422 });
   }
-
-  const stamp = new Date()
+  const stamp = /* @__PURE__ */ new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, '')
     .slice(0, 14);
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const registration = diagnosticRegistration(recipient, stamp);
   const results = {};
-
   for (const kind of requestedKinds) {
     if (kind === 'verification') {
       results.verification = await sendDonorVerificationEmail(
@@ -98,7 +91,7 @@ export async function handleAdminEmailDiagnostics(request, env) {
         donorCoveredFeeCents: 0,
         coverFees: false,
         stripePaymentIntentId: 'TEST-NO-CHARGE',
-        completedAt: new Date().toISOString(),
+        completedAt: /* @__PURE__ */ new Date().toISOString(),
         isDiagnostic: true,
       });
     } else if (kind === 'administrative') {
@@ -112,7 +105,6 @@ export async function handleAdminEmailDiagnostics(request, env) {
       );
     }
   }
-
   if (body.includeBounce === true) {
     results.bounce = await sendEmail(env, {
       from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>',
@@ -127,7 +119,6 @@ export async function handleAdminEmailDiagnostics(request, env) {
       ),
     });
   }
-
   await recordAuditEvent(env, request, {
     action: 'admin.email_diagnostics.run',
     actorUserId: admin.actor,
@@ -141,7 +132,7 @@ export async function handleAdminEmailDiagnostics(request, env) {
       statuses: Object.fromEntries(Object.entries(results).map(([key, value]) => [key, value?.status || 'unknown'])),
     },
   });
-
   const allAccepted = Object.values(results).every((result) => result?.status === 'sent');
   return json({ ok: allAccepted, recipient, stamp, results }, { status: allAccepted ? 200 : 502 });
 }
+export { handleAdminEmailDiagnostics };
