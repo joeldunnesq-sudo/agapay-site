@@ -67,3 +67,16 @@ export function hashSessionToken(token: string, salt: string): Promise<string>;
 export function secureCompare(a: string, b: string): boolean;
 export { parseJsonRow } from './json-rows.js';
 export const COMMEMORATION_KEY_PREFIX: string;
+
+export interface ResolvedParishDashboardSession {
+  id: string;
+  expiresAt: string;
+  mfaVerifiedAt: string;
+  accessType: string;
+}
+export function resolveParishDashboardSession(
+  registration: DashboardRegistration | null | undefined,
+  token: string
+): Promise<ResolvedParishDashboardSession | null>;
+
+export function randomHex(bytes?: number): string;

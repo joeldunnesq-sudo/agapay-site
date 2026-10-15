@@ -1,22 +1,25 @@
-import { d1First, generateSecret, randomHex, sha256Hex } from "../lib/core.js";
-import { DirectoryServiceError } from "./foundation.js";
-import { auditStatement, cleanText, isActiveHouseholdAdmin, runAtomic, safeJson } from "./shared.js";
-
-const TOKEN_LIFETIME_MS = 14 * 24 * 60 * 60 * 1000;
-const TOKEN_DOMAIN = "directory_household_share:";
-
+// Generated from src/directory/household-share-invitations.ts by npm run build:server. Do not edit.
+import { d1First, generateSecret, randomHex, sha256Hex } from '../lib/core.js';
+import { DirectoryServiceError } from './foundation.js';
+import { auditStatement, cleanText, isActiveHouseholdAdmin, runAtomic, safeJson } from './shared.js';
+const TOKEN_LIFETIME_MS = 14 * 24 * 60 * 60 * 1e3;
+const TOKEN_DOMAIN = 'directory_household_share:';
 async function tokenDigest(token) {
-  const cleaned = cleanText(token, { required: true, max: 256, field: "token" });
+  const cleaned = cleanText(token, { required: true, max: 256, field: 'token' });
   return sha256Hex(`${TOKEN_DOMAIN}${cleaned}`);
 }
-
 function invitationStateError(row) {
-  if (!row) return new DirectoryServiceError("invitation_not_found", "This household link is not valid.", 404);
-  if (row.status === "claimed") return new DirectoryServiceError("invitation_already_claimed", "This household link has already been used.", 409);
-  if (row.status === "cancelled") return new DirectoryServiceError("invitation_cancelled", "This household link was cancelled.", 410);
-  return new DirectoryServiceError("invitation_expired", "This household link has expired. Ask your household member for a new link.", 410);
+  if (!row) return new DirectoryServiceError('invitation_not_found', 'This household link is not valid.', 404);
+  if (row.status === 'claimed')
+    return new DirectoryServiceError('invitation_already_claimed', 'This household link has already been used.', 409);
+  if (row.status === 'cancelled')
+    return new DirectoryServiceError('invitation_cancelled', 'This household link was cancelled.', 410);
+  return new DirectoryServiceError(
+    'invitation_expired',
+    'This household link has expired. Ask your household member for a new link.',
+    410
+  );
 }
-
 async function loadInvitationByToken(env, token) {
   const digest = await tokenDigest(token);
   const row = await d1First(
@@ -36,36 +39,48 @@ async function loadInvitationByToken(env, token) {
       WHERE i.token = ?1`,
     digest
   );
-  if (row?.status === "pending" && Date.parse(row.expires_at) <= Date.now()) {
-    await runAtomic(env, [{
-      sql: "UPDATE directory_household_invitations SET status = 'expired' WHERE id = ?1 AND status = 'pending'",
-      params: [row.id]
-    }]);
-    row.status = "expired";
+  if (row?.status === 'pending' && Date.parse(row.expires_at) <= Date.now()) {
+    await runAtomic(env, [
+      {
+        sql: "UPDATE directory_household_invitations SET status = 'expired' WHERE id = ?1 AND status = 'pending'",
+        params: [row.id],
+      },
+    ]);
+    row.status = 'expired';
   }
   return row;
 }
-
 function assertUsable(row) {
-  if (!row || row.status !== "pending") throw invitationStateError(row);
+  if (!row || row.status !== 'pending') throw invitationStateError(row);
   if (!Number(row.household_active) || !Number(row.person_active) || !Number(row.membership_active)) {
-    throw new DirectoryServiceError("invitation_no_longer_eligible", "This person is no longer an active member of that household.", 409);
+    throw new DirectoryServiceError(
+      'invitation_no_longer_eligible',
+      'This person is no longer an active member of that household.',
+      409
+    );
   }
   if (Number(row.is_child) || Number(row.protected_person)) {
-    throw new DirectoryServiceError("invitation_no_longer_eligible", "This household link cannot be used for this person.", 409);
+    throw new DirectoryServiceError(
+      'invitation_no_longer_eligible',
+      'This household link cannot be used for this person.',
+      409
+    );
   }
 }
-
-export async function createHouseholdShareInvitation(env, { context, householdId, personId, correlationId = "" }) {
+async function createHouseholdShareInvitation(env, { context, householdId, personId, correlationId = '' }) {
   const managed = context.manageableHouseholds?.find((household) => household.id === householdId);
   if (!managed || !context.currentPerson?.id) {
-    throw new DirectoryServiceError("forbidden", "You cannot create links for this household.", 403);
+    throw new DirectoryServiceError('forbidden', 'You cannot create links for this household.', 403);
   }
-  if (!await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson.id })) {
-    throw new DirectoryServiceError("forbidden", "Only an active household administrator can share household links.", 403);
+  if (!(await isActiveHouseholdAdmin(env, { householdId, personId: context.currentPerson.id }))) {
+    throw new DirectoryServiceError(
+      'forbidden',
+      'Only an active household administrator can share household links.',
+      403
+    );
   }
   if (personId === context.currentPerson.id) {
-    throw new DirectoryServiceError("validation_failed", "Your account is already connected to you.", 422);
+    throw new DirectoryServiceError('validation_failed', 'Your account is already connected to you.', 422);
   }
   const member = await d1First(
     env,
@@ -82,18 +97,21 @@ export async function createHouseholdShareInvitation(env, { context, householdId
     personId,
     managed.parishId
   );
-  if (!member) throw new DirectoryServiceError("not_found", "That household member was not found.", 404);
+  if (!member) throw new DirectoryServiceError('not_found', 'That household member was not found.', 404);
   if (Number(member.is_child) || Number(member.protected_person)) {
-    throw new DirectoryServiceError("forbidden", "Household share links are available only for unprotected adults.", 403);
+    throw new DirectoryServiceError(
+      'forbidden',
+      'Household share links are available only for unprotected adults.',
+      403
+    );
   }
   if (Number(member.account_linked)) {
-    throw new DirectoryServiceError("already_connected", "That household member already has a connected account.", 409);
+    throw new DirectoryServiceError('already_connected', 'That household member already has a connected account.', 409);
   }
-
-  const id = generateSecret("dir_household_inv");
+  const id = generateSecret('dir_household_inv');
   const rawToken = randomHex(32);
   const digest = await tokenDigest(rawToken);
-  const createdAt = new Date().toISOString();
+  const createdAt = /* @__PURE__ */ new Date().toISOString();
   const expiresAt = new Date(Date.now() + TOKEN_LIFETIME_MS).toISOString();
   const actor = { userId: context.user.id, personId: context.currentPerson.id, parishId: managed.parishId };
   await runAtomic(env, [
@@ -101,36 +119,35 @@ export async function createHouseholdShareInvitation(env, { context, householdId
       sql: `UPDATE directory_household_invitations
                SET status = 'cancelled'
              WHERE household_id = ?1 AND person_id = ?2 AND status = 'pending'`,
-      params: [householdId, personId]
+      params: [householdId, personId],
     },
     {
       sql: `INSERT INTO directory_household_invitations
               (id, parish_id, household_id, person_id, token, created_by_user_id,
                status, created_at, expires_at)
             VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
-      params: [id, managed.parishId, householdId, personId, digest, context.user.id, createdAt, expiresAt]
+      params: [id, managed.parishId, householdId, personId, digest, context.user.id, createdAt, expiresAt],
     },
     auditStatement({
-      action: "directory.household_share.created",
+      action: 'directory.household_share.created',
       actor,
       parishId: managed.parishId,
-      targetType: "directory_household_invitation",
+      targetType: 'directory_household_invitation',
       targetId: id,
       householdId,
       after: { personId, expiresAt },
-      correlationId
-    })
+      correlationId,
+    }),
   ]);
   return {
     id,
     personId,
     personName: member.preferred_name,
     expiresAt,
-    sharePath: `/myagapay/join-household?token=${encodeURIComponent(rawToken)}`
+    sharePath: `/myagapay/join-household?token=${encodeURIComponent(rawToken)}`,
   };
 }
-
-export async function inspectHouseholdShareInvitation(env, { token }) {
+async function inspectHouseholdShareInvitation(env, { token }) {
   const row = await loadInvitationByToken(env, token);
   assertUsable(row);
   return {
@@ -138,11 +155,10 @@ export async function inspectHouseholdShareInvitation(env, { token }) {
     personName: row.person_name,
     householdName: row.household_name,
     expiresAt: row.expires_at,
-    status: row.status
+    status: row.status,
   };
 }
-
-export function householdShareApprovalStatement({ parishId, householdId, personId, invitationId, claimantUserId, timestamp }) {
+function householdShareApprovalStatement({ parishId, householdId, personId, invitationId, claimantUserId, timestamp }) {
   return {
     sql: `INSERT INTO directory_person_links
             (id, person_id, link_type, external_id, active, source, claim_id, created_at, updated_at)
@@ -173,28 +189,34 @@ export function householdShareApprovalStatement({ parishId, householdId, personI
       householdId,
       personId,
       claimantUserId,
-      timestamp
-    ]
+      timestamp,
+    ],
   };
 }
-
-export async function claimHouseholdShareInvitation(env, { context, token, correlationId = "" }) {
-  if (!context.user?.id) throw new DirectoryServiceError("unauthorized", "Sign in before using this household link.", 401);
+async function claimHouseholdShareInvitation(env, { context, token, correlationId = '' }) {
+  if (!context.user?.id)
+    throw new DirectoryServiceError('unauthorized', 'Sign in before using this household link.', 401);
   const row = await loadInvitationByToken(env, token);
   assertUsable(row);
-
   const existingTargetLink = await d1First(
     env,
     "SELECT external_id FROM directory_person_links WHERE person_id = ?1 AND link_type = 'platform_user' AND active = 1 LIMIT 1",
     row.person_id
   );
   if (existingTargetLink?.external_id === context.user.id) {
-    throw new DirectoryServiceError("already_connected", "Your account is already connected to this household member.", 409);
+    throw new DirectoryServiceError(
+      'already_connected',
+      'Your account is already connected to this household member.',
+      409
+    );
   }
   if (existingTargetLink) {
-    throw new DirectoryServiceError("person_already_connected", "This household member is already connected to another account. Parish staff can help resolve it.", 409);
+    throw new DirectoryServiceError(
+      'person_already_connected',
+      'This household member is already connected to another account. Parish staff can help resolve it.',
+      409
+    );
   }
-
   const claimantLink = await d1First(
     env,
     `SELECT l.person_id,
@@ -208,14 +230,16 @@ export async function claimHouseholdShareInvitation(env, { context, token, corre
     context.user.id,
     row.household_id
   );
-  const hasConflict = Boolean(claimantLink && (claimantLink.person_id !== row.person_id || Number(claimantLink.different_household)));
+  const hasConflict = Boolean(
+    claimantLink && (claimantLink.person_id !== row.person_id || Number(claimantLink.different_household))
+  );
   const conflictMessage = hasConflict
-    ? "CONFLICT: claiming account is already connected to a different directory person or household; staff must resolve identity before approval."
-    : "";
+    ? 'CONFLICT: claiming account is already connected to a different directory person or household; staff must resolve identity before approval.'
+    : '';
   const summary = hasConflict
     ? `${conflictMessage} Review account link for ${row.person_name} in ${row.household_name}.`
     : `Review account link for ${row.person_name} in ${row.household_name}; submitted from a household share link.`;
-  const requestId = generateSecret("dir_req");
+  const requestId = generateSecret('dir_req');
   const timestamp = Date.now();
   const requester = await d1First(
     env,
@@ -223,17 +247,21 @@ export async function claimHouseholdShareInvitation(env, { context, token, corre
     row.created_by_user_id
   );
   if (!requester?.person_id) {
-    throw new DirectoryServiceError("inviter_no_longer_authorized", "The person who shared this link is no longer connected. Ask parish staff for help.", 409);
+    throw new DirectoryServiceError(
+      'inviter_no_longer_authorized',
+      'The person who shared this link is no longer connected. Ask parish staff for help.',
+      409
+    );
   }
   const payload = {
     personId: row.person_id,
-    relationship: row.relationship || "other",
+    relationship: row.relationship || 'other',
     shareToLink: {
       invitationId: row.id,
       claimantUserId: context.user.id,
       existingHouseholdConflict: hasConflict,
-      conflictMessage
-    }
+      conflictMessage,
+    },
   };
   const actor = { userId: context.user.id, personId: context.currentPerson?.id || null, parishId: row.parish_id };
   await runAtomic(env, [
@@ -257,35 +285,42 @@ export async function claimHouseholdShareInvitation(env, { context, token, corre
         row.created_by_user_id,
         requester.person_id,
         summary.slice(0, 240),
-        safeJson(payload) || "{}",
-        timestamp
-      ]
+        safeJson(payload) || '{}',
+        timestamp,
+      ],
     },
     {
       sql: `UPDATE directory_household_invitations
                SET status = 'claimed', claimed_by_user_id = ?1, claimed_at = ?2
              WHERE id = ?3 AND status = 'pending' AND expires_at > datetime('now')`,
-      params: [context.user.id, new Date().toISOString(), row.id]
+      params: [context.user.id, /* @__PURE__ */ new Date().toISOString(), row.id],
     },
     auditStatement({
-      action: "directory.household_share.claimed_for_review",
+      action: 'directory.household_share.claimed_for_review',
       actor,
       parishId: row.parish_id,
-      targetType: "directory_household_invitation",
+      targetType: 'directory_household_invitation',
       targetId: row.id,
       householdId: row.household_id,
       after: { requestId, personId: row.person_id, existingHouseholdConflict: hasConflict },
-      correlationId
-    })
+      correlationId,
+    }),
   ]);
-  const createdRequest = await d1First(env, "SELECT id FROM directory_change_requests WHERE id = ?1", requestId);
+  const createdRequest = await d1First(env, 'SELECT id FROM directory_change_requests WHERE id = ?1', requestId);
   if (!createdRequest) {
-    throw new DirectoryServiceError("invitation_already_claimed", "This household link has already been used.", 409);
+    throw new DirectoryServiceError('invitation_already_claimed', 'This household link has already been used.', 409);
   }
   return {
     requestId,
-    status: "pending_review",
+    status: 'pending_review',
     conflictFlagged: hasConflict,
-    message: "Your request was submitted for parish review. Your account is not connected unless parish staff approves it."
+    message:
+      'Your request was submitted for parish review. Your account is not connected unless parish staff approves it.',
   };
 }
+export {
+  claimHouseholdShareInvitation,
+  createHouseholdShareInvitation,
+  householdShareApprovalStatement,
+  inspectHouseholdShareInvitation,
+};

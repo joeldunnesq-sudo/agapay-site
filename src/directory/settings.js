@@ -1,5 +1,6 @@
-import { d1First } from "../lib/core.js";
-import { DirectoryServiceError } from "./foundation.js";
+// Generated from src/directory/settings.ts by npm run build:server. Do not edit.
+import { d1First } from '../lib/core.js';
+import { DirectoryServiceError } from './foundation.js';
 import {
   assertParishActor,
   auditStatement,
@@ -9,30 +10,29 @@ import {
   nowMs,
   runAtomic,
   assertVisibility,
-  VISIBILITY_RANK
-} from "./shared.js";
-
-export const DEFAULT_DIRECTORY_SETTINGS = Object.freeze({
+  VISIBILITY_RANK,
+} from './shared.js';
+const DEFAULT_DIRECTORY_SETTINGS = Object.freeze({
   directoryEnabled: false,
   publicationApprovalRequired: true,
   childNamesAllowed: false,
   childPhotosAllowed: false,
-  addressMaxVisibility: "staff",
-  contactMaxVisibility: "directory_members",
+  addressMaxVisibility: 'staff',
+  contactMaxVisibility: 'directory_members',
   ordinaryMemberAccessEnabled: false,
-  clergyStaffAccessPolicy: "capability_required",
+  clergyStaffAccessPolicy: 'capability_required',
   reconfirmationIntervalDays: 365,
-  defaultHouseholdPublicationStatus: "draft",
+  defaultHouseholdPublicationStatus: 'draft',
   skillsDirectoryEnabled: true,
   skillsMemberSearchEnabled: true,
   skillsStaffOnlyMode: false,
   skillsCustomEntriesEnabled: true,
-  skillsDisclaimerText: "Skills and experience are self-reported. AGAPAY and the parish do not verify licenses, credentials, insurance, background checks, or suitability.",
-  skillsContactFallback: "Contact the parish office if a direct published contact is unavailable.",
+  skillsDisclaimerText:
+    'Skills and experience are self-reported. AGAPAY and the parish do not verify licenses, credentials, insurance, background checks, or suitability.',
+  skillsContactFallback: 'Contact the parish office if a direct published contact is unavailable.',
   skillsLastReviewedAt: 0,
-  householdVerificationIntervalDays: 365
+  householdVerificationIntervalDays: 365,
 });
-
 function rowToSettings(row, parishId) {
   if (!row) return { parishId, ...DEFAULT_DIRECTORY_SETTINGS, persisted: false };
   return {
@@ -47,62 +47,74 @@ function rowToSettings(row, parishId) {
     clergyStaffAccessPolicy: row.clergy_staff_access_policy,
     reconfirmationIntervalDays: Number(row.reconfirmation_interval_days || 365),
     defaultHouseholdPublicationStatus: row.default_household_publication_status,
-    skillsDirectoryEnabled: row.skills_directory_enabled === undefined ? true : Number(row.skills_directory_enabled || 0) === 1,
-    skillsMemberSearchEnabled: row.skills_member_search_enabled === undefined ? true : Number(row.skills_member_search_enabled || 0) === 1,
+    skillsDirectoryEnabled:
+      row.skills_directory_enabled === void 0 ? true : Number(row.skills_directory_enabled || 0) === 1,
+    skillsMemberSearchEnabled:
+      row.skills_member_search_enabled === void 0 ? true : Number(row.skills_member_search_enabled || 0) === 1,
     skillsStaffOnlyMode: Number(row.skills_staff_only_mode || 0) === 1,
-    skillsCustomEntriesEnabled: row.skills_custom_entries_enabled === undefined ? true : Number(row.skills_custom_entries_enabled || 0) === 1,
+    skillsCustomEntriesEnabled:
+      row.skills_custom_entries_enabled === void 0 ? true : Number(row.skills_custom_entries_enabled || 0) === 1,
     skillsDisclaimerText: row.skills_disclaimer_text || DEFAULT_DIRECTORY_SETTINGS.skillsDisclaimerText,
     skillsContactFallback: row.skills_contact_fallback || DEFAULT_DIRECTORY_SETTINGS.skillsContactFallback,
     skillsLastReviewedAt: Number(row.skills_last_reviewed_at || 0),
     householdVerificationIntervalDays: Number(row.household_verification_interval_days || 365),
     createdAt: Number(row.created_at || 0),
     updatedAt: Number(row.updated_at || 0),
-    persisted: true
+    persisted: true,
   };
 }
-
-export async function getDirectorySettings(env, parishId) {
-  const cleanedParishId = cleanText(parishId, { required: true, max: 160, field: "parishId" });
-  const row = await d1First(env, "SELECT * FROM directory_parish_settings WHERE parish_id = ?1", cleanedParishId);
+async function getDirectorySettings(env, parishId) {
+  const cleanedParishId = cleanText(parishId, { required: true, max: 160, field: 'parishId' });
+  const row = await d1First(env, 'SELECT * FROM directory_parish_settings WHERE parish_id = ?1', cleanedParishId);
   return rowToSettings(row, cleanedParishId);
 }
-
 function normalizeSettingsPatch(patch = {}) {
   const out = {};
-  if ("directoryEnabled" in patch) out.directoryEnabled = Boolean(patch.directoryEnabled);
-  if ("publicationApprovalRequired" in patch) out.publicationApprovalRequired = patch.publicationApprovalRequired !== false;
-  if ("childNamesAllowed" in patch) out.childNamesAllowed = false; // Platform safety: Phase 1B cannot weaken child defaults.
-  if ("childPhotosAllowed" in patch) out.childPhotosAllowed = false;
-  if ("ordinaryMemberAccessEnabled" in patch) out.ordinaryMemberAccessEnabled = Boolean(patch.ordinaryMemberAccessEnabled);
-  if ("addressMaxVisibility" in patch) {
+  if ('directoryEnabled' in patch) out.directoryEnabled = Boolean(patch.directoryEnabled);
+  if ('publicationApprovalRequired' in patch)
+    out.publicationApprovalRequired = patch.publicationApprovalRequired !== false;
+  if ('childNamesAllowed' in patch) out.childNamesAllowed = false;
+  if ('childPhotosAllowed' in patch) out.childPhotosAllowed = false;
+  if ('ordinaryMemberAccessEnabled' in patch)
+    out.ordinaryMemberAccessEnabled = Boolean(patch.ordinaryMemberAccessEnabled);
+  if ('addressMaxVisibility' in patch) {
     const visibility = assertVisibility(patch.addressMaxVisibility);
     if (VISIBILITY_RANK[visibility] > VISIBILITY_RANK.staff) {
-      throw new DirectoryServiceError("unsafe_setting", "Address maximum visibility cannot exceed staff in Phase 1B.", 400);
+      throw new DirectoryServiceError(
+        'unsafe_setting',
+        'Address maximum visibility cannot exceed staff in Phase 1B.',
+        400
+      );
     }
     out.addressMaxVisibility = visibility;
   }
-  if ("contactMaxVisibility" in patch) out.contactMaxVisibility = assertVisibility(patch.contactMaxVisibility);
-  if ("reconfirmationIntervalDays" in patch) {
+  if ('contactMaxVisibility' in patch) out.contactMaxVisibility = assertVisibility(patch.contactMaxVisibility);
+  if ('reconfirmationIntervalDays' in patch) {
     out.reconfirmationIntervalDays = Math.max(30, Math.min(1095, Number(patch.reconfirmationIntervalDays) || 365));
   }
-  if ("defaultHouseholdPublicationStatus" in patch) {
-    const status = cleanText(patch.defaultHouseholdPublicationStatus, { required: true, max: 40, field: "defaultHouseholdPublicationStatus" });
-    if (!["not_configured", "draft", "pending_approval"].includes(status)) {
-      throw new DirectoryServiceError("validation_failed", "Default household publication status is not supported.");
+  if ('defaultHouseholdPublicationStatus' in patch) {
+    const status = cleanText(patch.defaultHouseholdPublicationStatus, {
+      required: true,
+      max: 40,
+      field: 'defaultHouseholdPublicationStatus',
+    });
+    if (!['not_configured', 'draft', 'pending_approval'].includes(status)) {
+      throw new DirectoryServiceError('validation_failed', 'Default household publication status is not supported.');
     }
     out.defaultHouseholdPublicationStatus = status;
   }
   return out;
 }
-
-export async function updateDirectorySettings(env, { actor: actorInput, parishId, patch = {}, correlationId = "" }) {
-  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: "parishId" });
-  const actor = assertParishActor(actorInput, cleanedParishId, [DIRECTORY_CAPABILITIES.settingsManage, DIRECTORY_CAPABILITIES.manage]);
+async function updateDirectorySettings(env, { actor: actorInput, parishId, patch = {}, correlationId = '' }) {
+  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: 'parishId' });
+  const actor = assertParishActor(actorInput, cleanedParishId, [
+    DIRECTORY_CAPABILITIES.settingsManage,
+    DIRECTORY_CAPABILITIES.manage,
+  ]);
   const before = await getDirectorySettings(env, cleanedParishId);
   const normalized = normalizeSettingsPatch(patch);
   const next = { ...before, ...normalized, persisted: true };
   const timestamp = nowMs();
-
   await runAtomic(env, [
     {
       sql: `INSERT INTO directory_parish_settings (
@@ -135,28 +147,28 @@ export async function updateDirectorySettings(env, { actor: actorInput, parishId
         next.reconfirmationIntervalDays,
         next.defaultHouseholdPublicationStatus,
         timestamp,
-        timestamp
-      ]
+        timestamp,
+      ],
     },
     auditStatement({
-      action: "directory.parish_settings_changed",
+      action: 'directory.parish_settings_changed',
       actor,
       parishId: cleanedParishId,
-      targetType: "directory_parish_settings",
+      targetType: 'directory_parish_settings',
       targetId: cleanedParishId,
       before: {
         directoryEnabled: before.directoryEnabled,
         addressMaxVisibility: before.addressMaxVisibility,
-        childNamesAllowed: before.childNamesAllowed
+        childNamesAllowed: before.childNamesAllowed,
       },
       after: {
         directoryEnabled: next.directoryEnabled,
         addressMaxVisibility: next.addressMaxVisibility,
-        childNamesAllowed: false
+        childNamesAllowed: false,
       },
-      correlationId
-    })
+      correlationId,
+    }),
   ]);
-
   return getDirectorySettings(env, cleanedParishId);
 }
+export { DEFAULT_DIRECTORY_SETTINGS, getDirectorySettings, updateDirectorySettings };

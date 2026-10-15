@@ -1,3 +1,4 @@
+// Generated from src/recovery/service.ts by npm run build:server. Do not edit.
 import { portabilityBudget, portabilityBudgetUsage, recoveryBudget } from '../portability/budget.js';
 import { retainFinancialEvidence } from './retention.js';
 import { syncConfigurationMirrors } from './configuration.js';
@@ -17,8 +18,7 @@ import {
 import { freeze, assertFrozen, unfreeze } from './locks.js';
 import { captureFiles, validateFiles, applyFiles } from './files.js';
 import { planDatabase, applyDatabase, validateLedger } from './database.js';
-
-export const DISCLOSURE =
+const DISCLOSURE =
   'Restore replaces parish-owned records with a dated snapshot. Access credentials, subscription/billing, shared identities, audit history, and external provider records stay current. Payments are never refunded or repeated by restore. Recovery is blocked when payment/source activity, shared references, or database structure changed. Writes pause during snapshot creation and restoration. A verified safety copy is saved before restore. Restore points expire after seven days; downloaded export ZIPs cannot be imported as restore points.';
 const idPattern = /^[a-f0-9-]{36}$/;
 const publicOp = (o) =>
@@ -36,8 +36,7 @@ const publicOp = (o) =>
         canCancel: ['freeze', 'central', 'books', 'files', 'publish', 'validate'].includes(o.phase),
       }
     : null;
-
-export async function recoveryStatus(env, parishId, scope) {
+async function recoveryStatus(env, parishId, scope) {
   env = portabilityBudget(env);
   if (!['parish', 'accounting'].includes(scope)) fail('invalid_scope', 'Choose parish or accounting recovery.');
   const disclosure =
@@ -72,7 +71,6 @@ export async function recoveryStatus(env, parishId, scope) {
     disclosure,
   };
 }
-
 async function snapshot(env, parishId, id, scope, pinned = false) {
   if (!idPattern.test(id || '')) fail('snapshot_not_found', 'Select an available restore point.');
   const s = await query(
@@ -86,8 +84,7 @@ async function snapshot(env, parishId, id, scope, pinned = false) {
   if (!s) fail('snapshot_not_found', 'The selected restore point is unavailable or expired.');
   return s;
 }
-
-export async function startRecovery(env, parishId, actorHash, body) {
+async function startRecovery(env, parishId, actorHash, body) {
   env = portabilityBudget(env);
   await requireRecovery(env, parishId);
   const { scope, kind, requestKey } = body;
@@ -135,7 +132,7 @@ export async function startRecovery(env, parishId, actorHash, body) {
     env.AGAPAY_DB,
     'SELECT COUNT(*) n FROM parish_recovery_snapshots WHERE parish_id=? AND created_at>?',
     parishId,
-    Date.now() - 86400000
+    Date.now() - 864e5
   ).first();
   if (recent.n >= 20) fail('recovery_limit', 'The daily restore-point limit has been reached.');
   if (kind === 'restore') {
@@ -144,7 +141,6 @@ export async function startRecovery(env, parishId, actorHash, body) {
     if (!env.PARISH_RETAINED_DATA)
       fail('recovery_retention_unavailable', 'Restricted financial recovery storage is not configured.');
     const target = await snapshot(env, parishId, body.snapshotId, scope);
-    // Verify all components before creating a workspace lock.
     for (const part of ['central', 'books', 'files']) await readPart(env, target, part);
   }
   if (scope === 'accounting' && !(await booksFor(env, parishId)))
@@ -181,7 +177,6 @@ export async function startRecovery(env, parishId, actorHash, body) {
   ]);
   return publicOp(await query(env.AGAPAY_DB, 'SELECT * FROM parish_recovery_operations WHERE id=?', id).first());
 }
-
 async function savePart(env, op, name, value) {
   const part = await writePart(env, op.safety_id, name, value);
   const saved = await query(
@@ -202,7 +197,6 @@ async function savePart(env, op, name, value) {
     op.safety_id
   ).run();
 }
-
 async function validateAll(env, op, books, target, safety) {
   const central = await readPart(env, target, 'central'),
     bookData = await readPart(env, target, 'books'),
@@ -224,8 +218,7 @@ async function validateAll(env, op, books, target, safety) {
   }
   await validateFiles(env, op.parish_id, op.scope, files, currentFiles);
 }
-
-export async function advanceRecovery(env, parishId, id, action = 'advance') {
+async function advanceRecovery(env, parishId, id, action = 'advance') {
   env = portabilityBudget(env);
   await requireRecovery(env, parishId);
   if (!idPattern.test(id || '')) fail('recovery_not_found', 'Recovery operation not found.');
@@ -242,13 +235,11 @@ export async function advanceRecovery(env, parishId, id, action = 'advance') {
     env.AGAPAY_DB,
     "UPDATE parish_recovery_operations SET lease_token=?,lease_until=? WHERE id=? AND lease_until<? AND status IN ('running','paused')",
     token,
-    Date.now() + 600000,
+    Date.now() + 6e5,
     id,
     Date.now()
   ).run();
   if (held.meta.changes !== 1) fail('recovery_busy', 'A recovery step is still running. Retry shortly.');
-  // Another invocation may have finished a checkpoint between our initial read
-  // and acquiring the lease. Never execute a stale cancellation or phase.
   op = await query(env.AGAPAY_DB, 'SELECT * FROM parish_recovery_operations WHERE id=?', id).first();
   const next = async (phase) => {
     await query(
@@ -284,7 +275,6 @@ export async function advanceRecovery(env, parishId, id, action = 'advance') {
         );
       if (op.phase !== 'freeze') await unfreeze(env, op, books);
       else {
-        // A freeze may have succeeded before its checkpoint was saved.
         const locked = await query(
           env.AGAPAY_DB,
           'SELECT 1 FROM parish_recovery_locks WHERE operation_id=?',
@@ -434,3 +424,4 @@ export async function advanceRecovery(env, parishId, id, action = 'advance') {
   op = await query(env.AGAPAY_DB, 'SELECT * FROM parish_recovery_operations WHERE id=?', id).first();
   return publicOp(op);
 }
+export { DISCLOSURE, advanceRecovery, recoveryStatus, startRecovery };

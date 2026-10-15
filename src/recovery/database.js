@@ -1,11 +1,10 @@
+// Generated from src/recovery/database.ts by npm run build:server. Do not edit.
 import { registrationProjection } from './configuration.js';
 import { quoted, schemaMetadata } from '../portability/catalog.js';
 import { query, rows, fail, inventory, schemaHash, EXTERNAL } from './storage.js';
-
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const identity = (t, r) => JSON.stringify(t.pk.map((k) => r[k]));
-
-export function validateLedger(snapshot) {
+function validateLedger(snapshot) {
   if (!snapshot) return;
   const byName = new Map(snapshot.tables.map((t) => [t.name, t.rows]));
   const entries = byName.get('accounting_journal_entries');
@@ -33,8 +32,7 @@ export function validateLedger(snapshot) {
         fail('recovery_ledger_invalid', 'The snapshot contains an unbalanced posted journal.');
     }
 }
-
-export async function planDatabase(db, kind, parishId, target) {
+async function planDatabase(db, kind, parishId, target) {
   if (!db || !target) {
     if (db || target) fail('recovery_books_changed', 'Accounting activation changed since this snapshot.');
     return null;
@@ -85,7 +83,6 @@ export async function planDatabase(db, kind, parishId, target) {
     )
       fail('recovery_registration_changed', 'Parish ownership records changed since the snapshot.');
     const oldIds = new Set(saved.rows.map((r) => identity(item, r)));
-    // Global PK collisions must not become an upsert into another tenant.
     const currentById = new Map(current.map((r) => [identity(item, r), r]));
     for (const row of saved.rows.filter((r) => !equal(r, currentById.get(identity(item, r))))) {
       const existing = await query(
@@ -111,8 +108,6 @@ export async function planDatabase(db, kind, parishId, target) {
     )
   ).map((r) => r.name);
   const keys = await schemaMetadata(db, allNames, 'foreign_key_list');
-  // Reject cross-boundary incoming references, including ON DELETE CASCADE.
-  // Preserved rows are not silently modified to make a rollback fit.
   for (const parent of changes)
     for (const row of parent.removed)
       for (const [childName, fks] of keys) {
@@ -131,10 +126,8 @@ export async function planDatabase(db, kind, parishId, target) {
             );
         }
       }
-  // Children first for removal. Cycles use deferred FK checks; cascade safety
-  // was checked above against every row that will be removed.
   const sorted = [],
-    seen = new Set();
+    seen = /* @__PURE__ */ new Set();
   function visit(t) {
     if (seen.has(t.name)) return;
     seen.add(t.name);
@@ -175,14 +168,11 @@ export async function planDatabase(db, kind, parishId, target) {
     }, 0);
   return { changes: sorted, schema: target.schema, statementCount };
 }
-
-export async function applyDatabase(db, kind, op, target, plan) {
+async function applyDatabase(db, kind, op, target, plan) {
   if (!plan) return;
   const defs = await rows(db, "SELECT name,sql,tbl_name FROM sqlite_master WHERE type='trigger' AND sql IS NOT NULL");
   const affected = new Set(plan.changes.map((t) => t.name));
   const triggers = defs.filter((t) => affected.has(t.tbl_name));
-  // The lock bypass, data replacement, and exact trigger reinstatement commit
-  // together. A failed statement rolls back the entire database transaction.
   const statements = [db.prepare('PRAGMA defer_foreign_keys=ON')];
   for (const trigger of triggers) statements.push(db.prepare(`DROP TRIGGER ${quoted(trigger.name)}`));
   for (const t of plan.changes)
@@ -236,3 +226,4 @@ export async function applyDatabase(db, kind, op, target, plan) {
       'Database protections did not match after recovery. The workspace remains locked.'
     );
 }
+export { applyDatabase, planDatabase, validateLedger };

@@ -1,10 +1,10 @@
+// Generated from src/recovery/files.ts by npm run build:server. Do not edit.
 import { rawStorageEnv, inventoryParishObjects, fileBucket, objectOwnership } from '../portability/storage.js';
 import { collectLegacyRecords } from '../portability/legacy.js';
 import { sha256 } from '../portability/archive.js';
 import { query, fail, MAX_BYTES } from './storage.js';
-
 const skipLegacy = (r) => ['registration', 'index', 'calendar_credentials', 'legal_acceptance'].includes(r.kind);
-export const MAX_RECOVERY_FILE_ITEMS = 200;
+const MAX_RECOVERY_FILE_ITEMS = 200;
 function checkFileWork(...sets) {
   const items = new Set(
     sets.flatMap((value) => [
@@ -25,8 +25,7 @@ const encode = (bytes) => {
   return btoa(s);
 };
 const decode = (value) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
-
-export async function captureFiles(env, parishId, scope) {
+async function captureFiles(env, parishId, scope) {
   const raw = rawStorageEnv(env),
     files = [],
     legacy = [],
@@ -67,11 +66,9 @@ export async function captureFiles(env, parishId, scope) {
   checkFileWork(result);
   return result;
 }
-
-export async function validateFiles(env, parishId, scope, target, current) {
-  // Bound both forward replacement and safety rollback before the first write.
+async function validateFiles(env, parishId, scope, target, current) {
   checkFileWork(target, current);
-  const seen = new Set();
+  const seen = /* @__PURE__ */ new Set();
   for (const item of target.files) {
     if (scope === 'accounting' && item.binding !== 'ACCOUNTING_ATTACHMENTS')
       fail('recovery_scope_mismatch', 'The snapshot has the wrong recovery scope.');
@@ -83,7 +80,6 @@ export async function validateFiles(env, parishId, scope, target, current) {
     if (owner && owner.parish_id !== parishId)
       fail('recovery_owner_conflict', 'An uploaded file is owned outside this parish.');
   }
-  // Financial legacy records correspond to completed external activity.
   const financial = (data) =>
     data.legacy.filter((r) => r.disposition === 'financial').map(({ key, hash }) => ({ key, hash }));
   if (JSON.stringify(financial(target)) !== JSON.stringify(financial(current)))
@@ -103,8 +99,7 @@ export async function validateFiles(env, parishId, scope, target, current) {
       fail('recovery_owner_conflict', 'A legacy key is owned outside this parish.');
   }
 }
-
-export async function applyFiles(env, op, target, current) {
+async function applyFiles(env, op, target, current) {
   const raw = rawStorageEnv(env),
     db = env.AGAPAY_DB;
   for (const item of target.files) {
@@ -169,3 +164,4 @@ export async function applyFiles(env, op, target, current) {
       ).run();
     }
 }
+export { MAX_RECOVERY_FILE_ITEMS, applyFiles, captureFiles, validateFiles };
