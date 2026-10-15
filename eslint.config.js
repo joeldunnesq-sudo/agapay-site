@@ -6,6 +6,19 @@ const handwrittenIgnores = ['node_modules/**', 'public/vendor/**', 'tmp/**', 'tm
 const recommendedRules = js.configs.recommended.rules;
 
 export default [
+  // Preserve unused legacy declarations during the type-only migration.
+  {
+    files: ['src/accounting/ledger/workspace.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^run$' }] },
+  },
+  {
+    files: ['src/accounting/setup/service.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^all$' }] },
+  },
+  {
+    files: ['src/handlers/mfa.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadMfaTransaction$' }] },
+  },
   { ignores: handwrittenIgnores },
   {
     files: ['src/browser/myagapay/push-notifications.ts'],

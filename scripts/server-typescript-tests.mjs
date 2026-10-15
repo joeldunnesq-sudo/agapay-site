@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { once } from 'node:events';
 import ts from 'typescript';
+import { extractProvisionerEnvironment } from './lib/provisioner-types.mjs';
 import {
   readServerModuleSource,
   repoRoot,
@@ -100,6 +101,21 @@ try {
       .map((file) => file.fileName),
     []
   );
+  // Private-worker bindings come from its own configuration, without merging the two runtime namespaces.
+  const privateInput = join(fixtureRoot, 'provisioner-input.d.ts');
+  const privateOutput = join(fixtureRoot, 'provisioner-output.d.ts');
+  const privateDeclarations =
+    'interface __BaseEnv_AccountingProvisionerEnv { AGAPAY_DB: D1Database; ACCOUNTING_ACTIVATION: Workflow<{parishId: string; operationId: string}> }\ninterface AccountingProvisionerEnv extends __BaseEnv_AccountingProvisionerEnv {}\ndeclare namespace Cloudflare { interface GlobalProps { mainModule: typeof import("private-worker") } }';
+  await writeFile(privateInput, privateDeclarations);
+  await extractProvisionerEnvironment(pathToFileURL(privateInput), pathToFileURL(privateOutput));
+  const extracted = await readFile(privateOutput, 'utf8');
+  assert.match(extracted, /ACCOUNTING_ACTIVATION: Workflow/);
+  assert.match(extracted, /AGAPAY_DB: D1Database/);
+  assert.doesNotMatch(extracted, /namespace Cloudflare|mainModule/);
+  await writeFile(privateInput, 'interface AccountingProvisionerEnv {}');
+  await assert.rejects(extractProvisionerEnvironment(privateInput, privateOutput), /expected Accounting provisioner/);
+  await writeFile(privateInput, privateDeclarations + '\ninterface AccountingProvisionerEnv {}');
+  await assert.rejects(extractProvisionerEnvironment(privateInput, privateOutput), /expected Accounting provisioner/);
   // Quality separately generates Wrangler declarations and checks diagnostics.
   // This graph check must also work in a fresh Test job without those artifacts.
   await writeFile(join(fixtureRoot, 'package.json'), '{"type":"module"}\n');

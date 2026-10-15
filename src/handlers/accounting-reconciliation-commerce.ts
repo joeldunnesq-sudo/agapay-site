@@ -95,8 +95,8 @@ export async function handleAccountingReconciliationCommerce(request: Request, e
         approve: true,
       });
       return reply(
-        { ok: result.status === 'posted', invoice: result, message: result.exceptionMessage },
-        result.status === 'posted' ? 200 : 409
+        { ok: result!.status === 'posted', invoice: result, message: result!.exceptionMessage },
+        result!.status === 'posted' ? 200 : 409
       );
     }
     const tier = serviceTier(ctx.tier),

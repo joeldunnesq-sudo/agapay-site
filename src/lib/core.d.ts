@@ -98,3 +98,25 @@ export function rateLimitByKey(
   identifier: unknown,
   options?: { limit?: number; windowSeconds?: number }
 ): Promise<Response | null>;
+
+export function issueAdminSession(
+  env: Partial<Env>,
+  actor?: string,
+  options?: { mfaVerifiedAt?: string }
+): Promise<{ token: string; actor: string; createdAt: string; expiresAt: string; mfaVerifiedAt: string }>;
+export function markAdminSessionMfaVerified(
+  env: Partial<Env>,
+  sessionId: string | undefined,
+  verifiedAt?: string
+): Promise<boolean>;
+export function resolveAdminSession(
+  env: Partial<Env>,
+  token: string
+): Promise<{ id: string; actor: string; expiresAt: string; mfaVerifiedAt: string } | null>;
+export function resolveParishDashboardSession(
+  registration: import('../handlers/parish-dashboard-handler.js').DashboardRegistration,
+  token: string
+): Promise<{ id: string; expiresAt: string; mfaVerifiedAt: string; accessType: string } | null>;
+export function markParishDashboardSessionMfaVerified<
+  T extends import('../handlers/parish-dashboard-handler.js').DashboardRegistration,
+>(registration: T, sessionId: string | undefined, verifiedAt?: string): { registration: T; changed: boolean };

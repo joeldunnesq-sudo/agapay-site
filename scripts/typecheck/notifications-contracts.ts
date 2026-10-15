@@ -27,8 +27,9 @@ const ticket = submitParishSupportTicket(env, new Request('https://example.test'
 });
 const referral: string = attributionEmail({ firstTouch: { timestamp: '2026-01-01', category: 'Referral' } }).html;
 void [result, invite, ticket, referral];
-// @ts-expect-error Recipients are a collection.
 sendEmail(env, { from: 'a', to: 'b', subject: 'test' });
+// @ts-expect-error Recipient addresses must be strings.
+sendEmail(env, { from: 'a', to: 42, subject: 'test' });
 // @ts-expect-error Deadline overrides must be numeric.
 sendEmail(env, { from: 'a', to: ['b'], subject: 'test' }, { timeoutMs: 'never' });
 // @ts-expect-error Attachments require base64 content and a filename.

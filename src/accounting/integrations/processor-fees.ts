@@ -74,5 +74,5 @@ export async function recognizeGivingStripeFee(
       designatedFundId: fundId,
     },
   });
-  return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: source.id });
+  return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: source!.id });
 }

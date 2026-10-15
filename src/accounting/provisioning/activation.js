@@ -1,39 +1,37 @@
+// Generated from src/accounting/provisioning/activation.ts by npm run build:server. Do not edit.
 import { accountingEnabledFor } from '../../lib/entitlements.js';
 import { parishClosureState } from '../../portability/closure.js';
 import { detectAccountingEnvironment } from '../environment.js';
 import { deterministicAccountingDatabaseName } from './naming.js';
 import { ValidationError } from '../errors.js';
-
-export const ACTIVATION_STEPS = ['queued', 'database', 'schema', 'calendar', 'funds', 'validation', 'ready'];
-export const activationEnvironment = (env) => detectAccountingEnvironment(env);
-export const first = (env, sql, ...params) =>
+const ACTIVATION_STEPS = ['queued', 'database', 'schema', 'calendar', 'funds', 'validation', 'ready'];
+const activationEnvironment = (env) => detectAccountingEnvironment(env);
+const first = (env, sql, ...params) =>
   env.AGAPAY_DB.prepare(sql)
     .bind(...params)
     .first();
-export const run = (env, sql, ...params) =>
+const run = (env, sql, ...params) =>
   env.AGAPAY_DB.prepare(sql)
     .bind(...params)
     .run();
-
-export function activationOptions(input = {}) {
+function activationOptions(input = {}) {
   const startDate = String(input.startDate || '');
-  const date = new Date(`${startDate}T12:00:00Z`);
+  const date = /* @__PURE__ */ new Date(`${startDate}T12:00:00Z`);
   const fiscalYearStartMonth = Number(input.fiscalYearStartMonth);
   if (
     !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
     !Number.isFinite(date.getTime()) ||
     date.toISOString().slice(0, 10) !== startDate ||
-    date.getUTCFullYear() < 2000 ||
-    date.getUTCFullYear() > new Date().getUTCFullYear() + 1 ||
+    date.getUTCFullYear() < 2e3 ||
+    date.getUTCFullYear() > /* @__PURE__ */ new Date().getUTCFullYear() + 1 ||
     !Number.isInteger(fiscalYearStartMonth) ||
     fiscalYearStartMonth < 1 ||
     fiscalYearStartMonth > 12
   )
     throw new ValidationError('Choose a valid accounting start date and fiscal-year start month.');
-  return { startDate, fiscalYearStartMonth }; // Explicit allowlist: no uploaded files, PINs or provider identifiers.
+  return { startDate, fiscalYearStartMonth };
 }
-
-export async function requireActivationParish(env, parishId) {
+async function requireActivationParish(env, parishId) {
   if (await parishClosureState(env, parishId)) throw new ValidationError('This parish is closed.');
   const row = await first(
     env,
@@ -46,8 +44,7 @@ export async function requireActivationParish(env, parishId) {
     throw new ValidationError('An eligible, verified parish is required to activate Accounting.');
   return registration;
 }
-
-export async function activationOperation(env, parishId) {
+async function activationOperation(env, parishId) {
   return first(
     env,
     `SELECT o.*, e.parish_id, e.entity_status, e.activation_status, d.database_identifier,
@@ -59,8 +56,7 @@ export async function activationOperation(env, parishId) {
     activationEnvironment(env)
   );
 }
-
-export function activationDto(operation, available = true) {
+function activationDto(operation, available = true) {
   return operation
     ? {
         available,
@@ -80,8 +76,7 @@ export function activationDto(operation, available = true) {
       }
     : { available, status: 'not_started', step: 'queued', completed: false };
 }
-
-export async function reserveActivation(env, parishId, input) {
+async function reserveActivation(env, parishId, input) {
   const registration = await requireActivationParish(env, parishId);
   const previous = await activationOperation(env, parishId);
   if (previous) return previous;
@@ -94,7 +89,6 @@ export async function reserveActivation(env, parishId, input) {
     entityId = `acct_entity_${suffix}`,
     operationId = `activation-${environment}-${suffix}`;
   const prepare = (sql, ...params) => env.AGAPAY_DB.prepare(sql).bind(...params);
-  // One central transaction: competing tabs cannot reserve duplicate resources or leave half an entity.
   await env.AGAPAY_DB.batch([
     prepare(
       `INSERT OR IGNORE INTO accounting_entities(id,parish_id,entity_status,subscription_tier)
@@ -130,8 +124,7 @@ export async function reserveActivation(env, parishId, input) {
   ]);
   return activationOperation(env, parishId);
 }
-
-export async function activationProgress(env, operation, step, count = 0) {
+async function activationProgress(env, operation, step, count = 0) {
   await run(
     env,
     `UPDATE accounting_provisioning_operations SET status='running',progress_step=?,progress_current=?,
@@ -141,8 +134,7 @@ export async function activationProgress(env, operation, step, count = 0) {
     operation.id
   );
 }
-
-export async function completeActivation(env, operation, latestMigration) {
+async function completeActivation(env, operation, latestMigration) {
   await requireActivationParish(env, operation.parish_id);
   const prepare = (sql, ...params) => env.AGAPAY_DB.prepare(sql).bind(...params);
   await env.AGAPAY_DB.batch([
@@ -172,3 +164,16 @@ export async function completeActivation(env, operation, latestMigration) {
     ),
   ]);
 }
+export {
+  ACTIVATION_STEPS,
+  activationDto,
+  activationEnvironment,
+  activationOperation,
+  activationOptions,
+  activationProgress,
+  completeActivation,
+  first,
+  requireActivationParish,
+  reserveActivation,
+  run,
+};

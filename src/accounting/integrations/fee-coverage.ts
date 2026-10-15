@@ -64,7 +64,7 @@ export async function recognizeGivingFeeCoverage(
       donorRestricted: Boolean(original.donor_restricted),
     },
   });
-  return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: source.id });
+  return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: source!.id });
 }
 
 // Bounded, parish-scoped historical repair. Preview is read-only; application

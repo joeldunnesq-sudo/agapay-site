@@ -1,3 +1,4 @@
+// Generated from src/sacraments/pastoral-digest.ts by npm run build:server. Do not edit.
 import {
   d1,
   d1All,
@@ -16,10 +17,8 @@ import { sacramentsEnabledFor } from '../lib/entitlements.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
 import { loadAllRegistrations } from '../lib/registrations.js';
-
 const UPCOMING_DAYS = 7;
 const DISPLAY_LIMIT = 10;
-
 const REASON_LABELS = Object.freeze({
   homebound: 'Homebound',
   hospitalized: 'Hospitalized',
@@ -28,34 +27,28 @@ const REASON_LABELS = Object.freeze({
   regular_check_in: 'Regular check-in',
   other: 'Pastoral care',
 });
-
 function dateOnly(value) {
   const text = String(value || '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return '';
-  const parsed = new Date(`${text}T00:00:00Z`);
+  const parsed = /* @__PURE__ */ new Date(`${text}T00:00:00Z`);
   return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== text ? '' : text;
 }
-
 function addUtcDays(isoDate, days) {
-  const date = new Date(`${isoDate}T00:00:00Z`);
+  const date = /* @__PURE__ */ new Date(`${isoDate}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + Number(days || 0));
   return date.toISOString().slice(0, 10);
 }
-
 function daysBetween(left, right) {
-  return Math.round((Date.parse(`${right}T00:00:00Z`) - Date.parse(`${left}T00:00:00Z`)) / 86400000);
+  return Math.round((Date.parse(`${right}T00:00:00Z`) - Date.parse(`${left}T00:00:00Z`)) / 864e5);
 }
-
-export function pastoralReasonLabel(reason) {
+function pastoralReasonLabel(reason) {
   return REASON_LABELS[String(reason || '')] || REASON_LABELS.other;
 }
-
-export function buildPastoralDigestGroups(rows = [], todayValue, upcomingDays = UPCOMING_DAYS) {
+function buildPastoralDigestGroups(rows = [], todayValue, upcomingDays = UPCOMING_DAYS) {
   const today = dateOnly(todayValue);
   if (!today) throw new Error('A valid digest date is required.');
   const upcomingThrough = addUtcDays(today, upcomingDays);
-  const grouped = new Map();
-
+  const grouped = /* @__PURE__ */ new Map();
   for (const row of rows) {
     const recipientEmail = normalizeEmail(row.assigned_priest_email || row.assignedPriestEmail);
     const nextDueOn = dateOnly(row.next_due_on || row.nextDueOn);
@@ -83,7 +76,6 @@ export function buildPastoralDigestGroups(rows = [], todayValue, upcomingDays = 
     else if (nextDueOn === today) group.dueToday.push(item);
     else group.upcoming.push(item);
   }
-
   return [...grouped.values()]
     .map((group) => ({
       ...group,
@@ -93,25 +85,22 @@ export function buildPastoralDigestGroups(rows = [], todayValue, upcomingDays = 
     }))
     .sort((left, right) => left.recipientEmail.localeCompare(right.recipientEmail));
 }
-
 function maskEmail(value) {
   const [local = '', domain = ''] = normalizeEmail(value).split('@');
   if (!domain) return 'hidden';
   return `${local.slice(0, 1) || '*'}***@${domain}`;
 }
-
 function dueLabel(item, today) {
   const difference = daysBetween(today, item.nextDueOn);
   if (difference < 0) return `${Math.abs(difference)} day${difference === -1 ? '' : 's'} overdue`;
   if (difference === 0) return 'due today';
   if (difference === 1) return 'due tomorrow';
-  return `due ${new Date(`${item.nextDueOn}T00:00:00Z`).toLocaleDateString('en-US', {
+  return `due ${/* @__PURE__ */ new Date(`${item.nextDueOn}T00:00:00Z`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     timeZone: 'UTC',
   })}`;
 }
-
 function digestSectionHtml(title, items, today, tone = 'neutral') {
   if (!items.length) return '';
   const colors =
@@ -130,7 +119,6 @@ function digestSectionHtml(title, items, today, tone = 'neutral') {
     </ul>
   </div>`;
 }
-
 function digestSectionText(title, items, today) {
   if (!items.length) return [];
   const visible = items.slice(0, DISPLAY_LIMIT);
@@ -142,7 +130,6 @@ function digestSectionText(title, items, today) {
     '',
   ];
 }
-
 function digestSubject(group, parishName) {
   const location = parishName || 'your parish';
   if (group.overdue.length) {
@@ -153,7 +140,6 @@ function digestSubject(group, parishName) {
   }
   return `Pastoral care: ${group.upcoming.length} upcoming contact${group.upcoming.length === 1 ? '' : 's'} at ${location}`;
 }
-
 function digestMessage(appUrl, parishName, group) {
   const baseUrl = String(appUrl || 'https://agapay.app').replace(/\/+$/, '');
   const dashboardUrl = `${baseUrl}/parish/dashboard.html`;
@@ -188,7 +174,6 @@ function digestMessage(appUrl, parishName, group) {
     ].join('\n'),
   };
 }
-
 async function deliveryIdentity(parishId, recipientEmail, digestDate) {
   const recipientKey = await sha256Hex(normalizeEmail(recipientEmail));
   const digestKey = await sha256Hex(`${parishId}|${recipientKey}|${digestDate}`);
@@ -198,7 +183,6 @@ async function deliveryIdentity(parishId, recipientEmail, digestDate) {
     idempotencyKey: `pastoral-digest-${digestKey}`,
   };
 }
-
 async function beginDelivery(env, registration, group, identity, attemptedAt) {
   const existing = await d1First(
     env,
@@ -235,12 +219,11 @@ async function beginDelivery(env, registration, group, identity, attemptedAt) {
   );
   return true;
 }
-
 async function finishDelivery(env, identity, email, finishedAt) {
   const sent = email?.status === 'sent';
   const detail = sent
     ? ''
-    : String(email?.detail || email?.error || email?.body || email?.status || 'Email delivery failed').slice(0, 1000);
+    : String(email?.detail || email?.error || email?.body || email?.status || 'Email delivery failed').slice(0, 1e3);
   await d1Run(
     env,
     `UPDATE sacrament_pastoral_digest_deliveries
@@ -254,7 +237,6 @@ async function finishDelivery(env, identity, email, finishedAt) {
     identity.id
   );
 }
-
 async function loadPastoralDigestRows(env, parishId, upcomingThrough) {
   return d1All(
     env,
@@ -272,8 +254,7 @@ async function loadPastoralDigestRows(env, parishId, upcomingThrough) {
     upcomingThrough
   );
 }
-
-export async function sendDailyPastoralCareDigestEmails(env, scheduledTime, options = {}) {
+async function sendDailyPastoralCareDigestEmails(env, scheduledTime, options = {}) {
   if (!d1(env)) return [];
   const now = new Date(scheduledTime || Date.now());
   const today = now.toISOString().slice(0, 10);
@@ -285,7 +266,6 @@ export async function sendDailyPastoralCareDigestEmails(env, scheduledTime, opti
   const emailSender = options.emailSender || sendEmail;
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
   const results = [];
-
   for (const registration of registrations) {
     if (!registration.parishId || (parishFilter && registration.parishId !== parishFilter)) continue;
     if (!sacramentsEnabledFor(registration)) continue;
@@ -300,7 +280,6 @@ export async function sendDailyPastoralCareDigestEmails(env, scheduledTime, opti
       });
       continue;
     }
-
     for (const group of groups) {
       const resultBase = {
         parishId: registration.parishId,
@@ -316,9 +295,8 @@ export async function sendDailyPastoralCareDigestEmails(env, scheduledTime, opti
         results.push({ ...resultBase, status: 'dry_run' });
         continue;
       }
-
       const identity = await deliveryIdentity(registration.parishId, group.recipientEmail, today);
-      const attemptedAt = new Date().toISOString();
+      const attemptedAt = /* @__PURE__ */ new Date().toISOString();
       if (!(await beginDelivery(env, registration, group, identity, attemptedAt))) {
         results.push({ ...resultBase, status: 'skipped', reason: 'already_sent' });
         continue;
@@ -334,12 +312,12 @@ export async function sendDailyPastoralCareDigestEmails(env, scheduledTime, opti
             reply_to: env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
             ...message,
           },
-          { idempotencyKey: identity.idempotencyKey, timeoutMs: 15000 }
+          { idempotencyKey: identity.idempotencyKey, timeoutMs: 15e3 }
         );
       } catch (error) {
         email = { status: 'error', error: error?.message || String(error) };
       }
-      const finishedAt = new Date().toISOString();
+      const finishedAt = /* @__PURE__ */ new Date().toISOString();
       await finishDelivery(env, identity, email, finishedAt);
       results.push({
         ...resultBase,
@@ -348,11 +326,9 @@ export async function sendDailyPastoralCareDigestEmails(env, scheduledTime, opti
       });
     }
   }
-
   return results;
 }
-
-export async function handleAdminDailyPastoralCareDigest(request, env) {
+async function handleAdminDailyPastoralCareDigest(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'admin-maintenance', {
     limit: 12,
@@ -361,12 +337,17 @@ export async function handleAdminDailyPastoralCareDigest(request, env) {
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const body = await request.json().catch(() => ({}));
-  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const scheduledTime = body.scheduledTime || /* @__PURE__ */ new Date().toISOString();
   const results = await sendDailyPastoralCareDigestEmails(env, scheduledTime, {
     dryRun: body.dryRun !== false,
     parishId: body.parishId || '',
   });
   return json({ ok: true, dryRun: body.dryRun !== false, scheduledTime, results });
 }
+export {
+  buildPastoralDigestGroups,
+  handleAdminDailyPastoralCareDigest,
+  pastoralReasonLabel,
+  sendDailyPastoralCareDigestEmails,
+};

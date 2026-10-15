@@ -1,3 +1,4 @@
+// Generated from src/accounting/ledger/workspace.ts by npm run build:server. Do not edit.
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { createJournalDraft } from './service.js';
 function capability(actor, name) {
@@ -57,7 +58,7 @@ function lineDto(r) {
     creditAmount: Number(r.credit_amount),
   });
 }
-export async function getJournalEntry(db, { actor, journalEntryId }) {
+async function getJournalEntry(db, { actor, journalEntryId }) {
   capability(actor, 'accounting.view');
   const row = await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', journalEntryId);
   if (!row) throw new ValidationError('Journal entry was not found.');
@@ -79,7 +80,7 @@ export async function getJournalEntry(db, { actor, journalEntryId }) {
     ),
   });
 }
-export async function updateJournalDraft(
+async function updateJournalDraft(
   db,
   { actor, journalEntryId, expectedVersion, entryDate, description, memo = '', lines }
 ) {
@@ -143,14 +144,14 @@ export async function updateJournalDraft(
     ),
   ]);
   return getJournalEntry(db, {
-    actor: { ...actor, capabilities: [...new Set([...actor.capabilities, 'accounting.view'])] },
+    actor: { ...actor, capabilities: [.../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.view'])] },
     journalEntryId,
   });
 }
-export async function duplicateJournalDraft(db, { actor, journalEntryId }) {
+async function duplicateJournalDraft(db, { actor, journalEntryId }) {
   capability(actor, 'accounting.journals.create');
   const source = await getJournalEntry(db, {
-    actor: { ...actor, capabilities: [...new Set([...actor.capabilities, 'accounting.view'])] },
+    actor: { ...actor, capabilities: [.../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.view'])] },
     journalEntryId,
   });
   return createJournalDraft(db, {
@@ -167,7 +168,7 @@ export async function duplicateJournalDraft(db, { actor, journalEntryId }) {
     })),
   });
 }
-export async function deleteJournalDraft(db, { actor, journalEntryId, expectedVersion }) {
+async function deleteJournalDraft(db, { actor, journalEntryId, expectedVersion }) {
   capability(actor, 'accounting.journals.create');
   const current = await first(
     db,
@@ -186,7 +187,7 @@ export async function deleteJournalDraft(db, { actor, journalEntryId, expectedVe
   ]);
   return Object.freeze({ deleted: true });
 }
-export async function searchJournalEntries(
+async function searchJournalEntries(
   db,
   { actor, query = '', status = '', sourceType = '', dateFrom = '', dateTo = '', limit = 50, offset = 0 } = {}
 ) {
@@ -221,7 +222,7 @@ export async function searchJournalEntries(
   );
   return Object.freeze(rows.map(entryDto));
 }
-export async function ledgerRegister(db, { actor, accountId = '', fundId = '', dateFrom = '', dateTo = '' } = {}) {
+async function ledgerRegister(db, { actor, accountId = '', fundId = '', dateFrom = '', dateTo = '' } = {}) {
   capability(actor, 'accounting.view');
   const clauses = ["e.status IN ('posted','reversed')"],
     params = [];
@@ -270,7 +271,7 @@ function csv(value) {
   const s = String(value ?? '');
   return /[",\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
 }
-export function ledgerRegisterCsv(rows) {
+function ledgerRegisterCsv(rows) {
   return [
     'Date,Entry Number,Description,Debit,Credit,Running Balance,Account,Fund,Source',
     ...rows.map((r) =>
@@ -290,7 +291,7 @@ export function ledgerRegisterCsv(rows) {
     ),
   ].join('\r\n');
 }
-export function printableLedger(rows, { title = 'General Ledger' } = {}) {
+function printableLedger(rows, { title = 'General Ledger' } = {}) {
   const esc = (s) =>
     String(s ?? '').replace(
       /[&<>"']/g,
@@ -298,3 +299,13 @@ export function printableLedger(rows, { title = 'General Ledger' } = {}) {
     );
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:12px system-ui;color:#10233f}table{width:100%;border-collapse:collapse}th,td{padding:7px;border-bottom:1px solid #ccd5df;text-align:left}.number{text-align:right}@media print{button,nav{display:none}}</style></head><body><h1>${esc(title)}</h1><table><thead><tr><th>Date</th><th>Entry</th><th>Description</th><th>Account</th><th>Fund</th><th>Debit</th><th>Credit</th><th>Balance</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r.date)}</td><td>${esc(r.entryNumber)}</td><td>${esc(r.description)}</td><td>${esc(r.accountNumber)}</td><td>${esc(r.fundCode)}</td><td class="number">${r.debitAmount}</td><td class="number">${r.creditAmount}</td><td class="number">${r.runningBalance}</td></tr>`).join('')}</tbody></table></body></html>`;
 }
+export {
+  deleteJournalDraft,
+  duplicateJournalDraft,
+  getJournalEntry,
+  ledgerRegister,
+  ledgerRegisterCsv,
+  printableLedger,
+  searchJournalEntries,
+  updateJournalDraft,
+};

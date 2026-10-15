@@ -1,3 +1,4 @@
+// Generated from src/accounting/provisioning/worker.ts by npm run build:server. Do not edit.
 import { WorkerEntrypoint, WorkflowEntrypoint } from 'cloudflare:workers';
 import { createCloudflareD1ProvisioningAdapter, createD1DatabaseFacade } from './adapters.js';
 import {
@@ -20,7 +21,6 @@ import {
   validateProvisionedBooks,
 } from './full-schema.js';
 import { synchronizeGivingCatalogIntoDatabase } from '../source-wiring.js';
-
 const provider = (env) =>
   createCloudflareD1ProvisioningAdapter({
     CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID,
@@ -28,15 +28,12 @@ const provider = (env) =>
   });
 const configured = (env) =>
   Boolean(env.ACCOUNTING_D1_API_TOKEN && env.CLOUDFLARE_ACCOUNT_ID && env.ACCOUNTING_ACTIVATION);
-
-// No public HTTP routes. Only the authenticated application has this service binding.
-export default {
+var stdin_default = {
   fetch() {
     return new Response('Not found', { status: 404 });
   },
 };
-
-export class AccountingProvisionerService extends WorkerEntrypoint {
+class AccountingProvisionerService extends WorkerEntrypoint {
   async status(parishId) {
     await requireActivationParish(this.env, parishId);
     const operation = await activationOperation(this.env, parishId);
@@ -51,13 +48,10 @@ export class AccountingProvisionerService extends WorkerEntrypoint {
             retryable: true,
             message: 'Setup was interrupted. Retry to resume the same books.',
           };
-      } catch {
-        /* A reserved job may not have been dispatched yet. POST resumes it. */
-      }
+      } catch {}
     }
     return dto;
   }
-
   async start(parishId, options) {
     if (!configured(this.env))
       throw new Error('Automatic Accounting setup is not configured yet. Contact AGAPAY support.');
@@ -80,7 +74,6 @@ export class AccountingProvisionerService extends WorkerEntrypoint {
       }
     } catch (error) {
       if (instance && operation.failure_code === 'ownership_review') throw error;
-      // Deterministic Workflow IDs make dispatch safe after a lost HTTP response.
       try {
         await this.env.ACCOUNTING_ACTIVATION.create({
           id: operation.id,
@@ -92,7 +85,6 @@ export class AccountingProvisionerService extends WorkerEntrypoint {
     }
     return this.status(parishId);
   }
-
   async resolve(databaseName) {
     try {
       const record = await this.managedDatabase(databaseName);
@@ -102,7 +94,6 @@ export class AccountingProvisionerService extends WorkerEntrypoint {
       throw error;
     }
   }
-
   async managedDatabase(databaseName) {
     const record = await first(
       this.env,
@@ -119,7 +110,6 @@ export class AccountingProvisionerService extends WorkerEntrypoint {
     await requireActivationParish(this.env, record.parish_id);
     return record;
   }
-
   async query(databaseName, statements) {
     const record = await this.managedDatabase(databaseName);
     if (!record) throw new Error('Accounting books are unavailable.');
@@ -138,8 +128,7 @@ export class AccountingProvisionerService extends WorkerEntrypoint {
     return adapter.batch(record.provider_id, statements);
   }
 }
-
-export class AccountingProvisioningWorkflow extends WorkflowEntrypoint {
+class AccountingProvisioningWorkflow extends WorkflowEntrypoint {
   async run(event, step) {
     const env = this.env;
     const operation = await activationOperation(env, event.payload.parishId);
@@ -184,8 +173,8 @@ export class AccountingProvisioningWorkflow extends WorkflowEntrypoint {
             operation.id
           );
         }
-        const db = createD1DatabaseFacade(adapter, database.providerId);
-        await db
+        const db2 = createD1DatabaseFacade(adapter, database.providerId);
+        await db2
           .prepare(
             `CREATE TABLE IF NOT EXISTS accounting_database_metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL DEFAULT(datetime('now')))`
           )
@@ -195,15 +184,15 @@ export class AccountingProvisioningWorkflow extends WorkflowEntrypoint {
           environment: operation.environment,
           provisioning_operation_id: operation.id,
         };
-        const rows = (await db.prepare('SELECT key,value FROM accounting_database_metadata').all()).results;
+        const rows = (await db2.prepare('SELECT key,value FROM accounting_database_metadata').all()).results;
         for (const row of rows)
           if (row.key in expected && expected[row.key] !== row.value) throw new Error('Accounting ownership mismatch.');
-        await db.batch(
+        await db2.batch(
           Object.entries(expected).map(([key, value]) =>
-            db.prepare('INSERT OR IGNORE INTO accounting_database_metadata(key,value) VALUES(?,?)').bind(key, value)
+            db2.prepare('INSERT OR IGNORE INTO accounting_database_metadata(key,value) VALUES(?,?)').bind(key, value)
           )
         );
-        await prepareAccountingMigrationLedger(db);
+        await prepareAccountingMigrationLedger(db2);
         return database.providerId;
       });
       const db = createD1DatabaseFacade(adapter, providerId);
@@ -244,3 +233,4 @@ export class AccountingProvisioningWorkflow extends WorkflowEntrypoint {
     }
   }
 }
+export { AccountingProvisionerService, AccountingProvisioningWorkflow, stdin_default as default };

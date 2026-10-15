@@ -1,3 +1,4 @@
+// Generated from src/handlers/parish-pastoral-followup.ts by npm run build:server. Do not edit.
 import { recordAuditEvent } from '../lib/audit-log.js';
 import { hasModuleAccess } from '../lib/entitlements.js';
 import {
@@ -30,7 +31,6 @@ import {
 import { syncSacramentRequestToGoogleCalendar } from '../sacraments/google-calendar.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/parish-notifications.js';
-
 async function requireContext(request, env, parishId) {
   if (!hasProductionStore(env)) return { response: missingProductionStoreResponse() };
   const found = await findRegistrationByParishId(env, parishId);
@@ -81,18 +81,15 @@ async function requireContext(request, env, parishId) {
     dashboardSession: false,
   };
 }
-
 function actor(context = {}) {
   return context.identity?.user?.email || context.identity?.user?.id || 'parish-dashboard';
 }
-
 function configuredPriest(registration, name, email) {
   const normalizedEmail = normalizeEmail(email);
   return normalizeSacramentPriests(registration).find((priest) =>
     normalizedEmail ? normalizeEmail(priest.email) === normalizedEmail : priest.name === String(name || '').trim()
   );
 }
-
 async function bodyJson(request) {
   try {
     return await request.json();
@@ -100,7 +97,6 @@ async function bodyJson(request) {
     throw new PastoralFollowUpError('Invalid JSON body.', 400);
   }
 }
-
 async function audit(env, request, parishId, context, fields) {
   await recordAuditEvent(env, request, {
     actorType: context.identity ? 'platform_user' : 'parish',
@@ -110,13 +106,11 @@ async function audit(env, request, parishId, context, fields) {
     ...fields,
   });
 }
-
 function canManageAssigned(context, assignedPriestEmail) {
   return (
     context.canCover || (context.priest && normalizeEmail(context.priest.email) === normalizeEmail(assignedPriestEmail))
   );
 }
-
 async function requireFollowupAccess(env, parishId, followupId, context) {
   const followup = await findPastoralFollowup(env, parishId, followupId);
   if (!followup) throw new PastoralFollowUpError('Pastoral follow-up not found.', 404);
@@ -125,7 +119,6 @@ async function requireFollowupAccess(env, parishId, followupId, context) {
   }
   return followup;
 }
-
 async function requireMemorialAccess(env, parishId, markerId, context) {
   const marker = await findMemorialMarker(env, parishId, markerId);
   if (!marker) throw new PastoralFollowUpError('Memorial observance not found.', 404);
@@ -134,7 +127,6 @@ async function requireMemorialAccess(env, parishId, markerId, context) {
   }
   return marker;
 }
-
 async function notifyPriestOfRepose(env, registration, result) {
   if (!result.assignedPriestEmail) return;
   const rows = result.markers
@@ -159,8 +151,7 @@ async function notifyPriestOfRepose(env, registration, result) {
     ].join('\n'),
   });
 }
-
-export async function handleParishPastoralFollowUp(request, env, parishId, subpath = '', ctx = null) {
+async function handleParishPastoralFollowUp(request, env, parishId, subpath = '', ctx = null) {
   const limited = await rateLimit(
     request,
     env,
@@ -175,7 +166,6 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
     .split('/')
     .filter(Boolean)
     .map(decodeURIComponent);
-
   try {
     if (!parts.length && request.method === 'GET') {
       return json({
@@ -244,7 +234,10 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
         ctx.waitUntil(
           notifyPriestOfRepose(env, registration, result).catch((error) =>
             console.error(
-              JSON.stringify({ message: 'pastoral_repose_notification_failed', error: error?.message || String(error) })
+              JSON.stringify({
+                message: 'pastoral_repose_notification_failed',
+                error: error?.message || String(error),
+              })
             )
           )
         );
@@ -254,7 +247,7 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
       const body = await bodyJson(request);
       await requireFollowupAccess(env, parishId, parts[0], context);
       let priestFields = {};
-      if (body.assignedPriestName !== undefined || body.assignedPriestEmail !== undefined) {
+      if (body.assignedPriestName !== void 0 || body.assignedPriestEmail !== void 0) {
         if (!context.canCover)
           throw new PastoralFollowUpError('Only a rector covering the parish can reassign care.', 403);
         const priest = configuredPriest(registration, body.assignedPriestName, body.assignedPriestEmail);
@@ -302,7 +295,10 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
         ctx.waitUntil(
           notifyPriestOfRepose(env, registration, result).catch((error) =>
             console.error(
-              JSON.stringify({ message: 'pastoral_repose_notification_failed', error: error?.message || String(error) })
+              JSON.stringify({
+                message: 'pastoral_repose_notification_failed',
+                error: error?.message || String(error),
+              })
             )
           )
         );
@@ -387,3 +383,4 @@ export async function handleParishPastoralFollowUp(request, env, parishId, subpa
     throw error;
   }
 }
+export { handleParishPastoralFollowUp };

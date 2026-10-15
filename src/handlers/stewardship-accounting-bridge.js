@@ -1,3 +1,4 @@
+// Generated from src/handlers/stewardship-accounting-bridge.ts by npm run build:server. Do not edit.
 import { postServiceInvoices } from '../accounting/service-costs.js';
 import { getBearerToken, hasProductionStore, json, missingProductionStoreResponse, unauthorized } from '../lib/core.js';
 import { accountingEnabledFor, stewardshipToolAccess } from '../lib/entitlements.js';
@@ -5,13 +6,11 @@ import { fundActivity, statementOfActivities } from '../accounting/index.js';
 import { upsertStewardshipFinancialSnapshot } from '../stewardship/financial-snapshots.js';
 import { resolveAccountingDatabaseForParish } from './accounting-ledger.js';
 import { findRegistrationByParishId, verifyParishDashboardBearer } from './parish.js';
-
-export const STEWARDSHIP_ACCOUNTING_READER = Object.freeze({
+const STEWARDSHIP_ACCOUNTING_READER = Object.freeze({
   id: 'stewardship-financials-bridge',
   type: 'system',
   capabilities: Object.freeze(['accounting.reports.view']),
 });
-
 const defaultDependencies = Object.freeze({
   postServiceInvoices,
   accountingEnabledFor,
@@ -24,12 +23,11 @@ const defaultDependencies = Object.freeze({
   upsertStewardshipFinancialSnapshot,
   verifyParishDashboardBearer,
 });
-
 function requestedPeriod(url, body = {}) {
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = /* @__PURE__ */ new Date().getUTCFullYear();
   const year = Number.parseInt(url.searchParams.get('year') || body.fiscalYear || currentYear, 10);
   const startDate = url.searchParams.get('startDate') || body.startDate || `${year}-01-01`;
-  const defaultEndDate = year === currentYear ? new Date().toISOString().slice(0, 10) : `${year}-12-31`;
+  const defaultEndDate = year === currentYear ? /* @__PURE__ */ new Date().toISOString().slice(0, 10) : `${year}-12-31`;
   const endDate = url.searchParams.get('endDate') || body.endDate || defaultEndDate;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate) || startDate > endDate) {
     const error = new Error('Choose a valid accounting date range.');
@@ -38,8 +36,7 @@ function requestedPeriod(url, body = {}) {
   }
   return { year, startDate, endDate };
 }
-
-export function accountingFinancialSnapshot(statement, funds, { startDate, endDate }) {
+function accountingFinancialSnapshot(statement, funds, { startDate, endDate }) {
   return Object.freeze({
     available: true,
     startDate,
@@ -47,15 +44,12 @@ export function accountingFinancialSnapshot(statement, funds, { startDate, endDa
     totalIncomeCents: Number(statement.totals.revenue || 0),
     totalExpenseCents: Number(statement.totals.expenses || 0),
     netCents: Number(statement.totals.changeInNetAssets || 0),
-    expenseLines: (statement.rows || []).filter(row => row.category === 'expense'),
+    expenseLines: (statement.rows || []).filter((row) => row.category === 'expense'),
     restrictedFunds: Object.freeze(
       (funds.rows || [])
         .filter((row) => row.restrictionType !== 'unrestricted')
         .map((row) => {
           const otherActivity = Number(row.otherActivity || 0);
-          // Manual snapshots have only received/disbursed columns. Preserve
-          // transfers by folding positive other activity into receipts and
-          // negative other activity into disbursements instead of dropping it.
           return Object.freeze({
             fundName: row.name,
             beginningBalanceCents: Number(row.beginningBalance || 0),
@@ -67,7 +61,6 @@ export function accountingFinancialSnapshot(statement, funds, { startDate, endDa
     ),
   });
 }
-
 async function accountingAvailability(env, parishId, registration, dependencies) {
   if (!dependencies.accountingEnabledFor(registration)) {
     return { available: false, reason: 'not_entitled' };
@@ -88,7 +81,6 @@ async function accountingAvailability(env, parishId, registration, dependencies)
     };
   return { available: true, db: resolved.db };
 }
-
 async function readAccountingSnapshot(env, parishId, registration, period, dependencies) {
   const availability = await accountingAvailability(env, parishId, registration, dependencies);
   if (!availability.available) return availability;
@@ -107,13 +99,10 @@ async function readAccountingSnapshot(env, parishId, registration, period, depen
   ]);
   return accountingFinancialSnapshot(statement, funds, period);
 }
-
-// Internal report reader. Callers must authenticate and authorize the parish first.
-export function readStewardshipAccountingSnapshot(env, parishId, registration, period, dependencies = {}) {
+function readStewardshipAccountingSnapshot(env, parishId, registration, period, dependencies = {}) {
   return readAccountingSnapshot(env, parishId, registration, period, { ...defaultDependencies, ...dependencies });
 }
-
-export async function handleStewardshipAccountingBridge(request, env, parishId, dependencies = {}) {
+async function handleStewardshipAccountingBridge(request, env, parishId, dependencies = {}) {
   const deps = { ...defaultDependencies, ...dependencies };
   if (!deps.hasProductionStore(env)) return missingProductionStoreResponse();
   const found = await deps.findRegistrationByParishId(env, parishId);
@@ -122,7 +111,6 @@ export async function handleStewardshipAccountingBridge(request, env, parishId, 
   if (!deps.stewardshipToolAccess(found.registration)) {
     return json({ error: 'Stewardship requires the Stewardship or Parish plan.' }, { status: 403 });
   }
-
   const url = new URL(request.url);
   const importing = url.pathname.endsWith('/financials/import-from-accounting');
   try {
@@ -141,7 +129,7 @@ export async function handleStewardshipAccountingBridge(request, env, parishId, 
             : 'Accounting setup is still being finalized.';
         return json({ error: snapshot.reason, message }, { status: 409 });
       }
-      const importedAt = new Date().toISOString();
+      const importedAt = /* @__PURE__ */ new Date().toISOString();
       const saved = await deps.upsertStewardshipFinancialSnapshot(env, {
         parishId,
         annualMeetingId: body.annualMeetingId || null,
@@ -167,8 +155,17 @@ export async function handleStewardshipAccountingBridge(request, env, parishId, 
     return json({ error: 'Method not allowed' }, { status: 405 });
   } catch (error) {
     return json(
-      { error: 'stewardship_accounting_bridge_failed', message: error?.message || 'Unable to read accounting.' },
+      {
+        error: 'stewardship_accounting_bridge_failed',
+        message: error?.message || 'Unable to read accounting.',
+      },
       { status: error?.status || 400 }
     );
   }
 }
+export {
+  STEWARDSHIP_ACCOUNTING_READER,
+  accountingFinancialSnapshot,
+  handleStewardshipAccountingBridge,
+  readStewardshipAccountingSnapshot,
+};

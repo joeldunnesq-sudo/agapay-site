@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
 export interface AccountingMigration {
   name: string;
   sql: string;
@@ -17,7 +18,7 @@ export const provisioningActor = Object.freeze({
   capabilities: ['accounting.configure', 'accounting.view'],
 });
 
-export async function applyAccountingMigration(db: D1Database, migration: AccountingMigration) {
+export async function applyAccountingMigration(db: PortabilityDatabase, migration: AccountingMigration) {
   const sql = migration.sql.replaceAll('\r\n', '\n');
   if ((await digest(sql)) !== migration.sha256) throw new Error('Accounting migration checksum mismatch.');
   const applied = await db
@@ -39,7 +40,7 @@ export async function applyAccountingMigration(db: D1Database, migration: Accoun
   ]);
 }
 
-export async function prepareAccountingMigrationLedger(db: D1Database) {
+export async function prepareAccountingMigrationLedger(db: PortabilityDatabase) {
   await db
     .prepare(
       `CREATE TABLE IF NOT EXISTS accounting_migrations(version TEXT PRIMARY KEY,checksum TEXT NOT NULL,applied_at TEXT NOT NULL DEFAULT (datetime('now')));
@@ -48,12 +49,12 @@ export async function prepareAccountingMigrationLedger(db: D1Database) {
     .run();
 }
 
-export async function seedBeforeIntegrationMigration(db: D1Database, migration: AccountingMigration) {
+export async function seedBeforeIntegrationMigration(db: PortabilityDatabase, migration: AccountingMigration) {
   if (migration.name.startsWith('0005_')) await initializeLedgerChart(db, { actor: provisioningActor });
 }
 
 export async function initializeProvisionedCalendar(
-  db: D1Database,
+  db: PortabilityDatabase,
   options: ProvisionedCalendarOptions,
   reference: string
 ) {
@@ -78,7 +79,7 @@ export async function initializeProvisionedCalendar(
 }
 
 export async function validateProvisionedBooks(
-  db: D1Database,
+  db: PortabilityDatabase,
   parishId: string,
   migrations: readonly AccountingMigration[]
 ) {

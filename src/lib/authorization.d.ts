@@ -16,3 +16,19 @@ export function currentUser(
 ): Promise<{ id: string; [field: string]: unknown } | null>;
 
 export function expandRoleTemplate(roleTemplate: string): string[];
+
+export function authorize(
+  request: Request,
+  env: Partial<Env>,
+  options?: { parishId?: string; capability?: string }
+): Promise<{ user: { id: string }; membership: { id: string }; capabilities: readonly string[] } | null>;
+
+export function requireActiveMembership(
+  request: Request,
+  env: Partial<Env>,
+  parishId: string
+): Promise<{
+  user: NonNullable<Awaited<ReturnType<typeof import('./identity.js').requirePlatformUser>>>;
+  membership: { id: string; parishId: string };
+  capabilities: readonly string[];
+} | null>;
