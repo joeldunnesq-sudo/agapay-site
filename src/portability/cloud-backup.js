@@ -1,6 +1,5 @@
-// Only a manifest published after cloud read-back verification is evidence.
-// Return a small public summary, never storage keys or platform-wide row counts.
-export async function cloudBackupStatus(env, now = Date.now()) {
+// Generated from src/portability/cloud-backup.ts by npm run build:server. Do not edit.
+async function cloudBackupStatus(env, now = Date.now()) {
   const result = {
     status: 'unavailable',
     backedUpAt: null,
@@ -27,10 +26,11 @@ export async function cloudBackupStatus(env, now = Date.now()) {
     if (!stored || stored.size !== artifact.bytes) return result;
     return {
       ...result,
-      status: now - at > 48 * 3600000 ? 'overdue' : 'verified',
+      status: now - at > 48 * 36e5 ? 'overdue' : 'verified',
       backedUpAt: new Date(at).toISOString(),
     };
   } catch {
     return result;
   }
 }
+export { cloudBackupStatus };

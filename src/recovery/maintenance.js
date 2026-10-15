@@ -1,7 +1,7 @@
+// Generated from src/recovery/maintenance.ts by npm run build:server. Do not edit.
 import { rows, query, rootKey } from './storage.js';
 import { advanceRecovery } from './service.js';
-
-export async function runRecoveryJobs(env) {
+async function runRecoveryJobs(env) {
   if (env.PARISH_RECOVERY_ENABLED !== 'true') return { skipped: true };
   const active = await rows(
     env.AGAPAY_DB,
@@ -14,8 +14,6 @@ export async function runRecoveryJobs(env) {
     } catch (error) {
       if (error.code === 'recovery_busy') continue;
       console.error('parish_recovery_step_paused', error.code || 'step_failed');
-      // Let the existing scheduled-job alerting wrapper report a paused recovery.
-      // Do not forward raw database/provider errors into email or monitoring.
       throw new Error('Parish recovery is paused; inspect the saved recovery operation before retrying.');
     }
   }
@@ -35,3 +33,4 @@ export async function runRecoveryJobs(env) {
   }
   return { expired: expired.length };
 }
+export { runRecoveryJobs };

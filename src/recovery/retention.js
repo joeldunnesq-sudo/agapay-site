@@ -1,12 +1,9 @@
+// Generated from src/recovery/retention.ts by npm run build:server. Do not edit.
 import { FINANCIAL_TABLES } from '../portability/closure.js';
 import { FINANCIAL_BINDINGS } from '../portability/storage.js';
 import { sha256 } from '../portability/archive.js';
 import { query, readPart, fail } from './storage.js';
-
-// Rollback must not erase the prior financial evidence when the seven-day
-// self-service safety point expires. Preserve it in the restricted retention
-// store, outside both rollback scope and parish-facing download routes.
-export async function retainFinancialEvidence(env, op, safety) {
+async function retainFinancialEvidence(env, op, safety) {
   const bucket = env.PARISH_RETAINED_DATA;
   if (!bucket) fail('recovery_retention_unavailable', 'Restricted financial recovery storage is not configured.');
   const prefix = 'parish-recovery-audit/' + op.id + '/',
@@ -52,10 +49,10 @@ export async function retainFinancialEvidence(env, op, safety) {
           .map(([, value]) => Number(value))
       )
     );
-  if (configured.some((years) => !Number.isInteger(years) || years < 1 || years > 100))
+  if (configured.some((years2) => !Number.isInteger(years2) || years2 < 1 || years2 > 100))
     fail('recovery_retention_invalid', 'The accounting retention settings require review.');
   const years = Math.max(7, ...configured);
-  const reviewAfter = op.created_at + years * 366 * 86400000;
+  const reviewAfter = op.created_at + years * 366 * 864e5;
   const manifest = await store('manifest', {
     operationId: op.id,
     parishId: op.parish_id,
@@ -77,3 +74,4 @@ export async function retainFinancialEvidence(env, op, safety) {
     manifest.hash
   ).run();
 }
+export { retainFinancialEvidence };

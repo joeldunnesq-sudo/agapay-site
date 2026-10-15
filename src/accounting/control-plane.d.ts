@@ -31,3 +31,9 @@ export function resolveAccountingControlPlaneDatabase(
   readonly binding: null;
   readonly registryRecord: Readonly<Record<string, unknown>>;
 }>;
+
+export function loadAccountingDatabaseProviderRecord(
+  env: Partial<Env>,
+  entityId: string,
+  environment: string
+): Promise<{ databaseIdentifier: string } | null>;
