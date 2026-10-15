@@ -1,3 +1,4 @@
+// Generated from src/handlers/diocesan-statistics.ts by npm run build:server. Do not edit.
 import { stewardshipToolAccess } from '../lib/entitlements.js';
 import { saveStatisticalTotals, validateStatisticalTotals } from '../reports/diocesan-statistical-totals.js';
 import {
@@ -12,7 +13,6 @@ import {
   unauthorized,
   verifyParishDashboardBearer,
 } from './parish.js';
-
 function parishReportProfile(registration = {}) {
   return {
     parishName: registration.parishName || registration.name || 'Parish',
@@ -23,7 +23,6 @@ function parishReportProfile(registration = {}) {
     postalCode: registration.postalCode || '',
   };
 }
-
 async function requireReportContext(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return { response: json({ error: 'Parish dashboard record not found' }, { status: 404 }) };
@@ -37,21 +36,18 @@ async function requireReportContext(request, env, parishId) {
   }
   return { registration: found.registration };
 }
-
-export async function handleDiocesanStatisticsReport(request, env, parishId) {
+async function handleDiocesanStatisticsReport(request, env, parishId) {
   if (!['GET', 'POST', 'PUT'].includes(request.method)) {
     return json({ error: 'Method not allowed' }, { status: 405 });
   }
-
   const context = await requireReportContext(request, env, parishId);
   if (context.response) return context.response;
-
   const url = new URL(request.url);
   const requestedYear = url.searchParams.get('year');
   const parsedYear = Number(requestedYear);
   if (
     (requestedYear !== null || request.method === 'PUT') &&
-    (!requestedYear || !Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100)
+    (!requestedYear || !Number.isInteger(parsedYear) || parsedYear < 2e3 || parsedYear > 2100)
   ) {
     return json({ error: 'Choose a reporting year between 2000 and 2100.' }, { status: 400 });
   }
@@ -67,9 +63,7 @@ export async function handleDiocesanStatisticsReport(request, env, parishId) {
     await saveStatisticalTotals(env, parishId, year, totals);
   }
   const report = await aggregateDiocesanStatistics(env, { parishId, year });
-
   if (request.method !== 'POST') return json({ report });
-
   const pdfBytes = await buildDiocesanStatisticsPdf({
     parish: parishReportProfile(context.registration),
     report,
@@ -83,3 +77,4 @@ export async function handleDiocesanStatisticsReport(request, env, parishId) {
     },
   });
 }
+export { handleDiocesanStatisticsReport };

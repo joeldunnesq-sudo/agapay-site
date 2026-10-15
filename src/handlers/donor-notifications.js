@@ -1,20 +1,14 @@
+// Generated from src/handlers/donor-notifications.ts by npm run build:server. Do not edit.
 import { d1, d1All, d1Run, generateSecret, json, normalizeEmail, unauthorized } from '../lib/core.js';
 import { requireDonor } from './parish.js';
-
-// ── Donor notification helpers ───────────────────────────────────────────────
-
 function newNotifId() {
   return generateSecret(16);
 }
-
-// GET /api/donor/notifications
-// Returns active (undismissed) pledge nudge notifications for the signed-in donor.
-export async function handleDonorNotifications(request, env) {
+async function handleDonorNotifications(request, env) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!d1(env)) return json({ notifications: [] });
-
   const notifications = await d1All(
     env,
     `SELECT id, parish_id, type, fiscal_year, pledge_cents, given_cents, message, sent_at
@@ -24,7 +18,6 @@ export async function handleDonorNotifications(request, env) {
      LIMIT 10`,
     normalizeEmail(donor.email)
   );
-
   return json({
     notifications: (notifications || []).map((n) => ({
       id: n.id,
@@ -38,14 +31,11 @@ export async function handleDonorNotifications(request, env) {
     })),
   });
 }
-
-// POST /api/donor/notifications/:id/dismiss
-export async function handleDonorNotificationDismiss(request, env, notifId) {
+async function handleDonorNotificationDismiss(request, env, notifId) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!d1(env)) return json({ ok: true });
-
   await d1Run(
     env,
     `UPDATE donor_notifications
@@ -54,6 +44,6 @@ export async function handleDonorNotificationDismiss(request, env, notifId) {
     notifId,
     normalizeEmail(donor.email)
   );
-
   return json({ ok: true });
 }
+export { handleDonorNotificationDismiss, handleDonorNotifications };

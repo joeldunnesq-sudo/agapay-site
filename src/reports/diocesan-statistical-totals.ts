@@ -3,8 +3,15 @@ export interface StatisticalTotalsEnvironment {
 }
 export interface StatisticalReport {
   year: number;
-  sacraments: Record<string, number>;
-  membership: Record<string, number>;
+  sacraments: {
+    baptism: number;
+    chrismation: number;
+    wedding: number;
+    funeral: number;
+    total: number;
+    [field: string]: unknown;
+  };
+  membership: { people: number; households: number; catechumensMade: number; [field: string]: unknown };
 }
 const FIELDS = ['baptism', 'chrismation', 'wedding', 'funeral', 'catechumensMade', 'people', 'households'];
 
@@ -60,14 +67,14 @@ export async function applyStatisticalTotals<TReport extends StatisticalReport>(
   const manualAdditions = row ? validateStatisticalTotals(JSON.parse(row.totals_json)) : {};
   const automaticTotals: Record<string, number> = {};
   for (const field of FIELDS) {
-    const section = ['baptism', 'chrismation', 'wedding', 'funeral'].includes(field)
-      ? report.sacraments
-      : report.membership;
+    const section = (
+      ['baptism', 'chrismation', 'wedding', 'funeral'].includes(field) ? report.sacraments : report.membership
+    ) as Record<string, number>;
     automaticTotals[field] = section[field];
     if (Object.hasOwn(manualAdditions, field)) section[field] += manualAdditions[field];
   }
   report.sacraments.total = ['baptism', 'chrismation', 'wedding', 'funeral'].reduce(
-    (total, field) => total + report.sacraments[field],
+    (total, field) => total + (report.sacraments[field] as number),
     0
   );
   return { ...report, automaticTotals, manualAdditions };

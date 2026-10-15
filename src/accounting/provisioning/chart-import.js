@@ -1,6 +1,6 @@
+// Generated from src/accounting/provisioning/chart-import.ts by npm run build:server. Do not edit.
 import { csvTable, digest, normalize, text } from '../csv-utils.js';
 import { ValidationError } from '../errors.js';
-
 const aliases = {
   sourceRef: ['account id', 'id'],
   accountNumber: ['account number', 'number', 'account no', 'num', 'account code', 'code'],
@@ -53,8 +53,7 @@ const requireImporter = (actor) => {
   if (!actor?.id || !actor.capabilities?.includes('accounting.migration.import'))
     throw new ValidationError('Accounting import permission is required.');
 };
-
-export async function previewActivationChart(db, { actor, filename, csv, columnMap = {}, typeMap = {} }) {
+async function previewActivationChart(db, { actor, filename, csv, columnMap = {}, typeMap = {} }) {
   requireImporter(actor);
   if (typeof csv !== 'string') throw new ValidationError('Choose a CSV file to preview.');
   const table = csvTable({ filename, csv, maxRows: 250 });
@@ -76,9 +75,9 @@ export async function previewActivationChart(db, { actor, filename, csv, columnM
   const existing = await accountRows(db),
     rows = [],
     errors = [],
-    seenRefs = new Set(),
-    seenNumbers = new Set(),
-    seenNames = new Set();
+    seenRefs = /* @__PURE__ */ new Set(),
+    seenNumbers = /* @__PURE__ */ new Set(),
+    seenNames = /* @__PURE__ */ new Set();
   const value = (raw, key) => (indexes[key] < 0 ? '' : text(raw[indexes[key]]));
   for (let index = 0; index < table.rows.length; index++) {
     const raw = table.rows[index],
@@ -97,7 +96,7 @@ export async function previewActivationChart(db, { actor, filename, csv, columnM
       sourceRef.length > 180 ||
       accountNumber.length > 40 ||
       sourceType.length > 80 ||
-      value(raw, 'description').length > 1000
+      value(raw, 'description').length > 1e3
     ) {
       error('An account field is too long.');
       continue;
@@ -157,8 +156,7 @@ export async function previewActivationChart(db, { actor, filename, csv, columnM
     linkCount: rows.filter((row) => row.action === 'link').length,
   };
 }
-
-export async function commitActivationChart(db, input) {
+async function commitActivationChart(db, input) {
   requireImporter(input.actor);
   const session = await db
     .prepare("SELECT * FROM accounting_migration_sessions WHERE id=? AND status='in_progress'")
@@ -166,7 +164,7 @@ export async function commitActivationChart(db, input) {
     .first();
   if (!session) throw new ValidationError('Start or resume an import session first.');
   if (input.confirmed !== true) throw new ValidationError('Review and confirm the account mappings first.');
-  const preview = await previewActivationChart(db, input); // Never trust a browser-supplied preview.
+  const preview = await previewActivationChart(db, input);
   if (preview.errors.length || !preview.rows.length)
     throw new ValidationError('Resolve the CSV errors before creating accounts.');
   if (preview.distinctSourceTypes.some((type) => !categories.includes(input.typeMap?.[type])))
@@ -233,3 +231,4 @@ export async function commitActivationChart(db, input) {
   await db.batch(statements);
   return { created: preview.createCount, linked: preview.linkCount };
 }
+export { commitActivationChart, previewActivationChart };

@@ -1,14 +1,13 @@
+// Generated from src/accounting/provisioning/full-schema.ts by npm run build:server. Do not edit.
 import { digest } from '../csv-utils.js';
 import { initializeLedgerChart, validateLedgerFoundation } from '../ledger/service.js';
 import { initializeAccountingSetup } from '../setup/service.js';
-
-export const provisioningActor = Object.freeze({
+const provisioningActor = Object.freeze({
   id: 'accounting_provisioner',
   type: 'system',
   capabilities: ['accounting.configure', 'accounting.view'],
 });
-
-export async function applyAccountingMigration(db, migration) {
+async function applyAccountingMigration(db, migration) {
   const sql = migration.sql.replaceAll('\r\n', '\n');
   if ((await digest(sql)) !== migration.sha256) throw new Error('Accounting migration checksum mismatch.');
   const applied = await db
@@ -19,8 +18,6 @@ export async function applyAccountingMigration(db, migration) {
     if (applied.checksum !== migration.sha256) throw new Error('Accounting migration checksum drift.');
     return;
   }
-  // D1 executes a batch transaction, including its immutable migration markers.
-  // SQL is release-owned. A multi-statement migration is kept intact (including triggers).
   await db.batch([
     db.prepare(sql),
     db
@@ -29,8 +26,7 @@ export async function applyAccountingMigration(db, migration) {
     db.prepare('INSERT INTO _agapay_d1_migrations(name) VALUES(?)').bind(migration.name),
   ]);
 }
-
-export async function prepareAccountingMigrationLedger(db) {
+async function prepareAccountingMigrationLedger(db) {
   await db
     .prepare(
       `CREATE TABLE IF NOT EXISTS accounting_migrations(version TEXT PRIMARY KEY,checksum TEXT NOT NULL,applied_at TEXT NOT NULL DEFAULT (datetime('now')));
@@ -38,15 +34,13 @@ export async function prepareAccountingMigrationLedger(db) {
     )
     .run();
 }
-
-export async function seedBeforeIntegrationMigration(db, migration) {
+async function seedBeforeIntegrationMigration(db, migration) {
   if (migration.name.startsWith('0005_')) await initializeLedgerChart(db, { actor: provisioningActor });
 }
-
-export async function initializeProvisionedCalendar(db, options, reference) {
+async function initializeProvisionedCalendar(db, options, reference) {
   await initializeAccountingSetup(db, {
     actor: provisioningActor,
-    date: new Date(`${options.startDate}T12:00:00Z`),
+    date: /* @__PURE__ */ new Date(`${options.startDate}T12:00:00Z`),
     fiscalYearStartMonth: options.fiscalYearStartMonth,
     correlationId: reference,
   });
@@ -63,8 +57,7 @@ export async function initializeProvisionedCalendar(db, options, reference) {
       .bind(options.startDate),
   ]);
 }
-
-export async function validateProvisionedBooks(db, parishId, migrations) {
+async function validateProvisionedBooks(db, parishId, migrations) {
   const owner = await db.prepare("SELECT value FROM accounting_database_metadata WHERE key='parish_id'").first();
   if (owner?.value !== parishId) throw new Error('Accounting ownership check failed.');
   const integrity = (await db.prepare('PRAGMA quick_check').all()).results;
@@ -81,3 +74,11 @@ export async function validateProvisionedBooks(db, parishId, migrations) {
     throw new Error('Accounting validation did not pass.');
   return true;
 }
+export {
+  applyAccountingMigration,
+  initializeProvisionedCalendar,
+  prepareAccountingMigrationLedger,
+  provisioningActor,
+  seedBeforeIntegrationMigration,
+  validateProvisionedBooks,
+};

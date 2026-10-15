@@ -1,37 +1,33 @@
+// Generated from src/stewardship/attendance.ts by npm run build:server. Do not edit.
 import { generateSecret } from '../lib/core.js';
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const ALLOWED_ACTOR_TYPES = new Set(['parish_staff', 'ministry_leader']);
-
-export class AttendanceValidationError extends Error {
+const DAY_MS = 24 * 60 * 60 * 1e3;
+const ALLOWED_ACTOR_TYPES = /* @__PURE__ */ new Set(['parish_staff', 'ministry_leader']);
+class AttendanceValidationError extends Error {
   constructor(message, status = 400) {
     super(message);
     this.name = 'AttendanceValidationError';
     this.status = status;
   }
 }
-
-export function sundayOnOrBefore(value = new Date()) {
+function sundayOnOrBefore(value = /* @__PURE__ */ new Date()) {
   const source = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(source.getTime())) throw new AttendanceValidationError('Choose a valid week.');
   const date = new Date(Date.UTC(source.getUTCFullYear(), source.getUTCMonth(), source.getUTCDate()));
   date.setUTCDate(date.getUTCDate() - date.getUTCDay());
   return date.toISOString().slice(0, 10);
 }
-
-export function validateAttendanceWeek(value) {
+function validateAttendanceWeek(value) {
   const weekOf = String(value || '').trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(weekOf)) {
     throw new AttendanceValidationError('Week must be an ISO date for a Sunday.');
   }
-  const date = new Date(`${weekOf}T00:00:00.000Z`);
+  const date = /* @__PURE__ */ new Date(`${weekOf}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== weekOf || date.getUTCDay() !== 0) {
     throw new AttendanceValidationError('Week must be a valid Sunday.');
   }
   return weekOf;
 }
-
-export function validateHeadcount(value) {
+function validateHeadcount(value) {
   if (value == null || (typeof value === 'string' && value.trim() === '')) {
     throw new AttendanceValidationError('Headcount must be a whole number of zero or more.');
   }
@@ -41,26 +37,22 @@ export function validateHeadcount(value) {
   }
   return headcount;
 }
-
 function requestedWeeks(value) {
   const weeks = Number.parseInt(String(value || 52), 10);
   return Number.isFinite(weeks) ? Math.max(4, Math.min(104, weeks)) : 52;
 }
-
 function weekSequence(endingSunday, weeks) {
-  const end = new Date(`${endingSunday}T00:00:00.000Z`);
+  const end = /* @__PURE__ */ new Date(`${endingSunday}T00:00:00.000Z`);
   return Array.from({ length: weeks }, (_, index) => {
     const date = new Date(end.getTime() - (weeks - index - 1) * 7 * DAY_MS);
     return date.toISOString().slice(0, 10);
   });
 }
-
 function average(values) {
   const reported = values.filter((value) => typeof value === 'number');
   if (!reported.length) return null;
   return Math.round((reported.reduce((sum, value) => sum + value, 0) / reported.length) * 10) / 10;
 }
-
 function summaryFor(points) {
   const reported = points.filter((point) => typeof point.headcount === 'number');
   const latest = reported.at(-1) || null;
@@ -70,7 +62,7 @@ function summaryFor(points) {
   const priorAverage = average(priorWindow);
   const changePct =
     currentAverage !== null && priorAverage !== null && priorAverage > 0
-      ? Math.round(((currentAverage - priorAverage) / priorAverage) * 1000) / 10
+      ? Math.round(((currentAverage - priorAverage) / priorAverage) * 1e3) / 10
       : null;
   return {
     latestHeadcount: latest?.headcount ?? null,
@@ -80,11 +72,10 @@ function summaryFor(points) {
     eightWeekChangePct: changePct,
     weeksReported: reported.length,
     expectedWeeks: points.length,
-    reportingCoveragePct: points.length ? Math.round((reported.length / points.length) * 1000) / 10 : null,
+    reportingCoveragePct: points.length ? Math.round((reported.length / points.length) * 1e3) / 10 : null,
   };
 }
-
-export async function loadAttendanceDelegation(env, parishId) {
+async function loadAttendanceDelegation(env, parishId) {
   const row = await env.AGAPAY_DB.prepare(
     `
     SELECT s.headcount_delegate_ministry_id AS ministry_id,
@@ -102,8 +93,7 @@ export async function loadAttendanceDelegation(env, parishId) {
   if (!row?.ministry_id || !row?.ministry_name) return null;
   return { ministryId: row.ministry_id, ministryName: row.ministry_name };
 }
-
-export async function listAttendanceDelegateOptions(env, parishId) {
+async function listAttendanceDelegateOptions(env, parishId) {
   const result = await env.AGAPAY_DB.prepare(
     `
     SELECT m.id, m.display_name
@@ -120,8 +110,7 @@ export async function listAttendanceDelegateOptions(env, parishId) {
     .all();
   return (result.results || []).map((row) => ({ id: row.id, name: row.display_name || 'Ministry' }));
 }
-
-export async function getParishAttendanceTrend(env, { parishId, weeks = 52 }) {
+async function getParishAttendanceTrend(env, { parishId, weeks = 52 }) {
   const windowWeeks = requestedWeeks(weeks);
   const endingSunday = sundayOnOrBefore();
   const expected = weekSequence(endingSunday, windowWeeks);
@@ -152,8 +141,7 @@ export async function getParishAttendanceTrend(env, { parishId, weeks = 52 }) {
     delegateOptions,
   };
 }
-
-export async function saveParishWeeklyHeadcount(env, input) {
+async function saveParishWeeklyHeadcount(env, input) {
   const parishId = String(input.parishId || '').trim();
   const actorType = String(input.actorType || '').trim();
   const actorId = String(input.actorId || '').trim();
@@ -184,8 +172,7 @@ export async function saveParishWeeklyHeadcount(env, input) {
     .run();
   return { ok: true, weekOf, headcount };
 }
-
-export async function setAttendanceDelegate(env, { parishId, ministryId }) {
+async function setAttendanceDelegate(env, { parishId, ministryId }) {
   const normalizedMinistryId =
     ministryId == null || String(ministryId).trim() === '' ? null : String(ministryId).trim();
   if (normalizedMinistryId) {
@@ -215,3 +202,14 @@ export async function setAttendanceDelegate(env, { parishId, ministryId }) {
     .run();
   return loadAttendanceDelegation(env, parishId);
 }
+export {
+  AttendanceValidationError,
+  getParishAttendanceTrend,
+  listAttendanceDelegateOptions,
+  loadAttendanceDelegation,
+  saveParishWeeklyHeadcount,
+  setAttendanceDelegate,
+  sundayOnOrBefore,
+  validateAttendanceWeek,
+  validateHeadcount,
+};

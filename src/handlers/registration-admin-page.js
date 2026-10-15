@@ -1,3 +1,4 @@
+// Generated from src/handlers/registration-admin-page.ts by npm run build:server. Do not edit.
 import {
   clampListLimit,
   d1,
@@ -9,8 +10,7 @@ import {
   safeParseJsonRow,
 } from '../lib/core.js';
 import { defaultSubscriptionTier } from '../lib/subscriptions.js';
-
-export function adminRegistrationSummary(registration = {}, fallbackReference = '') {
+function adminRegistrationSummary(registration = {}, fallbackReference = '') {
   registration = registration || {};
   return {
     reference: registration.reference || fallbackReference || '',
@@ -32,8 +32,7 @@ export function adminRegistrationSummary(registration = {}, fallbackReference = 
     receivedAt: registration.receivedAt || '',
   };
 }
-
-export async function loadAdminRegistrationPage(env, options = {}) {
+async function loadAdminRegistrationPage(env, options = {}) {
   const limit = clampListLimit(options.limit, 100, 250);
   const cursor = decodeListCursor(options.cursor);
   const status = String(options.status || '')
@@ -42,7 +41,6 @@ export async function loadAdminRegistrationPage(env, options = {}) {
   const query = String(options.query || options.q || '')
     .trim()
     .toLowerCase();
-
   if (d1(env)) {
     const where = [];
     const params = [];
@@ -77,7 +75,7 @@ export async function loadAdminRegistrationPage(env, options = {}) {
       limit + 1
     );
     const pageRows = rows.slice(0, limit);
-    const registrations = pageRows.map((row) => {
+    const registrations2 = pageRows.map((row) => {
       try {
         return adminRegistrationSummary(safeParseJsonRow(row), row.reference);
       } catch {
@@ -85,17 +83,15 @@ export async function loadAdminRegistrationPage(env, options = {}) {
       }
     });
     return {
-      registrations,
+      registrations: registrations2,
       cursor: rows.length > limit ? encodeListCursor(pageRows[pageRows.length - 1]) : null,
       hasMore: rows.length > limit,
       limit,
       source: 'd1',
     };
   }
-
   const keys = await listKvKeys(env, { limit });
   const registrations = [];
-
   for (const key of keys) {
     if (isSystemKvKey(key.name)) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
@@ -122,7 +118,7 @@ export async function loadAdminRegistrationPage(env, options = {}) {
       registrations.push({ reference: key.name, status: 'unreadable' });
     }
   }
-
   registrations.sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
   return { registrations, cursor: null, hasMore: false, limit, source: 'kv' };
 }
+export { adminRegistrationSummary, loadAdminRegistrationPage };

@@ -13,6 +13,24 @@ export default [
   },
   ...tseslint.configs.recommended.map((config) => ({ ...config, files: ['src/**/*.ts', 'scripts/**/*.ts'] })),
   {
+    // Retain the existing unused helper while preserving runtime/export parity.
+    files: ['src/handlers/donor-notifications.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^newNotifId$' }] },
+  },
+  {
+    files: ['src/learn/hymn-source.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^liturgicalDay$', argsIgnorePattern: '^liturgicalDay$' },
+      ],
+    },
+  },
+  {
+    files: ['src/reports/diocesan-statistics.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^BLUE$' }] },
+  },
+  {
     files: ['src/**/*.ts', 'scripts/**/*.ts'],
     rules: {
       'no-unreachable': 'error',

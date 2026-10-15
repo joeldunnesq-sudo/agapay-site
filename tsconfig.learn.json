@@ -3,5 +3,5 @@
   "compilerOptions": {
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["src/learn/**/*.ts", "scripts/typecheck-learn/**/*.ts"]
+  "include": ["src/learn/domain.ts", "src/learn/future-records.ts"]
 }

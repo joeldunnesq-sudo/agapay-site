@@ -41,7 +41,7 @@ export function issueParishDashboardSession(
   options?: { mfaVerifiedAt?: string; accessType?: string }
 ): Promise<DashboardSession>;
 
-export function generateSecret(prefix?: string): string;
+export function generateSecret(prefix?: string | number): string;
 
 export { safeParseJsonRow } from './json-rows.js';
 export function clampListLimit(value: unknown, defaultLimit?: number, maxLimit?: number): number;
@@ -54,3 +54,16 @@ export function encodeListCursor(row?: RegistrationCursorRow): string;
 export function decodeListCursor(cursor: unknown): { receivedAt: unknown; reference: unknown } | null;
 
 export function clientIp(request: Request): string;
+export function isSystemKvKey(keyName: unknown): boolean;
+export interface PasswordRecord {
+  version: 'pbkdf2-sha256';
+  iterations: number;
+  salt: string;
+  hash: string;
+}
+export function createPasswordRecord(password: string): Promise<PasswordRecord>;
+export function verifyPasswordRecord(password: string, record: unknown): Promise<boolean>;
+export function hashSessionToken(token: string, salt: string): Promise<string>;
+export function secureCompare(a: string, b: string): boolean;
+export { parseJsonRow } from './json-rows.js';
+export const COMMEMORATION_KEY_PREFIX: string;

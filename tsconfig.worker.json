@@ -5,5 +5,5 @@
     "types": ["node"]
   },
   "include": [".wrangler/types/worker.d.ts", "src/**/*.ts", "scripts/typecheck/**/*.ts"],
-  "exclude": ["src/learn/**", "src/browser/**"]
+  "exclude": ["src/learn/domain.ts", "src/learn/future-records.ts", "src/browser/**"]
 }
