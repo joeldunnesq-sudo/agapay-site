@@ -1,6 +1,7 @@
+// Generated from src/browser/parish/backup.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-  const mounts = new WeakMap();
+  const mounts = /* @__PURE__ */ new WeakMap();
   window.ParishBackup = {
     mount({ element, parishId, headers }) {
       if (!element || !parishId) return;
@@ -50,7 +51,7 @@
           const date = at && new Date(at);
           cloud.textContent =
             date && Number.isFinite(date.getTime())
-              ? date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'long' }) +
+              ? date.toLocaleString(void 0, { dateStyle: 'medium', timeStyle: 'long' }) +
                 (data.cloud.status === 'overdue'
                   ? ' · Overdue: more than 48 hours since the last verified backup.'
                   : ' · Verified')
@@ -92,7 +93,7 @@
         document.body.append(link);
         link.click();
         link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        setTimeout(() => URL.revokeObjectURL(url), 6e4);
         progress.textContent =
           'Verified ZIP sent to your browser for saving. Check your Downloads folder. Created ' +
           new Date(job.createdAt).toLocaleString() +
@@ -110,7 +111,7 @@
           } else if (job.status === 'preparing') {
             progress.textContent =
               'Preparing your parish backup… It will download automatically when ready. Keep this page open, or retrieve it later in Data portability & closure.';
-            jobTimer = setTimeout(checkJob, 15000);
+            jobTimer = setTimeout(checkJob, 15e3);
             return;
           } else {
             jobId = null;
@@ -133,11 +134,10 @@
         progress.textContent = 'Requesting your parish backup…';
         try {
           if (!jobId) {
-            // Reuse an in-progress ordinary export after navigating away and back.
             const state = await api('');
             if (!alive()) return;
             const pending = state.jobs.find(
-              (job) => job.mode === 'export' && job.status === 'preparing' && job.expiresAt > Date.now()
+              (job2) => job2.mode === 'export' && job2.status === 'preparing' && job2.expiresAt > Date.now()
             );
             const job = pending || (await api('', { mode: 'export', requestKey: crypto.randomUUID() })).job;
             jobId = job.id;
@@ -158,7 +158,7 @@
       const timer = setInterval(() => {
         if (!alive()) dispose();
         else visibleRefresh();
-      }, 30000);
+      }, 3e4);
       document.addEventListener('visibilitychange', visibleRefresh);
       dispose = () => {
         stopped = true;

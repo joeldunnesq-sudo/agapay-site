@@ -1,28 +1,23 @@
-// Presentation and local shopping preferences. Catalog and checkout remain parish-owned.
+// Generated from src/browser/donor/bookstore-experience.ts by npm run build:browser. Do not edit.
 let bookstoreSavedOnly = false;
 let bookstoreSort = 'featured';
-
 function bookstoreExperienceEnabled() {
   return document.body.classList.contains('bookstore-boutique');
 }
-
 function bookstoreSavedKey(product) {
   return `${document.getElementById('bookstoreParishId')?.value || ''}:${product.id}:${product.variantId || ''}`;
 }
-
 function bookstoreSavedItems() {
   try {
     const saved = JSON.parse(localStorage.getItem('agapayBookstoreSaved') || '[]');
     return new Set(Array.isArray(saved) ? saved.filter((value) => typeof value === 'string') : []);
   } catch {
-    return new Set();
+    return /* @__PURE__ */ new Set();
   }
 }
-
 function bookstoreIsSaved(product) {
   return bookstoreSavedItems().has(bookstoreSavedKey(product));
 }
-
 function toggleBookstoreSaved(index) {
   const product = bookstoreProducts[index];
   if (!product) return;
@@ -39,11 +34,9 @@ function toggleBookstoreSaved(index) {
   renderBookstoreProducts(bookstoreProducts);
   document.querySelector(`[data-bookstore-save="${index}"]`)?.focus();
 }
-
 function toggleBookstoreSavedView() {
   setBookstoreView(bookstoreSavedOnly ? 'shop' : 'saved');
 }
-
 function setBookstoreView(view = 'shop') {
   document.body.dataset.bookstoreView = view;
   bookstoreSavedOnly = view === 'saved';
@@ -63,32 +56,41 @@ function setBookstoreView(view = 'shop') {
   renderBookstoreProducts(bookstoreProducts);
   if (view === 'orders') document.getElementById('bookstorePopularItems').hidden = true;
 }
-
 function scrollBookstoreSellers(direction) {
   const rail = document.getElementById('bookstorePopularGrid');
-  rail?.scrollBy({ left: direction * 280, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  rail?.scrollBy({
+    left: direction * 280,
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+  });
 }
-
 document.addEventListener('DOMContentLoaded', () => {
   const dialog = document.getElementById('bookstoreCategoryDialog');
   dialog?.addEventListener('click', (event) => {
     const category = event.target.closest('.bookstore-category-chip');
     if (category) {
       const label = document.getElementById('bookstoreCategoryLabel');
-      if (label) label.textContent = bookstoreCatalogCategory === 'all' ? 'Categories' : (BOOKSTORE_CATEGORY_LABELS[bookstoreCatalogCategory] || 'Sale');
+      if (label)
+        label.textContent =
+          bookstoreCatalogCategory === 'all'
+            ? 'Categories'
+            : BOOKSTORE_CATEGORY_LABELS[bookstoreCatalogCategory] || 'Sale';
       dialog.close();
     } else if (event.target === dialog) {
       const bounds = dialog.getBoundingClientRect();
-      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+      if (
+        event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom
+      )
+        dialog.close();
     }
   });
 });
-
 function setBookstoreSort(value) {
   bookstoreSort = value;
   renderBookstoreProducts(bookstoreProducts);
 }
-
 function bookstoreExperienceProducts(products) {
   const visible = products.filter((product) => !bookstoreSavedOnly || bookstoreIsSaved(product));
   if (bookstoreSort === 'low') visible.sort((a, b) => a.priceCents - b.priceCents);
@@ -96,7 +98,6 @@ function bookstoreExperienceProducts(products) {
   if (bookstoreSort === 'name') visible.sort((a, b) => String(a.name).localeCompare(String(b.name)));
   return visible;
 }
-
 function openBookstoreDetail(index) {
   const product = bookstoreProducts[index];
   if (!product) return;
@@ -118,14 +119,12 @@ function openBookstoreDetail(index) {
     </div>`;
   dialog.showModal();
 }
-
 function addBookstoreDetailToCart(index) {
   const product = bookstoreProducts[index];
   if (!product) return;
   addBookstoreProductToCart(product.id, product.variantId || '');
   document.getElementById('bookstoreDetail')?.close();
 }
-
 function openBookstoreBag() {
   if (!bookstoreCart.length) {
     setDonorStatus('Your cart is empty. Explore the collection below.', 'info');
@@ -134,7 +133,6 @@ function openBookstoreBag() {
   if (window.matchMedia('(max-width: 700px)').matches) setBookstoreMobileCartOpen(true);
   else document.getElementById('bookstoreCartPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
-
 function browseBookstoreCollection(category = 'all') {
   setBookstoreView('shop');
   bookstoreCatalogQuery = '';

@@ -8,7 +8,6 @@ interface ParishGivingInsightResponse {
 }
 declare function isParishTier(): boolean;
 declare function isParishPlusActive(): boolean;
-declare function renderStewardshipFees(fees: unknown, compact?: boolean): string;
 
 let givingOverviewInsightRequest = 0;
 let givingOverviewInsightParish = '';
@@ -33,7 +32,11 @@ async function loadGivingOverviewInsights(): Promise<void> {
   const year = Number(selector.value);
   const panels: [string, string, (data: ParishGivingInsightResponse) => string][] = [
     ['givingOverviewComparison', 'summary', (data) => swGivingSourceComparison(data, year)],
-    ['givingOverviewFees', 'health-score', (data) => renderStewardshipFees(data.processing_fees, true)],
+    [
+      'givingOverviewFees',
+      'health-score',
+      (data) => renderStewardshipFees(data.processing_fees as StewardshipFeeReportView | null | undefined, true),
+    ],
   ];
   await Promise.all(
     panels.map(async ([id, endpoint, render]) => {

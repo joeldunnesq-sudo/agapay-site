@@ -1,20 +1,13 @@
+// Generated from src/browser/parish/features/stewardship/reports.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global currentParish, authHeaders, escapeHtml, escapeAttr, fmtDollars, swNumber, gmKpi */
-/* exported renderGivingMetrics, ensureDiocesanStatisticsCard, loadDiocesanStatisticsPreview,
-  downloadDiocesanStatisticsReport, saveDiocesanStatisticsTotals */
-
-// Visual report summary. All amounts come from the existing giving APIs.
 function swReportAmount(value) {
   return typeof value === 'number' && Number.isFinite(value) ? fmtDollars(value) : '—';
 }
-
 function swReportBar(label, value, scale, tone) {
   const available = typeof value === 'number' && Number.isFinite(value);
   const width = available && scale > 0 ? Math.max(0, Math.min(100, (value / scale) * 100)) : 0;
   return `<div class="sw-report-bar-row"><div class="sw-report-bar-label"><span>${escapeHtml(label)}</span><strong>${swReportAmount(value)}</strong></div><div class="sw-report-bar-track" aria-hidden="true"><i class="sw-chart-${tone}" style="width:${width}%"></i></div></div>`;
 }
-
 function swReportBudget(s, year) {
   const goal = s.total_pledged_cents;
   const actual = s.total_actual_cents;
@@ -25,7 +18,7 @@ function swReportBudget(s, year) {
   const expected = hasGoal && elapsed !== null ? Math.round(goal * elapsed) : null;
   const difference = expected !== null && hasActual ? actual - expected : null;
   const pct = hasGoal && hasActual ? Math.round((actual / goal) * 100) : null;
-  const period = year < new Date().getFullYear() ? 'at year-end' : 'to date';
+  const period = year < /* @__PURE__ */ new Date().getFullYear() ? 'at year-end' : 'to date';
   const verdict =
     difference === null ? '' : difference === 0 ? 'On pace' : difference > 0 ? 'Ahead of pace' : 'Behind pace';
   const status = verdict
@@ -41,7 +34,6 @@ function swReportBudget(s, year) {
     ${chart}<div class="sw-report-chart-footer"><span>Annual pledge goal</span><strong>${hasGoal ? fmtDollars(goal) : 'Not set'}</strong></div>
     <p class="sw-chart-note">Expected giving follows the elapsed portion of the year. The projection estimates year-end giving at the current pace.</p></section>`;
 }
-
 function swReportFunds(f) {
   const funds = (f.funds || [])
     .filter((fund) => fund.total_cents > 0)
@@ -64,9 +56,8 @@ function swReportFunds(f) {
     <div class="sw-report-chart-metric"><strong>${f.error ? '—' : fmtDollars(total)}</strong><span>${f.error ? 'fund total unavailable' : `across ${funds.length} ${funds.length === 1 ? 'fund' : 'funds'}`}</span></div>
     ${content}<p class="sw-chart-note">Recorded AGAPAY gifts by fund. Outside giving is included in the overall collected total, but not this breakdown.</p></section>`;
 }
-
 function renderGivingMetrics(s, f, year) {
-  const label = year < new Date().getFullYear() ? 'Collected in ' + year : year + ' collected to date';
+  const label = year < /* @__PURE__ */ new Date().getFullYear() ? 'Collected in ' + year : year + ' collected to date';
   const prior =
     typeof s.prior_year_actual_cents === 'number'
       ? `<div class="sw-report-prior"><span>Prior full-year giving · ${year - 1}</span><strong>${fmtDollars(s.prior_year_actual_cents)}</strong><span>For context; current-year giving may cover a shorter period.</span></div>`
@@ -75,7 +66,6 @@ function renderGivingMetrics(s, f, year) {
     <div class="sw-kpi-grid sw-report-kpis">${gmKpi('Annual pledges', swReportAmount(s.total_pledged_cents), swNumber(s.pledging_donors) + ' pledging households')}${gmKpi('Projected year-end', swReportAmount(s.run_rate_cents), 'at the current giving pace')}${gmKpi('Average per donor', swReportAmount(s.avg_per_donor_cents), 'recorded giving per active donor')}</div></div>
     <div class="sw-report-chart-grid">${swReportBudget(s, year)}${swReportFunds(f)}</div>${prior}`;
 }
-
 function diocesanStatisticsApi(year) {
   return (
     '/api/parish/dashboard/' +
@@ -84,7 +74,6 @@ function diocesanStatisticsApi(year) {
     encodeURIComponent(year)
   );
 }
-
 function ensureDiocesanStatisticsCard() {
   const existing = document.getElementById('diocesanStatisticsPane');
   if (existing) return existing;
@@ -100,10 +89,9 @@ function ensureDiocesanStatisticsCard() {
   </div>`;
   return document.getElementById('diocesanStatisticsPane');
 }
-
 function diocesanStatisticsSelectedYear() {
   const select = document.getElementById('diocesanStatisticsYear');
-  const currentYear = new Date().getFullYear();
+  const currentYear = /* @__PURE__ */ new Date().getFullYear();
   if (select && !select.options.length) {
     for (let year = currentYear; year >= currentYear - 5; year -= 1) {
       select.add(new Option(String(year), String(year)));
@@ -111,7 +99,6 @@ function diocesanStatisticsSelectedYear() {
   }
   return Number(select?.value || currentYear);
 }
-
 function renderDiocesanStatisticsPreview(report) {
   const attendance = report.attendance || {};
   const attendanceValue =
@@ -146,7 +133,6 @@ function renderDiocesanStatisticsPreview(report) {
       <span data-statistics-save-status role="status"></span>
     </form>`;
 }
-
 async function saveDiocesanStatisticsTotals(event, year) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -177,7 +163,6 @@ async function saveDiocesanStatisticsTotals(event, year) {
     button.disabled = false;
   }
 }
-
 async function loadDiocesanStatisticsPreview(year) {
   const pane = ensureDiocesanStatisticsCard();
   if (!pane || !currentParish) return;
@@ -195,7 +180,6 @@ async function loadDiocesanStatisticsPreview(year) {
     pane.innerHTML = `<p class="sw-chart-empty">${escapeHtml(error.message || 'Unable to load the annual statistical summary.')}</p><button type="button" class="sw-action-btn" onclick="loadDiocesanStatisticsPreview(${selectedYear})">Try again</button>`;
   }
 }
-
 async function downloadDiocesanStatisticsReport(button) {
   if (!currentParish) return;
   const unsaved = document.querySelector('#diocesanStatisticsPane form[data-dirty="true"]');
@@ -228,7 +212,7 @@ async function downloadDiocesanStatisticsReport(button) {
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 1e3);
   } catch (error) {
     const pane = document.getElementById('diocesanStatisticsPane');
     if (pane)

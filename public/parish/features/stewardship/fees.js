@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/stewardship/fees.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global escapeHtml */
-/* exported renderStewardshipFees, selectStewardshipFeePeriod */
-
 function selectStewardshipFeePeriod(button, period) {
   const card = button.closest('.sw-fees');
   card.querySelectorAll('[data-fee-period]').forEach((panel) => {
@@ -12,7 +9,6 @@ function selectStewardshipFeePeriod(button, period) {
     tab.setAttribute('aria-pressed', String(tab === button));
   });
 }
-
 function renderStewardshipFees(report, compact = false) {
   if (!report?.annual) return '<p class="sw-chart-note">Processing fee details are not available yet.</p>';
   const money = (value) =>

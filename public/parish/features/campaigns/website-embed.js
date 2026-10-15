@@ -1,4 +1,4 @@
-/* global currentParish */
+// Generated from src/browser/parish/features/campaigns/website-embed.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
   const escape = (value) =>
@@ -83,7 +83,7 @@
     <iframe src="${escape(url.href)}" title="${escape(campaign.name)} — Powered by AGAPAY" width="100%" height="1400" style="display:block;width:100%;border:0" loading="lazy" allow="payment" referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </div>
 </section>
-<script src="${escape(location.origin)}/campaign-box.js" async></script>`;
+<script src="${escape(location.origin)}/campaign-box.js" async><\/script>`;
       say(
         'Code ready for an Elementor HTML widget. Colors, heading style, and introduction are saved in the copied code.'
       );

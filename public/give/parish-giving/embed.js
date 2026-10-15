@@ -1,3 +1,4 @@
+// Generated from src/browser/give/parish-giving/embed.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
   if (!/^\/give\/campaign-embed\/[^/]+\/[^/]+\/?$/.test(location.pathname)) return;
@@ -6,17 +7,22 @@
   try {
     const url = new URL(params.get('page'));
     if (url.protocol === 'https:' && !url.username && !url.password) {
-      url.search = ''; url.hash = ''; shareUrl = url.href;
+      url.search = '';
+      url.hash = '';
+      shareUrl = url.href;
     }
-  } catch { /* A preview without a parish URL uses the public campaign link. */ }
+  } catch {}
   window.AGAPAYCampaignEmbed = Object.freeze({ shareUrl });
   document.documentElement.classList.add('campaign-embedded');
   const root = document.documentElement.style;
   function contrast(hex) {
-    const rgb = hex.slice(1).match(/../g).map(value => {
-      const channel = parseInt(value, 16) / 255;
-      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-    });
+    const rgb = hex
+      .slice(1)
+      .match(/../g)
+      .map((value) => {
+        const channel = parseInt(value, 16) / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
     return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722 > 0.179 ? '#000000' : '#ffffff';
   }
   for (const key of ['primary', 'accent', 'background']) {
@@ -28,16 +34,18 @@
   if (params.get('font') === 'sans') root.setProperty('--campaign-serif', '"Mulish", system-ui, sans-serif');
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('campaignCanonicalUrl')?.remove();
-    const note = document.createElement('p'); note.className = 'agapay-campaign-checkout-brand';
+    const note = document.createElement('p');
+    note.className = 'agapay-campaign-checkout-brand';
     note.textContent = 'Powered by AGAPAY · Secure Stripe checkout opens in a new tab. Your parish page stays open.';
     document.getElementById('campaignCheckoutForm')?.prepend(note);
     let lastHeight = 0;
-    const notify = () => requestAnimationFrame(() => {
-      const height = Math.ceil(document.body.getBoundingClientRect().height);
-      if (height === lastHeight || parent === window) return;
-      lastHeight = height;
-      parent.postMessage({ type: 'agapay:campaign-resize', height }, '*');
-    });
+    const notify = () =>
+      requestAnimationFrame(() => {
+        const height = Math.ceil(document.body.getBoundingClientRect().height);
+        if (height === lastHeight || parent === window) return;
+        lastHeight = height;
+        parent.postMessage({ type: 'agapay:campaign-resize', height }, '*');
+      });
     new ResizeObserver(notify).observe(document.body);
     notify();
   });

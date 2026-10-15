@@ -10,7 +10,7 @@ const parishApp = await readParishDashboardSource();
 
 assert.match(parishApp, /AgapayMfa\?\.installFetchStepUp\(\)/, 'parish dashboard must install the MFA fetch wrapper');
 assert.match(portabilityClient, /archiveHash:\s*verifiedHash/, 'closure must submit the locally verified archive hash');
-assert.match(portabilityClient, /crypto\.subtle\.digest\('SHA-256'/, 'saved ZIP verification must happen on the device');
+assert.match(portabilityClient, /crypto\.subtle\.digest\(['"]SHA-256['"]/, 'saved ZIP verification must happen on the device');
 assert.match(portabilityClient, /Downloading alone does not close your parish/, 'download UI must state that downloading is non-destructive');
 assert.match(portabilityClient, /data-action="confirm"/, 'closure confirmation must remain a separate explicit action');
 assert.match(portabilityClient, /retention disclosure is a draft awaiting formal approval/, 'unapproved retention copy must be visible and keep closure disabled');

@@ -139,9 +139,8 @@ assert.match(
   /href="\/site-chrome\.css"/,
   'homepage should use the canonical shared navigation and footer styles'
 );
-assert.match(
-  html,
-  /src="\/site-chrome\.js"/,
+assert.ok(
+  html.includes('src="' + appAssetUrl('/site-chrome.js') + '"'),
   'homepage should use the canonical shared navigation and footer behavior'
 );
 assert.doesNotMatch(html, /data-no-site-chrome/, 'homepage should allow the canonical site chrome to render');

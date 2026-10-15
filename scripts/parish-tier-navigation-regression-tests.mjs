@@ -1,3 +1,4 @@
+import { appAssetUrl, pageAssets, appAssets } from './lib/app-asset-versions.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -56,13 +57,16 @@ const featureAssetVersions = [
   '/parish/features/giving.js',
   '/parish/dashboard-runtime.js',
   '/parish/app.js',
-].map((asset) => dashboard.match(new RegExp(`${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?v=([^"']+)`))?.[1]);
+];
+for (const asset of featureAssetVersions) {
+  assert.ok(dashboard.includes([...pageAssets, ...appAssets].includes(asset) ? appAssetUrl(asset) : asset + '?v=20260930recovery1'), asset + ' must use its current content version');
+}
 assert.ok(
   dashboard.includes('/parish/style.css?v=20260901memorial1')
     && dashboard.includes('/parish/redesign.css?v=20260829fullscreen1')
     && dashboard.includes('/parish/library.css?v=20260829fullscreen1')
     && dashboard.includes('/styles/stewardship.css?v=20260902access1')
-    && featureAssetVersions.every((version) => version && version === featureAssetVersions[0]),
+,
   "the loading-state assets must use current, synchronized cache versions"
 );
 for (const feature of ["directory", "library", "sacraments"]) {

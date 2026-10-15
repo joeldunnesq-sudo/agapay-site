@@ -24,7 +24,7 @@ const [dashboard, registry, worker, architectureGuide] = await Promise.all([
 ]);
 
 assert.match(registry, /function register\(id, definition\)/);
-assert.match(registry, /typeof definition\.load !== 'function'/);
+assert.match(registry, /typeof definition\.load !== ['"]function['"]/);
 assert.match(architectureGuide, /New feature code should not be added directly/);
 assert.ok(dashboard.replace(/\r\n/g, '\n').length < 160_000, 'dashboard.html exceeded its shell size ceiling');
 
@@ -51,7 +51,7 @@ for (const file of featureFiles) {
   const isEntry = !file.includes('/');
   const registrations = source.match(/ParishFeatureRegistry\.register\(/g) || [];
   assert.equal(registrations.length, isEntry ? 1 : 0, `${file} must register only at its feature entry`);
-  if (isEntry) assert.match(source, new RegExp(`ParishFeatureRegistry\\.register\\('${id}'`));
+  if (isEntry) assert.match(source, new RegExp(`ParishFeatureRegistry\\.register\\(['"]${id}['"]`));
   else assert.ok(source.split(/\r?\n/).length - 1 <= 1_200, `${file} exceeded the supporting-file ceiling`);
   assert.ok(
     (await stat(new URL(`public/parish/features/${file}`, root))).size < 250_000,

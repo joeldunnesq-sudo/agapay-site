@@ -55,7 +55,7 @@ try {
         body:
           route.request().url() === 'https://registration.test/register'
             ? html
-            : route.request().url().endsWith('/registration-assistance.js')
+            : new URL(route.request().url()).pathname === '/registration-assistance.js'
               ? assistance
               : '',
       })

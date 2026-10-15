@@ -1,15 +1,10 @@
+// Generated from src/browser/parish/features/commerce/bookstore-checkout.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: bookstore-checkout.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function bookstoreGuestCheckoutUrl() {
   if (!currentParish?.parishId) return '';
   return window.location.origin + '/' + encodeURIComponent(currentParish.parishId) + '/bookstore';
 }
-
 let bookstoreGuestCheckoutQrSvg = '';
-
 async function renderBookstoreGuestCheckout() {
   const url = bookstoreGuestCheckoutUrl();
   const input = document.getElementById('bookstoreGuestCheckoutUrl');
@@ -33,7 +28,6 @@ async function renderBookstoreGuestCheckout() {
     if (target.isConnected) target.innerHTML = bookstoreGuestCheckoutQrSvg;
   }
 }
-
 async function copyBookstoreGuestCheckoutLink() {
   const url = bookstoreGuestCheckoutUrl();
   if (!url) return;
@@ -47,11 +41,9 @@ async function copyBookstoreGuestCheckoutLink() {
     setStatus('Guest bookstore link copied.', 'success');
   }
 }
-
 function bookstoreGuestCheckoutQrFilename(extension) {
   return `${currentParish?.parishId || 'parish'}-bookstore-checkout-qr.${extension}`;
 }
-
 async function bookstoreGuestCheckoutDownloadSvg() {
   if (!bookstoreGuestCheckoutQrSvg) await renderBookstoreGuestCheckout();
   if (!bookstoreGuestCheckoutQrSvg) {
@@ -62,14 +54,12 @@ async function bookstoreGuestCheckoutDownloadSvg() {
     ? bookstoreGuestCheckoutQrSvg
     : bookstoreGuestCheckoutQrSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
 }
-
 async function downloadBookstoreGuestCheckoutQrSvg() {
   const svg = await bookstoreGuestCheckoutDownloadSvg();
   if (!svg) return;
   downloadBlob(bookstoreGuestCheckoutQrFilename('svg'), new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
   setStatus('Bookstore checkout QR code SVG downloaded.', 'success');
 }
-
 async function downloadBookstoreGuestCheckoutQrPng() {
   const svg = await bookstoreGuestCheckoutDownloadSvg();
   if (!svg) return;

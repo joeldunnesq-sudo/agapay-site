@@ -1,3 +1,4 @@
+// Generated from src/browser/parish/staff-login.ts by npm run build:browser. Do not edit.
 function showParishStaffLogin() {
   const parishId =
     document.getElementById('parishId')?.value.trim() ||
@@ -7,7 +8,6 @@ function showParishStaffLogin() {
   if (staffId && parishId) staffId.value = parishId;
   showParishAuthForm('parishStaffLoginForm');
 }
-
 async function loginParishStaff(event) {
   event.preventDefault();
   const parishId = document.getElementById('parishStaffId')?.value.trim();
@@ -26,13 +26,11 @@ async function loginParishStaff(event) {
     const res = await fetch('/api/identity/login', {
       method: 'POST',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ parishId, email, password })
+      body: JSON.stringify({ parishId, email, password }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Unable to sign in.');
-    const authenticated = data.mfaRequired
-      ? await window.AgapayMfa.runFlow(data, { displayName: email })
-      : data;
+    const authenticated = data.mfaRequired ? await window.AgapayMfa.runFlow(data, { displayName: email }) : data;
     if (!authenticated.token || !authenticated.parishToken) {
       throw new Error('Your staff account could not open this parish dashboard.');
     }
@@ -41,8 +39,7 @@ async function loginParishStaff(event) {
     sessionStorage.setItem('agapay_identity_session_token', authenticated.token);
     sessionStorage.setItem('agapay_identity_email', authenticated.identityEmail || email);
     sessionStorage.removeItem('agapay_parish_token');
-    window.location.href =
-      '/parish/dashboard?parish=' + encodeURIComponent(authenticated.parishId || parishId);
+    window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(authenticated.parishId || parishId);
   } catch (err) {
     setStatus(err.message, 'error');
   } finally {
