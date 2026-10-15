@@ -1,41 +1,43 @@
-import { d1First, d1Run, generateSecret } from "../lib/core.js";
-
+// Generated from src/stewardship/financial-snapshots.ts by npm run build:server. Do not edit.
+import { d1First, d1Run, generateSecret } from '../lib/core.js';
 const cents = (value) => Math.round(Number(value || 0));
 const snapshotId = () => generateSecret(16);
-
-export async function upsertStewardshipFinancialSnapshot(env, {
-  parishId,
-  annualMeetingId = null,
-  fiscalYear,
-  title = "",
-  totalIncomeCents = 0,
-  totalExpenseCents = 0,
-  netCents,
-  notes = "",
-  restrictedFunds = [],
-  importedFromAccountingAt,
-  replaceRestrictedFunds,
-  now = new Date().toISOString(),
-  idFactory = snapshotId,
-} = {}) {
+async function upsertStewardshipFinancialSnapshot(
+  env,
+  {
+    parishId,
+    annualMeetingId = null,
+    fiscalYear,
+    title = '',
+    totalIncomeCents = 0,
+    totalExpenseCents = 0,
+    netCents,
+    notes = '',
+    restrictedFunds = [],
+    importedFromAccountingAt,
+    replaceRestrictedFunds,
+    now = /* @__PURE__ */ new Date().toISOString(),
+    idFactory = snapshotId,
+  } = {}
+) {
   let meetingId = annualMeetingId;
   let createdMeeting = false;
   if (meetingId) {
     const meeting = await d1First(
       env,
-      "SELECT id FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+      'SELECT id FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?',
       meetingId,
-      parishId,
+      parishId
     );
     if (!meeting) {
-      const error = new Error("Meeting not found for this parish");
+      const error = new Error('Meeting not found for this parish');
       error.status = 404;
       throw error;
     }
   } else {
     const year = Number.parseInt(fiscalYear, 10);
     if (!Number.isInteger(year)) {
-      const error = new Error("Fiscal year is required");
+      const error = new Error('Fiscal year is required');
       error.status = 422;
       throw error;
     }
@@ -51,20 +53,19 @@ export async function upsertStewardshipFinancialSnapshot(env, {
       title || `${year} Financial Snapshot`,
       year,
       now,
-      now,
+      now
     );
   }
-
   const income = cents(totalIncomeCents);
   const expense = cents(totalExpenseCents);
-  const net = Math.round(Number(netCents ?? (income - expense)));
+  const net = Math.round(Number(netCents ?? income - expense));
   const existing = await d1First(
     env,
-    "SELECT id FROM stewardship_financial_summaries WHERE annual_meeting_id = ?",
-    meetingId,
+    'SELECT id FROM stewardship_financial_summaries WHERE annual_meeting_id = ?',
+    meetingId
   );
   if (existing) {
-    if (importedFromAccountingAt === undefined) {
+    if (importedFromAccountingAt === void 0) {
       await d1Run(
         env,
         `UPDATE stewardship_financial_summaries
@@ -77,7 +78,7 @@ export async function upsertStewardshipFinancialSnapshot(env, {
         notes || null,
         now,
         now,
-        existing.id,
+        existing.id
       );
     } else {
       await d1Run(
@@ -93,7 +94,7 @@ export async function upsertStewardshipFinancialSnapshot(env, {
         now,
         importedFromAccountingAt || null,
         now,
-        existing.id,
+        existing.id
       );
     }
   } else {
@@ -112,19 +113,15 @@ export async function upsertStewardshipFinancialSnapshot(env, {
       now,
       importedFromAccountingAt || null,
       now,
-      now,
+      now
     );
   }
-
-  const shouldReplaceFunds = replaceRestrictedFunds === undefined
-    ? Array.isArray(restrictedFunds) && restrictedFunds.length > 0
-    : Boolean(replaceRestrictedFunds);
+  const shouldReplaceFunds =
+    replaceRestrictedFunds === void 0
+      ? Array.isArray(restrictedFunds) && restrictedFunds.length > 0
+      : Boolean(replaceRestrictedFunds);
   if (shouldReplaceFunds && !createdMeeting) {
-    await d1Run(
-      env,
-      "DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?",
-      meetingId,
-    );
+    await d1Run(env, 'DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?', meetingId);
   }
   if (Array.isArray(restrictedFunds) && (createdMeeting || shouldReplaceFunds)) {
     for (let index = 0; index < restrictedFunds.length; index += 1) {
@@ -145,13 +142,13 @@ export async function upsertStewardshipFinancialSnapshot(env, {
         cents(fund.endingBalanceCents),
         fund.notes || null,
         index,
-        now,
+        now
       );
     }
   }
-
   return Object.freeze({
     annualMeetingId: meetingId,
     importedFromAccountingAt: importedFromAccountingAt || null,
   });
 }
+export { upsertStewardshipFinancialSnapshot };

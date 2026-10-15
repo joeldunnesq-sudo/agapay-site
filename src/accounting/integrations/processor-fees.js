@@ -1,9 +1,6 @@
+// Generated from src/accounting/integrations/processor-fees.ts by npm run build:server. Do not edit.
 import { ingestAccountingSourceEvent, processAccountingSourceEvent } from './service.js';
-
-export async function recognizeGivingStripeFee(
-  db,
-  { actor, entitlementTier, offering, donationId, fundId, occurredAt }
-) {
+async function recognizeGivingStripeFee(db, { actor, entitlementTier, offering, donationId, fundId, occurredAt }) {
   const balanceTransactionId = String(offering.stripeBalanceTransactionId || '');
   if (offering.stripeFeeSource !== 'balance_transaction' || !balanceTransactionId) return null;
   const fee = Number(offering.stripeFeeCents);
@@ -22,8 +19,6 @@ export async function recognizeGivingStripeFee(
   if (original && original.balance_transaction_id === balanceTransactionId && Number(original.fee_amount) === fee) {
     return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: original.id });
   }
-  // Old releases ingested estimates before a balance transaction existed.
-  // Retire that unposted source rather than overwriting its immutable facts.
   if (original) {
     await db
       .prepare(
@@ -54,3 +49,4 @@ export async function recognizeGivingStripeFee(
   });
   return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: source.id });
 }
+export { recognizeGivingStripeFee };

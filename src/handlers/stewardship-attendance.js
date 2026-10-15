@@ -1,3 +1,4 @@
+// Generated from src/handlers/stewardship-attendance.ts by npm run build:server. Do not edit.
 import { getBearerToken, json, unauthorized } from '../lib/core.js';
 import {
   AttendanceValidationError,
@@ -6,16 +7,13 @@ import {
   setAttendanceDelegate,
 } from '../stewardship/attendance.js';
 import { findRegistrationByParishId, verifyParishDashboardBearer } from './parish.js';
-
 const PRIVATE_HEADERS = {
   'Cache-Control': 'private, no-store',
   Vary: 'Authorization',
 };
-
 function response(payload, init = {}) {
   return json(payload, { ...init, headers: { ...PRIVATE_HEADERS, ...(init.headers || {}) } });
 }
-
 async function attendanceAccess(request, env, parishId) {
   const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
   if (!found || !(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return null;
@@ -30,15 +28,13 @@ async function attendanceAccess(request, env, parishId) {
     return { denied: response({ error: 'Stewardship is not active for this parish.' }, { status: 403 }) };
   return { found };
 }
-
 function attendanceError(error) {
   if (error instanceof AttendanceValidationError) {
     return response({ error: error.message }, { status: error.status });
   }
   throw error;
 }
-
-export async function handleStewardshipAttendance(request, env, parishId) {
+async function handleStewardshipAttendance(request, env, parishId) {
   const access = await attendanceAccess(request, env, parishId);
   if (!access) return unauthorized();
   if (access.denied) return access.denied;
@@ -63,8 +59,7 @@ export async function handleStewardshipAttendance(request, env, parishId) {
     return attendanceError(error);
   }
 }
-
-export async function handleStewardshipAttendanceDelegation(request, env, parishId) {
+async function handleStewardshipAttendanceDelegation(request, env, parishId) {
   const access = await attendanceAccess(request, env, parishId);
   if (!access) return unauthorized();
   if (access.denied) return access.denied;
@@ -77,3 +72,4 @@ export async function handleStewardshipAttendanceDelegation(request, env, parish
     return attendanceError(error);
   }
 }
+export { handleStewardshipAttendance, handleStewardshipAttendanceDelegation };

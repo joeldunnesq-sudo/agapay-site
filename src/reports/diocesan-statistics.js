@@ -1,7 +1,7 @@
+// Generated from src/reports/diocesan-statistics.ts by npm run build:server. Do not edit.
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { stewardshipGivingSummary } from '../lib/stewardship-summary.js';
 import { applyStatisticalTotals } from './diocesan-statistical-totals.js';
-
 const LETTER = [612, 792];
 const MARGIN = 48;
 const NAVY = rgb(0.03, 0.1, 0.18);
@@ -12,23 +12,19 @@ const INK = rgb(0.1, 0.12, 0.15);
 const MUTED = rgb(0.4, 0.43, 0.47);
 const LINE = rgb(0.84, 0.85, 0.86);
 const WHITE = rgb(1, 1, 1);
-
 function plainText(value) {
   return String(value ?? '')
     .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '-')
     .trim();
 }
-
 function number(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 }
-
 function roundedAverage(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Math.round(parsed * 10) / 10 : null;
 }
-
 function formatUsd(cents) {
   return (number(cents) / 100).toLocaleString('en-US', {
     style: 'currency',
@@ -36,13 +32,11 @@ function formatUsd(cents) {
     maximumFractionDigits: 0,
   });
 }
-
-function validYear(value, fallback = new Date().getFullYear()) {
+function validYear(value, fallback = /* @__PURE__ */ new Date().getFullYear()) {
   const year = Number.parseInt(value, 10);
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) return fallback;
+  if (!Number.isInteger(year) || year < 2e3 || year > 2100) return fallback;
   return year;
 }
-
 async function manualIncomeTotalCents(env, parishId, startDate, endDate) {
   const row = await env.AGAPAY_DB.prepare(
     `SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
@@ -55,20 +49,14 @@ async function manualIncomeTotalCents(env, parishId, startDate, endDate) {
     .catch(() => null);
   return number(row?.total_cents);
 }
-
-export function normalizeDiocesanStatisticsYear(value, fallback) {
+function normalizeDiocesanStatisticsYear(value, fallback) {
   return validYear(value, fallback);
 }
-
-export async function aggregateDiocesanStatistics(
-  env,
-  { parishId, year, givingSummaryLoader = stewardshipGivingSummary }
-) {
+async function aggregateDiocesanStatistics(env, { parishId, year, givingSummaryLoader = stewardshipGivingSummary }) {
   const reportingYear = validYear(year);
   const yearStart = `${reportingYear}-01-01`;
   const nextYearStart = `${reportingYear + 1}-01-01`;
   const yearEnd = `${reportingYear}-12-31`;
-
   const [attendanceRow, sacramentResult, membershipRow, membershipStatusResult, catechumensMadeRow, giving] =
     await Promise.all([
       env.AGAPAY_DB.prepare(
@@ -132,9 +120,13 @@ export async function aggregateDiocesanStatistics(
         .first(),
       givingSummaryLoader(env, parishId, reportingYear, manualIncomeTotalCents),
     ]);
-
   const weeksReported = number(attendanceRow?.weeks_reported);
-  const sacramentCounts = { baptism: 0, chrismation: 0, wedding: 0, funeral: 0 };
+  const sacramentCounts = {
+    baptism: 0,
+    chrismation: 0,
+    wedding: 0,
+    funeral: 0,
+  };
   for (const row of sacramentResult?.results || []) {
     if (Object.hasOwn(sacramentCounts, row.sacrament_type)) {
       sacramentCounts[row.sacrament_type] = number(row.total);
@@ -144,7 +136,6 @@ export async function aggregateDiocesanStatistics(
   for (const row of membershipStatusResult?.results || []) {
     affiliationStatuses[row.status] = number(row.total);
   }
-
   return applyStatisticalTotals(env, parishId, {
     schemaVersion: 1,
     year: reportingYear,
@@ -166,7 +157,7 @@ export async function aggregateDiocesanStatistics(
       households: number(membershipRow?.households),
       catechumensMade: number(catechumensMadeRow?.total),
       statuses: affiliationStatuses,
-      asOf: new Date().toISOString(),
+      asOf: /* @__PURE__ */ new Date().toISOString(),
     },
     giving: {
       totalActualCents: number(giving?.total_actual_cents),
@@ -179,13 +170,11 @@ export async function aggregateDiocesanStatistics(
     },
   });
 }
-
-export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
+async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
   const pdf = await PDFDocument.create();
   const parishName = parish.parishName || parish.name || 'Parish';
   pdf.setTitle(`${parishName} - ${report.year} Diocesan Annual Statistical Report`);
   pdf.setProducer('AGAPAY');
-
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const italic = await pdf.embedFont(StandardFonts.HelveticaOblique);
@@ -193,7 +182,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
   const [pageWidth, pageHeight] = LETTER;
   const contentWidth = pageWidth - MARGIN * 2;
   let y = pageHeight - MARGIN;
-
   const draw = (value, { x = MARGIN, size = 10, font = regular, color = INK } = {}) => {
     page.drawText(plainText(value), { x, y, size, font, color });
   };
@@ -231,7 +219,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     page.drawText(plainText(value), { x: valueX, y, size: 9.5, font: bold, color: NAVY });
     y -= 17;
   };
-
   page.drawRectangle({ x: 0, y: pageHeight - 118, width: pageWidth, height: 118, color: NAVY });
   page.drawText('AGAPAY', { x: MARGIN, y: pageHeight - 35, size: 9, font: bold, color: GOLD });
   page.drawText(plainText(parishName), { x: MARGIN, y: pageHeight - 59, size: 18, font: bold, color: WHITE });
@@ -250,7 +237,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     color: rgb(0.78, 0.83, 0.87),
   });
   y = pageHeight - 148;
-
   const boxGap = 8;
   const boxWidth = (contentWidth - boxGap * 3) / 4;
   metricBox(MARGIN, boxWidth, 'Active people', report.membership.people, `${report.membership.households} households`);
@@ -270,7 +256,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     `${report.giving.activeDonors} donors`
   );
   y -= 82;
-
   sectionTitle('Parish Membership', 'Directory records plus additional manual counts');
   const leftStart = y;
   row('Active people', report.membership.people, MARGIN, MARGIN + 135);
@@ -286,7 +271,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     MARGIN + 435
   );
   y = Math.min(y, leftStart - 54) - 4;
-
   sectionTitle('Sacramental Life', `${report.year}: AGAPAY records plus additional manual counts`);
   const sacramentY = y;
   row('Baptisms', report.sacraments.baptism, MARGIN, MARGIN + 105);
@@ -295,7 +279,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
   row('Weddings', report.sacraments.wedding, MARGIN + 275, MARGIN + 380);
   row('Funerals', report.sacraments.funeral, MARGIN + 275, MARGIN + 380);
   y = sacramentY - 48;
-
   sectionTitle('Sunday Attendance', 'Parish-owned weekly headcounts');
   if (report.attendance.status === 'not_reported') {
     page.drawRectangle({
@@ -328,7 +311,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     row('Last reported Sunday', report.attendance.lastWeek || '-', MARGIN + 275, MARGIN + 410);
     y = attendanceY - 48;
   }
-
   sectionTitle('Stewardship Summary', `Recorded giving for ${report.year}`);
   const givingY = y;
   row('Total giving', formatUsd(report.giving.totalActualCents), MARGIN, MARGIN + 125);
@@ -343,7 +325,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     MARGIN + 275,
     MARGIN + 410
   );
-
   const footerY = 38;
   page.drawLine({
     start: { x: MARGIN, y: footerY + 18 },
@@ -352,7 +333,7 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     color: LINE,
   });
   page.drawText(
-    `Generated ${new Date().toLocaleDateString('en-US')} via AGAPAY${Object.keys(report.manualAdditions || {}).length ? ' | Includes additional manual counts' : ''}`,
+    `Generated ${/* @__PURE__ */ new Date().toLocaleDateString('en-US')} via AGAPAY${Object.keys(report.manualAdditions || {}).length ? ' | Includes additional manual counts' : ''}`,
     {
       x: MARGIN,
       y: footerY,
@@ -362,6 +343,6 @@ export async function buildDiocesanStatisticsPdf({ parish = {}, report }) {
     }
   );
   page.drawText(`Page 1 of 1`, { x: pageWidth - MARGIN - 45, y: footerY, size: 7.5, font: regular, color: MUTED });
-
   return pdf.save();
 }
+export { aggregateDiocesanStatistics, buildDiocesanStatisticsPdf, normalizeDiocesanStatisticsYear };

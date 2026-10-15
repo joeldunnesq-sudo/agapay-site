@@ -1,14 +1,11 @@
+// Generated from src/accounting/service-costs.ts by npm run build:server. Do not edit.
 import { d1All, d1Run } from '../lib/core.js';
 import { invoiceDonationMetadata, invoiceSubscriptionId } from '../payments/donation-events.js';
 import { stripeObjectId } from '../lib/stripe-connect.js';
 import { subscriptionTierFromStripePriceId } from '../lib/subscriptions.js';
 import { ingestAccountingSourceEvent, processAccountingSourceEvent } from './integrations/service.js';
-
 const actor = { id: 'agapay_service_billing', type: 'system', capabilities: ['accounting.integrations.post'] };
-
-// Only a verified platform subscription may supply these facts. Never infer a
-// historical charge from today's catalog price or the parish's current tier.
-export function serviceInvoiceFacts(env, invoice, registration) {
+function serviceInvoiceFacts(env, invoice, registration) {
   const subscriptionId = invoiceSubscriptionId(invoice);
   const customerId = stripeObjectId(invoice.customer);
   if (
@@ -44,15 +41,14 @@ export function serviceInvoiceFacts(env, invoice, registration) {
     parishId: registration.parishId,
     subscriptionId,
     customerId,
-    paidAt: new Date(invoice.status_transitions.paid_at * 1000).toISOString(),
+    paidAt: new Date(invoice.status_transitions.paid_at * 1e3).toISOString(),
     currency: invoice.currency.toUpperCase(),
     amountCents: invoice.amount_paid,
     planLabel: labels.join(' / ') || 'Subscription as invoiced',
     priceIds: prices,
   };
 }
-
-export async function recordServiceInvoice(env, invoice, registration) {
+async function recordServiceInvoice(env, invoice, registration) {
   const facts = serviceInvoiceFacts(env, invoice, registration);
   if (!facts) return null;
   if (!env.AGAPAY_DB) throw new Error('Durable subscription accounting storage is unavailable.');
@@ -85,8 +81,7 @@ export async function recordServiceInvoice(env, invoice, registration) {
     throw new Error('A repeated subscription invoice has conflicting billing facts.');
   return facts;
 }
-
-export async function postServiceInvoices(env, db, parishId) {
+async function postServiceInvoices(env, db, parishId) {
   const rows = await d1All(
     env,
     `SELECT * FROM agapay_service_invoices WHERE parish_id=?
@@ -131,8 +126,7 @@ export async function postServiceInvoices(env, db, parishId) {
     );
   }
 }
-
-export async function readServiceCosts(env, parishId, year) {
+async function readServiceCosts(env, parishId, year) {
   const rows = await d1All(
     env,
     `SELECT invoice_id,paid_at,currency,amount_cents,plan_label,accounting_status
@@ -147,3 +141,4 @@ export async function readServiceCosts(env, parishId, year) {
     excludedCurrencyCount: rows.filter((row) => row.currency !== 'USD').length,
   };
 }
+export { postServiceInvoices, readServiceCosts, recordServiceInvoice, serviceInvoiceFacts };

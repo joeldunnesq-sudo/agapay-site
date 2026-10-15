@@ -1,8 +1,8 @@
+// Generated from src/accounting/integrations/fee-coverage.ts by npm run build:server. Do not edit.
 import { ingestAccountingSourceEvent, processAccountingSourceEvent } from './service.js';
 import { givingContribution } from '../../lib/giving-contributions.js';
 import { d1All } from '../../lib/core.js';
-
-export async function recognizeGivingFeeCoverage(db, { actor, entitlementTier, offering, originalEventId }) {
+async function recognizeGivingFeeCoverage(db, { actor, entitlementTier, offering, originalEventId }) {
   const original = await db
     .prepare('SELECT * FROM accounting_integration_source_events WHERE id=?')
     .bind(originalEventId)
@@ -41,10 +41,7 @@ export async function recognizeGivingFeeCoverage(db, { actor, entitlementTier, o
   });
   return processAccountingSourceEvent(db, { actor, entitlementTier, sourceEventId: source.id });
 }
-
-// Bounded, parish-scoped historical repair. Preview is read-only; application
-// recognizes only missing additions and respects the ledger's review/closed-period rules.
-export async function givingFeeCoverageBackfill(
+async function givingFeeCoverageBackfill(
   env,
   db,
   { actor, entitlementTier, parishId, year, afterId = '', apply = false, expectedAdditions = [] }
@@ -56,7 +53,7 @@ export async function givingFeeCoverageBackfill(
   if (apply && (!Array.isArray(expectedAdditions) || expectedAdditions.length > 100))
     throw new Error('Review a bounded batch before applying it.');
   year = Number(year);
-  if (!Number.isInteger(year) || year < 2000 || year > 2200) throw new Error('Choose a valid year.');
+  if (!Number.isInteger(year) || year < 2e3 || year > 2200) throw new Error('Choose a valid year.');
   const rows = await d1All(
     env,
     `SELECT id, data FROM donor_offerings WHERE parish_id=?
@@ -115,3 +112,4 @@ export async function givingFeeCoverageBackfill(
     totalCents: additions.reduce((sum, item) => sum + item.amountCents, 0),
   };
 }
+export { givingFeeCoverageBackfill, recognizeGivingFeeCoverage };

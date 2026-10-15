@@ -1,3 +1,4 @@
+// Generated from src/payments/donation-receipts.ts by npm run build:server. Do not edit.
 import { d1, d1First, d1Run } from '../lib/core.js';
 import { sendEmail } from '../lib/email.js';
 import {
@@ -6,8 +7,7 @@ import {
   paidOfferingStatus,
   storeDonorOffering,
 } from '../handlers/parish-donor-offerings.js';
-
-export async function deliverDonationReceipt(env, offering = {}, send) {
+async function deliverDonationReceipt(env, offering = {}, send) {
   if (!offering || offering.emailReceiptSentAt || !paidOfferingStatus(offering)) return offering;
   let current = offering;
   if (offering.checkoutSessionId)
@@ -21,15 +21,11 @@ export async function deliverDonationReceipt(env, offering = {}, send) {
     emailReceiptStatus: email.status || 'unknown',
     emailReceiptId: email.id || '',
     emailReceiptDetail: email.detail || '',
-    emailReceiptSentAt: email.status === 'sent' ? email.sentAt || new Date().toISOString() : '',
+    emailReceiptSentAt: email.status === 'sent' ? email.sentAt || /* @__PURE__ */ new Date().toISOString() : '',
   });
 }
-
-// Resend retains keys for 24 hours. Ambiguous delivery is never automatically
-// retried beyond 23 hours; its durable row remains available for reconciliation.
-const RETRY_WINDOW_MS = 23 * 60 * 60 * 1000;
-
-export async function sendDonationReceiptMessage(env, offering, message) {
+const RETRY_WINDOW_MS = 23 * 60 * 60 * 1e3;
+async function sendDonationReceiptMessage(env, offering, message) {
   if (offering.isDiagnostic || !env.RESEND_API_KEY) return sendEmail(env, message);
   if (!d1(env) || !offering.id) throw new Error('Durable storage is required for donation receipts.');
   const id = `donation:${offering.parishId}:${offering.id}`;
@@ -51,7 +47,7 @@ export async function sendDonationReceiptMessage(env, offering, message) {
       AND (first_attempt_at IS NULL OR first_attempt_at>?5)`,
     id,
     now,
-    now + 60000,
+    now + 6e4,
     token,
     now - RETRY_WINDOW_MS
   );
@@ -68,9 +64,8 @@ export async function sendDonationReceiptMessage(env, offering, message) {
     }
     throw new Error('Donation receipt delivery is already in progress; retry later.');
   }
-  // Freeze the complete provider payload, including timestamps and fee details.
   const delivery = await sendEmail(env, JSON.parse(row.message), { idempotencyKey: id });
-  const sentAt = delivery.status === 'sent' ? new Date().toISOString() : '';
+  const sentAt = delivery.status === 'sent' ? /* @__PURE__ */ new Date().toISOString() : '';
   await d1Run(
     env,
     `UPDATE donation_receipt_deliveries SET status=?3, provider_id=?4,
@@ -86,3 +81,4 @@ export async function sendDonationReceiptMessage(env, offering, message) {
     throw new Error('Donation receipt delivery failed; retry with the same payment identity.');
   return { ...delivery, sentAt };
 }
+export { deliverDonationReceipt, sendDonationReceiptMessage };

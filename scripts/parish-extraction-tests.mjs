@@ -130,10 +130,7 @@ try {
 
 const parishFacade = await readFile(new URL('../src/handlers/parish.js', import.meta.url), 'utf8');
 const parish = readParishHandlerSource();
-const parishCommemorations = await readFile(
-  new URL('../src/handlers/parish-commemorations.js', import.meta.url),
-  'utf8'
-);
+const parishCommemorations = await readServerModuleSource('src/handlers/parish-commemorations.js');
 const parishSacraments = await readFile(new URL('../src/handlers/parish-sacraments.js', import.meta.url), 'utf8');
 const parishCommerce = readParishCommerceSource();
 const parishReconciliation = await readFile(
