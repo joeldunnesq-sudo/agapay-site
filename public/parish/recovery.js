@@ -1,3 +1,4 @@
+// Generated from src/browser/parish/recovery.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
   const stylesheet = document.createElement('link');
@@ -20,9 +21,9 @@
   }
   new MutationObserver(mountToolbar).observe(document.body, { childList: true, subtree: true });
   mountToolbar();
-  const mounts = new WeakMap();
+  const mounts = /* @__PURE__ */ new WeakMap();
   const labels = { parish: 'parish', accounting: 'accounting' };
-  const date = (value) => new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  const date = (value) => new Date(value).toLocaleString(void 0, { dateStyle: 'medium', timeStyle: 'short' });
   window.ParishRecovery = {
     mount({ element, parishId, headers, scope = 'parish' }) {
       if (!element || !parishId || !labels[scope]) return;
@@ -240,7 +241,7 @@
           document.body.append(link);
           link.click();
           link.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          setTimeout(() => URL.revokeObjectURL(url), 6e4);
           find('status').textContent = 'Backup sent to your browser for saving. Restore uses the verified cloud copy.';
         } catch (error) {
           find('status').textContent = error.message;
@@ -256,7 +257,7 @@
           return;
         }
         if (!busy && element.getClientRects().length) void refresh();
-      }, 30000);
+      }, 3e4);
       mounts.set(element, () => {
         stopped = true;
         clearInterval(timer);
@@ -279,7 +280,12 @@
       );
       document.body.append(dialog);
       dialog.showModal();
-      this.mount({ element: dialog.querySelector('[data-panel]'), parishId, headers, scope: 'accounting' });
+      this.mount({
+        element: dialog.querySelector('[data-panel]'),
+        parishId,
+        headers,
+        scope: 'accounting',
+      });
     },
   };
 })();

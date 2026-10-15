@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/koinonia/announcements.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard koinonia: announcements.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function openKoinoniaComposer(view) {
   setKoinoniaStudioView(view);
   const targetId =
@@ -22,7 +19,6 @@ function openKoinoniaComposer(view) {
     target?.focus({ preventScroll: true });
   });
 }
-
 function renderKoinoniaOverview() {
   const announcements = communicationsState.announcements || [];
   const audio = communicationsState.teaching || [];
@@ -53,7 +49,6 @@ function renderKoinoniaOverview() {
     calendarStatus.textContent = currentParish?.koinoniaCalendarUrl
       ? 'Public calendar link saved.'
       : 'No calendar sync link saved.';
-
   const recent = [
     ...announcements.map((item) => ({ ...item, kind: 'Announcement', icon: '▤', view: 'announcements' })),
     ...audio.map((item) => ({ ...item, kind: 'Audio', icon: '♪', view: 'audio' })),
@@ -80,7 +75,6 @@ function renderKoinoniaOverview() {
         .join('')
     : '<div class="communications-empty"><strong>Your studio is ready</strong><p>Publish the first announcement, audio post, or video for your parish.</p></div>';
 }
-
 function renderCommunicationsList() {
   const list = document.getElementById('communicationsList');
   if (!list) return;
@@ -109,7 +103,6 @@ function renderCommunicationsList() {
     )
     .join('');
 }
-
 async function toggleAnnouncementReaders(id, button) {
   const panel = document.getElementById('communicationsReaders-' + id);
   if (!panel) return;
@@ -139,14 +132,12 @@ async function toggleAnnouncementReaders(id, button) {
     panel.innerHTML = `<p>${escapeHtml(error.message || 'Unable to load readers.')}</p>`;
   }
 }
-
 function renderAnnouncementReaders(panel, data) {
   const readers = data.readers || [];
   panel.innerHTML = readers.length
     ? `<strong>${readers.length} parishioner${readers.length === 1 ? '' : 's'} read this</strong><ul>${readers.map((reader) => `<li><span>${escapeHtml(reader.displayName || reader.donorId || 'Parishioner')}</span><time>${escapeHtml(new Date(reader.readAt).toLocaleString())}</time></li>`).join('')}</ul>`
     : '<strong>No readers yet</strong><p>Readers will appear here after opening this announcement in My AGAPAY.</p>';
 }
-
 function insertAnnouncementFormatting(kind, targetId = 'announcementBody') {
   const textarea = document.getElementById(targetId);
   if (!textarea) return;
@@ -172,7 +163,6 @@ function insertAnnouncementFormatting(kind, targetId = 'announcementBody') {
   textarea.setRangeText(replacement, start, end, 'select');
   textarea.focus();
 }
-
 function insertTeachingFormatting(kind) {
   const textarea = document.getElementById('teachingBody');
   if (!textarea) return;
@@ -198,7 +188,6 @@ function insertTeachingFormatting(kind) {
   textarea.setRangeText(replacement, start, end, 'select');
   textarea.focus();
 }
-
 async function uploadAnnouncementHero(announcementId, file) {
   const response = await fetch(communicationsApi('/' + encodeURIComponent(announcementId) + '/hero-image'), {
     method: 'POST',
@@ -209,7 +198,6 @@ async function uploadAnnouncementHero(announcementId, file) {
   if (!response.ok) throw new Error(data.error || 'Unable to upload the announcement image.');
   return data.announcement;
 }
-
 async function createAnnouncementDraft(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -248,7 +236,6 @@ async function createAnnouncementDraft(event) {
     }
   }
 }
-
 async function patchAnnouncement(id, changes) {
   const response = await fetch(communicationsApi('/' + encodeURIComponent(id)), {
     method: 'PATCH',
@@ -260,7 +247,6 @@ async function patchAnnouncement(id, changes) {
   await loadCommunicationsTab(true);
   return data.announcement;
 }
-
 function editAnnouncement(id) {
   const item = communicationsState.announcements.find((row) => row.id === id);
   const dialog = document.getElementById('announcementEditDialog');
@@ -282,7 +268,6 @@ function editAnnouncement(id) {
   else dialog.setAttribute('open', '');
   window.setTimeout(() => document.getElementById('announcementEditTitle')?.focus(), 40);
 }
-
 function closeAnnouncementEditor() {
   const dialog = document.getElementById('announcementEditDialog');
   if (!dialog) return;
@@ -291,7 +276,6 @@ function closeAnnouncementEditor() {
   else dialog.removeAttribute('open');
   document.getElementById('announcementEditForm')?.reset();
 }
-
 async function saveAnnouncementEdit(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -327,7 +311,6 @@ async function saveAnnouncementEdit(event) {
     }
   }
 }
-
 async function publishAnnouncement(id, button) {
   if (!confirm('Publish this announcement to every parishioner in My AGAPAY?')) return;
   if (button) {
@@ -346,7 +329,6 @@ async function publishAnnouncement(id, button) {
     }
   }
 }
-
 async function archiveAnnouncement(id, button) {
   if (!confirm('Archive this announcement? It will leave the donor feed but remain in this list.')) return;
   if (button) {
@@ -371,7 +353,6 @@ async function archiveAnnouncement(id, button) {
     }
   }
 }
-
 async function deleteAnnouncement(id, button) {
   const item = communicationsState.announcements.find((row) => row.id === id);
   if (

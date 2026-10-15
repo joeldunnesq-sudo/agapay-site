@@ -1,6 +1,5 @@
+// Generated from src/browser/parish/features/accounting/report-documents.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// One financial statement model for the screen, CSV, print, and PDF.
 function accountingStatementMoney(cents) {
   const value = Number(cents || 0);
   if (!value) return '-';
@@ -10,7 +9,6 @@ function accountingStatementMoney(cents) {
   });
   return value < 0 ? `(${amount})` : amount;
 }
-
 function accountingStatementDocument() {
   const id = accountingReportView;
   const custom = accountingCustomReport;
@@ -42,7 +40,6 @@ function accountingStatementDocument() {
   if (source.disclaimer) statement.notes.push(source.disclaimer);
   if (source.validation?.status && source.validation.status !== 'validated')
     statement.notes.push(`Review required: ${(source.validation.reasonCodes || []).join(', ').replaceAll('_', ' ')}.`);
-
   if (id === 'trialBalance') {
     statement.columns = [{ label: 'Account' }, money('Debit', 'endingDebit'), money('Credit', 'endingCredit')];
     for (const item of source.rows || []) row('detail', [accountName(item), item.endingDebit, item.endingCredit]);
@@ -67,7 +64,7 @@ function accountingStatementDocument() {
       ['expense', 'Expenses'],
     ]) {
       section(label);
-      const groups = new Map();
+      const groups = /* @__PURE__ */ new Map();
       for (const item of (source.rows || []).filter((entry) => entry.category === category)) {
         const key = item.accountId || item.accountNumber || item.accountName;
         const grouped = groups.get(key) || { label: accountName(item), without: 0, with: 0 };
@@ -115,7 +112,7 @@ function accountingStatementDocument() {
       );
   } else if (id === 'expenses') {
     statement.columns = [{ label: 'Expense account' }, money('Amount', 'amount')];
-    const groups = new Map();
+    const groups = /* @__PURE__ */ new Map();
     for (const item of (source.rows || []).filter((entry) => entry.category === 'expense')) {
       const key = accountName(item);
       groups.set(key, (groups.get(key) || 0) + Number(item.amount || 0));
@@ -177,16 +174,13 @@ function accountingStatementDocument() {
     statement.notes.push('No posted activity for the selected period.');
   return statement;
 }
-
 function accountingStatementHtml(report) {
   const columns = report.columns;
   return `<article class="acct-statement"><header><div class="acct-statement-parish">${escapeHtml(report.parish)}</div><h2>${escapeHtml(report.title)}</h2>${report.subtitle ? `<p>${escapeHtml(report.subtitle)}</p>` : ''}<p>${escapeHtml(report.period)}</p><small>${escapeHtml(report.basis)} · ${escapeHtml(report.currency)} · Negative amounts in parentheses</small></header><div class="acct-table-wrap"><table><thead><tr>${columns.map((col) => `<th scope="col" class="${col.money ? 'number' : ''}">${escapeHtml(col.label)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((item) => (item.kind === 'section' ? `<tr class="section"><th colspan="${columns.length}" scope="rowgroup">${escapeHtml(item.cells[0])}</th></tr>` : `<tr class="${item.kind}">${columns.map((col, i) => `<td class="${col.money ? 'number' : ''}">${escapeHtml(col.money ? accountingStatementMoney(item.cells[i]) : (item.cells[i] ?? ''))}</td>`).join('')}</tr>`)).join('')}</tbody></table></div>${report.notes.map((note) => `<p class="acct-statement-note">${escapeHtml(note)}</p>`).join('')}</article>`;
 }
-
 function accountingStatementActions() {
   return '<button type="button" class="acct-refresh" onclick="downloadAccountingReportPdf(this)">Download PDF</button><button type="button" class="acct-refresh" onclick="printAccountingReport()">Print</button><button type="button" class="acct-refresh" onclick="downloadAccountingReport()">Export CSV</button>';
 }
-
 async function downloadAccountingReportPdf(button) {
   const label = button?.textContent;
   try {

@@ -1,21 +1,11 @@
+// Generated from src/browser/parish/features/stewardship/meetings.ts by npm run build:browser. Do not edit.
 'use strict';
-
-/* global stewardshipState, escapeHtml, escapeAttr, parishSessionStorageKey, currentParish, setStatus,
-  stewardshipApi, authHeaders, statusLabel, loadStewardshipPanel */
-/* exported renderParishPlusMeetingsPane, newStewardshipMeeting, editStewardshipMeeting,
-  closeStewardshipEditor, addStewardshipRow, removeStewardshipRow, saveStewardshipMeeting */
-
-// Annual-meeting packet listing, drafts, repeaters, saves, and preview links.
-// Read shared parish identity and authentication only when actions run.
-
 function renderParishPlusMeetingsPane(meetingsPane, active) {
   if (!meetingsPane) return;
   const meetings = stewardshipState.meetings || [];
-  const year = new Date().getFullYear();
+  const year = /* @__PURE__ */ new Date().getFullYear();
   const stateChip = document.getElementById('parishPlusPacketsState');
-
   if (active) {
-    // State chip reflects the current-year packet's status, or a prompt to start
     if (stateChip) {
       const thisYear = meetings.find((m) => Number(m.fiscalYear) === year);
       if (thisYear) {
@@ -30,34 +20,22 @@ function renderParishPlusMeetingsPane(meetingsPane, active) {
     }
     meetingsPane.innerHTML =
       (meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year)) +
-      '<div class="pdx-pp-card-foot">' +
-      '<button class="pdx-pp-new-btn" type="button" onclick="newStewardshipMeeting()">' +
-      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>' +
-      ' New packet' +
-      '</button>' +
-      '</div>';
+      '<div class="pdx-pp-card-foot"><button class="pdx-pp-new-btn" type="button" onclick="newStewardshipMeeting()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg> New packet</button></div>';
     return;
   }
-
   if (stateChip) {
     stateChip.textContent = 'Parish tier';
     stateChip.className = 'pdx-pp-card-state locked';
   }
-  meetingsPane.innerHTML =
-    '<div class="pdx-pp-locked-items">' +
-    '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Agenda, opening prayer, quorum call</div>' +
-    '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Rector, treasurer &amp; ministry reports</div>' +
-    '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Financial summary &amp; restricted funds</div>' +
-    '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Nominees, elections, resolutions</div>' +
-    '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Sign-in sheet &amp; minutes template</div>' +
-    '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Print-ready PDF packet</div>' +
-    '</div>' +
-    '<div class="pdx-pp-card-foot"><button class="pdx-pp-hero-cta" type="button" style="width:auto;" onclick="switchTab(\'settings\')">Upgrade to Parish</button></div>';
+  meetingsPane.innerHTML = `<div class="pdx-pp-locked-items"><div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Agenda, opening prayer, quorum call</div><div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Rector, treasurer &amp; ministry reports</div><div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Financial summary &amp; restricted funds</div><div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Nominees, elections, resolutions</div><div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Sign-in sheet &amp; minutes template</div><div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Print-ready PDF packet</div></div><div class="pdx-pp-card-foot"><button class="pdx-pp-hero-cta" type="button" style="width:auto;" onclick="switchTab('settings')">Upgrade to Parish</button></div>`;
 }
-
-// Upsell state: lock Stewardship tool cards, show tier CTA in plan row
 function renderMeetingsList(meetings) {
-  const statusLabels = { draft: 'Draft', ready: 'Ready', generated: 'Generated', archived: 'Archived' };
+  const statusLabels = {
+    draft: 'Draft',
+    ready: 'Ready',
+    generated: 'Generated',
+    archived: 'Archived',
+  };
   const statusClasses = {
     draft: 'pdx-pp-pill-draft',
     ready: 'pdx-pp-pill-ready',
@@ -76,58 +54,36 @@ function renderMeetingsList(meetings) {
           : '';
         const metaParts = [m.fiscalYear, dateStr, m.location ? escapeHtml(m.location) : ''].filter(Boolean).join(' · ');
         return (
-          '<div class="pdx-pp-meeting-row">' +
-          '<div class="pdx-pp-meeting-info">' +
-          '<strong class="pdx-pp-meeting-title">' +
+          '<div class="pdx-pp-meeting-row"><div class="pdx-pp-meeting-info"><strong class="pdx-pp-meeting-title">' +
           escapeHtml(m.title || m.fiscalYear + ' Annual Meeting') +
-          '</strong>' +
-          '<span class="pdx-pp-meeting-meta">' +
+          '</strong><span class="pdx-pp-meeting-meta">' +
           metaParts +
-          '</span>' +
-          '</div>' +
-          '<div class="pdx-pp-meeting-actions">' +
-          '<span class="pdx-pp-pill ' +
+          '</span></div><div class="pdx-pp-meeting-actions"><span class="pdx-pp-pill ' +
           cls +
           '">' +
           label +
-          '</span>' +
-          '<button class="pdx-pp-mini-btn" type="button" onclick="editStewardshipMeeting(\'' +
+          `</span><button class="pdx-pp-mini-btn" type="button" onclick="editStewardshipMeeting('` +
           escapeAttr(m.id) +
-          '\')">Edit</button>' +
-          '<a class="pdx-pp-mini-btn" href="' +
+          `')">Edit</button><a class="pdx-pp-mini-btn" href="` +
           escapeAttr(stewardshipPreviewUrl(m.id)) +
-          '" target="_blank" rel="noopener">Preview</a>' +
-          '<a class="pdx-pp-mini-btn" href="' +
+          '" target="_blank" rel="noopener">Preview</a><a class="pdx-pp-mini-btn" href="' +
           escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) +
-          '" target="_blank" rel="noopener">PDF</a>' +
-          '</div>' +
-          '</div>'
+          '" target="_blank" rel="noopener">PDF</a></div></div>'
         );
       })
       .join('') +
     '</div>'
   );
 }
-
 function renderMeetingsEmpty(year) {
   return (
-    '<div class="sw-meetings-empty">' +
-    '<div class="sw-meetings-empty-icon" aria-hidden="true">' +
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
-    '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' +
-    '</svg>' +
-    '</div>' +
-    '<strong>No packets yet</strong>' +
-    '<span>Create your first ' +
+    '<div class="sw-meetings-empty"><div class="sw-meetings-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><strong>No packets yet</strong><span>Create your first ' +
     year +
-    ' Annual Parish Meeting packet.</span>' +
-    '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">Create ' +
+    ' Annual Parish Meeting packet.</span><button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">Create ' +
     year +
-    ' packet</button>' +
-    '</div>'
+    ' packet</button></div>'
   );
 }
-
 function stewardshipPreviewUrl(meetingId, suffix = 'preview') {
   const token =
     document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
@@ -139,9 +95,6 @@ function stewardshipPreviewUrl(meetingId, suffix = 'preview') {
   url.searchParams.set('t', token);
   return url.pathname + url.search;
 }
-
-// Builds a single-line mailing address from the parish's Settings tab
-// fields, mirroring registrationAddressLine() server-side.
 function parishAddressLine(parish) {
   if (!parish) return '';
   return [
@@ -152,9 +105,8 @@ function parishAddressLine(parish) {
     .filter(Boolean)
     .join(', ');
 }
-
 function emptyStewardshipMeeting() {
-  const year = new Date().getFullYear();
+  const year = /* @__PURE__ */ new Date().getFullYear();
   return {
     id: '',
     title: `${year} Annual Parish Meeting`,
@@ -187,7 +139,6 @@ function emptyStewardshipMeeting() {
     resolutions: [],
   };
 }
-
 function newStewardshipMeeting() {
   if (!currentParish) {
     setStatus('Load a parish first.', 'error');
@@ -196,7 +147,6 @@ function newStewardshipMeeting() {
   stewardshipState.selectedMeeting = emptyStewardshipMeeting();
   renderStewardshipEditor();
 }
-
 async function editStewardshipMeeting(meetingId) {
   if (!meetingId) return;
   try {
@@ -214,13 +164,11 @@ async function editStewardshipMeeting(meetingId) {
     setStatus(err.message, 'error');
   }
 }
-
 function closeStewardshipEditor() {
   stewardshipState.selectedMeeting = null;
   const card = document.getElementById('stewardshipEditorCard');
   if (card) card.hidden = true;
 }
-
 function stewardshipMeetingReports(items = []) {
   const reports = Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
   [
@@ -231,7 +179,6 @@ function stewardshipMeetingReports(items = []) {
   });
   return reports;
 }
-
 function stewardshipRepeaterRows(type, items) {
   const rows = items && items.length ? items : [{}];
   return rows
@@ -277,7 +224,6 @@ function stewardshipRepeaterRows(type, items) {
     })
     .join('');
 }
-
 function renderStewardshipEditor() {
   const meeting = stewardshipState.selectedMeeting || emptyStewardshipMeeting();
   const card = document.getElementById('stewardshipEditorCard');
@@ -324,7 +270,6 @@ function renderStewardshipEditor() {
       </form>`;
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-
 function addStewardshipRow(type) {
   const target = document.getElementById(
     {
@@ -338,7 +283,6 @@ function addStewardshipRow(type) {
   if (!target) return;
   target.insertAdjacentHTML('beforeend', stewardshipRepeaterRows(type, [{}]));
 }
-
 function removeStewardshipRow(btn) {
   const row = btn?.closest('.stewardship-repeat-row');
   const parent = row?.parentElement;
@@ -349,7 +293,6 @@ function removeStewardshipRow(btn) {
   }
   row.remove();
 }
-
 function readStewardshipRows(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return [];
@@ -363,12 +306,10 @@ function readStewardshipRows(containerId) {
     })
     .filter((item) => Object.values(item).some(Boolean));
 }
-
 function dollarsToNumber(value) {
   const amount = Number(String(value || '').replace(/[^0-9.-]/g, ''));
   return Number.isFinite(amount) ? amount : 0;
 }
-
 async function saveStewardshipMeeting(event, status = 'draft') {
   event?.preventDefault?.();
   const form = document.getElementById('stewardshipMeetingForm');

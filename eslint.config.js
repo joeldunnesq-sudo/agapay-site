@@ -1132,4 +1132,455 @@ export default [
       ],
     },
   },
+  // Preserve the existing classic-script entry points, external state assignments and ternary side effects.
+  {
+    files: ['src/browser/parish/features/accounting.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(accountingView|accountingReportView|accountingCustomReport|accountingDepthComparative|accountingData|accountingBankPreview|accountingFundCatalog|accountingShowInactiveFunds|accountingFundAccountSections|accountingExpenseAccountEditor|accountingVendorLifecycleConfirm|accountingAccountLifecycleConfirm|accountingLifecycleMessage|accountingReconciliationView|accountingCloseDetail|accountingJournalEditor|accountingLedgerNewestFirst|accountingLedgerAccountNumber|accountingLedgerSearch|accountingRegisterEntryMode|accountingRecurringEditor|accountingPayablesView|accountingBudgetReport|accountingBudgetEditor|accountingMigration|accountingAdvancedNavExpanded|accountingSimpleIncomeMessage|accountingSimpleEntryMode|accountingInKindGiftMessage|accountingExperienceMode|ACCOUNTING_SIMPLE_REVENUE_LABELS|bootstrapAccountingStaff|verifyAccountingStaff|addAccountingStaff|changeAccountingPin|lockAccountingWorkspace|accountingApi|accountingMoney|accountingDate)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/report-loaders.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(loadAccountingCoreReport|accountingPriorYear|accountingGeneralLedgerReport)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/report-documents.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(accountingStatementHtml|accountingStatementActions|downloadAccountingReportPdf)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/funds.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadAccountingFunds|toggleAccountingFundAccountSection|renderAccountingFunds|toggleAccountingInactiveFunds|filterAccountingFunds|showAccountingExpenseAccountForm|showAccountingAccountForm|saveAccountingExpenseAccount|beginAccountingAccountLifecycle|cancelAccountingLifecycle|changeAccountingAccountLifecycle)$',
+        },
+      ],
+      '@typescript-eslint/no-unused-expressions': [
+        'error',
+        {
+          allowTernary: true,
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/activation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(openAccountingActivation|startAccountingActivation|retryAccountingActivation|previewAccountingActivationChart|updateAccountingActivationTypes|commitAccountingActivationChart|finishAccountingActivation)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/close.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderAccountingClose|createAccountingClose|createAccountingYearEnd|waiveAccountingCloseCheck|completeAccountingClose|printAccountingClosePacket|downloadAccountingAuditTrail|downloadAccountingAccountantExport|createAccountingAdjustment|postAccountingAdjustment|createAccountingAdjustmentTemplate|archiveAccountingFiscalYear|reopenAccountingFiscalYear|renderAccountingGovernance|saveAccountingRetention|createAccountingLegalHold|releaseAccountingLegalHold)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/migration.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(openAccountingMigration|closeAccountingMigration|createAccountingMigrationSession|resumeAccountingMigration|setAccountingMigrationStep|previewAccountingMigrationCsv|commitAccountingMigrationStep|renderAccountingMigrationWizard)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['src/browser/parish/features/commerce/bookstore-catalog.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(bookstoreEditingProductId|bookstoreEditingOriginalStock|loadBookstoreLowStockBadge|bookstoreCategoryOptions|toggleBookstoreFeature)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['src/browser/parish/features/commerce/bookstore-counts.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(syncBookstoreCountDifference|startBookstorePhysicalCount|openBookstoreDraftCount|closeBookstorePhysicalCount|openBookstoreClosedCount)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/commerce/bookstore-inventory.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setBookstoreLowStockFilter|saveBookstoreReorderThreshold|openBookstoreItemModal|submitBookstoreReceiving|renderBookstoreStarterCatalogUI|submitBookstoreStarterCatalog|submitBookstoreManualItem|saveBookstoreItemFromModal|archiveBookstoreItem)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/commerce/bookstore-sales.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(setBookstoreSalesRange|searchBookstoreOrders|loadMoreBookstoreOrders)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['src/browser/parish/features/commerce/offerings.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(toggleCommerceOfferingFeature|submitParishCommerceOffering|moveParishCommerceOffering|toggleEventsOversightStatus|toggleEventsCalendarVisibility)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/koinonia.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(koinoniaMinistriesState|prayerAdminState|koinoniaMinistryImageUrls|prayerAdminApi|announcementStatusLabel|contentCategoryLabel|saveParishBlogSettings|toggleCommunicationsFeature|toggleKoinoniaSubfeature)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['src/browser/parish/features/koinonia/prayers.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setParishPrayerFilter|quickApproveParishPrayer|openParishPrayerReview|submitParishPrayerReview|saveParishPrayerSettings)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/koinonia/announcements.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(openKoinoniaComposer|renderKoinoniaOverview|renderCommunicationsList|toggleAnnouncementReaders|insertAnnouncementFormatting|insertTeachingFormatting|createAnnouncementDraft|editAnnouncement|saveAnnouncementEdit|publishAnnouncement|archiveAnnouncement|deleteAnnouncement)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/stewardship.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        isStarterTier: 'readonly',
+        isParishTier: 'readonly',
+        isParishPlusActive: 'readonly',
+        syncDashboardPaywall: 'readonly',
+        renderParishPlusMeetingsPane: 'readonly',
+        authHeaders: 'readonly',
+        updateStewardshipBadges: 'readonly',
+        loadStewardshipHealthScorePanel: 'readonly',
+        loadGivingMetricsPanel: 'readonly',
+        loadFinancialSnapshotsPanel: 'readonly',
+        loadDonorConcentrationPanel: 'readonly',
+        loadRecurringGivingPanel: 'readonly',
+        loadGivingIntelligencePanels: 'readonly',
+        loadStewardshipAttendancePanel: 'readonly',
+        loadDiocesanStatisticsPreview: 'readonly',
+        ensureDiocesanStatisticsCard: 'readonly',
+        escapeHtml: 'readonly',
+        setStatus: 'readonly',
+        setStewardshipReportMonth: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(dismissStewardshipCompNotice|startStewardshipSubscription|openStewardshipBilling)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/stewardship.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(dismissStewardshipCompNotice|startStewardshipSubscription|openStewardshipBilling)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/stewardship/metrics.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        stewardshipApi: 'readonly',
+        authHeaders: 'readonly',
+        checkNudgeEligibility: 'readonly',
+        escapeHtml: 'readonly',
+        parishSessionStorageKey: 'readonly',
+        renderGivingMetrics: 'readonly',
+        ensureOutsideGivingCard: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadGivingMetricsPanel|loadStewardshipHealthScorePanel|loadDonorConcentrationPanel|loadRecurringGivingPanel|loadGivingIntelligencePanels|loadStewardshipAttendancePanel|saveStewardshipAttendance|saveAttendanceDelegate|syncAttendanceEntryFromWeek|openStewardshipMonthlyReport|setStewardshipReportMonth|selectedStewardshipReportMonth)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/stewardship/metrics.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadGivingMetricsPanel|syncAttendanceEntryFromWeek|saveStewardshipAttendance|saveAttendanceDelegate|loadGivingIntelligencePanels|loadStewardshipHealthScorePanel|loadDonorConcentrationPanel|loadRecurringGivingPanel|setStewardshipReportMonth|openStewardshipMonthlyReport)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['public/parish/features/stewardship/financials.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'readonly',
+        isParishTier: 'readonly',
+        stewardshipApi: 'readonly',
+        authHeaders: 'readonly',
+        escapeHtml: 'readonly',
+        accountingMoney: 'readonly',
+        escapeAttr: 'readonly',
+        parishSessionStorageKey: 'readonly',
+        selectedStewardshipReportMonth: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(importAccountingFinancialSnapshot|openStewardshipMonthlyFinancialReport)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/stewardship/financials.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(importAccountingFinancialSnapshot|openStewardshipMonthlyFinancialReport)$',
+        },
+      ],
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['public/parish/features/stewardship/meetings.js'],
+    languageOptions: {
+      globals: {
+        stewardshipState: 'readonly',
+        escapeHtml: 'readonly',
+        escapeAttr: 'readonly',
+        parishSessionStorageKey: 'readonly',
+        currentParish: 'readonly',
+        setStatus: 'readonly',
+        stewardshipApi: 'readonly',
+        authHeaders: 'readonly',
+        statusLabel: 'readonly',
+        loadStewardshipPanel: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderParishPlusMeetingsPane|newStewardshipMeeting|editStewardshipMeeting|closeStewardshipEditor|addStewardshipRow|removeStewardshipRow|saveStewardshipMeeting)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/stewardship/meetings.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderParishPlusMeetingsPane|newStewardshipMeeting|editStewardshipMeeting|closeStewardshipEditor|addStewardshipRow|removeStewardshipRow|saveStewardshipMeeting)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/koinonia/media.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderTeachingAdminList|renderVideoAdminList|renderYouTubeAdminList|chooseTeachingAudioUpload|setTeachingAudioLink|createTeachingDraft|editTeachingPost|publishTeachingPost|archiveTeachingPost|deleteTeachingPost|createVideoUpload|editVideoPost|publishVideoPost|archiveVideo|deleteVideo|addYouTubeVideo|toggleTeachingPin|saveYouTubeChannel|removeYouTubeChannel|removeYouTubeVideo|toggleYouTubeVideoPin)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/koinonia/ministries.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(uploadKoinoniaMinistryImage|removeKoinoniaMinistryImage|deleteKoinoniaMinistry|selectKoinoniaMinistry|toggleKoinoniaMinistryEditor|updateKoinoniaMinistry|createKoinoniaMinistry|searchKoinoniaMinistryPeople|addKoinoniaMinistryMember|removeKoinoniaMinistryMember|setKoinoniaMinistryDirectoryBadge|reviewKoinoniaMinistryRequest|acknowledgeKoinoniaGeneralInterest|saveKoinoniaCalendar)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/recovery.ts'],
+    rules: {
+      'prefer-const': 'off',
+    },
+  },
+  {
+    files: ['src/browser/parish/directory-import.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-expressions': [
+        'error',
+        {
+          allowTernary: true,
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/accounting.js'],
+    rules: {
+      'no-empty': [
+        'error',
+        {
+          allowEmptyCatch: true,
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/campaigns.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(openNewCampaignForm|editCampaign|closeCampaignEditor|handleCoverUpload|removeCoverPhoto|handlePhotosUpload|removeCampPhoto|saveCampaign|postCampaignUpdate)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/campaigns.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'writable',
+        authHeaders: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(openNewCampaignForm|editCampaign|closeCampaignEditor|handleCoverUpload|removeCoverPhoto|handlePhotosUpload|removeCampPhoto|saveCampaign|postCampaignUpdate)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/sacraments/preparation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderSacramentsPreparationTemplates|addPreparationTemplateItem|removePreparationTemplateItem|savePreparationTemplate|uploadPreparationGuide|deletePreparationGuide)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['public/parish/features/stewardship.js'],
+    rules: {
+      'no-empty': [
+        'error',
+        {
+          allowEmptyCatch: true,
+        },
+      ],
+    },
+  },
 ];

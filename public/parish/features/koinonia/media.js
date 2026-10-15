@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/koinonia/media.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard koinonia: media.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function renderTeachingAdminList() {
   const list = document.getElementById('teachingAdminList');
   if (!list) return;
@@ -32,7 +29,6 @@ function renderTeachingAdminList() {
     )
     .join('');
 }
-
 function formatVideoDuration(seconds) {
   const total = Math.max(0, Math.round(Number(seconds) || 0));
   const hours = Math.floor(total / 3600);
@@ -42,7 +38,6 @@ function formatVideoDuration(seconds) {
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     : `${minutes}:${String(secs).padStart(2, '0')}`;
 }
-
 function renderVideoAdminList() {
   const list = document.getElementById('videoAdminList');
   if (!list) return;
@@ -66,10 +61,9 @@ function renderVideoAdminList() {
     : '<div class="communications-empty"><strong>No native videos yet</strong><p>Upload a recording to begin private Stream processing.</p></div>';
   if (rows.some((item) => item.status === 'draft' && !item.readyToStream && item.streamState !== 'error')) {
     window.clearTimeout(renderVideoAdminList.pollTimer);
-    renderVideoAdminList.pollTimer = window.setTimeout(() => loadCommunicationsTab(true), 8000);
+    renderVideoAdminList.pollTimer = window.setTimeout(() => loadCommunicationsTab(true), 8e3);
   }
 }
-
 function renderYouTubeAdminList() {
   const list = document.getElementById('youtubeAdminList');
   if (!list) return;
@@ -88,7 +82,6 @@ function renderYouTubeAdminList() {
     channelRow + curatedRows ||
     '<div class="communications-empty"><strong>No YouTube channel connected</strong><p>Connect the parish channel once to keep Koinonia video up to date automatically.</p></div>';
 }
-
 async function uploadTeachingAudio(teachingId, file) {
   if (file.size > 50 * 1024 * 1024) throw new Error('Teaching audio must be 50MB or smaller.');
   const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(teachingId) + '/audio'), {
@@ -100,7 +93,6 @@ async function uploadTeachingAudio(teachingId, file) {
   if (!response.ok) throw new Error(data.error || `Unable to upload the teaching audio (HTTP ${response.status}).`);
   return data.post;
 }
-
 function chooseTeachingAudioUpload(teachingId, button) {
   const picker = document.createElement('input');
   picker.type = 'file';
@@ -131,7 +123,6 @@ function chooseTeachingAudioUpload(teachingId, button) {
   );
   picker.click();
 }
-
 async function setTeachingAudioLink(teachingId, button) {
   const item = communicationsState.teaching.find((row) => row.id === teachingId);
   if (!item) return;
@@ -158,7 +149,6 @@ async function setTeachingAudioLink(teachingId, button) {
     }
   }
 }
-
 async function createTeachingDraft(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -212,7 +202,6 @@ async function createTeachingDraft(event) {
     }
   }
 }
-
 async function patchTeachingPost(id, changes) {
   const response = await fetch(communicationsApi('/teaching/' + encodeURIComponent(id)), {
     method: 'PATCH',
@@ -224,7 +213,6 @@ async function patchTeachingPost(id, changes) {
   await loadCommunicationsTab(true);
   return data.post;
 }
-
 async function editTeachingPost(id) {
   const item = communicationsState.teaching.find((row) => row.id === id);
   if (!item) return;
@@ -239,7 +227,6 @@ async function editTeachingPost(id) {
     setStatus(error.message, 'error');
   }
 }
-
 async function publishTeachingPost(id, button) {
   if (!confirm('Publish this teaching post to every parishioner in My AGAPAY?')) return;
   if (button) {
@@ -258,7 +245,6 @@ async function publishTeachingPost(id, button) {
     }
   }
 }
-
 async function archiveTeachingPost(id, button) {
   if (!confirm('Archive this teaching post? It will leave Parish Life but remain in this list.')) return;
   if (button) {
@@ -283,7 +269,6 @@ async function archiveTeachingPost(id, button) {
     }
   }
 }
-
 async function deleteTeachingPost(id, button) {
   const item = communicationsState.teaching.find((row) => row.id === id);
   const hostedNotice = item?.audioSource === 'upload' ? ' The uploaded audio file will also be removed.' : '';
@@ -311,7 +296,6 @@ async function deleteTeachingPost(id, button) {
     }
   }
 }
-
 function uploadVideoDirectly(uploadUrl, file, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -328,7 +312,6 @@ function uploadVideoDirectly(uploadUrl, file, onProgress) {
     xhr.send(form);
   });
 }
-
 async function createVideoUpload(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -373,7 +356,6 @@ async function createVideoUpload(event) {
     }
   }
 }
-
 async function patchVideoPost(id, changes) {
   const response = await fetch(communicationsApi('/video/' + encodeURIComponent(id)), {
     method: 'PATCH',
@@ -385,7 +367,6 @@ async function patchVideoPost(id, changes) {
   await loadCommunicationsTab(true);
   return data.post;
 }
-
 async function editVideoPost(id) {
   const item = communicationsState.videos.find((row) => row.id === id);
   if (!item) return;
@@ -401,7 +382,6 @@ async function editVideoPost(id) {
     setStatus(error.message, 'error');
   }
 }
-
 async function publishVideoPost(id, button) {
   if (!confirm('Publish this private video to parishioners in My AGAPAY?')) return;
   if (button) button.disabled = true;
@@ -414,7 +394,6 @@ async function publishVideoPost(id, button) {
     if (button) button.disabled = false;
   }
 }
-
 async function archiveVideo(id, button) {
   if (!confirm('Archive this video? It will no longer be playable in My AGAPAY.')) return;
   if (button) button.disabled = true;
@@ -433,7 +412,6 @@ async function archiveVideo(id, button) {
     if (button) button.disabled = false;
   }
 }
-
 async function deleteVideo(id, button) {
   const item = communicationsState.videos.find((row) => row.id === id);
   if (
@@ -464,7 +442,6 @@ async function deleteVideo(id, button) {
     }
   }
 }
-
 async function addYouTubeVideo(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -490,7 +467,6 @@ async function addYouTubeVideo(event) {
     if (button) button.disabled = false;
   }
 }
-
 async function toggleTeachingPin(id, pinned, button) {
   if (button) button.disabled = true;
   try {
@@ -502,7 +478,6 @@ async function toggleTeachingPin(id, pinned, button) {
     if (button) button.disabled = false;
   }
 }
-
 async function saveYouTubeChannel(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -524,7 +499,6 @@ async function saveYouTubeChannel(event) {
     if (button) button.disabled = false;
   }
 }
-
 async function removeYouTubeChannel(button) {
   if (!confirm('Disconnect this YouTube channel? Individually curated videos will remain.')) return;
   if (button) button.disabled = true;
@@ -543,7 +517,6 @@ async function removeYouTubeChannel(button) {
     if (button) button.disabled = false;
   }
 }
-
 async function removeYouTubeVideo(id, button) {
   if (!confirm('Remove this YouTube link from Media?')) return;
   if (button) button.disabled = true;
@@ -562,7 +535,6 @@ async function removeYouTubeVideo(id, button) {
     if (button) button.disabled = false;
   }
 }
-
 async function toggleYouTubeVideoPin(id, pinned, button) {
   if (button) button.disabled = true;
   try {

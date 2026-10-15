@@ -1,17 +1,11 @@
+// Generated from src/browser/parish/features/commerce/bookstore-catalog.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: bookstore-catalog.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 let bookstoreEditingProductId = null;
-
 let bookstoreEditingOriginalStock = 0;
-
 function bookstoreApi(path = '') {
   if (!currentParish?.parishId) throw new Error('Load a parish first.');
   return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/bookstore' + path;
 }
-
 function syncBookstoreLowStockNavigation() {
   const badge = document.getElementById('bookstoreLowStockNavBadge');
   if (!badge) return;
@@ -19,7 +13,6 @@ function syncBookstoreLowStockNavigation() {
   badge.hidden = count === 0;
   badge.textContent = count ? `${count} item${count === 1 ? '' : 's'} low on stock` : '';
 }
-
 async function loadBookstoreLowStockBadge() {
   if (!currentParish || isStarterTier() || !moduleIncluded('bookstore')) return;
   try {
@@ -33,7 +26,6 @@ async function loadBookstoreLowStockBadge() {
     console.warn('Unable to load bookstore low-stock badge.', error);
   }
 }
-
 const BOOKSTORE_CATEGORY_LABELS = {
   book: 'Book',
   prayer_rope: 'Prayer Rope',
@@ -44,7 +36,6 @@ const BOOKSTORE_CATEGORY_LABELS = {
   cd_dvd: 'CD / DVD',
   other: 'Other',
 };
-
 function bookstoreCategoryOptions(selected = 'other') {
   return Object.entries(BOOKSTORE_CATEGORY_LABELS)
     .map(
@@ -53,9 +44,7 @@ function bookstoreCategoryOptions(selected = 'other') {
     )
     .join('');
 }
-
-const BOOKSTORE_NO_STATEWIDE_SALES_TAX_STATES = new Set(['DE', 'MT', 'NH', 'OR']);
-
+const BOOKSTORE_NO_STATEWIDE_SALES_TAX_STATES = /* @__PURE__ */ new Set(['DE', 'MT', 'NH', 'OR']);
 function normalizeStateCode(value) {
   const raw = String(value || '')
     .trim()
@@ -116,7 +105,6 @@ function normalizeStateCode(value) {
   if (/^[A-Z]{2}$/.test(raw)) return raw;
   return names[raw] || raw.slice(0, 2);
 }
-
 function renderBookstoreTaxReminder() {
   const box = document.getElementById('bookstoreTaxReminder');
   if (!box || !currentParish) return;
@@ -134,7 +122,6 @@ function renderBookstoreTaxReminder() {
   }
   box.innerHTML = `<strong>Sales tax reminder:</strong> ${escapeHtml(stateLabel)} may require sales tax on bookstore items. Set up Stripe Tax in your connected Stripe account before taking live bookstore payments so Stripe can show any required tax on the payment page.`;
 }
-
 function renderBookstoreFeatureToggle() {
   const root = document.getElementById('bookstoreFeatureToggle');
   if (!root) return;
@@ -145,7 +132,6 @@ function renderBookstoreFeatureToggle() {
       <em>${enabled ? 'On' : 'Off'}</em>
     </label>`;
 }
-
 async function toggleBookstoreFeature(input) {
   if (!currentParish) return;
   const enabled = Boolean(input?.checked);
@@ -179,13 +165,11 @@ async function toggleBookstoreFeature(input) {
     if (input) input.disabled = false;
   }
 }
-
 async function loadBookstoreCatalogTab(force = false) {
   const upsell = document.getElementById('bookstoreUpsellBanner');
   const live = document.getElementById('bookstoreLiveContent');
   const status = document.getElementById('bookstoreStatusLabel');
   if (!currentParish) return;
-
   const swActive = !isStarterTier() && moduleIncluded('bookstore');
   syncDashboardPaywall(document.getElementById('tab-bookstore'), 'bookstore', 'Stewardship', !swActive);
   updateStewardshipBadges(swActive, { renderPanel: false });
@@ -207,7 +191,6 @@ async function loadBookstoreCatalogTab(force = false) {
   renderBookstoreTaxReminder();
   renderBookstoreGuestCheckout();
   setTimeout(() => loadBookstoreSalesPanel(force), 250);
-
   if (bookstoreCatalogState.loaded && !force) {
     renderBookstoreCurrentItems(bookstoreCatalogState.products);
     renderBookstoreCountSessions(bookstoreCatalogState.countSessions);
@@ -216,12 +199,10 @@ async function loadBookstoreCatalogTab(force = false) {
     renderCommerceOverview();
     return;
   }
-
   const itemsPane = document.getElementById('bookstoreCurrentItems');
   const starterPane = document.getElementById('bookstoreStarterCatalog');
   if (itemsPane) itemsPane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
   if (starterPane) starterPane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
-
   try {
     const [productsRes, lowStockRes, countSessionsRes, catalogRes] = await Promise.all([
       fetch(bookstoreApi('/products'), { headers: authHeaders() }),
@@ -237,7 +218,6 @@ async function loadBookstoreCatalogTab(force = false) {
     if (!lowStockRes.ok) throw new Error(lowStockData.error || 'Unable to load low-stock items.');
     if (!countSessionsRes.ok) throw new Error(countSessionsData.error || 'Unable to load physical counts.');
     if (!catalogRes.ok) throw new Error(catalogData.error || 'Unable to load the starter catalog.');
-
     bookstoreCatalogState = {
       loaded: true,
       products: productsData.products || [],

@@ -1,5 +1,5 @@
+// Generated from src/browser/parish/features/accounting/report-loaders.ts by npm run build:browser. Do not edit.
 'use strict';
-
 async function loadAccountingCoreReport(id) {
   const period = accountingReportPeriod();
   const key = id === 'expenses' ? 'activities' : id;
@@ -20,16 +20,14 @@ async function loadAccountingCoreReport(id) {
   }
   renderAccountingPane();
 }
-
 function accountingPriorYear(date) {
   const [year, month, day] = date.split('-').map(Number);
   const lastDay = new Date(Date.UTC(year - 1, month, 0)).getUTCDate();
   return `${year - 1}-${String(month).padStart(2, '0')}-${String(Math.min(day, lastDay)).padStart(2, '0')}`;
 }
-
 function accountingGeneralLedgerReport() {
   const period = accountingReportPeriod(),
-    groups = new Map();
+    groups = /* @__PURE__ */ new Map();
   for (const entry of accountingReportLedgerRows('0001-01-01', period.end)) {
     const number = entry.accountNumber;
     const group = groups.get(number) || { name: `${number} ${entry.accountName}`, opening: 0, entries: [] };
@@ -53,7 +51,8 @@ function accountingGeneralLedgerReport() {
       debit += dr;
       credit += cr;
       rows.push({
-        label: `${entry.date} | ${entry.entryNumber}\n${entry.description || ''}`,
+        label: `${entry.date} | ${entry.entryNumber}
+${entry.description || ''}`,
         fund: entry.fund,
         debit: dr,
         credit: cr,

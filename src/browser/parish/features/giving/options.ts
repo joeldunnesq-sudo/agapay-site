@@ -21,7 +21,6 @@ interface ParishGivingEditControls extends HTMLFormControlsCollection {
   restrictionType?: HTMLSelectElement;
   accountNumber?: HTMLInputElement;
 }
-declare function restrictionLabel(value: string): string;
 declare function isGeneralDashboardFund(value: ParishGivingOption): boolean;
 declare function isCandleDashboardFund(value: ParishGivingOption): boolean;
 declare function hasGivingPlusAccess(): boolean;

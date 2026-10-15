@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/accounting/close.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: close.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function renderAccountingCloseBase(pane) {
   const data = accountingData.close;
   if (!data) {
@@ -19,7 +16,6 @@ function renderAccountingCloseBase(pane) {
     openPeriods = data.periods.filter((p) => p.status === 'open' && (!fy || p.fiscalYearId === fy.id));
   pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Controlled accounting close</span><h2>Month-end & year-end</h2><p>Review every subsystem, resolve blockers, preserve a snapshot, and lock the period.</p></div>${fy ? `<button class="acct-refresh" onclick="downloadAccountingAuditTrail()">Export audit trail</button>` : ''}</div><div class="acct-kpis"><div><span>Open periods</span><strong>${openPeriods.length}</strong></div><div><span>Close in progress</span><strong>${data.sessions.filter((s) => !['completed', 'voided'].includes(s.status)).length}</strong></div><div><span>Completed closes</span><strong>${data.sessions.filter((s) => s.status === 'completed').length}</strong></div></div><div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Start month-end</span><h2>Close an accounting period</h2>${openPeriods.length ? `<form class="acct-phase-form" onsubmit="createAccountingClose(event)"><input type="hidden" name="closeType" value="month_end"><label>Fiscal year<select name="fiscalYearId">${data.fiscalYears.map((y) => `<option value="${escapeAttr(y.id)}">${escapeHtml(y.name)}</option>`).join('')}</select></label><label>Open period<select name="accountingPeriodId">${openPeriods.map((p) => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}</option>`).join('')}</select></label><button class="acct-primary">Begin month-end close</button><span class="acct-form-status"></span></form>` : '<p>No open accounting period is currently available.</p>'}</section><section class="acct-card"><span class="acct-kicker">Year-end</span><h2>Close revenue & expense accounts</h2><p>Preview the change in net assets and verify every prior period before creating the final closing entry.</p>${fy ? `<button class="acct-primary" onclick="createAccountingYearEnd('${escapeAttr(fy.id)}')">Begin year-end close</button><button class="acct-link" onclick="downloadAccountingAccountantExport('${escapeAttr(fy.id)}')">Prepare accountant handoff</button>` : ''}</section></div><div class="acct-list-head"><div><span class="acct-kicker">Close history</span><h2>Sessions & preserved snapshots</h2></div></div><div class="acct-card-grid">${data.sessions.map((s) => `<article class="acct-budget-card"><div><span>${escapeHtml((s.closeType || 'close').replaceAll('_', ' '))}</span><h3>${escapeHtml(data.periods.find((p) => p.id === s.accountingPeriodId)?.name || data.fiscalYears.find((y) => y.id === s.fiscalYearId)?.name || 'Accounting close')}</h3><p>${s.lastValidatedAt ? `Last checked ${accountingDate(s.lastValidatedAt)}` : 'Checks not yet run'}</p></div><span class="acct-status ${escapeAttr(s.status)}">${escapeHtml(s.status)}</span><div class="acct-row-actions"><button onclick="openAccountingClose('${escapeAttr(s.id)}')">Open checklist</button></div></article>`).join('') || accountingEmpty('No close sessions yet', 'Begin with the current open accounting period.')}</div>`;
 }
-
 function renderAccountingClose(pane) {
   renderAccountingCloseBase(pane);
   if (accountingCloseDetail || !accountingData.close) return;
@@ -30,7 +26,6 @@ function renderAccountingClose(pane) {
     `<div class="acct-list-head"><div><span class="acct-kicker">Adjusting entries</span><h2>Period adjustments</h2><p>Create, review, and post accruals, deferrals, corrections, and recurring templates.</p></div></div><div class="acct-setup-grid"><section class="acct-card"><form class="acct-phase-form" onsubmit="createAccountingAdjustment(event)"><label>Type<select name="adjustmentType"><option value="accrual">Accrual</option><option value="deferral">Deferral</option><option value="reclassification">Reclassification</option><option value="correction">Correction</option><option value="other">Other</option></select></label><label>Effective date<input name="effectiveDate" type="date" required></label><label>Reason<input name="reason" required></label><label>Supporting memo<textarea name="supportingMemo" required></textarea></label><div class="acct-form-grid"><label>Debit account<select name="debitAccountId">${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Credit account<select name="creditAccountId">${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select><label>Fund<select name="fundId">${accountingData.funds.map((f) => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><label>Amount<input name="amount" type="number" min=".01" step=".01" required></label></div><button class="acct-primary">Create adjustment</button><span class="acct-form-status"></span></form></section><section class="acct-card"><form class="acct-phase-form" onsubmit="createAccountingAdjustmentTemplate(event)"><h2>New adjustment template</h2><label>Name<input name="name" required></label><label>Frequency<select name="frequency"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annually">Annually</option></select></label><button class="acct-primary">Create template from accounts above</button><span class="acct-form-status"></span></form><div class="acct-checklist">${adjustments.templates.map((t) => `<div><i>↻</i><span><strong>${escapeHtml(t.name)}</strong><small>${escapeHtml(t.frequency)}</small></span></div>`).join('') || '<p>No templates yet.</p>'}</div></section></div><div class="acct-card-grid">${adjustments.items.map((a) => `<article class="acct-budget-card"><div><span>${accountingDate(a.effectiveDate)}</span><h3>${escapeHtml(a.type)}</h3><p>${escapeHtml(a.reason)}</p></div><span class="acct-status ${escapeAttr(a.status)}">${escapeHtml(a.status)}</span>${a.status === 'draft' ? `<button onclick="postAccountingAdjustment('${escapeAttr(a.id)}',${a.version})">Post adjustment</button>` : ''}</article>`).join('') || accountingEmpty('No adjustments yet', 'Create an adjusting entry for the open period.')}</div>${fy ? `<section class="acct-card"><span class="acct-kicker">Fiscal-year governance</span><h2>${escapeHtml(fy.name)}</h2><div class="acct-row-actions"><button onclick="archiveAccountingFiscalYear('${escapeAttr(fy.id)}',${fy.version})">Archive fiscal year</button><button onclick="reopenAccountingFiscalYear('${escapeAttr(fy.id)}',${fy.version})">Reopen year-end close</button></div></section>` : ''}`
   );
 }
-
 async function loadAccountingPhaseF() {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Loading close workspace...</p>';
@@ -58,7 +53,6 @@ async function loadAccountingPhaseF() {
       pane.innerHTML = `<div class="acct-empty error"><strong>Unable to load close workspace</strong><span>${escapeHtml(error.message)}</span><button onclick="loadAccountingPhaseF()">Try again</button></div>`;
   }
 }
-
 async function phaseFMutation(path, body) {
   const res = await fetch(accountingApi(path), {
       method: 'POST',
@@ -72,7 +66,6 @@ async function phaseFMutation(path, body) {
   }
   return payload;
 }
-
 async function createAccountingClose(event) {
   event.preventDefault();
   const payload = await phaseFMutation('/close/sessions', Object.fromEntries(new FormData(event.currentTarget)));
@@ -80,12 +73,10 @@ async function createAccountingClose(event) {
     await validateAccountingClose(payload.session.id, payload.session.version);
   }
 }
-
 async function createAccountingYearEnd(fiscalYearId) {
   const payload = await phaseFMutation('/close/sessions', { closeType: 'year_end', fiscalYearId });
   if (payload) await validateAccountingClose(payload.session.id, payload.session.version);
 }
-
 async function openAccountingClose(id) {
   const res = await fetch(accountingApi(`/close/sessions/${encodeURIComponent(id)}`), { headers: authHeaders() }),
     payload = await res.json().catch(() => ({}));
@@ -96,7 +87,6 @@ async function openAccountingClose(id) {
   accountingCloseDetail = payload.session;
   renderAccountingPane();
 }
-
 async function validateAccountingClose(id, version) {
   const payload = await phaseFMutation(`/close/sessions/${encodeURIComponent(id)}/validate`, {
     expectedVersion: version,
@@ -106,7 +96,6 @@ async function validateAccountingClose(id, version) {
     renderAccountingPane();
   }
 }
-
 async function waiveAccountingCloseCheck(id, checkId, version) {
   const reason = prompt('Reason for waiving this warning:');
   if (!reason) return;
@@ -117,7 +106,6 @@ async function waiveAccountingCloseCheck(id, checkId, version) {
   });
   if (payload) await openAccountingClose(id);
 }
-
 async function completeAccountingClose(id, version, type) {
   const path =
     type === 'year_end'
@@ -130,20 +118,16 @@ async function completeAccountingClose(id, version, type) {
     await loadAccountingPhaseF();
   }
 }
-
 function printAccountingClosePacket(id) {
   window.open(accountingApi(`/close/sessions/${encodeURIComponent(id)}/packet`), '_blank', 'noopener');
 }
-
 function downloadAccountingAuditTrail() {
   downloadAccountingFile(accountingApi('/close/audit-trail.csv'), 'agapay-accounting-audit-trail.csv');
 }
-
 async function downloadAccountingAccountantExport(fiscalYearId) {
   const payload = await phaseFMutation(`/close/year-end/${encodeURIComponent(fiscalYearId)}/accountant-export`, {});
   if (payload) alert('Accountant handoff prepared and preserved with its manifest.');
 }
-
 async function createAccountingAdjustment(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -163,7 +147,6 @@ async function createAccountingAdjustment(event) {
     await loadAccountingPhaseF();
   }
 }
-
 async function postAccountingAdjustment(id, expectedVersion) {
   if (await phaseFMutation(`/adjustments/${encodeURIComponent(id)}/post`, { expectedVersion })) {
     accountingData.close = null;
@@ -171,7 +154,6 @@ async function postAccountingAdjustment(id, expectedVersion) {
     await loadAccountingPhaseF();
   }
 }
-
 async function createAccountingAdjustmentTemplate(event) {
   event.preventDefault();
   const raw = Object.fromEntries(new FormData(event.currentTarget)),
@@ -188,7 +170,6 @@ async function createAccountingAdjustmentTemplate(event) {
     await loadAccountingPhaseF();
   }
 }
-
 async function archiveAccountingFiscalYear(id, expectedVersion) {
   if (!confirm('Archive this fiscal year?')) return;
   if (await phaseFMutation(`/close/year-end/${encodeURIComponent(id)}/archive`, { expectedVersion })) {
@@ -196,7 +177,6 @@ async function archiveAccountingFiscalYear(id, expectedVersion) {
     await loadAccountingPhaseF();
   }
 }
-
 async function reopenAccountingFiscalYear(id, expectedVersion) {
   const reason = prompt('Reason for reopening this year-end close:');
   if (!reason) return;
@@ -205,7 +185,6 @@ async function reopenAccountingFiscalYear(id, expectedVersion) {
     await loadAccountingPhaseF();
   }
 }
-
 function renderAccountingGovernance(pane) {
   const data = accountingData.governance;
   if (!data) {
@@ -231,7 +210,6 @@ function renderAccountingGovernance(pane) {
       ''
     )}</div><label><input name="allowLegalHold" type="checkbox" ${s.allowLegalHold ? 'checked' : ''}> Allow legal holds</label><button class="acct-primary">Save retention settings</button><span class="acct-form-status"></span></form><p class="acct-governance-disclaimer">${escapeHtml(s.disclaimer || '')}</p></section><section class="acct-card"><span class="acct-kicker">Read-only health overview</span><h2>${escapeHtml(String(h.status || 'unknown').replaceAll('_', ' '))}</h2><p>${escapeHtml(p.safeSummary || 'No protective restriction is active.')}</p><div class="acct-facts"><div><strong>${escapeHtml(String(p.state || 'unknown').replaceAll('_', ' '))}</strong><span>Protective state</span></div><div><strong>${h.activeWork || 0}</strong><span>Active scans</span></div><div><strong>${(h.findings || []).length}</strong><span>Open findings</span></div></div><p>${escapeHtml(h.disclaimer || '')}</p></section></div><div class="acct-list-head"><div><span class="acct-kicker">Legal holds</span><h2>Preserve designated records</h2></div></div><section class="acct-card"><form class="acct-phase-form" onsubmit="createAccountingLegalHold(event)"><div class="acct-form-grid"><label>Entity type<input name="entityType" required placeholder="journal_entry"></label><label>Entity ID<input name="entityId" required></label><label>Reason<input name="reason" required></label></div><button class="acct-primary" ${s.allowLegalHold ? '' : 'disabled'}>Create legal hold</button><span class="acct-form-status"></span></form></section><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Placed</th><th>Entity</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>${data.legalHolds.map((hold) => `<tr><td>${accountingDate(hold.placedAt)}</td><td><strong>${escapeHtml(hold.entityType)}</strong><br>${escapeHtml(hold.entityId)}</td><td>${escapeHtml(hold.reason)}</td><td><span class="acct-status ${escapeAttr(hold.status)}">${escapeHtml(hold.status)}</span></td><td>${hold.status === 'active' ? `<button class="acct-link" onclick="releaseAccountingLegalHold('${escapeAttr(hold.id)}',${hold.version})">Release</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5">No legal holds.</td></tr>'}</tbody></table></div>`;
 }
-
 async function loadAccountingGovernance() {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Loading accounting governance...</p>';
@@ -256,12 +234,13 @@ async function loadAccountingGovernance() {
       pane.innerHTML = `<div class="acct-empty error"><strong>Unable to load governance</strong><span>${escapeHtml(error.message)}</span><button onclick="loadAccountingGovernance()">Try again</button></div>`;
   }
 }
-
 async function saveAccountingRetention(event) {
   event.preventDefault();
   const form = event.currentTarget,
     raw = Object.fromEntries(new FormData(form)),
-    patch = { allowLegalHold: form.elements.allowLegalHold.checked };
+    patch = {
+      allowLegalHold: form.elements.allowLegalHold.checked,
+    };
   for (const key of [
     'accountingRecordsRetentionYears',
     'bankStatementRetentionYears',
@@ -285,7 +264,6 @@ async function saveAccountingRetention(event) {
     await loadAccountingGovernance();
   }
 }
-
 async function createAccountingLegalHold(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -303,7 +281,6 @@ async function createAccountingLegalHold(event) {
     await loadAccountingGovernance();
   }
 }
-
 async function releaseAccountingLegalHold(id, expectedVersion) {
   if (!confirm('Release this legal hold? The record remains in the governance history.')) return;
   const res = await fetch(accountingApi(`/governance/legal-holds/${encodeURIComponent(id)}/release`), {

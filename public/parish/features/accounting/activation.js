@@ -1,20 +1,22 @@
+// Generated from src/browser/parish/features/accounting/activation.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Technical activation and chart import are deliberately separate from balance posting.
-const accountingActivation = { parishId: '', timer: null, status: null, import: null, complete: false };
-
+const accountingActivation = {
+  parishId: '',
+  timer: null,
+  status: null,
+  import: null,
+  complete: false,
+};
 function accountingActivationShell(step, content) {
   const parish = escapeHtml(currentParish?.name || currentParish?.parishName || 'Your parish');
   return `<div class="acct-wizard"><header class="acct-wizard-hero"><div><span class="acct-wizard-eyebrow">A NEW CHAPTER FOR YOUR PARISH</span><h2>Your books. Beautifully organized.</h2><p>A private accounting home for ${parish}.</p></div><div class="acct-wizard-seal" aria-hidden="true"><img src="/mark.png" alt="" width="46" height="52"><span>AGAPAY<br>ACCOUNTING</span></div></header><ol class="acct-wizard-steps" aria-label="Accounting activation progress">${['Prepare your books', 'Secure your workspace', 'Make it yours'].map((label, index) => `<li ${step === index + 1 ? 'aria-current="step"' : ''} class="${step > index + 1 ? 'is-complete' : ''}"><span>${step > index + 1 ? '✓' : index + 1}</span>${label}</li>`).join('')}</ol><div class="acct-wizard-body">${content}</div><footer class="acct-wizard-footer"><span aria-hidden="true">◇</span> Private parish books · Named staff access · A clear audit trail</footer></div>`;
 }
-
 async function accountingActivationStatus() {
   const response = await fetch(accountingAccessApi('/activation'), { headers: authHeaders() });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || 'Unable to check Accounting setup.');
   return payload;
 }
-
 async function accountingActivationGuard(pane) {
   if (accountingActivation.parishId !== currentParish.parishId) {
     clearTimeout(accountingActivation.timer);
@@ -37,7 +39,6 @@ async function accountingActivationGuard(pane) {
   await renderAccountingActivation(pane);
   return true;
 }
-
 async function openAccountingActivation() {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
@@ -47,7 +48,6 @@ async function openAccountingActivation() {
     pane.innerHTML = accountingEmpty('Accounting setup needs attention', error.message);
   }
 }
-
 async function renderAccountingActivation(pane = document.getElementById('accountingPane')) {
   clearTimeout(accountingActivation.timer);
   if (!pane) return;
@@ -73,7 +73,7 @@ async function renderAccountingActivation(pane = document.getElementById('accoun
     return;
   }
   if (status.status === 'not_started' || status.status === 'review_required') {
-    const today = new Date().toLocaleDateString('en-CA');
+    const today = /* @__PURE__ */ new Date().toLocaleDateString('en-CA');
     pane.innerHTML = accountingActivationShell(
       1,
       `<div class="acct-wizard-layout"><section><span class="acct-kicker">A thoughtful start</span><h3>Less setup. More clarity.</h3><p>We’ll prepare your chart of accounts, fiscal calendar and existing giving funds. Then you can bring your accounts over from Aplos or QuickBooks.</p><form class="acct-wizard-form" onsubmit="startAccountingActivation(event)"><label>Start keeping books on<input name="startDate" type="date" required value="${escapeAttr(today)}"><small>This sets your starting period. No historical transactions are imported.</small></label><label>Fiscal year begins in<select name="fiscalYearStartMonth">${Array.from({ length: 12 }, (_, index) => `<option value="${index + 1}">${new Date(2026, index, 1).toLocaleString('en', { month: 'long' })}</option>`).join('')}</select></label><button class="acct-primary" ${status.available ? '' : 'disabled'}>Create my parish’s books <span aria-hidden="true">→</span></button><div class="acct-form-status" role="status">${status.available ? '' : status.status === 'review_required' ? 'Existing books need a support review before setup can continue. They will not be replaced.' : 'Automatic setup is awaiting platform configuration. Contact AGAPAY support; your plan already includes Accounting.'}</div></form></section><aside class="acct-wizard-summary"><span class="acct-kicker">Prepared for your parish</span><h3>Everything in its place.</h3><ul><li><b>Private books</b><span>A separate database owned by your parish.</span></li><li><b>A complete foundation</b><span>Ledger, funds, payables, reconciliation and reports.</span></li><li><b>Your existing accounts</b><span>Upload Aplos or QuickBooks CSVs, or use the parish starter chart.</span></li></ul><p class="acct-wizard-note">USD · No new Stripe charges · Opening balances stay pending until reviewed.</p></aside></div>`
@@ -93,9 +93,8 @@ async function renderAccountingActivation(pane = document.getElementById('accoun
     1,
     `<section class="acct-wizard-progress"><div class="acct-wizard-orbit ${failed ? 'is-paused' : ''}" aria-hidden="true">${failed ? 'Ⅱ' : '<img src="/mark.png" alt="" width="40" height="46">'}</div><h3>${failed ? 'Safely paused. Ready when you are.' : 'Making room for good stewardship.'}</h3><p>${failed ? escapeHtml(status.message) : 'We’re preparing your parish’s books. You can leave this page and return later.'}</p><ol aria-label="Provisioning stages">${stages.map(([key, label], index) => `<li class="${index < active ? 'is-complete' : index === active ? 'is-current' : ''}"><span aria-hidden="true">${index < active ? '✓' : index + 1}</span><div><b>${label}</b>${key === 'schema' && index === active ? `<small>${status.migrationCount || 0} schema updates applied</small>` : ''}</div></li>`).join('')}</ol><div role="status" class="acct-form-status" id="accountingActivationPollStatus"></div>${failed && status.retryable ? '<button class="acct-primary" onclick="retryAccountingActivation(this)">Resume setup →</button>' : ''}${status.status === 'pending' ? '<button class="acct-refresh" onclick="retryAccountingActivation(this)">Resume if setup has not started</button>' : ''}<small class="acct-wizard-reference">Setup reference: ${escapeHtml(status.reference || '')}</small></section>`
   );
-  if (!failed) accountingActivation.timer = setTimeout(pollAccountingActivation, 10000);
+  if (!failed) accountingActivation.timer = setTimeout(pollAccountingActivation, 1e4);
 }
-
 async function pollAccountingActivation() {
   clearTimeout(accountingActivation.timer);
   if (
@@ -111,13 +110,12 @@ async function pollAccountingActivation() {
   } catch (error) {
     const status = document.getElementById('accountingActivationPollStatus');
     if (status) status.textContent = `${error.message} Checking again shortly…`;
-    accountingActivation.timer = setTimeout(pollAccountingActivation, 20000);
+    accountingActivation.timer = setTimeout(pollAccountingActivation, 2e4);
   }
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && document.getElementById('accountingActivationPollStatus')) pollAccountingActivation();
 });
-
 async function startAccountingActivation(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -149,7 +147,6 @@ async function retryAccountingActivation(button) {
     button.disabled = false;
   }
 }
-
 function renderAccountingActivationChart(pane = document.getElementById('accountingPane')) {
   const imported = accountingActivation.import;
   pane.innerHTML = accountingActivationShell(
@@ -174,7 +171,6 @@ function renderAccountingActivationChart(pane = document.getElementById('account
     }</section>`
   );
 }
-
 function accountingActivationChartPreview(preview) {
   const categories = [
     ['asset', 'Asset'],
@@ -192,7 +188,6 @@ function accountingActivationChartPreview(preview) {
       : ''
   }<div class="acct-wizard-table" tabindex="0" aria-label="Account import preview"><table><thead><tr><th>Number</th><th>Account</th><th>Category</th><th>Action</th></tr></thead><tbody>${preview.rows.map((row) => `<tr><td>${escapeHtml(row.accountNumber || 'Auto')}</td><td>${escapeHtml(row.name)}</td><td>${escapeHtml(row.category || 'Choose above')}</td><td>${row.action === 'link' ? `Link → ${escapeHtml(row.matchName)}` : 'Create new'}</td></tr>`).join('')}</tbody></table></div><label class="acct-wizard-confirm"><input type="checkbox" id="accountingActivationConfirm">I reviewed the categories and existing account links. Create these accounts without posting balances.</label><button class="acct-primary" id="accountingActivationCommit" onclick="commitAccountingActivationChart(this)" ${preview.errors.length ? 'disabled' : ''}>Import reviewed accounts →</button><div role="status" id="accountingActivationImportStatus" class="acct-form-status"></div></section>`;
 }
-
 async function previewAccountingActivationChart(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -203,7 +198,7 @@ async function previewAccountingActivationChart(event) {
   try {
     const file = form.elements.file.files[0],
       raw = Object.fromEntries(new FormData(form));
-    if (file && file.size > 1_000_000) throw new Error('Choose a CSV smaller than 1 MB.');
+    if (file && file.size > 1e6) throw new Error('Choose a CSV smaller than 1 MB.');
     const previous = accountingActivation.import;
     if (!file && !previous?.csv) throw new Error('Choose an Aplos or QuickBooks CSV.');
     const input = {
@@ -225,7 +220,6 @@ async function previewAccountingActivationChart(event) {
     button.disabled = false;
   }
 }
-
 async function updateAccountingActivationTypes() {
   const input = accountingActivation.import;
   input.typeMap = Object.fromEntries(
@@ -241,7 +235,7 @@ async function updateAccountingActivationTypes() {
     const { preview } = await accountingAccessRequest('/activation/chart/preview', {
       ...input,
       typeMap,
-      preview: undefined,
+      preview: void 0,
     });
     if (JSON.stringify(typeMap) !== JSON.stringify(input.typeMap)) return;
     input.preview = preview;
@@ -250,7 +244,6 @@ async function updateAccountingActivationTypes() {
     document.getElementById('accountingActivationImportStatus').textContent = error.message;
   }
 }
-
 async function commitAccountingActivationChart(button) {
   const status = document.getElementById('accountingActivationImportStatus');
   if (!document.getElementById('accountingActivationConfirm').checked) {
@@ -267,18 +260,17 @@ async function commitAccountingActivationChart(button) {
     }
     const { result } = await accountingAccessRequest('/activation/chart/commit', {
       ...input,
-      preview: undefined,
+      preview: void 0,
       fingerprint: input.preview.fingerprint,
       confirmed: true,
     });
-    accountingActivation.import = { result }; // Release raw CSV from browser memory after commit.
+    accountingActivation.import = { result };
     renderAccountingActivationChart();
   } catch (error) {
     status.textContent = error.message;
     button.disabled = false;
   }
 }
-
 async function finishAccountingActivation(button) {
   button.disabled = true;
   try {

@@ -1,17 +1,8 @@
+// Generated from src/browser/parish/features/campaigns.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Campaign management owns its editor draft, listing, uploads, and updates.
-// Read the live shared parish only inside actions after the core initializes.
-// Giving's editable catalogs, authentication, and entitlement checks stay in core.
-/* global currentParish:writable, authHeaders */
-/* exported openNewCampaignForm, editCampaign, closeCampaignEditor,
-  handleCoverUpload, removeCoverPhoto, handlePhotosUpload, removeCampPhoto,
-  saveCampaign, postCampaignUpdate */
-
 let editingCampaignId = null;
 let campaignCoverUrl = '';
 let campaignPhotos = [];
-
 function renderCampaignList(parish) {
   const pane = document.getElementById('campaignListPane');
   if (!pane) return;
@@ -40,68 +31,47 @@ function renderCampaignList(parish) {
         .replace(/\\/g, '\\\\')
         .replace(/'/g, "\\'");
       return (
-        '<div class="campaign-list-item" style="border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-bottom:10px;background:var(--paper);">' +
-        '<div style="display:flex;align-items:flex-start;gap:8px;">' +
-        '<div style="flex:1;min-width:0;">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
-        '<strong style="font-size:0.95rem;color:var(--ink)">' +
+        '<div class="campaign-list-item" style="border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-bottom:10px;background:var(--paper);"><div style="display:flex;align-items:flex-start;gap:8px;"><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;"><strong style="font-size:0.95rem;color:var(--ink)">' +
         escCamp(c.name) +
-        '</strong>' +
-        '<span class="' +
+        '</strong><span class="' +
         s.cls +
         '" style="display:inline-flex;align-items:center;gap:5px;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.6rem;border-radius:100px;">' +
         s.label +
-        '</span>' +
-        '</div>' +
-        '<div style="width:100%;height:6px;background:var(--gold-soft,rgba(200,162,74,0.15));border-radius:100px;overflow:hidden;margin:4px 0 2px;">' +
-        '<div style="height:100%;width:' +
+        '</span></div><div style="width:100%;height:6px;background:var(--gold-soft,rgba(200,162,74,0.15));border-radius:100px;overflow:hidden;margin:4px 0 2px;"><div style="height:100%;width:' +
         pct +
-        '%;background:linear-gradient(90deg,#C8A24A,#e8c56a);border-radius:100px;transition:width 0.8s ease;"></div></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--stone);">' +
-        '<span>' +
+        '%;background:linear-gradient(90deg,#C8A24A,#e8c56a);border-radius:100px;transition:width 0.8s ease;"></div></div><div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--stone);"><span>' +
         usd(raised) +
         ' raised' +
         (goal ? ' of ' + usd(goal) : '') +
-        '</span>' +
-        '<span>' +
+        '</span><span>' +
         (c.giftCount || 0) +
         ' gift' +
         ((c.giftCount || 0) !== 1 ? 's' : '') +
-        '</span></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:12px;">' +
-        '<button type="button" class="btn btn-ghost btn-sm" data-campaign-embed="' +
+        '</span></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:12px;"><button type="button" class="btn btn-ghost btn-sm" data-campaign-embed="' +
         escCamp(c.id) +
-        '">Website embed</button>' +
-        '<a href="' +
+        '">Website embed</button><a href="' +
         pageUrl +
-        '" target="_blank" class="btn btn-ghost btn-sm" title="View public page">&#8599; View</a>' +
-        '<button class="btn btn-ghost btn-sm" onclick="editCampaign(\'' +
+        `" target="_blank" class="btn btn-ghost btn-sm" title="View public page">&#8599; View</a><button class="btn btn-ghost btn-sm" onclick="editCampaign('` +
         campaignId +
-        '\')" title="Edit">Edit</button>' +
-        '</div></div></div>'
+        `')" title="Edit">Edit</button></div></div></div>`
       );
     })
     .join('');
 }
-
 function slugifyCampaign(str) {
   return String(str || '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
-
 function campaignPublicUrl(parishId, campaignSlug) {
   const parishSegment = slugifyCampaign(parishId);
   const campaignSegment = slugifyCampaign(campaignSlug).replace(/-campaign$/, '');
   return '/give/' + encodeURIComponent(parishSegment) + '/' + encodeURIComponent(campaignSegment) + '-campaign';
 }
-
 function escCamp(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-
 function openNewCampaignForm() {
   editingCampaignId = null;
   campaignCoverUrl = '';
@@ -137,7 +107,6 @@ function openNewCampaignForm() {
     editorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
-
 function editCampaign(campaignId) {
   if (!currentParish) return;
   const c = (currentParish.campaigns || []).find((x) => x.id === campaignId);
@@ -182,7 +151,6 @@ function editCampaign(campaignId) {
   }
   if (updateCard) updateCard.hidden = false;
 }
-
 function closeCampaignEditor() {
   const editorCard = document.getElementById('campaignEditorCard');
   if (editorCard) editorCard.hidden = true;
@@ -190,7 +158,6 @@ function closeCampaignEditor() {
   if (updateCard) updateCard.hidden = true;
   editingCampaignId = null;
 }
-
 async function uploadCampaignPhoto(file, campaignId) {
   const parishId = currentParish?.parishId;
   if (!parishId) throw new Error('No parish loaded');
@@ -204,7 +171,6 @@ async function uploadCampaignPhoto(file, campaignId) {
   if (!res.ok) throw new Error(data.error || 'Upload failed');
   return data;
 }
-
 async function handleCoverUpload(input) {
   const file = input.files?.[0];
   if (!file) return;
@@ -226,7 +192,6 @@ async function handleCoverUpload(input) {
     input.value = '';
   }
 }
-
 function removeCoverPhoto(e) {
   e.stopPropagation();
   campaignCoverUrl = '';
@@ -237,7 +202,6 @@ function removeCoverPhoto(e) {
   const placeholder = document.getElementById('campCoverPlaceholder');
   if (placeholder) placeholder.hidden = false;
 }
-
 async function handlePhotosUpload(input) {
   const files = Array.from(input.files || []);
   if (!files.length) return;
@@ -252,7 +216,6 @@ async function handlePhotosUpload(input) {
   renderCampPhotosGrid();
   input.value = '';
 }
-
 function renderCampPhotosGrid() {
   const grid = document.getElementById('campPhotosGrid');
   if (!grid) return;
@@ -263,19 +226,16 @@ function renderCampPhotosGrid() {
         p.url +
         '" alt="Photo ' +
         (i + 1) +
-        '" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;" />' +
-        '<button type="button" onclick="removeCampPhoto(' +
+        '" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;" /><button type="button" onclick="removeCampPhoto(' +
         i +
         ')" style="position:absolute;top:4px;right:4px;background:rgba(6,21,34,0.72);border:none;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:0.75rem;line-height:1;">&#10005;</button></div>'
     )
     .join('');
 }
-
 function removeCampPhoto(i) {
   campaignPhotos.splice(i, 1);
   renderCampPhotosGrid();
 }
-
 async function saveCampaign() {
   if (!currentParish) return;
   const statusSpan = document.getElementById('campSaveStatus');
@@ -297,8 +257,9 @@ async function saveCampaign() {
     coverPhotoUrl: campaignCoverUrl,
     photos: campaignPhotos.map((p) => ({ url: p.url, key: p.key })),
     createdAt: editingCampaignId
-      ? (currentParish.campaigns || []).find((c) => c.id === editingCampaignId)?.createdAt || new Date().toISOString()
-      : new Date().toISOString(),
+      ? (currentParish.campaigns || []).find((c) => c.id === editingCampaignId)?.createdAt ||
+        /* @__PURE__ */ new Date().toISOString()
+      : /* @__PURE__ */ new Date().toISOString(),
     updates: editingCampaignId
       ? (currentParish.campaigns || []).find((c) => c.id === editingCampaignId)?.updates || []
       : [],
@@ -339,7 +300,6 @@ async function saveCampaign() {
     }
   }
 }
-
 async function postCampaignUpdate() {
   if (!currentParish || !editingCampaignId) return;
   const body = (document.getElementById('updateBody')?.value || '').trim();
@@ -352,7 +312,7 @@ async function postCampaignUpdate() {
   if (!campaign) return;
   const newUpdate = {
     id: 'upd_' + crypto.randomUUID().replace(/-/g, '').substring(0, 10),
-    date: new Date().toISOString(),
+    date: /* @__PURE__ */ new Date().toISOString(),
     body,
   };
   const updates = [newUpdate, ...(campaign.updates || [])];
@@ -372,12 +332,11 @@ async function postCampaignUpdate() {
     if (statusSpan) statusSpan.textContent = '✓ Update posted';
     setTimeout(() => {
       if (statusSpan) statusSpan.textContent = '';
-    }, 3000);
+    }, 3e3);
   } catch (e) {
     if (statusSpan) statusSpan.textContent = 'Error: ' + e.message;
   }
 }
-
 window.ParishFeatureRegistry.register('campaigns', {
   load: () => renderCampaignList(currentParish),
   refresh: () => renderCampaignList(currentParish),

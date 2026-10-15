@@ -178,7 +178,7 @@ async function saveDiocesanStatisticsTotals(event: SubmitEvent, year: number) {
   }
 }
 
-async function loadDiocesanStatisticsPreview(year: number | undefined) {
+async function loadDiocesanStatisticsPreview(year?: number) {
   const pane = ensureDiocesanStatisticsCard();
   if (!pane || !currentParish) return;
   const select = document.getElementById('diocesanStatisticsYear') as HTMLSelectElement | null;

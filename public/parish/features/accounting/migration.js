@@ -1,19 +1,15 @@
+// Generated from src/browser/parish/features/accounting/migration.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: migration.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 async function accountingMigrationRequest(path, body = null) {
   const response = await fetch(accountingApi(`/migration${path}`), {
     method: body === null ? 'GET' : 'POST',
     headers: body === null ? authHeaders() : { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: body === null ? undefined : JSON.stringify(body),
+    body: body === null ? void 0 : JSON.stringify(body),
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.message || payload.error || 'Migration request failed.');
   return payload;
 }
-
 async function openAccountingMigration() {
   try {
     const payload = await accountingMigrationRequest('/sessions');
@@ -29,12 +25,10 @@ async function openAccountingMigration() {
     alert(error.message);
   }
 }
-
 function closeAccountingMigration() {
   accountingMigration = { active: false, session: null, sessions: [], step: 'source', previews: {}, advanced: false };
   renderAccountingPane();
 }
-
 async function createAccountingMigrationSession(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -55,7 +49,6 @@ async function createAccountingMigrationSession(event) {
     status.textContent = error.message;
   }
 }
-
 async function resumeAccountingMigration(id) {
   try {
     const payload = await accountingMigrationRequest(`/sessions/${encodeURIComponent(id)}`);
@@ -66,16 +59,13 @@ async function resumeAccountingMigration(id) {
     alert(error.message);
   }
 }
-
 function setAccountingMigrationStep(step) {
   accountingMigration.step = step;
   renderAccountingPane();
 }
-
 function migrationStatus(value) {
   return String(value || 'not_started').replaceAll('_', ' ');
 }
-
 function migrationSourceGuide(sourceSystem, expanded = false) {
   const source = String(sourceSystem || '').toLowerCase();
   if (!['aplos', 'quickbooks'].includes(source)) return '';
@@ -111,11 +101,9 @@ function migrationSourceGuide(sourceSystem, expanded = false) {
   const list = (steps) => `<ol>${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`;
   return `<details class="acct-card acct-migration-guide" ${expanded ? 'open' : ''}><summary><span><small>Source guide</small><strong>Exporting data from ${escapeHtml(sourceName)}</strong></span><i aria-hidden="true">⌄</i></summary><div class="acct-migration-guide-body"><section><h3>Exporting people</h3>${list(peopleSteps)}</section><section><h3>Exporting giving</h3>${list(givingSteps)}</section><section class="acct-migration-guide-import"><h3>Preparing files for AGAPAY</h3><ol><li>Open the matching migration step for the data you are importing.</li><li>Use the exported workbook to populate the requested columns.</li><li>Keep the first row intact because it contains the column headers.</li><li>Save the finished file as a <strong>.CSV</strong> file.</li><li>Upload the CSV in this workspace, review the preview, and commit it when the results are correct.</li></ol></section></div></details>`;
 }
-
 function migrationCsvForm(kind, title, columns) {
   return `<form class="acct-phase-form" onsubmit="previewAccountingMigrationCsv(event,'${escapeAttr(kind)}')"><label>${escapeHtml(title)} CSV<input name="file" type="file" accept=".csv,text/csv" required></label><details><summary>Column names</summary><div class="acct-form-grid">${columns.map(([key, label, fallback]) => `<label>${escapeHtml(label)}<input name="column_${escapeAttr(key)}" value="${escapeAttr(fallback)}" required></label>`).join('')}</div></details><button class="acct-primary">Review CSV</button><span class="acct-form-status"></span></form>`;
 }
-
 async function previewAccountingMigrationCsv(event, kind) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -148,13 +136,11 @@ async function previewAccountingMigrationCsv(event, kind) {
     status.textContent = error.message;
   }
 }
-
 async function refreshAccountingMigrationSession() {
   if (!accountingMigration.session) return;
   const payload = await accountingMigrationRequest(`/sessions/${encodeURIComponent(accountingMigration.session.id)}`);
   accountingMigration.session = payload.session;
 }
-
 function migrationCommitBase(kind) {
   return {
     migrationSessionId: accountingMigration.session.id,
@@ -166,7 +152,6 @@ function migrationCommitBase(kind) {
     ),
   };
 }
-
 async function commitAccountingMigrationStep(kind) {
   if (kind === 'chart' && !confirm('Confirm each mapped source account type and commit this chart of accounts?'))
     return;
@@ -235,7 +220,6 @@ async function commitAccountingMigrationStep(kind) {
     else alert(error.message);
   }
 }
-
 function migrationPreviewErrors(preview) {
   return preview?.errors?.length
     ? `<div class="acct-empty error"><strong>${preview.errors.length} item${preview.errors.length === 1 ? '' : 's'} need attention</strong><span>${escapeHtml(
@@ -246,7 +230,6 @@ function migrationPreviewErrors(preview) {
       )}</span></div>`
     : '';
 }
-
 function renderAccountingMigrationWizard(pane) {
   const session = accountingMigration.session;
   if (!session) {
@@ -307,7 +290,7 @@ function renderAccountingMigrationWizard(pane) {
       history = accountingMigration.previews.history;
     content = `<section class="acct-card acct-setup-lead"><span class="acct-kicker">Recommended cutover</span><h2><strong>Start clean with an opening balance</strong></h2><p>Export a trial balance as of the day before AGAPAY begins. An unbalanced file is stopped in preview before anything posts.</p>${
       opening
-        ? `${migrationPreviewErrors(opening)}<div class="acct-facts"><div><strong>${accountingMoney(opening.totalDebits)}</strong><span>Debits</span></div><div><strong>${accountingMoney(opening.totalCredits)}</strong><span>Credits</span></div><div><strong>${opening.balanced ? 'Balanced' : 'Not balanced'}</strong><span>Preview status</span></div></div><label>Effective date<input id="migrationOpeningDate" type="date" value="${new Date().toISOString().slice(0, 10)}"></label><label><input id="migrationAcknowledgeExisting" type="checkbox"> I acknowledge existing posted ledger activity, if any.</label><button class="acct-primary" onclick="commitAccountingMigrationStep('opening')" ${opening.eligibleToCommit ? '' : 'disabled'}>Post opening balance</button><span data-migration-commit-status></span>`
+        ? `${migrationPreviewErrors(opening)}<div class="acct-facts"><div><strong>${accountingMoney(opening.totalDebits)}</strong><span>Debits</span></div><div><strong>${accountingMoney(opening.totalCredits)}</strong><span>Credits</span></div><div><strong>${opening.balanced ? 'Balanced' : 'Not balanced'}</strong><span>Preview status</span></div></div><label>Effective date<input id="migrationOpeningDate" type="date" value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}"></label><label><input id="migrationAcknowledgeExisting" type="checkbox"> I acknowledge existing posted ledger activity, if any.</label><button class="acct-primary" onclick="commitAccountingMigrationStep('opening')" ${opening.eligibleToCommit ? '' : 'disabled'}>Post opening balance</button><span data-migration-commit-status></span>`
         : migrationCsvForm('opening', 'Trial balance', [
             ['accountRef', 'Account reference', 'Account'],
             ['debit', 'Debit', 'Debit'],

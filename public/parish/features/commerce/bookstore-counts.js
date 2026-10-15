@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/commerce/bookstore-counts.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard commerce: bookstore-counts.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function renderBookstoreCountSessions(sessions = []) {
   const pane = document.getElementById('bookstoreCountSessions');
   const startButton = document.getElementById('bookstoreStartCountButton');
@@ -32,7 +29,6 @@ function renderBookstoreCountSessions(sessions = []) {
           : ''
       }`;
 }
-
 function buildBookstoreCountModal() {
   const existing = document.getElementById('bookstoreCountModal');
   if (existing) return existing;
@@ -50,20 +46,17 @@ function buildBookstoreCountModal() {
   document.body.appendChild(modal);
   return modal;
 }
-
 function showBookstoreCountModal() {
   const modal = buildBookstoreCountModal();
   modal.hidden = false;
   document.body.classList.add('bookstore-modal-open');
   return document.getElementById('bookstoreCountModalBody');
 }
-
 function closeBookstoreCountModal() {
   const modal = document.getElementById('bookstoreCountModal');
   if (modal) modal.hidden = true;
   document.body.classList.remove('bookstore-modal-open');
 }
-
 function renderBookstoreDraftCount(session) {
   const pane = showBookstoreCountModal();
   const products = (bookstoreCatalogState.products || []).filter(
@@ -94,7 +87,6 @@ function renderBookstoreDraftCount(session) {
       </form>`;
   setTimeout(() => pane.querySelector('.bookstore-count-quantity')?.focus(), 0);
 }
-
 function syncBookstoreCountDifference(input) {
   const row = input.closest('.bookstore-count-row');
   const differenceBox = row?.querySelector('.bookstore-count-difference');
@@ -112,7 +104,6 @@ function syncBookstoreCountDifference(input) {
   summary.className = difference === 0 ? 'is-match' : 'is-difference';
   noteLabel.hidden = difference === 0;
 }
-
 async function startBookstorePhysicalCount(button) {
   const existing = (bookstoreCatalogState.countSessions || []).find((session) => session.status === 'draft');
   if (existing) {
@@ -146,14 +137,12 @@ async function startBookstorePhysicalCount(button) {
     renderBookstoreCountSessions(bookstoreCatalogState.countSessions || []);
   }
 }
-
 function openBookstoreDraftCount(sessionId) {
   const session = (bookstoreCatalogState.countSessions || []).find(
     (item) => item.id === sessionId && item.status === 'draft'
   );
   if (session) renderBookstoreDraftCount(session);
 }
-
 async function closeBookstorePhysicalCount(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -201,7 +190,6 @@ async function closeBookstorePhysicalCount(event) {
     }
   }
 }
-
 function renderBookstoreCompletedCount(session) {
   const pane = showBookstoreCountModal();
   document.getElementById('bookstoreCountModalTitle').textContent = 'Completed physical count';
@@ -215,7 +203,6 @@ function renderBookstoreCompletedCount(session) {
         .join('')}</div>
       <div class="bookstore-count-actions"><button class="btn btn-gold" type="button" onclick="closeBookstoreCountModal()">Done</button></div>`;
 }
-
 async function openBookstoreClosedCount(sessionId) {
   const pane = showBookstoreCountModal();
   pane.innerHTML = '<p class="sw-tool-loading">Loading physical count…</p>';
