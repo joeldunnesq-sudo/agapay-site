@@ -11,7 +11,7 @@ export interface DirectoryParish {
   region?: string;
 }
 export interface DirectoryLogo {
-  bytes?: Uint8Array | ArrayBuffer | string;
+  bytes?: Uint8Array | ArrayBuffer | string | null;
   contentType?: string;
 }
 export interface DirectoryPdfInput {

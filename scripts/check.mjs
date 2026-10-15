@@ -436,7 +436,7 @@ for (const calendar of [calendarContext.window.AGAPAYLiturgicalCalendar, serverL
   assert.equal(cleanMonday?.offset, -48);
   assert.equal(cleanMonday?.rank, "fast", "Clean Monday should be highlighted as a fast boundary");
 }
-assert.ok(donorApp.includes("parishPatronalFeastForYear") && donorApp.includes('rank: "patronal"'), "Today Feast Highlights should include the donor parish Patronal feast");
+assert.ok(donorApp.includes("parishPatronalFeastForYear") && includesJavaScriptFragment(donorApp, 'rank: "patronal"'), "Today Feast Highlights should include the donor parish Patronal feast");
 assert.ok(donorCalendar.includes('class="patronal"') && donorCalendarCss.includes(".cal-feast-rank.patronal"), "Today Feast Highlights should label Patronal feasts distinctly");
 assert.ok(donorCalendarCss.includes("@media (max-width: 719px)") && donorCalendarCss.includes('aria-label="Saint of the Day"'), "Today mobile layout should lift Saint of the Day above lower cards without changing desktop columns");
 const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");

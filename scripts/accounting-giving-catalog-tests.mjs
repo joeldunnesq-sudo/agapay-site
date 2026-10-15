@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readServerModuleSource } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
@@ -496,14 +497,12 @@ assert.match(
 assert.match(wiring, /restrictionType/);
 assert.match(wiring, /giving_goal_cents/);
 assert.match(wiring, /loadGivingCatalogFromAccounting/);
-assert.match(
-  wiring,
-  /return "fund_general"/,
+assert.ok(
+  includesJavaScriptFragment(wiring, 'return "fund_general"'),
   'stewardship accounting wiring must use the system General Operating fund'
 );
-assert.match(
-  wiring,
-  /stewardshipGift \? "general"/,
+assert.ok(
+  includesJavaScriptFragment(wiring, 'stewardshipGift ? "general" :'),
   'new stewardship source events must resolve to the General Operating identity'
 );
 assert.match(

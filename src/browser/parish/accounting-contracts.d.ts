@@ -107,21 +107,22 @@ interface AccountingLedgerEntry {
   fund?: string;
 }
 interface AccountingWorkspaceData {
-  setup: { settings?: { baseCurrency?: string } } | null;
-  journals: unknown[];
+  setup: AccountingSetupOverview | null;
+  journals: AccountingJournalSummary[];
   ledger: AccountingLedgerEntry[];
   reports: Record<string, AccountingReport>;
   accounts: AccountingAccount[];
   accountCatalog: AccountingAccount[];
   funds: AccountingFund[];
-  bankAccounts: unknown[];
-  payables: unknown;
-  budgets: unknown;
-  banking: unknown;
-  integrations: unknown;
+  bankAccounts: AccountingBankAccount[];
+  payables: AccountingPayablesWorkspace | null;
+  budgets: { items?: unknown[] } | null;
+  banking: AccountingBanking | null;
+  integrations: AccountingIntegrations | null;
   close: AccountingCloseWorkspace | null;
   adjustments: AccountingAdjustments | null;
   governance: AccountingGovernance | null;
+  recurring?: AccountingRecurring[];
   tier: string;
 }
 interface AccountingMigrationState {
@@ -132,15 +133,10 @@ interface AccountingMigrationState {
   previews: Record<string, AccountingMigrationPreview>;
   advanced: boolean;
 }
-declare function loadAccountingTab(force?: boolean): Promise<void>;
-declare function renderAccountingPane(): void;
-declare function renderAccountingReadiness(readiness: AccountingReadiness, pane: HTMLElement): void;
-declare function accountingStaffSessionKey(): string;
-declare function accountingStaffSession(): { profile: { id: string } } | null;
 
-declare function accountingReportPeriod(): { start: string; end: string };
-declare function accountingReportLedgerRows(start: string, end: string): AccountingLedgerEntry[];
-declare const ACCOUNTING_REPORT_LIBRARY: readonly { id: string; title: string }[];
+declare function accountingStaffSessionKey(): string;
+declare function accountingStaffSession(): { profile: AccountingAccessProfile } | null;
+
 declare module '*parish/accounting-report-pdf.js?v=20260930reports1' {
   export function createAccountingReportPdf(report: AccountingStatement): Promise<Uint8Array<ArrayBuffer>>;
 }
@@ -315,4 +311,3 @@ interface AccountingGovernanceResponse extends Partial<AccountingGovernance> {
   message?: string;
   error?: string;
 }
-declare function downloadAccountingFile(url: string, filename: string): unknown;

@@ -1,30 +1,32 @@
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import vm from "node:vm";
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import vm from 'node:vm';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
 
 import {
   enrichLiturgicalDayWithOrthocal,
   orthocalReadingAppointments,
-  orthocalSaintStories
-} from "../src/learn/readings-source.js";
+  orthocalSaintStories,
+} from '../src/learn/readings-source.js';
 
-const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const orthocalDay = {
-  summary_title: "Great Prince Vladimir, Equal-to-the-Apostles, Enlightener of the Lands of Rus",
-  saints: ["Holy Martyrs Cyricus and His Mother Julitta (304)"],
+  summary_title: 'Great Prince Vladimir, Equal-to-the-Apostles, Enlightener of the Lands of Rus',
+  saints: ['Holy Martyrs Cyricus and His Mother Julitta (304)'],
   stories: [
     {
-      title: "Holy Equal-to-the-Apostles Great Prince Vladimir (in holy baptism Basil), enlightener of the Russian Land (1051)",
-      story: "<p>The life of Prince Vladimir.</p>"
+      title:
+        'Holy Equal-to-the-Apostles Great Prince Vladimir (in holy baptism Basil), enlightener of the Russian Land (1051)',
+      story: '<p>The life of Prince Vladimir.</p>',
     },
     {
-      title: "Holy Martyrs Cyricus and His Mother Julitta (304)",
-      story: "<p>The lives of Cyricus and Julitta.</p>"
-    }
-  ]
+      title: 'Holy Martyrs Cyricus and His Mother Julitta (304)',
+      story: '<p>The lives of Cyricus and Julitta.</p>',
+    },
+  ],
 };
 
 const stories = orthocalSaintStories(orthocalDay);
@@ -33,11 +35,11 @@ assert.equal(stories[0].name, orthocalDay.summary_title);
 assert.match(stories[0].storyText, /Prince Vladimir/);
 
 const enriched = await enrichLiturgicalDayWithOrthocal(
-  { feastTitle: "", saints: [], saintStories: [] },
+  { feastTitle: '', saints: [], saintStories: [] },
   {
-    calendarType: "julian",
-    civilDate: "2026-07-28",
-    fetcher: async () => ({ ok: true, json: async () => orthocalDay })
+    calendarType: 'julian',
+    civilDate: '2026-07-28',
+    fetcher: async () => ({ ok: true, json: async () => orthocalDay }),
   }
 );
 assert.equal(enriched.feastTitle, orthocalDay.summary_title);
@@ -45,86 +47,121 @@ assert.equal(enriched.primarySaintTitle, orthocalDay.summary_title);
 assert.equal(enriched.saintStories[0].name, enriched.feastTitle);
 
 const tikhonDay = {
-  summary_title: "Leavetaking of Transfiguration",
-  saints: ["St Tikhon of Zadonsk (1783)"],
+  summary_title: 'Leavetaking of Transfiguration',
+  saints: ['St Tikhon of Zadonsk (1783)'],
   readings: [
-    { source: "epistle", display: "2 Corinthians 9:12-10:7", description: "" },
-    { source: "epistle", display: "Hebrews 7:26-8:2", description: "St Tikhon" },
-    { source: "gospel", display: "Mark 3:19-27", description: "" },
-    { source: "gospel", display: "Matthew 5:14-19", description: "St Tikhon" }
-  ]
+    { source: 'epistle', display: '2 Corinthians 9:12-10:7', description: '' },
+    { source: 'epistle', display: 'Hebrews 7:26-8:2', description: 'St Tikhon' },
+    { source: 'gospel', display: 'Mark 3:19-27', description: '' },
+    { source: 'gospel', display: 'Matthew 5:14-19', description: 'St Tikhon' },
+  ],
 };
 const appointments = orthocalReadingAppointments(tikhonDay);
-assert.deepEqual(appointments.map(({ type, ref, appointment }) => ({ type, ref, appointment })), [
-  { type: "epistle", ref: "2 Corinthians 9:12-10:7", appointment: "" },
-  { type: "epistle", ref: "Hebrews 7:26-8:2", appointment: "St Tikhon" },
-  { type: "gospel", ref: "Mark 3:19-27", appointment: "" },
-  { type: "gospel", ref: "Matthew 5:14-19", appointment: "St Tikhon" }
-]);
+assert.deepEqual(
+  appointments.map(({ type, ref, appointment }) => ({ type, ref, appointment })),
+  [
+    { type: 'epistle', ref: '2 Corinthians 9:12-10:7', appointment: '' },
+    { type: 'epistle', ref: 'Hebrews 7:26-8:2', appointment: 'St Tikhon' },
+    { type: 'gospel', ref: 'Mark 3:19-27', appointment: '' },
+    { type: 'gospel', ref: 'Matthew 5:14-19', appointment: 'St Tikhon' },
+  ]
+);
 
 const tikhonEnriched = await enrichLiturgicalDayWithOrthocal(
-  { feastTitle: "", saints: [], saintStories: [] },
+  { feastTitle: '', saints: [], saintStories: [] },
   {
-    calendarType: "julian",
-    civilDate: "2026-08-26",
-    fetcher: async () => ({ ok: true, json: async () => tikhonDay })
+    calendarType: 'julian',
+    civilDate: '2026-08-26',
+    fetcher: async () => ({ ok: true, json: async () => tikhonDay }),
   }
 );
-assert.equal(tikhonEnriched.epistleRef, "2 Corinthians 9:12-10:7", "the compatibility field retains the readings of the day");
-assert.equal(tikhonEnriched.gospelRef, "Mark 3:19-27", "the compatibility field retains the readings of the day");
-assert.equal(tikhonEnriched.readingAppointments.length, 4, "all ordinary and saint appointments must be retained");
-assert.equal(tikhonEnriched.feastTitle, "Leavetaking of Transfiguration", "the Apodosis remains a separate liturgical observance");
-assert.equal(tikhonEnriched.primarySaintTitle, "St Tikhon of Zadonsk (1783)", "the saint remains the Today hero title");
+assert.equal(
+  tikhonEnriched.epistleRef,
+  '2 Corinthians 9:12-10:7',
+  'the compatibility field retains the readings of the day'
+);
+assert.equal(tikhonEnriched.gospelRef, 'Mark 3:19-27', 'the compatibility field retains the readings of the day');
+assert.equal(tikhonEnriched.readingAppointments.length, 4, 'all ordinary and saint appointments must be retained');
+assert.equal(
+  tikhonEnriched.feastTitle,
+  'Leavetaking of Transfiguration',
+  'the Apodosis remains a separate liturgical observance'
+);
+assert.equal(tikhonEnriched.primarySaintTitle, 'St Tikhon of Zadonsk (1783)', 'the saint remains the Today hero title');
 
 const donorApp = readDonorAppSource();
-const parishLife = readFileSync(path.join(repoRoot, "public", "myagapay", "parish-life.html"), "utf8");
-assert.match(donorApp, /today\.primarySaintTitle \|\| today\.feastTitle/);
+const parishLife = readFileSync(path.join(repoRoot, 'public', 'myagapay', 'parish-life.html'), 'utf8');
+assert.ok(includesJavaScriptFragment(donorApp, 'today.primarySaintTitle || today.feastTitle'));
 assert.match(donorApp, /stories\.find\(\(story\) => story\?\.primary\) \|\| stories\[0\]/);
-const readingRowsStart = donorApp.indexOf("function liturgicalReadingRows");
-const readingRowsEnd = donorApp.indexOf("function renderDonorTodayInChurch", readingRowsStart);
+const readingRowsStart = donorApp.indexOf('function liturgicalReadingRows');
+const readingRowsEnd = donorApp.indexOf('function renderDonorTodayInChurch', readingRowsStart);
 const readingSandbox = {};
 vm.runInNewContext(donorApp.slice(readingRowsStart, readingRowsEnd), readingSandbox);
 const readingTexts = (day) => Array.from(readingSandbox.liturgicalReadingRows(day), (row) => row.text);
-assert.deepEqual(readingTexts(tikhonEnriched), [
-  "Readings of the day",
-  "Epistle: 2 Corinthians 9:12-10:7",
-  "Gospel: Mark 3:19-27",
-  "Saint — St Tikhon",
-  "Epistle: Hebrews 7:26-8:2",
-  "Gospel: Matthew 5:14-19",
-], "ordinary readings must not inherit the day's observance title");
+assert.deepEqual(
+  readingTexts(tikhonEnriched),
+  [
+    'Readings of the day',
+    'Epistle: 2 Corinthians 9:12-10:7',
+    'Gospel: Mark 3:19-27',
+    'Saint — St Tikhon',
+    'Epistle: Hebrews 7:26-8:2',
+    'Gospel: Matthew 5:14-19',
+  ],
+  "ordinary readings must not inherit the day's observance title"
+);
 
 // September 11, 2026 (Julian August 29): the two sets shown in the reported screenshot.
 const forerunnerDay = {
-  feastTitle: "Beheading of St John the Baptist",
-  readingAppointments: orthocalReadingAppointments({ readings: [
-    { source: "epistle", display: "Acts 13.25-33", description: "Forerunner" },
-    { source: "gospel", display: "Mark 6.14-30", description: "Forerunner" },
-    { source: "epistle", display: "Galatians 4.8-21", description: "" },
-    { source: "gospel", display: "Mark 6.45-53", description: "" },
-  ] }),
+  feastTitle: 'Beheading of St John the Baptist',
+  readingAppointments: orthocalReadingAppointments({
+    readings: [
+      { source: 'epistle', display: 'Acts 13.25-33', description: 'Forerunner' },
+      { source: 'gospel', display: 'Mark 6.14-30', description: 'Forerunner' },
+      { source: 'epistle', display: 'Galatians 4.8-21', description: '' },
+      { source: 'gospel', display: 'Mark 6.45-53', description: '' },
+    ],
+  }),
 };
-assert.deepEqual(readingTexts(forerunnerDay), [
-  "Feast — Forerunner",
-  "Epistle: Acts 13.25-33",
-  "Gospel: Mark 6.14-30",
-  "Readings of the day",
-  "Epistle: Galatians 4.8-21",
-  "Gospel: Mark 6.45-53",
-], "the Forerunner's feast readings and ordinary readings must remain distinct");
-assert.deepEqual(readingTexts({
-  feastTitle: forerunnerDay.feastTitle,
-  epistleRef: "Galatians 4.8-21",
-  gospelRef: "Mark 6.45-53",
-}), ["Epistle: Galatians 4.8-21", "Gospel: Mark 6.45-53"],
-"a single fallback set stays concise without a redundant heading");
-assert.match(donorApp, /\["epistle", "gospel"\]/,
-  "each appointment must order the Gospel after the Epistle");
-assert.doesNotMatch(donorApp, /when this service is celebrated|The parish Typikon determines which appointed readings are proclaimed|Liturgical observance:/,
-  "the Today hero must keep the grouped reading presentation concise");
-assert.match(donorApp, /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
-  "each daily reading must render as its own hero line");
-assert.match(parishLife, /\/donor\/app\.js\?v=[a-f0-9]{16}/,
-  "the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes");
+assert.deepEqual(
+  readingTexts(forerunnerDay),
+  [
+    'Feast — Forerunner',
+    'Epistle: Acts 13.25-33',
+    'Gospel: Mark 6.14-30',
+    'Readings of the day',
+    'Epistle: Galatians 4.8-21',
+    'Gospel: Mark 6.45-53',
+  ],
+  "the Forerunner's feast readings and ordinary readings must remain distinct"
+);
+assert.deepEqual(
+  readingTexts({
+    feastTitle: forerunnerDay.feastTitle,
+    epistleRef: 'Galatians 4.8-21',
+    gospelRef: 'Mark 6.45-53',
+  }),
+  ['Epistle: Galatians 4.8-21', 'Gospel: Mark 6.45-53'],
+  'a single fallback set stays concise without a redundant heading'
+);
+assert.ok(
+  includesJavaScriptFragment(donorApp, '["epistle", "gospel"]'),
+  'each appointment must order the Gospel after the Epistle'
+);
+assert.doesNotMatch(
+  donorApp,
+  /when this service is celebrated|The parish Typikon determines which appointed readings are proclaimed|Liturgical observance:/,
+  'the Today hero must keep the grouped reading presentation concise'
+);
+assert.match(
+  donorApp,
+  /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
+  'each daily reading must render as its own hero line'
+);
+assert.match(
+  parishLife,
+  /\/donor\/app\.js\?v=[a-f0-9]{16}/,
+  'the Koinonia page must invalidate cached donor-app bundles when liturgical rendering changes'
+);
 
-console.log("PASS - Today hero, saint card, and first life use the same primary commemoration");
+console.log('PASS - Today hero, saint card, and first life use the same primary commemoration');

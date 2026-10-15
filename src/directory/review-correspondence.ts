@@ -153,7 +153,7 @@ export async function respondToDirectoryReviewRequest(
     sourceType,
     sourceId,
     message,
-  }: { context: DirectorySelfContext; sourceType: string; sourceId: string; message: unknown }
+  }: { context: DirectorySelfContext; sourceType: string; sourceId: string; message: unknown; correlationId?: string }
 ) {
   if (sourceType !== 'publication_profile')
     throw new DirectoryServiceError(

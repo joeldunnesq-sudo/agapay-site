@@ -9,7 +9,7 @@ export interface ConfirmedFeeOffering {
 import { ingestAccountingSourceEvent, processAccountingSourceEvent } from './service.js';
 
 export async function recognizeGivingStripeFee(
-  db: D1Database,
+  db: import('../../portability/contracts.js').PortabilityDatabase,
   {
     actor,
     entitlementTier,

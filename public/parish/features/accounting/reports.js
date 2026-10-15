@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/accounting/reports.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: reports.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 const ACCOUNTING_REPORT_LIBRARY = [
   {
     id: 'generalLedger',
@@ -104,20 +101,17 @@ const ACCOUNTING_REPORT_LIBRARY = [
     copy: 'Visual expense analysis with the current AGAPAY subscription rate shown separately.',
   },
 ];
-
 let accountingReportDateRange = null;
-
 function accountingReportPeriod() {
   if (accountingReportDateRange) return accountingReportDateRange;
   const fiscal = accountingData.setup?.currentFiscalYear || {};
-  const now = new Date(),
+  const now = /* @__PURE__ */ new Date(),
     today = now.toISOString().slice(0, 10);
   return {
     start: fiscal.startDate || `${now.getUTCFullYear()}-01-01`,
     end: fiscal.endDate && fiscal.endDate < today ? fiscal.endDate : today,
   };
 }
-
 function accountingReportLedgerRows(startDate = '0001-01-01', endDate = '9999-12-31') {
   const accounts = new Map(
     (accountingData.accountCatalog?.length ? accountingData.accountCatalog : accountingData.accounts || []).map(
@@ -145,14 +139,13 @@ function accountingReportLedgerRows(startDate = '0001-01-01', endDate = '9999-12
       };
     });
 }
-
 function accountingTabularReport(id) {
   if (id === 'generalLedger') return accountingGeneralLedgerReport();
   const period = accountingReportPeriod(),
     current = accountingReportLedgerRows(period.start, period.end);
   const moneyColumn = (key, label) => ({ key, label, money: true });
   if (id === 'incomeByFund') {
-    const groups = new Map();
+    const groups = /* @__PURE__ */ new Map();
     for (const row of current.filter((item) => ['revenue', 'expense'].includes(item.category))) {
       const item = groups.get(row.fund) || { name: row.fund, revenue: 0, expenses: 0 };
       item[row.category === 'revenue' ? 'revenue' : 'expenses'] += row.amount;
@@ -175,7 +168,7 @@ function accountingTabularReport(id) {
   }
   if (id === 'balanceByFund') {
     const all = accountingReportLedgerRows('0001-01-01', period.end),
-      groups = new Map();
+      groups = /* @__PURE__ */ new Map();
     for (const row of all) {
       const item = groups.get(row.fund) || { name: row.fund, assets: 0, liabilities: 0, netAssets: 0 };
       if (row.category === 'asset') item.assets += row.amount;
@@ -198,7 +191,7 @@ function accountingTabularReport(id) {
     };
   }
   if (id === 'incomeByMonth') {
-    const groups = new Map();
+    const groups = /* @__PURE__ */ new Map();
     for (const row of current.filter((item) => ['revenue', 'expense'].includes(item.category))) {
       const key = row.date.slice(0, 7),
         item = groups.get(key) || { month: key, revenue: 0, expenses: 0 };
@@ -220,20 +213,20 @@ function accountingTabularReport(id) {
     };
   }
   const accountComparison = (leftStart, leftEnd, rightStart, rightEnd, title, leftLabel, rightLabel) => {
-    const groups = new Map(),
+    const groups = /* @__PURE__ */ new Map(),
       add = (rows, key) =>
         rows
           .filter((item) => ['revenue', 'expense'].includes(item.category))
           .forEach((row) => {
-            const id = row.account.id || row.accountNumber,
-              item = groups.get(id) || {
+            const id2 = row.account.id || row.accountNumber,
+              item = groups.get(id2) || {
                 account: `${row.account.accountNumber || row.accountNumber || ''} · ${row.account.name || row.accountName || ''}`,
                 category: row.category,
                 left: 0,
                 right: 0,
               };
             item[key] += row.amount;
-            groups.set(id, item);
+            groups.set(id2, item);
           });
     add(accountingReportLedgerRows(leftStart, leftEnd), 'left');
     add(accountingReportLedgerRows(rightStart, rightEnd), 'right');
@@ -252,7 +245,7 @@ function accountingTabularReport(id) {
     };
   };
   if (id === 'comparativePeriods') {
-    const end = new Date(`${period.end}T00:00:00Z`),
+    const end = /* @__PURE__ */ new Date(`${period.end}T00:00:00Z`),
       leftStart = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1)),
       priorEnd = new Date(leftStart);
     priorEnd.setUTCDate(0);
@@ -282,7 +275,6 @@ function accountingTabularReport(id) {
   }
   return null;
 }
-
 function renderAccountingReportLibrary(pane) {
   const groups = [...new Set(ACCOUNTING_REPORT_LIBRARY.map((report) => report.group))];
   pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Financial reporting</span><h2>Reports</h2><p>Create clear parish financial statements, fund views, comparisons, and budget reports.</p></div><label>Search reports<input type="search" placeholder="Search by report name" oninput="filterAccountingReportLibrary(this.value)"></label></section><div class="acct-report-quick"><span>Quick access</span><button onclick="openAccountingReport('position')">Balance Sheet</button><button onclick="openAccountingReport('activities')">Revenue minus expenses</button><button onclick="openAccountingReport('expenses')">Expense Report</button><button onclick="openAccountingReport('budgetActual')">Budget to Actual</button></div><div class="acct-report-library">${groups
@@ -299,7 +291,6 @@ function renderAccountingReportLibrary(pane) {
     )
     .join('')}</div>`;
 }
-
 function filterAccountingReportLibrary(query) {
   const value = String(query || '')
     .trim()
@@ -308,7 +299,6 @@ function filterAccountingReportLibrary(query) {
     .querySelectorAll('[data-report-search]')
     .forEach((card) => (card.hidden = value && !card.dataset.reportSearch.includes(value)));
 }
-
 async function openAccountingReport(id) {
   const definition = ACCOUNTING_REPORT_LIBRARY.find((report) => report.id === id);
   if (!definition) return;
@@ -333,7 +323,6 @@ async function openAccountingReport(id) {
   accountingCustomReport = accountingTabularReport(id);
   renderAccountingPane();
 }
-
 async function loadAccountingDepthReport(id) {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Preparing accountant report…</p>';
@@ -437,12 +426,10 @@ async function loadAccountingDepthReport(id) {
     renderAccountingPane();
   }
 }
-
 function toggleAccountingDepthComparative() {
   accountingDepthComparative = !accountingDepthComparative;
   loadAccountingDepthReport(accountingReportView);
 }
-
 async function loadAccountingBudgetLibraryReport(id) {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Creating budget report…</p>';
@@ -465,9 +452,9 @@ async function loadAccountingBudgetLibraryReport(id) {
     }
     const moneyColumn = (key, label) => ({ key, label, money: true });
     if (id === 'budgetByFund') {
-      const groups = new Map();
+      const groups = /* @__PURE__ */ new Map();
       for (const row of reports[0].rows || []) {
-        const fund = accountingData.funds.find((item) => item.id === row.fundId),
+        const fund = accountingData.funds.find((item2) => item2.id === row.fundId),
           name = fund?.name || 'Unassigned',
           groupKey = name + ':' + row.category,
           item = groups.get(groupKey) || { name, category: row.category, budget: 0, actual: 0, variance: 0 };
@@ -550,7 +537,6 @@ async function loadAccountingBudgetLibraryReport(id) {
     renderAccountingPane();
   }
 }
-
 function renderAccountingReports(pane) {
   if (accountingReportView === 'library') {
     renderAccountingReportLibrary(pane);
@@ -591,13 +577,11 @@ function renderAccountingReports(pane) {
     pane.innerHTML = accountingEmpty('Report unavailable', error.message);
   }
 }
-
 function openAccountingIncomeReport() {
   accountingReportView = 'activities';
   accountingCustomReport = null;
   setAccountingView('reports');
 }
-
 function accountingIncomeSummary(report, printable = false) {
   const totals = report.totals;
   if (!totals || !Number.isFinite(totals.revenue) || !Number.isFinite(totals.expenses))
@@ -614,13 +598,11 @@ function accountingIncomeSummary(report, printable = false) {
     );
   return `<section class="acct-income-summary">${heading}<div class="acct-income-equation">${cells}</div></section>`;
 }
-
 function setAccountingReportView(view) {
   accountingReportView = view;
   accountingCustomReport = null;
   renderAccountingPane();
 }
-
 function downloadAccountingReport() {
   try {
     const report = accountingStatementDocument();
@@ -656,7 +638,6 @@ function downloadAccountingReport() {
     alert(error.message);
   }
 }
-
 function printAccountingReport() {
   const report = accountingStatementDocument();
   const win = window.open('about:blank', '_blank');
@@ -674,7 +655,6 @@ function printAccountingReport() {
   win.document.close();
   win.focus();
 }
-
 async function downloadAccountingFile(url, fallbackName) {
   try {
     const res = await fetch(url, { headers: authHeaders() });
@@ -686,7 +666,6 @@ async function downloadAccountingFile(url, fallbackName) {
     alert(error.message || 'Unable to download this Accounting export.');
   }
 }
-
 async function downloadAccountingLedger() {
   try {
     const res = await fetch(accountingApi('/exports/general-ledger.csv'), { headers: authHeaders() });
@@ -699,7 +678,6 @@ async function downloadAccountingLedger() {
     alert(error.message || 'Unable to export the general ledger.');
   }
 }
-
 async function printAccountingLedger() {
   const win = window.open('about:blank', '_blank');
   if (!win) {
@@ -723,7 +701,6 @@ async function printAccountingLedger() {
     alert(error.message || 'Unable to open the printable ledger.');
   }
 }
-
 function accountingReportDateForm() {
   const period = accountingReportPeriod();
   return (
@@ -734,7 +711,6 @@ function accountingReportDateForm() {
     '" required></label></div><button class="acct-primary">Apply report dates</button><span class="acct-form-status" role="status"></span></form>'
   );
 }
-
 async function applyAccountingReportDates(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -746,9 +722,8 @@ async function applyAccountingReportDates(event) {
   accountingReportDateRange = { start: values.start, end: values.end };
   await openAccountingReport(accountingReportView);
 }
-
 function renderAccountingExpenses(pane, report, reportTabs) {
-  const grouped = new Map();
+  const grouped = /* @__PURE__ */ new Map();
   for (const row of (report.rows || []).filter((item) => item.category === 'expense' && Number(item.amount) !== 0)) {
     const key = row.accountId || row.accountNumber || row.accountName;
     const current = grouped.get(key) || { ...row, amount: 0 };
@@ -770,7 +745,7 @@ function renderAccountingExpenses(pane, report, reportTabs) {
   const subscriptionMonthlyCents = currentParish?.subscriptionMonthlyCents;
   const hasPublishedSubscriptionPrice =
     subscriptionMonthlyCents !== null &&
-    subscriptionMonthlyCents !== undefined &&
+    subscriptionMonthlyCents !== void 0 &&
     Number.isFinite(Number(subscriptionMonthlyCents));
   const subscriptionPrice = hasPublishedSubscriptionPrice
     ? accountingMoney(Number(subscriptionMonthlyCents))

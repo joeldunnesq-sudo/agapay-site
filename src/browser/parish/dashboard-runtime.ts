@@ -37,7 +37,7 @@ function setDashboardRefreshing(refreshing: boolean) {
   document.querySelector('.app')?.setAttribute('aria-busy', refreshing ? 'true' : 'false');
 }
 
-async function loadDashboard(btn: HTMLButtonElement | null | undefined) {
+async function loadDashboard(btn?: HTMLButtonElement | null) {
   if (dashboardLoadPromise) return dashboardLoadPromise;
   dashboardLoadPromise = loadDashboardInner(btn);
   try {

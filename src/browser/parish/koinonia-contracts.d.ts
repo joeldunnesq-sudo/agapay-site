@@ -91,7 +91,6 @@ interface KoinoniaResponse extends KoinoniaReaders {
   settings?: ParishPrayerSettings;
   metrics?: Record<string, number>;
 }
-declare function loadBulletins(force?: boolean): Promise<unknown>;
 
 interface KoinoniaYouTubeChannel {
   channelUrl?: string;

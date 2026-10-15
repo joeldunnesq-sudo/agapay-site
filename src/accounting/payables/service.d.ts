@@ -21,3 +21,21 @@ export function createBillDraft(
     };
   }
 ): Promise<{ id: string }>;
+
+/** Vendor fields consumed by the validated migration preview. */
+export function createVendor(
+  db: PortabilityDatabase,
+  options: {
+    actor: import('../ledger/service.js').LedgerServiceActor;
+    entitlementTier: string;
+    input: {
+      displayName: string;
+      legalName?: string;
+      email?: string;
+      phone?: string;
+      taxIdLast4?: string;
+      taxClassification?: string;
+      requires1099Review?: boolean;
+    };
+  }
+): Promise<unknown>;

@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/accounting/ledger.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: ledger.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 async function submitAccountingRegisterEntry(event, kind) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -89,12 +86,10 @@ async function submitAccountingRegisterEntry(event, kind) {
     button.disabled = false;
   }
 }
-
 function editAccountingRecurring(id) {
   accountingRecurringEditor = (accountingData.recurring || []).find((item) => item.id === id) || null;
   renderAccountingPane();
 }
-
 async function saveAccountingRecurring(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -125,7 +120,6 @@ async function saveAccountingRecurring(event) {
   accountingRecurringEditor = null;
   await loadAccountingTab(true);
 }
-
 async function toggleAccountingRecurring(id, expectedVersion, status) {
   const response = await fetch(accountingApi(`/recurring-transactions/${encodeURIComponent(id)}`), {
       method: 'PATCH',
@@ -139,7 +133,6 @@ async function toggleAccountingRecurring(id, expectedVersion, status) {
   }
   await loadAccountingTab(true);
 }
-
 function journalLineTemplate(line = {}) {
   const accountOptions = accountingData.accounts
     .map(
@@ -155,7 +148,6 @@ function journalLineTemplate(line = {}) {
     .join('');
   return `<div class="acct-journal-line"><label>Account<select data-journal-account><option value="">Choose account</option>${accountOptions}</select></label><label>Fund<select data-journal-fund><option value="">Choose fund</option>${fundOptions}</select></label><label>Debit<input data-journal-debit inputmode="decimal" type="number" min="0" step="0.01" value="${line.debitAmount ? (line.debitAmount / 100).toFixed(2) : ''}" placeholder="0.00"></label><label>Credit<input data-journal-credit inputmode="decimal" type="number" min="0" step="0.01" value="${line.creditAmount ? (line.creditAmount / 100).toFixed(2) : ''}" placeholder="0.00"></label><button type="button" class="acct-remove-line" onclick="removeAccountingJournalLine(this)" aria-label="Remove line">×</button></div>`;
 }
-
 function renderAccountingJournalEditor(pane = document.getElementById('accountingPane')) {
   if (!pane || !accountingJournalEditor) return;
   const draft = accountingJournalEditor;
@@ -165,7 +157,6 @@ function renderAccountingJournalEditor(pane = document.getElementById('accountin
   if (draft.id)
     renderAccountingAttachments('journal_entry', draft.id, pane.querySelector('[data-accounting-attachments]'));
 }
-
 function bindAccountingJournalLine(row) {
   row
     .querySelectorAll('[data-journal-debit],[data-journal-credit]')
@@ -176,19 +167,17 @@ function bindAccountingJournalLine(row) {
     if (defaultFundId && fundSelect) fundSelect.value = defaultFundId;
   });
 }
-
 function newAccountingJournal() {
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
   accountingJournalEditor = {
     id: '',
     version: 0,
-    entryDate: new Date().toISOString().slice(0, 10),
+    entryDate: /* @__PURE__ */ new Date().toISOString().slice(0, 10),
     description: '',
     lines: [{ fundId: defaultFund?.id || '' }, { fundId: defaultFund?.id || '' }],
   };
   renderAccountingPane();
 }
-
 async function editAccountingJournal(id) {
   const res = await fetch(accountingApi(`/journals/${encodeURIComponent(id)}`), { headers: authHeaders() });
   const payload = await res.json().catch(() => ({}));
@@ -199,12 +188,10 @@ async function editAccountingJournal(id) {
   accountingJournalEditor = payload.entry;
   renderAccountingPane();
 }
-
 function closeAccountingJournal() {
   accountingJournalEditor = null;
   renderAccountingPane();
 }
-
 function addAccountingJournalLine() {
   const holder = document.getElementById('accountingJournalLines');
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
@@ -213,12 +200,10 @@ function addAccountingJournalLine() {
   if (row) bindAccountingJournalLine(row);
   updateAccountingJournalBalance();
 }
-
 function removeAccountingJournalLine(button) {
   button.closest('.acct-journal-line')?.remove();
   updateAccountingJournalBalance();
 }
-
 function collectAccountingJournal() {
   const cents = (value) => Math.round(Number(value || 0) * 100);
   const lines = Array.from(document.querySelectorAll('.acct-journal-line')).map((row) => ({
@@ -233,7 +218,6 @@ function collectAccountingJournal() {
     lines,
   };
 }
-
 function updateAccountingJournalBalance() {
   const balance = document.getElementById('accountingJournalBalance');
   if (!balance) return;
@@ -243,7 +227,6 @@ function updateAccountingJournalBalance() {
   balance.classList.toggle('balanced', debits > 0 && debits === credits);
   balance.innerHTML = `<span>Debits <strong>${accountingMoney(debits)}</strong></span><span>Credits <strong>${accountingMoney(credits)}</strong></span><span>${debits > 0 && debits === credits ? 'Balanced ✓' : `Difference ${accountingMoney(Math.abs(debits - credits))}`}</span>`;
 }
-
 async function saveAccountingJournal(validateAfter = false) {
   const data = collectAccountingJournal();
   const validation = document.getElementById('accountingJournalValidation');
@@ -280,7 +263,6 @@ async function saveAccountingJournal(validateAfter = false) {
   }
   await validateAccountingJournal();
 }
-
 async function validateAccountingJournal() {
   const draft = accountingJournalEditor;
   const res = await fetch(accountingApi(`/journals/${encodeURIComponent(draft.id)}/validate`), {
@@ -298,7 +280,6 @@ async function validateAccountingJournal() {
   box.innerHTML =
     '<span class="success">Balanced and ready to post.</span><button type="button" class="acct-post" onclick="postAccountingJournal()">Post to ledger</button>';
 }
-
 async function postAccountingJournal() {
   const draft = accountingJournalEditor;
   const key = `parish-ui-${draft.id}-${draft.version}`;
@@ -318,11 +299,10 @@ async function postAccountingJournal() {
   accountingView = 'journals';
   renderAccountingPane();
 }
-
 async function reverseAccountingJournal(id) {
   const reason = prompt('Reason for reversing this journal entry:');
   if (!reason) return;
-  const entryDate = prompt('Reversal date (YYYY-MM-DD):', new Date().toISOString().slice(0, 10));
+  const entryDate = prompt('Reversal date (YYYY-MM-DD):', /* @__PURE__ */ new Date().toISOString().slice(0, 10));
   if (!entryDate) return;
   const key = `journal-reversal-ui-${id}-${Date.now()}`,
     res = await fetch(accountingApi(`/journals/${encodeURIComponent(id)}/reverse`), {
@@ -337,7 +317,6 @@ async function reverseAccountingJournal(id) {
   }
   await loadAccountingTab(true);
 }
-
 async function voidAccountingJournal(id) {
   const reason = prompt('Reason for voiding this journal draft:');
   if (!reason) return;
@@ -353,7 +332,6 @@ async function voidAccountingJournal(id) {
   }
   await loadAccountingTab(true);
 }
-
 async function initializeAccounting() {
   const res = await fetch(accountingApi('/ledger/initialize'), {
     method: 'POST',
@@ -367,7 +345,6 @@ async function initializeAccounting() {
   }
   loadAccountingTab(true);
 }
-
 async function validateAccountingLedgerFoundation() {
   const res = await fetch(accountingApi('/ledger/validate'), { headers: authHeaders() }),
     payload = await res.json().catch(() => ({})),
@@ -377,7 +354,6 @@ async function validateAccountingLedgerFoundation() {
     ? `<div><strong>${payload.validation?.ok ? 'Healthy' : 'Review needed'}</strong><span>${(payload.validation?.issues || []).map((issue) => escapeHtml(issue.replaceAll('_', ' '))).join(' · ') || 'All foundation checks passed.'}</span></div>`
     : `<div><strong>Validation failed</strong><span>${escapeHtml(payload.message || payload.error || 'Unable to validate ledger.')}</span></div>`;
 }
-
 async function postAccountingOpeningBalances(event) {
   event.preventDefault();
   const form = event.currentTarget,

@@ -1,8 +1,4 @@
-// Classic-script controller. Top-level function declarations intentionally
-// preserve the Admin HTML inline-handler globals.
-// ══════════════════════════════════════════════════════════════════
-// TAX EXEMPTIONS ADMIN TAB
-// ══════════════════════════════════════════════════════════════════
+// Generated from src/browser/admin/controllers/tax-exemptions.ts by npm run build:browser. Do not edit.
 let texClaimsCache = [];
 let texSelectedId = '';
 let texDebounceTimer = null;
@@ -24,21 +20,16 @@ const TEX_SYNC_LABELS = {
   partial: 'Partial sync',
   reconciliation_required: 'Reconciliation required',
 };
-
 function texBadge(kind, value, label) {
   return `<span class="badge ${escapeAttr(kind)}-${escapeAttr(value)}" role="status">${escapeHtml(label)}</span>`;
 }
-
 function texStatusBadge(status) {
   return texBadge('tex', status, TEX_STATUS_LABELS[status] || readable(status));
 }
-
 function texSyncBadge(sync) {
   return texBadge('texsync', sync, TEX_SYNC_LABELS[sync] || readable(sync));
 }
-
 let texSelectedVersion = '';
-
 async function texFetch(path, options = {}) {
   const response = await fetch(path, {
     ...options,
@@ -49,9 +40,7 @@ async function texFetch(path, options = {}) {
   let result = {};
   try {
     result = await response.json();
-  } catch {
-    /* non-JSON (e.g. document stream) */
-  }
+  } catch {}
   if (handleAuthFailure(response, result)) throw new Error('Session expired');
   if (response.status === 409 && result.code === 'STALE_RECORD') {
     const err = new Error(
@@ -64,10 +53,6 @@ async function texFetch(path, options = {}) {
   if (!response.ok) throw new Error(result.error || result.message || `Request failed (${response.status})`);
   return result;
 }
-
-// Wraps a mutating action: on a STALE_RECORD conflict, shows the
-// required copy, reloads the latest detail (so the admin sees current
-// state before acting again), and never auto-retries.
 async function texRunMutation(id, fn) {
   try {
     return await fn();
@@ -83,7 +68,6 @@ async function texRunMutation(id, fn) {
     throw err;
   }
 }
-
 async function loadTaxExemptionSummary() {
   const container = document.getElementById('taxExemptionSummaryCards');
   try {
@@ -130,12 +114,10 @@ async function loadTaxExemptionSummary() {
     container.innerHTML = `<article class="revenue-card"><div class="revenue-empty">Could not load summary: ${escapeHtml(err.message)}</div></article>`;
   }
 }
-
 function setTexStatusFilter(value) {
   document.getElementById('texFilterStatus').value = value;
   loadTaxExemptions();
 }
-
 function onTexFilterChange() {
   loadTaxExemptions();
 }
@@ -143,14 +125,12 @@ function debouncedTexFilterChange() {
   clearTimeout(texDebounceTimer);
   texDebounceTimer = setTimeout(loadTaxExemptions, 350);
 }
-
 async function loadTaxExemptions() {
   const statusEl = document.getElementById('texQueueStatus');
   const wrap = document.getElementById('texTableWrap');
   statusEl.style.display = '';
   statusEl.textContent = 'Loading exemption claims…';
   wrap.style.display = 'none';
-
   const status = document.getElementById('texFilterStatus').value;
   const state = document.getElementById('texFilterState').value.trim();
   const jurisdiction = document.getElementById('texFilterJurisdiction').value.trim();
@@ -160,7 +140,6 @@ async function loadTaxExemptions() {
   if (state) params.set('state', state);
   if (jurisdiction) params.set('jurisdiction', jurisdiction);
   if (q) params.set('q', q);
-
   try {
     const data = await texFetch('/api/admin/tax-exemptions?' + params.toString());
     texClaimsCache = data.claims || [];
@@ -178,13 +157,17 @@ async function loadTaxExemptions() {
     statusEl.style.display = '';
   }
 }
-
 function texNoStatewideNote(state) {
-  const NO_TAX_STATES = { AK: 'Alaska', DE: 'Delaware', MT: 'Montana', NH: 'New Hampshire', OR: 'Oregon' };
+  const NO_TAX_STATES = {
+    AK: 'Alaska',
+    DE: 'Delaware',
+    MT: 'Montana',
+    NH: 'New Hampshire',
+    OR: 'Oregon',
+  };
   if (!NO_TAX_STATES[state]) return '';
   return ` <span title="No statewide general sales tax -- not the same as tax-exempt status">ⓘ</span>`;
 }
-
 function renderTaxExemptionQueue() {
   const body = document.getElementById('texQueueBody');
   body.innerHTML = texClaimsCache
@@ -211,12 +194,10 @@ function renderTaxExemptionQueue() {
     })
     .join('');
 }
-
 function closeTexDetail() {
   texSelectedId = '';
   document.getElementById('texDetailSection').style.display = 'none';
 }
-
 async function openTexDetail(id) {
   texSelectedId = id;
   const section = document.getElementById('texDetailSection');
@@ -225,7 +206,6 @@ async function openTexDetail(id) {
   document.getElementById('texDetailTitle').textContent = 'Loading…';
   body.innerHTML = '<div class="revenue-empty">Loading claim detail…</div>';
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
   try {
     const data = await texFetch(`/api/admin/tax-exemptions/${encodeURIComponent(id)}`);
     renderTexDetail(data);
@@ -233,18 +213,9 @@ async function openTexDetail(id) {
     body.innerHTML = `<div class="revenue-empty">Could not load this claim: ${escapeHtml(err.message)}</div>`;
   }
 }
-
 function texMaskedCertificate(masked) {
-  // The admin detail API never sends the full certificate number to
-  // this view (see handleAdminTaxExemptionDetail) -- only the masked
-  // form. There is deliberately no "reveal" affordance here since
-  // there is nothing further to reveal client-side; a full-number
-  // lookup, if ever operationally necessary, would need its own
-  // narrowly-scoped, audit-logged endpoint rather than being bundled
-  // into this general detail response.
   return escapeHtml(masked || '—');
 }
-
 function texNotAvailableNotice(registration) {
   if (!registration?.hasNoStatewideGeneralSalesTax) return '';
   let extra = '';
@@ -256,7 +227,6 @@ function texNotAvailableNotice(registration) {
         This does not make the organization automatically tax-exempt.
       </div>`;
 }
-
 function texRenderStripeSyncRows(syncs) {
   if (!syncs.length) {
     return `<div class="revenue-empty">Approved exemption is waiting for a qualifying AGAPAY subscription Customer to be created.</div>`;
@@ -285,7 +255,6 @@ function texRenderStripeSyncRows(syncs) {
     )
     .join('');
 }
-
 function renderTexDetail(data) {
   const {
     claim,
@@ -303,10 +272,8 @@ function renderTexDetail(data) {
   texSelectedVersion = claim.recordVersion || '';
   document.getElementById('texDetailTitle').textContent =
     `${registration?.parishName || claim.registrationReference} — ${TEX_STATUS_LABELS[claim.status] || claim.status}`;
-
   const currentDoc = documents.find((d) => d.isCurrent);
   const archivedDocs = documents.filter((d) => !d.isCurrent);
-
   const body = document.getElementById('texDetailBody');
   body.innerHTML = `
         <div class="tex-detail-grid">
@@ -413,10 +380,8 @@ function renderTexDetail(data) {
           </section>
         </div>
       `;
-
   renderTexActionButtons(claim, allowedActions, registration, sync);
 }
-
 function renderTexActionButtons(claim, allowed, registration, sync) {
   const wrap = document.getElementById('texActionButtons');
   const buttons = [];
@@ -448,7 +413,6 @@ function renderTexActionButtons(claim, allowed, registration, sync) {
     buttons.push(`<span class="revenue-empty">No actions available for this claim's current state.</span>`);
   wrap.innerHTML = buttons.join(' ');
 }
-
 function texOpenApproveConfirm(id) {
   const claim = texClaimsCache.find((c) => c.id === id) || {};
   const formEl = document.getElementById('texActionForm');
@@ -465,7 +429,6 @@ function texOpenApproveConfirm(id) {
         </div>
       `;
 }
-
 function texOpenReasonForm(id, action) {
   const formEl = document.getElementById('texActionForm');
   const labels = {
@@ -505,7 +468,6 @@ function texOpenReasonForm(id, action) {
         </div>
       `;
 }
-
 async function texApprove(id, btn) {
   btn.disabled = true;
   btn.classList.add('loading');
@@ -516,7 +478,7 @@ async function texApprove(id, btn) {
         body: JSON.stringify({ expectedVersion: texSelectedVersion }),
       })
     );
-    if (!result) return; // stale-record conflict already handled by texRunMutation
+    if (!result) return;
     setStatus(
       result.waitingForCustomer ? 'Approved -- waiting for a future Stripe Customer.' : 'Exemption approved.',
       'success'
@@ -530,14 +492,16 @@ async function texApprove(id, btn) {
     btn.classList.remove('loading');
   }
 }
-
 async function texSubmitReasonAction(id, action, btn) {
   const reason = document.getElementById(`texReason-${id}`)?.value.trim();
   if (!reason) {
     setStatus('A reason is required.', 'error');
     return;
   }
-  const body = { reason, expectedVersion: texSelectedVersion };
+  const body = {
+    reason,
+    expectedVersion: texSelectedVersion,
+  };
   if (action === 'request-replacement') {
     const graceChoice = document.querySelector(`input[name="texGrace-${id}"]:checked`)?.value;
     body.keepActiveDuringReplacement = graceChoice === 'keep';
@@ -552,7 +516,7 @@ async function texSubmitReasonAction(id, action, btn) {
         body: JSON.stringify(body),
       })
     );
-    if (!result) return; // stale-record conflict already handled
+    if (!result) return;
     setStatus('Done.', 'success');
     openTexDetail(id);
     loadTaxExemptionSummary();
@@ -563,7 +527,6 @@ async function texSubmitReasonAction(id, action, btn) {
     btn.classList.remove('loading');
   }
 }
-
 async function texRetryAll(id, btn) {
   btn.disabled = true;
   btn.classList.add('loading');
@@ -584,7 +547,6 @@ async function texRetryAll(id, btn) {
     btn.classList.remove('loading');
   }
 }
-
 async function texRetryOne(syncId, btn) {
   btn.disabled = true;
   btn.classList.add('loading');
@@ -608,7 +570,6 @@ async function texRetryOne(syncId, btn) {
     btn.classList.remove('loading');
   }
 }
-
 function texOpenReconcile(syncId) {
   const el = document.getElementById(`texReconcileForm-${syncId}`);
   el.style.display = '';
@@ -622,7 +583,6 @@ function texOpenReconcile(syncId) {
         <p style="font-size:12px;color:var(--muted);margin-top:6px;">Accepting acknowledges Stripe's current state without changing it. Forcing overwrites it back to AGAPAY's intended value and requires explicit confirmation.</p>
       `;
 }
-
 async function texSubmitReconcile(syncId, action, btn) {
   const reason = document.getElementById(`texReconcileReason-${syncId}`)?.value.trim();
   if (!reason) {
@@ -660,7 +620,6 @@ async function texSubmitReconcile(syncId, action, btn) {
     btn.classList.remove('loading');
   }
 }
-
 async function texAddNote(id, btn) {
   const note = document.getElementById('texNewNote')?.value.trim();
   if (!note) {
@@ -682,7 +641,6 @@ async function texAddNote(id, btn) {
     btn.classList.remove('loading');
   }
 }
-
 async function texViewDocument(id, mode) {
   setStatus('Opening document…');
   try {
@@ -695,8 +653,6 @@ async function texViewDocument(id, mode) {
     if (!response.ok) throw new Error('Could not load document (' + response.status + ')');
     const blob = await response.blob();
     const objectUrl = URL.createObjectURL(blob);
-    // Never place the R2 storage key or a persistent URL in the DOM --
-    // this is a transient, revoked-after-use object URL only.
     const win = window.open(objectUrl, '_blank', 'noopener');
     if (!win) {
       const a = document.createElement('a');
@@ -704,7 +660,7 @@ async function texViewDocument(id, mode) {
       a.download = mode === 'attachment' ? 'exemption-document' : '';
       a.click();
     }
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 6e4);
   } catch (err) {
     setStatus('Could not open document: ' + err.message, 'error');
   }

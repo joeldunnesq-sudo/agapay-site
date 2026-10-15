@@ -1,20 +1,5 @@
+// Generated from src/browser/parish/features/onboarding.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Onboarding owns setup rendering, the temporary wizard draft, and save/signoff
-// actions. Shared parish identity, catalogs, billing, and navigation stay in core.
-// Read core globals only inside actions after app.js has initialized; never cache
-// a separate parish or catalog snapshot here. Inline action names stay compatible.
-/* global currentParish:writable, editableFunds:writable, editableCampaigns:writable,
-  fundPresets, campaignPresets, hasGivingPlusAccess, fallbackFundsArray,
-  isGeneralDashboardFund, isCandleDashboardFund, escapeHtml, escapeAttr,
-  slugifyLocal, setStatus, givingCatalogSnapshot, givingCatalogBaseline,
-  accountingCatalogSnapshot, accountingCatalogBaseline, authHeaders,
-  loadDashboard, renderDashboard, tierOptionsMarkup, setupCheckMarkup,
-  parishHouseholdPickerMarkup, syncParishHouseholdPricing */
-/* exported openGivingSetupWizard, setGivingSetupWizardStep, addGivingSetupPreset,
-  addGivingSetupCustom, removeGivingSetupChoice, saveGivingSetupWizard,
-  submitTreasurerGoLive */
-
 const treasurerAffirmationCopy = {
   stripeAccount: 'The connected Stripe account belongs to this parish.',
   payoutBank: 'The payout bank account shown in Stripe is correct.',
@@ -214,20 +199,17 @@ function renderSimpleParishSetupWizard(workflow) {
         : needsStripe
           ? `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button><button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Continue Stripe setup</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
           : needsGivingReview
-            ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">A short wizard will show only the giving choices included with ${escapeHtml(currentParish.subscriptionTierLabel || 'your plan')}.</p>${workflow.accountingSetupRequired ? '<p class="setup-copy setup-action-copy">Your plan includes Accounting. Complete Accounting setup first, then return here to review and save giving setup so the General Operating Fund is linked to your books.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'accounting\')">Open Accounting setup</button>' : ''}<button class="btn btn-gold" type="button" onclick="openGivingSetupWizard()">Review giving setup</button>`
+            ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">A short wizard will show only the giving choices included with ${escapeHtml(currentParish.subscriptionTierLabel || 'your plan')}.</p>${workflow.accountingSetupRequired ? `<p class="setup-copy setup-action-copy">Your plan includes Accounting. Complete Accounting setup first, then return here to review and save giving setup so the General Operating Fund is linked to your books.</p><button class="btn btn-gold" type="button" onclick="switchTab('accounting')">Open Accounting setup</button>` : ''}<button class="btn btn-gold" type="button" onclick="openGivingSetupWizard()">Review giving setup</button>`
             : `<strong>Next step: ${blockerKeys.has('credential') ? 'secure parish access' : 'AGAPAY review'}</strong><p class="setup-copy setup-action-copy">${escapeHtml(waiting)}</p><a href="mailto:onboarding@agapay.app">Contact onboarding support</a><button class="btn btn-ghost" type="button" onclick="loadDashboard()">Check for updates</button>`;
   pane.innerHTML = `<div class="setup-wizard-card deterministic-onboarding parish-simple-setup"><div class="setup-wizard-body"><div><div class="onboarding-kicker">Parish setup</div><div class="setup-title">Three steps to start giving</div><p class="setup-copy">${live ? 'Launch is complete.' : 'AGAPAY handles the internal checks. Your parish only completes the three steps below.'}</p><div class="parish-setup-stages">${stageMarkup}</div></div><div class="setup-action-panel">${action}${workflow.updatedAt ? `<p class="setup-copy">Last updated ${escapeHtml(new Date(workflow.updatedAt).toLocaleString())}</p>` : ''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open Stripe setup</a><p id="setupLinkHelp"></p></div></div></div>${workflow.canGoLive ? onboardingSignoffMarkup(workflow) : ''}</div>`;
 }
-
 function renderDeterministicOnboardingWizard(workflow) {
   renderSimpleParishSetupWizard(workflow);
 }
-
 let givingSetupWizardStep = 0;
 let givingSetupDraft = null;
 let givingSetupSaving = false;
 let givingSetupReturnFocus = null;
-
 function givingSetupKeydown(event) {
   const modal = document.getElementById('givingSetupModal');
   if (!modal) return;
@@ -249,7 +231,6 @@ function givingSetupKeydown(event) {
     first?.focus();
   }
 }
-
 function givingSetupTierDetails() {
   const tier = String(currentParish?.subscriptionTier || 'starter').toLowerCase();
   const label = currentParish?.subscriptionTierLabel || (tier === 'starter' ? 'Give' : 'Give +');
@@ -264,11 +245,9 @@ function givingSetupTierDetails() {
           : 'Unlimited funds and campaigns, recurring giving, receipts, and enhanced giving reports';
   return { tier, label, givingPlus, designatedLimit: Infinity, featureCopy };
 }
-
 function activeGivingSetupItems(items) {
   return (Array.isArray(items) ? items : []).filter((item) => item && item.enabled !== false && item.active !== false);
 }
-
 function buildGivingSetupDraft() {
   const activeFunds = activeGivingSetupItems(
     editableFunds.length ? editableFunds : fallbackFundsArray(currentParish?.funds)
@@ -294,7 +273,6 @@ function buildGivingSetupDraft() {
       : 'none',
   };
 }
-
 function closeGivingSetupWizard() {
   if (givingSetupSaving) return;
   document.getElementById('givingSetupModal')?.remove();
@@ -304,7 +282,6 @@ function closeGivingSetupWizard() {
   givingSetupWizardStep = 0;
   givingSetupReturnFocus?.focus();
 }
-
 function captureGivingSetupWizardStep() {
   if (!givingSetupDraft) return;
   if (givingSetupWizardStep === 0) {
@@ -318,14 +295,12 @@ function captureGivingSetupWizardStep() {
       document.querySelector('input[name="givingSetupImportDecision"]:checked')?.value || 'none';
   }
 }
-
 function givingSetupChoiceRows(items, kind) {
   const label = kind === 'fund' ? 'designated fund' : 'campaign';
   if (!items.length)
     return `<div class="giving-setup-empty">No ${label}s selected. That is okay—you can add them later.</div>`;
   return `<div class="giving-setup-selected">${items.map((item, index) => `<div class="giving-setup-selected-row"><span><strong>${escapeHtml(item.name || 'Giving option')}</strong><small>${escapeHtml(item.description || (kind === 'fund' ? 'Parish-designated giving destination' : 'Time-limited parish campaign'))}</small></span><button type="button" aria-label="Remove ${escapeHtml(item.name || label)}" onclick="removeGivingSetupChoice('${kind}',${index})">Remove</button></div>`).join('')}</div>`;
 }
-
 function givingSetupPresetButtons(kind) {
   const source = kind === 'fund' ? fundPresets : campaignPresets;
   const selected = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
@@ -341,7 +316,6 @@ function givingSetupPresetButtons(kind) {
     })
     .join('')}</div>`;
 }
-
 function givingSetupBasicsMarkup(tier) {
   return `<div class="giving-setup-screen">
       <div class="giving-setup-screen-heading"><span>Step 1 of 3</span><h3>Set the giving basics</h3><p>These are the choices every parish needs before accepting a gift.</p></div>
@@ -354,7 +328,6 @@ function givingSetupBasicsMarkup(tier) {
       <div class="giving-setup-plan-note"><strong>${escapeHtml(tier.label)} includes</strong><span>${escapeHtml(tier.featureCopy)}</span></div>
     </div>`;
 }
-
 function givingSetupChoicesMarkup(tier) {
   const fundLimit = Number.isFinite(tier.designatedLimit)
     ? `Choose up to ${tier.designatedLimit}`
@@ -365,7 +338,6 @@ function givingSetupChoicesMarkup(tier) {
       ${tier.givingPlus ? `<section class="giving-setup-choice-section"><div class="giving-setup-choice-head"><div><strong>Launch campaigns</strong><small>Optional, time-limited needs. Skip this if there is no current campaign.</small></div><em>${givingSetupDraft.campaigns.length} selected</em></div>${givingSetupChoiceRows(givingSetupDraft.campaigns, 'campaign')}${givingSetupPresetButtons('campaign')}<div class="giving-setup-custom"><input id="givingSetupCustomCampaign" maxlength="120" placeholder="Or name a current campaign"><button type="button" onclick="addGivingSetupCustom('campaign')">Add campaign</button></div></section>` : '<div class="giving-setup-upgrade-note"><strong>Campaigns are not part of Give.</strong><span>You can launch now with General Operating, unlimited designated funds, and candles. Upgrade later if the parish needs campaigns.</span></div>'}
     </div>`;
 }
-
 function givingSetupReviewMarkup(tier) {
   const rows = [
     ['AGAPAY plan', tier.label],
@@ -401,7 +373,6 @@ function givingSetupReviewMarkup(tier) {
       <div class="giving-setup-save-status" id="givingSetupSaveStatus" role="status" aria-live="polite"></div>
     </div>`;
 }
-
 function renderGivingSetupWizard() {
   const modal = document.getElementById('givingSetupModal');
   if (!modal || !givingSetupDraft) return;
@@ -419,7 +390,6 @@ function renderGivingSetupWizard() {
       <footer class="giving-setup-dialog-actions"><button type="button" class="btn btn-ghost" onclick="${givingSetupWizardStep ? 'setGivingSetupWizardStep(' + (givingSetupWizardStep - 1) + ')' : 'closeGivingSetupWizard()'}">${givingSetupWizardStep ? 'Back' : 'Cancel'}</button>${givingSetupWizardStep < 2 ? `<button type="button" class="btn btn-gold" onclick="setGivingSetupWizardStep(${givingSetupWizardStep + 1})">Continue</button>` : '<button type="button" class="btn btn-gold" onclick="saveGivingSetupWizard(this)">Save giving setup</button>'}</footer>
     </div>`;
 }
-
 function openGivingSetupWizard() {
   if (givingSetupSaving) return;
   givingSetupReturnFocus = document.activeElement;
@@ -435,7 +405,6 @@ function openGivingSetupWizard() {
   renderGivingSetupWizard();
   setTimeout(() => document.getElementById('givingSetupGeneralName')?.focus(), 0);
 }
-
 function setGivingSetupWizardStep(step) {
   if (givingSetupSaving) return;
   captureGivingSetupWizardStep();
@@ -448,7 +417,6 @@ function setGivingSetupWizardStep(step) {
   renderGivingSetupWizard();
   document.querySelector('#givingSetupModal input, #givingSetupModal button')?.focus();
 }
-
 function addGivingSetupPreset(kind, key) {
   if (!givingSetupDraft) return;
   const tier = givingSetupTierDetails();
@@ -466,7 +434,6 @@ function addGivingSetupPreset(kind, key) {
   });
   renderGivingSetupWizard();
 }
-
 function addGivingSetupCustom(kind) {
   if (!givingSetupDraft) return;
   const tier = givingSetupTierDetails();
@@ -504,14 +471,12 @@ function addGivingSetupCustom(kind) {
   });
   renderGivingSetupWizard();
 }
-
 function removeGivingSetupChoice(kind, index) {
   if (!givingSetupDraft) return;
   const target = kind === 'fund' ? givingSetupDraft.designatedFunds : givingSetupDraft.campaigns;
   target.splice(Number(index), 1);
   renderGivingSetupWizard();
 }
-
 async function saveGivingSetupWizard(button) {
   if (!currentParish || !givingSetupDraft || givingSetupSaving) return;
   captureGivingSetupWizardStep();
@@ -566,8 +531,6 @@ async function saveGivingSetupWizard(button) {
     importDecision: givingSetupDraft.importDecision === 'requested' ? 'requested' : 'none',
     ...(hasGivingPlusAccess() ? { campaigns: editableCampaigns } : {}),
   };
-  // Snapshot helpers read the shared catalog. Restore it before any asynchronous
-  // work so failed saves cannot turn an unsaved draft into dashboard state.
   editableFunds = previousFunds;
   editableCampaigns = previousCampaigns;
   givingSetupSaving = true;
@@ -577,12 +540,12 @@ async function saveGivingSetupWizard(button) {
   const saveStatus = document.getElementById('givingSetupSaveStatus');
   if (saveStatus) {
     saveStatus.className = 'giving-setup-save-status visible';
-    saveStatus.textContent = 'Saving your giving setup\u2026';
+    saveStatus.textContent = 'Saving your giving setup…';
   }
   if (button) {
     button.classList.add('loading');
     button.disabled = true;
-    button.textContent = 'Saving\u2026';
+    button.textContent = 'Saving…';
   }
   try {
     const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
@@ -669,7 +632,10 @@ async function submitTreasurerGoLive(button) {
         ? 'The latest launch summary is shown below. Review it, check the confirmations again, and click Go Live.'
         : 'Your setup changed and needs attention before launch. Follow the next step shown above.';
       if (refreshedError) refreshedError.textContent = refreshMessage;
-      document.getElementById('treasurerSignoff')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('treasurerSignoff')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
       setStatus(refreshMessage, 'info');
       return;
     }
@@ -724,7 +690,6 @@ function renderOnboardingSetup() {
       'setupParishHouseholdPrice'
     );
 }
-
 window.ParishFeatureRegistry.register('onboarding', {
   load: renderOnboardingSetup,
   refresh: renderOnboardingSetup,

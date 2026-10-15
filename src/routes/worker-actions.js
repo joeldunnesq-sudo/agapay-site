@@ -1,3 +1,4 @@
+// Generated from src/routes/worker-actions.ts by npm run build:server. Do not edit.
 import { handleAdminRelationships } from '../handlers/admin-relationships.js';
 import { handleContact, handleAdminContactLeads } from '../handlers/contact.js';
 import { getBearerToken, handleSecurityConfig, json, unauthorized, corsJson } from '../lib/core.js';
@@ -295,7 +296,6 @@ import {
   handleMfaStepUp,
   handleMfaVerify,
 } from '../handlers/mfa.js';
-
 import {
   handleDirectoryIntake,
   handleDonorLiturgicalDay,
@@ -328,8 +328,7 @@ import {
   handleStewardshipMonthlyReport,
 } from '../handlers/stewardship-reports.js';
 import { handleHealth, handleLearnOdysseyActivate } from '../handlers/platform-actions.js';
-
-export const ROUTE_ACTIONS = Object.freeze({
+const ROUTE_ACTIONS = Object.freeze({
   handleAdminRelationships,
   handleContact,
   handleAdminContactLeads,
@@ -625,3 +624,4 @@ export const ROUTE_ACTIONS = Object.freeze({
   publicSubscriptionTiers,
   requireDonor,
 });
+export { ROUTE_ACTIONS };

@@ -8,6 +8,38 @@ import { repoRoot } from './server-typescript.mjs';
 // Classic scripts retain lexical globals; explicitly marked native modules retain ESM.
 // Neither delivery mode bundles, wraps, or renames runtime bindings.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/donor/controllers/calendar.ts', output: 'public/donor/controllers/calendar.js' },
+  { source: 'src/browser/donor/controllers/bookstore.ts', output: 'public/donor/controllers/bookstore.js' },
+  { source: 'src/browser/donor/controllers/history.ts', output: 'public/donor/controllers/history.js' },
+  {
+    source: 'src/browser/parish/features/koinonia/bulletins.ts',
+    output: 'public/parish/features/koinonia/bulletins.js',
+  },
+  {
+    source: 'src/browser/parish/features/sacraments/pastoral-followup.ts',
+    output: 'public/parish/features/sacraments/pastoral-followup.js',
+  },
+  { source: 'src/browser/parish/features/onboarding.ts', output: 'public/parish/features/onboarding.js' },
+  { source: 'src/browser/admin/controllers/tax-exemptions.ts', output: 'public/admin/controllers/tax-exemptions.js' },
+  { source: 'src/browser/myagapay/exchange.ts', output: 'public/myagapay/exchange.js' },
+  { source: 'src/browser/give/embed.ts', output: 'public/give/embed.js' },
+  {
+    source: 'src/browser/parish/features/accounting/workspace.ts',
+    output: 'public/parish/features/accounting/workspace.js',
+  },
+  {
+    source: 'src/browser/parish/features/accounting/reports.ts',
+    output: 'public/parish/features/accounting/reports.js',
+  },
+  { source: 'src/browser/parish/features/accounting/ledger.ts', output: 'public/parish/features/accounting/ledger.js' },
+  {
+    source: 'src/browser/parish/features/accounting/banking.ts',
+    output: 'public/parish/features/accounting/banking.js',
+  },
+  {
+    source: 'src/browser/parish/features/accounting/treasurer.ts',
+    output: 'public/parish/features/accounting/treasurer.js',
+  },
   { source: 'src/browser/attribution.ts', output: 'public/attribution.js', module: true, delivery: 'native-module' },
   {
     source: 'src/browser/attribution-core.ts',

@@ -22,7 +22,7 @@ export interface AdminActions<TEnv> {
     env: TEnv,
     resource: string,
     subpath: string,
-    context: string
+    context: 'attachment' | 'inline'
   ): AwaitableResult;
   handleAdminOnboardingTest(request: Request, env: TEnv, resource: string): AwaitableResult;
   handleAdminParishSupportTickets(request: Request, env: TEnv, resource?: string): AwaitableResult;
@@ -69,7 +69,7 @@ export interface AdminActions<TEnv> {
   handleParishAuthenticatorSetup(request: Request, env: TEnv): AwaitableResult;
   handleStripeRefresh(request: Request, env: TEnv, resource: string): AwaitableResult;
   handleSubscriptionCheckout(request: Request, env: TEnv, resource: string): AwaitableResult;
-  json(arg0: unknown, arg1: ResponseInit): Response;
+  json(arg0: unknown, arg1: import('../lib/http-responses.js').JsonResponseInit): Response;
 }
 export interface AdminRouteContext<TEnv> {
   request: Request;

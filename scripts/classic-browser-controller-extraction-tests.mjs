@@ -1,3 +1,4 @@
+import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -133,7 +134,7 @@ function assertOrderedScripts(file, first, second) {
 
 const adminHtml = assertOrderedScripts(
   'public/admin.html',
-  '/admin/controllers/tax-exemptions.js?v=20260904-controllers1',
+  appAssetUrl('/admin/controllers/tax-exemptions.js'),
   '/admin/app.js?v='
 );
 assert.ok(adminHtml.indexOf('/admin/presentation.js') < adminHtml.indexOf('/admin/controllers/tax-exemptions.js'));

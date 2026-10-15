@@ -30,7 +30,7 @@ let accountingData: AccountingWorkspaceData = {
   tier: '',
 };
 
-let accountingBankPreview: unknown = null;
+let accountingBankPreview: AccountingBankPreview | null = null;
 
 let accountingFundCatalog: AccountingFund[] | null = null;
 
@@ -50,7 +50,7 @@ let accountingReconciliationView = 'giving';
 
 let accountingCloseDetail: AccountingCloseSession | null = null;
 
-let accountingJournalEditor: unknown = null;
+let accountingJournalEditor: AccountingJournalDraft | null = null;
 
 let accountingLedgerNewestFirst = false;
 
@@ -60,7 +60,7 @@ let accountingLedgerSearch = '';
 
 let accountingRegisterEntryMode = 'transaction';
 
-let accountingRecurringEditor: unknown = null;
+let accountingRecurringEditor: AccountingRecurring | null = null;
 
 let accountingPayablesView = 'bills';
 
@@ -92,7 +92,7 @@ try {
     accountingExperienceMode = 'accountant';
 } catch {}
 
-const ACCOUNTING_SIMPLE_REVENUE_LABELS = Object.freeze({
+const ACCOUNTING_SIMPLE_REVENUE_LABELS: Readonly<Record<string, string>> = Object.freeze({
   acct_4000: 'Stewardship & Tithes',
   acct_4010: 'General Donations',
   acct_4030: 'Candle Offerings',

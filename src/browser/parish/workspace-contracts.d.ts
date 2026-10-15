@@ -353,14 +353,7 @@ interface DonorBookstoreExperienceProduct {
   savingsPercent?: number;
   fulfillmentType?: string;
 }
-declare let bookstoreProducts: DonorBookstoreExperienceProduct[];
-declare let bookstoreCart: readonly unknown[];
-declare let bookstoreCatalogCategory: string;
-declare let bookstoreCatalogQuery: string;
-declare function renderBookstoreProducts(products: DonorBookstoreExperienceProduct[]): void;
-declare function setDonorStatus(message: string, tone: string): void;
-declare function bookstoreCategoryIcon(category: string): string;
-declare function addBookstoreProductToCart(productId: string, variantId: string): void;
-declare function setBookstoreMobileCartOpen(open: boolean): void;
-declare function setBookstoreCatalogCategory(category: string): void;
+
+declare function setDonorStatus(message: string, tone?: string): void;
+
 declare module '*attribution.js' {}

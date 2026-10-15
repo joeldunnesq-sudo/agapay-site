@@ -1659,4 +1659,244 @@ export default [
     },
   },
   { files: ['src/browser/bookstore/app.ts', 'src/handlers/nonprofit-pricing.ts'], rules: { 'prefer-const': 'off' } },
+  // Preserve classic inline-action globals and existing dormant legacy code during migration.
+  {
+    files: ['src/browser/parish/features/accounting/ledger.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(submitAccountingRegisterEntry|editAccountingRecurring|saveAccountingRecurring|toggleAccountingRecurring|journalLineTemplate|renderAccountingJournalEditor|bindAccountingJournalLine|newAccountingJournal|editAccountingJournal|closeAccountingJournal|addAccountingJournalLine|removeAccountingJournalLine|collectAccountingJournal|updateAccountingJournalBalance|saveAccountingJournal|validateAccountingJournal|postAccountingJournal|reverseAccountingJournal|voidAccountingJournal|initializeAccounting|validateAccountingLedgerFoundation|postAccountingOpeningBalances)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/banking.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderAccountingBankStatements|renderAccountingBanking|setAccountingReconciliationView|renderAccountingIntegrationsBase|renderAccountingIntegrations|renderAccountingServiceInvoices|postAccountingServiceInvoice|configureAccountingCommerceItem|previewAccountingCommerceBackfill|loadAccountingPhaseE|showAccountingBankAccountForm|phaseEMutation|createAccountingBankAccount|previewAccountingBankCsv|commitAccountingBankCsv|createAccountingReconciliation|completeAccountingReconciliation|editAccountingBankAccount|updateAccountingBankAccount|showAccountingEligibleItems|showAccountingReconciliationAdjustment|postAccountingReconciliationAdjustment|saveAccountingIntegrationSettings|accountingMatchSuggestions|showAccountingMatchSuggestions|confirmAccountingSuggestedMatch|renderAccountingFeeCoverageRepair|previewAccountingFeeCoverage)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/treasurer.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(accountingSimpleRevenueOptions|accountingSimpleFundOptions|accountingSimpleIncomeForm|accountingIncomeSplitRow|enableAccountingIncomeSplits|disableAccountingIncomeSplits|addAccountingIncomeSplit|removeAccountingIncomeSplit|collectAccountingIncomeSplits|updateAccountingSplitDepositBalance|accountingSimpleActivityFeed|accountingInKindDebitOptions|accountingInKindGiftForm|accountingOverviewHero|accountingOverviewFundSummary|accountingOverviewFundRank|renderAccountingOverview|accountingRegisterModel|accountingRegisterEntryForm|accountingRecurringPanel|accountingPledgeAccountSetting|submitAccountingSimpleIncome|submitAccountingInKindGift)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/workspace.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/reports.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(ACCOUNTING_REPORT_LIBRARY|accountingReportDateRange|accountingReportPeriod|accountingReportLedgerRows|accountingTabularReport|renderAccountingReportLibrary|filterAccountingReportLibrary|openAccountingReport|loadAccountingDepthReport|toggleAccountingDepthComparative|loadAccountingBudgetLibraryReport|renderAccountingReports|openAccountingIncomeReport|accountingIncomeSummary|setAccountingReportView|downloadAccountingReport|printAccountingReport|downloadAccountingFile|downloadAccountingLedger|printAccountingLedger|accountingReportDateForm|applyAccountingReportDates|renderAccountingExpenses)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/exchange.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(exchangeState|exchangeObjectUrls|exchangeDraftPhotos|exchangeDraftPhotoUrls|requestedExchangeListingId|requestedExchangeThreadId|exchangeEscape|exchangeHeaders|exchangeStatus|exchangeCategoryLabel|exchangeMoney|exchangeDate|exchangeFetch|releaseExchangeObjectUrls|privateExchangePhoto|hydrateExchangePhotos|exchangePhotoFrameHtml|exchangePhotoHtml|exchangeDetailPhotosHtml|syncExchangeUrl|renderExchangeListings|exchangeThreadListHtml|renderExchangeDetail|renderExchangeMessages|toggleExchangeComposer|toggleMyExchangeListings|loadExchangeListings|openExchangeListing|closeExchangeDetail|validExchangePhoto|releaseExchangeDraftPhotoUrls|renderExchangeDraftPhotos|selectExchangePhotos|removeExchangeDraftPhoto|clearExchangeDraftPhotos|syncExchangeListingType|uploadExchangePhoto|addPhotosToExchangeListing|createExchangeListing|completeExchangeListing|startExchangeThread|loadExchangeThreads|openExchangeThread|sendExchangeMessage|setDefaultExchangeExpiry)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/controllers/tax-exemptions.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(texClaimsCache|texSelectedId|texDebounceTimer|TEX_STATUS_LABELS|TEX_SYNC_LABELS|texBadge|texStatusBadge|texSyncBadge|texSelectedVersion|texFetch|texRunMutation|loadTaxExemptionSummary|setTexStatusFilter|onTexFilterChange|debouncedTexFilterChange|loadTaxExemptions|texNoStatewideNote|renderTaxExemptionQueue|closeTexDetail|openTexDetail|texMaskedCertificate|texNotAvailableNotice|texRenderStripeSyncRows|renderTexDetail|renderTexActionButtons|texOpenApproveConfirm|texOpenReasonForm|texApprove|texSubmitReasonAction|texRetryAll|texRetryOne|texOpenReconcile|texSubmitReconcile|texAddNote|texViewDocument|hasCurrentDocument|workflowEnabled)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/onboarding.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(treasurerAffirmationCopy|onboardingSignoffMarkup|renderSimpleParishSetupWizard|renderDeterministicOnboardingWizard|givingSetupWizardStep|givingSetupDraft|givingSetupSaving|givingSetupReturnFocus|givingSetupKeydown|givingSetupTierDetails|activeGivingSetupItems|buildGivingSetupDraft|closeGivingSetupWizard|captureGivingSetupWizardStep|givingSetupChoiceRows|givingSetupPresetButtons|givingSetupBasicsMarkup|givingSetupChoicesMarkup|givingSetupReviewMarkup|renderGivingSetupWizard|openGivingSetupWizard|setGivingSetupWizardStep|addGivingSetupPreset|addGivingSetupCustom|removeGivingSetupChoice|saveGivingSetupWizard|submitTreasurerGoLive|renderOnboardingSetup)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/sacraments/pastoral-followup.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(sacramentsDashboardTab|pastoralFollowUpState|pastoralAuthHeaders|PASTORAL_REASON_LABELS|PASTORAL_CONTACT_LABELS|PASTORAL_CLOSURE_LABELS|MEMORIAL_MARKER_LABELS|loadPastoralFollowUps|searchPastoralFollowUpCandidates|pastoralDateOnly|pastoralToday|pastoralDateFromToday|pastoralLocalDateTime|pastoralNextDue|pastoralAddCalendarDate|pastoralMemorialDates|pastoralRelativeDue|pastoralLastContact|pastoralReasonOptions|pastoralClosureOptions|pastoralPriestOptions|pastoralCreatePriestField|pastoralFollowUpCard|pastoralQueue|memorialMarkerCard|memorialQueue|pastoralAddForm|pastoralStandaloneReposeForm|renderPastoralFollowUps|togglePastoralContactForm|togglePastoralSettings|togglePastoralClosure|togglePastoralReposeFields|updatePastoralMemorialPreview|togglePastoralContactClose|toggleMemorialSchedule|pastoralMutation|createPastoralFollowUp|renderPastoralCareOwner|setPastoralScope|searchPastoralReposeCandidates|recordStandalonePastoralRepose|openPastoralReposeFromDirectory|savePastoralContact|savePastoralSettings|snoozePastoralFollowUp|savePastoralClosure|updateMemorialMarker|scheduleMemorialMarker|arrangeMemorialElsewhere|skipMemorialMarker|completeMemorialMarker|reopenMemorialMarker|openMemorialRequest|reopenPastoralFollowUp|openPastoralSchedule|installSacramentPastoralFollowUp)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/koinonia/bulletins.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(bulletinState|bulletinQrLoading|bulletinLiturgicalRequestId|bulletinApi|installBulletinEntryPoints|ensureBulletinWorkspace|nextSundayDate|bulletinDisplayDate|newBulletinBlock|createBulletinPreviewDraft|openBulletinWorkspace|loadBulletins|initializeBulletinBuilder|ensureBulletinQr|renderBulletinDraftSelect|openBulletinDraft|createNewBulletinDraft|updateBulletinField|updateBulletinServiceDate|addBulletinBlock|selectBulletinBlock|removeBulletinBlock|moveBulletinBlock|updateBulletinBlockField|addBulletinItem|updateBulletinItem|removeBulletinItem|newBulletinHymn|addBulletinHymn|updateBulletinHymn|removeBulletinHymn|refreshBulletinHymnsFromLibrary|bulletinBlockMarkup|bulletinPageHeaderMarkup|bulletinFoldSaintFeatureMarkup|renderFoldedBulletin|bulletinBlockLabel|renderBulletinPage|renderBulletinOutline|renderBulletinBlockEditor|renderBulletinSaveState|renderBulletinBuilder|duplicateBulletinDraft|saveBulletinDraft|openTempleTropariaEditor|closeTempleTropariaEditor|addTempleTroparionDraft|updateTempleTroparionDraft|removeTempleTroparionDraft|renderTempleTropariaEditor|saveTempleTroparia|printBulletinPreview)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/controllers/history.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(offeringRows|activityDate|productActivityLabel|productFromOffering|buildHistoryActivities|historyActivityRows|donorOfferingIsComplete|renderDonorGivingStory|renderProductFilterState|renderAgapayHistoryTimeline|renderHistorySummary|historyBookstoreCache|renderOfferingsPayload|loadDonorOfferingsPage|renderDonorOfferings|recurringManagementItems|renderRecurringManagement|openDonorRecurringPortal|filterOfferings|searchOfferings|setHistoryProductFilter|setHistoryPeriodFilter)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/controllers/bookstore.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(BOOKSTORE_STATUS_TONE|BOOKSTORE_FULFILLMENT_LABELS|BOOKSTORE_FALLBACK_FIELDS|bookstoreItemFieldsSchema|bookstoreProducts|bookstoreCart|bookstoreCatalogQuery|bookstoreCatalogCategory|bookstoreParishes|bookstoreLoadRevision|bookstoreSwitchPending|loadBookstoreItemFieldsSchema|renderBookstoreItemFields|bookstoreProductById|setBookstoreCatalogQuery|setBookstoreCatalogCategory|bookstoreCategoryIcon|bookstoreBarcodeIcon|bookstoreProductCard|renderBookstorePopularItems|renderBookstoreCategoryFilters|renderBookstoreProducts|renderBookstoreCart|setBookstoreMobileCartOpen|toggleBookstoreMobileCart|addBookstoreProductToCart|changeBookstoreCartQuantity|removeBookstoreCartItem|clearManualBookstoreEntry|addManualBookstoreItem|bookstoreScannerStream|bookstoreScannerRAF|bookstoreZXingReader|bookstoreScannerTorchOn|resetBookstoreScannerTorchControl|enableBookstoreScannerTorchControl|toggleBookstoreScannerTorch|startBookstoreBookScan|openBookstoreScanner|scanWithBarcodeDetector|scanWithZXing|handleBarcodeDetected|closeBookstoreScanner|renderBookstoreParishContext|renderBookstoreParishOptions|loadBookstoreParishOptions|closeBookstoreParishMenu|toggleBookstoreParishMenu|selectBookstoreParish|loadDonorBookstorePage|renderBookstorePayload|requestBookstoreFeature|bookstoreOrderRow|submitBookstoreOrder|handleBookstoreCheckoutReturn)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/controllers/calendar.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(calendarShortDateIso|annualIsoFromParishDate|parishPatronalFeastForYear|donorCalendarState|todayIsoLocal|longDateParts|churchCalendarDate|liturgicalRankLabel|isFastRule|toneOfWeekLabel|saintDisplayTitle|saintStoryModalHtml|koinoniaHeroTitle|liturgicalReadingRows|renderDonorTodayInChurch|loadDonorLiturgicalDay|showDonorSaintModal|closeDonorSaintModal|openDonorSaintOfDay|renderDonorCalendarFeasts|renderDonorCalendarPrompts|donorApprovedSacramentEvents|renderDonorPersonalCalendar|donorParishCalendarSubscriptionUrl|donorParishCalendarGoogleUrl|donorParishCalendarPlatform|donorParishCalendarEventDate|donorParishCalendarDateKey|donorParishCalendarEventDateKey|donorParishCalendarEventCategory|DONOR_CALENDAR_CELEBRATION_ICONS|donorParishCalendarView|donorParishCalendarEventsOn|donorParishCalendarCelebrationsOn|donorParishCalendarCelebrationHtml|renderDonorParishCalendarSelectedDate|donorParishCalendarStartOfWeek|renderDonorParishCalendarMonth|selectDonorParishCalendarDate|setDonorParishCalendarView|changeDonorParishCalendarPeriod|renderDonorParishCalendar|donorCalendarCelebrationRequestPath|copyDonorParishCalendarUrl|loadDonorCalendarPage)$',
+          argsIgnorePattern: '^(err|claim|registration|sync)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      'src/accounting/commerce/service.ts',
+      'src/accounting/reconciliation/service.ts',
+      'src/browser/donor/controllers/history.ts',
+      'src/browser/parish/features/koinonia/bulletins.ts',
+    ],
+    rules: { 'prefer-const': 'off' },
+  },
+  {
+    files: ['src/accounting/reconciliation/service.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^transactionDto$' }] },
+  },
+  {
+    files: ['src/accounting/source-wiring.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }] },
+  },
+  {
+    files: ['public/parish/features/onboarding.js'],
+    languageOptions: {
+      globals: {
+        currentParish: 'writable',
+        editableFunds: 'writable',
+        editableCampaigns: 'writable',
+        fundPresets: 'readonly',
+        campaignPresets: 'readonly',
+        hasGivingPlusAccess: 'readonly',
+        fallbackFundsArray: 'readonly',
+        isGeneralDashboardFund: 'readonly',
+        isCandleDashboardFund: 'readonly',
+        escapeHtml: 'readonly',
+        escapeAttr: 'readonly',
+        slugifyLocal: 'readonly',
+        setStatus: 'readonly',
+        givingCatalogSnapshot: 'readonly',
+        givingCatalogBaseline: 'readonly',
+        accountingCatalogSnapshot: 'readonly',
+        accountingCatalogBaseline: 'readonly',
+        authHeaders: 'readonly',
+        loadDashboard: 'readonly',
+        renderDashboard: 'readonly',
+        tierOptionsMarkup: 'readonly',
+        setupCheckMarkup: 'readonly',
+        parishHouseholdPickerMarkup: 'readonly',
+        syncParishHouseholdPricing: 'readonly',
+      },
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(onboardingSignoffMarkup|renderSimpleParishSetupWizard|renderDeterministicOnboardingWizard|givingSetupKeydown|givingSetupTierDetails|activeGivingSetupItems|buildGivingSetupDraft|closeGivingSetupWizard|captureGivingSetupWizardStep|givingSetupChoiceRows|givingSetupPresetButtons|givingSetupBasicsMarkup|givingSetupChoicesMarkup|givingSetupReviewMarkup|renderGivingSetupWizard|openGivingSetupWizard|setGivingSetupWizardStep|addGivingSetupPreset|addGivingSetupCustom|removeGivingSetupChoice|saveGivingSetupWizard|submitTreasurerGoLive|renderOnboardingSetup)$',
+        },
+      ],
+    },
+  },
 ];

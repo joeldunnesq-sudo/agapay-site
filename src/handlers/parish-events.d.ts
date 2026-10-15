@@ -26,3 +26,10 @@ export function patchMinistryCommerceItem(
   ministryId: string,
   productId: string
 ): Promise<Record<string, unknown>>;
+
+export const handleDonorEvents: import('../routes/donor.js').DonorActions<Env, ExecutionContext>['handleDonorEvents'];
+
+export const handleParishEvents: import('../routes/parish.js').ParishActions<
+  Env,
+  ExecutionContext
+>['handleParishEvents'];
