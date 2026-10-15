@@ -29,7 +29,7 @@ export function configurationChangedSql() {
 export async function syncConfigurationMirrors(
   env: PortabilityEnvironment,
   parishId: string,
-  mirrors: readonly string[]
+  mirrors?: readonly string[]
 ) {
   const db = env.AGAPAY_DB!,
     kv = rawStorageEnv(env).AGAPAY_REGISTRATIONS;

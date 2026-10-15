@@ -1,9 +1,9 @@
 export interface DiagnosticJob {
-  confirmation_stage?: string;
+  confirmation_stage?: string | null;
   status?: string;
   confirmed_at?: unknown;
   mode?: string;
-  error_code?: string;
+  error_code?: string | null;
 }
 const CONFIRMATION_STAGES = Object.freeze({
   freeze_books: 'freezing_accounting',
@@ -39,7 +39,7 @@ function stageFor(job: DiagnosticJob | null | undefined) {
   return 'unknown';
 }
 
-function failedSafeguardFor(errorCode: string | undefined) {
+function failedSafeguardFor(errorCode: string | null | undefined) {
   if (!errorCode) return null;
   for (const [pattern, family] of FAILURE_FAMILIES) if (pattern.test(errorCode)) return family;
   return 'unexpected_failure';

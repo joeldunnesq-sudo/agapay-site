@@ -1,3 +1,4 @@
+// Generated from src/operations/parish-milestones.ts by npm run build:server. Do not edit.
 import { d1All, d1First, d1Run } from '../lib/core.js';
 import { loadAllRegistrations } from '../lib/registrations.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
@@ -8,17 +9,18 @@ import {
   parishOccasions,
   relationshipSnapshot,
 } from '../lib/parish-relationships.js';
-
-export async function milestonePreferences(env, registration) {
+async function milestonePreferences(env, registration) {
   const row = await d1First(
     env,
     'SELECT data FROM parish_milestone_preferences WHERE reference = ?',
     registration.reference
   );
-  return { ...defaultMilestonePreferences(registration), ...(row ? JSON.parse(row.data) : {}) };
+  return {
+    ...defaultMilestonePreferences(registration),
+    ...(row ? JSON.parse(row.data) : {}),
+  };
 }
-
-export async function annualGivingReport(env, registration, now = new Date()) {
+async function annualGivingReport(env, registration, now = /* @__PURE__ */ new Date()) {
   const end = new Date(now);
   end.setUTCHours(0, 0, 0, 0);
   const start = new Date(end);
@@ -66,8 +68,7 @@ export async function annualGivingReport(env, registration, now = new Date()) {
         : null,
   };
 }
-
-export async function buildMilestoneMessage(env, registration, occasion, now = new Date()) {
+async function buildMilestoneMessage(env, registration, occasion, now = /* @__PURE__ */ new Date()) {
   const prefs = await milestonePreferences(env, registration);
   const name = registration.parishName || 'your parish';
   const to = occasion.kind === 'feast' ? prefs.feastRecipient : prefs.recipient;
@@ -112,12 +113,11 @@ export async function buildMilestoneMessage(env, registration, occasion, now = n
     report,
   };
 }
-
-export async function runParishMilestones(env, scheduledTime) {
+async function runParishMilestones(env, scheduledTime) {
   if (!env.AGAPAY_DB) return { status: 'not_configured' };
   const now = new Date(scheduledTime || Date.now());
-  const registrations = await loadAllRegistrations(env, { hardLimit: 25000 });
-  if (registrations.length >= 25000)
+  const registrations = await loadAllRegistrations(env, { hardLimit: 25e3 });
+  if (registrations.length >= 25e3)
     throw new Error('Parish relationship scan limit reached; expand pagination before continuing.');
   await d1Run(
     env,
@@ -137,8 +137,6 @@ export async function runParishMilestones(env, scheduledTime) {
       const message = await buildMilestoneMessage(env, r, occasion, now);
       if (!message.to[0]) continue;
       const id = `${r.reference}:${occasion.kind}:${occasion.date}`;
-      // Claim once in D1 before the external side effect. Ambiguous outcomes need
-      // review, never an automatic resend after the provider's idempotency window.
       const claim = await d1Run(
         env,
         `INSERT INTO parish_milestone_deliveries(id, reference, kind, occasion_date, status, updated_at) VALUES (?, ?, ?, ?, 'sending', ?) ON CONFLICT(id) DO NOTHING`,
@@ -166,3 +164,4 @@ export async function runParishMilestones(env, scheduledTime) {
   }
   return { status: 'complete', sent };
 }
+export { annualGivingReport, buildMilestoneMessage, milestonePreferences, runParishMilestones };

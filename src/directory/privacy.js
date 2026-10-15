@@ -1,6 +1,7 @@
-import { d1First } from "../lib/core.js";
-import { DirectoryServiceError } from "./foundation.js";
-import { getDirectorySettings } from "./settings.js";
+// Generated from src/directory/privacy.ts by npm run build:server. Do not edit.
+import { d1First } from '../lib/core.js';
+import { DirectoryServiceError } from './foundation.js';
+import { getDirectorySettings } from './settings.js';
 import {
   assertCanManageOwner,
   assertOwnerInParish,
@@ -14,58 +15,67 @@ import {
   nowMs,
   normalizeOwner,
   runAtomic,
-  VISIBILITY_RANK
-} from "./shared.js";
-
-export const FIELD_DEFAULTS = Object.freeze({
-  household_display_name: { visibility: "directory_members", eligible: true },
-  adult_preferred_name: { visibility: "directory_members", eligible: true },
-  adult_legal_name: { visibility: "staff", eligible: false },
-  adult_email: { visibility: "private", eligible: false },
-  adult_phone: { visibility: "private", eligible: false },
-  adult_birthday: { visibility: "private", eligible: false },
-  household_anniversary: { visibility: "private", eligible: false },
-  person_photo: { visibility: "private", eligible: false },
-  household_photo: { visibility: "private", eligible: false },
-  street_address: { visibility: "staff", eligible: false },
-  city_state: { visibility: "directory_members", eligible: true },
-  household_address: { visibility: "staff", eligible: false },
-  child_name: { visibility: "private", eligible: false },
-  child_birth_date: { visibility: "private", eligible: false },
-  child_age: { visibility: "private", eligible: false },
-  household_relationship: { visibility: "household", eligible: false },
-  person_notes: { visibility: "private", eligible: false },
-  household_notes: { visibility: "private", eligible: false },
-  parish_affiliation: { visibility: "leadership", eligible: false },
-  giving_information: { visibility: "private", eligible: false },
-  future_skills: { visibility: "leadership", eligible: false }
+  VISIBILITY_RANK,
+} from './shared.js';
+const FIELD_DEFAULTS = Object.freeze({
+  household_display_name: { visibility: 'directory_members', eligible: true },
+  adult_preferred_name: { visibility: 'directory_members', eligible: true },
+  adult_legal_name: { visibility: 'staff', eligible: false },
+  adult_email: { visibility: 'private', eligible: false },
+  adult_phone: { visibility: 'private', eligible: false },
+  adult_birthday: { visibility: 'private', eligible: false },
+  household_anniversary: { visibility: 'private', eligible: false },
+  person_photo: { visibility: 'private', eligible: false },
+  household_photo: { visibility: 'private', eligible: false },
+  street_address: { visibility: 'staff', eligible: false },
+  city_state: { visibility: 'directory_members', eligible: true },
+  household_address: { visibility: 'staff', eligible: false },
+  child_name: { visibility: 'private', eligible: false },
+  child_birth_date: { visibility: 'private', eligible: false },
+  child_age: { visibility: 'private', eligible: false },
+  household_relationship: { visibility: 'household', eligible: false },
+  person_notes: { visibility: 'private', eligible: false },
+  household_notes: { visibility: 'private', eligible: false },
+  parish_affiliation: { visibility: 'leadership', eligible: false },
+  giving_information: { visibility: 'private', eligible: false },
+  future_skills: { visibility: 'leadership', eligible: false },
 });
-
-export function defaultPrivacyForField(fieldKey) {
-  return FIELD_DEFAULTS[fieldKey] || { visibility: "private", eligible: false };
+function defaultPrivacyForField(fieldKey) {
+  return FIELD_DEFAULTS[fieldKey] || { visibility: 'private', eligible: false };
 }
-
-export async function getPersonPrivacyFlags(env, { parishId, personId }) {
+async function getPersonPrivacyFlags(env, { parishId, personId }) {
   const row = await d1First(
     env,
-    "SELECT * FROM directory_person_privacy_flags WHERE parish_id = ?1 AND person_id = ?2 AND active = 1",
+    'SELECT * FROM directory_person_privacy_flags WHERE parish_id = ?1 AND person_id = ?2 AND active = 1',
     parishId,
     personId
   );
   return {
     isChild: Number(row?.is_child || 0) === 1,
-    protectedPerson: Number(row?.protected_person || 0) === 1
+    protectedPerson: Number(row?.protected_person || 0) === 1,
   };
 }
-
-export async function setPersonPrivacyFlags(env, { actor: actorInput, parishId, personId, isChild = false, protectedPerson = false, correlationId = "" }) {
-  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: "parishId" });
-  const actor = assertParishActor(actorInput, cleanedParishId, [DIRECTORY_CAPABILITIES.householdsManage, DIRECTORY_CAPABILITIES.manage]);
-  await assertOwnerInParish(env, { ownerType: "person", ownerId: personId, parishId: cleanedParishId });
+async function setPersonPrivacyFlags(
+  env,
+  { actor: actorInput, parishId, personId, isChild = false, protectedPerson = false, correlationId = '' }
+) {
+  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: 'parishId' });
+  const actor = assertParishActor(actorInput, cleanedParishId, [
+    DIRECTORY_CAPABILITIES.householdsManage,
+    DIRECTORY_CAPABILITIES.manage,
+  ]);
+  await assertOwnerInParish(env, { ownerType: 'person', ownerId: personId, parishId: cleanedParishId });
   const before = await getPersonPrivacyFlags(env, { parishId: cleanedParishId, personId });
   const timestamp = nowMs();
-  const id = (await d1First(env, "SELECT id FROM directory_person_privacy_flags WHERE parish_id = ?1 AND person_id = ?2", cleanedParishId, personId))?.id || `dir_priv_${crypto.randomUUID?.() || timestamp}`;
-
+  const id =
+    (
+      await d1First(
+        env,
+        'SELECT id FROM directory_person_privacy_flags WHERE parish_id = ?1 AND person_id = ?2',
+        cleanedParishId,
+        personId
+      )
+    )?.id || `dir_priv_${crypto.randomUUID?.() || timestamp}`;
   await runAtomic(env, [
     {
       sql: `INSERT INTO directory_person_privacy_flags
@@ -76,28 +86,39 @@ export async function setPersonPrivacyFlags(env, { actor: actorInput, parishId, 
               protected_person = excluded.protected_person,
               active = 1,
               updated_at = excluded.updated_at`,
-      params: [id, cleanedParishId, personId, boolToInt(isChild), boolToInt(protectedPerson), timestamp, timestamp]
+      params: [id, cleanedParishId, personId, boolToInt(isChild), boolToInt(protectedPerson), timestamp, timestamp],
     },
     auditStatement({
-      action: "directory.protected_person_status_changed",
+      action: 'directory.protected_person_status_changed',
       actor,
       parishId: cleanedParishId,
-      targetType: "directory_person",
+      targetType: 'directory_person',
       targetId: personId,
       before,
       after: { isChild: Boolean(isChild), protectedPerson: Boolean(protectedPerson) },
-      correlationId
-    })
+      correlationId,
+    }),
   ]);
   return getPersonPrivacyFlags(env, { parishId: cleanedParishId, personId });
 }
-
-export async function setFieldPrivacyPreference(env, { actor: actorInput, parishId, ownerType, ownerId, fieldKey, visibility, publicationEligible = false, correlationId = "" }) {
-  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: "parishId" });
+async function setFieldPrivacyPreference(
+  env,
+  {
+    actor: actorInput,
+    parishId,
+    ownerType,
+    ownerId,
+    fieldKey,
+    visibility,
+    publicationEligible = false,
+    correlationId = '',
+  }
+) {
+  const cleanedParishId = cleanText(parishId || actorInput?.parishId, { required: true, max: 160, field: 'parishId' });
   const owner = normalizeOwner(ownerType, ownerId);
   await assertOwnerInParish(env, { ...owner, parishId: cleanedParishId });
   const actor = await assertCanManageOwner(env, actorInput, { parishId: cleanedParishId, ...owner });
-  const cleanedField = cleanText(fieldKey, { required: true, max: 80, field: "fieldKey" });
+  const cleanedField = cleanText(fieldKey, { required: true, max: 80, field: 'fieldKey' });
   const requested = assertVisibility(visibility);
   const effective = await evaluateFieldPolicy(env, {
     parishId: cleanedParishId,
@@ -106,20 +127,35 @@ export async function setFieldPrivacyPreference(env, { actor: actorInput, parish
     fieldKey: cleanedField,
     requestedVisibility: requested,
     publicationEligible,
-    ignoreStoredPreference: true
+    ignoreStoredPreference: true,
   });
   if (effective.visibility !== requested || effective.publicationEligible !== Boolean(publicationEligible)) {
-    throw new DirectoryServiceError("privacy_policy_denied", "Requested visibility is weaker than parish or safety policy permits.", 403);
+    throw new DirectoryServiceError(
+      'privacy_policy_denied',
+      'Requested visibility is weaker than parish or safety policy permits.',
+      403
+    );
   }
-
   const before = await d1First(
     env,
-    "SELECT visibility, publication_eligible FROM directory_field_privacy_preferences WHERE parish_id = ?1 AND owner_type = ?2 AND owner_id = ?3 AND field_key = ?4",
-    cleanedParishId, owner.ownerType, owner.ownerId, cleanedField
+    'SELECT visibility, publication_eligible FROM directory_field_privacy_preferences WHERE parish_id = ?1 AND owner_type = ?2 AND owner_id = ?3 AND field_key = ?4',
+    cleanedParishId,
+    owner.ownerType,
+    owner.ownerId,
+    cleanedField
   );
   const timestamp = nowMs();
-  const id = (await d1First(env, "SELECT id FROM directory_field_privacy_preferences WHERE parish_id = ?1 AND owner_type = ?2 AND owner_id = ?3 AND field_key = ?4", cleanedParishId, owner.ownerType, owner.ownerId, cleanedField))?.id || `dir_fpref_${timestamp}_${Math.random().toString(16).slice(2)}`;
-
+  const id =
+    (
+      await d1First(
+        env,
+        'SELECT id FROM directory_field_privacy_preferences WHERE parish_id = ?1 AND owner_type = ?2 AND owner_id = ?3 AND field_key = ?4',
+        cleanedParishId,
+        owner.ownerType,
+        owner.ownerId,
+        cleanedField
+      )
+    )?.id || `dir_fpref_${timestamp}_${Math.random().toString(16).slice(2)}`;
   await runAtomic(env, [
     {
       sql: `INSERT INTO directory_field_privacy_preferences
@@ -130,57 +166,110 @@ export async function setFieldPrivacyPreference(env, { actor: actorInput, parish
               publication_eligible = excluded.publication_eligible,
               active = 1,
               updated_at = excluded.updated_at`,
-      params: [id, cleanedParishId, owner.ownerType, owner.ownerId, cleanedField, requested, boolToInt(publicationEligible), timestamp, timestamp]
+      params: [
+        id,
+        cleanedParishId,
+        owner.ownerType,
+        owner.ownerId,
+        cleanedField,
+        requested,
+        boolToInt(publicationEligible),
+        timestamp,
+        timestamp,
+      ],
     },
     auditStatement({
-      action: "directory.visibility_preference_changed",
+      action: 'directory.visibility_preference_changed',
       actor,
       parishId: cleanedParishId,
       targetType: `directory_${owner.ownerType}`,
       targetId: owner.ownerId,
-      before: before ? { fieldKey: cleanedField, visibility: before.visibility, publicationEligible: Boolean(before.publication_eligible) } : null,
+      before: before
+        ? {
+            fieldKey: cleanedField,
+            visibility: before.visibility,
+            publicationEligible: Boolean(before.publication_eligible),
+          }
+        : null,
       after: { fieldKey: cleanedField, visibility: requested, publicationEligible: Boolean(publicationEligible) },
-      correlationId
-    })
+      correlationId,
+    }),
   ]);
   return { fieldKey: cleanedField, visibility: requested, publicationEligible: Boolean(publicationEligible) };
 }
-
-export async function evaluateFieldPolicy(env, { parishId, ownerType, ownerId, fieldKey, requestedVisibility = "", publicationEligible = false, protectedAddress = false, ignoreStoredPreference = false }) {
+async function evaluateFieldPolicy(
+  env,
+  {
+    parishId,
+    ownerType,
+    ownerId,
+    fieldKey,
+    requestedVisibility = '',
+    publicationEligible = false,
+    protectedAddress = false,
+    ignoreStoredPreference = false,
+  }
+) {
   const settings = await getDirectorySettings(env, parishId);
   const defaults = defaultPrivacyForField(fieldKey);
   const preference = await d1First(
     env,
-    "SELECT visibility, publication_eligible FROM directory_field_privacy_preferences WHERE parish_id = ?1 AND owner_type = ?2 AND owner_id = ?3 AND field_key = ?4 AND active = 1",
-    parishId, ownerType, ownerId, fieldKey
+    'SELECT visibility, publication_eligible FROM directory_field_privacy_preferences WHERE parish_id = ?1 AND owner_type = ?2 AND owner_id = ?3 AND field_key = ?4 AND active = 1',
+    parishId,
+    ownerType,
+    ownerId,
+    fieldKey
   );
   const requested = requestedVisibility ? assertVisibility(requestedVisibility) : null;
   const effectivePreference = ignoreStoredPreference ? null : preference;
   const baseVisibility = effectivePreference?.visibility || requested || defaults.visibility;
-  let maxVisibility = "directory_members";
-  // City/state is the coarse location shown in the member directory. Keep the
-  // parish's stricter address cap for street/full-address fields without
-  // accidentally suppressing an adult household's explicit city/state opt-in.
-  if (fieldKey.includes("address") || fieldKey === "street_address") maxVisibility = settings.addressMaxVisibility;
-  if (fieldKey.includes("email") || fieldKey.includes("phone")) maxVisibility = settings.contactMaxVisibility;
+  let maxVisibility = 'directory_members';
+  if (fieldKey.includes('address') || fieldKey === 'street_address') maxVisibility = settings.addressMaxVisibility;
+  if (fieldKey.includes('email') || fieldKey.includes('phone')) maxVisibility = settings.contactMaxVisibility;
   let visibility = mostRestrictive(baseVisibility, maxVisibility);
-
-  const explicitOptInEligible = ["adult_email", "adult_phone", "adult_birthday", "household_anniversary", "city_state", "household_display_name", "adult_preferred_name", "person_photo", "household_photo"].includes(fieldKey);
-  let eligible = effectivePreference ? Number(effectivePreference.publication_eligible || 0) === 1 : Boolean(publicationEligible && (defaults.eligible || explicitOptInEligible));
-  if (ownerType === "person") {
+  const explicitOptInEligible = [
+    'adult_email',
+    'adult_phone',
+    'adult_birthday',
+    'household_anniversary',
+    'city_state',
+    'household_display_name',
+    'adult_preferred_name',
+    'person_photo',
+    'household_photo',
+  ].includes(fieldKey);
+  let eligible = effectivePreference
+    ? Number(effectivePreference.publication_eligible || 0) === 1
+    : Boolean(publicationEligible && (defaults.eligible || explicitOptInEligible));
+  if (ownerType === 'person') {
     const flags = await getPersonPrivacyFlags(env, { parishId, personId: ownerId });
     if (flags.isChild || flags.protectedPerson) {
-      visibility = "private";
+      visibility = 'private';
       eligible = false;
     }
   }
   if (protectedAddress) {
-    visibility = VISIBILITY_RANK[visibility] > VISIBILITY_RANK.staff ? "staff" : visibility;
+    visibility = VISIBILITY_RANK[visibility] > VISIBILITY_RANK.staff ? 'staff' : visibility;
     eligible = false;
   }
-  if (fieldKey === "giving_information" || fieldKey === "person_notes" || fieldKey === "household_notes" || fieldKey === "adult_legal_name" || fieldKey === "child_birth_date" || fieldKey === "child_age") {
+  if (
+    fieldKey === 'giving_information' ||
+    fieldKey === 'person_notes' ||
+    fieldKey === 'household_notes' ||
+    fieldKey === 'adult_legal_name' ||
+    fieldKey === 'child_birth_date' ||
+    fieldKey === 'child_age'
+  ) {
     eligible = false;
     if (VISIBILITY_RANK[visibility] > VISIBILITY_RANK[defaults.visibility]) visibility = defaults.visibility;
   }
   return { visibility, publicationEligible: eligible, settings };
 }
+export {
+  FIELD_DEFAULTS,
+  defaultPrivacyForField,
+  evaluateFieldPolicy,
+  getPersonPrivacyFlags,
+  setFieldPrivacyPreference,
+  setPersonPrivacyFlags,
+};

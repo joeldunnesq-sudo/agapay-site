@@ -751,4 +751,13 @@ export default [
       ],
     },
   },
+  // Preserve existing imports and parameter destructuring during behavior-neutral migration.
+  {
+    files: ['src/directory/publication.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^boolToInt$' }] },
+  },
+  {
+    files: ['src/directory/child-publication.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^parishId$' }] },
+  },
 ];

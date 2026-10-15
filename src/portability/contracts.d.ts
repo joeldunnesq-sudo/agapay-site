@@ -92,7 +92,7 @@ export interface RecoveryOperation {
   id: string;
   parish_id: string;
   scope: string;
-  target_id: string;
+  target_id: string | null;
   safety_id: string;
   created_at: number;
   guard_hash: string | null;
@@ -120,6 +120,36 @@ export interface DatabaseSnapshot {
   tables: RecoveryTable[];
 }
 export interface RecoveryFiles {
-  files: { binding: string; key: string; body: string; hash: string }[];
-  legacy: { key: string; body: string; disposition: string }[];
+  files: {
+    binding: string;
+    key: string;
+    body: string;
+    hash: string;
+    disposition: string;
+    httpMetadata: R2HTTPMetadata;
+    customMetadata: Record<string, string>;
+  }[];
+  legacy: { key: string; body: string; disposition: string; kind: string; hash: string }[];
+  mirrors?: string[];
+}
+
+export interface PortabilityJobRow extends PortabilityJob {
+  status: string;
+  confirmation_stage: string | null;
+  requested_by: string;
+  created_at: number;
+  expires_at: number;
+  completed_at: number | null;
+  archive_bytes: number | null;
+  archive_key: string | null;
+  error_code: string | null;
+  manifest_sha256: string | null;
+}
+export interface RecoveryOperationRow extends RecoveryOperation {
+  kind: string;
+  status: string;
+  phase: string;
+  rollback: number;
+  actor_hash: string;
+  error_code: string | null;
 }
