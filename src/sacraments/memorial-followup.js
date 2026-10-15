@@ -1,16 +1,14 @@
+// Generated from src/sacraments/memorial-followup.ts by npm run build:server. Do not edit.
 import { d1All, d1Batch, d1First, generateSecret, normalizeEmail } from '../lib/core.js';
 import { PastoralFollowUpError } from './pastoral-followup.js';
-
-export const MEMORIAL_MARKER_TYPES = new Set([
+const MEMORIAL_MARKER_TYPES = /* @__PURE__ */ new Set([
   'third_day',
   'ninth_day',
   'fortieth_day',
   'six_month',
   'first_anniversary',
 ]);
-
-export const MEMORIAL_MARKER_STATUSES = new Set(['pending', 'arranged', 'completed', 'skipped']);
-
+const MEMORIAL_MARKER_STATUSES = /* @__PURE__ */ new Set(['pending', 'arranged', 'completed', 'skipped']);
 const MARKER_DEFINITIONS = Object.freeze({
   third_day: { label: '3rd day', leadDays: 2, date: (value) => addDays(value, 2) },
   ninth_day: { label: '9th day', leadDays: 7, date: (value) => addDays(value, 8) },
@@ -18,34 +16,28 @@ const MARKER_DEFINITIONS = Object.freeze({
   six_month: { label: 'Six months', leadDays: 30, date: (value) => addMonths(value, 6) },
   first_anniversary: { label: 'First anniversary', leadDays: 30, date: (value) => addYears(value, 1) },
 });
-
-function cleanText(value, max = 1000) {
+function cleanText(value, max = 1e3) {
   return String(value || '')
     .trim()
     .slice(0, max);
 }
-
 function validDate(value) {
   const text = cleanText(value, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return '';
-  const date = new Date(`${text}T00:00:00Z`);
+  const date = /* @__PURE__ */ new Date(`${text}T00:00:00Z`);
   return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text ? '' : text;
 }
-
 function utcDate(value) {
-  return new Date(`${value}T00:00:00Z`);
+  return /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
 }
-
 function isoDate(date) {
   return date.toISOString().slice(0, 10);
 }
-
 function addDays(value, days) {
   const date = utcDate(value);
   date.setUTCDate(date.getUTCDate() + days);
   return isoDate(date);
 }
-
 function addMonths(value, months) {
   const source = utcDate(value);
   const year = source.getUTCFullYear();
@@ -53,7 +45,6 @@ function addMonths(value, months) {
   const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   return isoDate(new Date(Date.UTC(year, month, Math.min(source.getUTCDate(), lastDay))));
 }
-
 function addYears(value, years) {
   const source = utcDate(value);
   const year = source.getUTCFullYear() + years;
@@ -61,19 +52,16 @@ function addYears(value, years) {
   const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   return isoDate(new Date(Date.UTC(year, month, Math.min(source.getUTCDate(), lastDay))));
 }
-
 function reminderDate(reposedOn, targetDate, leadDays) {
   const proposed = addDays(targetDate, -leadDays);
   return proposed < reposedOn ? reposedOn : proposed;
 }
-
 function selectedMarkerTypes(value) {
   const requested = Array.isArray(value) ? value : [...MEMORIAL_MARKER_TYPES];
   const selected = requested.map((item) => cleanText(item, 40)).filter((item) => MEMORIAL_MARKER_TYPES.has(item));
   if (!selected.length) throw new PastoralFollowUpError('Choose at least one memorial observance.');
   return [...new Set(selected)];
 }
-
 function markerDto(row = {}) {
   return {
     id: row.id,
@@ -98,7 +86,6 @@ function markerDto(row = {}) {
     updatedAt: row.updated_at,
   };
 }
-
 const MARKER_SELECT = `
   SELECT m.*, c.parish_id, c.person_id, c.assigned_priest_name, c.assigned_priest_email,
     c.reposed_on, c.annual_enabled, p.preferred_name,
@@ -114,8 +101,7 @@ const MARKER_SELECT = `
   JOIN sacrament_memorial_cycles c ON c.id = m.cycle_id
   JOIN directory_people p ON p.id = c.person_id
 `;
-
-export function buildMemorialSchedule(reposedOnInput, markerTypesInput) {
+function buildMemorialSchedule(reposedOnInput, markerTypesInput) {
   const reposedOn = validDate(reposedOnInput);
   if (!reposedOn) throw new PastoralFollowUpError('Choose a valid date of repose.');
   return selectedMarkerTypes(markerTypesInput).map((markerType) => {
@@ -130,8 +116,7 @@ export function buildMemorialSchedule(reposedOnInput, markerTypesInput) {
     };
   });
 }
-
-export async function listMemorialMarkers(env, parishId, assignedPriestEmail = '') {
+async function listMemorialMarkers(env, parishId, assignedPriestEmail = '') {
   const normalizedAssignee = normalizeEmail(assignedPriestEmail);
   const rows = await d1All(
     env,
@@ -147,13 +132,11 @@ export async function listMemorialMarkers(env, parishId, assignedPriestEmail = '
   );
   return rows.map(markerDto);
 }
-
-export async function findMemorialMarker(env, parishId, markerId) {
+async function findMemorialMarker(env, parishId, markerId) {
   const row = await d1First(env, `${MARKER_SELECT} WHERE c.parish_id = ? AND m.id = ?`, parishId, markerId);
   return row ? markerDto(row) : null;
 }
-
-export async function recordRepose(env, input = {}) {
+async function recordRepose(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const followupId = cleanText(input.followupId, 160);
   const personId = cleanText(input.personId, 160);
@@ -171,7 +154,8 @@ export async function recordRepose(env, input = {}) {
       )
     : null;
   if (followupId && !followup) throw new PastoralFollowUpError('Pastoral follow-up not found.', 404);
-  if (followup && followup.status !== 'active') throw new PastoralFollowUpError('Reopen this follow-up before recording a repose.', 409);
+  if (followup && followup.status !== 'active')
+    throw new PastoralFollowUpError('Reopen this follow-up before recording a repose.', 409);
   const person = followup
     ? { id: followup.person_id, preferred_name: followup.preferred_name }
     : await d1First(
@@ -207,7 +191,8 @@ export async function recordRepose(env, input = {}) {
   }
   const assignedPriestName = followup?.assigned_priest_name || cleanText(input.assignedPriestName, 120);
   const assignedPriestEmail = followup?.assigned_priest_email || normalizeEmail(input.assignedPriestEmail);
-  if (!assignedPriestName || !assignedPriestEmail) throw new PastoralFollowUpError('Choose the priest responsible for memorial follow-up.');
+  if (!assignedPriestName || !assignedPriestEmail)
+    throw new PastoralFollowUpError('Choose the priest responsible for memorial follow-up.');
   if (!reposedOn) throw new PastoralFollowUpError('Choose a valid date of repose.');
   const existing = await d1First(
     env,
@@ -216,9 +201,8 @@ export async function recordRepose(env, input = {}) {
     person.id
   );
   if (existing) throw new PastoralFollowUpError('This person already has a memorial observance cycle.', 409);
-
   const cycleId = generateSecret('memorialcycle');
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const includeSixMonth = markers.some((marker) => marker.markerType === 'six_month');
   const annualEnabled = input.annualEnabled !== false;
   const statements = [
@@ -226,12 +210,23 @@ export async function recordRepose(env, input = {}) {
       sql: `UPDATE directory_people SET deceased = 1, reposed_on = ?, updated_at = ? WHERE id = ?`,
       params: [reposedOn, Date.now(), person.id],
     },
-    ...(followup ? [{
-      sql: `UPDATE sacrament_pastoral_followups
+    ...(followup
+      ? [
+          {
+            sql: `UPDATE sacrament_pastoral_followups
         SET status = 'closed', next_due_on = NULL, closed_at = ?, closed_by = ?, closure_outcome = 'reposed',
             closure_reason = ?, updated_at = ? WHERE id = ? AND parish_id = ?`,
-      params: [now, actor, cleanText(input.closureReason, 500) || `Reposed ${reposedOn}`, now, followupId, parishId],
-    }] : []),
+            params: [
+              now,
+              actor,
+              cleanText(input.closureReason, 500) || `Reposed ${reposedOn}`,
+              now,
+              followupId,
+              parishId,
+            ],
+          },
+        ]
+      : []),
     {
       sql: `INSERT INTO sacrament_memorial_cycles
         (id, parish_id, person_id, followup_id, assigned_priest_name, assigned_priest_email,
@@ -279,8 +274,7 @@ export async function recordRepose(env, input = {}) {
     markers: (await listMemorialMarkers(env, parishId)).filter((marker) => marker.cycleId === cycleId),
   };
 }
-
-export async function updateMemorialMarker(env, input = {}) {
+async function updateMemorialMarker(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const markerId = cleanText(input.markerId, 180);
   const status = cleanText(input.status, 30);
@@ -290,8 +284,8 @@ export async function updateMemorialMarker(env, input = {}) {
   if (existing.status === 'scheduled' && status === 'arranged') {
     throw new PastoralFollowUpError('This observance already has a scheduled service request.', 409);
   }
-  const now = new Date().toISOString();
-  const scheduledFor = input.scheduledFor === undefined ? existing.scheduledFor : validDate(input.scheduledFor) || null;
+  const now = /* @__PURE__ */ new Date().toISOString();
+  const scheduledFor = input.scheduledFor === void 0 ? existing.scheduledFor : validDate(input.scheduledFor) || null;
   if (status === 'arranged' && !scheduledFor) throw new PastoralFollowUpError('Choose a valid arranged date.');
   await d1Batch(env, [
     {
@@ -301,7 +295,7 @@ export async function updateMemorialMarker(env, input = {}) {
       params: [
         status,
         scheduledFor,
-        cleanText(input.note, 1000) || null,
+        cleanText(input.note, 1e3) || null,
         ['completed', 'skipped'].includes(status) ? now : null,
         now,
         markerId,
@@ -311,8 +305,7 @@ export async function updateMemorialMarker(env, input = {}) {
   ]);
   return findMemorialMarker(env, parishId, markerId);
 }
-
-export async function scheduleMemorialService(env, input = {}) {
+async function scheduleMemorialService(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const markerId = cleanText(input.markerId, 180);
   const scheduledFor = validDate(input.scheduledFor);
@@ -324,7 +317,7 @@ export async function scheduleMemorialService(env, input = {}) {
     throw new PastoralFollowUpError('This memorial observance already has a service request.', 409);
   }
   const requestId = generateSecret('sac');
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const internalEmail = normalizeEmail(marker.assignedPriestEmail || input.actor) || 'parish-dashboard@agapay.invalid';
   await d1Batch(env, [
     {
@@ -346,7 +339,7 @@ export async function scheduleMemorialService(env, input = {}) {
         scheduledFor,
         confirmedTime || null,
         marker.assignedPriestName,
-        cleanText(input.note, 1000) || `Created from the ${marker.markerLabel} memorial tickler.`,
+        cleanText(input.note, 1e3) || `Created from the ${marker.markerLabel} memorial tickler.`,
         now,
         now,
       ],
@@ -355,7 +348,7 @@ export async function scheduleMemorialService(env, input = {}) {
       sql: `UPDATE sacrament_memorial_markers
         SET status = 'scheduled', scheduled_for = ?, service_request_id = ?, note = ?, updated_at = ?
         WHERE id = ? AND cycle_id IN (SELECT id FROM sacrament_memorial_cycles WHERE parish_id = ?)`,
-      params: [scheduledFor, requestId, cleanText(input.note, 1000) || null, now, markerId, parishId],
+      params: [scheduledFor, requestId, cleanText(input.note, 1e3) || null, now, markerId, parishId],
     },
   ]);
   return {
@@ -363,8 +356,7 @@ export async function scheduleMemorialService(env, input = {}) {
     request: await d1First(env, 'SELECT * FROM sacrament_requests WHERE id = ? AND parish_id = ?', requestId, parishId),
   };
 }
-
-export async function materializeMemorialAnniversaries(env, asOf = Date.now()) {
+async function materializeMemorialAnniversaries(env, asOf = Date.now()) {
   const date = new Date(asOf);
   if (Number.isNaN(date.getTime())) return { created: 0 };
   const cycles = await d1All(
@@ -386,15 +378,7 @@ export async function materializeMemorialAnniversaries(env, asOf = Date.now()) {
         sql: `INSERT OR IGNORE INTO sacrament_memorial_markers
           (id, cycle_id, marker_key, marker_type, target_date, remind_on, status, created_at, updated_at)
           VALUES (?, ?, ?, 'annual_anniversary', ?, ?, 'pending', ?, ?)`,
-        params: [
-          generateSecret('memorialmarker'),
-          cycle.id,
-          `annual_${year}`,
-          targetDate,
-          remindOn,
-          now,
-          now,
-        ],
+        params: [generateSecret('memorialmarker'), cycle.id, `annual_${year}`, targetDate, remindOn, now, now],
       });
     }
   }
@@ -405,3 +389,14 @@ export async function materializeMemorialAnniversaries(env, asOf = Date.now()) {
   }
   return { created };
 }
+export {
+  MEMORIAL_MARKER_STATUSES,
+  MEMORIAL_MARKER_TYPES,
+  buildMemorialSchedule,
+  findMemorialMarker,
+  listMemorialMarkers,
+  materializeMemorialAnniversaries,
+  recordRepose,
+  scheduleMemorialService,
+  updateMemorialMarker,
+};

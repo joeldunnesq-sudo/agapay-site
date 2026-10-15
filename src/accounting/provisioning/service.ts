@@ -1,4 +1,5 @@
 export interface ProvisioningRow {
+  quick_check?: unknown;
   name?: unknown;
   version?: unknown;
   checksum?: unknown;

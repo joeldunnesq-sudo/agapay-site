@@ -68,3 +68,12 @@ export function absoluteWebsiteUrl(value?: unknown): string;
 
 export { loadParishRecurringOfferings, summarizeParishRecurringHealth } from './parish-giving-read-models.js';
 export { parishDashboardPayload, summarizeCharges } from './parish-dashboard-handler.js';
+
+export function appendAdminAudit<T extends Record<string, unknown>>(
+  registration: T,
+  action: string,
+  actor: string,
+  details: Record<string, unknown>
+): T;
+
+export { normalizeSacramentPriests } from './parish-dashboard-handler.js';

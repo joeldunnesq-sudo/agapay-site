@@ -6,7 +6,7 @@ export interface EmailAttachment {
 }
 export interface EmailMessage {
   from: string;
-  to: readonly string[];
+  to: string | readonly string[];
   subject: string;
   reply_to?: string;
   html?: string;

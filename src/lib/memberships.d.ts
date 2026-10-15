@@ -13,3 +13,8 @@ export function createInvitation(
   env: DatabaseReadEnv,
   options: { parishId: string; email: string; roleTemplate: string; invitedByLegacyBearer: boolean }
 ): Promise<{ ok: true; id: string; token: string; expiresAt: string } | { ok: false; code: string; error: string }>;
+
+export function listMembershipsForParish(
+  env: DatabaseReadEnv,
+  parishId: string
+): Promise<{ id: string; parishId: string; status: string }[]>;

@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { extractProvisionerEnvironment } from './lib/provisioner-types.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 mkdirSync(new URL('../.wrangler/types/', import.meta.url), { recursive: true });
@@ -8,6 +9,17 @@ mkdirSync(new URL('../.wrangler/types/', import.meta.url), { recursive: true });
 // Generate locally from the checked-in configuration; no deployment or remote bindings.
 const commands = [
   ['node_modules/wrangler/bin/wrangler.js', 'types', '.wrangler/types/worker.d.ts'],
+  [
+    'node_modules/wrangler/bin/wrangler.js',
+    'types',
+    '.wrangler/types/accounting-provisioner.generated.d.ts',
+    '--config',
+    'wrangler.accounting-provisioner.json',
+    '--env-interface',
+    'AccountingProvisionerEnv',
+    '--include-runtime',
+    'false',
+  ],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.worker.json'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.learn.json'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.browser.json'],
@@ -25,6 +37,12 @@ for (const args of commands) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
+  if (args.includes('.wrangler/types/accounting-provisioner.generated.d.ts')) {
+    await extractProvisionerEnvironment(
+      new URL('../.wrangler/types/accounting-provisioner.generated.d.ts', import.meta.url),
+      new URL('../.wrangler/types/accounting-provisioner.d.ts', import.meta.url)
+    );
+  }
 }
 
 console.log('PASS - strict Worker, Learn, and browser type checks (no emitted application files)');

@@ -1,3 +1,4 @@
+import {includesJavaScriptFragment} from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
 import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
@@ -54,7 +55,7 @@ assert.match(parishApp, /font-size="24"[^>]*>Give with gratitude\.<\/text>/, "bu
 assert.match(publicStore, /No account required/);
 assert.match(publicStoreApp, /bookstorePathSegments\[1\] === "bookstore"/);
 
-assert.match(googleCalendar, /KV_PREFIX = "__agapay_sacraments_google_calendar:"/);
+assert.ok(includesJavaScriptFragment(googleCalendar, 'const KV_PREFIX = "__agapay_sacraments_google_calendar:"'));
 assert.match(googleCalendar, /return `sac\.\$\{body\}/);
 assert.match(googleCalendar, /\/api\/learn\/google-calendar\/callback/);
 assert.match(googleCalendar, /syncSacramentRequestToGoogleCalendar/);

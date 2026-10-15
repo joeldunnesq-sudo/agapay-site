@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../portability/contracts.js';
 import type { DonationInvoice } from '../payments/donation-events.js';
 import type { StripeObjectReference } from '../lib/stripe-connect.js';
 export interface ServiceInvoice extends DonationInvoice {
@@ -127,7 +128,7 @@ export async function recordServiceInvoice(
   return facts;
 }
 
-export async function postServiceInvoices(env: Partial<Env>, db: D1Database, parishId: string) {
+export async function postServiceInvoices(env: Partial<Env>, db: PortabilityDatabase, parishId: string) {
   const rows = await d1All<ServiceInvoiceRow>(
     env,
     `SELECT * FROM agapay_service_invoices WHERE parish_id=?
@@ -161,13 +162,13 @@ export async function postServiceInvoices(env: Partial<Env>, db: D1Database, par
     const result = await processAccountingSourceEvent(db, {
       actor,
       entitlementTier: 'parish',
-      sourceEventId: source.id,
+      sourceEventId: source!.id,
     });
     await d1Run(
       env,
       'UPDATE agapay_service_invoices SET accounting_status=?,accounting_message=? WHERE invoice_id=?',
-      result.status,
-      result.exceptionMessage || null,
+      result!.status,
+      result!.exceptionMessage || null,
       row.invoice_id
     );
   }

@@ -27,3 +27,8 @@ export function resolveOperationalAccountingDatabase(
   env: Partial<Env>,
   parishId: string
 ): Promise<import('../portability/contracts.js').PortabilityDatabase | null>;
+
+export function synchronizeGivingCatalogIntoDatabase(
+  db: import('../portability/contracts.js').PortabilityDatabase,
+  registration?: import('../handlers/parish-giving-catalog.js').CatalogRegistration
+): Promise<unknown>;

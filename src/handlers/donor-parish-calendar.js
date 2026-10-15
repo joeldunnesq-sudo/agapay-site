@@ -1,12 +1,11 @@
+// Generated from src/handlers/donor-parish-calendar.ts by npm run build:server. Do not edit.
 import { json, unauthorized } from '../lib/core.js';
 import { fetchKoinoniaCalendarIcs, normalizeKoinoniaCalendarUrl } from '../lib/koinonia-calendar.js';
 import { loadPublishedCommerceCalendarEvents } from './parish-events.js';
 import { findRegistrationByParishId, requireDonor } from './parish.js';
-
 function unescapeIcsText(value = '') {
   return String(value).replace(/\\n/gi, ' ').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\').trim();
 }
-
 function icsDateParts(value = '') {
   const raw = String(value).trim();
   const match = raw.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/);
@@ -23,7 +22,6 @@ function icsDateParts(value = '') {
     allDay: !raw.includes('T'),
   };
 }
-
 function icsZoneFormatter(timeZone, context) {
   const cached = context?.formatters?.get(timeZone);
   if (cached) return cached;
@@ -40,7 +38,6 @@ function icsZoneFormatter(timeZone, context) {
   if (context?.formatters && context.formatters.size < 16) context.formatters.set(timeZone, formatter);
   return formatter;
 }
-
 function icsZonedDate(parts, timeZone, context) {
   let timestamp = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
   try {
@@ -65,8 +62,7 @@ function icsZonedDate(parts, timeZone, context) {
   }
   return new Date(timestamp);
 }
-
-function icsDate(value = '', params = {}, context = undefined) {
+function icsDate(value = '', params = {}, context = void 0) {
   const parts = icsDateParts(value);
   if (!parts) return null;
   let date;
@@ -79,7 +75,6 @@ function icsDate(value = '', params = {}, context = undefined) {
   }
   return !date || Number.isNaN(date.getTime()) ? null : date;
 }
-
 function icsRule(value = '') {
   return Object.fromEntries(
     String(value)
@@ -88,13 +83,10 @@ function icsRule(value = '') {
       .filter((pair) => pair.length === 2)
   );
 }
-
 const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-
 function icsNaiveDate(parts) {
   return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
 }
-
 function icsDateInEventZone(date, event, context) {
   if (event.dtstartParams?.tzid) {
     try {
@@ -109,7 +101,6 @@ function icsDateInEventZone(date, event, context) {
     ? { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() }
     : { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
 }
-
 function icsRecurrenceDate(cursor, event, context) {
   const parts = {
     year: cursor.getUTCFullYear(),
@@ -125,7 +116,6 @@ function icsRecurrenceDate(cursor, event, context) {
   }
   return new Date(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
 }
-
 function icsCountLatestPossible(startCursor, frequency, interval, count) {
   const latest = new Date(startCursor);
   const span = Math.max(0, count - 1) * interval;
@@ -135,9 +125,7 @@ function icsCountLatestPossible(startCursor, frequency, interval, count) {
   if (frequency === 'YEARLY') latest.setUTCFullYear(latest.getUTCFullYear() + span);
   return latest;
 }
-
-const ICS_TIMEZONE_MARGIN_MS = 36 * 60 * 60 * 1000;
-
+const ICS_TIMEZONE_MARGIN_MS = 36 * 60 * 60 * 1e3;
 function icsBlockMayOverlap(block, now, horizon) {
   const recurrence = block.match(/(?:^|\r?\n)RRULE:([^\r\n]+)/)?.[1] || '';
   if (recurrence) return /(?:^|;)FREQ=(?:DAILY|WEEKLY|MONTHLY|YEARLY)(?:;|$)/.test(recurrence);
@@ -153,7 +141,6 @@ function icsBlockMayOverlap(block, now, horizon) {
     approximateEnd >= now.getTime() - ICS_TIMEZONE_MARGIN_MS
   );
 }
-
 function expandIcsEvent(event, now, horizon, context) {
   const startParts = icsDateParts(event.dtstart);
   if (!startParts) return [];
@@ -168,11 +155,11 @@ function expandIcsEvent(event, now, horizon, context) {
       approximateEnd.getTime() < now.getTime() - ICS_TIMEZONE_MARGIN_MS
     )
       return [];
-    const start = icsDate(event.dtstart, event.dtstartParams, context);
-    if (!start) return [];
-    const end = icsDate(event.dtend, event.dtendParams || event.dtstartParams, context);
-    const duration = end ? Math.max(0, end.getTime() - start.getTime()) : 0;
-    return start <= horizon && (end || start) >= now ? [{ start, end, duration }] : [];
+    const start2 = icsDate(event.dtstart, event.dtstartParams, context);
+    if (!start2) return [];
+    const end2 = icsDate(event.dtend, event.dtendParams || event.dtstartParams, context);
+    const duration2 = end2 ? Math.max(0, end2.getTime() - start2.getTime()) : 0;
+    return start2 <= horizon && (end2 || start2) >= now ? [{ start: start2, end: end2, duration: duration2 }] : [];
   }
   const frequency = rule.FREQ;
   const interval = Math.max(1, Number(rule.INTERVAL || 1));
@@ -230,10 +217,10 @@ function expandIcsEvent(event, now, horizon, context) {
     }
   }
   let occurrencesSeen = 0;
-  for (let guard = 0; guard < 5000 && results.length < 30; guard += 1) {
+  for (let guard = 0; guard < 5e3 && results.length < 30; guard += 1) {
     const instanceStart = icsRecurrenceDate(cursor, event, context);
     if (!instanceStart || instanceStart > horizon || instanceStart > until) break;
-    const dayDelta = Math.floor((cursor - startCursor) / 86400000);
+    const dayDelta = Math.floor((cursor - startCursor) / 864e5);
     const weekDelta = Math.floor(dayDelta / 7);
     const monthDelta =
       (cursor.getUTCFullYear() - startCursor.getUTCFullYear()) * 12 + cursor.getUTCMonth() - startCursor.getUTCMonth();
@@ -263,13 +250,12 @@ function expandIcsEvent(event, now, horizon, context) {
   }
   return results;
 }
-
-export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
+function parseKoinoniaCalendarIcs(text, fromDate = /* @__PURE__ */ new Date()) {
   const unfolded = String(text || '').replace(/\r?\n[ \t]/g, '');
   const blocks = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
   const now = new Date(fromDate);
-  const horizon = new Date(now.getTime() + 180 * 86400000);
-  const context = { formatters: new Map() };
+  const horizon = new Date(now.getTime() + 180 * 864e5);
+  const context = { formatters: /* @__PURE__ */ new Map() };
   return blocks
     .flatMap((block) => {
       if (!icsBlockMayOverlap(block, now, horizon)) return [];
@@ -309,8 +295,7 @@ export function parseKoinoniaCalendarIcs(text, fromDate = new Date()) {
     .sort((left, right) => left.startsAt.localeCompare(right.startsAt))
     .slice(0, 180);
 }
-
-export async function handleDonorParishCalendar(request, env) {
+async function handleDonorParishCalendar(request, env) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
@@ -343,7 +328,7 @@ export async function handleDonorParishCalendar(request, env) {
       .sort((left, right) => String(left.startsAt || '').localeCompare(String(right.startsAt || '')))
       .slice(0, 240);
     return json(
-      { connected: true, internal: true, subscriptionUrl, events, syncedAt: new Date().toISOString() },
+      { connected: true, internal: true, subscriptionUrl, events, syncedAt: /* @__PURE__ */ new Date().toISOString() },
       { headers: { 'Cache-Control': 'private, max-age=300' } }
     );
   } catch {
@@ -353,3 +338,4 @@ export async function handleDonorParishCalendar(request, env) {
     );
   }
 }
+export { handleDonorParishCalendar, parseKoinoniaCalendarIcs };

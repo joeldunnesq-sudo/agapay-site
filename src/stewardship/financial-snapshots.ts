@@ -15,7 +15,7 @@ export interface FinancialSnapshotOptions {
   totalExpenseCents?: unknown;
   netCents?: unknown;
   notes?: string;
-  restrictedFunds?: FinancialSnapshotFund[];
+  restrictedFunds?: readonly FinancialSnapshotFund[];
   importedFromAccountingAt?: string | null;
   replaceRestrictedFunds?: boolean;
   now?: string;

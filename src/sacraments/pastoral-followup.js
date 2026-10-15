@@ -1,6 +1,6 @@
+// Generated from src/sacraments/pastoral-followup.ts by npm run build:server. Do not edit.
 import { d1All, d1Batch, d1First, d1Run, generateSecret, normalizeEmail } from '../lib/core.js';
-
-export const PASTORAL_FOLLOWUP_REASONS = new Set([
+const PASTORAL_FOLLOWUP_REASONS = /* @__PURE__ */ new Set([
   'homebound',
   'hospitalized',
   'bereavement',
@@ -8,7 +8,7 @@ export const PASTORAL_FOLLOWUP_REASONS = new Set([
   'regular_check_in',
   'other',
 ]);
-export const PASTORAL_CONTACT_TYPES = new Set([
+const PASTORAL_CONTACT_TYPES = /* @__PURE__ */ new Set([
   'phone',
   'home_visit',
   'hospital_visit',
@@ -17,7 +17,7 @@ export const PASTORAL_CONTACT_TYPES = new Set([
   'family_contact',
   'other',
 ]);
-export const PASTORAL_CLOSURE_OUTCOMES = new Set([
+const PASTORAL_CLOSURE_OUTCOMES = /* @__PURE__ */ new Set([
   'recovered',
   'care_transferred',
   'declined',
@@ -25,35 +25,30 @@ export const PASTORAL_CLOSURE_OUTCOMES = new Set([
   'reposed',
   'other',
 ]);
-
-export class PastoralFollowUpError extends Error {
+class PastoralFollowUpError extends Error {
   constructor(message, status = 422) {
     super(message);
     this.status = status;
   }
 }
-
-function cleanText(value, max = 1000) {
+function cleanText(value, max = 1e3) {
   return String(value || '')
     .trim()
     .slice(0, max);
 }
-
 function validDate(value) {
   const text = cleanText(value, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return '';
-  const date = new Date(`${text}T00:00:00Z`);
+  const date = /* @__PURE__ */ new Date(`${text}T00:00:00Z`);
   return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text ? '' : text;
 }
-
 function validDateTime(value) {
   const text = cleanText(value, 40);
   const date = new Date(text);
   return !text || Number.isNaN(date.getTime()) ? '' : date.toISOString();
 }
-
 function cadence(value, required = false) {
-  if (value === null || value === undefined || value === '') {
+  if (value === null || value === void 0 || value === '') {
     if (required) throw new PastoralFollowUpError('Choose a follow-up cadence.');
     return null;
   }
@@ -63,7 +58,6 @@ function cadence(value, required = false) {
   }
   return days;
 }
-
 function personScopeSql(alias = 'p') {
   return `(
     ${alias}.created_by_parish_id = ? OR
@@ -78,7 +72,6 @@ function personScopeSql(alias = 'p') {
     )
   )`;
 }
-
 async function parishPerson(env, parishId, personId) {
   return d1First(
     env,
@@ -93,7 +86,6 @@ async function parishPerson(env, parishId, personId) {
     parishId
   );
 }
-
 function followupDto(row = {}) {
   return {
     id: row.id,
@@ -119,7 +111,6 @@ function followupDto(row = {}) {
     updatedAt: row.updated_at,
   };
 }
-
 const FOLLOWUP_SELECT = `
   SELECT f.*, p.preferred_name,
     (SELECT c.value FROM directory_contact_methods c
@@ -138,8 +129,7 @@ const FOLLOWUP_SELECT = `
   FROM sacrament_pastoral_followups f
   JOIN directory_people p ON p.id = f.person_id
 `;
-
-export async function listPastoralFollowups(env, parishId, assignedPriestEmail = '') {
+async function listPastoralFollowups(env, parishId, assignedPriestEmail = '') {
   const normalizedAssignee = normalizeEmail(assignedPriestEmail);
   const rows = await d1All(
     env,
@@ -155,13 +145,11 @@ export async function listPastoralFollowups(env, parishId, assignedPriestEmail =
   );
   return rows.map(followupDto);
 }
-
-export async function findPastoralFollowup(env, parishId, followupId) {
+async function findPastoralFollowup(env, parishId, followupId) {
   const row = await d1First(env, `${FOLLOWUP_SELECT} WHERE f.id = ? AND f.parish_id = ?`, followupId, parishId);
   return row ? followupDto(row) : null;
 }
-
-export async function listPastoralFollowupCandidates(env, parishId, search = '') {
+async function listPastoralFollowupCandidates(env, parishId, search = '') {
   const query = cleanText(search, 100).toLowerCase();
   const like = `%${query.replaceAll('%', '\\%').replaceAll('_', '\\_')}%`;
   const rows = await d1All(
@@ -202,8 +190,7 @@ export async function listPastoralFollowupCandidates(env, parishId, search = '')
     followupStatus: row.followup_status || '',
   }));
 }
-
-export async function createPastoralFollowup(env, input = {}) {
+async function createPastoralFollowup(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const personId = cleanText(input.personId, 160);
   const priestName = cleanText(input.assignedPriestName, 120);
@@ -246,8 +233,7 @@ export async function createPastoralFollowup(env, input = {}) {
   }
   return findPastoralFollowup(env, parishId, id);
 }
-
-export async function updatePastoralFollowup(env, input = {}) {
+async function updatePastoralFollowup(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const id = cleanText(input.id, 160);
   const existing = await d1First(
@@ -264,7 +250,7 @@ export async function updatePastoralFollowup(env, input = {}) {
   }
   if (action === 'close') {
     const outcome = cleanText(input.closureOutcome, 40) || 'other';
-    const reason = cleanText(input.closureReason, 500) || 'Pastoral follow-up completed';
+    const reason2 = cleanText(input.closureReason, 500) || 'Pastoral follow-up completed';
     if (!PASTORAL_CLOSURE_OUTCOMES.has(outcome) || outcome === 'reposed') {
       throw new PastoralFollowUpError('Choose a valid closure outcome. Record a repose through the memorial workflow.');
     }
@@ -276,29 +262,27 @@ export async function updatePastoralFollowup(env, input = {}) {
           closure_outcome = ?, closure_reason = ?, updated_at = ?
       WHERE id = ? AND parish_id = ?
     `,
-      new Date().toISOString(),
+      /* @__PURE__ */ new Date().toISOString(),
       actor,
       outcome,
-      reason,
-      new Date().toISOString(),
+      reason2,
+      /* @__PURE__ */ new Date().toISOString(),
       id,
       parishId
     );
     return findPastoralFollowup(env, parishId, id);
   }
   const priestName =
-    input.assignedPriestName === undefined ? existing.assigned_priest_name : cleanText(input.assignedPriestName, 120);
+    input.assignedPriestName === void 0 ? existing.assigned_priest_name : cleanText(input.assignedPriestName, 120);
   const priestEmail =
-    input.assignedPriestEmail === undefined
-      ? existing.assigned_priest_email
-      : normalizeEmail(input.assignedPriestEmail);
-  const reason = input.reason === undefined ? existing.reason : cleanText(input.reason, 40);
-  const nextDueOn = validDate(input.nextDueOn === undefined ? existing.next_due_on : input.nextDueOn);
+    input.assignedPriestEmail === void 0 ? existing.assigned_priest_email : normalizeEmail(input.assignedPriestEmail);
+  const reason = input.reason === void 0 ? existing.reason : cleanText(input.reason, 40);
+  const nextDueOn = validDate(input.nextDueOn === void 0 ? existing.next_due_on : input.nextDueOn);
   if (!priestName) throw new PastoralFollowUpError('Choose the priest responsible for follow-up.');
   if (!PASTORAL_FOLLOWUP_REASONS.has(reason)) throw new PastoralFollowUpError('Choose a valid pastoral care reason.');
   if (!nextDueOn) throw new PastoralFollowUpError('Choose the next follow-up date.');
-  const nextCadence = input.cadenceDays === undefined ? existing.cadence_days : cadence(input.cadenceDays);
-  const note = input.note === undefined ? existing.note : cleanText(input.note, 1200) || null;
+  const nextCadence = input.cadenceDays === void 0 ? existing.cadence_days : cadence(input.cadenceDays);
+  const note = input.note === void 0 ? existing.note : cleanText(input.note, 1200) || null;
   await d1Run(
     env,
     `
@@ -314,19 +298,20 @@ export async function updatePastoralFollowup(env, input = {}) {
     nextCadence,
     nextDueOn,
     note,
-    new Date().toISOString(),
+    /* @__PURE__ */ new Date().toISOString(),
     id,
     parishId
   );
   return findPastoralFollowup(env, parishId, id);
 }
-
-export async function recordPastoralContact(env, input = {}) {
+async function recordPastoralContact(env, input = {}) {
   const parishId = cleanText(input.parishId, 120);
   const followupId = cleanText(input.followupId, 160);
   const contactType = cleanText(input.contactType, 40);
   const submittedContactedAt = cleanText(input.contactedAt, 40);
-  const contactedAt = submittedContactedAt ? validDateTime(submittedContactedAt) : new Date().toISOString();
+  const contactedAt = submittedContactedAt
+    ? validDateTime(submittedContactedAt)
+    : /* @__PURE__ */ new Date().toISOString();
   const actor = cleanText(input.actor, 180) || 'parish-dashboard';
   const close = input.close === true;
   const existing = await d1First(
@@ -343,7 +328,7 @@ export async function recordPastoralContact(env, input = {}) {
   if (!contactedAt) throw new PastoralFollowUpError('Choose a valid contact date and time.');
   const nextDueOn = close ? null : validDate(input.nextDueOn);
   if (!close && !nextDueOn) throw new PastoralFollowUpError('Choose the next follow-up date or close the plan.');
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const contactId = generateSecret('pastoralcontact');
   const statements = [
     {
@@ -383,10 +368,22 @@ export async function recordPastoralContact(env, input = {}) {
   await d1Batch(env, statements);
   return findPastoralFollowup(env, parishId, followupId);
 }
-
-export function defaultNextPastoralDueOn(contactedAt, cadenceDays) {
+function defaultNextPastoralDueOn(contactedAt, cadenceDays) {
   const date = new Date(contactedAt);
   if (Number.isNaN(date.getTime())) return '';
   date.setUTCDate(date.getUTCDate() + cadence(cadenceDays, true));
   return date.toISOString().slice(0, 10);
 }
+export {
+  PASTORAL_CLOSURE_OUTCOMES,
+  PASTORAL_CONTACT_TYPES,
+  PASTORAL_FOLLOWUP_REASONS,
+  PastoralFollowUpError,
+  createPastoralFollowup,
+  defaultNextPastoralDueOn,
+  findPastoralFollowup,
+  listPastoralFollowupCandidates,
+  listPastoralFollowups,
+  recordPastoralContact,
+  updatePastoralFollowup,
+};
