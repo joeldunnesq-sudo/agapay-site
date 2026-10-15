@@ -9,7 +9,10 @@ export function findRegistrationByParishId<Registration extends CatalogRegistrat
   id: string
 ): Promise<{ key: string; registration: Registration } | null>;
 export function getBearerToken(request: Request): string;
-export function givingFeatureAccess(registration: CatalogRegistration, feature: 'campaigns' | 'branding'): boolean;
+export function givingFeatureAccess(
+  registration: CatalogRegistration,
+  feature: 'campaigns' | 'branding' | 'giverInsights'
+): boolean;
 export function hasProductionStore(env: GivingCatalogEnv): boolean;
 export function missingProductionStoreResponse(): Response;
 export function parishFromRegistration(registration: CatalogRegistration): CatalogParish | null;
@@ -51,7 +54,7 @@ export function starterFundCatalogError(funds?: unknown): string;
 export function requireDonor(
   request: Request,
   env: Partial<Env>
-): Promise<{ defaultParishId?: unknown; [field: string]: unknown } | null>;
+): Promise<import('../lib/identity-contracts.js').DonorRecord | null>;
 
 export function requireAdminContext(
   request: Request,
@@ -60,3 +63,8 @@ export function requireAdminContext(
 export function requireAdmin(request: Request, env: Partial<Env>): Promise<boolean>;
 
 export function handleParishDashboard(request: Request, env: Partial<Env>, parishId: string): Promise<Response>;
+
+export function absoluteWebsiteUrl(value?: unknown): string;
+
+export { loadParishRecurringOfferings, summarizeParishRecurringHealth } from './parish-giving-read-models.js';
+export { parishDashboardPayload, summarizeCharges } from './parish-dashboard-handler.js';

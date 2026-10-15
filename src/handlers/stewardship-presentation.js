@@ -1,6 +1,4 @@
-// src/handlers/stewardship-presentation.js
-// Stewardship HTML pages and annual-meeting packet rendering.
-
+// Generated from src/handlers/stewardship-presentation.ts by npm run build:server. Do not edit.
 import { stewardshipStatus } from '../lib/core.js';
 import { stewardshipToolAccess as hasStewardshipToolAccess } from '../lib/entitlements.js';
 import { absoluteWebsiteUrl } from './parish.js';
@@ -13,14 +11,10 @@ import {
   registrationAddressLine,
   stewardshipSessionScript,
 } from './stewardship-http.js';
-
-export function paywallHtml() {
+function paywallHtml() {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stewardship Health — AGAPAY</title></head><body><main><h1>Stewardship Health is included in Give +</h1><p>Choose Give + or Parish in your dashboard settings to access stewardship reports, pledge context, and giving-health insights.</p><a href="/parish/dashboard">Review current plans</a></main></body></html>`;
 }
-
-// ─── Module home (when subscribed) ───────────────────────────────────────────
-
-export function stewardshipHomeHtml(registration, meetings, env) {
+function stewardshipHomeHtml(registration, meetings, env) {
   const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const status = stewardshipStatus(registration);
   const statusLabel =
@@ -33,7 +27,6 @@ export function stewardshipHomeHtml(registration, meetings, env) {
       incomplete: 'Incomplete',
     }[status] || status;
   const statusColor = hasStewardshipToolAccess(registration) ? 'var(--green, #4ade80)' : 'var(--red, #f87171)';
-
   const meetingRows =
     meetings
       .map(
@@ -51,7 +44,6 @@ export function stewardshipHomeHtml(registration, meetings, env) {
       )
       .join('') ||
     `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No annual meetings yet. <a href="/parish/stewardship/annual-meetings/new">Create your first packet →</a></td></tr>`;
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,7 +88,7 @@ export function stewardshipHomeHtml(registration, meetings, env) {
             <select id="giving-year-select" class="form-select" style="font-size:.85rem;padding:.3rem .6rem" onchange="loadGivingMetrics()">
               ${[0, 1, 2, 3, 4]
                 .map((n) => {
-                  const y = new Date().getFullYear() - n;
+                  const y = /* @__PURE__ */ new Date().getFullYear() - n;
                   return `<option value="${y}">${y}</option>`;
                 })
                 .join('')}
@@ -275,26 +267,22 @@ export function stewardshipHomeHtml(registration, meetings, env) {
       // Kick off load
       loadGivingMetrics();
     })();
-  </script>
+  <\/script>
 
   ${stewardshipSessionScript()}
 </body>
 </html>`;
 }
-
-// ─── Billing page ─────────────────────────────────────────────────────────────
-
-export function billingHtml(registration, subscription, env) {
+function billingHtml(registration, subscription, env) {
   const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const status = stewardshipStatus(registration);
   const periodEnd = registration.stewardshipPeriodEnd
-    ? new Date(registration.stewardshipPeriodEnd * 1000).toLocaleDateString('en-US', {
+    ? new Date(registration.stewardshipPeriodEnd * 1e3).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
     : '—';
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -344,10 +332,7 @@ export function billingHtml(registration, subscription, env) {
 </body>
 </html>`;
 }
-
-// ─── Annual meeting list / new / edit ─────────────────────────────────────────
-
-export function annualMeetingFormHtml(
+function annualMeetingFormHtml(
   registration,
   meeting,
   agendaItems,
@@ -365,8 +350,7 @@ export function annualMeetingFormHtml(
     ? '/parish/stewardship/annual-meetings/new'
     : `/parish/stewardship/annual-meetings/${meeting.id}`;
   const parishName = registration.parishName || registration.name || '';
-  const currentYear = new Date().getFullYear();
-
+  const currentYear = /* @__PURE__ */ new Date().getFullYear();
   const agendaHtml = (agendaItems || [])
     .map(
       (item, i) => `
@@ -378,7 +362,6 @@ export function annualMeetingFormHtml(
     </div>`
     )
     .join('');
-
   const reportEntries = Array.isArray(reports) ? [...reports] : [];
   [
     { report_type: 'brotherhood', title: 'Brotherhood Report', body: '', created_by: '' },
@@ -406,7 +389,6 @@ export function annualMeetingFormHtml(
     </div>`
     )
     .join('');
-
   const fundsHtml = (restrictedFunds || [])
     .map(
       (f, i) => `
@@ -421,7 +403,6 @@ export function annualMeetingFormHtml(
     </div>`
     )
     .join('');
-
   const nomineesHtml = (nominees || [])
     .map(
       (n, i) => `
@@ -435,7 +416,6 @@ export function annualMeetingFormHtml(
     </div>`
     )
     .join('');
-
   const resolutionsHtml = (resolutions || [])
     .map(
       (r, i) => `
@@ -447,7 +427,6 @@ export function annualMeetingFormHtml(
     </div>`
     )
     .join('');
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -630,10 +609,9 @@ export function annualMeetingFormHtml(
         e.target.closest('[class$="-row"]')?.remove();
       }
     });
-  </script>
+  <\/script>
   ${stewardshipSessionScript()}
 </body>
 </html>`;
 }
-
-// ─── Preview / PDF ────────────────────────────────────────────────────────────
+export { annualMeetingFormHtml, billingHtml, paywallHtml, stewardshipHomeHtml };

@@ -1,9 +1,6 @@
-// src/handlers/stewardship-http.js
-// Shared presentation, request-parsing, and public DTO helpers for stewardship handlers.
-
+// Generated from src/handlers/stewardship-http.ts by npm run build:server. Do not edit.
 import { generateSecret } from '../lib/core.js';
-
-export function dashboardNav(registration, activeSection, base) {
+function dashboardNav(registration, activeSection, base) {
   const parishName = registration.parishName || registration.name || 'Parish';
   return `<nav class="dashboard-nav">
     <div class="nav-brand">
@@ -20,15 +17,7 @@ export function dashboardNav(registration, activeSection, base) {
     </ul>
   </nav>`;
 }
-
-// ─── Utilities ────────────────────────────────────────────────────────────────
-
-// Builds a single-line mailing address from the parish's Settings tab fields
-// (addressLine1, addressLine2, city, state, postalCode) — the registration
-// record has no single flat "address" field, so every place that wants a
-// printable parish address should go through this rather than reading
-// registration.address directly (which is always undefined).
-export function registrationAddressLine(registration = {}) {
+function registrationAddressLine(registration = {}) {
   return [
     registration.addressLine1,
     registration.addressLine2,
@@ -37,22 +26,19 @@ export function registrationAddressLine(registration = {}) {
     .filter(Boolean)
     .join(', ');
 }
-
-export function escHtml(s) {
+function escHtml(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
-
-export function escAttr(s) {
+function escAttr(s) {
   return String(s || '')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
-
-export function stewardshipSessionScript() {
+function stewardshipSessionScript() {
   return `<script>
     (function () {
       var qs = window.location.search || "";
@@ -76,30 +62,24 @@ export function stewardshipSessionScript() {
         form.setAttribute("action", withSession(form.getAttribute("action")));
       });
     })();
-  </script>`;
+  <\/script>`;
 }
-
-export function centsToDisplay(cents) {
+function centsToDisplay(cents) {
   if (!cents) return '';
   return (cents / 100).toFixed(2);
 }
-
-export function displayToCents(s) {
+function displayToCents(s) {
   const n = parseFloat(String(s || '').replace(/[^0-9.-]/g, ''));
   return isNaN(n) ? 0 : Math.round(n * 100);
 }
-
-export function newId() {
+function newId() {
   return generateSecret(16);
 }
-
-// Parse repeated form fields (e.g. title[], body[])
-export function parseRepeatedField(formData, key) {
+function parseRepeatedField(formData, key) {
   const raw = formData.getAll ? formData.getAll(key) : [];
   return Array.isArray(raw) ? raw : [raw].filter(Boolean);
 }
-
-export async function parseFormBody(request) {
+async function parseFormBody(request) {
   const text = await request.text();
   const params = new URLSearchParams(text);
   const result = {};
@@ -114,27 +94,23 @@ export async function parseFormBody(request) {
   }
   return result;
 }
-
-export async function parseJsonBody(request) {
+async function parseJsonBody(request) {
   try {
     return await request.json();
   } catch {
     return null;
   }
 }
-
-export function centsFromApi(value) {
-  if (value === null || value === undefined || value === '') return 0;
+function centsFromApi(value) {
+  if (value === null || value === void 0 || value === '') return 0;
   return Math.round(Number(value) * 100) || 0;
 }
-
-export function packetLineCount(value, fallback, { min = 0, max = 200 } = {}) {
+function packetLineCount(value, fallback, { min = 0, max = 200 } = {}) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, Math.min(max, parsed));
 }
-
-export function apiFormFromMeetingPayload(payload = {}) {
+function apiFormFromMeetingPayload(payload = {}) {
   const agendaItems = Array.isArray(payload.agendaItems) ? payload.agendaItems : [];
   const reports = Array.isArray(payload.reports) ? payload.reports : [];
   const restrictedFunds = Array.isArray(payload.restrictedFunds) ? payload.restrictedFunds : [];
@@ -143,7 +119,7 @@ export function apiFormFromMeetingPayload(payload = {}) {
   const financialSummary = payload.financialSummary || {};
   return {
     title: payload.title || 'Annual Meeting',
-    fiscal_year: payload.fiscalYear || payload.fiscal_year || new Date().getFullYear(),
+    fiscal_year: payload.fiscalYear || payload.fiscal_year || /* @__PURE__ */ new Date().getFullYear(),
     meeting_date: payload.meetingDate || payload.meeting_date || '',
     meeting_time: payload.meetingTime || payload.meeting_time || '',
     location: payload.location || '',
@@ -180,13 +156,12 @@ export function apiFormFromMeetingPayload(payload = {}) {
     resolution_resolved: resolutions.map((item) => item.resolvedText || item.resolved_text || item.body || ''),
   };
 }
-
-export function publicMeeting(row) {
+function publicMeeting(row) {
   if (!row) return null;
   return {
     id: row.id,
     title: row.title || '',
-    fiscalYear: Number(row.fiscal_year) || new Date().getFullYear(),
+    fiscalYear: Number(row.fiscal_year) || /* @__PURE__ */ new Date().getFullYear(),
     meetingDate: row.meeting_date || '',
     meetingTime: row.meeting_time || '',
     location: row.location || '',
@@ -200,16 +175,7 @@ export function publicMeeting(row) {
     updatedAt: row.updated_at || '',
   };
 }
-
-export function publicMeetingDetails(
-  meeting,
-  agendaItems,
-  reports,
-  financialSummary,
-  restrictedFunds,
-  nominees,
-  resolutions
-) {
+function publicMeetingDetails(meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions) {
   return {
     ...publicMeeting(meeting),
     agendaItems: (agendaItems || []).map((item) => ({
@@ -262,19 +228,25 @@ export function publicMeetingDetails(
     })),
   };
 }
-
-export function isMissingStewardshipSchema(error) {
+function isMissingStewardshipSchema(error) {
   return /stewardship_annual_meetings|no such table|not found/i.test(String(error?.message || error || ''));
 }
-
-// ─── "Founding 20" free-year AGAPAY Parish + promo ───────────────────────────
-// Admin-granted only — not self-service — to keep the count exact and to avoid
-// building abuse/fraud protection for what is a small, relationship-driven
-// promo. Grant state lives entirely on the registration record
-// (registration.stewardshipComp), completely separate from the Stripe
-// subscription fields, so a comped parish has no billing objects at all.
-
-// POST /api/admin/stewardship/comp
-// Body: { parishId: string }
-// Grants one year of free AGAPAY Parish + access, capped at
-// STEWARDSHIP_COMP_PROMO_LIMIT total grants across all parishes.
+export {
+  apiFormFromMeetingPayload,
+  centsFromApi,
+  centsToDisplay,
+  dashboardNav,
+  displayToCents,
+  escAttr,
+  escHtml,
+  isMissingStewardshipSchema,
+  newId,
+  packetLineCount,
+  parseFormBody,
+  parseJsonBody,
+  parseRepeatedField,
+  publicMeeting,
+  publicMeetingDetails,
+  registrationAddressLine,
+  stewardshipSessionScript,
+};

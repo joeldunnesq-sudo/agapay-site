@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import * as taxReadinessRuntime from '../src/lib/tax-readiness.js';
 import { subscriptionTiers, subscriptionAddOns, parishHouseholdBands } from '../src/lib/subscriptions.js';
 import * as coreRuntime from '../src/lib/core.js';
@@ -226,10 +227,10 @@ for (const screenshot of ["giving-dashboard.jpg", "koinonia-2.jpg", "parish-book
 assert.equal((manifest.match(/"form_factor": "narrow"/g) || []).length, 3, "My AGAPAY PWA screenshots should declare the narrow mobile form factor");
 assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260729c"), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
 assert.ok(/navigator\.serviceWorker\.register\(\s*(["'])\/service-worker\.js\1/.test(myAgapayLoginPage), "My AGAPAY login HTML should directly register the service worker for PWABuilder's source parser");
-assert.ok(pwaRegister.includes("registerOrUpdate();") && !pwaRegister.includes('window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
+assert.ok(includesJavaScriptFragment(pwaRegister, "registerOrUpdate();") && !includesJavaScriptFragment(pwaRegister, 'window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
 assert.ok(rootManifest.includes('"name": "My AGAPAY"') && rootManifest.includes('"start_url": "/myagapay/login?source=pwa"') && rootManifest.includes('"scope": "/"'), "the homepage installer should launch My AGAPAY at its login page while retaining compatibility with existing root-scope installs");
-assert.ok(pwaHomeInstall.includes('isLegacyHomepageLaunch()') && pwaHomeInstall.includes('window.location.replace("/myagapay/login?source=pwa")'), "existing homepage-installed My AGAPAY icons should be repaired to open the login page");
+assert.ok(includesJavaScriptFragment(pwaHomeInstall, 'isLegacyHomepageLaunch()') && includesJavaScriptFragment(pwaHomeInstall, 'window.location.replace("/myagapay/login?source=pwa")'), "existing homepage-installed My AGAPAY icons should be repaired to open the login page");
 assert.ok(rootManifest.includes('"orientation": "portrait-primary"'), "root PWA manifest should prefer the phone-first portrait orientation");
 assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('/myagapay/manifest.webmanifest'), "Give homepage should remain installable without carrying a separate marketing-page installer");
 assert.ok(/class="give-hero-actions"[\s\S]{0,500}href="#pricing"[\s\S]{0,80}>See plans and pricing<\/a>/.test(givingOverviewPage), "Give homepage hero should link directly to the consolidated pricing section");

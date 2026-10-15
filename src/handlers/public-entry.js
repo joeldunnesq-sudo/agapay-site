@@ -1,3 +1,4 @@
+// Generated from src/handlers/public-entry.ts by npm run build:server. Do not edit.
 import { calendarLabel, liturgicalFeastsForYear, nextLiturgicalFeast, orthodoxPascha } from '../liturgical-calendar.js';
 import { enrichLiturgicalDayWithOrthocal } from '../learn/readings-source.js';
 import {
@@ -14,19 +15,16 @@ import {
 import { requireDonor } from './parish.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
-
-export async function handleWaitlist(request, env) {
+async function handleWaitlist(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'waitlist', { limit: 8, windowSeconds: 300 });
   if (limited) return limited;
-
   let body;
   try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-
   const product = String(body.product || '')
     .trim()
     .toLowerCase();
@@ -35,14 +33,12 @@ export async function handleWaitlist(request, env) {
     directory: 'AGAPAY Directory',
   };
   if (!productLabels[product]) return json({ error: 'Choose a valid waitlist.' }, { status: 400 });
-
   const email = normalizeEmail(body.email);
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ error: 'Enter a valid email address.' }, { status: 400 });
   }
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const entry = {
     product,
     productLabel: productLabels[product],
@@ -55,13 +51,11 @@ export async function handleWaitlist(request, env) {
   };
   const key = `waitlist:${product}:${await sha256Hex(email)}`;
   const value = JSON.stringify(entry);
-
   if (d1(env)) {
     await d1SetSetting(env, key, value);
   } else {
     await env.AGAPAY_REGISTRATIONS.put(key, value);
   }
-
   const notifyTo = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
   const emailResult = await sendEmail(env, {
@@ -81,9 +75,12 @@ export async function handleWaitlist(request, env) {
       </div>
     `
     ),
-    text: `${productLabels[product]} waitlist signup\n\nEmail: ${email}\nSource: ${entry.source}\nTime: ${now}`,
-  });
+    text: `${productLabels[product]} waitlist signup
 
+Email: ${email}
+Source: ${entry.source}
+Time: ${now}`,
+  });
   return json({
     ok: true,
     product,
@@ -91,19 +88,16 @@ export async function handleWaitlist(request, env) {
     emailSent: emailResult.status === 'sent',
   });
 }
-
-export async function handleDirectoryIntake(request, env) {
+async function handleDirectoryIntake(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const limited = await rateLimit(request, env, 'directory-intake', { limit: 6, windowSeconds: 300 });
   if (limited) return limited;
-
   let body;
   try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-
   if (
     String(body.website || '').trim() &&
     !String(body.website || '').startsWith('http') &&
@@ -111,13 +105,19 @@ export async function handleDirectoryIntake(request, env) {
   ) {
     return json({ error: 'Enter a valid website URL.' }, { status: 400 });
   }
-
   const kind = String(body.kind || 'business')
     .trim()
     .toLowerCase();
-  const allowedKinds = new Set(['business', 'church', 'ministry', 'school', 'monastery', 'nonprofit', 'other']);
+  const allowedKinds = /* @__PURE__ */ new Set([
+    'business',
+    'church',
+    'ministry',
+    'school',
+    'monastery',
+    'nonprofit',
+    'other',
+  ]);
   if (!allowedKinds.has(kind)) return json({ error: 'Choose a valid listing type.' }, { status: 400 });
-
   const name = String(body.name || '')
     .trim()
     .slice(0, 160);
@@ -130,8 +130,7 @@ export async function handleDirectoryIntake(request, env) {
     return json({ error: 'Enter a valid contact email.' }, { status: 400 });
   }
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const website = String(body.website || '')
     .trim()
     .slice(0, 240);
@@ -183,7 +182,6 @@ export async function handleDirectoryIntake(request, env) {
     userAgent: request.headers.get('user-agent') || '',
     referer: request.headers.get('referer') || '',
   };
-
   const key = `directory:intake:${entry.id}`;
   const value = JSON.stringify(entry);
   if (d1(env)) {
@@ -191,7 +189,6 @@ export async function handleDirectoryIntake(request, env) {
   } else {
     await env.AGAPAY_REGISTRATIONS.put(key, value);
   }
-
   const location = [entry.address1, entry.address2, entry.city, entry.state, entry.postalCode, entry.country]
     .filter(Boolean)
     .join(', ');
@@ -221,27 +218,41 @@ export async function handleDirectoryIntake(request, env) {
       ${entry.services ? `<p style="margin:0;font-size:14px;line-height:1.7;color:#171715;"><strong>Helpful notes / services:</strong><br>${htmlEscape(entry.services)}</p>` : ''}
     `
     ),
-    text: `AGAPAY Directory submission\n\nName: ${entry.name}\nType: ${entry.kind}\nCategory: ${entry.category}\nContact: ${entry.contactName} <${entry.contactEmail}>\nPhone: ${entry.phone}\nAddress: ${location}\nWebsite: ${entry.website}\nDescription: ${entry.description}\nNotes: ${entry.services}\nSubmitted: ${now}`,
-  });
+    text: `AGAPAY Directory submission
 
+Name: ${entry.name}
+Type: ${entry.kind}
+Category: ${entry.category}
+Contact: ${entry.contactName} <${entry.contactEmail}>
+Phone: ${entry.phone}
+Address: ${location}
+Website: ${entry.website}
+Description: ${entry.description}
+Notes: ${entry.services}
+Submitted: ${now}`,
+  });
   return json({
     ok: true,
     id: entry.id,
     emailSent: emailResult.status === 'sent',
   });
 }
-
-export function handleLiturgicalCalendar(request) {
+function handleLiturgicalCalendar(request) {
   const url = new URL(request.url);
-  const year = Math.max(1900, Math.min(2199, Number(url.searchParams.get('year')) || new Date().getFullYear()));
+  const year = Math.max(
+    1900,
+    Math.min(2199, Number(url.searchParams.get('year')) || /* @__PURE__ */ new Date().getFullYear())
+  );
   const calendar = String(url.searchParams.get('calendar') || 'julian')
     .toLowerCase()
     .includes('gregorian')
     ? 'gregorian'
     : 'julian';
   const nextFrom = url.searchParams.get('from');
-  const fromDate = nextFrom && /^\d{4}-\d{2}-\d{2}$/.test(nextFrom) ? new Date(`${nextFrom}T00:00:00`) : new Date();
-
+  const fromDate =
+    nextFrom && /^\d{4}-\d{2}-\d{2}$/.test(nextFrom)
+      ? /* @__PURE__ */ new Date(`${nextFrom}T00:00:00`)
+      : /* @__PURE__ */ new Date();
   return json({
     ok: true,
     year,
@@ -252,7 +263,6 @@ export function handleLiturgicalCalendar(request) {
     nextFeast: nextLiturgicalFeast(calendar, fromDate),
   });
 }
-
 async function loadDirectoryNamedaysForLiturgicalDay(env, request, civilDate) {
   if (!d1(env)) return [];
   const url = new URL(request.url);
@@ -284,10 +294,9 @@ async function loadDirectoryNamedaysForLiturgicalDay(env, request, civilDate) {
     }))
     .filter((row) => row.displayName && row.saintName);
 }
-
-export async function handleDonorLiturgicalDay(request, env) {
+async function handleDonorLiturgicalDay(request, env) {
   const url = new URL(request.url);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = /* @__PURE__ */ new Date().toISOString().slice(0, 10);
   const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(url.searchParams.get('date') || ''))
     ? url.searchParams.get('date')
     : today;
@@ -297,7 +306,7 @@ export async function handleDonorLiturgicalDay(request, env) {
       ? 'gregorian'
       : 'julian';
   const readingsCalendar = calendar === 'gregorian' ? 'revised-julian' : 'julian';
-  const year = Number(civilDate.slice(0, 4)) || new Date().getFullYear();
+  const year = Number(civilDate.slice(0, 4)) || /* @__PURE__ */ new Date().getFullYear();
   const feasts = liturgicalFeastsForYear(year, calendar);
   const feast = feasts.find((item) => item.date === civilDate) || null;
   const enriched = await enrichLiturgicalDayWithOrthocal(
@@ -313,7 +322,6 @@ export async function handleDonorLiturgicalDay(request, env) {
     { calendarType: readingsCalendar, civilDate }
   );
   enriched.nameDays = await loadDirectoryNamedaysForLiturgicalDay(env, request, civilDate);
-
   return json({
     ok: true,
     date: civilDate,
@@ -323,3 +331,4 @@ export async function handleDonorLiturgicalDay(request, env) {
     today: enriched,
   });
 }
+export { handleDirectoryIntake, handleDonorLiturgicalDay, handleLiturgicalCalendar, handleWaitlist };

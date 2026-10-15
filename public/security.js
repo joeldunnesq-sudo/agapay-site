@@ -1,44 +1,47 @@
+// Generated from src/browser/security.ts by npm run build:browser. Do not edit.
 (function () {
-  window.agapayTurnstileToken = "";
-
+  window.agapayTurnstileToken = '';
   function renderTurnstile(siteKey) {
     if (!window.turnstile || !siteKey) return;
-    document.querySelectorAll("[data-agapay-turnstile]").forEach((target) => {
-      if (target.dataset.rendered === "true") return;
-      target.dataset.rendered = "true";
+    document.querySelectorAll('[data-agapay-turnstile]').forEach((target) => {
+      if (target.dataset.rendered === 'true') return;
+      target.dataset.rendered = 'true';
       window.turnstile.render(target, {
         sitekey: siteKey,
-        action: target.dataset.action || undefined,
-        callback: (token) => { window.agapayTurnstileToken = token || ""; },
-        "expired-callback": () => { window.agapayTurnstileToken = ""; },
-        "error-callback": () => { window.agapayTurnstileToken = ""; }
+        action: target.dataset.action || void 0,
+        callback: (token) => {
+          window.agapayTurnstileToken = token || '';
+        },
+        'expired-callback': () => {
+          window.agapayTurnstileToken = '';
+        },
+        'error-callback': () => {
+          window.agapayTurnstileToken = '';
+        },
       });
     });
   }
-
   async function initAGAPAYSecurity() {
     try {
-      const response = await fetch("/api/security/config", { headers: { Accept: "application/json" } });
+      const response = await fetch('/api/security/config', { headers: { Accept: 'application/json' } });
       const config = await response.json();
       if (!config.turnstileEnabled || !config.turnstileSiteKey) return;
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
       script.onload = () => renderTurnstile(config.turnstileSiteKey);
       document.head.appendChild(script);
     } catch {
-      window.agapayTurnstileToken = "";
+      window.agapayTurnstileToken = '';
     }
   }
-
   window.agapaySecurityPayload = function () {
     const responseField = document.querySelector('[name="cf-turnstile-response"]');
-    return { turnstileToken: window.agapayTurnstileToken || responseField?.value || "" };
+    return { turnstileToken: window.agapayTurnstileToken || responseField?.value || '' };
   };
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initAGAPAYSecurity);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAGAPAYSecurity);
   } else {
     initAGAPAYSecurity();
   }

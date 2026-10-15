@@ -1,6 +1,4 @@
-// src/handlers/stewardship-packet-presentation.js
-// Annual-meeting packet preview and PDF-ready rendering.
-
+// Generated from src/handlers/stewardship-packet-presentation.ts by npm run build:server. Do not edit.
 import { absoluteWebsiteUrl } from './parish.js';
 import {
   escAttr,
@@ -9,8 +7,7 @@ import {
   registrationAddressLine,
   stewardshipSessionScript,
 } from './stewardship-http.js';
-
-export function packetPreviewHtml(
+function packetPreviewHtml(
   registration,
   meeting,
   agendaItems,
@@ -22,18 +19,15 @@ export function packetPreviewHtml(
   isPdf,
   env
 ) {
-  // A meeting saved before its Financial Summary section was filled in has no
-  // row in stewardship_financial_summaries at all — d1First then returns null
-  // rather than an empty object, which crashed every property access below.
   financialSummary = financialSummary || {};
   const base = absoluteWebsiteUrl(env.AGAPAY_PUBLIC_URL);
   const parishName = meeting.parish_name_override || registration.parishName || registration.name || 'Parish';
   const jurisdiction = meeting.jurisdiction || registration.jurisdiction || '';
   const address = meeting.address || registrationAddressLine(registration) || '';
   const location = meeting.location || '';
-  const fiscalYear = meeting.fiscal_year || new Date().getFullYear();
+  const fiscalYear = meeting.fiscal_year || /* @__PURE__ */ new Date().getFullYear();
   const meetingDate = meeting.meeting_date
-    ? new Date(meeting.meeting_date + 'T12:00:00').toLocaleDateString('en-US', {
+    ? /* @__PURE__ */ new Date(meeting.meeting_date + 'T12:00:00').toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -41,18 +35,17 @@ export function packetPreviewHtml(
       })
     : 'Date TBD';
   const meetingTime = meeting.meeting_time
-    ? new Date('2000-01-01T' + meeting.meeting_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    ? /* @__PURE__ */ new Date('2000-01-01T' + meeting.meeting_time).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      })
     : '';
   const signatureLineCount = packetLineCount(meeting.signature_line_count, 24, { min: 1 });
   const noteLineCount = packetLineCount(meeting.note_line_count, 12);
-
   const fmt = (cents) =>
     cents
       ? '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       : '$0.00';
-
-  // ── Sections ──────────────────────────────────────────────────────────────
-
   const noticeSection = `
     <section class="pk-section pk-page-break">
       <div class="pk-section-rule"><span>Notice</span></div>
@@ -61,7 +54,6 @@ export function packetPreviewHtml(
       <p class="pk-body">The purpose of the meeting is to receive annual reports, review the financial statement, elect parish council members, consider resolutions, and transact such other business as may properly come before the meeting.</p>
       <p class="pk-body pk-body--muted">In the name of the Father, and of the Son, and of the Holy Spirit.</p>
     </section>`;
-
   const agendaSection = agendaItems?.length
     ? `
     <section class="pk-section">
@@ -80,7 +72,6 @@ export function packetPreviewHtml(
       </ol>
     </section>`
     : '';
-
   const reportsSection = reports?.length
     ? `
     <section class="pk-section pk-page-break">
@@ -107,7 +98,6 @@ export function packetPreviewHtml(
         .join('')}
     </section>`
     : '';
-
   const finSection = financialSummary
     ? (() => {
         const income = financialSummary.total_income_cents || 0;
@@ -138,7 +128,6 @@ export function packetPreviewHtml(
     </section>`;
       })()
     : '';
-
   const fundsSection = restrictedFunds?.length
     ? `
     <section class="pk-section">
@@ -174,7 +163,6 @@ export function packetPreviewHtml(
       </div>
     </section>`
     : '';
-
   const nomineesSection = nominees?.length
     ? `
     <section class="pk-section">
@@ -195,7 +183,6 @@ export function packetPreviewHtml(
       </div>
     </section>`
     : '';
-
   const resolutionsSection = resolutions?.length
     ? `
     <section class="pk-section pk-page-break">
@@ -221,7 +208,6 @@ export function packetPreviewHtml(
         .join('')}
     </section>`
     : '';
-
   const signinSection = `
     <section class="pk-section pk-page-break">
       <div class="pk-section-rule"><span>Sign-In</span></div>
@@ -236,7 +222,6 @@ export function packetPreviewHtml(
         </table>
       </div>
     </section>`;
-
   const minutesSection = `
     <section class="pk-section pk-page-break">
       <div class="pk-section-rule"><span>Minutes</span></div>
@@ -254,8 +239,6 @@ export function packetPreviewHtml(
         <div class="pk-sig-line"><div class="pk-sig-under"></div><span>Date</span></div>
       </div>
     </section>`;
-
-  // ── Toolbar (preview only) ────────────────────────────────────────────────
   const toolbar = isPdf
     ? ''
     : `
@@ -275,7 +258,6 @@ export function packetPreviewHtml(
         </a>
       </div>
     </div>`;
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -684,14 +666,13 @@ export function packetPreviewHtml(
     ${minutesSection}
 
     <div class="pk-footer">
-      Generated by AGAPAY Stewardship &middot; agapay.app &middot; ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+      Generated by AGAPAY Stewardship &middot; agapay.app &middot; ${/* @__PURE__ */ new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
     </div>
   </div>
 
-  ${!isPdf ? `<script>if (window.location.hash === '#print') window.print();</script>` : ''}
+  ${!isPdf ? `<script>if (window.location.hash === '#print') window.print();<\/script>` : ''}
   ${!isPdf ? stewardshipSessionScript() : ''}
 </body>
 </html>`;
 }
-
-// ─── Utility: dashboard nav (matches existing pattern) ───────────────────────
+export { packetPreviewHtml };

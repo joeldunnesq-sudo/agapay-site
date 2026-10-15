@@ -14,8 +14,21 @@ const sources = (await readdir(join(repoRoot, 'src/browser'), { recursive: true 
   .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'))
   .map((file) => `src/browser/${file}`);
 assert.deepEqual(sources.sort(), browserTypeScriptEntries.map(({ source }) => source).sort());
-for (const { output } of browserTypeScriptEntries) {
+for (const { output, externalEmbed } of browserTypeScriptEntries) {
   const asset = output.slice('public'.length);
+  if (externalEmbed) {
+    // Published third-party snippets keep the stable URL and their existing revalidation policy.
+    assert.equal(output, 'public/campaign-box.js', 'Only the existing external campaign widget uses this contract');
+    const consumer = await readFile(join(repoRoot, 'public/parish/features/campaigns/website-embed.js'), 'utf8');
+    assert.ok(consumer.includes('/campaign-box.js" async></script>'));
+    const headers = (await readFile(join(repoRoot, 'public/_headers'), 'utf8')).replaceAll('\r\n', '\n');
+    assert.ok(
+      headers.includes(
+        '/campaign-box.js\n  Access-Control-Allow-Origin: *\n  Cross-Origin-Resource-Policy: cross-origin\n  Cache-Control: public, max-age=3600, must-revalidate'
+      )
+    );
+    continue;
+  }
   const url = appAssetUrl(asset);
   let consumers = 0;
   for (const page of htmlFilesUnder('public')) {

@@ -1,9 +1,7 @@
+// Generated from src/handlers/outside-gift-accounting.ts by npm run build:server. Do not edit.
 import { json } from '../lib/core.js';
 import { accountingContext } from './accounting-ledger.js';
 import { OutsideGiftError, outsideGiftRow, outsideGiftDto, auditStatement } from '../lib/outside-gifts.js';
-
-// Read-only against the ledger. Linking assigns an already-posted contribution;
-// it never creates income, a deposit, or a transfer. Central allocations are atomic.
 const eligibleLines = `SELECT l.id line_id,e.id entry_id,e.entry_date,e.description,l.credit_amount,f.giving_source_id fund_id,a.name account_name
  FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id
  JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id
@@ -12,8 +10,7 @@ const eligibleLines = `SELECT l.id line_id,e.id entry_id,e.entry_date,e.descript
  AND t.category='revenue' AND l.credit_amount>0 AND l.debit_amount=0 AND f.giving_source_type='fund'`;
 const reply = (body, status = 200) =>
   json(body, { status, headers: { 'Cache-Control': 'private, no-store', Vary: 'Authorization' } });
-
-export async function linkOutsideGift(db, ledger, parishId, entityId, actor, row, body) {
+async function linkOutsideGift(db, ledger, parishId, entityId, actor, row, body) {
   if (typeof body.lineId !== 'string' || !body.lineId || body.lineId.length > 200)
     throw new OutsideGiftError('Choose a posted contribution first.');
   const line = await ledger
@@ -32,7 +29,7 @@ export async function linkOutsideGift(db, ledger, parishId, entityId, actor, row
   }
   if (row.revision !== body.revision || row.record_state !== 'active')
     throw new OutsideGiftError('This record changed. Refresh before linking.', 409);
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const next = {
     ...row,
     revision: row.revision + 1,
@@ -76,8 +73,7 @@ export async function linkOutsideGift(db, ledger, parishId, entityId, actor, row
     );
   return outsideGiftRow(db, parishId, row.id);
 }
-
-export async function unlinkOutsideGift(db, parishId, actor, row, body) {
+async function unlinkOutsideGift(db, parishId, actor, row, body) {
   const reason = String(body.reason || '')
     .trim()
     .slice(0, 500);
@@ -85,7 +81,7 @@ export async function unlinkOutsideGift(db, parishId, actor, row, body) {
     throw new OutsideGiftError('Give an unlink reason and confirm the Accounting entry will remain unchanged.');
   if (row.revision !== body.revision || !row.accounting_line_id)
     throw new OutsideGiftError('This link changed. Refresh before unlinking.', 409);
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const next = {
     ...row,
     revision: row.revision + 1,
@@ -107,8 +103,7 @@ export async function unlinkOutsideGift(db, parishId, actor, row, body) {
   if (result[0].meta.changes !== 1) throw new OutsideGiftError('This link changed. Refresh before unlinking.', 409);
   return outsideGiftRow(db, parishId, row.id);
 }
-
-export async function outsideAccountingAction(request, env, registration, id, action, body) {
+async function outsideAccountingAction(request, env, registration, id, action, body) {
   if (action === 'unlink' && request.method !== 'POST') return reply({ error: 'Method not allowed.' }, 405);
   const context = await accountingContext(
     request,
@@ -161,3 +156,4 @@ export async function outsideAccountingAction(request, env, registration, id, ac
       : await linkOutsideGift(db, context.db, registration.parishId, context.entityId, actor, row, body);
   return reply({ gift: await outsideGiftDto(db, next, registration) });
 }
+export { linkOutsideGift, outsideAccountingAction, unlinkOutsideGift };
