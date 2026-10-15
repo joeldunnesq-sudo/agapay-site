@@ -9,3 +9,10 @@ export function requireCapability(
   membership: { parishId: string };
   capabilities: readonly string[];
 } | null>;
+
+export function currentUser(
+  request: Request,
+  env: Partial<Env>
+): Promise<{ id: string; [field: string]: unknown } | null>;
+
+export function expandRoleTemplate(roleTemplate: string): string[];

@@ -1,16 +1,15 @@
+// Generated from src/handlers/accounting-activation.ts by npm run build:server. Do not edit.
 import { json } from '../lib/core.js';
 import { requireAccountingStaffProfile } from '../lib/accounting-staff.js';
 import { activationDto, activationOperation, first, run } from '../accounting/provisioning/activation.js';
 import { accountingContext } from './accounting-ledger.js';
 import { previewActivationChart, commitActivationChart } from '../accounting/provisioning/chart-import.js';
 import { ValidationError } from '../accounting/errors.js';
-
 const reply = (body, status = 200) =>
   json(body, {
     status,
     headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', Vary: 'Authorization' },
   });
-
 async function activationBody(request) {
   const reader = request.body?.getReader();
   if (!reader) return {};
@@ -21,7 +20,7 @@ async function activationBody(request) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 1_100_000) {
+      if (size > 11e5) {
         await reader.cancel();
         throw new ValidationError('Upload must be under 1 MB.');
       }
@@ -42,9 +41,7 @@ async function activationBody(request) {
     throw new ValidationError('A valid JSON request is required.');
   }
 }
-
-// Called only after the parish bearer and current Accounting entitlement are verified.
-export async function handleAccountingActivation(request, env, parishId, path) {
+async function handleAccountingActivation(request, env, parishId, path) {
   try {
     if (request.method === 'GET' && path === '/activation') {
       const operation = await activationOperation(env, parishId);
@@ -72,7 +69,7 @@ export async function handleAccountingActivation(request, env, parishId, path) {
       return reply(status);
     }
     if (request.method !== 'POST') return reply({ error: 'Method not allowed' }, 405);
-    if (Number(request.headers.get('Content-Length') || 0) > 1_100_000)
+    if (Number(request.headers.get('Content-Length') || 0) > 11e5)
       return reply({ error: 'Upload must be under 1 MB.' }, 413);
     const body = await activationBody(request);
     if (path === '/activation/start') {
@@ -123,3 +120,4 @@ export async function handleAccountingActivation(request, env, parishId, path) {
     );
   }
 }
+export { handleAccountingActivation };

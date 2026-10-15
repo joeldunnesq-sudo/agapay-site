@@ -1,43 +1,40 @@
-import { currentUser } from "../lib/authorization.js";
-import { d1First, json, normalizeEmail } from "../lib/core.js";
+// Generated from src/handlers/koinonia-access.ts by npm run build:server. Do not edit.
+import { currentUser } from '../lib/authorization.js';
+import { d1First, json, normalizeEmail } from '../lib/core.js';
 import {
   HOUSEHOLD_VERIFICATION_REQUIRED_CODE,
   HOUSEHOLD_VERIFICATION_REQUIRED_MESSAGE,
   householdVerificationStatus,
   isHouseholdVerificationCurrent,
-} from "../lib/household-verification.js";
-import { requireDonor } from "./parish.js";
-
-export class KoinoniaAccessError extends Error {
+} from '../lib/household-verification.js';
+import { requireDonor } from './parish.js';
+class KoinoniaAccessError extends Error {
   constructor(code, message, status) {
     super(message);
-    this.name = "KoinoniaAccessError";
+    this.name = 'KoinoniaAccessError';
     this.code = code;
     this.status = status;
   }
 }
-
 function accessError(code, message, status) {
   return new KoinoniaAccessError(code, message, status);
 }
-
-export async function resolveDonorHouseholdContext(request, env) {
+async function resolveDonorHouseholdContext(request, env) {
   const donor = await requireDonor(request, env);
   if (!donor?.email) {
-    throw accessError("authentication_required", "Sign in to access Koinonia.", 401);
+    throw accessError('authentication_required', 'Sign in to access Koinonia.', 401);
   }
-
-  const parishId = String(donor.defaultParishId || "").trim();
+  const parishId = String(donor.defaultParishId || '').trim();
   if (!parishId) {
-    throw accessError("home_parish_required", "Choose your home parish to access Koinonia.", 422);
+    throw accessError('home_parish_required', 'Choose your home parish to access Koinonia.', 422);
   }
-
   const user = await currentUser(request, env);
   if (!user?.id) {
-    throw accessError("parish_profile_required", "Your donor account is not linked to a parish member profile.", 403);
+    throw accessError('parish_profile_required', 'Your donor account is not linked to a parish member profile.', 403);
   }
-
-  const row = await d1First(env, `
+  const row = await d1First(
+    env,
+    `
     SELECT p.id AS person_id,
            h.id AS household_id,
            verification.verification_status,
@@ -73,49 +70,45 @@ export async function resolveDonorHouseholdContext(request, env) {
       ELSE 2
     END, membership.created_at ASC
     LIMIT 1
-  `, parishId, user.id);
-
+  `,
+    parishId,
+    user.id
+  );
   if (!row?.person_id) {
-    throw accessError("parish_profile_required", "Your account is not linked to an active parish member.", 403);
+    throw accessError('parish_profile_required', 'Your account is not linked to an active parish member.', 403);
   }
-
   return {
     donor,
     donorId: normalizeEmail(donor.email),
     user,
     parishId,
     personId: row.person_id,
-    householdId: row.household_id || "",
-    verification: row.household_id ? {
-      verification_status: row.verification_status,
-      verification_due_at: row.verification_due_at,
-      last_verified_at: row.last_verified_at,
-      verification_policy_version: row.verification_policy_version,
-    } : null,
+    householdId: row.household_id || '',
+    verification: row.household_id
+      ? {
+          verification_status: row.verification_status,
+          verification_due_at: row.verification_due_at,
+          last_verified_at: row.last_verified_at,
+          verification_policy_version: row.verification_policy_version,
+        }
+      : null,
   };
 }
-
-export async function requireVerifiedHousehold(request, env) {
+async function requireVerifiedHousehold(request, env) {
   const context = await resolveDonorHouseholdContext(request, env);
   if (!context.householdId || !isHouseholdVerificationCurrent(context.verification)) {
-    throw accessError(
-      HOUSEHOLD_VERIFICATION_REQUIRED_CODE,
-      HOUSEHOLD_VERIFICATION_REQUIRED_MESSAGE,
-      403,
-    );
+    throw accessError(HOUSEHOLD_VERIFICATION_REQUIRED_CODE, HOUSEHOLD_VERIFICATION_REQUIRED_MESSAGE, 403);
   }
   return {
     ...context,
     verificationStatus: householdVerificationStatus(context.verification),
   };
 }
-
-export function koinoniaAccessErrorResponse(error) {
+function koinoniaAccessErrorResponse(error) {
   if (!(error instanceof KoinoniaAccessError)) return null;
   return json({ error: error.message, code: error.code }, { status: error.status });
 }
-
-export async function verifiedHouseholdAccess(request, env) {
+async function verifiedHouseholdAccess(request, env) {
   try {
     return { context: await requireVerifiedHousehold(request, env), response: null };
   } catch (error) {
@@ -124,8 +117,7 @@ export async function verifiedHouseholdAccess(request, env) {
     throw error;
   }
 }
-
-export async function handleKoinoniaAccess(request, env) {
+async function handleKoinoniaAccess(request, env) {
   const access = await verifiedHouseholdAccess(request, env);
   if (access.response) return access.response;
   return json({
@@ -136,3 +128,11 @@ export async function handleKoinoniaAccess(request, env) {
     verificationDueAt: Number(access.context.verification.verification_due_at || 0),
   });
 }
+export {
+  KoinoniaAccessError,
+  handleKoinoniaAccess,
+  koinoniaAccessErrorResponse,
+  requireVerifiedHousehold,
+  resolveDonorHouseholdContext,
+  verifiedHouseholdAccess,
+};

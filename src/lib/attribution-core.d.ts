@@ -1,6 +1,7 @@
 // Describe the existing shared browser/server JS sanitizer without publishing a new static asset.
 // The path suffix identifies its existing imports; the implementation remains unmigrated.
 declare module '*public/attribution-core.js' {
+  export function cleanText(value: unknown, limit?: number): string;
   export interface AttributionTouch {
     [field: string]: unknown;
     timestamp?: string;

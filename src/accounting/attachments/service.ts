@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
 export interface AttachmentActor {
   id?: string;
   type?: string;
@@ -45,13 +46,13 @@ function capability(actor: AttachmentActor | null | undefined, required: string)
       details: { capability: required },
     });
 }
-async function first<T = AttachmentRow>(db: D1Database, sql: string, ...params: unknown[]) {
+async function first<T = AttachmentRow>(db: PortabilityDatabase, sql: string, ...params: unknown[]) {
   return db
     .prepare(sql)
     .bind(...params)
     .first<T>();
 }
-async function all(db: D1Database, sql: string, ...params: unknown[]) {
+async function all(db: PortabilityDatabase, sql: string, ...params: unknown[]) {
   return (
     (
       await db
@@ -61,7 +62,7 @@ async function all(db: D1Database, sql: string, ...params: unknown[]) {
     ).results || []
   );
 }
-async function run(db: D1Database, sql: string, ...params: unknown[]) {
+async function run(db: PortabilityDatabase, sql: string, ...params: unknown[]) {
   return db
     .prepare(sql)
     .bind(...params)
@@ -90,7 +91,7 @@ function dto(row: AttachmentRow | null) {
     })
   );
 }
-async function validateEntity(db: D1Database, entityType: string, entityId: string) {
+async function validateEntity(db: PortabilityDatabase, entityType: string, entityId: string) {
   const table = ENTITY_TABLES[entityType as keyof typeof ENTITY_TABLES];
   if (!table) throw new ValidationError('Attachment entity type is invalid.');
   if (!text(entityId) || !(await first(db, `SELECT id FROM ${table} WHERE id=?`, entityId)))
@@ -98,7 +99,7 @@ async function validateEntity(db: D1Database, entityType: string, entityId: stri
 }
 
 export async function listAttachments(
-  db: D1Database,
+  db: PortabilityDatabase,
   { actor, entitlementTier, entityType, entityId }: AttachmentOptions
 ) {
   capability(actor, 'accounting.attachments.view');
@@ -117,7 +118,7 @@ export async function listAttachments(
 }
 
 export async function recordAttachment(
-  db: D1Database,
+  db: PortabilityDatabase,
   {
     actor,
     entitlementTier,
@@ -163,7 +164,7 @@ export async function recordAttachment(
 }
 
 export async function deleteAttachment(
-  db: D1Database,
+  db: PortabilityDatabase,
   {
     actor,
     entitlementTier,

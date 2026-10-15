@@ -1,23 +1,20 @@
-import { d1First, d1Run, hasProductionStore, json, missingProductionStoreResponse, rateLimit } from "../lib/core.js";
-import { exchangeEnabledFor, prayerRequestsEnabledFor, signupsEnabledFor } from "../lib/entitlements.js";
-import { verifiedHouseholdAccess } from "./koinonia-access.js";
-import { findRegistrationByParishId } from "./parish.js";
-
-const TOOLS = new Set(["signups", "exchange", "prayers"]);
+// Generated from src/handlers/koinonia-community-tools.ts by npm run build:server. Do not edit.
+import { d1First, d1Run, hasProductionStore, json, missingProductionStoreResponse, rateLimit } from '../lib/core.js';
+import { exchangeEnabledFor, prayerRequestsEnabledFor, signupsEnabledFor } from '../lib/entitlements.js';
+import { verifiedHouseholdAccess } from './koinonia-access.js';
+import { findRegistrationByParishId } from './parish.js';
+const TOOLS = /* @__PURE__ */ new Set(['signups', 'exchange', 'prayers']);
 const PRIVATE_HEADERS = {
-  "Cache-Control": "private, no-store",
-  "X-Robots-Tag": "noindex, nofollow",
-  "Vary": "Authorization, X-AGAPAY-Donor-Email",
+  'Cache-Control': 'private, no-store',
+  'X-Robots-Tag': 'noindex, nofollow',
+  Vary: 'Authorization, X-AGAPAY-Donor-Email',
 };
-
 function privateJson(payload, init = {}) {
   return json(payload, { ...init, headers: { ...PRIVATE_HEADERS, ...(init.headers || {}) } });
 }
-
 function database(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
-
 function enabledTools(registration) {
   return {
     signups: signupsEnabledFor(registration),
@@ -25,9 +22,15 @@ function enabledTools(registration) {
     prayers: prayerRequestsEnabledFor(registration),
   };
 }
-
-export async function getCommunityToolBadgeCounts(env, context, enabled = { signups: true, exchange: true, prayers: true }, asOf = Date.now()) {
-  const row = await d1First(env, `
+async function getCommunityToolBadgeCounts(
+  env,
+  context,
+  enabled = { signups: true, exchange: true, prayers: true },
+  asOf = Date.now()
+) {
+  const row = await d1First(
+    env,
+    `
     SELECT
       (SELECT COUNT(*)
        FROM koinonia_signup_sheets sheet
@@ -52,50 +55,66 @@ export async function getCommunityToolBadgeCounts(env, context, enabled = { sign
            SELECT view.last_opened_at FROM koinonia_prayer_views view
            WHERE view.parish_id = ?1 AND view.person_id = ?2
          ), 0)) AS prayers_count
-  `, context.parishId, context.personId, asOf);
+  `,
+    context.parishId,
+    context.personId,
+    asOf
+  );
   return {
     signups: enabled.signups ? Math.max(0, Number(row?.signups_count) || 0) : 0,
     exchange: enabled.exchange ? Math.max(0, Number(row?.exchange_count) || 0) : 0,
     prayers: enabled.prayers ? Math.max(0, Number(row?.prayers_count) || 0) : 0,
   };
 }
-
-export async function markCommunityToolOpened(env, context, tool, openedAt = Date.now()) {
-  if (!TOOLS.has(tool)) throw new Error("Unknown Community Tool.");
-  if (tool === "prayers") {
-    await d1Run(env, `
+async function markCommunityToolOpened(env, context, tool, openedAt = Date.now()) {
+  if (!TOOLS.has(tool)) throw new Error('Unknown Community Tool.');
+  if (tool === 'prayers') {
+    await d1Run(
+      env,
+      `
       INSERT INTO koinonia_prayer_views (parish_id, person_id, last_opened_at)
       VALUES (?1, ?2, ?3)
       ON CONFLICT(parish_id, person_id) DO UPDATE SET last_opened_at = excluded.last_opened_at
-    `, context.parishId, context.personId, openedAt);
+    `,
+      context.parishId,
+      context.personId,
+      openedAt
+    );
     return { ok: true, tool, lastOpenedAt: openedAt };
   }
-  await d1Run(env, `
+  await d1Run(
+    env,
+    `
     INSERT INTO koinonia_community_tool_views (parish_id, person_id, tool, last_opened_at)
     VALUES (?1, ?2, ?3, ?4)
     ON CONFLICT(parish_id, person_id, tool) DO UPDATE SET last_opened_at = excluded.last_opened_at
-  `, context.parishId, context.personId, tool, openedAt);
+  `,
+    context.parishId,
+    context.personId,
+    tool,
+    openedAt
+  );
   return { ok: true, tool, lastOpenedAt: openedAt };
 }
-
-export async function handleDonorKoinoniaCommunityTools(request, env) {
+async function handleDonorKoinoniaCommunityTools(request, env) {
   if (!hasProductionStore(env) || !database(env)) return missingProductionStoreResponse();
-  const limited = await rateLimit(request, env, "koinonia-community-tools", { limit: 120, windowSeconds: 300 });
+  const limited = await rateLimit(request, env, 'koinonia-community-tools', { limit: 120, windowSeconds: 300 });
   if (limited) return limited;
   const access = await verifiedHouseholdAccess(request, env);
   if (access.response) return access.response;
   const found = await findRegistrationByParishId(env, access.context.parishId);
   const enabled = enabledTools(found?.registration || {});
   const url = new URL(request.url);
-  const path = url.pathname.replace(/^\/api\/donor\/koinonia\/community-tools\/?/, "");
-  const parts = path ? path.split("/").map(decodeURIComponent) : [];
-
-  if (parts.length === 1 && parts[0] === "badges" && request.method === "GET") {
+  const path = url.pathname.replace(/^\/api\/donor\/koinonia\/community-tools\/?/, '');
+  const parts = path ? path.split('/').map(decodeURIComponent) : [];
+  if (parts.length === 1 && parts[0] === 'badges' && request.method === 'GET') {
     return privateJson({ ok: true, counts: await getCommunityToolBadgeCounts(env, access.context, enabled) });
   }
-  if (parts.length === 2 && parts[1] === "opened" && request.method === "POST" && TOOLS.has(parts[0])) {
-    if (!enabled[parts[0]]) return privateJson({ error: "This Community Tool is not available for your parish." }, { status: 403 });
+  if (parts.length === 2 && parts[1] === 'opened' && request.method === 'POST' && TOOLS.has(parts[0])) {
+    if (!enabled[parts[0]])
+      return privateJson({ error: 'This Community Tool is not available for your parish.' }, { status: 403 });
     return privateJson(await markCommunityToolOpened(env, access.context, parts[0]));
   }
-  return privateJson({ error: "Method not allowed" }, { status: 405 });
+  return privateJson({ error: 'Method not allowed' }, { status: 405 });
 }
+export { getCommunityToolBadgeCounts, handleDonorKoinoniaCommunityTools, markCommunityToolOpened };

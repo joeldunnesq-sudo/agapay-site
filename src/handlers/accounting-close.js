@@ -1,3 +1,4 @@
+// Generated from src/handlers/accounting-close.ts by npm run build:server. Do not edit.
 import { json } from '../lib/core.js';
 import {
   archiveFiscalYear,
@@ -17,7 +18,6 @@ import {
   reopenYearEndClose,
 } from '../accounting/index.js';
 import { accountingContext } from './accounting-ledger.js';
-
 const HEADERS = { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow', Vary: 'Authorization' };
 const reply = (payload, status = 200) => json(payload, { status, headers: HEADERS });
 const tierOf = (t) => (t === 'advanced_operations' ? 'parish' : 'mission');
@@ -43,7 +43,7 @@ function required(path, method) {
   if (path === '/close/sessions' && method === 'POST') return 'accounting.close.create';
   return 'accounting.close.view';
 }
-export async function handleAccountingClose(request, env, parishId) {
+async function handleAccountingClose(request, env, parishId) {
   const url = new URL(request.url),
     base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting`;
   if (!url.pathname.startsWith(base)) return null;
@@ -193,3 +193,4 @@ export async function handleAccountingClose(request, env, parishId) {
     );
   }
 }
+export { handleAccountingClose };

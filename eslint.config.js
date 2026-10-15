@@ -760,4 +760,9 @@ export default [
     files: ['src/directory/child-publication.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^parishId$' }] },
   },
+  // Retain the existing compatibility print helper without changing emitted behavior.
+  {
+    files: ['src/handlers/accounting-payables-budgets.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^printableCheck$' }] },
+  },
 ];

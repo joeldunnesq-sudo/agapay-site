@@ -1,3 +1,4 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
 export interface VendorReportActor {
   id?: string;
   capabilities?: readonly string[];
@@ -28,7 +29,7 @@ function parish(tier: unknown) {
   if (tier !== 'parish') throw new AccountingDatabaseError('Accounts Payable is available with Parish Accounting.');
 }
 
-async function all(db: D1Database, query: string, ...params: (string | number | null)[]) {
+async function all(db: PortabilityDatabase, query: string, ...params: (string | number | null)[]) {
   return (
     (
       await db
@@ -40,7 +41,7 @@ async function all(db: D1Database, query: string, ...params: (string | number | 
 }
 
 export async function vendor1099Summary(
-  db: D1Database,
+  db: PortabilityDatabase,
   { actor, entitlementTier, calendarYear }: { actor: VendorReportActor; entitlementTier: string; calendarYear: unknown }
 ) {
   capability(actor, 'ap.view');
