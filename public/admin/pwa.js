@@ -1,39 +1,34 @@
+// Generated from src/browser/admin/pwa.ts by npm run build:browser. Do not edit.
 (function () {
   let deferredInstallPrompt = null;
-
   function adminInstallButtons() {
-    return Array.from(document.querySelectorAll(".admin-install-btn"));
+    return Array.from(document.querySelectorAll('.admin-install-btn'));
   }
-
   function showInstallButtons() {
     adminInstallButtons().forEach((button) => {
-      button.classList.remove("hidden");
-      button.addEventListener("click", promptInstall, { once: false });
+      button.classList.remove('hidden');
+      button.addEventListener('click', promptInstall, { once: false });
     });
   }
-
   async function promptInstall() {
     if (!deferredInstallPrompt) return;
     deferredInstallPrompt.prompt();
     await deferredInstallPrompt.userChoice.catch(() => null);
     deferredInstallPrompt = null;
-    adminInstallButtons().forEach((button) => button.classList.add("hidden"));
+    adminInstallButtons().forEach((button) => button.classList.add('hidden'));
   }
-
-  window.addEventListener("beforeinstallprompt", (event) => {
+  window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
     showInstallButtons();
   });
-
-  window.addEventListener("appinstalled", () => {
+  window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
-    adminInstallButtons().forEach((button) => button.classList.add("hidden"));
+    adminInstallButtons().forEach((button) => button.classList.add('hidden'));
   });
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
     });
   }
 })();

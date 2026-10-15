@@ -1,3 +1,4 @@
+// Generated from src/browser/koinonia-preview.ts by npm run build:browser. Do not edit.
 (function () {
   document.querySelectorAll('[data-koinonia-preview]').forEach((preview) => {
     const track = preview.querySelector('.give-koinonia-track');
@@ -13,7 +14,6 @@
     let loading = false;
     let index = 0;
     let timer = null;
-
     function schedule() {
       clearTimeout(timer);
       pauseButton.textContent = paused ? 'Play preview' : 'Pause preview';
@@ -22,20 +22,20 @@
         timer = setTimeout(() => show((index + 1) % slides.length), 4500);
       }
     }
-
     function show(nextIndex) {
       index = nextIndex;
-      track.style.transform = `translateY(-${index * 100 / slides.length}%)`;
+      track.style.transform = `translateY(-${(index * 100) / slides.length}%)`;
       slides.forEach((slide, i) => slide.setAttribute('aria-hidden', String(i !== index)));
       caption.textContent = `${slides[index].dataset.screenName} · ${index + 1} of ${slides.length}`;
       schedule();
     }
-
     async function loadScreens() {
       if (loading) return;
       loading = true;
       const images = Array.from(track.querySelectorAll('img'));
-      images.forEach((image) => { image.loading = 'eager'; });
+      images.forEach((image) => {
+        image.loading = 'eager';
+      });
       const results = await Promise.allSettled(images.map((image) => image.decode()));
       if (results.some((result) => result.status === 'rejected')) {
         caption.textContent = 'Preview unavailable. Please reload to try again.';
@@ -45,7 +45,6 @@
       controls.hidden = false;
       schedule();
     }
-
     pauseButton.addEventListener('click', () => {
       paused = !paused;
       schedule();
@@ -60,11 +59,14 @@
     });
     document.addEventListener('visibilitychange', schedule);
     if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver((entries) => {
-        visible = entries[0].isIntersecting;
-        if (visible) loadScreens();
-        schedule();
-      }, { threshold: 0.15 });
+      const observer = new IntersectionObserver(
+        (entries) => {
+          visible = entries[0].isIntersecting;
+          if (visible) loadScreens();
+          schedule();
+        },
+        { threshold: 0.15 }
+      );
       observer.observe(preview);
     } else {
       loadScreens();

@@ -9,3 +9,9 @@ export function sendDonorDonationReceiptEmail(
   env: EmailEnv,
   offering: Record<string, unknown>
 ): Promise<ReceiptDelivery>;
+
+import type { DonorRecord } from '../lib/identity-contracts.js';
+export function issueDonorSession(
+  env: Partial<Env>,
+  donor: DonorRecord
+): Promise<{ token: string; donor: DonorRecord }>;

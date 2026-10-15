@@ -22,3 +22,8 @@ export function synchronizeGivingCatalogWithAccounting(
   parishId: string,
   registration?: DashboardRegistration
 ): Promise<AccountingCatalogSync>;
+
+export function resolveOperationalAccountingDatabase(
+  env: Partial<Env>,
+  parishId: string
+): Promise<import('../portability/contracts.js').PortabilityDatabase | null>;

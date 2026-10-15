@@ -13,6 +13,32 @@ export default [
   },
   ...tseslint.configs.recommended.map((config) => ({ ...config, files: ['src/**/*.ts', 'scripts/**/*.ts'] })),
   {
+    // Preserve the legacy gate's function-scoped variables and deferred shell loading.
+    files: ['src/browser/learn/mobile-gate.ts'],
+    rules: { 'no-var': 'off', 'prefer-const': 'off' },
+  },
+
+  {
+    // Preserve the existing third-party Pixel queue bootstrap and its IArguments payloads.
+    files: ['src/browser/meta-pixel.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
+      'prefer-spread': 'off',
+      'prefer-rest-params': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^_error$' }],
+    },
+  },
+  {
+    // Keep legacy callback arity and URL helper evaluation during the type-only migration.
+    files: ['src/handlers/stewardship-presentation.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^i$' }] },
+  },
+  {
+    files: ['src/handlers/stewardship-packet-presentation.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^base$' }] },
+  },
+
+  {
     // Retain the existing unused helper while preserving runtime/export parity.
     files: ['src/handlers/donor-notifications.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^newNotifId$' }] },

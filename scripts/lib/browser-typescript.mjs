@@ -7,6 +7,19 @@ import { repoRoot } from './server-typescript.mjs';
 
 // These are classic scripts: no bundling, module wrapper, exports, or global renaming.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/marketing-funnel.ts', output: 'public/marketing-funnel.js' },
+  { source: 'src/browser/meta-pixel.ts', output: 'public/meta-pixel.js' },
+  { source: 'src/browser/home-giving-impact.ts', output: 'public/home-giving-impact.js' },
+  { source: 'src/browser/pwa-register.ts', output: 'public/pwa-register.js' },
+  { source: 'src/browser/admin/pwa.ts', output: 'public/admin/pwa.js' },
+  { source: 'src/browser/donor/pwa-install.ts', output: 'public/donor/pwa-install.js' },
+  { source: 'src/browser/donor/session.ts', output: 'public/donor/session.js' },
+  { source: 'src/browser/security.ts', output: 'public/security.js' },
+  { source: 'src/browser/learn/mobile-gate.ts', output: 'public/learn/mobile-gate.js' },
+  { source: 'src/browser/pwa-home-install.ts', output: 'public/pwa-home-install.js' },
+  { source: 'src/browser/koinonia-preview.ts', output: 'public/koinonia-preview.js' },
+  { source: 'src/browser/campaign-box.ts', output: 'public/campaign-box.js', externalEmbed: true },
+  { source: 'src/browser/learn/legacy-planner.ts', output: 'public/learn/legacy-planner.js' },
   { source: 'src/browser/myagapay/signups.ts', output: 'public/myagapay/signups.js' },
   { source: 'src/browser/myagapay/app-header.ts', output: 'public/myagapay/app-header.js' },
   { source: 'src/browser/myagapay/prayer-requests.ts', output: 'public/myagapay/prayer-requests.js' },

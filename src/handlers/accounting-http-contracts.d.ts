@@ -21,6 +21,7 @@ export interface AccountingHttpContext {
   db: AccountingHttpDatabase;
   actor: AccountingHttpActor;
   tier: string;
+  entityId: string;
   databaseStatus: string;
   databaseHealth: string;
   registration: CatalogRegistration;
@@ -30,6 +31,7 @@ export interface AccountingHttpFailure {
   db?: never;
   actor?: never;
   tier?: never;
+  entityId?: never;
   databaseStatus?: never;
   databaseHealth?: never;
   registration?: never;

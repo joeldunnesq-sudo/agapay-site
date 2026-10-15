@@ -86,3 +86,15 @@ export function verifyTurnstileIfConfigured(
   env: Partial<Env>,
   token: unknown
 ): Promise<Response | null>;
+
+import type { DonorRecord } from './identity-contracts.js';
+export function loadDonor(env: Partial<Env>, email: unknown): Promise<DonorRecord | null>;
+export function publicDonor(donor: DonorRecord): Record<string, unknown>;
+export function privilegedMfaRequired(env: Partial<Env>): boolean;
+export function rateLimitByKey(
+  request: Request,
+  env: Partial<Env>,
+  bucket: string,
+  identifier: unknown,
+  options?: { limit?: number; windowSeconds?: number }
+): Promise<Response | null>;
