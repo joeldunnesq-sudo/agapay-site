@@ -1,14 +1,15 @@
+// Generated from src/accounting/reconciliation/service.ts by npm run build:server. Do not edit.
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { createJournalDraft, postJournalEntry } from '../ledger/service.js';
 import { cents, csvRows, digest, normalize, text } from '../csv-utils.js';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const MAX_BYTES = 1_000_000,
-  MAX_ROWS = 5000;
+const MAX_BYTES = 1e6,
+  MAX_ROWS = 5e3;
 function id(prefix) {
   return `${prefix}_${crypto.randomUUID()}`;
 }
 function now() {
-  return new Date().toISOString();
+  return /* @__PURE__ */ new Date().toISOString();
 }
 function requireCapability(actor, capability) {
   if (!actor?.id || !actor.capabilities?.includes(capability))
@@ -82,8 +83,7 @@ function transactionDto(row) {
     })
   );
 }
-
-export async function createBankAccount(db, { actor, entitlementTier, input }) {
+async function createBankAccount(db, { actor, entitlementTier, input }) {
   requireCapability(actor, 'accounting.bank_accounts.manage');
   assertTier(entitlementTier);
   const account = await first(
@@ -115,7 +115,7 @@ export async function createBankAccount(db, { actor, entitlementTier, input }) {
   );
   return bankDto(await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', accountId));
 }
-export async function updateBankAccount(db, { actor, entitlementTier, bankAccountId, expectedVersion, patch }) {
+async function updateBankAccount(db, { actor, entitlementTier, bankAccountId, expectedVersion, patch }) {
   requireCapability(actor, 'accounting.bank_accounts.manage');
   assertTier(entitlementTier);
   const current = await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', bankAccountId);
@@ -136,15 +136,14 @@ export async function updateBankAccount(db, { actor, entitlementTier, bankAccoun
   );
   return bankDto(await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', bankAccountId));
 }
-export async function listBankAccounts(db, { actor, entitlementTier }) {
+async function listBankAccounts(db, { actor, entitlementTier }) {
   requireCapability(actor, 'accounting.bank_accounts.view');
   assertTier(entitlementTier);
   return Object.freeze(
     (await all(db, 'SELECT * FROM accounting_bank_accounts ORDER BY is_default DESC,name')).map(bankDto)
   );
 }
-
-export async function previewBankCsv({ actor, entitlementTier, filename, csv, columnMap = {}, delimiter = ',' }) {
+async function previewBankCsv({ actor, entitlementTier, filename, csv, columnMap = {}, delimiter = ',' }) {
   requireCapability(actor, 'accounting.bank_imports.manage');
   assertTier(entitlementTier);
   if (!/\.csv$/i.test(filename || '') || new TextEncoder().encode(csv || '').length > MAX_BYTES)
@@ -203,7 +202,10 @@ export async function previewBankCsv({ actor, entitlementTier, filename, csv, co
       if (direction === 'credit') credits += amount;
       else debits += amount;
     } catch (error) {
-      errors.push({ rowNumber: n + 1, code: error.message.startsWith('invalid_') ? error.message : 'invalid_row' });
+      errors.push({
+        rowNumber: n + 1,
+        code: error.message.startsWith('invalid_') ? error.message : 'invalid_row',
+      });
     }
   }
   return Object.freeze({
@@ -226,8 +228,7 @@ export async function previewBankCsv({ actor, entitlementTier, filename, csv, co
     fileHash: await digest(csv),
   });
 }
-
-export async function commitBankImport(db, { actor, entitlementTier, bankAccountId, preview }) {
+async function commitBankImport(db, { actor, entitlementTier, bankAccountId, preview }) {
   requireCapability(actor, 'accounting.bank_imports.manage');
   assertTier(entitlementTier);
   const bank = await first(
@@ -320,8 +321,7 @@ export async function commitBankImport(db, { actor, entitlementTier, bankAccount
   );
   return Object.freeze({ id: fileId, importedCount: imported, duplicateCount: duplicates, duplicateFile: false });
 }
-
-export async function createReconciliation(db, { actor, entitlementTier, input }) {
+async function createReconciliation(db, { actor, entitlementTier, input }) {
   requireCapability(actor, 'accounting.reconciliation.create');
   assertTier(entitlementTier);
   if (
@@ -379,7 +379,7 @@ async function ledgerBalance(db, accountId, date, before = false) {
   );
   return Number(row.balance);
 }
-export async function eligibleLedgerItems(db, { actor, entitlementTier, reconciliationId }) {
+async function eligibleLedgerItems(db, { actor, entitlementTier, reconciliationId }) {
   requireCapability(actor, 'accounting.reconciliation.view');
   assertTier(entitlementTier);
   const session = await first(
@@ -397,7 +397,7 @@ export async function eligibleLedgerItems(db, { actor, entitlementTier, reconcil
     )
   );
 }
-export async function suggestMatches(db, { actor, entitlementTier, reconciliationId }) {
+async function suggestMatches(db, { actor, entitlementTier, reconciliationId }) {
   requireCapability(actor, 'accounting.reconciliation.view');
   assertTier(entitlementTier);
   const session = await first(db, 'SELECT * FROM accounting_reconciliation_sessions WHERE id=?', reconciliationId);
@@ -414,7 +414,7 @@ export async function suggestMatches(db, { actor, entitlementTier, reconciliatio
       const effect = Number(l.netEffect),
         expected = b.direction === 'credit' ? Number(b.unmatched_amount) : -Number(b.unmatched_amount);
       if (effect !== expected) continue;
-      const days = Math.abs((Date.parse(b.posted_date) - Date.parse(l.postingDate)) / 86400000);
+      const days = Math.abs((Date.parse(b.posted_date) - Date.parse(l.postingDate)) / 864e5);
       if (days > 3) continue;
       let confidence = 70,
         reasons = ['Exact amount'];
@@ -441,7 +441,7 @@ export async function suggestMatches(db, { actor, entitlementTier, reconciliatio
     }
   return Object.freeze(suggestions.sort((a, b) => b.confidence - a.confidence));
 }
-export async function confirmReconciliationMatch(
+async function confirmReconciliationMatch(
   db,
   { actor, entitlementTier, reconciliationId, bankTransactionIds, journalLineIds, matchType = 'one_to_one' }
 ) {
@@ -544,12 +544,12 @@ async function reconciliationSummary(db, sessionId) {
     version: Number(s.version),
   });
 }
-export async function validateReconciliation(db, { actor, entitlementTier, reconciliationId }) {
+async function validateReconciliation(db, { actor, entitlementTier, reconciliationId }) {
   requireCapability(actor, 'accounting.reconciliation.view');
   assertTier(entitlementTier);
   return reconciliationSummary(db, reconciliationId);
 }
-export async function completeReconciliation(db, { actor, entitlementTier, reconciliationId, expectedVersion }) {
+async function completeReconciliation(db, { actor, entitlementTier, reconciliationId, expectedVersion }) {
   requireCapability(actor, 'accounting.reconciliation.complete');
   assertTier(entitlementTier);
   const summary = await reconciliationSummary(db, reconciliationId),
@@ -607,7 +607,7 @@ export async function completeReconciliation(db, { actor, entitlementTier, recon
   );
   return reconciliationSummary(db, session.id);
 }
-export async function reopenReconciliation(db, { actor, entitlementTier, reconciliationId, expectedVersion, reason }) {
+async function reopenReconciliation(db, { actor, entitlementTier, reconciliationId, expectedVersion, reason }) {
   requireCapability(actor, 'accounting.reconciliation.reopen');
   assertTier(entitlementTier);
   if (!text(reason)) throw new ValidationError('A reason is required.');
@@ -635,7 +635,7 @@ export async function reopenReconciliation(db, { actor, entitlementTier, reconci
   );
   return reconciliationSummary(db, reconciliationId);
 }
-export async function postReconciliationAdjustment(
+async function postReconciliationAdjustment(
   db,
   {
     actor,
@@ -674,7 +674,9 @@ export async function postReconciliationAdjustment(
         ];
   const elevated = {
       ...actor,
-      capabilities: [...new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post'])],
+      capabilities: [
+        .../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post']),
+      ],
     },
     draft = await createJournalDraft(db, {
       actor: elevated,
@@ -706,7 +708,7 @@ export async function postReconciliationAdjustment(
   );
   return Object.freeze({ journalEntryId: posted.id, status: posted.status });
 }
-export function reconciliationCsv(summary) {
+function reconciliationCsv(summary) {
   const safe = (v) => {
     const s = String(v ?? '');
     return /^[=+\-@]/.test(s) ? `'${s}` : s;
@@ -728,3 +730,19 @@ export function reconciliationCsv(summary) {
     .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(','))
     .join('\r\n');
 }
+export {
+  commitBankImport,
+  completeReconciliation,
+  confirmReconciliationMatch,
+  createBankAccount,
+  createReconciliation,
+  eligibleLedgerItems,
+  listBankAccounts,
+  postReconciliationAdjustment,
+  previewBankCsv,
+  reconciliationCsv,
+  reopenReconciliation,
+  suggestMatches,
+  updateBankAccount,
+  validateReconciliation,
+};

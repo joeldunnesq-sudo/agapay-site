@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
 import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
@@ -267,9 +268,9 @@ assert.match(donorHandler, /\.slice\(0, 180\)/);
 assert.match(donorApp, /function donorApprovedSacramentEvents/);
 assert.match(donorApp, /function renderDonorParishCalendar/);
 assert.match(donorApp, /calendarAvailable = connected \|\| events\.length > 0/);
-assert.match(donorApp, /event\.commerceKind === "meal"/);
+assert.match(donorApp, /event\.commerceKind === ['"]meal['"]/);
 assert.match(donorApp, /href="\$\{escapeHtml\(href\)\}"/);
-assert.match(donorApp, /calendarDefaultView === "month" \? "month" : "week"/);
+assert.match(donorApp, /calendarDefaultView === ['"]month['"] \? ['"]month['"] : ['"]week['"]/);
 assert.match(
   donorApp,
   /hasSubscriptionControls[\s\S]*Events published by your parish for the selected week/,
@@ -278,14 +279,15 @@ assert.match(
 assert.match(donorApp, /function setDonorParishCalendarView/);
 assert.match(donorApp, /function changeDonorParishCalendarPeriod/);
 assert.match(donorApp, /function donorParishCalendarPlatform\(\)[\s\S]*?\/android\/i/);
-assert.match(
-  donorApp,
-  /isAndroid \? \(googleUrl \|\| subscriptionUrl\) : subscriptionUrl\.replace\(\/\^https:\/i, "webcal:"\)/,
+assert.ok(
+  includesJavaScriptFragment(
+    donorApp,
+    "subscribeButton.href = isAndroid ? googleUrl || subscriptionUrl : subscriptionUrl.replace(/^https:/i, 'webcal:')"
+  ),
   'Android must use a supported HTTPS or Google Calendar URL instead of the unsupported webcal protocol'
 );
-assert.match(
-  donorApp,
-  /subscribeButton\.target = isAndroid \? "_blank" : ""/,
+assert.ok(
+  includesJavaScriptFragment(donorApp, "subscribeButton.target = isAndroid ? '_blank' : ''"),
   'the Android flow should leave the installed app to complete calendar subscription'
 );
 assert.match(
@@ -315,9 +317,8 @@ assert.match(
   /<details class="cal-festal-year" id="calendarFestalYear">/,
   'the full festal year should be collapsed behind an accessible disclosure'
 );
-assert.match(
-  donorApp,
-  /const upcomingFeast = \[\.\.\.highlighted, \.\.\.highlightsForYear\(year \+ 1\)\]/,
+assert.ok(
+  includesJavaScriptFragment(donorApp, 'const upcomingFeast = [...highlighted, ...highlightsForYear(year + 1)]'),
   'the upcoming feast should roll into the next civil year when necessary'
 );
 assert.match(
@@ -345,7 +346,10 @@ assert.doesNotMatch(
   /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/,
   'the full calendar must not show the Next Feast, Pascha, or Calendar summary cards'
 );
-assert.match(donorCalendar, /class="cal-hero parish-life-liturgical-hero refined-liturgical-hero calendar-liturgical-hero"/);
+assert.match(
+  donorCalendar,
+  /class="cal-hero parish-life-liturgical-hero refined-liturgical-hero calendar-liturgical-hero"/
+);
 assert.match(donorCalendar, /id="todayCivilDateEyebrow"/);
 assert.match(
   donorStyles,

@@ -1,15 +1,33 @@
+// Generated from src/browser/give/embed.ts by npm run build:browser. Do not edit.
 (function () {
   'use strict';
-
-  // Only presentation tokens cross the iframe boundary; never inject a stylesheet.
-  const themeKeys = ['primary', 'primary-text', 'accent', 'accent-text', 'background', 'surface', 'text', 'muted', 'border', 'success', 'danger', 'font', 'heading-font'];
+  const themeKeys = [
+    'primary',
+    'primary-text',
+    'accent',
+    'accent-text',
+    'background',
+    'surface',
+    'text',
+    'muted',
+    'border',
+    'success',
+    'danger',
+    'font',
+    'heading-font',
+  ];
   function applyTheme(theme) {
     if (!theme || typeof theme !== 'object') return;
     for (const key of themeKeys) {
       const value = typeof theme[key] === 'string' ? theme[key].trim() : '';
       const property = `--agapay-giving-${key}`;
       const type = key.includes('font') ? 'font-family' : 'color';
-      if (value.length <= 200 && !/[;{}<>\\]/.test(value) && !/url\s*\(|var\s*\(|env\s*\(|inherit|initial|unset|revert/i.test(value) && CSS.supports(type, value)) {
+      if (
+        value.length <= 200 &&
+        !/[;{}<>\\]/.test(value) &&
+        !/url\s*\(|var\s*\(|env\s*\(|inherit|initial|unset|revert/i.test(value) &&
+        CSS.supports(type, value)
+      ) {
         document.documentElement.style.setProperty(property, value);
       } else {
         document.documentElement.style.removeProperty(property);
@@ -23,7 +41,6 @@
       applyTheme(event.data.theme);
     }
   });
-
   const state = {
     organization: null,
     organizationId: '',
@@ -31,26 +48,21 @@
     frequency: 'once',
     loading: false,
   };
-
   const amountFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
-
   function el(id) {
     return document.getElementById(id);
   }
-
   function money(value) {
     return amountFormatter.format(Number(value) || 0);
   }
-
   function cleanText(value) {
     return String(value || '').trim();
   }
-
   function organizationIdFromLocation() {
     const params = new URLSearchParams(window.location.search);
     const requested = cleanText(params.get('parish'));
@@ -59,13 +71,13 @@
     const embedIndex = parts.findIndex((part, index) => part === 'embed' && parts[index - 1] === 'give');
     return embedIndex >= 0 ? cleanText(parts[embedIndex + 1]) : '';
   }
-
   function isLocalPreview() {
     const host = window.location.hostname;
-    return ['localhost', '127.0.0.1', '::1'].includes(host)
-      && Boolean(new URLSearchParams(window.location.search).get('preview'));
+    return (
+      ['localhost', '127.0.0.1', '::1'].includes(host) &&
+      Boolean(new URLSearchParams(window.location.search).get('preview'))
+    );
   }
-
   function previewOrganization() {
     const previewKind = cleanText(new URLSearchParams(window.location.search).get('preview')).toLowerCase();
     const profiles = {
@@ -131,7 +143,6 @@
       designatedFundsEnabled: true,
     };
   }
-
   function setStatus(message, tone = 'error') {
     const status = el('givingStatus');
     if (!status) return;
@@ -140,33 +151,34 @@
     status.classList.toggle('is-success', tone === 'success');
     notifyHeight();
   }
-
   function clearStatus() {
     setStatus('');
   }
-
   function notifyHeight() {
     if (window.parent === window) return;
     window.requestAnimationFrame(() => {
       const height = Math.ceil(document.documentElement.scrollHeight);
-      window.parent.postMessage({
-        type: 'agapay:giving-box-resize',
-        organizationId: state.organizationId,
-        parishId: state.organizationId,
-        height,
-      }, '*');
+      window.parent.postMessage(
+        {
+          type: 'agapay:giving-box-resize',
+          organizationId: state.organizationId,
+          parishId: state.organizationId,
+          height,
+        },
+        '*'
+      );
     });
   }
-
   function frequencyLabel(frequency = state.frequency) {
-    return {
-      once: 'One-time gift',
-      monthly: 'Monthly gift',
-      quarterly: 'Quarterly gift',
-      yearly: 'Yearly gift',
-    }[frequency] || 'One-time gift';
+    return (
+      {
+        once: 'One-time gift',
+        monthly: 'Monthly gift',
+        quarterly: 'Quarterly gift',
+        yearly: 'Yearly gift',
+      }[frequency] || 'One-time gift'
+    );
   }
-
   function updateGiftSummary() {
     const amount = money(state.amount);
     el('continueAmount').textContent = amount;
@@ -174,7 +186,6 @@
     el('summaryFrequency').textContent = frequencyLabel();
     el('summaryFund').textContent = 'General Fund';
   }
-
   function chooseFrequency(frequency) {
     const supported = ['once', 'monthly', 'quarterly', 'yearly'];
     state.frequency = supported.includes(frequency) ? frequency : 'once';
@@ -191,7 +202,6 @@
     }[state.frequency];
     updateGiftSummary();
   }
-
   function chooseAmount(amount, activeButton = null) {
     state.amount = Math.max(0, Number(amount) || 0);
     document.querySelectorAll('[data-amount]').forEach((button) => {
@@ -201,13 +211,11 @@
     if (activeButton) el('customAmount').value = '';
     updateGiftSummary();
   }
-
   function revealOptionalFields() {
     el('noteField').hidden = !el('addNote').checked;
     el('tributeFields').hidden = !el('addTribute').checked;
     notifyHeight();
   }
-
   function updateStepMarkers(step) {
     document.querySelectorAll('[data-step-marker]').forEach((marker) => {
       const value = Number(marker.dataset.stepMarker);
@@ -217,7 +225,6 @@
       if (number) number.textContent = value < step ? '✓' : String(value);
     });
   }
-
   function showStep(step) {
     clearStatus();
     el('giftStep').hidden = step !== 1;
@@ -230,7 +237,6 @@
     }
     notifyHeight();
   }
-
   function organizationTypeLabel(organization = {}) {
     const value = cleanText(organization.communityType || organization.type).toLowerCase();
     if (value.includes('school') || value.includes('academy')) return 'School & Academy';
@@ -242,13 +248,13 @@
     if (value.includes('parish') || value.includes('church')) return 'Parish';
     return cleanText(organization.communityType || organization.type) || 'Community Organization';
   }
-
   function renderOrganization(organization) {
     state.organization = organization;
     state.organizationId = organization.id || state.organizationId;
     document.title = `Give to ${organization.name || 'this organization'} with AGAPAY`;
-    const tributeEnabled = organization.tributeGivingEnabled !== false
-      && !organizationTypeLabel(organization).toLowerCase().includes('business');
+    const tributeEnabled =
+      organization.tributeGivingEnabled !== false &&
+      !organizationTypeLabel(organization).toLowerCase().includes('business');
     el('tributeOption').hidden = !tributeEnabled;
     if (!tributeEnabled) {
       el('addTribute').checked = false;
@@ -258,7 +264,6 @@
     el('giveAgainLink').href = `/give/embed/${encodeURIComponent(state.organizationId)}`;
     notifyHeight();
   }
-
   function showUnavailable() {
     el('giftStep').hidden = true;
     el('detailsStep').hidden = true;
@@ -267,7 +272,6 @@
     document.querySelector('.step-ribbon').hidden = true;
     notifyHeight();
   }
-
   async function loadOrganization() {
     if (isLocalPreview()) return previewOrganization();
     const response = await fetch(`/api/parishes?id=${encodeURIComponent(state.organizationId)}`, {
@@ -277,26 +281,25 @@
     if (!response.ok || !result.parish) throw new Error(result.error || 'Organization not found');
     return result.parish;
   }
-
   function applyQueryDefaults() {
     const params = new URLSearchParams(window.location.search);
     chooseFrequency(cleanText(params.get('frequency')) || 'once');
     const requestedAmount = Number(params.get('amount'));
-    if (requestedAmount > 0 && requestedAmount <= 50000) {
-      const preset = Array.from(document.querySelectorAll('[data-amount]'))
-        .find((button) => Number(button.dataset.amount) === requestedAmount);
+    if (requestedAmount > 0 && requestedAmount <= 5e4) {
+      const preset = Array.from(document.querySelectorAll('[data-amount]')).find(
+        (button) => Number(button.dataset.amount) === requestedAmount
+      );
       chooseAmount(requestedAmount, preset || null);
       if (!preset) el('customAmount').value = String(requestedAmount);
     }
   }
-
   function validateGiftStep() {
     if (!Number.isFinite(state.amount) || state.amount < 1) {
       setStatus('Choose or enter a gift amount of at least $1.');
       el('customAmount').focus();
       return false;
     }
-    if (state.amount > 50000) {
+    if (state.amount > 5e4) {
       setStatus('Online gifts are limited to $50,000 per transaction.');
       el('customAmount').focus();
       return false;
@@ -308,12 +311,12 @@
     }
     return true;
   }
-
   function checkoutPayload() {
     const tributeName = cleanText(el('tributeName').value);
-    const tribute = el('addTribute').checked && tributeName
-      ? `${el('tributeType').value === 'memory' ? 'In memory of' : 'In honor of'} ${tributeName}`
-      : '';
+    const tribute =
+      el('addTribute').checked && tributeName
+        ? `${el('tributeType').value === 'memory' ? 'In memory of' : 'In honor of'} ${tributeName}`
+        : '';
     return {
       parishId: state.organizationId,
       giftType: 'stewardship',
@@ -332,13 +335,11 @@
       ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {}),
     };
   }
-
   function checkoutErrorMessage(result, fallback) {
     const message = cleanText(result.detail || result.error || fallback);
     if (/turnstile|verification/i.test(message)) return 'Please complete the security check and try again.';
     return message || fallback;
   }
-
   async function submitCheckout(event) {
     event.preventDefault();
     if (state.loading || !el('donorForm').reportValidity()) return;
@@ -361,9 +362,7 @@
           try {
             window.top.location.href = result.url;
             return;
-          } catch {
-            // Some host sites intentionally restrict top-frame navigation.
-          }
+          } catch {}
         }
         window.location.href = result.url;
         return;
@@ -378,7 +377,6 @@
       notifyHeight();
     }
   }
-
   async function reconcileCheckoutReturn() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') !== '1') {
@@ -398,16 +396,16 @@
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Confirmation is still processing.');
-      el('completionCopy').textContent = result.paymentStatus === 'paid' || result.status === 'completed'
-        ? 'Your payment was successful. A receipt will arrive by email.'
-        : 'Your payment is processing. A receipt will arrive as soon as Stripe confirms it.';
+      el('completionCopy').textContent =
+        result.paymentStatus === 'paid' || result.status === 'completed'
+          ? 'Your payment was successful. A receipt will arrive by email.'
+          : 'Your payment is processing. A receipt will arrive as soon as Stripe confirms it.';
     } catch {
       el('completionCopy').textContent = 'Your payment is being confirmed. A receipt will arrive by email.';
     }
     notifyHeight();
     return true;
   }
-
   function bindEvents() {
     document.querySelectorAll('[data-frequency]').forEach((button) => {
       button.addEventListener('click', () => chooseFrequency(button.dataset.frequency));
@@ -424,7 +422,6 @@
     el('backButton').addEventListener('click', () => showStep(1));
     el('donorForm').addEventListener('submit', submitCheckout);
   }
-
   async function init() {
     state.organizationId = organizationIdFromLocation();
     bindEvents();
@@ -447,6 +444,5 @@
     }
     notifyHeight();
   }
-
   init();
 })();

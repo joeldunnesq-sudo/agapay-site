@@ -1,71 +1,131 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import vm from "node:vm";
-import worker from "../src/worker.js";
-import { parishLifeExperienceFor } from "../src/lib/parish-life-experience.js";
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
+import worker from '../src/worker.js';
+import { parishLifeExperienceFor } from '../src/lib/parish-life-experience.js';
 
-for (const subscriptionTier of ["giving", "parish", "diocese"]) {
-  assert.deepEqual(parishLifeExperienceFor({ subscriptionTier }), { communicationsEnabled: true, label: "Koinonia" });
+for (const subscriptionTier of ['giving', 'parish', 'diocese']) {
+  assert.deepEqual(parishLifeExperienceFor({ subscriptionTier }), { communicationsEnabled: true, label: 'Koinonia' });
 }
-for (const subscriptionTier of ["starter", "mission", "stewardship", "monastery_free"]) {
-  assert.deepEqual(parishLifeExperienceFor({ subscriptionTier }), { communicationsEnabled: false, label: "Today" });
+for (const subscriptionTier of ['starter', 'mission', 'stewardship', 'monastery_free']) {
+  assert.deepEqual(parishLifeExperienceFor({ subscriptionTier }), { communicationsEnabled: false, label: 'Today' });
 }
 assert.deepEqual(
-  parishLifeExperienceFor({ subscriptionTier: "parish", communicationsEnabled: false }),
-  { communicationsEnabled: false, label: "Today" },
-  "the parish setting must use the same entitlement decision as the communications API"
+  parishLifeExperienceFor({ subscriptionTier: 'parish', communicationsEnabled: false }),
+  { communicationsEnabled: false, label: 'Today' },
+  'the parish setting must use the same entitlement decision as the communications API'
 );
 
-const legacy = await worker.fetch(new Request("https://agapay.test/myagapay/giving/calendar?from=bookmark"), {}, { waitUntil() {} });
+const legacy = await worker.fetch(
+  new Request('https://agapay.test/myagapay/giving/calendar?from=bookmark'),
+  {},
+  { waitUntil() {} }
+);
 assert.equal(legacy.status, 301);
-assert.equal(legacy.headers.get("location"), "https://agapay.test/myagapay/parish-life?from=bookmark");
+assert.equal(legacy.headers.get('location'), 'https://agapay.test/myagapay/parish-life?from=bookmark');
 
-let canonicalCalendarAssetPath = "";
-const canonicalCalendar = await worker.fetch(new Request("https://agapay.test/myagapay/calendar"), {
-  ASSETS: {
-    async fetch(request) {
-      canonicalCalendarAssetPath = new URL(request.url).pathname;
-      return new Response("calendar");
-    }
-  }
-}, { waitUntil() {} });
+let canonicalCalendarAssetPath = '';
+const canonicalCalendar = await worker.fetch(
+  new Request('https://agapay.test/myagapay/calendar'),
+  {
+    ASSETS: {
+      async fetch(request) {
+        canonicalCalendarAssetPath = new URL(request.url).pathname;
+        return new Response('calendar');
+      },
+    },
+  },
+  { waitUntil() {} }
+);
 assert.equal(canonicalCalendar.status, 200);
-assert.equal(canonicalCalendarAssetPath, "/myagapay/giving/calendar.html", "the canonical full-calendar route must serve the calendar page instead of returning to Koinonia");
+assert.equal(
+  canonicalCalendarAssetPath,
+  '/myagapay/giving/calendar.html',
+  'the canonical full-calendar route must serve the calendar page instead of returning to Koinonia'
+);
 
-const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching, media, watch] = await Promise.all([
-  "parish-life.html", "parish-life.js", "../myagapay-shell.js", "../donor/app.js", "giving/calendar.html", "feed.html", "groups.html", "teaching.html", "media.html", "watch.html",
-].map((file) => file === '../donor/app.js' ? readDonorAppSource() : readFile(new URL(`../public/myagapay/${file}`, import.meta.url), "utf8")));
-const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promise.all([
-  "dashboard.html", "app.js", "style.css",
-].map((file) => file === "app.js" ? readParishDashboardSource() : readFile(new URL(`../public/parish/${file}`, import.meta.url), "utf8")));
-const donorStyles = await readFile(new URL("../public/donor/style.css", import.meta.url), "utf8");
-const readingRowsStart = donorApp.indexOf("function liturgicalReadingRows");
-const readingRowsEnd = donorApp.indexOf("function renderDonorTodayInChurch", readingRowsStart);
+const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching, media, watch] = await Promise.all(
+  [
+    'parish-life.html',
+    'parish-life.js',
+    '../myagapay-shell.js',
+    '../donor/app.js',
+    'giving/calendar.html',
+    'feed.html',
+    'groups.html',
+    'teaching.html',
+    'media.html',
+    'watch.html',
+  ].map((file) =>
+    file === '../donor/app.js'
+      ? readDonorAppSource()
+      : readFile(new URL(`../public/myagapay/${file}`, import.meta.url), 'utf8')
+  )
+);
+const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promise.all(
+  ['dashboard.html', 'app.js', 'style.css'].map((file) =>
+    file === 'app.js'
+      ? readParishDashboardSource()
+      : readFile(new URL(`../public/parish/${file}`, import.meta.url), 'utf8')
+  )
+);
+const donorStyles = await readFile(new URL('../public/donor/style.css', import.meta.url), 'utf8');
+const readingRowsStart = donorApp.indexOf('function liturgicalReadingRows');
+const readingRowsEnd = donorApp.indexOf('function renderDonorTodayInChurch', readingRowsStart);
 const readingRowsSandbox = {};
-vm.runInNewContext(`${donorApp.slice(readingRowsStart, readingRowsEnd)}\nglobalThis.liturgicalReadingRows = liturgicalReadingRows;`, readingRowsSandbox);
-const singleAppointmentRows = JSON.parse(JSON.stringify(readingRowsSandbox.liturgicalReadingRows({
-  feastTitle: "Saints Alexander, John, and Paul",
-  readingAppointments: [
-    { type: "epistle", ref: "Hebrews 11:33–12:2", appointment: "Saints Alexander, John, and Paul" },
-    { type: "gospel", ref: "Matthew 10:32–33, 37–38; 19:27–30", appointment: "Saints Alexander, John, and Paul" },
-  ],
-})));
-assert.deepEqual(singleAppointmentRows.map((row) => row.text), [
-  "Epistle: Hebrews 11:33–12:2",
-  "Gospel: Matthew 10:32–33, 37–38; 19:27–30",
-], "a single appointed set should not repeat the feast or saint title above its readings");
-const multipleAppointmentRows = JSON.parse(JSON.stringify(readingRowsSandbox.liturgicalReadingRows({
-  readingAppointments: [
-    { type: "epistle", ref: "Romans 1:1–7", appointment: "Readings of the day" },
-    { type: "epistle", ref: "Hebrews 11:33–12:2", appointment: "Saint Alexander" },
-  ],
-})));
-assert.equal(multipleAppointmentRows.filter((row) => row.className.includes("is-heading")).length, 2, "multiple appointed sets should retain headings that distinguish their readings");
-assert.match(donorStyles, /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tools should sit in one row on wider screens");
-assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*min-height:82px/, "Community Tool cards should remain compact");
-assert.match(donorStyles, /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "all three Community Tool cards should remain in one row on mobile");
+vm.runInNewContext(
+  `${donorApp.slice(readingRowsStart, readingRowsEnd)}\nglobalThis.liturgicalReadingRows = liturgicalReadingRows;`,
+  readingRowsSandbox
+);
+const singleAppointmentRows = JSON.parse(
+  JSON.stringify(
+    readingRowsSandbox.liturgicalReadingRows({
+      feastTitle: 'Saints Alexander, John, and Paul',
+      readingAppointments: [
+        { type: 'epistle', ref: 'Hebrews 11:33–12:2', appointment: 'Saints Alexander, John, and Paul' },
+        { type: 'gospel', ref: 'Matthew 10:32–33, 37–38; 19:27–30', appointment: 'Saints Alexander, John, and Paul' },
+      ],
+    })
+  )
+);
+assert.deepEqual(
+  singleAppointmentRows.map((row) => row.text),
+  ['Epistle: Hebrews 11:33–12:2', 'Gospel: Matthew 10:32–33, 37–38; 19:27–30'],
+  'a single appointed set should not repeat the feast or saint title above its readings'
+);
+const multipleAppointmentRows = JSON.parse(
+  JSON.stringify(
+    readingRowsSandbox.liturgicalReadingRows({
+      readingAppointments: [
+        { type: 'epistle', ref: 'Romans 1:1–7', appointment: 'Readings of the day' },
+        { type: 'epistle', ref: 'Hebrews 11:33–12:2', appointment: 'Saint Alexander' },
+      ],
+    })
+  )
+);
+assert.equal(
+  multipleAppointmentRows.filter((row) => row.className.includes('is-heading')).length,
+  2,
+  'multiple appointed sets should retain headings that distinguish their readings'
+);
+assert.match(
+  donorStyles,
+  /\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,
+  'all three Community Tools should sit in one row on wider screens'
+);
+assert.match(
+  donorStyles,
+  /\.parish-life-community-tool \{[^}]*min-height:82px/,
+  'Community Tool cards should remain compact'
+);
+assert.match(
+  donorStyles,
+  /@media \(max-width:680px\)[\s\S]{0,160}\.parish-life-community-tools \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,
+  'all three Community Tool cards should remain in one row on mobile'
+);
 
 assert.match(landing, /class="cal-hero parish-life-liturgical-hero(?: [^"]+)?"/);
 assert.match(landing, /class="cal-date-heading-row"/);
@@ -73,155 +133,302 @@ assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
 assert.match(landing, />Make an offering →</);
-assert.doesNotMatch(landing, /class="cal-hero parish-life-saint-card"/, "the Koinonia landing should not duplicate Saint of the Day in a second card");
+assert.doesNotMatch(
+  landing,
+  /class="cal-hero parish-life-saint-card"/,
+  'the Koinonia landing should not duplicate Saint of the Day in a second card'
+);
 assert.match(donorApp, /Hagiography/, 'the Hagiography pill opens the saint modal');
 assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
 assert.match(landing, />This Week in the Church<[\s\S]*data-calendar-default-view="week"/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
-assert.ok(landing.indexOf('id="parishLifeInboxMount"') < landing.indexOf(">This Week in the Church<"), "the actionable announcements card should sit directly below the hero and before the week calendar");
-assert.doesNotMatch(landing, />Community</, "the product must not be renamed Community in the rendered landing");
+assert.ok(
+  landing.indexOf('id="parishLifeInboxMount"') < landing.indexOf('>This Week in the Church<'),
+  'the actionable announcements card should sit directly below the hero and before the week calendar'
+);
+assert.doesNotMatch(landing, />Community</, 'the product must not be renamed Community in the rendered landing');
 assert.match(
   donorStyles,
   /\.donor-parish-life-page \.topbar-title\[data-parish-life-label\] \{[\s\S]*?font-family: var\(--serif\);/,
-  "the Koinonia landing header should use the same Cormorant serif family as the My AGAPAY home header"
+  'the Koinonia landing header should use the same Cormorant serif family as the My AGAPAY home header'
 );
-assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-today-row \{ display: block; \}/, "the Koinonia hero should use one text column");
-assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row \{[\s\S]*?display: block;[\s\S]*?padding-right: 82px;/, "the civil date should remain in normal flow with room for the corner badge");
-assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?position: absolute;[\s\S]*?top: 0;[\s\S]*?right: 0;/, "the Church date badge should overlay the top-right corner without pushing the feast content down");
-assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?border-radius: 0 0 0 14px;/, "the Church badge should use the right-corner cutout");
-assert.match(donorStyles, /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row\.is-civil-only \{[\s\S]*?padding-right: 0;/, "Revised-Julian parishes should reclaim the badge space");
+assert.match(
+  donorStyles,
+  /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-today-row \{ display: block; \}/,
+  'the Koinonia hero should use one text column'
+);
+assert.match(
+  donorStyles,
+  /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row \{[\s\S]*?display: block;[\s\S]*?padding-right: 82px;/,
+  'the civil date should remain in normal flow with room for the corner badge'
+);
+assert.match(
+  donorStyles,
+  /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?position: absolute;[\s\S]*?top: 0;[\s\S]*?right: 0;/,
+  'the Church date badge should overlay the top-right corner without pushing the feast content down'
+);
+assert.match(
+  donorStyles,
+  /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-badge \{[\s\S]*?border-radius: 0 0 0 14px;/,
+  'the Church badge should use the right-corner cutout'
+);
+assert.match(
+  donorStyles,
+  /\.donor-parish-life-page \.parish-life-liturgical-hero \.cal-date-heading-row\.is-civil-only \{[\s\S]*?padding-right: 0;/,
+  'Revised-Julian parishes should reclaim the badge space'
+);
 
 const sandbox = { window: {}, document: { addEventListener() {} }, console };
 vm.runInNewContext(landingScript, sandbox);
 const fixtureEvents = [
-  { name: "Minor commemoration", date: "2026-08-02", rank: "season" },
-  { id: "dormition-fast-ends", name: "Dormition Fast Ends", date: "2026-08-14", rank: "fast" },
-  { id: "transfiguration", name: "Transfiguration", date: "2026-08-06", rank: "great" },
-  { id: "dormition-fast-begins", name: "Dormition Fast Begins", date: "2026-08-01", rank: "fast" },
-  { id: "dormition", name: "Dormition of the Theotokos", date: "2026-08-15", rank: "great" },
+  { name: 'Minor commemoration', date: '2026-08-02', rank: 'season' },
+  { id: 'dormition-fast-ends', name: 'Dormition Fast Ends', date: '2026-08-14', rank: 'fast' },
+  { id: 'transfiguration', name: 'Transfiguration', date: '2026-08-06', rank: 'great' },
+  { id: 'dormition-fast-begins', name: 'Dormition Fast Begins', date: '2026-08-01', rank: 'fast' },
+  { id: 'dormition', name: 'Dormition of the Theotokos', date: '2026-08-15', rank: 'great' },
 ];
 sandbox.window.AGAPAYLiturgicalCalendar = { liturgicalFeastsForYear: () => fixtureEvents };
 assert.equal(
-  sandbox.window.parishLifeNextLiturgicalEvent("julian", new Date(2026, 7, 1)).name,
-  "Dormition Fast Begins",
-  "the landing should fall back to the next major feast or beginning of a fasting period"
+  sandbox.window.parishLifeNextLiturgicalEvent('julian', new Date(2026, 7, 1)).name,
+  'Dormition Fast Begins',
+  'the landing should fall back to the next major feast or beginning of a fasting period'
 );
 assert.deepEqual(
-  Array.from(sandbox.window.parishLifeUpcomingLiturgicalEvents("julian", new Date(2026, 7, 1)), (event) => event.id),
-  ["dormition-fast-begins", "dormition"],
-  "a fasting-period fallback should also surface the feast associated with that fast"
+  Array.from(sandbox.window.parishLifeUpcomingLiturgicalEvents('julian', new Date(2026, 7, 1)), (event) => event.id),
+  ['dormition-fast-begins', 'dormition'],
+  'a fasting-period fallback should also surface the feast associated with that fast'
 );
-const balancedListening = Array.from(sandbox.window.parishLifeBalancedListenItems(
-  [
-    { key:"parish-1", kind:"parish", publishedAt:"2026-08-01" },
-    { key:"parish-2", kind:"parish", publishedAt:"2026-07-20" },
-    { key:"parish-3", kind:"parish", publishedAt:"2026-07-10" },
-  ],
-  [
-    { key:"podcast-1", kind:"podcast", publishedAt:"2026-08-05" },
-    { key:"podcast-2", kind:"podcast", publishedAt:"2026-08-04" },
-    { key:"podcast-3", kind:"podcast", publishedAt:"2026-08-03" },
-    { key:"podcast-4", kind:"podcast", publishedAt:"2026-08-02" },
-  ],
-  5
-));
-assert.equal(balancedListening.length, 5, "the combined listening preview should stay compact");
-assert.ok(balancedListening.filter((item) => item.kind === "parish").length >= 2, "frequent podcasts must not crowd parish audio out of the combined preview");
-assert.ok(balancedListening.some((item) => item.kind === "podcast"), "the combined preview should include a subscribed podcast when one is available");
+const balancedListening = Array.from(
+  sandbox.window.parishLifeBalancedListenItems(
+    [
+      { key: 'parish-1', kind: 'parish', publishedAt: '2026-08-01' },
+      { key: 'parish-2', kind: 'parish', publishedAt: '2026-07-20' },
+      { key: 'parish-3', kind: 'parish', publishedAt: '2026-07-10' },
+    ],
+    [
+      { key: 'podcast-1', kind: 'podcast', publishedAt: '2026-08-05' },
+      { key: 'podcast-2', kind: 'podcast', publishedAt: '2026-08-04' },
+      { key: 'podcast-3', kind: 'podcast', publishedAt: '2026-08-03' },
+      { key: 'podcast-4', kind: 'podcast', publishedAt: '2026-08-02' },
+    ],
+    5
+  )
+);
+assert.equal(balancedListening.length, 5, 'the combined listening preview should stay compact');
+assert.ok(
+  balancedListening.filter((item) => item.kind === 'parish').length >= 2,
+  'frequent podcasts must not crowd parish audio out of the combined preview'
+);
+assert.ok(
+  balancedListening.some((item) => item.kind === 'podcast'),
+  'the combined preview should include a subscribed podcast when one is available'
+);
 assert.match(landingScript, /Feast associated with this fast/);
 const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
-assert.equal(lowerTierMarkup, "", "lower tiers must receive no communications section DOM");
+assert.equal(lowerTierMarkup, '', 'lower tiers must receive no communications section DOM');
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
-const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, { signupsEnabled:true, exchangeEnabled:true });
+const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, {
+  signupsEnabled: true,
+  exchangeEnabled: true,
+});
 const parishInboxMarkup = sandbox.window.parishLifeInboxShellHtml(true);
 assert.match(parishInboxMarkup, /parishLifeCommunityInbox/);
 assert.match(parishInboxMarkup, /Parish Today/);
-assert.equal(sandbox.window.parishLifeInboxShellHtml(false), "");
+assert.equal(sandbox.window.parishLifeInboxShellHtml(false), '');
 assert.match(parishTierMarkup, /id="listenHeading">Listen</);
 assert.match(parishTierMarkup, /Continue listening/);
 assert.match(parishTierMarkup, /Latest audio/);
 assert.match(parishTierMarkup, /Latest Video/);
 assert.match(parishTierMarkup, /Your Ministries/);
-for (const loadingLabel of ["ministries", "audio", "videos", "news"]) {
-  assert.match(parishTierMarkup, new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`), `the ${loadingLabel} section needs its own honest loading state`);
+for (const loadingLabel of ['ministries', 'audio', 'videos', 'news']) {
+  assert.match(
+    parishTierMarkup,
+    new RegExp(`class="sw-tool-loading parish-life-section-loading"[^>]*>Loading ${loadingLabel}…<`),
+    `the ${loadingLabel} section needs its own honest loading state`
+  );
 }
-assert.match(parishTierMarkup, /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/, "Continue listening must be conditional and appear above the combined latest-audio list");
-assert.equal((parishTierMarkup.match(/parish-life-section-loading/g) || []).length, 4, "each fresh-content section must own one loading placeholder");
-assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf('id="listenHeading"'), "ministries should appear before the unified listening section and video");
-assert.match(landing, /id="koinoniaShortcuts"/, "community tools belong beneath the hero");
-assert.match(donorStyles, /\.parish-life-community-tool \{[^}]*background:linear-gradient\(145deg,#fff,#faf6eb\)/, "community tools should retain the quiet white-to-cream card treatment");
-assert.ok(parishTierMarkup.indexOf("Your Ministries") < parishTierMarkup.indexOf("parishLifeNewsMount"), "the combined news preview should follow parish-specific ministries");
+assert.match(
+  parishTierMarkup,
+  /id="parishLifeContinueListeningSection"[\s\S]*hidden[\s\S]*id="parishLifeListenItems"/,
+  'Continue listening must be conditional and appear above the combined latest-audio list'
+);
+assert.equal(
+  (parishTierMarkup.match(/parish-life-section-loading/g) || []).length,
+  4,
+  'each fresh-content section must own one loading placeholder'
+);
+assert.ok(
+  parishTierMarkup.indexOf('Your Ministries') < parishTierMarkup.indexOf('id="listenHeading"'),
+  'ministries should appear before the unified listening section and video'
+);
+assert.match(landing, /id="koinoniaShortcuts"/, 'community tools belong beneath the hero');
+assert.match(
+  donorStyles,
+  /\.parish-life-community-tool \{[^}]*background:linear-gradient\(145deg,#fff,#faf6eb\)/,
+  'community tools should retain the quiet white-to-cream card treatment'
+);
+assert.ok(
+  parishTierMarkup.indexOf('Your Ministries') < parishTierMarkup.indexOf('parishLifeNewsMount'),
+  'the combined news preview should follow parish-specific ministries'
+);
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);
 assert.match(landingScript, /item\.status === "published" && item\.pinned === true && !item\.read/);
 assert.match(landingScript, /item\.kind === "coverage" \? "I can cover" : "Claim spot"/);
 assert.match(landingScript, /signups\/coverage\/\$\{encodeURIComponent\(id\)\}\/accept/);
 assert.doesNotMatch(parishTierMarkup, /Pinned Announcements/);
-assert.match(donorStyles, /\.parish-life-blog-list \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "Recent News should use a compact 2-by-2 grid");
+assert.match(
+  donorStyles,
+  /\.parish-life-blog-list \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
+  'Recent News should use a compact 2-by-2 grid'
+);
 assert.match(landingScript, /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
 assert.match(landingScript, /href="\/myagapay\/media\/watch\?video=/);
-assert.match(landingScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/);
-assert.match(landingScript, /fetch\(path, \{ headers, cache: "no-store" \}\)/, "landing content requests must remain uncached");
-assert.match(landingScript, /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard\?view=context"/, "cached structure must render before the landing dashboard request resolves");
-assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*renderCommunityInbox/, "actionable announcements and signup actions should replace the Community Inbox placeholder");
-assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/, "ministries should replace their own placeholder when their request resolves");
-assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/, "recordings should replace their own placeholder when their request resolves");
+assert.match(
+  landingScript,
+  /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/
+);
+assert.match(
+  landingScript,
+  /fetch\(path, \{ headers, cache: "no-store" \}\)/,
+  'landing content requests must remain uncached'
+);
+assert.match(
+  landingScript,
+  /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard\?view=context"/,
+  'cached structure must render before the landing dashboard request resolves'
+);
+assert.match(
+  landingScript,
+  /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*renderCommunityInbox/,
+  'actionable announcements and signup actions should replace the Community Inbox placeholder'
+);
+assert.match(
+  landingScript,
+  /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/,
+  'ministries should replace their own placeholder when their request resolves'
+);
+assert.match(
+  landingScript,
+  /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/,
+  'recordings should replace their own placeholder when their request resolves'
+);
 
-const tierMount = { innerHTML: "" };
-const inboxMount = { innerHTML: "" };
-const sidebarName = { textContent: "" };
+const tierMount = { innerHTML: '' };
+const inboxMount = { innerHTML: '' };
+const sidebarName = { textContent: '' };
 const sidebarCommunications = { hidden: true };
-const tierLabel = { textContent: "Today" };
-sandbox.document.title = "Today | My AGAPAY";
+const tierLabel = { textContent: 'Today' };
+sandbox.document.title = 'Today | My AGAPAY';
 sandbox.document.documentElement = { dataset: {} };
-sandbox.document.getElementById = (id) => ({
-  parishLifeTierSections: tierMount,
-  parishLifeInboxMount: inboxMount,
-  parishLifeSidebarName: sidebarName,
-  parishLifeSidebarCommunications: sidebarCommunications,
-})[id] || null;
-sandbox.document.querySelectorAll = (selector) => selector === "[data-parish-life-label]" ? [tierLabel] : [];
+sandbox.document.getElementById = (id) =>
+  ({
+    parishLifeTierSections: tierMount,
+    parishLifeInboxMount: inboxMount,
+    parishLifeSidebarName: sidebarName,
+    parishLifeSidebarCommunications: sidebarCommunications,
+  })[id] || null;
+sandbox.document.querySelectorAll = (selector) => (selector === '[data-parish-life-label]' ? [tierLabel] : []);
 sandbox.window.MyAgapayShell = {
   capabilitiesLoaded: () => true,
-  parishLifeExperience: () => ({ communicationsEnabled: true, label: "Koinonia" })
+  parishLifeExperience: () => ({ communicationsEnabled: true, label: 'Koinonia' }),
 };
 const cachedTierExperience = sandbox.window.initializeParishLifeStructure();
 assert.equal(cachedTierExperience.communicationsEnabled, true);
-assert.match(inboxMount.innerHTML, /Parish Today[\s\S]*Loading your parish summary…/, "a cached Koinonia decision must synchronously render the Parish Today shell before any fetch");
-assert.equal(tierLabel.textContent, "Koinonia");
+assert.match(
+  inboxMount.innerHTML,
+  /Parish Today[\s\S]*Loading your parish summary…/,
+  'a cached Koinonia decision must synchronously render the Parish Today shell before any fetch'
+);
+assert.equal(tierLabel.textContent, 'Koinonia');
 
-sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: "Today" });
+sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: 'Today' });
 sandbox.window.initializeParishLifeStructure();
-assert.equal(tierMount.innerHTML, "", "a cached lower-tier decision must never render Koinonia section shells");
-assert.equal(inboxMount.innerHTML, "", "a cached lower-tier decision must never render the Community Inbox shell");
+assert.equal(tierMount.innerHTML, '', 'a cached lower-tier decision must never render Koinonia section shells');
+assert.equal(inboxMount.innerHTML, '', 'a cached lower-tier decision must never render the Community Inbox shell');
 
 sandbox.window.MyAgapayShell.capabilitiesLoaded = () => false;
 sandbox.window.initializeParishLifeStructure();
 assert.match(tierMount.innerHTML, /data-parish-life-structure-loading[\s\S]*Loading parish sections…/);
-assert.equal(inboxMount.innerHTML, "", "an unresolved tier must not guess whether the Community Inbox is available");
-assert.doesNotMatch(tierMount.innerHTML, /Pinned Announcements|Your Ministries|Recent Audio/, "an unresolved tier must show loading without guessing the page structure");
+assert.equal(inboxMount.innerHTML, '', 'an unresolved tier must not guess whether the Community Inbox is available');
+assert.doesNotMatch(
+  tierMount.innerHTML,
+  /Pinned Announcements|Your Ministries|Recent Audio/,
+  'an unresolved tier must show loading without guessing the page structure'
+);
 
 for (const [name, source] of Object.entries({ calendar, feed, groups, teaching, media, watch })) {
   assert.match(source, /href="\/myagapay\/parish-life"/, `${name} must return directly to the shared landing`);
 }
 assert.match(shell, /function ensureParishLifeBackLink[\s\S]*feed\|news\|groups\|teaching\|media/);
 assert.match(shell, /link\.href = "\/myagapay\/parish-life"/);
-assert.match(shell, /className = "parish-life-back-link koinonia-page-back"[\s\S]*page\.prepend\(link\)/, "each Koinonia subpage must put its back arrow at the top-left of page content");
-assert.match(landing, /class="cal-date-heading-row"[\s\S]*id="todayChurchDateBadge"[\s\S]*id="todayChurchDateCalendar">Julian<[\s\S]*id="todayCivilDateEyebrow"/, "the Koinonia hero must retain the Julian Church date and civil-date eyebrow in one compact heading region");
-assert.doesNotMatch(landing, /id="todayCalendarLabel"/, "Koinonia should not repeat a separate Julian calendar designation beside the badge");
-assert.match(landing, /family=DM\+Sans[^\"]+[\s\S]*\/donor\/style\.css\?v=[a-f0-9]{16}/, "the Koinonia landing must load its intended DM Sans typography and the current versioned stylesheet");
-assert.match(landing, /\/donor\/app\.js\?v=[a-f0-9]{16}/, "the Koinonia landing must load the current versioned calendar script");
-assert.match(donorStyles, /\.cal-date-calendar \{[^}]*font-family:var\(--sans\)[^}]*font-size:6px[^}]*font-weight:700/, "the Julian designation must use the site sans typography at a quiet supporting size");
-assert.match(donorApp, /churchCalendarDate\(date, calendar\)[\s\S]*usesJulianCalendar[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*todayChurchDateBadge[\s\S]*hidden = !usesJulianCalendar/, "the eyebrow must show the civil date while the Julian-only badge uses the parish calendar date");
-assert.match(donorApp, /dateHeadingRow\.classList\.toggle\("is-civil-only", !usesJulianCalendar\)/, "Revised-Julian parishes should remove the Church-date box and use the civil-only layout");
+assert.match(
+  shell,
+  /className = "parish-life-back-link koinonia-page-back"[\s\S]*page\.prepend\(link\)/,
+  'each Koinonia subpage must put its back arrow at the top-left of page content'
+);
+assert.match(
+  landing,
+  /class="cal-date-heading-row"[\s\S]*id="todayChurchDateBadge"[\s\S]*id="todayChurchDateCalendar">Julian<[\s\S]*id="todayCivilDateEyebrow"/,
+  'the Koinonia hero must retain the Julian Church date and civil-date eyebrow in one compact heading region'
+);
+assert.doesNotMatch(
+  landing,
+  /id="todayCalendarLabel"/,
+  'Koinonia should not repeat a separate Julian calendar designation beside the badge'
+);
+assert.match(
+  landing,
+  /family=DM\+Sans[^\"]+[\s\S]*\/donor\/style\.css\?v=[a-f0-9]{16}/,
+  'the Koinonia landing must load its intended DM Sans typography and the current versioned stylesheet'
+);
+assert.match(
+  landing,
+  /\/donor\/app\.js\?v=[a-f0-9]{16}/,
+  'the Koinonia landing must load the current versioned calendar script'
+);
+assert.match(
+  donorStyles,
+  /\.cal-date-calendar \{[^}]*font-family:var\(--sans\)[^}]*font-size:6px[^}]*font-weight:700/,
+  'the Julian designation must use the site sans typography at a quiet supporting size'
+);
+assert.match(
+  donorApp,
+  /churchCalendarDate\(date, calendar\)[\s\S]*usesJulianCalendar[\s\S]*todayCivilDateEyebrow[\s\S]*churchParts\.dayNum[\s\S]*todayChurchDateBadge[\s\S]*hidden = !usesJulianCalendar/,
+  'the eyebrow must show the civil date while the Julian-only badge uses the parish calendar date'
+);
+assert.ok(
+  includesJavaScriptFragment(donorApp, 'dateHeadingRow.classList.toggle("is-civil-only", !usesJulianCalendar)'),
+  'Revised-Julian parishes should remove the Church-date box and use the civil-only layout'
+);
 
-assert.doesNotMatch(parishDashboard, /class="koinonia-quick-publish"/, "At a glance should no longer duplicate announcement, audio, and video actions");
-assert.match(parishDashboard, /koinonia-overview-welcome[\s\S]*koinonia-calendar-connect is-compact[\s\S]*id="koinoniaCalendarUrl"/, "At a glance should contain the calendar connection card");
-for (const view of ["announcements", "audio", "video", "news"]) {
-  assert.match(parishDashboard, new RegExp(`class="koinonia-metric-card"[^>]+openKoinoniaComposer\\('${view}'\\)`), `the ${view} metric card should initiate its composer`);
+assert.doesNotMatch(
+  parishDashboard,
+  /class="koinonia-quick-publish"/,
+  'At a glance should no longer duplicate announcement, audio, and video actions'
+);
+assert.match(
+  parishDashboard,
+  /koinonia-overview-welcome[\s\S]*koinonia-calendar-connect is-compact[\s\S]*id="koinoniaCalendarUrl"/,
+  'At a glance should contain the calendar connection card'
+);
+for (const view of ['announcements', 'audio', 'video', 'news']) {
+  assert.match(
+    parishDashboard,
+    new RegExp(`class="koinonia-metric-card"[^>]+openKoinoniaComposer\\('${view}'\\)`),
+    `the ${view} metric card should initiate its composer`
+  );
 }
-assert.match(parishDashboardApp, /view === 'news'[\s\S]*\? 'parishBlogSourceUrl'/, "the priest blog action should focus the RSS input");
-assert.match(parishDashboardStyles, /\.koinonia-metric-card:hover[\s\S]*\.koinonia-metric-card:focus-visible/, "the clickable action cards should expose hover and keyboard focus feedback");
+assert.match(
+  parishDashboardApp,
+  /view === 'news'[\s\S]*\? 'parishBlogSourceUrl'/,
+  'the priest blog action should focus the RSS input'
+);
+assert.match(
+  parishDashboardStyles,
+  /\.koinonia-metric-card:hover[\s\S]*\.koinonia-metric-card:focus-visible/,
+  'the clickable action cards should expose hover and keyboard focus feedback'
+);
 
-console.log("PASS - tier-aware Today/Koinonia landing, structural gating, redirects, and subpage back navigation");
+console.log('PASS - tier-aware Today/Koinonia landing, structural gating, redirects, and subpage back navigation');

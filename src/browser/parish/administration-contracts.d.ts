@@ -162,3 +162,9 @@ interface ParishCampaignResponse {
   key: string;
   campaigns?: ParishGivingOption[];
 }
+
+interface Window {
+  SacramentPastoralFollowUp: { load(force?: boolean): Promise<void>; render(): string; reset(): void };
+  renderSacramentsPanel(): void;
+  setSacramentsDashboardTab(tab: string): void;
+}

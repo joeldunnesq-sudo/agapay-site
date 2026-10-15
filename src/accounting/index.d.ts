@@ -223,3 +223,7 @@ export {
   updateJournalDraft,
   voidJournalDraft,
 } from './ledger/workspace.js';
+
+export { ingestAccountingSourceEvent, processAccountingSourceEvent } from './integrations/service.js';
+
+export { ingestCommerceSourceEvent, processCommerceSourceEvent } from './commerce/service.js';

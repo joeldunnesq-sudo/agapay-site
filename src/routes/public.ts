@@ -31,7 +31,7 @@ export interface PublicActions<TEnv> {
     | null
     | undefined
     | Promise<{ donorName?: string; householdName?: string } | null | undefined>;
-  json(body: unknown, init?: ResponseInit): Response;
+  json(body: unknown, init?: import('../lib/http-responses.js').JsonResponseInit): Response;
   addCorsHeaders(response: Response, env: TEnv): Response;
   corsJson(body: unknown, env: TEnv): Response;
   publicSubscriptionTiers(): unknown;

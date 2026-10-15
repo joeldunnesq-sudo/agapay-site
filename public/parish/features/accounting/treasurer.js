@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/accounting/treasurer.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: treasurer.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function accountingSimpleRevenueOptions(selectedId = '') {
   const order = Object.keys(ACCOUNTING_SIMPLE_REVENUE_LABELS);
   return accountingData.accounts
@@ -20,7 +17,6 @@ function accountingSimpleRevenueOptions(selectedId = '') {
     )
     .join('');
 }
-
 function accountingSimpleFundOptions(selectedId = '') {
   return accountingData.funds
     .map(
@@ -29,20 +25,17 @@ function accountingSimpleFundOptions(selectedId = '') {
     )
     .join('');
 }
-
 function accountingSimpleIncomeForm() {
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
   const banks = accountingData.bankAccounts || [];
   if (!banks.length)
     return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Add a bank account first</h2><p>A deposit needs a destination account. Open Reconciliation to add the parish checking or savings account.</p></div><button class="acct-primary" onclick="setAccountingView('banking')">Open bank accounts</button></section>`;
-  return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><button type="button" class="acct-link" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid acct-simple-income-details"><label>Where did the money go?<select name="depositAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`).join('')}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div><div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div><div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId: defaultFund?.id || '' }, false)}</div><div class="acct-income-split-actions" hidden><button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button><button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button></div><div class="acct-balance acct-income-split-balance" hidden></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div></form></section>`;
+  return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><button type="button" class="acct-link" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid acct-simple-income-details"><label>Where did the money go?<select name="depositAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`).join('')}</select></label><label>Date<input name="entryDate" type="date" required value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div><div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div><div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId: defaultFund?.id || '' }, false)}</div><div class="acct-income-split-actions" hidden><button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button><button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button></div><div class="acct-balance acct-income-split-balance" hidden></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div></form></section>`;
 }
-
 function accountingIncomeSplitRow(split = {}, removable = true) {
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
   return `<div class="acct-income-split-row" data-income-split-row><label>What kind of income was this?<select data-income-revenue required onchange="updateAccountingSplitDepositBalance(this.form)"><option value="">Choose income type</option>${accountingSimpleRevenueOptions(split.revenueAccountId || '')}</select></label><label>Which fund?<select data-income-fund required onchange="updateAccountingSplitDepositBalance(this.form)">${accountingSimpleFundOptions(split.fundId || defaultFund?.id || '')}</select></label><label><span data-split-amount-label>Amount</span><input data-income-amount type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="0.00" value="${split.amount ? escapeAttr(split.amount) : ''}" oninput="updateAccountingSplitDepositBalance(this.form)"></label><label class="acct-income-line-memo">Line memo <small>Optional</small><input data-income-memo maxlength="240" placeholder="Envelope batch or collection detail" value="${escapeAttr(split.description || '')}"></label>${removable ? '<button type="button" class="acct-remove-line" onclick="removeAccountingIncomeSplit(this)" aria-label="Remove split">×</button>' : ''}</div>`;
 }
-
 function enableAccountingIncomeSplits(button) {
   const form = button.closest('.acct-simple-income').querySelector('form');
   if (!form || form.dataset.splitEnabled === '1') return;
@@ -58,7 +51,6 @@ function enableAccountingIncomeSplits(button) {
   });
   addAccountingIncomeSplit(form.querySelector('.acct-add-line'));
 }
-
 function disableAccountingIncomeSplits(button) {
   const form = button.closest('form');
   if (!form) return;
@@ -75,7 +67,6 @@ function disableAccountingIncomeSplits(button) {
   });
   form.querySelector('[data-income-submit]').disabled = false;
 }
-
 function addAccountingIncomeSplit(button) {
   const form = button.closest('form');
   const holder = form?.querySelector('[data-income-splits]');
@@ -83,14 +74,12 @@ function addAccountingIncomeSplit(button) {
   holder.insertAdjacentHTML('beforeend', accountingIncomeSplitRow());
   updateAccountingSplitDepositBalance(form);
 }
-
 function removeAccountingIncomeSplit(button) {
   const form = button.closest('form');
   if (form?.querySelectorAll('[data-income-split-row]').length <= 2) return;
   button.closest('[data-income-split-row]')?.remove();
   updateAccountingSplitDepositBalance(form);
 }
-
 function collectAccountingIncomeSplits(form) {
   const cents = (value) => Math.round(Number(value || 0) * 100);
   return Array.from(form.querySelectorAll('[data-income-split-row]')).map((row) => ({
@@ -100,7 +89,6 @@ function collectAccountingIncomeSplits(form) {
     description: row.querySelector('[data-income-memo]').value.trim(),
   }));
 }
-
 function updateAccountingSplitDepositBalance(form) {
   if (!form || form.dataset.splitEnabled !== '1') return;
   const cents = (value) => Math.round(Number(value || 0) * 100);
@@ -116,14 +104,12 @@ function updateAccountingSplitDepositBalance(form) {
   balance.innerHTML = `<span>Deposit <strong>${accountingMoney(total)}</strong></span><span>Allocated <strong>${accountingMoney(allocated)}</strong></span><span>${balanced ? 'Balanced ✓' : complete ? `Difference ${accountingMoney(Math.abs(total - allocated))}` : 'Complete every allocation'}</span>`;
   form.querySelector('[data-income-submit]').disabled = !balanced;
 }
-
 function accountingSimpleActivityFeed() {
   const entries = accountingData.journals.filter((entry) => ['posted', 'reversed'].includes(entry.status)).slice(0, 8);
   return `<section class="acct-simple-feed"><div class="acct-suite-section-head"><div><span class="acct-kicker">Recent activity</span><h2>What has been recorded</h2></div></div>${entries.map((entry) => `<article><i>✓</i><p>You recorded <strong>${accountingMoney(entry.totalDebits ?? entry.total_debits ?? 0)}</strong> for ${escapeHtml(entry.description || 'parish activity')} on ${accountingDate(entry.postingDate || entry.entryDate)}.</p></article>`).join('') || accountingEmpty('No activity yet', 'Recorded income and posted parish activity will appear here.')}</section>`;
 }
-
 function accountingInKindDebitOptions() {
-  const cashIds = new Set(['acct_1000', 'acct_1010', 'acct_1100']);
+  const cashIds = /* @__PURE__ */ new Set(['acct_1000', 'acct_1010', 'acct_1100']);
   return accountingData.accounts
     .filter(
       (account) => ['asset', 'expense'].includes(account.category) && account.isActive !== false && !account.archivedAt
@@ -137,7 +123,7 @@ function accountingInKindDebitOptions() {
         )
     )
     .sort((left, right) =>
-      String(left.accountNumber || '').localeCompare(String(right.accountNumber || ''), undefined, { numeric: true })
+      String(left.accountNumber || '').localeCompare(String(right.accountNumber || ''), void 0, { numeric: true })
     )
     .map(
       (account) =>
@@ -145,13 +131,11 @@ function accountingInKindDebitOptions() {
     )
     .join('');
 }
-
 function accountingInKindGiftForm() {
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
   const debitOptions = accountingInKindDebitOptions();
-  return `<section class="acct-simple-income acct-in-kind-gift"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record a Non-Cash Gift</span><h2>Put a donated item on the books</h2><p>No money moved. AGAPAY will debit the account receiving the value and credit In-Kind Contributions.</p></div><button type="button" class="acct-link" onclick="openAccountingSimpleIncome()">Record cash income instead</button></div><form onsubmit="submitAccountingInKindGift(event)"><div class="acct-simple-income-grid"><label>What was received?<input name="itemDescription" maxlength="240" required placeholder="Processional cross, vehicle, building materials, or donated services"></label><label>Who gave it? <small>Optional</small><input name="donorName" maxlength="160" placeholder="Donor name for parish records"></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="Fair value"></label><label class="wide">How was the value determined?<textarea name="valuationBasis" maxlength="500" rows="3" required placeholder="Independent appraisal, comparable retail listing, or donor's stated value"></textarea></label><label>Which account should reflect it?<select name="debitAccountId" required><option value="">Choose an asset or expense account</option>${debitOptions}</select></label><label>Which fund?<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id || '')}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label></div>${debitOptions ? '' : '<p class="acct-form-status">Add an eligible expense or non-cash asset account before recording this gift.</p>'}<div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingInKindGiftMessage)}</span><button class="acct-primary" ${debitOptions ? '' : 'disabled'}>Post non-cash gift</button></div></form></section>`;
+  return `<section class="acct-simple-income acct-in-kind-gift"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record a Non-Cash Gift</span><h2>Put a donated item on the books</h2><p>No money moved. AGAPAY will debit the account receiving the value and credit In-Kind Contributions.</p></div><button type="button" class="acct-link" onclick="openAccountingSimpleIncome()">Record cash income instead</button></div><form onsubmit="submitAccountingInKindGift(event)"><div class="acct-simple-income-grid"><label>What was received?<input name="itemDescription" maxlength="240" required placeholder="Processional cross, vehicle, building materials, or donated services"></label><label>Who gave it? <small>Optional</small><input name="donorName" maxlength="160" placeholder="Donor name for parish records"></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="Fair value"></label><label class="wide">How was the value determined?<textarea name="valuationBasis" maxlength="500" rows="3" required placeholder="Independent appraisal, comparable retail listing, or donor's stated value"></textarea></label><label>Which account should reflect it?<select name="debitAccountId" required><option value="">Choose an asset or expense account</option>${debitOptions}</select></label><label>Which fund?<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id || '')}</select></label><label>Date<input name="entryDate" type="date" required value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}"></label></div>${debitOptions ? '' : '<p class="acct-form-status">Add an eligible expense or non-cash asset account before recording this gift.</p>'}<div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingInKindGiftMessage)}</span><button class="acct-primary" ${debitOptions ? '' : 'disabled'}>Post non-cash gift</button></div></form></section>`;
 }
-
 function accountingOverviewHero() {
   if (accountingExperienceMode === 'treasurer')
     return `<section class="acct-command-hero">
@@ -163,7 +147,6 @@ function accountingOverviewHero() {
       <div class="acct-command-actions"><button onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
     </section>`;
 }
-
 function accountingOverviewFundSummary(fund, fundActivity) {
   const ledgerBalance = Number(
     fundActivity.find((row) => row.fundId === fund.id || row.code === fund.code)?.endingBalance || 0
@@ -182,14 +165,12 @@ function accountingOverviewFundSummary(fund, fundActivity) {
     campaignProgress: false,
   };
 }
-
 function accountingOverviewFundRank(fund) {
   if (Number(fund.isDefault)) return 0;
   if (String(fund.givingSourceType || fund.giving_source_type) === 'campaign') return 1;
   if (/benevolence/i.test(`${fund.name || ''} ${fund.givingSourceId || fund.giving_source_id || ''}`)) return 2;
   return 3;
 }
-
 function renderAccountingOverview(pane) {
   const position = accountingData.reports.position || {},
     activities = accountingData.reports.activities || {};
@@ -234,7 +215,6 @@ function renderAccountingOverview(pane) {
     }</tbody></table></div></div></div>
       <aside><div class="acct-suite-section-head"><h2>Fund balances</h2><span>${overviewFunds.length} active</span></div><div class="acct-suite-funds">${overviewFunds.map(({ fund, summary }) => `<div class="acct-suite-fund ${summary.campaignProgress ? 'campaign-progress' : ''}"><div><strong>${escapeHtml(fund.name)}</strong><span>${accountingMoney(summary.amount)}</span></div><small>${escapeHtml(summary.label)}</small></div>`).join('') || '<div class="acct-suite-fund"><strong>No funds configured</strong></div>'}</div><div class="acct-suite-health"><strong>Financial integrity: ${position.validation?.status === 'validated' ? 'healthy' : 'needs review'}</strong><p>The trial balance and financial-position equation are checked whenever reports load.</p></div></aside></div>`;
 }
-
 function accountingRegisterModel() {
   const options = accountingData.accounts
     .filter((item) => ['asset', 'liability'].includes(String(item.category || '').toLowerCase()))
@@ -244,10 +224,10 @@ function accountingRegisterModel() {
       name: item.name || 'Account',
       category: item.category,
     }))
-    .sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
-  if (!options.some((account) => account.number === accountingLedgerAccountNumber)) {
+    .sort((a, b) => a.number.localeCompare(b.number, void 0, { numeric: true }));
+  if (!options.some((account2) => account2.number === accountingLedgerAccountNumber)) {
     accountingLedgerAccountNumber =
-      options.find((account) => /checking|cash|bank/i.test(account.name))?.number || options[0]?.number || '';
+      options.find((account2) => /checking|cash|bank/i.test(account2.name))?.number || options[0]?.number || '';
   }
   const account = options.find((item) => item.number === accountingLedgerAccountNumber) ||
     options[0] || { number: '', name: 'Account register' };
@@ -290,7 +270,6 @@ function accountingRegisterModel() {
     credits: chronological.reduce((sum, row) => sum + Number(row.creditAmount ?? row.credit_amount ?? 0), 0),
   };
 }
-
 function accountingRegisterEntryForm(register) {
   const selectedAccountId = register.configuration?.id || register.account.id || '';
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
@@ -314,12 +293,11 @@ function accountingRegisterEntryForm(register) {
         `<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId || '')}">${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`
     )
     .join('');
-  const today = new Date().toISOString().slice(0, 10);
+  const today = /* @__PURE__ */ new Date().toISOString().slice(0, 10);
   const transaction = `<form class="acct-register-entry-form" onsubmit="submitAccountingRegisterEntry(event,'transaction')"><div class="acct-register-entry-grid"><label>Date<input name="entryDate" type="date" required value="${today}"></label><label>Payee / source<input name="payee" maxlength="120" required placeholder="Who was paid or who sent this?"></label><label>Offset account<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose account</option>${accountOptions}</select></label><label>Fund<select name="fundId" required>${fundOptions}</select></label><label>Check / reference<input name="reference" maxlength="60" placeholder="Optional"></label><label class="wide">Comment<input name="comment" maxlength="240" placeholder="What was this for?"></label><label>Payment<input name="payment" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00"></label><label>Deposit<input name="deposit" inputmode="decimal" type="number" min="0" step="0.01" placeholder="0.00"></label></div><div class="acct-register-entry-foot"><span class="acct-form-status">Enter either a payment or a deposit.</span><button class="acct-primary">Post transaction</button></div></form>`;
   const contribution = `<form class="acct-register-entry-form" onsubmit="submitAccountingRegisterEntry(event,'contribution')"><div class="acct-register-entry-grid contribution"><label>Date<input name="entryDate" type="date" required value="${today}"></label><label>Contributor<input name="payee" maxlength="120" required placeholder="Name or contribution source"></label><label>Contribution account<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose income account</option>${revenueOptions}</select></label><label>Fund<select name="fundId" required>${fundOptions}</select></label><label class="wide">Comment<input name="comment" maxlength="240" placeholder="Contribution details"></label><label>Deposit amount<input name="deposit" inputmode="decimal" type="number" min="0.01" step="0.01" required placeholder="0.00"></label></div><div class="acct-register-entry-foot"><span class="acct-form-status">The contribution will increase this register account and the selected fund.</span><button class="acct-primary">Post contribution</button></div></form>`;
   return `<section class="acct-register-entry"><div class="acct-register-entry-tabs"><button type="button" class="${accountingRegisterEntryMode === 'transaction' ? 'active' : ''}" onclick="setAccountingRegisterEntryMode('transaction')">＋ Deposit / Payment</button><button type="button" class="${accountingRegisterEntryMode === 'contribution' ? 'active' : ''}" onclick="setAccountingRegisterEntryMode('contribution')">＋ Contribution</button></div>${accountingRegisterEntryMode === 'contribution' ? contribution : transaction}</section>`;
 }
-
 function accountingRecurringPanel(register) {
   const items = accountingData.recurring || [],
     active = items.filter((item) => item.status === 'active');
@@ -340,16 +318,14 @@ function accountingRecurringPanel(register) {
       )
       .join(
         ''
-      )}</select></label><label>Next posting date<input name="nextPostingDate" required type="date" value="${escapeAttr(item.nextPostingDate || new Date().toISOString().slice(0, 10))}"></label><label>End date <small>Optional</small><input name="endDate" type="date" value="${escapeAttr(item.endDate || '')}"></label><label class="wide">Description<input name="description" maxlength="240" value="${escapeAttr(item.description || '')}" placeholder="What is this recurring expense for?"></label><div class="acct-recurring-foot"><span class="acct-form-status"></span><button class="acct-primary">${item.id ? 'Save schedule' : 'Start schedule'}</button></div></form></section>`;
+      )}</select></label><label>Next posting date<input name="nextPostingDate" required type="date" value="${escapeAttr(item.nextPostingDate || /* @__PURE__ */ new Date().toISOString().slice(0, 10))}"></label><label>End date <small>Optional</small><input name="endDate" type="date" value="${escapeAttr(item.endDate || '')}"></label><label class="wide">Description<input name="description" maxlength="240" value="${escapeAttr(item.description || '')}" placeholder="What is this recurring expense for?"></label><div class="acct-recurring-foot"><span class="acct-form-status"></span><button class="acct-primary">${item.id ? 'Save schedule' : 'Start schedule'}</button></div></form></section>`;
   }
   return `<section class="acct-recurring-panel compact"><div class="acct-recurring-head"><div><span class="acct-kicker">Automation</span><h2>Recurring expenses</h2><p>${active.length} active schedule${active.length === 1 ? '' : 's'} · Due transactions post automatically each morning.</p></div><button class="acct-primary" onclick="accountingRecurringEditor={};renderAccountingPane()">＋ Schedule expense</button></div><div class="acct-recurring-list">${items.map((item) => `<article><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.payee)} · ${escapeHtml(item.expenseAccount)} · ${escapeHtml(item.fund)}</small></div><span>${accountingMoney(item.amount)}<small>${escapeHtml(item.frequency)} · next ${accountingDate(item.nextPostingDate)}</small></span><i class="acct-status ${item.status === 'active' ? 'posted' : ''}">${escapeHtml(item.status)}</i><div><button onclick="editAccountingRecurring('${escapeAttr(item.id)}')">Edit</button>${item.status === 'active' ? `<button onclick="toggleAccountingRecurring('${escapeAttr(item.id)}',${item.version},'paused')">Pause</button>` : item.status === 'paused' ? `<button onclick="toggleAccountingRecurring('${escapeAttr(item.id)}',${item.version},'active')">Resume</button>` : ''}</div></article>`).join('') || '<div class="acct-fund-account-empty">No recurring expenses yet.</div>'}</div></section>`;
 }
-
 function accountingPledgeAccountSetting(settings = {}) {
   const revenue = accountingData.accounts.filter((account) => account.category === 'revenue');
   return `<label>Pledge comparison account<select id="accountingPledgeComparisonAccount"><option value="">Not configured</option>${revenue.map((account) => `<option value="${escapeAttr(account.id)}" ${settings.pledgeComparisonAccountId === account.id ? 'selected' : ''}>${escapeHtml(account.accountNumber)} · ${escapeHtml(account.name)}</option>`).join('')}</select><small>Choose the general stewardship/offering revenue account. AGAPAY will not guess or change a budget line.</small></label>`;
 }
-
 async function submitAccountingSimpleIncome(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -414,7 +390,6 @@ async function submitAccountingSimpleIncome(event) {
   accountingView = 'ledger';
   renderAccountingPane();
 }
-
 async function submitAccountingInKindGift(event) {
   event.preventDefault();
   const form = event.currentTarget,

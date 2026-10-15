@@ -1,7 +1,5 @@
+// Generated from src/browser/parish/features/koinonia/bulletins.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard Koinonia: block-based Sunday bulletin editor.
-
 let bulletinState = {
   loaded: false,
   loading: false,
@@ -15,11 +13,9 @@ let bulletinState = {
 };
 let bulletinQrLoading = false;
 let bulletinLiturgicalRequestId = 0;
-
 function bulletinApi(path = '') {
   return `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/bulletins${path}`;
 }
-
 function installBulletinEntryPoints() {
   if (typeof document.createElement === 'function' && !document.querySelector('link[href^="/parish/bulletins.css"]')) {
     const stylesheet = document.createElement('link');
@@ -32,7 +28,7 @@ function installBulletinEntryPoints() {
   if (navigation && overview && !navigation.querySelector('[data-koinonia-view="bulletins"]')) {
     overview.insertAdjacentHTML(
       'afterend',
-      '<button type="button" data-koinonia-view="bulletins" onclick="setKoinoniaStudioView(\'bulletins\')"><span>▥</span>Bulletins</button>'
+      `<button type="button" data-koinonia-view="bulletins" onclick="setKoinoniaStudioView('bulletins')"><span>▥</span>Bulletins</button>`
     );
   }
   const metrics = document.querySelector('.koinonia-metric-grid');
@@ -43,7 +39,6 @@ function installBulletinEntryPoints() {
     );
   }
 }
-
 function ensureBulletinWorkspace() {
   const mount = document.getElementById('bulletinMount');
   if (!mount || mount.childElementCount) return;
@@ -69,9 +64,8 @@ function ensureBulletinWorkspace() {
     </div>
     <dialog id="templeTropariaDialog" class="bulletin-hymn-dialog"><div class="bulletin-hymn-dialog-head"><div><span class="eyebrow">Approved parish translations</span><h3>Temple hymns library</h3><p>Save the troparia and kontakia used regularly at your temple. These become reusable starting texts for new bulletins.</p></div><button type="button" onclick="closeTempleTropariaEditor()" aria-label="Close temple hymns editor">×</button></div><div id="templeTropariaEditor" class="bulletin-hymn-library"></div><div class="bulletin-hymn-dialog-actions"><button class="btn btn-ghost" type="button" onclick="addTempleTroparionDraft()">＋ Add hymn</button><button class="btn btn-gold" type="button" onclick="saveTempleTroparia()">Save approved translations</button></div></dialog>`;
 }
-
 function nextSundayDate() {
-  const date = new Date();
+  const date = /* @__PURE__ */ new Date();
   date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + ((7 - date.getDay()) % 7));
   const year = date.getFullYear();
@@ -79,9 +73,8 @@ function nextSundayDate() {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-
 function bulletinDisplayDate(value) {
-  const date = new Date(`${value || nextSundayDate()}T12:00:00`);
+  const date = /* @__PURE__ */ new Date(`${value || nextSundayDate()}T12:00:00`);
   return Number.isNaN(date.getTime())
     ? 'Sunday'
     : new Intl.DateTimeFormat('en-US', {
@@ -91,7 +84,6 @@ function bulletinDisplayDate(value) {
         year: 'numeric',
       }).format(date);
 }
-
 function newBulletinBlock(type) {
   const defaults = {
     message: {
@@ -126,7 +118,6 @@ function newBulletinBlock(type) {
   };
   return { id: crypto.randomUUID(), type, ...(defaults[type] || defaults.message) };
 }
-
 function createBulletinPreviewDraft() {
   const suggested = bulletinState.suggestions?.blocks;
   const blocks =
@@ -154,12 +145,10 @@ function createBulletinPreviewDraft() {
     blocks,
   };
 }
-
 function openBulletinWorkspace() {
   setKoinoniaStudioView('bulletins');
   void loadBulletins();
 }
-
 async function loadBulletins(force = false) {
   ensureBulletinWorkspace();
   if (!currentParish || bulletinState.loading || (bulletinState.loaded && !force)) {
@@ -196,7 +185,6 @@ async function loadBulletins(force = false) {
     bulletinState.loading = false;
   }
 }
-
 function initializeBulletinBuilder() {
   ensureBulletinWorkspace();
   if (!bulletinState.active) bulletinState.active = createBulletinPreviewDraft();
@@ -212,7 +200,6 @@ function initializeBulletinBuilder() {
   renderBulletinBuilder();
   void ensureBulletinQr();
 }
-
 async function ensureBulletinQr() {
   const hasGiving = bulletinState.active?.blocks?.some((block) => block.type === 'giving');
   if (!hasGiving || bulletinQrLoading || typeof renderQrCode !== 'function') return;
@@ -225,7 +212,6 @@ async function ensureBulletinQr() {
     bulletinQrLoading = false;
   }
 }
-
 function renderBulletinDraftSelect() {
   const select = document.getElementById('bulletinDraftSelect');
   const count = document.getElementById('koinoniaBulletinCount');
@@ -245,7 +231,6 @@ function renderBulletinDraftSelect() {
     .join('')}`;
   select.value = bulletinState.active?.id || '';
 }
-
 function openBulletinDraft(id) {
   if (!id) {
     createNewBulletinDraft();
@@ -262,7 +247,6 @@ function openBulletinDraft(id) {
   bulletinState.dirty = false;
   initializeBulletinBuilder();
 }
-
 function createNewBulletinDraft() {
   if (bulletinState.dirty && !confirm('Start a new edition and discard your unsaved changes?')) return;
   bulletinState.active = createBulletinPreviewDraft();
@@ -270,14 +254,12 @@ function createNewBulletinDraft() {
   bulletinState.dirty = false;
   initializeBulletinBuilder();
 }
-
 function updateBulletinField(field, value) {
   if (!bulletinState.active) initializeBulletinBuilder();
   bulletinState.active[field] = value;
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 async function updateBulletinServiceDate(value) {
   updateBulletinField('serviceDate', value);
   const draft = bulletinState.active;
@@ -339,11 +321,10 @@ async function updateBulletinServiceDate(value) {
     setStatus(error.message || 'Unable to load Sunday’s liturgical details.', 'error');
   }
 }
-
 function addBulletinBlock(type) {
   if (!bulletinState.active) initializeBulletinBuilder();
   if (type === 'liturgical') {
-    const existing = bulletinState.active.blocks.find((block) => block.type === 'liturgical');
+    const existing = bulletinState.active.blocks.find((block2) => block2.type === 'liturgical');
     if (existing) {
       bulletinState.selectedBlockId = existing.id;
       renderBulletinBuilder();
@@ -352,7 +333,7 @@ function addBulletinBlock(type) {
     }
   }
   if (type === 'hymns') {
-    const existing = bulletinState.active.blocks.find((block) => block.type === 'hymns');
+    const existing = bulletinState.active.blocks.find((block2) => block2.type === 'hymns');
     if (existing) {
       bulletinState.selectedBlockId = existing.id;
       renderBulletinBuilder();
@@ -360,7 +341,7 @@ function addBulletinBlock(type) {
     }
   }
   if (type === 'celebrations') {
-    const existing = bulletinState.active.blocks.find((block) => block.type === 'celebrations');
+    const existing = bulletinState.active.blocks.find((block2) => block2.type === 'celebrations');
     if (existing) {
       bulletinState.selectedBlockId = existing.id;
       renderBulletinBuilder();
@@ -374,13 +355,11 @@ function addBulletinBlock(type) {
   renderBulletinBuilder();
   if (type === 'liturgical') void updateBulletinServiceDate(bulletinState.active.serviceDate);
 }
-
 function selectBulletinBlock(id) {
   bulletinState.selectedBlockId = id;
   renderBulletinOutline();
   renderBulletinBlockEditor();
 }
-
 function removeBulletinBlock(id) {
   if (!bulletinState.active || bulletinState.active.blocks.length <= 1) {
     setStatus('Keep at least one content block in the bulletin.', 'error');
@@ -391,7 +370,6 @@ function removeBulletinBlock(id) {
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 function moveBulletinBlock(id, direction) {
   const blocks = bulletinState.active?.blocks || [];
   const index = blocks.findIndex((block) => block.id === id);
@@ -401,7 +379,6 @@ function moveBulletinBlock(id, direction) {
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 function updateBulletinBlockField(id, field, value) {
   const block = bulletinState.active?.blocks?.find((item) => item.id === id);
   if (!block || !['title', 'body', 'saint', 'saintLife', 'quoteText', 'quoteAttribution'].includes(field)) return;
@@ -410,7 +387,6 @@ function updateBulletinBlockField(id, field, value) {
   renderBulletinPage();
   renderBulletinSaveState();
 }
-
 function addBulletinItem(id) {
   const block = bulletinState.active?.blocks?.find((item) => item.id === id);
   if (!block || !Array.isArray(block.items)) return;
@@ -418,9 +394,8 @@ function addBulletinItem(id) {
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 function updateBulletinItem(id, index, field, value) {
-  const block = bulletinState.active?.blocks?.find((item) => item.id === id);
+  const block = bulletinState.active?.blocks?.find((item2) => item2.id === id);
   const item = block?.items?.[index];
   if (!item || !['label', 'text'].includes(field)) return;
   item[field] = value;
@@ -429,7 +404,6 @@ function updateBulletinItem(id, index, field, value) {
   renderBulletinPage();
   renderBulletinSaveState();
 }
-
 function removeBulletinItem(id, index) {
   const block = bulletinState.active?.blocks?.find((item) => item.id === id);
   if (!block || !Array.isArray(block.items)) return;
@@ -437,7 +411,6 @@ function removeBulletinItem(id, index) {
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 function newBulletinHymn() {
   return {
     id: crypto.randomUUID(),
@@ -447,7 +420,6 @@ function newBulletinHymn() {
     text: '',
   };
 }
-
 function addBulletinHymn(id) {
   const block = bulletinState.active?.blocks?.find((item) => item.id === id && item.type === 'hymns');
   if (!block) return;
@@ -456,7 +428,6 @@ function addBulletinHymn(id) {
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 function updateBulletinHymn(id, index, field, value) {
   const hymn = bulletinState.active?.blocks?.find((item) => item.id === id)?.hymns?.[index];
   if (!hymn || !['kind', 'title', 'tone', 'text'].includes(field)) return;
@@ -465,7 +436,6 @@ function updateBulletinHymn(id, index, field, value) {
   renderBulletinPage();
   renderBulletinSaveState();
 }
-
 function removeBulletinHymn(id, index) {
   const block = bulletinState.active?.blocks?.find((item) => item.id === id && item.type === 'hymns');
   if (!block || !Array.isArray(block.hymns)) return;
@@ -473,7 +443,6 @@ function removeBulletinHymn(id, index) {
   bulletinState.dirty = true;
   renderBulletinBuilder();
 }
-
 function refreshBulletinHymnsFromLibrary(id) {
   const block = bulletinState.active?.blocks?.find((item) => item.id === id && item.type === 'hymns');
   if (!block) return;
@@ -482,7 +451,6 @@ function refreshBulletinHymnsFromLibrary(id) {
   renderBulletinBuilder();
   setStatus('Approved temple hymns copied into this bulletin.', 'success');
 }
-
 function bulletinBlockMarkup(block, { omitSaintLife = false, omitSaintQuote = false } = {}) {
   if (block.type === 'liturgical') {
     const readings = (block.items || [])
@@ -531,11 +499,9 @@ function bulletinBlockMarkup(block, { omitSaintLife = false, omitSaintQuote = fa
   }
   return `<section class="bulletin-print-block"><h2>${escapeHtml(block.title)}</h2><p>${escapeHtml(block.body)}</p></section>`;
 }
-
 function bulletinPageHeaderMarkup(draft, parishName, city, { cover = false } = {}) {
   return `<header class="bulletin-page-header${cover ? ' is-cover' : ''}"><span class="bulletin-page-kicker">${escapeHtml(parishName)}</span><h1>${escapeHtml(draft.title || 'Sunday Bulletin')}</h1><p>${escapeHtml(bulletinDisplayDate(draft.serviceDate))}${city ? ` · ${escapeHtml(city)}` : ''}</p></header>`;
 }
-
 function bulletinFoldSaintFeatureMarkup(liturgicalBlock) {
   if (!liturgicalBlock?.saintLife && !liturgicalBlock?.quoteText) return '';
   const life = liturgicalBlock.saintLife
@@ -546,12 +512,11 @@ function bulletinFoldSaintFeatureMarkup(liturgicalBlock) {
     : '';
   return `<section class="bulletin-print-block bulletin-fold-saint-feature"><h2>Life & wisdom of the saint</h2>${liturgicalBlock.saint ? `<strong class="bulletin-fold-saint-name">${escapeHtml(liturgicalBlock.saint)}</strong>` : ''}${life}${quote}</section>`;
 }
-
 function renderFoldedBulletin(draft, parishName, city) {
   const blocks = Array.isArray(draft.blocks) ? draft.blocks : [];
   const liturgical = blocks.find((block) => block.type === 'liturgical');
   const byType = (...types) => blocks.filter((block) => types.includes(block.type));
-  const assignedTypes = new Set([
+  const assignedTypes = /* @__PURE__ */ new Set([
     'liturgical',
     'giving',
     'events',
@@ -573,7 +538,6 @@ function renderFoldedBulletin(draft, parishName, city) {
     : '<section class="bulletin-print-block bulletin-print-liturgical"><h2>Saint & appointed readings</h2><p class="bulletin-print-empty">Add the saint and readings for this Sunday.</p></section>';
   return `<div class="bulletin-fold-sheets"><section class="bulletin-fold-sheet is-outside" aria-label="Outside spread"><div class="bulletin-fold-panel is-back">${backBlocks.map((block) => bulletinBlockMarkup(block)).join('') || '<section class="bulletin-print-block"><h2>Parish life</h2><p class="bulletin-print-empty">Add giving, celebrations, or upcoming events.</p></section>'}${panelFooter}</div><div class="bulletin-fold-panel is-front">${bulletinPageHeaderMarkup(draft, parishName, city, { cover: true })}<div class="bulletin-cover-content">${frontLiturgical}</div>${panelFooter}</div></section><section class="bulletin-fold-sheet is-inside" aria-label="Inside spread"><div class="bulletin-fold-panel is-inside-left">${insideLeftBlocks.map((block) => bulletinBlockMarkup(block)).join('') || '<section class="bulletin-print-block"><h2>This week in worship</h2><p class="bulletin-print-empty">Add this week’s service schedule.</p></section>'}${panelFooter}</div><div class="bulletin-fold-panel is-inside-right">${insideRightBlocks.map((block) => bulletinBlockMarkup(block)).join('')}${bulletinFoldSaintFeatureMarkup(liturgical)}${panelFooter}</div></section></div>`;
 }
-
 function bulletinBlockLabel(block) {
   return (
     {
@@ -588,7 +552,6 @@ function bulletinBlockLabel(block) {
     }[block.type] || block.title
   );
 }
-
 function renderBulletinPage() {
   const draft = bulletinState.active;
   const page = document.getElementById('bulletinPagePreview');
@@ -605,7 +568,6 @@ function renderBulletinPage() {
     previewStatus.innerHTML = `<i></i> ${draft.template === 'folded' ? 'Continuous preview · Downloads as four folded panels' : 'Continuous editing preview'}`;
   }
 }
-
 function renderBulletinOutline() {
   const draft = bulletinState.active;
   const outline = document.getElementById('bulletinBlockOutline');
@@ -617,7 +579,6 @@ function renderBulletinOutline() {
     )
     .join('');
 }
-
 function renderBulletinBlockEditor() {
   const editor = document.getElementById('bulletinBlockEditor');
   const block = bulletinState.active?.blocks?.find((item) => item.id === bulletinState.selectedBlockId);
@@ -668,7 +629,6 @@ function renderBulletinBlockEditor() {
   }
   editor.innerHTML = `<span class="eyebrow">Edit block</span>${title}<label>Body<textarea maxlength="8000" rows="8" oninput="updateBulletinBlockField('${block.id}','body',this.value)">${escapeHtml(block.body || '')}</textarea></label>`;
 }
-
 function renderBulletinSaveState() {
   const saveState = document.getElementById('bulletinSaveState');
   if (!saveState || !bulletinState.active) return;
@@ -678,14 +638,12 @@ function renderBulletinSaveState() {
       ? 'Draft saved'
       : 'Preview draft';
 }
-
 function renderBulletinBuilder() {
   renderBulletinPage();
   renderBulletinOutline();
   renderBulletinBlockEditor();
   renderBulletinSaveState();
 }
-
 function duplicateBulletinDraft() {
   if (!bulletinState.active) initializeBulletinBuilder();
   const copy = structuredClone(bulletinState.active);
@@ -701,7 +659,6 @@ function duplicateBulletinDraft() {
   initializeBulletinBuilder();
   setStatus('Bulletin duplicated as a new draft.', 'success');
 }
-
 async function saveBulletinDraft() {
   const draft = bulletinState.active;
   if (!draft) return;
@@ -734,7 +691,6 @@ async function saveBulletinDraft() {
     if (button) button.disabled = false;
   }
 }
-
 function openTempleTropariaEditor() {
   bulletinState.templeTropariaDraft = structuredClone(bulletinState.templeTroparia || []);
   renderTempleTropariaEditor();
@@ -743,30 +699,25 @@ function openTempleTropariaEditor() {
   if (typeof dialog.showModal === 'function') dialog.showModal();
   else dialog.setAttribute('open', '');
 }
-
 function closeTempleTropariaEditor() {
   const dialog = document.getElementById('templeTropariaDialog');
   if (!dialog) return;
   if (typeof dialog.close === 'function') dialog.close();
   else dialog.removeAttribute('open');
 }
-
 function addTempleTroparionDraft() {
   bulletinState.templeTropariaDraft.push(newBulletinHymn());
   renderTempleTropariaEditor();
 }
-
 function updateTempleTroparionDraft(index, field, value) {
   const hymn = bulletinState.templeTropariaDraft[index];
   if (!hymn || !['kind', 'title', 'tone', 'text'].includes(field)) return;
   hymn[field] = value;
 }
-
 function removeTempleTroparionDraft(index) {
   bulletinState.templeTropariaDraft.splice(index, 1);
   renderTempleTropariaEditor();
 }
-
 function renderTempleTropariaEditor() {
   const editor = document.getElementById('templeTropariaEditor');
   if (!editor) return;
@@ -782,7 +733,6 @@ function renderTempleTropariaEditor() {
     )
     .join('');
 }
-
 async function saveTempleTroparia() {
   const button = document.querySelector('.bulletin-hymn-dialog-actions .btn-gold');
   if (button) button.disabled = true;
@@ -811,7 +761,6 @@ async function saveTempleTroparia() {
     if (button) button.disabled = false;
   }
 }
-
 function printBulletinPreview() {
   const page = document.getElementById('bulletinPagePreview');
   const draft = bulletinState.active;
@@ -839,11 +788,10 @@ function printBulletinPreview() {
     printWindow.addEventListener('afterprint', cleanup, { once: true });
     printWindow.focus();
     printWindow.print();
-    setTimeout(cleanup, 60000);
+    setTimeout(cleanup, 6e4);
   };
   const stylesheet = printDocument.querySelector('link[rel="stylesheet"]');
   if (stylesheet) stylesheet.addEventListener('load', printWhenReady, { once: true });
   else printWhenReady();
 }
-
 installBulletinEntryPoints();

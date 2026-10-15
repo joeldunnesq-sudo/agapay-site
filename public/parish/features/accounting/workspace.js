@@ -1,8 +1,5 @@
+// Generated from src/browser/parish/features/accounting/workspace.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: workspace.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 async function renderAccountingAttachments(entityType, entityId, container) {
   if (!container) return;
   container.dataset.accountingAttachments = `${entityType}:${entityId}`;
@@ -22,7 +19,6 @@ async function renderAccountingAttachments(entityType, entityId, container) {
   const items = payload.attachments || [];
   container.innerHTML = `<section class="acct-attachments"><div class="acct-list-head"><div><span class="acct-kicker">Private documents</span><h3>Attachments</h3><p>PDF, JPG, or PNG · 10 MB maximum</p></div></div><form class="acct-attachment-upload" onsubmit="accountingUpload(event,'${escapeAttr(entityType)}','${escapeAttr(entityId)}')"><label>Document<input name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required></label><label>Display name<input name="displayName" maxlength="180" placeholder="Optional document label"></label><button class="acct-primary">Upload</button><span class="acct-form-status"></span></form><div class="acct-attachment-list">${items.map((item) => `<div><span><strong>${escapeHtml(item.displayName)}</strong><small>${escapeHtml(item.mimeType)} · ${Math.max(1, Math.ceil(Number(item.sizeBytes) / 1024))} KB · ${accountingDate(item.createdAt)}</small></span><div class="acct-row-actions"><button type="button" onclick="downloadAccountingAttachment('${escapeAttr(item.id)}','${escapeAttr(item.displayName)}')">Download</button><button type="button" onclick="removeAccountingAttachment('${escapeAttr(item.id)}',${item.version},'${escapeAttr(entityType)}','${escapeAttr(entityId)}',this)">Delete</button></div></div>`).join('') || '<p>No attachments yet.</p>'}</div></section>`;
 }
-
 async function accountingUpload(event, entityType, entityId) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -43,7 +39,6 @@ async function accountingUpload(event, entityType, entityId) {
   }
   await renderAccountingAttachments(entityType, entityId, form.closest('[data-accounting-attachments]'));
 }
-
 async function downloadAccountingAttachment(attachmentId, filename) {
   const response = await fetch(accountingApi(`/attachments/${encodeURIComponent(attachmentId)}/download`), {
     headers: authHeaders(),
@@ -62,7 +57,6 @@ async function downloadAccountingAttachment(attachmentId, filename) {
   link.remove();
   URL.revokeObjectURL(url);
 }
-
 async function removeAccountingAttachment(attachmentId, expectedVersion, entityType, entityId, button) {
   if (!confirm('Delete this attachment from the accounting record?')) return;
   const response = await fetch(accountingApi(`/attachments/${encodeURIComponent(attachmentId)}`), {
@@ -77,11 +71,9 @@ async function removeAccountingAttachment(attachmentId, expectedVersion, entityT
   }
   await renderAccountingAttachments(entityType, entityId, button.closest('[data-accounting-attachments]'));
 }
-
 function accountingPreviewOnly() {
   return !moduleIncluded('accounting') || !currentParish?.accountingAvailable;
 }
-
 function renderAccountingPaywall(pane = document.getElementById('accountingPane')) {
   if (!pane) return;
   const included = moduleIncluded('accounting');
@@ -156,7 +148,6 @@ function renderAccountingPaywall(pane = document.getElementById('accountingPane'
   }
   renderAccountingReadiness({ status: 'disabled', ready: false }, pane);
 }
-
 function renderAccountingReadiness(accounting, pane = document.getElementById('accountingPane')) {
   if (!pane) return;
   const setup = accounting.status === 'setup_required';
@@ -176,27 +167,24 @@ function renderAccountingReadiness(accounting, pane = document.getElementById('a
   if (copy) copy.textContent = setup ? 'Included · Setup required' : 'Included · Needs attention';
   pane.innerHTML = `<section class="acct-access-card"><span class="acct-kicker">Accounting access</span><h2>${title}</h2><p>${message}</p><button class="acct-primary" type="button" onclick="loadAccountingTab(true)">Check again</button></section>`;
 }
-
 function accountingViewTitle() {
-  return (
-    {
-      overview: 'Overview',
-      ledger: 'General Ledger',
-      journals: 'Journal Entries',
-      funds: 'Funds',
-      reports: 'Financial Reports',
-      payables: 'Payables',
-      budgets: 'Budgets',
-      banking: 'Reconciliation',
-      close: 'Period Close',
-      governance: 'Governance',
-      setup: 'Setup',
-      settings: 'Settings',
-      integrations: 'Settings',
-    }[accountingView] || 'Overview'
-  );
+  const titles = {
+    overview: 'Overview',
+    ledger: 'General Ledger',
+    journals: 'Journal Entries',
+    funds: 'Funds',
+    reports: 'Financial Reports',
+    payables: 'Payables',
+    budgets: 'Budgets',
+    banking: 'Reconciliation',
+    close: 'Period Close',
+    governance: 'Governance',
+    setup: 'Setup',
+    settings: 'Settings',
+    integrations: 'Settings',
+  };
+  return titles[accountingView] || 'Overview';
 }
-
 function syncAccountingExperienceChrome() {
   const shell = document.querySelector('.acct-suite-shell');
   if (shell) shell.dataset.accountingExperience = accountingExperienceMode;
@@ -262,7 +250,6 @@ function syncAccountingExperienceChrome() {
   }
   if (shell) shell.classList.toggle('acct-suite-shell--advanced-open', isTreasurer && accountingAdvancedNavExpanded);
 }
-
 function setAccountingExperienceMode(mode) {
   accountingExperienceMode = mode === 'accountant' ? 'accountant' : 'treasurer';
   accountingAdvancedNavExpanded = false;
@@ -271,12 +258,10 @@ function setAccountingExperienceMode(mode) {
   } catch {}
   renderAccountingPane();
 }
-
 function toggleAccountingAdvancedNav() {
   accountingAdvancedNavExpanded = !accountingAdvancedNavExpanded;
   syncAccountingExperienceChrome();
 }
-
 function renderAccountingPane() {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
@@ -325,7 +310,7 @@ function renderAccountingPane() {
         <section class="acct-card"><span class="acct-kicker">Readiness</span><div class="acct-checklist">${(overview.checklist || []).map((item) => `<div class="${item.complete ? 'complete' : ''}"><i>${item.complete ? '✓' : '○'}</i><span>${escapeHtml(item.label)}</span></div>`).join('')}</div></section>
         <section class="acct-card acct-settings"><span class="acct-kicker">Parish settings</span><h2>Fiscal year & opening balances</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({ length: 12 }, (_, index) => `<option value="${index + 1}" ${Number(settings.fiscalYearStartMonth || 1) === index + 1 ? 'selected' : ''}>${new Date(2026, index, 1).toLocaleString('en-US', { month: 'long' })}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition === 'pending' ? 'selected' : ''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition === 'required' ? 'selected' : ''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition === 'deferred' ? 'selected' : ''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition === 'not_applicable' ? 'selected' : ''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition === 'posted' ? 'selected' : ''}>Posted</option></select></label>${accountingPledgeAccountSetting(settings)}<button type="button" class="acct-primary" onclick="saveAccountingSettings()" ${settings.version ? '' : 'disabled'}>Save settings</button></section>
         <section class="acct-card"><span class="acct-kicker">Ledger foundation validation</span><div id="accountingLedgerValidation" class="acct-facts"><div><strong>${overview.validation?.ok ? 'Healthy' : 'Review needed'}</strong><span>Ledger integrity</span></div></div><button type="button" class="acct-refresh" onclick="validateAccountingLedgerFoundation()">Validate foundation</button></section>
-        <section class="acct-card acct-settings"><span class="acct-kicker">Opening balances</span><h2>Enter starting balances</h2><form class="acct-phase-form" onsubmit="postAccountingOpeningBalances(event)"><label>Effective date<input name="effectiveDate" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label><label>Description<input name="description" required value="Opening balances"></label><div class="acct-form-grid"><label>Debit account<select name="debitAccountId" required>${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Credit account<select name="creditAccountId" required>${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select><label>Fund<select name="fundId" required>${accountingData.funds.map((f) => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required></label></div><button class="acct-primary">Post opening balances</button><span class="acct-form-status"></span></form></section>
+        <section class="acct-card acct-settings"><span class="acct-kicker">Opening balances</span><h2>Enter starting balances</h2><form class="acct-phase-form" onsubmit="postAccountingOpeningBalances(event)"><label>Effective date<input name="effectiveDate" type="date" required value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}"></label><label>Description<input name="description" required value="Opening balances"></label><div class="acct-form-grid"><label>Debit account<select name="debitAccountId" required>${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Credit account<select name="creditAccountId" required>${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select><label>Fund<select name="fundId" required>${accountingData.funds.map((f) => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required></label></div><button class="acct-primary">Post opening balances</button><span class="acct-form-status"></span></form></section>
         <section class="acct-card"><span class="acct-kicker">Switching accounting systems</span><h2>Move from QuickBooks or Aplos</h2><p>Bring over a chart of accounts, vendors, funds, and either a clean opening balance or advanced general-ledger history through reviewed CSV steps.</p><button type="button" class="acct-primary" onclick="openAccountingMigration()">Open migration wizard</button><small>Treasurer-only · previews never write to the ledger.</small></section>
         <section class="acct-card"><span class="acct-kicker">Current books</span><div class="acct-facts"><div><strong>${escapeHtml(overview.currentFiscalYear?.name || 'Not set')}</strong><span>Fiscal year</span></div><div><strong>${escapeHtml(overview.currentPeriod?.name || 'Not open')}</strong><span>Open period</span></div><div><strong>${overview.validation?.ok ? 'Healthy' : 'Review needed'}</strong><span>Ledger integrity</span></div></div></section>
       </div>`;
@@ -384,7 +369,6 @@ function renderAccountingPane() {
       : `
       <div class="acct-list-head"><div><span class="acct-kicker">Manual ledger</span><h2>Journal entries</h2></div><button type="button" class="acct-primary" onclick="newAccountingJournal()">New journal entry</button></div><div class="acct-ledger-toggle"><button onclick="setAccountingView('ledger')">Register</button><button class="active" onclick="setAccountingView('journals')">Journal entries</button></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Entry</th><th>Description</th><th>Source</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.entryDate || row.entry_date || row.postingDate)}</td><td><strong>${escapeHtml(row.entryNumber || row.entry_number || row.id || '')}</strong></td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${escapeHtml(row.sourceType || row.source_type || 'Manual')}</td><td><strong>${accountingMoney(row.totalDebits ?? row.total_debits ?? row.totalCredits ?? row.total_credits ?? 0)}</strong></td><td><span class="acct-status ${escapeAttr(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</span></td><td><button type="button" class="acct-link" onclick="openAccountingJournalAttachments('${escapeAttr(row.id)}')">Attachments</button>${row.status === 'draft' ? `<button type="button" class="acct-link" onclick="editAccountingJournal('${escapeAttr(row.id)}')">Continue</button><button type="button" class="acct-link" onclick="voidAccountingJournal('${escapeAttr(row.id)}')">Void</button>` : row.status === 'posted' ? `<button type="button" class="acct-link" onclick="reverseAccountingJournal('${escapeAttr(row.id)}')">Reverse</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
 }
-
 function openAccountingJournalAttachments(id) {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
@@ -399,40 +383,33 @@ function openAccountingJournalAttachments(id) {
     pane.querySelector('[data-journal-attachment-panel] [data-accounting-attachments]')
   );
 }
-
 function toggleAccountingLedgerOrder() {
   accountingLedgerNewestFirst = !accountingLedgerNewestFirst;
   renderAccountingPane();
 }
-
 function setAccountingLedgerAccount(accountNumber) {
   accountingLedgerAccountNumber = accountNumber;
   accountingLedgerSearch = '';
   renderAccountingPane();
 }
-
 function searchAccountingLedger(event) {
   event.preventDefault();
   accountingLedgerSearch = String(new FormData(event.currentTarget).get('query') || '').trim();
   renderAccountingPane();
 }
-
 function clearAccountingLedgerSearch() {
   accountingLedgerSearch = '';
   renderAccountingPane();
 }
-
 function setAccountingRegisterEntryMode(mode) {
   accountingRegisterEntryMode = mode === 'contribution' ? 'contribution' : 'transaction';
   renderAccountingPane();
 }
-
 function applyAccountingRegisterDefaultFund(accountSelect) {
   const defaultFundId = accountSelect.selectedOptions[0]?.dataset.defaultFund || '';
   const fundSelect = accountSelect.form?.elements?.fundId;
   if (defaultFundId && fundSelect) fundSelect.value = defaultFundId;
 }
-
 function setAccountingView(view) {
   if (accountingPreviewOnly()) {
     renderAccountingPaywall();
@@ -467,21 +444,18 @@ function setAccountingView(view) {
   if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
   if (accountingView === 'governance' && !accountingData.governance) loadAccountingGovernance();
 }
-
 function openAccountingSimpleIncome() {
   accountingSimpleIncomeMessage = '';
   accountingSimpleEntryMode = 'income';
   accountingView = 'ledger';
   renderAccountingPane();
 }
-
 function openAccountingInKindGift() {
   accountingInKindGiftMessage = '';
   accountingSimpleEntryMode = 'in-kind';
   accountingView = 'ledger';
   renderAccountingPane();
 }
-
 async function openAccountingSimpleBill() {
   accountingPayablesView = 'bills';
   accountingView = 'payables';
@@ -489,7 +463,6 @@ async function openAccountingSimpleBill() {
   else renderAccountingPane();
   showAccountingBillForm();
 }
-
 async function loadAccountingTab(force = false) {
   const pane = document.getElementById('accountingPane');
   if (!pane || !currentParish?.parishId) return;
@@ -598,7 +571,6 @@ async function loadAccountingTab(force = false) {
     pane.innerHTML = `<div class="acct-empty error"><strong>Accounting needs attention</strong><span>${escapeHtml(error.message || 'Unable to load Accounting.')}</span><button type="button" onclick="loadAccountingTab(true)">Try again</button></div>`;
   }
 }
-
 async function loadAccountingPhaseD() {
   if (accountingData.tier !== 'advanced_operations') {
     renderAccountingPane();
@@ -607,7 +579,7 @@ async function loadAccountingPhaseD() {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Loading Parish Accounting...</p>';
   try {
-    const year = new Date().getUTCFullYear();
+    const year = /* @__PURE__ */ new Date().getUTCFullYear();
     const [
       overviewRes,
       vendorsRes,
@@ -679,7 +651,6 @@ async function loadAccountingPhaseD() {
       pane.innerHTML = `<div class="acct-empty error"><strong>Unable to load Parish Accounting</strong><span>${escapeHtml(error.message)}</span><button onclick="loadAccountingPhaseD()">Try again</button></div>`;
   }
 }
-
 async function saveAccountingSettings() {
   const settings = accountingData.setup?.settings;
   if (!settings) return;

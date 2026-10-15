@@ -1,0 +1,877 @@
+import type { PortabilityDatabase } from '../../portability/contracts.js';
+import type { LedgerServiceActor } from '../ledger/service.js';
+interface ReconciliationSqlRow {
+  entry_id: string;
+  id: string;
+  name: string;
+  account_id: string;
+  account_type: string;
+  institution_name: string;
+  masked_last4: string;
+  currency: string;
+  settlement_profile_id: string;
+  stripe_external_account_id: string;
+  is_default: number;
+  status: string;
+  is_active: number;
+  version: number;
+  bank_account_id: string;
+  source_type: string;
+  posted_date: string;
+  description: string;
+  reference_number: string;
+  check_number: string;
+  amount: number;
+  direction: string;
+  match_status: string;
+  matched_amount: number;
+  unmatched_amount: number;
+  imported_count: number;
+  duplicate_count: number;
+  statement_ending_balance: number;
+  balance: number;
+  statement_end_date: string;
+  netEffect: number;
+  postingDate: string;
+  journalLineId: string;
+  journalEntryId: string;
+  debit_amount: number;
+  credit_amount: number;
+  deposits: number;
+  withdrawals: number;
+  bank_name: string;
+  statement_start_date: string;
+  statement_beginning_balance: number;
+  ledger_beginning_balance: number;
+  require_separate_reviewer: number;
+  created_by_actor_id: string;
+  correlation_id: string;
+}
+interface BankActorOptions {
+  actor: LedgerServiceActor;
+  entitlementTier: string;
+}
+interface ReconciliationOptions extends BankActorOptions {
+  reconciliationId: string;
+}
+export interface BankCsvRow {
+  rowNumber: number;
+  postedDate: string;
+  description: string;
+  normalizedDescription: string;
+  amount: number;
+  direction: string;
+  referenceNumber: string;
+  checkNumber: string;
+  externalTransactionId: string;
+  rawRowHash?: string;
+}
+interface ReconciliationInput extends Record<string, unknown> {
+  startDate: string;
+  endDate: string;
+  bankAccountId: string;
+}
+import { AccountingDatabaseError, ValidationError } from '../errors.js';
+import { createJournalDraft, postJournalEntry } from '../ledger/service.js';
+import { cents, csvRows, digest, normalize, text } from '../csv-utils.js';
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_BYTES = 1_000_000,
+  MAX_ROWS = 5000;
+function id(prefix: string) {
+  return `${prefix}_${crypto.randomUUID()}`;
+}
+function now() {
+  return new Date().toISOString();
+}
+function requireCapability(actor: LedgerServiceActor, capability: string) {
+  if (!actor?.id || !actor.capabilities?.includes(capability))
+    throw new AccountingDatabaseError('Bank reconciliation capability is required.', { details: { capability } });
+}
+function assertTier(tier: string) {
+  if (!['mission', 'parish'].includes(tier))
+    throw new AccountingDatabaseError('Bank reconciliation is not included for this parish.');
+}
+async function first(db: PortabilityDatabase, sql: string, ...params: unknown[]) {
+  return db
+    .prepare(sql)
+    .bind(...params)
+    .first<ReconciliationSqlRow>();
+}
+async function all(db: PortabilityDatabase, sql: string, ...params: unknown[]) {
+  return (
+    (
+      await db
+        .prepare(sql)
+        .bind(...params)
+        .all<ReconciliationSqlRow>()
+    ).results || []
+  );
+}
+async function run(db: PortabilityDatabase, sql: string, ...params: unknown[]) {
+  return db
+    .prepare(sql)
+    .bind(...params)
+    .run();
+}
+function bankDto(row: ReconciliationSqlRow | null) {
+  return (
+    row &&
+    Object.freeze({
+      id: row.id,
+      name: row.name,
+      ledgerAccountId: row.account_id,
+      accountType: row.account_type,
+      institutionName: row.institution_name || '',
+      maskedLast4: row.masked_last4 || '',
+      currency: row.currency,
+      settlementProfileId: row.settlement_profile_id || '',
+      stripeDestinationReference: row.stripe_external_account_id || '',
+      isDefault: Boolean(row.is_default),
+      status: row.status,
+      isActive: Boolean(row.is_active),
+      version: Number(row.version),
+    })
+  );
+}
+function transactionDto(row: ReconciliationSqlRow | null) {
+  return (
+    row &&
+    Object.freeze({
+      id: row.id,
+      bankAccountId: row.bank_account_id,
+      sourceType: row.source_type,
+      postedDate: row.posted_date,
+      description: row.description,
+      referenceNumber: row.reference_number || '',
+      checkNumber: row.check_number || '',
+      amount: Number(row.amount),
+      direction: row.direction,
+      currency: row.currency,
+      status: row.status,
+      matchStatus: row.match_status,
+      matchedAmount: Number(row.matched_amount),
+      unmatchedAmount: Number(row.unmatched_amount),
+      version: Number(row.version),
+    })
+  );
+}
+
+export async function createBankAccount(
+  db: PortabilityDatabase,
+  { actor, entitlementTier, input }: BankActorOptions & { input: Record<string, unknown> }
+) {
+  requireCapability(actor, 'accounting.bank_accounts.manage');
+  assertTier(entitlementTier);
+  const account = await first(
+    db,
+    `SELECT a.id FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.id=? AND a.is_active=1 AND a.archived_at IS NULL AND a.is_posting_account=1 AND t.category='asset'`,
+    input?.ledgerAccountId
+  );
+  if (!account) throw new ValidationError('An active asset posting account is required.');
+  const last4 = text(input.maskedLast4);
+  if (last4 && !/^\d{1,4}$/.test(last4)) throw new ValidationError('Only a masked last-four reference may be stored.');
+  if (/\d{5,}/.test(text(input.name) + text(input.institutionName)))
+    throw new ValidationError('Full bank account numbers must not be stored.');
+  const accountId = id('bank');
+  if (input.isDefault)
+    await run(db, "UPDATE accounting_bank_accounts SET is_default=0,updated_at=datetime('now') WHERE is_default=1");
+  await run(
+    db,
+    `INSERT INTO accounting_bank_accounts(id,name,account_id,account_type,institution_name,masked_last4,currency,settlement_profile_id,stripe_external_account_id,is_default) VALUES(?,?,?,?,?,?,?,?,?,?)`,
+    accountId,
+    text(input.name),
+    input.ledgerAccountId,
+    input.accountType || 'checking',
+    text(input.institutionName) || null,
+    last4 || null,
+    text(input.currency || 'USD').toUpperCase(),
+    text(input.settlementProfileId) || null,
+    text(input.stripeExternalAccountId) || null,
+    Number(Boolean(input.isDefault))
+  );
+  return bankDto(await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', accountId));
+}
+export async function updateBankAccount(
+  db: PortabilityDatabase,
+  {
+    actor,
+    entitlementTier,
+    bankAccountId,
+    expectedVersion,
+    patch,
+  }: BankActorOptions & {
+    bankAccountId: string;
+    expectedVersion: number;
+    patch: Record<string, unknown> & { maskedLast4?: string };
+  }
+) {
+  requireCapability(actor, 'accounting.bank_accounts.manage');
+  assertTier(entitlementTier);
+  const current = await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', bankAccountId);
+  if (!current || Number(current.version) !== Number(expectedVersion))
+    throw new AccountingDatabaseError('Bank account changed. Reload and try again.', { details: { conflict: true } });
+  const last4 = patch.maskedLast4 ?? current.masked_last4;
+  if (last4 && !/^\d{1,4}$/.test(last4)) throw new ValidationError('Only a masked last-four reference may be stored.');
+  if (patch.isDefault) await run(db, 'UPDATE accounting_bank_accounts SET is_default=0 WHERE id<>?', bankAccountId);
+  await run(
+    db,
+    `UPDATE accounting_bank_accounts SET name=?,institution_name=?,masked_last4=?,is_default=?,version=version+1,updated_at=datetime('now') WHERE id=? AND version=?`,
+    patch.name ?? current.name,
+    patch.institutionName ?? current.institution_name,
+    last4 || null,
+    Number(patch.isDefault ?? Boolean(current.is_default)),
+    bankAccountId,
+    Number(expectedVersion)
+  );
+  return bankDto(await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', bankAccountId));
+}
+export async function listBankAccounts(db: PortabilityDatabase, { actor, entitlementTier }: BankActorOptions) {
+  requireCapability(actor, 'accounting.bank_accounts.view');
+  assertTier(entitlementTier);
+  return Object.freeze(
+    (await all(db, 'SELECT * FROM accounting_bank_accounts ORDER BY is_default DESC,name')).map(bankDto)
+  );
+}
+
+export async function previewBankCsv({
+  actor,
+  entitlementTier,
+  filename,
+  csv,
+  columnMap = {},
+  delimiter = ',',
+}: BankActorOptions & { filename: string; csv: string; columnMap?: Record<string, string>; delimiter?: string }) {
+  requireCapability(actor, 'accounting.bank_imports.manage');
+  assertTier(entitlementTier);
+  if (!/\.csv$/i.test(filename || '') || new TextEncoder().encode(csv || '').length > MAX_BYTES)
+    throw new ValidationError('A CSV file under 1 MB is required.');
+  const rows = csvRows(csv, delimiter);
+  if (rows.length < 2 || rows.length - 1 > MAX_ROWS)
+    throw new ValidationError('CSV must contain a header and no more than 5,000 rows.');
+  const headers = rows[0].map(normalize),
+    index = (name: string, fallback: string) => headers.indexOf(normalize(columnMap[name] || fallback));
+  const ix = {
+    date: index('date', 'date'),
+    description: index('description', 'description'),
+    amount: index('amount', 'amount'),
+    debit: index('debit', 'debit'),
+    credit: index('credit', 'credit'),
+    reference: index('reference', 'reference'),
+    check: index('checkNumber', 'check number'),
+    external: index('externalId', 'transaction id'),
+  };
+  const normalizedRows: BankCsvRow[] = [],
+    errors = [];
+  let credits = 0,
+    debits = 0;
+  for (let n = 1; n < rows.length; n++) {
+    try {
+      const row = rows[n],
+        date = text(row[ix.date]);
+      if (!DATE.test(date)) throw new Error('invalid_date');
+      let amount, direction;
+      if (ix.amount >= 0) {
+        const signed = cents(row[ix.amount]);
+        direction = signed >= 0 ? 'credit' : 'debit';
+        amount = Math.abs(signed);
+      } else {
+        const debit = ix.debit >= 0 && text(row[ix.debit]) ? Math.abs(cents(row[ix.debit])) : 0,
+          credit = ix.credit >= 0 && text(row[ix.credit]) ? Math.abs(cents(row[ix.credit])) : 0;
+        if (debit > 0 === credit > 0) throw new Error('invalid_amount');
+        amount = debit || credit;
+        direction = credit ? 'credit' : 'debit';
+      }
+      const description = text(row[ix.description]);
+      if (!description) throw new Error('missing_description');
+      const item: BankCsvRow = {
+        rowNumber: n + 1,
+        postedDate: date,
+        description,
+        normalizedDescription: normalize(description),
+        amount,
+        direction,
+        referenceNumber: ix.reference >= 0 ? text(row[ix.reference]) : '',
+        checkNumber: ix.check >= 0 ? text(row[ix.check]) : '',
+        externalTransactionId: ix.external >= 0 ? text(row[ix.external]) : '',
+      };
+      item.rawRowHash = await digest(JSON.stringify(row));
+      normalizedRows.push(item);
+      if (direction === 'credit') credits += amount;
+      else debits += amount;
+    } catch (error) {
+      errors.push({
+        rowNumber: n + 1,
+        code: (error as Error).message.startsWith('invalid_') ? (error as Error).message : 'invalid_row',
+      });
+    }
+  }
+  return Object.freeze({
+    filename,
+    rowCount: rows.length - 1,
+    validRows: normalizedRows.length,
+    invalidRows: errors.length,
+    totalCredits: credits,
+    totalDebits: debits,
+    dateRange: {
+      start: normalizedRows.map((r) => r.postedDate).sort()[0] || '',
+      end:
+        normalizedRows
+          .map((r) => r.postedDate)
+          .sort()
+          .at(-1) || '',
+    },
+    rows: Object.freeze(normalizedRows),
+    errors: Object.freeze(errors),
+    fileHash: await digest(csv),
+  });
+}
+
+export async function commitBankImport(
+  db: PortabilityDatabase,
+  {
+    actor,
+    entitlementTier,
+    bankAccountId,
+    preview,
+  }: BankActorOptions & { bankAccountId: string; preview: Awaited<ReturnType<typeof previewBankCsv>> }
+) {
+  requireCapability(actor, 'accounting.bank_imports.manage');
+  assertTier(entitlementTier);
+  const bank = await first(
+    db,
+    "SELECT * FROM accounting_bank_accounts WHERE id=? AND is_active=1 AND status='active'",
+    bankAccountId
+  );
+  if (!bank) throw new ValidationError('An active bank account is required.');
+  const prior = await first(
+    db,
+    'SELECT * FROM accounting_bank_import_files WHERE bank_account_id=? AND file_hash=?',
+    bankAccountId,
+    preview.fileHash
+  );
+  if (prior)
+    return Object.freeze({
+      id: prior.id,
+      importedCount: Number(prior.imported_count),
+      duplicateCount: Number(prior.duplicate_count),
+      duplicateFile: true,
+    });
+  const fileId = id('import');
+  await run(
+    db,
+    `INSERT INTO accounting_bank_import_files(id,bank_account_id,filename,file_hash,statement_start_date,statement_end_date,row_count,status,created_by_actor_type,created_by_actor_id) VALUES(?,?,?,?,?,?,?,'importing',?,?)`,
+    fileId,
+    bankAccountId,
+    text(preview.filename).split(/[\\/]/).at(-1),
+    preview.fileHash,
+    preview.dateRange.start || null,
+    preview.dateRange.end || null,
+    Number(preview.rowCount),
+    actor.type || 'platform_user',
+    actor.id
+  );
+  let imported = 0,
+    duplicates = 0;
+  for (const item of preview.rows) {
+    const duplicateHash = await digest(
+      [
+        bankAccountId,
+        item.postedDate,
+        item.amount,
+        item.direction,
+        item.normalizedDescription,
+        item.referenceNumber,
+        item.checkNumber,
+        item.externalTransactionId,
+      ].join('|')
+    );
+    const existing = await first(
+      db,
+      'SELECT id FROM accounting_bank_transactions WHERE bank_account_id=? AND duplicate_hash=?',
+      bankAccountId,
+      duplicateHash
+    );
+    if (existing) {
+      duplicates++;
+      continue;
+    }
+    await run(
+      db,
+      `INSERT INTO accounting_bank_transactions(id,bank_account_id,source_type,source_file_id,external_transaction_id,posted_date,description,normalized_description,reference_number,check_number,amount,direction,currency,unmatched_amount,duplicate_hash,raw_row_hash) VALUES(?,?,'csv',?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      id('banktxn'),
+      bankAccountId,
+      fileId,
+      item.externalTransactionId || null,
+      item.postedDate,
+      item.description,
+      item.normalizedDescription,
+      item.referenceNumber || null,
+      item.checkNumber || null,
+      item.amount,
+      item.direction,
+      bank.currency,
+      item.amount,
+      duplicateHash,
+      item.rawRowHash
+    );
+    imported++;
+  }
+  await run(
+    db,
+    "UPDATE accounting_bank_import_files SET imported_count=?,duplicate_count=?,error_count=?,status='completed',completed_at=?,version=version+1 WHERE id=?",
+    imported,
+    duplicates,
+    Number(preview.invalidRows || 0),
+    now(),
+    fileId
+  );
+  return Object.freeze({ id: fileId, importedCount: imported, duplicateCount: duplicates, duplicateFile: false });
+}
+
+export async function createReconciliation(
+  db: PortabilityDatabase,
+  { actor, entitlementTier, input }: BankActorOptions & { input: ReconciliationInput }
+) {
+  requireCapability(actor, 'accounting.reconciliation.create');
+  assertTier(entitlementTier);
+  if (
+    !DATE.test(input?.startDate) ||
+    !DATE.test(input?.endDate) ||
+    input.startDate > input.endDate ||
+    !Number.isSafeInteger(Number(input.endingBalance))
+  )
+    throw new ValidationError('Valid statement dates and ending balance are required.');
+  const bank = await first(
+    db,
+    'SELECT * FROM accounting_bank_accounts WHERE id=? AND is_active=1',
+    input.bankAccountId
+  );
+  if (!bank) throw new ValidationError('Bank account was not found.');
+  const overlap = await first(
+    db,
+    "SELECT id FROM accounting_reconciliation_sessions WHERE bank_account_id=? AND status='completed' AND statement_start_date<=? AND statement_end_date>=?",
+    bank.id,
+    input.endDate,
+    input.startDate
+  );
+  if (overlap) throw new ValidationError('Statement overlaps a completed reconciliation.');
+  const prior = await first(
+    db,
+    "SELECT statement_ending_balance,statement_end_date FROM accounting_reconciliation_sessions WHERE bank_account_id=? AND status='completed' ORDER BY statement_end_date DESC LIMIT 1",
+    bank.id
+  );
+  if (prior && Number(prior.statement_ending_balance) !== Number(input.beginningBalance))
+    throw new ValidationError('Beginning balance does not continue from the prior reconciliation.');
+  const ledgerBeginning = await ledgerBalance(db, bank.account_id, input.startDate, true),
+    sessionId = id('recon');
+  await run(
+    db,
+    `INSERT INTO accounting_reconciliation_sessions(id,bank_account_id,statement_start_date,statement_end_date,statement_beginning_balance,statement_ending_balance,ledger_beginning_balance,status,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,?,?,?,?,'in_progress',?,?,?)`,
+    sessionId,
+    bank.id,
+    input.startDate,
+    input.endDate,
+    Number(input.beginningBalance),
+    Number(input.endingBalance),
+    ledgerBeginning,
+    actor.type || 'platform_user',
+    actor.id,
+    input.correlationId || null
+  );
+  return reconciliationSummary(db, sessionId);
+}
+async function ledgerBalance(db: PortabilityDatabase, accountId: string, date: string, before = false) {
+  const row = await first(
+    db,
+    `SELECT COALESCE(SUM(l.debit_amount-l.credit_amount),0) balance FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND COALESCE(e.posting_date,e.entry_date) ${before ? '<' : '<='} ?`,
+    accountId,
+    date
+  );
+  return Number(row!.balance);
+}
+export async function eligibleLedgerItems(
+  db: PortabilityDatabase,
+  { actor, entitlementTier, reconciliationId }: ReconciliationOptions
+) {
+  requireCapability(actor, 'accounting.reconciliation.view');
+  assertTier(entitlementTier);
+  const session = await first(
+    db,
+    'SELECT s.*,b.account_id FROM accounting_reconciliation_sessions s JOIN accounting_bank_accounts b ON b.id=s.bank_account_id WHERE s.id=?',
+    reconciliationId
+  );
+  if (!session) throw new ValidationError('Reconciliation was not found.');
+  return Object.freeze(
+    await all(
+      db,
+      `SELECT l.id journalLineId,e.id journalEntryId,e.entry_number entryNumber,COALESCE(e.posting_date,e.entry_date) postingDate,e.description,e.source_type sourceType,l.debit_amount debitAmount,l.credit_amount creditAmount,(l.debit_amount-l.credit_amount) netEffect FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND COALESCE(e.posting_date,e.entry_date)<=? ORDER BY postingDate,e.id`,
+      session.account_id,
+      session.statement_end_date
+    )
+  );
+}
+export async function suggestMatches(
+  db: PortabilityDatabase,
+  { actor, entitlementTier, reconciliationId }: ReconciliationOptions
+) {
+  requireCapability(actor, 'accounting.reconciliation.view');
+  assertTier(entitlementTier);
+  const session = await first(db, 'SELECT * FROM accounting_reconciliation_sessions WHERE id=?', reconciliationId);
+  if (!session) throw new ValidationError('Reconciliation was not found.');
+  const bank = await all(
+      db,
+      "SELECT * FROM accounting_bank_transactions WHERE bank_account_id=? AND status='imported' AND unmatched_amount>0",
+      session.bank_account_id
+    ),
+    ledger = await eligibleLedgerItems(db, { actor, entitlementTier, reconciliationId });
+  const suggestions = [];
+  for (const b of bank)
+    for (const l of ledger) {
+      const effect = Number(l.netEffect),
+        expected = b.direction === 'credit' ? Number(b.unmatched_amount) : -Number(b.unmatched_amount);
+      if (effect !== expected) continue;
+      const days = Math.abs((Date.parse(b.posted_date) - Date.parse(l.postingDate)) / 86400000);
+      if (days > 3) continue;
+      let confidence = 70,
+        reasons = ['Exact amount'];
+      if (days === 0) {
+        confidence += 15;
+        reasons.push('Same date');
+      }
+      if (b.check_number && l.description.includes(b.check_number)) {
+        confidence += 15;
+        reasons.push('Matching check number');
+      }
+      if (b.reference_number && l.description.includes(b.reference_number)) {
+        confidence = 100;
+        reasons.push('Matching reference');
+      }
+      suggestions.push({
+        bankTransactionId: b.id,
+        journalLineId: l.journalLineId,
+        journalEntryId: l.journalEntryId,
+        amount: b.unmatched_amount,
+        confidence: Math.min(100, confidence),
+        reasons,
+      });
+    }
+  return Object.freeze(suggestions.sort((a, b) => b.confidence - a.confidence));
+}
+export async function confirmReconciliationMatch(
+  db: PortabilityDatabase,
+  {
+    actor,
+    entitlementTier,
+    reconciliationId,
+    bankTransactionIds,
+    journalLineIds,
+    matchType = 'one_to_one',
+  }: ReconciliationOptions & { bankTransactionIds: string[]; journalLineIds: string[]; matchType?: string }
+) {
+  requireCapability(actor, 'accounting.reconciliation.match');
+  assertTier(entitlementTier);
+  if (!bankTransactionIds?.length || !journalLineIds?.length)
+    throw new ValidationError('Bank and ledger match items are required.');
+  const session = await first(
+    db,
+    'SELECT s.*,b.account_id FROM accounting_reconciliation_sessions s JOIN accounting_bank_accounts b ON b.id=s.bank_account_id WHERE s.id=?',
+    reconciliationId
+  );
+  if (!session || !['in_progress', 'reopened'].includes(session.status))
+    throw new ValidationError('Reconciliation is not editable.');
+  const banks = await all(
+      db,
+      `SELECT * FROM accounting_bank_transactions WHERE bank_account_id=? AND unmatched_amount>0 AND id IN (${bankTransactionIds.map(() => '?').join(',')})`,
+      session.bank_account_id,
+      ...bankTransactionIds
+    ),
+    lines = await all(
+      db,
+      `SELECT l.*,e.id entry_id FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND l.id IN (${journalLineIds.map(() => '?').join(',')})`,
+      session.account_id,
+      ...journalLineIds
+    );
+  if (banks.length !== bankTransactionIds.length || lines.length !== journalLineIds.length)
+    throw new ValidationError('Match items must belong to this bank account and remain unmatched.');
+  const bankTotal = banks.reduce((s, b) => s + (b.direction === 'credit' ? 1 : -1) * Number(b.unmatched_amount), 0),
+    ledgerTotal = lines.reduce((s, l) => s + Number(l.debit_amount) - Number(l.credit_amount), 0);
+  if (bankTotal !== ledgerTotal) throw new ValidationError('Bank and ledger match totals must be equal.');
+  const group = id('match'),
+    remainingLines = lines.map((line) => ({
+      line,
+      remaining: Math.abs(Number(line.debit_amount) - Number(line.credit_amount)),
+      sign: Number(line.debit_amount) > 0 ? 1 : -1,
+    }));
+  for (const bank of banks) {
+    let remaining = Number(bank.unmatched_amount),
+      sign = bank.direction === 'credit' ? 1 : -1;
+    for (const target of remainingLines) {
+      if (!remaining) break;
+      if (target.sign !== sign || !target.remaining) continue;
+      const amount = Math.min(remaining, target.remaining);
+      await run(
+        db,
+        `INSERT INTO accounting_reconciliation_items(id,reconciliation_session_id,bank_transaction_id,journal_entry_id,journal_line_id,match_group_id,matched_amount,match_type,status) VALUES(?,?,?,?,?,?,?,?,'confirmed')`,
+        id('reconitem'),
+        session.id,
+        bank.id,
+        target.line.entry_id,
+        target.line.id,
+        group,
+        amount,
+        matchType
+      );
+      remaining -= amount;
+      target.remaining -= amount;
+    }
+    if (remaining) throw new ValidationError('Grouped match cannot allocate all items by direction.');
+    await run(
+      db,
+      "UPDATE accounting_bank_transactions SET matched_amount=amount,unmatched_amount=0,match_status='matched',version=version+1,updated_at=datetime('now') WHERE id=?",
+      bank.id
+    );
+  }
+  return reconciliationSummary(db, session.id);
+}
+async function reconciliationSummary(db: PortabilityDatabase, sessionId: string) {
+  const s = await first(
+    db,
+    'SELECT s.*,b.account_id,b.name bank_name,b.masked_last4 FROM accounting_reconciliation_sessions s JOIN accounting_bank_accounts b ON b.id=s.bank_account_id WHERE s.id=?',
+    sessionId
+  );
+  if (!s) return null;
+  const ledgerEnding = await ledgerBalance(db, s.account_id, s.statement_end_date),
+    out = await first(
+      db,
+      `SELECT COALESCE(SUM(CASE WHEN l.debit_amount>0 THEN l.debit_amount ELSE 0 END),0) deposits,COALESCE(SUM(CASE WHEN l.credit_amount>0 THEN l.credit_amount ELSE 0 END),0) withdrawals FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND COALESCE(e.posting_date,e.entry_date)<=? AND NOT EXISTS(SELECT 1 FROM accounting_reconciliation_items i WHERE i.journal_line_id=l.id AND i.status='confirmed')`,
+      s.account_id,
+      s.statement_end_date
+    );
+  const adjustedBank = Number(s.statement_ending_balance) + Number(out!.deposits) - Number(out!.withdrawals),
+    difference = adjustedBank - ledgerEnding;
+  return Object.freeze({
+    id: s.id,
+    bankAccount: { id: s.bank_account_id, name: s.bank_name, maskedLast4: s.masked_last4 || '' },
+    startDate: s.statement_start_date,
+    endDate: s.statement_end_date,
+    beginningBalance: Number(s.statement_beginning_balance),
+    endingBalance: Number(s.statement_ending_balance),
+    ledgerBeginningBalance: Number(s.ledger_beginning_balance),
+    ledgerEndingBalance: ledgerEnding,
+    outstandingDeposits: Number(out!.deposits),
+    outstandingWithdrawals: Number(out!.withdrawals),
+    adjustedBankBalance: adjustedBank,
+    adjustedLedgerBalance: ledgerEnding,
+    difference,
+    status: s.status,
+    version: Number(s.version),
+  });
+}
+export async function validateReconciliation(
+  db: PortabilityDatabase,
+  { actor, entitlementTier, reconciliationId }: ReconciliationOptions
+) {
+  requireCapability(actor, 'accounting.reconciliation.view');
+  assertTier(entitlementTier);
+  return reconciliationSummary(db, reconciliationId);
+}
+export async function completeReconciliation(
+  db: PortabilityDatabase,
+  { actor, entitlementTier, reconciliationId, expectedVersion }: ReconciliationOptions & { expectedVersion: number }
+) {
+  requireCapability(actor, 'accounting.reconciliation.complete');
+  assertTier(entitlementTier);
+  const summary = await reconciliationSummary(db, reconciliationId),
+    session = await first(db, 'SELECT * FROM accounting_reconciliation_sessions WHERE id=?', reconciliationId);
+  if (
+    !session ||
+    Number(session.version) !== Number(expectedVersion) ||
+    !['in_progress', 'reopened'].includes(session.status)
+  )
+    throw new AccountingDatabaseError('Reconciliation changed or is not completable.', { details: { conflict: true } });
+  if (summary!.difference !== 0) throw new ValidationError('Reconciliation difference must be zero before completion.');
+  const settings = await first(db, "SELECT * FROM accounting_reconciliation_settings WHERE id='primary'");
+  if (settings!.require_separate_reviewer && session.created_by_actor_id === actor.id)
+    throw new ValidationError('A separate reviewer must complete this reconciliation.');
+  const completed = now(),
+    snapshotHash = await digest(JSON.stringify(summary));
+  await run(
+    db,
+    `INSERT INTO accounting_reconciliation_snapshots(id,reconciliation_session_id,statement_beginning_balance,statement_ending_balance,adjusted_bank_balance,ledger_ending_balance,adjusted_ledger_balance,outstanding_deposits,outstanding_withdrawals,adjustments_total,difference,completed_at,completed_by_actor_type,completed_by_actor_id,snapshot_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    id('snapshot'),
+    session.id,
+    summary!.beginningBalance,
+    summary!.endingBalance,
+    summary!.adjustedBankBalance,
+    summary!.ledgerEndingBalance,
+    summary!.adjustedLedgerBalance,
+    summary!.outstandingDeposits,
+    summary!.outstandingWithdrawals,
+    0,
+    summary!.difference,
+    completed,
+    actor.type || 'platform_user',
+    actor.id,
+    snapshotHash
+  );
+  await run(
+    db,
+    "UPDATE accounting_reconciliation_sessions SET status='completed',difference=0,calculated_ending_balance=?,completed_by_actor_type=?,completed_by_actor_id=?,completed_at=?,version=version+1,updated_at=? WHERE id=?",
+    summary!.adjustedBankBalance,
+    actor.type || 'platform_user',
+    actor.id,
+    completed,
+    completed,
+    session.id
+  );
+  await run(
+    db,
+    'INSERT INTO accounting_ledger_events(id,event_type,actor_type,actor_id,correlation_id,metadata_json) VALUES(?,?,?,?,?,?)',
+    id('event'),
+    'reconciliation.completed',
+    actor.type || 'platform_user',
+    actor.id,
+    session.correlation_id || null,
+    JSON.stringify({ reconciliationId: session.id, snapshotHash })
+  );
+  return reconciliationSummary(db, session.id);
+}
+export async function reopenReconciliation(
+  db: PortabilityDatabase,
+  {
+    actor,
+    entitlementTier,
+    reconciliationId,
+    expectedVersion,
+    reason,
+  }: ReconciliationOptions & { expectedVersion: number; reason: string }
+) {
+  requireCapability(actor, 'accounting.reconciliation.reopen');
+  assertTier(entitlementTier);
+  if (!text(reason)) throw new ValidationError('A reason is required.');
+  const result = await run(
+    db,
+    "UPDATE accounting_reconciliation_sessions SET status='reopened',reopened_at=?,version=version+1,updated_at=? WHERE id=? AND status='completed' AND version=?",
+    now(),
+    now(),
+    reconciliationId,
+    Number(expectedVersion)
+  );
+  if (!result.meta?.changes)
+    throw new AccountingDatabaseError('Completed reconciliation changed. Reload and try again.', {
+      details: { conflict: true },
+    });
+  await run(
+    db,
+    'INSERT INTO accounting_ledger_events(id,event_type,actor_type,actor_id,reason_code,metadata_json) VALUES(?,?,?,?,?,?)',
+    id('event'),
+    'reconciliation.reopened',
+    actor.type || 'platform_user',
+    actor.id,
+    text(reason),
+    JSON.stringify({ reconciliationId })
+  );
+  return reconciliationSummary(db, reconciliationId);
+}
+export async function postReconciliationAdjustment(
+  db: PortabilityDatabase,
+  {
+    actor,
+    entitlementTier,
+    reconciliationId,
+    date,
+    description,
+    amount,
+    direction,
+    offsetAccountId,
+    fundId,
+    reason,
+    idempotencyKey,
+  }: ReconciliationOptions & {
+    date: string;
+    description: string;
+    amount: number;
+    direction: string;
+    offsetAccountId: string;
+    fundId: string;
+    reason: string;
+    idempotencyKey: string;
+  }
+) {
+  requireCapability(actor, 'accounting.reconciliation.adjust');
+  assertTier(entitlementTier);
+  if (!DATE.test(date) || !Number.isSafeInteger(amount) || amount <= 0 || !text(reason))
+    throw new ValidationError('Adjustment date, amount, and reason are required.');
+  const session = await first(
+    db,
+    'SELECT s.*,b.account_id FROM accounting_reconciliation_sessions s JOIN accounting_bank_accounts b ON b.id=s.bank_account_id WHERE s.id=?',
+    reconciliationId
+  );
+  if (!session || !['in_progress', 'reopened'].includes(session.status))
+    throw new ValidationError('Reconciliation is not editable.');
+  const lines =
+    direction === 'credit'
+      ? [
+          { accountId: session.account_id, fundId, debitAmount: amount },
+          { accountId: offsetAccountId, fundId, creditAmount: amount },
+        ]
+      : [
+          { accountId: offsetAccountId, fundId, debitAmount: amount },
+          { accountId: session.account_id, fundId, creditAmount: amount },
+        ];
+  const elevated = {
+      ...actor,
+      capabilities: [...new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post'])],
+    },
+    draft = await createJournalDraft(db, {
+      actor: elevated,
+      entryDate: date,
+      description,
+      sourceType: 'reconciliation_adjustment',
+      sourceId: `${reconciliationId}:${idempotencyKey}`,
+      lines,
+      correlationId: session.correlation_id || '',
+    }),
+    posted = await postJournalEntry(db, {
+      actor: elevated,
+      journalEntryId: draft.id,
+      idempotencyKey: `reconciliation:${reconciliationId}:${idempotencyKey}`,
+      requestHash: await digest(
+        JSON.stringify({ date, description, amount, direction, offsetAccountId, fundId, reason })
+      ),
+      expectedVersion: 1,
+      correlationId: session.correlation_id || '',
+    });
+  await run(
+    db,
+    'INSERT OR IGNORE INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?,?,?,?)',
+    id('link'),
+    posted!.id,
+    'reconciliation',
+    reconciliationId,
+    'adjustment'
+  );
+  return Object.freeze({ journalEntryId: posted!.id, status: posted!.status });
+}
+export function reconciliationCsv(summary: NonNullable<Awaited<ReturnType<typeof reconciliationSummary>>>) {
+  const safe = (v: unknown) => {
+    const s = String(v ?? '');
+    return /^[=+\-@]/.test(s) ? `'${s}` : s;
+  };
+  return [
+    ['AGAPAY Bank Reconciliation'],
+    ['Bank', safe(summary!.bankAccount.name)],
+    ['Statement start', summary!.startDate],
+    ['Statement end', summary!.endDate],
+    ['Beginning balance', summary!.beginningBalance],
+    ['Ending balance', summary!.endingBalance],
+    ['Outstanding deposits', summary!.outstandingDeposits],
+    ['Outstanding withdrawals', summary!.outstandingWithdrawals],
+    ['Adjusted bank balance', summary!.adjustedBankBalance],
+    ['Ledger ending balance', summary!.ledgerEndingBalance],
+    ['Difference', summary!.difference],
+    ['Status', summary!.status],
+  ]
+    .map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(','))
+    .join('\r\n');
+}

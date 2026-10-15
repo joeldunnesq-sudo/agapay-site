@@ -33,3 +33,7 @@ export function storeGroupMessageAttachment(
     maxBytes?: number;
   }
 ): Promise<{ object: R2Object | null; size: number }>;
+
+export const handleDonorGroups: import('../routes/donor.js').DonorActions<Env, ExecutionContext>['handleDonorGroups'];
+
+export const GROUP_MESSAGE_IMAGE_TYPES: ReadonlySet<string>;

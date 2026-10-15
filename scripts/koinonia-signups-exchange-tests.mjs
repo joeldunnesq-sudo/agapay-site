@@ -573,7 +573,7 @@ assert.match(
 );
 assert.match(
   read('public/myagapay/exchange.js'),
-  /listing\.listingType === "request"[\s\S]*\/images\/app\/icon-512\.png/,
+  /listing\.listingType === ['"]request['"][\s\S]*\/images\/app\/icon-512\.png/,
   'request cards and details must use the same AGAPAY artwork as media players'
 );
 assert.match(

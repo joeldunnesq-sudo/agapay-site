@@ -1,0 +1,609 @@
+import type {} from '../native-contracts.js';
+interface ExchangePhoto {
+  id: string;
+  url: string;
+}
+interface ExchangeListing {
+  id: string;
+  listingType: string;
+  status: string;
+  title: string;
+  category: string;
+  posterName: string;
+  priceCents?: number | null;
+  photos: ExchangePhoto[];
+  mine?: boolean;
+  description?: string;
+  expiresAt?: number;
+}
+interface ExchangeThread {
+  id: string;
+  requesterName?: string;
+  updatedAt?: number;
+  status: string;
+  mine?: boolean;
+  listingTitle: string;
+  listingStatus: string;
+  listingId: string;
+}
+interface ExchangeMessage {
+  id: string;
+  mine?: boolean;
+  read?: boolean;
+  senderName: string;
+  body: string;
+  createdAt: number;
+}
+interface ExchangeResponse {
+  error?: string;
+  listings?: ExchangeListing[];
+  listingId: string;
+  threadId: string;
+  threadsClosed?: number;
+  threads?: ExchangeThread[];
+  thread: ExchangeThread;
+  messages?: ExchangeMessage[];
+}
+interface ExchangeState {
+  listings: ExchangeListing[];
+  activeListingId: string;
+  activeThreadId: string;
+  threads: ExchangeThread[];
+  messages: ExchangeMessage[];
+  mineOnly: boolean;
+}
+const exchangeState: ExchangeState = {
+  listings: [],
+  activeListingId: '',
+  activeThreadId: '',
+  threads: [],
+  messages: [],
+  mineOnly: false,
+};
+const exchangeObjectUrls = new Map<string, string>();
+let exchangeDraftPhotos: File[] = [];
+const exchangeDraftPhotoUrls = new Map<number, string>();
+let requestedExchangeListingId = new URLSearchParams(window.location.search).get('listing') || '';
+let requestedExchangeThreadId = new URLSearchParams(window.location.search).get('thread') || '';
+
+function exchangeEscape(value: unknown) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function exchangeHeaders(extra: Record<string, string> = { 'Content-Type': 'application/json' }) {
+  return window.MyAgapayShell?.authHeaders(extra) || extra;
+}
+
+function exchangeStatus(message: string, state = '') {
+  const target = document.getElementById('exchangeStatus') as HTMLElement;
+  if (!target) return;
+  target.hidden = !message;
+  target.textContent = message || '';
+  if (state) target.dataset.state = state;
+  else delete target.dataset.state;
+}
+
+function exchangeCategoryLabel(value: string) {
+  return (
+    (
+      {
+        household_goods: 'Household goods',
+        furniture: 'Furniture',
+        clothing: 'Clothing',
+        books: 'Books',
+        children_baby: 'Children & baby',
+        tools: 'Tools',
+        services: 'Services',
+        other: 'Other',
+      } as Record<string, string>
+    )[value] || 'Other'
+  );
+}
+
+function exchangeMoney(cents: unknown) {
+  return cents == null
+    ? 'Free / not listed'
+    : new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(Number(cents) / 100);
+}
+
+function exchangeDate(value: unknown, withTime = false) {
+  const date = new Date(Number(value));
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(
+    undefined,
+    withTime
+      ? { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+      : { month: 'short', day: 'numeric', year: 'numeric' }
+  ).format(date);
+}
+
+async function exchangeFetch(path: string, options: RequestInit = {}) {
+  const response = await fetch(path, { ...options, headers: exchangeHeaders(), cache: 'no-store' });
+  if (window.MyAgapayShell?.handleUnauthorized(response)) return null;
+  const payload = await (response.json().catch(() => ({})) as Promise<ExchangeResponse>);
+  if (!response.ok) throw new Error(payload.error || 'Unable to load Parish Exchange.');
+  return payload;
+}
+
+function releaseExchangeObjectUrls() {
+  exchangeObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  exchangeObjectUrls.clear();
+}
+
+async function privateExchangePhoto(url: string | undefined) {
+  const response = await fetch(url!, { headers: exchangeHeaders({}), cache: 'no-store' });
+  if (window.MyAgapayShell?.handleUnauthorized(response)) return null;
+  if (!response.ok) throw new Error('Unable to load this private listing photo.');
+  return response.blob();
+}
+
+async function hydrateExchangePhotos() {
+  const images = [...document.querySelectorAll<HTMLImageElement>('[data-exchange-photo]')].filter(
+    (image) => image.dataset.exchangePhotoHydrating !== 'true'
+  );
+  await Promise.all(
+    images.map(async (image) => {
+      image.dataset.exchangePhotoHydrating = 'true';
+      try {
+        const blob = await privateExchangePhoto(image.dataset.photoUrl);
+        if (!blob || !image.isConnected) return;
+        const objectUrl = URL.createObjectURL(blob);
+        exchangeObjectUrls.set(`${image.dataset.exchangePhoto}:${Math.random()}`, objectUrl);
+        image.src = objectUrl;
+        image.closest<HTMLElement>('.exchange-photo-frame')?.classList.add('is-loaded');
+      } catch {
+        image.closest<HTMLElement>('.exchange-photo-frame')?.classList.add('is-unavailable');
+      } finally {
+        delete image.dataset.exchangePhotoHydrating;
+      }
+    })
+  );
+}
+
+function exchangePhotoFrameHtml(listing: ExchangeListing, photo: ExchangePhoto | undefined, size = 'card', index = 0) {
+  if (listing.listingType === 'request') {
+    return `<span class="exchange-photo-frame is-${size} is-request-art"><img src="/images/app/icon-512.png" alt="AGAPAY request artwork" /></span>`;
+  }
+  return `<span class="exchange-photo-frame is-${size}">${photo ? `<img data-exchange-photo="${exchangeEscape(photo.id)}" data-photo-url="${exchangeEscape(photo.url)}" alt="Photo ${index + 1} of ${exchangeEscape(listing.title)}" />` : '<span aria-hidden="true">⇄</span>'}</span>`;
+}
+
+function exchangePhotoHtml(listing: ExchangeListing, size = 'card') {
+  return exchangePhotoFrameHtml(listing, listing.photos?.[0], size, 0);
+}
+
+function exchangeDetailPhotosHtml(listing: ExchangeListing) {
+  if (listing.listingType === 'request' || (listing.photos || []).length < 2)
+    return exchangePhotoHtml(listing, 'detail');
+  return `<div class="exchange-detail-photo-gallery">${listing.photos.map((photo, index) => exchangePhotoFrameHtml(listing, photo, 'gallery', index)).join('')}</div>`;
+}
+
+function syncExchangeUrl(listingId = '', threadId = '') {
+  const url = new URL(window.location.href);
+  if (listingId) url.searchParams.set('listing', listingId);
+  else url.searchParams.delete('listing');
+  if (threadId) url.searchParams.set('thread', threadId);
+  else url.searchParams.delete('thread');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function renderExchangeListings() {
+  const target = document.getElementById('exchangeListings') as HTMLElement;
+  if (!target) return;
+  releaseExchangeObjectUrls();
+  if (!exchangeState.listings.length) {
+    target.innerHTML = `<div class="koinonia-empty-state"><strong>${exchangeState.mineOnly ? 'You have no listings yet' : 'No active listings'}</strong><p>${exchangeState.mineOnly ? 'Post an offer or request when you’re ready.' : 'Be the first parishioner to share an offer or request.'}</p></div>`;
+    return;
+  }
+  target.innerHTML = exchangeState.listings
+    .map(
+      (listing) => `
+    <button type="button" class="exchange-listing-card${listing.id === exchangeState.activeListingId ? ' is-active' : ''}" onclick="openExchangeListing('${exchangeEscape(listing.id)}')">
+      ${exchangePhotoHtml(listing)}
+      <span class="exchange-listing-copy"><span class="exchange-listing-flags"><em class="is-${exchangeEscape(listing.listingType)}">${listing.listingType === 'offer' ? 'Offer' : 'Request'}</em>${listing.status !== 'active' ? `<em>${exchangeEscape(listing.status)}</em>` : ''}</span><strong>${exchangeEscape(listing.title)}</strong><small>${exchangeEscape(exchangeCategoryLabel(listing.category))} · ${exchangeEscape(listing.posterName)}</small><b>${exchangeEscape(exchangeMoney(listing.priceCents))}</b></span>
+    </button>
+  `
+    )
+    .join('');
+  void hydrateExchangePhotos();
+}
+
+function exchangeThreadListHtml(threads: ExchangeThread[]) {
+  if (!threads.length)
+    return '<div class="koinonia-empty-state"><strong>No conversations yet</strong><p>When a parishioner messages about this listing, the conversation will appear here.</p></div>';
+  return `<div class="exchange-thread-list">${threads.map((thread) => `<button type="button" onclick="openExchangeThread('${exchangeEscape(thread.id)}')"><span><strong>${exchangeEscape(thread.requesterName)}</strong><small>${exchangeEscape(exchangeDate(thread.updatedAt, true))}</small></span><em>${exchangeEscape(thread.status)}</em></button>`).join('')}</div>`;
+}
+
+function renderExchangeDetail(listing: ExchangeListing) {
+  const target = document.getElementById('exchangeDetail') as HTMLElement;
+  if (!target) return;
+  const canAddPhotos =
+    listing.mine && listing.listingType === 'offer' && listing.status === 'active' && (listing.photos || []).length < 5;
+  const action = listing.mine
+    ? `<div class="exchange-owner-actions">${listing.status === 'active' ? `<button class="btn btn-primary" type="button" onclick="completeExchangeListing('${exchangeEscape(listing.id)}')">Mark completed</button><button class="btn btn-ghost" type="button" onclick="loadExchangeThreads('${exchangeEscape(listing.id)}')">View conversations</button>${canAddPhotos ? `<label class="btn btn-ghost exchange-add-photo-button" for="exchangeAddPhotos">Add photos</label><input class="exchange-photo-file-input" id="exchangeAddPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple onchange="addPhotosToExchangeListing(this,'${exchangeEscape(listing.id)}',${(listing.photos || []).length})" />` : ''}` : ''}</div>`
+    : listing.status === 'active'
+      ? `<button class="btn btn-gold exchange-message-poster" type="button" onclick="startExchangeThread('${exchangeEscape(listing.id)}')">Message poster in AGAPAY</button>`
+      : '';
+  target.innerHTML = `
+    <div class="exchange-detail-head"><button class="koinonia-detail-back" type="button" onclick="closeExchangeDetail()">← Parish Exchange</button>${exchangeDetailPhotosHtml(listing)}<div class="exchange-detail-flags"><em class="is-${exchangeEscape(listing.listingType)}">${listing.listingType === 'offer' ? 'Offer' : 'Request'}</em><em>${exchangeEscape(exchangeCategoryLabel(listing.category))}</em>${listing.mine ? '<em>Your listing</em>' : ''}</div><h2>${exchangeEscape(listing.title)}</h2><p>${exchangeEscape(listing.description || 'No additional description was provided.')}</p><dl><div><dt>Posted by</dt><dd>${listing.mine ? 'You' : exchangeEscape(listing.posterName)}</dd></div><div><dt>Price</dt><dd>${exchangeEscape(exchangeMoney(listing.priceCents))}</dd></div>${listing.expiresAt ? `<div><dt>Expires</dt><dd>${exchangeEscape(exchangeDate(listing.expiresAt))}</dd></div>` : ''}</dl>${action}<small class="exchange-safety-note">Keep contact in this in-app conversation. AGAPAY does not reveal phone numbers or email addresses and does not process payment.</small></div>
+    <section class="exchange-conversation-panel" id="exchangeConversationPanel">${listing.mine ? '<div class="koinonia-empty-state"><strong>Private conversations</strong><p>Select View conversations to see messages about this listing.</p></div>' : '<div class="koinonia-empty-state"><strong>Interested?</strong><p>Message the poster privately without sharing your email or phone number.</p></div>'}</section>
+  `;
+  void hydrateExchangePhotos();
+}
+
+function renderExchangeMessages(thread: ExchangeThread, messages: ExchangeMessage[]) {
+  const panel = document.getElementById('exchangeConversationPanel') as HTMLElement;
+  if (!panel) return;
+  const otherName = thread.mine ? 'Listing poster' : thread.requesterName;
+  panel.innerHTML = `
+    <div class="exchange-thread-head"><div><span class="eyebrow">Private conversation</span><h3>${exchangeEscape(thread.listingTitle)}</h3><p>Conversation with ${exchangeEscape(otherName || 'a parish member')}</p></div><span>${exchangeEscape(thread.status)}</span></div>
+    <div class="exchange-message-list" id="exchangeMessageList">${messages.length ? messages.map((message) => `<article class="exchange-message ${message.mine ? 'is-mine' : 'is-theirs'}${message.read ? '' : ' is-unread'}"><strong>${message.mine ? 'You' : exchangeEscape(message.senderName)}</strong><p>${exchangeEscape(message.body)}</p><time>${exchangeEscape(exchangeDate(message.createdAt, true))}</time></article>`).join('') : '<div class="koinonia-empty-state"><strong>No messages yet</strong><p>Start the conversation below.</p></div>'}</div>
+    ${thread.status === 'open' && thread.listingStatus === 'active' ? `<form class="exchange-message-form" onsubmit="sendExchangeMessage(event,'${exchangeEscape(thread.id)}')"><label for="exchangeMessageBody">Message</label><textarea id="exchangeMessageBody" maxlength="2000" rows="3" required placeholder="Ask about condition, timing, payment, or pickup…"></textarea><button class="btn btn-gold" type="submit">Send privately</button></form>` : '<p class="exchange-thread-closed">This conversation is closed.</p>'}
+  `;
+  const list = document.getElementById('exchangeMessageList') as HTMLElement;
+  if (list) list.scrollTop = list.scrollHeight;
+}
+
+function toggleExchangeComposer(open: boolean) {
+  const panel = document.getElementById('exchangeComposer') as HTMLElement;
+  if (!panel) return;
+  panel.hidden = !open;
+  if (open) {
+    syncExchangeListingType();
+    panel.querySelector<HTMLInputElement>('input,select')?.focus();
+  }
+}
+
+function toggleMyExchangeListings(button: HTMLButtonElement) {
+  exchangeState.mineOnly = !exchangeState.mineOnly;
+  button?.setAttribute('aria-pressed', String(exchangeState.mineOnly));
+  button?.classList.toggle('is-active', exchangeState.mineOnly);
+  void loadExchangeListings();
+}
+
+async function loadExchangeListings() {
+  const type = (document.getElementById('exchangeTypeFilter') as HTMLInputElement)?.value || '';
+  const category = (document.getElementById('exchangeCategoryFilter') as HTMLInputElement)?.value || '';
+  const query = new URLSearchParams();
+  if (type) query.set('type', type);
+  if (category) query.set('category', category);
+  if (exchangeState.mineOnly) query.set('mine', '1');
+  try {
+    const data = await exchangeFetch(`/api/donor/koinonia/exchange/listings?${query}`);
+    if (!data) return;
+    exchangeState.listings = data.listings || [];
+    renderExchangeListings();
+    exchangeStatus('');
+    if (requestedExchangeListingId && exchangeState.listings.some(({ id }) => id === requestedExchangeListingId)) {
+      const listingId = requestedExchangeListingId;
+      requestedExchangeListingId = '';
+      await openExchangeListing(listingId);
+      if (requestedExchangeThreadId) {
+        const threadId = requestedExchangeThreadId;
+        requestedExchangeThreadId = '';
+        await openExchangeThread(threadId);
+      }
+    }
+  } catch (error) {
+    exchangeStatus((error as Error).message || 'Unable to load Parish Exchange listings.', 'error');
+  }
+}
+
+async function openExchangeListing(listingId: string) {
+  const listing = exchangeState.listings.find(({ id }) => id === listingId);
+  if (!listing) return;
+  exchangeState.activeListingId = listingId;
+  exchangeState.activeThreadId = '';
+  syncExchangeUrl(listingId);
+  document.body.classList.add('is-koinonia-detail-open');
+  renderExchangeListings();
+  renderExchangeDetail(listing);
+}
+
+function closeExchangeDetail() {
+  exchangeState.activeListingId = '';
+  exchangeState.activeThreadId = '';
+  syncExchangeUrl();
+  document.body.classList.remove('is-koinonia-detail-open');
+  renderExchangeListings();
+  (document.getElementById('exchangeDetail') as HTMLElement).innerHTML =
+    '<div class="koinonia-empty-state"><strong>Select a listing</strong><p>Open a listing to see its details and start a private conversation.</p></div>';
+}
+
+function validExchangePhoto(file: File | undefined) {
+  return (
+    file &&
+    ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) &&
+    file.size > 0 &&
+    file.size <= 10 * 1024 * 1024
+  );
+}
+
+function releaseExchangeDraftPhotoUrls() {
+  exchangeDraftPhotoUrls.forEach((url) => URL.revokeObjectURL(url));
+  exchangeDraftPhotoUrls.clear();
+}
+
+function renderExchangeDraftPhotos() {
+  const target = document.getElementById('exchangeDraftPhotoGrid') as HTMLElement;
+  if (!target) return;
+  releaseExchangeDraftPhotoUrls();
+  if (!exchangeDraftPhotos.length) {
+    target.innerHTML = '<p>No photos selected yet.</p>';
+    return;
+  }
+  target.innerHTML = exchangeDraftPhotos
+    .map((file, index) => {
+      const url = URL.createObjectURL(file);
+      exchangeDraftPhotoUrls.set(index, url);
+      return `<figure><img src="${exchangeEscape(url)}" alt="Selected item photo ${index + 1}" /><button type="button" onclick="removeExchangeDraftPhoto(${index})" aria-label="Remove photo ${index + 1}">×</button>${index === 0 ? '<figcaption>Cover photo</figcaption>' : ''}</figure>`;
+    })
+    .join('');
+}
+
+function selectExchangePhotos(input: HTMLInputElement | null) {
+  const incoming = [...(input?.files || [])];
+  if (input) input.value = '';
+  const invalid = incoming.find((file) => !validExchangePhoto(file));
+  if (invalid) {
+    exchangeStatus('Photos must be JPG, PNG, or WebP and 10MB or smaller.', 'error');
+    return;
+  }
+  const known = new Set(exchangeDraftPhotos.map((file) => `${file.name}|${file.size}|${file.lastModified}`));
+  const unique = incoming.filter((file) => !known.has(`${file.name}|${file.size}|${file.lastModified}`));
+  if (exchangeDraftPhotos.length + unique.length > 5) {
+    exchangeStatus('Choose up to 5 item photos.', 'error');
+    return;
+  }
+  exchangeDraftPhotos = [...exchangeDraftPhotos, ...unique];
+  renderExchangeDraftPhotos();
+  exchangeStatus(
+    exchangeDraftPhotos.length
+      ? `${exchangeDraftPhotos.length} photo${exchangeDraftPhotos.length === 1 ? '' : 's'} ready to upload.`
+      : '',
+    'success'
+  );
+}
+
+function removeExchangeDraftPhoto(index: number) {
+  exchangeDraftPhotos = exchangeDraftPhotos.filter((_, photoIndex) => photoIndex !== index);
+  renderExchangeDraftPhotos();
+}
+
+function clearExchangeDraftPhotos() {
+  exchangeDraftPhotos = [];
+  releaseExchangeDraftPhotoUrls();
+  renderExchangeDraftPhotos();
+  const galleryInput = document.getElementById('exchangePhotos') as HTMLInputElement;
+  const cameraInput = document.getElementById('exchangeCameraPhoto') as HTMLInputElement;
+  if (galleryInput) galleryInput.value = '';
+  if (cameraInput) cameraInput.value = '';
+}
+
+function syncExchangeListingType() {
+  const isOffer = (document.getElementById('exchangeListingType') as HTMLInputElement)?.value !== 'request';
+  const uploader = document.getElementById('exchangePhotoUploader') as HTMLElement;
+  const requestArtwork = document.getElementById('exchangeRequestArtwork') as HTMLElement;
+  if (uploader) uploader.hidden = !isOffer;
+  if (requestArtwork) requestArtwork.hidden = isOffer;
+  if (!isOffer && exchangeDraftPhotos.length) clearExchangeDraftPhotos();
+}
+
+async function uploadExchangePhoto(listingId: string, file: File) {
+  const response = await fetch(`/api/donor/koinonia/exchange/listings/${encodeURIComponent(listingId)}/photos`, {
+    method: 'POST',
+    headers: exchangeHeaders({ 'Content-Type': file.type, 'X-AGAPAY-Attachment-Bytes': String(file.size) }),
+    body: file,
+  });
+  if (window.MyAgapayShell?.handleUnauthorized(response)) return null;
+  const payload = await (response.json().catch(() => ({})) as Promise<ExchangeResponse>);
+  if (!response.ok) throw new Error(payload.error || 'Unable to upload a listing photo.');
+  return payload;
+}
+
+async function addPhotosToExchangeListing(input: HTMLInputElement | null, listingId: string, existingCount = 0) {
+  const files = [...(input?.files || [])];
+  if (input) input.value = '';
+  if (!files.length) return;
+  if (existingCount + files.length > 5) {
+    exchangeStatus(
+      `This listing can include ${Math.max(0, 5 - existingCount)} more photo${5 - existingCount === 1 ? '' : 's'}.`,
+      'error'
+    );
+    return;
+  }
+  if (files.some((file) => !validExchangePhoto(file))) {
+    exchangeStatus('Photos must be JPG, PNG, or WebP and 10MB or smaller.', 'error');
+    return;
+  }
+  try {
+    for (let index = 0; index < files.length; index += 1) {
+      exchangeStatus(`Uploading photo ${index + 1} of ${files.length}…`);
+      await uploadExchangePhoto(listingId, files[index]);
+    }
+    await loadExchangeListings();
+    await openExchangeListing(listingId);
+    exchangeStatus(`${files.length} photo${files.length === 1 ? '' : 's'} added to your listing.`, 'success');
+  } catch (error) {
+    await loadExchangeListings();
+    await openExchangeListing(listingId);
+    exchangeStatus(
+      (error as Error).message || 'Unable to add every photo. You can try again from this listing.',
+      'error'
+    );
+  }
+}
+
+async function createExchangeListing(event: Event & { currentTarget: HTMLFormElement }) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  const listingType = (document.getElementById('exchangeListingType') as HTMLInputElement).value;
+  const files = listingType === 'offer' ? [...exchangeDraftPhotos] : [];
+  let createdListingId = '';
+  if (button) button.disabled = true;
+  try {
+    const price = (document.getElementById('exchangePrice') as HTMLInputElement).value;
+    const expires = (document.getElementById('exchangeExpires') as HTMLInputElement).value;
+    const data = await exchangeFetch('/api/donor/koinonia/exchange/listings', {
+      method: 'POST',
+      body: JSON.stringify({
+        listingType,
+        category: (document.getElementById('exchangeCategory') as HTMLInputElement).value,
+        title: (document.getElementById('exchangeTitle') as HTMLInputElement).value,
+        description: (document.getElementById('exchangeDescription') as HTMLInputElement).value,
+        priceCents: price === '' ? null : Math.round(Number(price) * 100),
+        expiresAt: expires ? new Date(`${expires}T23:59:59`).getTime() : null,
+      }),
+    });
+    if (!data) return;
+    createdListingId = data.listingId;
+    for (let index = 0; index < files.length; index += 1) {
+      exchangeStatus(`Publishing listing · uploading photo ${index + 1} of ${files.length}…`);
+      await uploadExchangePhoto(data.listingId, files[index]);
+    }
+    form.reset();
+    clearExchangeDraftPhotos();
+    syncExchangeListingType();
+    setDefaultExchangeExpiry();
+    toggleExchangeComposer(false);
+    exchangeState.mineOnly = false;
+    const mineButton = document.getElementById('exchangeMineFilter') as HTMLInputElement;
+    mineButton?.setAttribute('aria-pressed', 'false');
+    mineButton?.classList.remove('is-active');
+    (document.getElementById('exchangeTypeFilter') as HTMLInputElement).value = '';
+    (document.getElementById('exchangeCategoryFilter') as HTMLInputElement).value = '';
+    await loadExchangeListings();
+    await openExchangeListing(data.listingId);
+    exchangeStatus('Your listing is live in Parish Exchange.', 'success');
+  } catch (error) {
+    if (createdListingId) {
+      await loadExchangeListings();
+      await openExchangeListing(createdListingId);
+      exchangeStatus(
+        `${(error as Error).message || 'A photo could not be uploaded.'} Your listing is live; use Add photos to try again.`,
+        'error'
+      );
+    } else {
+      exchangeStatus((error as Error).message || 'Unable to create this listing.', 'error');
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function completeExchangeListing(listingId: string) {
+  try {
+    const data = await exchangeFetch(
+      `/api/donor/koinonia/exchange/listings/${encodeURIComponent(listingId)}/complete`,
+      { method: 'POST', body: '{}' }
+    );
+    if (!data) return;
+    exchangeState.mineOnly = true;
+    const mineButton = document.getElementById('exchangeMineFilter') as HTMLInputElement;
+    mineButton?.setAttribute('aria-pressed', 'true');
+    mineButton?.classList.add('is-active');
+    await loadExchangeListings();
+    await openExchangeListing(listingId);
+    exchangeStatus(
+      `Listing completed. ${Number(data.threadsClosed || 0)} open conversation${Number(data.threadsClosed || 0) === 1 ? ' was' : 's were'} closed.`,
+      'success'
+    );
+  } catch (error) {
+    exchangeStatus((error as Error).message || 'Unable to complete this listing.', 'error');
+  }
+}
+
+async function startExchangeThread(listingId: string) {
+  try {
+    const data = await exchangeFetch(`/api/donor/koinonia/exchange/listings/${encodeURIComponent(listingId)}/threads`, {
+      method: 'POST',
+      body: '{}',
+    });
+    if (!data) return;
+    await openExchangeThread(data.threadId);
+  } catch (error) {
+    exchangeStatus((error as Error).message || 'Unable to start this conversation.', 'error');
+  }
+}
+
+async function loadExchangeThreads(listingId: string) {
+  try {
+    const data = await exchangeFetch(`/api/donor/koinonia/exchange/listings/${encodeURIComponent(listingId)}/threads`);
+    if (!data) return;
+    exchangeState.threads = data.threads || [];
+    (document.getElementById('exchangeConversationPanel') as HTMLElement).innerHTML = exchangeThreadListHtml(
+      exchangeState.threads
+    );
+  } catch (error) {
+    exchangeStatus((error as Error).message || 'Unable to load listing conversations.', 'error');
+  }
+}
+
+async function openExchangeThread(threadId: string) {
+  try {
+    const data = await exchangeFetch(`/api/donor/koinonia/exchange/threads/${encodeURIComponent(threadId)}/messages`);
+    if (!data) return;
+    exchangeState.activeThreadId = threadId;
+    exchangeState.messages = data.messages || [];
+    syncExchangeUrl(exchangeState.activeListingId || data.thread.listingId, threadId);
+    renderExchangeMessages(data.thread, exchangeState.messages);
+    await Promise.all(
+      exchangeState.messages
+        .filter((message) => !message.mine && !message.read)
+        .map((message) =>
+          exchangeFetch(
+            `/api/donor/koinonia/exchange/threads/${encodeURIComponent(threadId)}/messages/${encodeURIComponent(message.id)}/read`,
+            { method: 'POST', body: '{}' }
+          ).catch(() => null)
+        )
+    );
+  } catch (error) {
+    exchangeStatus((error as Error).message || 'Unable to open this conversation.', 'error');
+  }
+}
+
+async function sendExchangeMessage(event: Event & { currentTarget: HTMLFormElement }, threadId: string) {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  const body = (document.getElementById('exchangeMessageBody') as HTMLInputElement)?.value || '';
+  if (button) button.disabled = true;
+  try {
+    await exchangeFetch(`/api/donor/koinonia/exchange/threads/${encodeURIComponent(threadId)}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    });
+    await openExchangeThread(threadId);
+    exchangeStatus('Message sent privately.', 'success');
+  } catch (error) {
+    exchangeStatus((error as Error).message || 'Unable to send this message.', 'error');
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function setDefaultExchangeExpiry() {
+  const input = document.getElementById('exchangeExpires') as HTMLInputElement;
+  if (!input || input.value) return;
+  const date = new Date();
+  date.setDate(date.getDate() + 30);
+  input.value = date.toISOString().slice(0, 10);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  void exchangeFetch('/api/donor/koinonia/community-tools/exchange/opened', { method: 'POST', body: '{}' }).catch(
+    () => null
+  );
+  setDefaultExchangeExpiry();
+  syncExchangeListingType();
+  void loadExchangeListings();
+});
+
+window.addEventListener('beforeunload', () => {
+  releaseExchangeObjectUrls();
+  releaseExchangeDraftPhotoUrls();
+});

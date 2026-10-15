@@ -1,14 +1,14 @@
+// Generated from src/accounting/commerce/service.ts by npm run build:server. Do not edit.
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { createJournalDraft, postJournalEntry } from '../ledger/service.js';
 import { COMMERCE_ACCOUNTING_SOURCE_TYPES } from '../../payments/classification.js';
-
-export const COMMERCE_SOURCE_TYPES = COMMERCE_ACCOUNTING_SOURCE_TYPES;
+const COMMERCE_SOURCE_TYPES = COMMERCE_ACCOUNTING_SOURCE_TYPES;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 function id(p) {
   return `${p}_${crypto.randomUUID()}`;
 }
 function now() {
-  return new Date().toISOString();
+  return /* @__PURE__ */ new Date().toISOString();
 }
 async function first(db, q, ...p) {
   return db
@@ -79,7 +79,7 @@ function dto(r) {
     })
   );
 }
-export async function configureCommerceItem(db, { actor, entitlementTier, input }) {
+async function configureCommerceItem(db, { actor, entitlementTier, input }) {
   access(actor, 'accounting.commerce.configure', entitlementTier);
   if (!input?.operationalItemId || !String(input.name || '').trim())
     throw new ValidationError('Operational item identity and name are required.');
@@ -147,7 +147,7 @@ export async function configureCommerceItem(db, { actor, entitlementTier, input 
     version: Number(r.version),
   });
 }
-export async function ingestCommerceSourceEvent(db, { actor, entitlementTier, event }) {
+async function ingestCommerceSourceEvent(db, { actor, entitlementTier, event }) {
   access(actor, 'accounting.commerce.post', entitlementTier);
   if (
     !event ||
@@ -300,7 +300,7 @@ async function fail(db, e, code, message, status = 'exception') {
   );
   return dto(await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', e.id));
 }
-export async function processCommerceSourceEvent(db, { actor, entitlementTier, sourceEventId, approve = false }) {
+async function processCommerceSourceEvent(db, { actor, entitlementTier, sourceEventId, approve = false }) {
   access(actor, approve ? 'accounting.commerce.review' : 'accounting.commerce.post', entitlementTier);
   const e = await first(
     db,
@@ -486,7 +486,9 @@ export async function processCommerceSourceEvent(db, { actor, entitlementTier, s
   }
   const elevated = {
       ...actor,
-      capabilities: [...new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post'])],
+      capabilities: [
+        .../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post']),
+      ],
     },
     draft = await createJournalDraft(db, {
       actor: elevated,
@@ -550,7 +552,7 @@ export async function processCommerceSourceEvent(db, { actor, entitlementTier, s
   );
   return dto(await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', e.id));
 }
-export async function commerceOverview(db, { actor, entitlementTier, startDate, endDate }) {
+async function commerceOverview(db, { actor, entitlementTier, startDate, endDate }) {
   access(actor, 'accounting.commerce.view', entitlementTier);
   if (!DATE.test(startDate) || !DATE.test(endDate)) throw new ValidationError('Valid commerce dates are required.');
   const r = await first(
@@ -571,7 +573,7 @@ export async function commerceOverview(db, { actor, entitlementTier, startDate, 
     exceptions: Number(r.exceptions),
   });
 }
-export async function salesTaxLiabilityReport(db, { actor, entitlementTier, startDate, endDate }) {
+async function salesTaxLiabilityReport(db, { actor, entitlementTier, startDate, endDate }) {
   access(actor, 'accounting.commerce.reports.view', entitlementTier);
   const rows = await all(
     db,
@@ -596,7 +598,7 @@ export async function salesTaxLiabilityReport(db, { actor, entitlementTier, star
     ),
   });
 }
-export async function previewCommerceBackfill(db, { actor, entitlementTier, startDate, endDate }) {
+async function previewCommerceBackfill(db, { actor, entitlementTier, startDate, endDate }) {
   access(actor, 'accounting.commerce.backfill', entitlementTier);
   const r = await first(
     db,
@@ -617,7 +619,7 @@ export async function previewCommerceBackfill(db, { actor, entitlementTier, star
     missingMappings: Number(r.missing_mappings),
   });
 }
-export function commerceReportCsv(report) {
+function commerceReportCsv(report) {
   const safe = (v) => {
     let s = String(v ?? '');
     if (/^[=+\-@]/.test(s)) s = `'${s}`;
@@ -626,3 +628,13 @@ export function commerceReportCsv(report) {
   const rows = [Object.keys(report.rows?.[0] || {}), ...(report.rows || []).map(Object.values)];
   return rows.map((r) => r.map(safe).join(',')).join('\r\n');
 }
+export {
+  COMMERCE_SOURCE_TYPES,
+  commerceOverview,
+  commerceReportCsv,
+  configureCommerceItem,
+  ingestCommerceSourceEvent,
+  previewCommerceBackfill,
+  processCommerceSourceEvent,
+  salesTaxLiabilityReport,
+};
