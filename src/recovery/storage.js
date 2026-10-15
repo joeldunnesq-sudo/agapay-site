@@ -1,3 +1,4 @@
+// Generated from src/recovery/storage.ts by npm run build:server. Do not edit.
 import { registrationProjection } from './configuration.js';
 import {
   inspectStorage,
@@ -11,16 +12,15 @@ import { inspectBooks, resolvePortabilityBooks } from '../portability/accounting
 import { sha256 } from '../portability/archive.js';
 import { rawStorageEnv } from '../portability/storage.js';
 import { suppressionRecord, storageGuardsEnabled } from '../portability/suppression.js';
-
-export const MAX_BYTES = 12 * 1024 * 1024;
-export const TTL = 7 * 86400000;
-export const fail = (code, message) => {
+const MAX_BYTES = 12 * 1024 * 1024;
+const TTL = 7 * 864e5;
+const fail = (code, message) => {
   throw new PortabilityError(code, message);
 };
-export const query = (db, sql, ...args) => db.prepare(sql).bind(...args);
-export const rows = async (db, sql, ...args) => (await query(db, sql, ...args).all()).results;
-export const rootKey = (id) => 'parish-recovery/' + id + '/';
-export const publicSnapshot = (s) => ({
+const query = (db, sql, ...args) => db.prepare(sql).bind(...args);
+const rows = async (db, sql, ...args) => (await query(db, sql, ...args).all()).results;
+const rootKey = (id) => 'parish-recovery/' + id + '/';
+const publicSnapshot = (s) => ({
   id: s.id,
   scope: s.scope,
   kind: s.kind,
@@ -29,9 +29,7 @@ export const publicSnapshot = (s) => ({
   expiresAt: s.expires_at,
   status: s.status,
 });
-// Access controls and provider/payment state must remain current. These records
-// are explicitly excluded from rollback, even though ordinary exports include them.
-export const PRESERVED = new Set([
+const PRESERVED = /* @__PURE__ */ new Set([
   'parish_memberships',
   'membership_capabilities',
   'accounting_entities',
@@ -48,10 +46,9 @@ export const PRESERVED = new Set([
   'accounting_legal_holds',
   'accounting_recovery_verifications',
 ]);
-export const EXTERNAL =
+const EXTERNAL =
   /donation|payment|stripe|payout|refund|chargeback|receipt_delivery|donor_offerings|commerce_order|settlement_profile|agapay_service_invoice|source_event|source_document|posting_attempt|posting_job|check_sequence|check_stock|check_print|check_void|bank_feed|integration_event|external_transaction|legal_hold/i;
-
-export async function requireRecovery(env, parishId) {
+async function requireRecovery(env, parishId) {
   if (env.PARISH_RECOVERY_ENABLED !== 'true' || !env.PARISH_EXPORTS || !storageGuardsEnabled(env))
     fail('recovery_unavailable', 'Restore-ready backups are not available on this deployment.');
   if (
@@ -60,8 +57,7 @@ export async function requireRecovery(env, parishId) {
   )
     fail('parish_closed', 'A closed or closing parish cannot be restored.');
 }
-
-export async function booksFor(env, parishId) {
+async function booksFor(env, parishId) {
   if (
     !(await query(
       env.AGAPAY_DB,
@@ -72,15 +68,13 @@ export async function booksFor(env, parishId) {
   const entities = await rows(env.AGAPAY_DB, 'SELECT * FROM accounting_entities WHERE parish_id=?', parishId);
   return resolvePortabilityBooks(rawStorageEnv(env), parishId, entities);
 }
-
-export function centralScope(name, alias = 't') {
+function centralScope(name, alias = 't') {
   let scope = tableScope(name, alias);
   if (name === 'directory_people')
     scope += ` AND NOT EXISTS(SELECT 1 FROM directory_person_links l WHERE l.person_id=${alias}.id) AND NOT EXISTS(SELECT 1 FROM directory_parish_affiliations a WHERE a.person_id=${alias}.id AND a.parish_id<>?1) AND NOT EXISTS(SELECT 1 FROM directory_household_members m JOIN directory_households h ON h.id=m.household_id WHERE m.person_id=${alias}.id AND h.parish_id<>?1)`;
   return scope;
 }
-
-export async function inventory(db, kind) {
+async function inventory(db, kind) {
   const items =
     kind === 'central'
       ? (await inspectStorage(db))
@@ -105,8 +99,7 @@ export async function inventory(db, kind) {
   }
   return items;
 }
-
-export async function schemaHash(db) {
+async function schemaHash(db) {
   return sha256(
     JSON.stringify(
       await rows(
@@ -116,8 +109,7 @@ export async function schemaHash(db) {
     )
   );
 }
-
-export async function captureDatabase(db, kind, parishId) {
+async function captureDatabase(db, kind, parishId) {
   if (!db) return null;
   const tables = [];
   let bytes = 0;
@@ -136,12 +128,14 @@ export async function captureDatabase(db, kind, parishId) {
     bytes += new TextEncoder().encode(JSON.stringify(data)).length;
     if (data.length > MAX_TABLE_ROWS || bytes > MAX_BYTES)
       fail('recovery_too_large', 'This snapshot exceeds the self-service recovery limit. Contact support.');
-    tables.push({ ...item, rows: item.name === 'registrations' ? data.map(registrationProjection) : data });
+    tables.push({
+      ...item,
+      rows: item.name === 'registrations' ? data.map(registrationProjection) : data,
+    });
   }
   return { schema: await schemaHash(db), tables };
 }
-
-export async function writePart(env, snapshotId, part, value) {
+async function writePart(env, snapshotId, part, value) {
   const body = JSON.stringify(value);
   if (new TextEncoder().encode(body).length > MAX_BYTES)
     fail('recovery_too_large', 'The snapshot exceeds the self-service size limit.');
@@ -156,8 +150,7 @@ export async function writePart(env, snapshotId, part, value) {
     fail('recovery_checksum_failed', 'The recovery copy could not be verified.');
   return { part, hash, bytes: new TextEncoder().encode(body).length };
 }
-
-export async function readPart(env, snapshot, part) {
+async function readPart(env, snapshot, part) {
   const manifest = JSON.parse(snapshot.manifest_json);
   if ((await sha256(snapshot.manifest_json)) !== snapshot.manifest_sha256)
     fail('recovery_checksum_failed', 'Snapshot metadata failed verification.');
@@ -170,3 +163,22 @@ export async function readPart(env, snapshot, part) {
   if ((await sha256(body)) !== expected.hash) fail('recovery_checksum_failed', 'The snapshot checksum did not match.');
   return JSON.parse(body);
 }
+export {
+  EXTERNAL,
+  MAX_BYTES,
+  PRESERVED,
+  TTL,
+  booksFor,
+  captureDatabase,
+  centralScope,
+  fail,
+  inventory,
+  publicSnapshot,
+  query,
+  readPart,
+  requireRecovery,
+  rootKey,
+  rows,
+  schemaHash,
+  writePart,
+};

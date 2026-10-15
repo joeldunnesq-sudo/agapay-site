@@ -1,26 +1,23 @@
+// Generated from src/recovery/configuration.ts by npm run build:server. Do not edit.
 import { rawStorageEnv } from '../portability/storage.js';
 import { sha256 } from '../portability/archive.js';
-
-// Explicitly reviewed parish-editable configuration. New identity, billing,
-// entitlement, or credential fields cannot enter rollback by default.
-export const CONFIG_FIELDS =
+const CONFIG_FIELDS =
   'parishName addressLine1 addressLine2 city state postalCode country website taxLegalName taxEin timezone liturgicalCalendar koinoniaCalendarUrl patronalFeast patronalFeastName patronalFeastDate givingStatus recurringGivingEnabled candlesEnabled commemorationsEnabled communicationsEnabled signupsEnabled exchangeEnabled prayerRequestsEnabled sacramentsEnabled sacramentPriests bookstoreEnabled eventsEnabled mealsEnabled funds campaigns feastCampaigns'.split(
     ' '
   );
-export function configuration(data) {
+function configuration(data) {
   const value = typeof data === 'string' ? JSON.parse(data) : data;
   return Object.fromEntries(CONFIG_FIELDS.map((key) => [key, value[key] ?? null]));
 }
-export function registrationProjection(row) {
+function registrationProjection(row) {
   return { reference: row.reference, parish_id: row.parish_id, data: JSON.stringify(configuration(row.data)) };
 }
-export function configurationChangedSql() {
+function configurationChangedSql() {
   return CONFIG_FIELDS.map((key) => `json_extract(OLD.data,'$.${key}') IS NOT json_extract(NEW.data,'$.${key}')`).join(
     ' OR '
   );
 }
-
-export async function syncConfigurationMirrors(env, parishId, mirrors) {
+async function syncConfigurationMirrors(env, parishId, mirrors) {
   const db = env.AGAPAY_DB,
     kv = rawStorageEnv(env).AGAPAY_REGISTRATIONS;
   if (!kv || !mirrors?.length) return;
@@ -51,3 +48,4 @@ export async function syncConfigurationMirrors(env, parishId, mirrors) {
       .run();
   }
 }
+export { CONFIG_FIELDS, configuration, configurationChangedSql, registrationProjection, syncConfigurationMirrors };

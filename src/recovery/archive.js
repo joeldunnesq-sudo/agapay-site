@@ -1,8 +1,8 @@
+// Generated from src/recovery/archive.ts by npm run build:server. Do not edit.
 import { createZip, utf8, sha256 } from '../portability/archive.js';
 import { exportRow, csvForRows } from '../portability/catalog.js';
 import { readPart, query, fail, requireRecovery } from './storage.js';
-
-export async function downloadRecoverySnapshot(env, parishId, id, scope) {
+async function downloadRecoverySnapshot(env, parishId, id, scope) {
   await requireRecovery(env, parishId);
   const snapshot = await query(
     env.AGAPAY_DB,
@@ -43,3 +43,4 @@ export async function downloadRecoverySnapshot(env, parishId, id, scope) {
   files.push({ name: 'manifest.json', bytes: utf8(JSON.stringify(manifest, null, 2)) });
   return createZip(files);
 }
+export { downloadRecoverySnapshot };

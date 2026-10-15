@@ -1,16 +1,15 @@
+// Generated from src/recovery/locks.ts by npm run build:server. Do not edit.
 import { configurationChangedSql } from './configuration.js';
 import { inspectStorage, tableScope, quoted } from '../portability/catalog.js';
 import { inspectBooks } from '../portability/accounting.js';
 import { assertStorageDrained } from '../portability/storage.js';
 import { sha256 } from '../portability/archive.js';
 import { query, rows, fail, PRESERVED } from './storage.js';
-
 async function guardHash(db, books) {
   const sql =
     "SELECT name,sql FROM sqlite_master WHERE type='trigger' AND (name LIKE 'recovery_%' OR name LIKE 'parish_recovery_%') ORDER BY name";
   return sha256(JSON.stringify([await rows(db, sql), books ? await rows(books, sql) : null]));
 }
-
 async function verifyDefinitions(db, definitions) {
   const actual = new Map(
     (await rows(db, "SELECT name,sql FROM sqlite_master WHERE type='trigger'")).map((row) => [row.name, row.sql])
@@ -27,8 +26,7 @@ async function verifyDefinitions(db, definitions) {
       fail('recovery_lock_changed', 'The installed write barrier does not match the reviewed definition.');
   }
 }
-
-export async function freeze(env, op, books) {
+async function freeze(env, op, books) {
   const db = env.AGAPAY_DB;
   const statements = [];
   const centralDefinitions = [];
@@ -48,7 +46,6 @@ export async function freeze(env, op, books) {
     if (!migrationGuards.has('parish_recovery_' + name))
       fail('recovery_migration_incomplete', 'Recovery safeguards are not fully installed.');
   }
-  // Triggers protect writes from HTTP, jobs, webhooks, and in-flight requests.
   for (const item of await inspectStorage(db)) {
     if (
       !item.scope ||
@@ -109,8 +106,7 @@ export async function freeze(env, op, books) {
     op.id
   ).run();
 }
-
-export async function assertFrozen(env, op, books) {
+async function assertFrozen(env, op, books) {
   const lock = await query(
     env.AGAPAY_DB,
     "SELECT operation_id FROM parish_recovery_locks WHERE parish_id=? AND phase='frozen'",
@@ -128,8 +124,7 @@ export async function assertFrozen(env, op, books) {
     fail('recovery_lock_changed', 'The database write safeguards changed. Recovery requires review.');
   await assertStorageDrained(env, op.parish_id);
 }
-
-export async function unfreeze(env, op, books) {
+async function unfreeze(env, op, books) {
   if (books && (await query(books, "SELECT 1 FROM sqlite_master WHERE name='recovery_lock'").first()))
     await query(books, 'DELETE FROM recovery_lock WHERE operation_id=?', op.id).run();
   await query(
@@ -139,3 +134,4 @@ export async function unfreeze(env, op, books) {
     op.id
   ).run();
 }
+export { assertFrozen, freeze, unfreeze };
