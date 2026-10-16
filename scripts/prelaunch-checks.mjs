@@ -1,3 +1,4 @@
+import { readServerModuleSource } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -82,7 +83,7 @@ const backendFiles = [
   'src/lib/parish-notifications.js',
   'src/lib/stripe-fees.js',
 ];
-const backendSources = (await Promise.all(backendFiles.map((file) => readFile(file, 'utf8')))).join('\n');
+const backendSources = (await Promise.all(backendFiles.map((file) => readServerModuleSource(file)))).join('\n');
 assert.ok(backendSources.includes('X-AGAPAY-Admin-Token'), 'Backend should accept AGAPAY admin auth header');
 assert.ok(backendSources.includes('X-AGAPAY-Donor-Email'), 'Backend should accept AGAPAY donor auth header');
 assert.ok(backendSources.includes('handleAdminReleaseStatus'), 'Backend should expose a release-status report');

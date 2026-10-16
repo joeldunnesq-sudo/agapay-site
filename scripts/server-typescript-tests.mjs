@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { typeScriptMigrationInventory } from './lib/typescript-migration-inventory.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
@@ -21,6 +22,15 @@ import * as terminology from '../src/organizations/terminology.js';
 import * as xml from '../src/lib/xml-text.js';
 
 await synchronizeServerTypeScript();
+
+// Exercise the release guard against extracted authoritative sources before deployment.
+const prelaunch = spawnSync(process.execPath, ['scripts/prelaunch-checks.mjs'], {
+  cwd: repoRoot,
+  env: { ...process.env, AGAPAY_BASE_URL: '' },
+  encoding: 'utf8',
+});
+assert.equal(prelaunch.status, 0, prelaunch.stderr || prelaunch.stdout);
+assert.match(prelaunch.stdout, /AGAPAY prelaunch checks passed/);
 
 // New runtime TypeScript must have an explicit output contract. The existing Learn
 // model-only files have a separate type-check project and are not runtime entries.
