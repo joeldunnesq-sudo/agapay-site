@@ -4,8 +4,6 @@
     "public/admin/app.js": 3477,
     "public/donor/app.js": 2553,
     "public/learn/dashboard-shell.js": 9272,
-    "public/learn/dashboard-view-models.js": 1724,
-    "public/listen/app.js": 1598,
     "public/parish/app.js": 2245,
     "public/parish/features/directory.js": 1257,
     "public/parish/features/sacraments.js": 1577,

@@ -35,6 +35,11 @@ const server = createServer(async (req, res) => {
     );
     return;
   }
+  if (url.pathname === '/__listen_typescript_test__') {
+    res.setHeader('Content-Type', 'text/html');
+    res.end(await readFile(resolve(publicRoot, 'listen/index.html'), 'utf8'));
+    return;
+  }
   if (url.pathname.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json');
     res.end('{}');
@@ -128,6 +133,88 @@ try {
   assert.equal(native.email, 'person@example.test');
   assert.doesNotMatch(native.sanitized, /<script|onerror=/i);
   assert.match(native.sanitized, /<b>Example<\/b>/);
+  // Exercise the real Listen module graph and IndexedDB/Cache APIs with a deterministic media adapter.
+  const listenContext = await browser.newContext({
+    viewport: { width: 393, height: 873 },
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  try {
+    const listenPage = await listenContext.newPage(),
+      listenErrors = [];
+    listenPage.on('pageerror', (error) => listenErrors.push(error.message));
+    await listenPage.addInitScript(
+      ({ origin }) => {
+        localStorage.setItem(
+          'agp_eps',
+          JSON.stringify([
+            {
+              guid: 'listen-ui-1',
+              url: origin + '/__native_audio__',
+              title: 'Migration Episode',
+              show: 'Fixture Podcast',
+              date: '2026-10-16',
+              duration: 300,
+              categories: ['Prayer'],
+            },
+          ])
+        );
+        HTMLMediaElement.prototype.play = function () {
+          window.__listenPlayedSrc = this.src;
+          this.dispatchEvent(new Event('playing'));
+          return Promise.resolve();
+        };
+        HTMLMediaElement.prototype.pause = function () {
+          this.dispatchEvent(new Event('pause'));
+        };
+        HTMLMediaElement.prototype.load = function () {
+          queueMicrotask(() => this.dispatchEvent(new Event('loadedmetadata')));
+        };
+        Object.defineProperty(HTMLMediaElement.prototype, 'duration', { configurable: true, get: () => 300 });
+      },
+      { origin }
+    );
+    await listenPage.goto(origin + '/__listen_typescript_test__');
+    await listenPage.locator('.ep-like-btn').first().click();
+    assert.deepEqual(await listenPage.evaluate(() => JSON.parse(localStorage.getItem('agp_liked'))), ['listen-ui-1']);
+    await listenPage.locator('.ep-play-next-btn').first().click();
+    assert.equal(await listenPage.evaluate(() => JSON.parse(localStorage.getItem('agp_queue'))[0].guid), 'listen-ui-1');
+    await listenPage.locator('.ep-download-btn').first().click();
+    await listenPage.waitForFunction(() =>
+      JSON.parse(localStorage.getItem('agp_downloaded') || '[]').includes('listen-ui-1')
+    );
+    assert.deepEqual(
+      await listenPage.evaluate(async () =>
+        Array.from(
+          new Uint8Array(
+            await (
+              await (await caches.open('agapay-listen-audio-v1')).match(location.origin + '/__native_audio__')
+            ).arrayBuffer()
+          )
+        )
+      ),
+      [1, 2, 3, 4]
+    );
+    await listenPage.locator('.ep-tap').first().click();
+    await listenPage.waitForFunction(() => localStorage.getItem('agp_current'));
+    assert.equal(await listenPage.evaluate(() => JSON.parse(localStorage.getItem('agp_current')).guid), 'listen-ui-1');
+    assert.ok(
+      await listenPage.evaluate(() => window.__listenPlayedSrc.startsWith('blob:')),
+      'downloaded audio uses the local Cache response'
+    );
+    assert.equal(await listenPage.evaluate(() => navigator.mediaSession.metadata.title), 'Migration Episode');
+    await listenPage.locator('.play-pause').click();
+    await listenPage.locator('.back-btn').click();
+    await listenPage.locator('[data-nav="library"]').last().click();
+    await listenPage.locator('[data-nav="profile"]').last().click();
+    assert.ok((await listenPage.locator('#listen-app').innerText()).includes('Guest Listener'));
+    assert.deepEqual(listenErrors, [], 'Listen helpers must boot and handle UI actions without runtime errors');
+    console.log(
+      'PASS - mobile Listen likes, queue, exact cached bytes, media-adapter playback, Media Session metadata and navigation'
+    );
+  } finally {
+    await listenContext.close();
+  }
   await page.evaluate(
     async ({ cacheName, oldUrl }) => {
       window.AGAPAYDonorSession.saveSession({ token: 'migration-fixture', donor: { email: 'migration@example.test' } });

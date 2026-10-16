@@ -11,6 +11,82 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/listen/app-panels.ts',
+    output: 'public/listen/app-panels.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app-catalog.ts',
+    output: 'public/listen/app-catalog.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app-presentation.ts',
+    output: 'public/listen/app-presentation.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app-events.ts',
+    output: 'public/listen/app-events.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app.ts',
+    output: 'public/listen/app.js',
+    module: true,
+    runtimeSupportSources: [
+      'src/browser/listen/app-catalog.ts',
+      'src/browser/listen/app-presentation.ts',
+      'src/browser/listen/app-events.ts',
+      'src/browser/listen/app-panels.ts',
+    ],
+  },
+  {
+    source: 'src/browser/learn/dashboard-view-models-shared.ts',
+    output: 'public/learn/dashboard-view-models-shared.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/view-model-dashboard-planner.ts',
+    output: 'public/learn/view-model-dashboard-planner.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/view-model-academic.ts',
+    output: 'public/learn/view-model-academic.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/view-model-setup-print.ts',
+    output: 'public/learn/view-model-setup-print.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/dashboard-view-models.ts',
+    output: 'public/learn/dashboard-view-models.js',
+    module: true,
+    delivery: 'native-module',
+    runtimeSupportSources: [
+      'src/browser/learn/dashboard-view-models-shared.ts',
+      'src/browser/learn/view-model-dashboard-planner.ts',
+      'src/browser/learn/view-model-academic.ts',
+      'src/browser/learn/view-model-setup-print.ts',
+    ],
+  },
+  {
+    source: 'src/browser/donor/controllers/sacraments.ts',
+    output: 'public/donor/controllers/sacraments.js',
+    classicSupportSources: ['src/browser/donor/sacrament-presentation.ts'],
+  },
+  {
     source: 'src/browser/myagapay-shell.ts',
     output: 'public/myagapay-shell.js',
     supportSources: ['src/browser/myagapay/shell-icons.ts', 'src/browser/myagapay/shell-products.ts'],
@@ -303,6 +379,25 @@ export function compilePrivateBrowserEntry(entry, root = repoRoot) {
     throw new Error('Unregistered private browser dependency: ' + actual.join(', '));
   return result.outputFiles[0].text;
 }
+// Only function declarations may be composed before a classic entry: no initialization can move.
+export function readClassicBrowserEntry(entry, root = repoRoot) {
+  const pieces = (entry.classicSupportSources || []).map((p) => {
+    const code = readFileSync(resolve(root, p), 'utf8'),
+      ast = ts.createSourceFile(p, code, ts.ScriptTarget.Latest, true);
+    if (ast.statements.some((n) => !ts.isFunctionDeclaration(n)))
+      throw new Error('Classic support must contain only function declarations: ' + p);
+    return code;
+  });
+  const main = readFileSync(resolve(root, entry.source), 'utf8');
+  const ast = ts.createSourceFile(entry.source, main, ts.ScriptTarget.Latest, true);
+  let prologueEnd = 0;
+  for (const statement of ast.statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) break;
+    prologueEnd = statement.end;
+  }
+  // A classic entry's directive prologue must remain before every composed declaration.
+  return [main.slice(0, prologueEnd), ...pieces, main.slice(prologueEnd)].join('\n');
+}
 export async function synchronizeBrowserTypeScript({ check = true, root = repoRoot } = {}) {
   const prettier = JSON.parse(await readFile(resolve(root, '.prettierrc.json'), 'utf8'));
   const stale = [];
@@ -310,13 +405,18 @@ export async function synchronizeBrowserTypeScript({ check = true, root = repoRo
     const { source, output, module: nativeModule } = entry;
     const { code } = entry.supportSources
       ? { code: compilePrivateBrowserEntry(entry, root) }
-      : await transform(await readFile(resolve(root, source), 'utf8'), {
-          loader: 'ts',
-          ...(nativeModule ? { format: 'esm' } : {}),
-          target: 'es2022',
-          charset: 'utf8',
-          legalComments: 'none',
-        });
+      : await transform(
+          entry.classicSupportSources
+            ? readClassicBrowserEntry(entry, root)
+            : await readFile(resolve(root, source), 'utf8'),
+          {
+            loader: 'ts',
+            ...(nativeModule ? { format: 'esm' } : {}),
+            target: 'es2022',
+            charset: 'utf8',
+            legalComments: 'none',
+          }
+        );
     // Fail before writing if a runtime import/export would turn a classic script into a module.
     if (!nativeModule) new Script(code, { filename: output });
     const generated = await format(`// Generated from ${source} by npm run build:browser. Do not edit.\n${code}`, {
@@ -347,7 +447,7 @@ export async function synchronizeBrowserTypeScript({ check = true, root = repoRo
 // Inspect authored browser logic without coupling source guards to emitted quote style.
 export function readBrowserContractSourceSync(runtimePath, root = repoRoot) {
   const entry = browserTypeScriptEntries.find((e) => e.output === runtimePath);
-  const code = [entry?.source || runtimePath, ...(entry?.supportSources || [])]
+  const code = [entry?.source || runtimePath, ...(entry?.supportSources || []), ...(entry?.classicSupportSources || [])]
     .map((p) => readFileSync(resolve(root, p), 'utf8'))
     .join('\n');
   if (!entry) return code;

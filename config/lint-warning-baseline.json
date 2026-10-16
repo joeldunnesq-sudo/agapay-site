@@ -17,12 +17,6 @@
   "public/learn/dashboard-shell.js": {
     "max-lines": 1
   },
-  "public/learn/dashboard-view-models.js": {
-    "max-lines": 1
-  },
-  "public/listen/app.js": {
-    "max-lines": 1
-  },
   "public/parish/app.js": {
     "max-lines": 1
   },

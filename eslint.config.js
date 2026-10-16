@@ -1938,4 +1938,39 @@ export default [
     files: ['src/worker.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^e$' }] },
   },
+  // Retain original inline handlers, composed classic globals and existing Listen compatibility functions.
+  {
+    files: ['src/browser/donor/controllers/sacraments.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(SACRAMENT_TYPE_LABELS|selectSacramentSlot|toggleSacramentAddressFieldByLocation|openSacramentAccordion|selectSacramentAccordionSlot|updateSacramentPreparationItem|uploadSacramentPreparationDocument|deleteSacramentPreparationDocument|submitCustomSacramentRequest|requestParishStewardshipUpgrade|submitSacramentAccordionBooking|submitSacramentAccordionRequest|submitSacramentRequest|cancelSacramentRequest)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/sacrament-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(sacramentLocationHint|sacramentIcon|sacramentSummary|sacramentPreparationStatusLabel|sacramentRequestRow)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/listen/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(handleImport|renderMiniPlayer)$' }],
+    },
+  },
+  {
+    files: ['src/browser/listen/app-events.ts'],
+    rules: { '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }] },
+  },
 ];
