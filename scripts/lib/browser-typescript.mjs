@@ -11,6 +11,11 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/parish/features/directory.ts',
+    output: 'public/parish/features/directory.js',
+    classicSupportSources: ['src/browser/parish/directory-feature-presentation.ts'],
+  },
+  {
     source: 'src/browser/listen/app-panels.ts',
     output: 'public/listen/app-panels.js',
     module: true,

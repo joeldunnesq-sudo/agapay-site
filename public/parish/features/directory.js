@@ -1,13 +1,143 @@
+// Generated from src/browser/parish/features/directory.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard Directory feature.
-// Loaded before app.js so existing inline dashboard actions keep their global names.
-
+function directoryHouseholdLastName(name) {
+  const normalized = String(name || '')
+    .trim()
+    .replace(/^the\s+/i, '')
+    .replace(/\s+(family|household)$/i, '');
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  return parts.at(-1) || normalized || 'Household';
+}
+function directoryHouseholdSortKey(name) {
+  return `${directoryHouseholdLastName(name).toLocaleLowerCase('en-US')}\0${String(name || '').toLocaleLowerCase('en-US')}`;
+}
+function directoryHouseholdInitials(name) {
+  return `${directoryHouseholdLastName(name).charAt(0)}H`.toUpperCase();
+}
+function directoryEmptyState(title, subtitle) {
+  return `<div class="pdx-dir-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>`;
+}
+function directoryPriorityBadgeClass(priority) {
+  const value = String(priority || '').toLowerCase();
+  if (value === 'urgent') return 'urgent';
+  if (value === 'high') return 'high';
+  return '';
+}
+function directoryPhotoPlaceholderElement(label) {
+  const span = document.createElement('span');
+  span.className = 'pdx-dir-thumb pdx-dir-thumb-placeholder';
+  span.textContent = label || 'No photo';
+  return span;
+}
+function directoryAccessStatusRow(label, value, description, tone = 'neutral') {
+  return `<div class="pdx-dir-status-row is-${escapeAttr(tone)}"><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(description)}</span></div><em>${escapeHtml(value)}</em></div>`;
+}
+function directoryHouseholdSummaryCard(label, value, description, tone = 'neutral') {
+  return `<div class="pdx-dir-household-summary-card is-${escapeAttr(tone)}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(description)}</small></div>`;
+}
+function directoryReviewValue(value) {
+  if (value === null || value === void 0 || value === '') return 'Not set';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.length ? value.map(directoryReviewValue).join(', ') : 'None';
+  if (typeof value === 'object') {
+    return (
+      Object.entries(value)
+        .filter(([, item]) => item !== void 0 && item !== null && item !== '')
+        .map(([key, item]) => {
+          const label = key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/_/g, ' ')
+            .replace(/^./, (c) => c.toUpperCase());
+          return label + ': ' + directoryReviewValue(item);
+        })
+        .join('\n') || 'Not set'
+    );
+  }
+  return String(value);
+}
+function directoryReviewObjectRows(obj) {
+  if (!obj || typeof obj !== 'object' || !Object.keys(obj).length)
+    return '<div class="pdx-dir-empty"><strong>No proposed fields</strong><span>This item may only need status approval.</span></div>';
+  return (
+    Object.entries(obj)
+      .filter(([key]) => !['publicationPreferences', 'source'].includes(key))
+      .map(([key, value]) => {
+        const label = key
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/_/g, ' ')
+          .replace(/^./, (c) => c.toUpperCase());
+        return `<div class="pdx-dir-review-field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(directoryReviewValue(value))}</strong></div>`;
+      })
+      .join('') ||
+    '<div class="pdx-dir-empty"><strong>No separate field changes</strong><span>Review the sharing choices for publication approval.</span></div>'
+  );
+}
+function directoryReviewPrefs(preferences) {
+  if (!preferences || typeof preferences !== 'object') return '';
+  const labels = {
+    adultPreferredName: 'Name',
+    adultEmail: 'Email',
+    adultPhone: 'Phone',
+    householdAddress: 'Address',
+    personPhoto: 'Photo',
+  };
+  const anyPublished = Object.values(preferences).some(
+    (pref) => pref?.visibility === 'directory_members' && pref?.publicationEligible
+  );
+  return `<div class="pdx-dir-review-prefs">
+      <div class="pdx-dir-review-prefs-head">
+        <strong>${anyPublished ? 'Approval will publish selected fields' : 'Parishioner sharing choices'}</strong>
+        <span>${anyPublished ? 'Directory-visible after approval' : 'Nothing public unless the member requested it'}</span>
+      </div>
+      <div class="pdx-dir-pref-chip-list">
+      ${Object.entries(preferences)
+        .map(([key, pref]) => {
+          const visibility = pref?.visibility || 'private';
+          const eligible = pref?.publicationEligible;
+          const chipClass =
+            visibility === 'directory_members' && eligible ? 'publish' : visibility === 'private' ? 'private' : '';
+          return `<span class="pdx-dir-pref-chip ${chipClass}"><b>${escapeHtml(labels[key] || key)}</b><small>${escapeHtml(visibility.replace(/_/g, ' '))}${eligible ? ' · requested' : ''}</small></span>`;
+        })
+        .join('')}
+      </div>
+      ${anyPublished ? '<em>Approving this item publishes only the fields marked for directory members.</em>' : ''}
+    </div>`;
+}
+function directoryReviewMeta(item) {
+  const parts = [
+    item.reviewType ? statusLabel(item.reviewType) : '',
+    item.requesterLabel ? 'Submitted by ' + item.requesterLabel : '',
+    item.priority ? statusLabel(item.priority) + ' priority' : '',
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
+function directoryHealthTile(label, value, copy, tone) {
+  return `<div class="pdx-dir-health-tile is-${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(copy)}</small></div>`;
+}
+function directoryReviewTypeLabel(type = '') {
+  const labels = {
+    publication_person: 'Member directory submission',
+    publication_household: 'Household directory submission',
+    membership_add_adult: 'Add adult to household',
+    membership_remove: 'Remove household member',
+    household_relationship_change: 'Household relationship change',
+    child_publication_review: 'Child sharing request',
+    publication_media: 'Photo sharing request',
+    person_canonical_correction: 'Member record correction',
+  };
+  return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
+}
+function directoryMetric(label, value, iconPath) {
+  return `<div class="pdx-kpi-card">
+      <div class="pdx-kpi-label">${escapeHtml(label)}</div>
+      <div class="pdx-kpi-value">${escapeHtml(value ?? 0)}</div>
+      <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24">${iconPath || ''}</svg></div>
+    </div>`;
+}
 function directoryAdminApi(path = '') {
   if (!currentParish?.parishId) return '';
   return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/directory/admin' + path;
 }
-
 function openDirectoryImport() {
   window.DirectoryImport.open({
     api: directoryAdminApi,
@@ -15,7 +145,6 @@ function openDirectoryImport() {
     onChange: () => loadDirectoryAdminTab(true),
   });
 }
-
 async function loadDirectoryAdminTab(force = false) {
   const pane = document.getElementById('directoryAdminPane');
   if (!pane) return;
@@ -70,11 +199,9 @@ async function loadDirectoryAdminTab(force = false) {
     pane.innerHTML = renderDirectoryAdminGenericError();
   }
 }
-
 let directoryAdminTab = 'directory';
 let directoryBrowseType = 'household';
 let directoryLastData = null;
-
 function switchDirectoryAdminTab(tab) {
   directoryAdminTab = tab;
   const pane = document.getElementById('directoryAdminPane');
@@ -86,16 +213,9 @@ function switchDirectoryAdminTab(tab) {
     panel.hidden = panel.dataset.dirPanel !== tab;
   });
 }
-
-// Single browse surface shared by People and Households -- previously
-// three separate sections (a photo gallery, a People list, a Households
-// list) covered the same "find a record" task with three different
-// layouts. One toggle + one search box + one result list replaces all
-// three.
 function directoryBrowseRow(record) {
   return directoryBrowseType === 'household' ? directoryHouseholdRow(record) : directoryPersonRow(record);
 }
-
 function renderDirectoryBrowseList(records) {
   const list = document.getElementById('directoryBrowseList');
   if (!list) return;
@@ -115,7 +235,6 @@ function renderDirectoryBrowseList(records) {
     : `<tr><td colspan="4">${directoryEmptyState('No matches', 'No households match your search.')}</td></tr>`;
   hydrateDirectoryAdminImages(list);
 }
-
 function switchDirectoryBrowseType(type) {
   directoryBrowseType = type;
   const pane = document.getElementById('directoryAdminPane');
@@ -128,7 +247,6 @@ function switchDirectoryBrowseType(type) {
     type === 'household' ? directoryLastData?.households || [] : directoryLastData?.people || []
   );
 }
-
 let directoryBrowseSearchTimer = null;
 function searchDirectoryBrowse(value) {
   clearTimeout(directoryBrowseSearchTimer);
@@ -155,7 +273,6 @@ async function runDirectoryBrowseSearch(query) {
     list.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to search.')}</p>`;
   }
 }
-
 function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance, print, settings = {}) {
   const pane = document.getElementById('directoryAdminPane');
   if (!pane) return;
@@ -275,7 +392,6 @@ function renderDirectoryAdminPanel(dashboard, queue, people, households, skills,
   switchDirectoryAdminTab(directoryAdminTab);
   hydrateDirectoryAdminImages(pane);
 }
-
 function renderDirectoryFeatureToggle(settings = {}) {
   const enabled = Boolean(settings.directoryEnabled && settings.ordinaryMemberAccessEnabled);
   return `<label class="sac-admin-switch pdx-dir-feature-switch agapay-feature-switch" title="Show or hide the parish directory in My AGAPAY">
@@ -284,7 +400,6 @@ function renderDirectoryFeatureToggle(settings = {}) {
       <em>${enabled ? 'On' : 'Off'}</em>
     </label>`;
 }
-
 async function toggleDirectoryFeature(input) {
   if (!currentParish) return;
   const enabled = Boolean(input?.checked);
@@ -317,24 +432,6 @@ async function toggleDirectoryFeature(input) {
     if (input) input.disabled = false;
   }
 }
-
-function directoryHouseholdLastName(name) {
-  const normalized = String(name || '')
-    .trim()
-    .replace(/^the\s+/i, '')
-    .replace(/\s+(family|household)$/i, '');
-  const parts = normalized.split(/\s+/).filter(Boolean);
-  return parts.at(-1) || normalized || 'Household';
-}
-
-function directoryHouseholdSortKey(name) {
-  return `${directoryHouseholdLastName(name).toLocaleLowerCase('en-US')}\u0000${String(name || '').toLocaleLowerCase('en-US')}`;
-}
-
-function directoryHouseholdInitials(name) {
-  return `${directoryHouseholdLastName(name).charAt(0)}H`.toUpperCase();
-}
-
 function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillListings = []) {
   const name = household.displayName || 'Household';
   const memberRows = publishedMembers.filter(
@@ -378,7 +475,7 @@ function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillL
           let nameday = '';
           if (/^\d{2}-\d{2}$/.test(feast)) {
             const [month, day] = feast.split('-').map(Number);
-            nameday = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', timeZone: 'UTC' }).format(
+            nameday = new Intl.DateTimeFormat(void 0, { month: 'long', day: 'numeric', timeZone: 'UTC' }).format(
               new Date(Date.UTC(2024, month - 1, day))
             );
           }
@@ -395,11 +492,7 @@ function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillL
         : 'Visible to parishioners in My AGAPAY'
       : 'Private from parishioners';
     return `<div class="pdx-dir-contact-field ${value ? '' : 'is-empty'} ${shared ? 'is-shared' : 'is-private'}" title="${escapeAttr(sharingLabel)}">
-      <span class="pdx-dir-contact-eye" role="img" aria-label="${escapeAttr(sharingLabel)}">${
-        shared
-          ? '<svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>'
-          : '<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a15 15 0 0 1-2.1 2.8M6.1 6.2C3.8 7.8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
-      }</span>
+      <span class="pdx-dir-contact-eye" role="img" aria-label="${escapeAttr(sharingLabel)}">${shared ? '<svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a15 15 0 0 1-2.1 2.8M6.1 6.2C3.8 7.8 2.5 12 2.5 12s3.5 6 9.5 6c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'}</span>
       <small>${escapeHtml(label)}</small><span>${escapeHtml(value || 'Not entered')}</span>
     </div>`;
   };
@@ -407,7 +500,7 @@ function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillL
     .map((row) => {
       const feast = String(row.feast_month_day || '');
       if (!/^\d{2}-\d{2}$/.test(feast)) return '';
-      return new Intl.DateTimeFormat(undefined, { month: 'long', timeZone: 'UTC' }).format(
+      return new Intl.DateTimeFormat(void 0, { month: 'long', timeZone: 'UTC' }).format(
         new Date(Date.UTC(2024, Number(feast.slice(0, 2)) - 1, 1))
       );
     })
@@ -426,7 +519,6 @@ function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillL
       }</div></td>
     </tr>`;
 }
-
 function filterCanonicalDirectoryRows() {
   const month = document.getElementById('directoryNamedayFilter')?.value || '';
   const skill = document.getElementById('directorySkillFilter')?.value || '';
@@ -436,18 +528,6 @@ function filterCanonicalDirectoryRows() {
     );
   });
 }
-
-function directoryEmptyState(title, subtitle) {
-  return `<div class="pdx-dir-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>`;
-}
-
-function directoryPriorityBadgeClass(priority) {
-  const value = String(priority || '').toLowerCase();
-  if (value === 'urgent') return 'urgent';
-  if (value === 'high') return 'high';
-  return '';
-}
-
 function directoryQueueRow(item) {
   const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
   const sourceType = escapeAttr(item.sourceType);
@@ -463,19 +543,16 @@ function directoryQueueRow(item) {
       </div>
     </div>`;
 }
-
 function directoryDetailList(items, emptyTitle, emptyCopy, mapFn) {
   if (!Array.isArray(items) || !items.length) return directoryEmptyState(emptyTitle, emptyCopy);
   return `<div class="pdx-dir-detail-list">${items.map(mapFn).join('')}</div>`;
 }
-
 function directoryDetailTarget() {
   const tools = document.querySelector('[data-dir-panel="tools"]');
   return tools && !tools.hidden
     ? document.getElementById('directoryManagementDetail')
     : document.getElementById('directoryRecordDetail');
 }
-
 function directoryRecordDetailShell(kicker, title, subtitle, body, targetId = 'directoryRecordDetail') {
   return `
       <article class="pdx-dir-review-card pdx-dir-record-card">
@@ -510,12 +587,6 @@ async function hydrateDirectoryAdminImages(root = document) {
     })
   );
 }
-function directoryPhotoPlaceholderElement(label) {
-  const span = document.createElement('span');
-  span.className = 'pdx-dir-thumb pdx-dir-thumb-placeholder';
-  span.textContent = label || 'No photo';
-  return span;
-}
 function directoryAdminPhotoImg(photo, className = 'pdx-dir-thumb', alt = 'Family photo') {
   return photo?.url
     ? `<img class="${className}" data-directory-admin-src="${escapeAttr(photo.url)}" alt="${escapeAttr(alt)}" />`
@@ -536,7 +607,6 @@ function directoryHouseholdPhotoCard(photo) {
       <div><strong>${escapeHtml(status)}</strong><p>${escapeHtml((photo.visibility || 'private').replace(/_/g, ' '))} · ${escapeHtml(photo.processingStatus || 'processing status unavailable')}. This is the photo the family uploaded from My AGAPAY.</p></div>
     </div></section>`;
 }
-
 function directorySubmittedPhotoReview(photo) {
   if (!photo)
     return `<section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Submitted photo</h4>${directoryEmptyState('Photo unavailable', 'The submitted media record could not be loaded. Return this item rather than approving it without seeing the photo.')}</section>`;
@@ -553,20 +623,13 @@ function directorySubmittedPhotoReview(photo) {
       </div>
     </div></section>`;
 }
-
-function directoryAccessStatusRow(label, value, description, tone = 'neutral') {
-  return `<div class="pdx-dir-status-row is-${escapeAttr(tone)}"><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(description)}</span></div><em>${escapeHtml(value)}</em></div>`;
-}
-
-function directoryHouseholdSummaryCard(label, value, description, tone = 'neutral') {
-  return `<div class="pdx-dir-household-summary-card is-${escapeAttr(tone)}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(description)}</small></div>`;
-}
-
 async function removeDirectoryPersonFromParish(personId, displayName, expectedVersion, householdId = '') {
   const name = displayName || 'this person';
   if (
     !confirm(
-      `Remove ${name} from this parish?\n\nThis immediately hides them from the parishioner directory and blocks Koinonia. Their My AGAPAY account and giving history will not be deleted.`
+      `Remove ${name} from this parish?
+
+This immediately hides them from the parishioner directory and blocks Koinonia. Their My AGAPAY account and giving history will not be deleted.`
     )
   )
     return;
@@ -589,7 +652,6 @@ async function removeDirectoryPersonFromParish(personId, displayName, expectedVe
     setStatus(error.message || 'Unable to remove parish access.', 'error');
   }
 }
-
 async function openDirectoryPerson(personId) {
   const detail = directoryDetailTarget();
   if (!detail || !personId) return;
@@ -656,8 +718,7 @@ async function openDirectoryPerson(personId) {
     detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this person record.')}</p>`;
   }
 }
-
-function directoryHouseholdAccountRow(member, householdId, verificationStatus, managerIds = new Set()) {
+function directoryHouseholdAccountRow(member, householdId, verificationStatus, managerIds = /* @__PURE__ */ new Set()) {
   const name = member.preferred_name || member.preferredName || member.id;
   const relationship = String(member.relationship || 'adult').replace(/_/g, ' ');
   const manager = managerIds.has(String(member.id));
@@ -679,7 +740,6 @@ function directoryHouseholdAccountRow(member, householdId, verificationStatus, m
   }
   return `<form class="pdx-dir-account-row is-needed" onsubmit="sendDirectoryHouseholdInvitation(event,'${escapeAttr(member.id)}','${escapeAttr(householdId)}')"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''} · no account connected</span></div><label><span class="sr-only">Email for ${escapeHtml(name)}</span><input name="email" type="email" autocomplete="email" required value="${escapeAttr(member.email || '')}" placeholder="adult@example.com" /></label><button type="submit">Send invitation</button>${removal}</form>`;
 }
-
 async function openDirectoryHousehold(householdId) {
   const detail = directoryDetailTarget();
   if (!detail || !householdId) return;
@@ -750,87 +810,6 @@ async function openDirectoryHousehold(householdId) {
     detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this household record.')}</p>`;
   }
 }
-
-function directoryReviewValue(value) {
-  if (value === null || value === undefined || value === '') return 'Not set';
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (Array.isArray(value)) return value.length ? value.map(directoryReviewValue).join(', ') : 'None';
-  if (typeof value === 'object') {
-    return (
-      Object.entries(value)
-        .filter(([, item]) => item !== undefined && item !== null && item !== '')
-        .map(([key, item]) => {
-          const label = key
-            .replace(/([A-Z])/g, ' $1')
-            .replace(/_/g, ' ')
-            .replace(/^./, (c) => c.toUpperCase());
-          return label + ': ' + directoryReviewValue(item);
-        })
-        .join('\n') || 'Not set'
-    );
-  }
-  return String(value);
-}
-
-function directoryReviewObjectRows(obj) {
-  if (!obj || typeof obj !== 'object' || !Object.keys(obj).length)
-    return '<div class="pdx-dir-empty"><strong>No proposed fields</strong><span>This item may only need status approval.</span></div>';
-  return (
-    Object.entries(obj)
-      .filter(([key]) => !['publicationPreferences', 'source'].includes(key))
-      .map(([key, value]) => {
-        const label = key
-          .replace(/([A-Z])/g, ' $1')
-          .replace(/_/g, ' ')
-          .replace(/^./, (c) => c.toUpperCase());
-        return `<div class="pdx-dir-review-field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(directoryReviewValue(value))}</strong></div>`;
-      })
-      .join('') ||
-    '<div class="pdx-dir-empty"><strong>No separate field changes</strong><span>Review the sharing choices for publication approval.</span></div>'
-  );
-}
-
-function directoryReviewPrefs(preferences) {
-  if (!preferences || typeof preferences !== 'object') return '';
-  const labels = {
-    adultPreferredName: 'Name',
-    adultEmail: 'Email',
-    adultPhone: 'Phone',
-    householdAddress: 'Address',
-    personPhoto: 'Photo',
-  };
-  const anyPublished = Object.values(preferences).some(
-    (pref) => pref?.visibility === 'directory_members' && pref?.publicationEligible
-  );
-  return `<div class="pdx-dir-review-prefs">
-      <div class="pdx-dir-review-prefs-head">
-        <strong>${anyPublished ? 'Approval will publish selected fields' : 'Parishioner sharing choices'}</strong>
-        <span>${anyPublished ? 'Directory-visible after approval' : 'Nothing public unless the member requested it'}</span>
-      </div>
-      <div class="pdx-dir-pref-chip-list">
-      ${Object.entries(preferences)
-        .map(([key, pref]) => {
-          const visibility = pref?.visibility || 'private';
-          const eligible = pref?.publicationEligible;
-          const chipClass =
-            visibility === 'directory_members' && eligible ? 'publish' : visibility === 'private' ? 'private' : '';
-          return `<span class="pdx-dir-pref-chip ${chipClass}"><b>${escapeHtml(labels[key] || key)}</b><small>${escapeHtml(visibility.replace(/_/g, ' '))}${eligible ? ' · requested' : ''}</small></span>`;
-        })
-        .join('')}
-      </div>
-      ${anyPublished ? '<em>Approving this item publishes only the fields marked for directory members.</em>' : ''}
-    </div>`;
-}
-
-function directoryReviewMeta(item) {
-  const parts = [
-    item.reviewType ? statusLabel(item.reviewType) : '',
-    item.requesterLabel ? 'Submitted by ' + item.requesterLabel : '',
-    item.priority ? statusLabel(item.priority) + ' priority' : '',
-  ].filter(Boolean);
-  return parts.join(' · ');
-}
-
 async function openDirectoryReview(sourceType, sourceId) {
   const detail = document.getElementById('directoryManagementDetail');
   if (!detail || !sourceType || !sourceId) return;
@@ -898,7 +877,6 @@ async function openDirectoryReview(sourceType, sourceId) {
     detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this review item.')}</p>`;
   }
 }
-
 async function decideDirectoryReview(sourceType, sourceId, decision, button, version = '') {
   const note = document.getElementById('directoryReviewNote')?.value.trim() || '';
   if (decision === 'return' && !note) {
@@ -933,7 +911,6 @@ async function decideDirectoryReview(sourceType, sourceId, decision, button, ver
     alert(err.message || 'Unable to save this review decision.');
   }
 }
-
 async function directoryInvitationMutation(path, body = {}) {
   const res = await fetch(directoryAdminApi(path), {
     method: 'POST',
@@ -945,7 +922,6 @@ async function directoryInvitationMutation(path, body = {}) {
     throw new Error(payload.message || payload.error || 'Unable to update this invitation.');
   return payload;
 }
-
 async function sendDirectoryAccountInvitation(event, personId, householdId) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -973,7 +949,6 @@ async function sendDirectoryAccountInvitation(event, personId, householdId) {
     }
   }
 }
-
 async function sendDirectoryHouseholdInvitation(event, personId, householdId) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -1000,14 +975,12 @@ async function sendDirectoryHouseholdInvitation(event, personId, householdId) {
     }
   }
 }
-
 async function copyDirectoryInvitationLink(button) {
   const url = button?.dataset?.invitationUrl || '';
   if (!url) return;
   await navigator.clipboard.writeText(url);
   setStatus('Secure invitation link copied.', 'success');
 }
-
 async function resendDirectoryAccountInvitation(invitationId, personId, householdId = '') {
   try {
     const payload = await directoryInvitationMutation('/invitations/' + encodeURIComponent(invitationId) + '/resend');
@@ -1021,7 +994,6 @@ async function resendDirectoryAccountInvitation(invitationId, personId, househol
     setStatus(error.message || 'Unable to resend invitation.', 'error');
   }
 }
-
 async function revokeDirectoryAccountInvitation(invitationId, personId, householdId = '') {
   if (!confirm('Revoke this directory invitation? Its secure link will stop working.')) return;
   try {
@@ -1033,7 +1005,6 @@ async function revokeDirectoryAccountInvitation(invitationId, personId, househol
     setStatus(error.message || 'Unable to revoke invitation.', 'error');
   }
 }
-
 function directoryPersonRow(person) {
   const pending = person.pendingRequestCount || 0;
   const accessLabel = person.child
@@ -1049,7 +1020,6 @@ function directoryPersonRow(person) {
       <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}<button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryPerson('${escapeAttr(person.id)}')">Open</button></div>
     </div>`;
 }
-
 function directoryHouseholdRow(household) {
   const count = household.memberCount || 0;
   const admins = household.administratorCount || household.adminCount || 0;
@@ -1068,7 +1038,6 @@ function directoryHouseholdRow(household) {
       </div>
     </div>`;
 }
-
 function directoryMaintenanceRow(label, value, alertIfPositive = false, help = '') {
   const numeric = Number(value ?? 0);
   return `<div class="pdx-dir-row">
@@ -1076,7 +1045,6 @@ function directoryMaintenanceRow(label, value, alertIfPositive = false, help = '
       <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${alertIfPositive && numeric > 0 ? 'urgent' : 'count'}">${escapeHtml(numeric)}</span></div>
     </div>`;
 }
-
 function directoryHealthOverview(metrics = {}, maintenance = {}, actionCount = 0) {
   const current = Number(maintenance.householdsCurrent || 0);
   const due = Number(maintenance.householdsDue || 0);
@@ -1097,25 +1065,6 @@ function directoryHealthOverview(metrics = {}, maintenance = {}, actionCount = 0
       </div>
     </section>`;
 }
-
-function directoryHealthTile(label, value, copy, tone) {
-  return `<div class="pdx-dir-health-tile is-${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(copy)}</small></div>`;
-}
-
-function directoryReviewTypeLabel(type = '') {
-  const labels = {
-    publication_person: 'Member directory submission',
-    publication_household: 'Household directory submission',
-    membership_add_adult: 'Add adult to household',
-    membership_remove: 'Remove household member',
-    household_relationship_change: 'Household relationship change',
-    child_publication_review: 'Child sharing request',
-    publication_media: 'Photo sharing request',
-    person_canonical_correction: 'Member record correction',
-  };
-  return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
-}
-
 function directoryReviewQueueRows(items = []) {
   if (!items.length)
     return `<div class="pdx-dir-queue-empty"><span>✓</span><strong>No submissions awaiting review</strong><small>Completed directory submissions will appear here after a member sends them from My AGAPAY.</small></div>`;
@@ -1130,12 +1079,10 @@ function directoryReviewQueueRows(items = []) {
     })
     .join('');
 }
-
 function directoryReviewConversation(messages = []) {
   if (!messages.length) return '';
   return `<div class="pdx-dir-review-conversation"><h4>Question and response</h4>${messages.map((message) => `<div class="is-${escapeAttr(message.direction)}"><span>${message.direction === 'staff_to_member' ? 'Parish office' : 'Parishioner'}</span><p>${escapeHtml(message.body)}</p></div>`).join('')}</div>`;
 }
-
 function directorySkillsAdminRows(listings) {
   if (!listings.length)
     return directoryEmptyState('Nothing to review', 'No Skills & Service listings are active or awaiting review.');
@@ -1155,7 +1102,6 @@ function directorySkillsAdminRows(listings) {
     )
     .join('');
 }
-
 async function moderateDirectorySkill(id, action) {
   if (!id || !action) return;
   try {
@@ -1173,7 +1119,6 @@ async function moderateDirectorySkill(id, action) {
     alert(err.message || 'Unable to update this skill listing.');
   }
 }
-
 async function downloadDirectoryAdminExport(path) {
   try {
     const res = await fetch(directoryAdminApi(path), { headers: authHeaders() });
@@ -1186,7 +1131,6 @@ async function downloadDirectoryAdminExport(path) {
     alert(err.message || 'Unable to download this export.');
   }
 }
-
 async function previewDirectoryAdminPrint(path) {
   const win = window.open('about:blank', '_blank');
   if (!win) {
@@ -1213,9 +1157,8 @@ async function previewDirectoryAdminPrint(path) {
     alert(err.message || 'Unable to open this print view.');
   }
 }
-
 function printableDirectoryHtml(print = {}) {
-  const grouped = new Map();
+  const grouped = /* @__PURE__ */ new Map();
   (print.households || []).forEach((row) => {
     const name = row.display_name || row.displayName || 'Household';
     if (!grouped.has(name)) grouped.set(name, []);
@@ -1231,7 +1174,6 @@ function printableDirectoryHtml(print = {}) {
       @page{size:letter;margin:.55in}*{box-sizing:border-box}body{margin:0;color:#171715;background:#f6f1e8;font-family:Arial,sans-serif}header{padding:32px;background:linear-gradient(145deg,#061522,#0b2130);color:#f6f1e8}header small{color:#e8c879;text-transform:uppercase;letter-spacing:.14em;font-weight:700}h1{margin:6px 0 4px;font:600 36px Georgia,serif}header p{margin:0;color:rgba(246,241,232,.72)}.toolbar{display:flex;justify-content:flex-end;padding:14px 24px;background:#fff;border-bottom:1px solid #ddd}.toolbar button{border:0;border-radius:9px;padding:10px 16px;background:#061522;color:#fff;font-weight:700;cursor:pointer}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:24px}article{break-inside:avoid;padding:18px;border:1px solid #ddd5c7;border-radius:14px;background:#fff}article h2{margin:0 0 8px;font:600 22px Georgia,serif;color:#235c4d}article p{margin:0;color:#625e56;font-size:13px;line-height:1.55}footer{padding:0 24px 24px;color:#6f6a60;font-size:11px}@media print{body{background:#fff}.toolbar{display:none}header{padding:20px 24px}main{padding:18px 0}.toolbar+main{}article{box-shadow:none}}
     </style></head><body><header><small>AGAPAY Parish Directory</small><h1>Our Parish Family</h1><p>${escapeHtml(print.privacyReminder || 'Private parish directory. Do not distribute outside the parish.')}</p></header><div class="toolbar"><button onclick="window.print()">Print directory</button></div><main>${cards || '<article><h2>No published households</h2><p>There are no approved directory entries to print yet.</p></article>'}</main><footer>Generated ${escapeHtml(new Date(print.generatedAt || Date.now()).toLocaleString())}</footer></body></html>`;
 }
-
 function printableSkillsHtml(print = {}) {
   const rows = (print.listings || [])
     .map(
@@ -1241,15 +1183,6 @@ function printableSkillsHtml(print = {}) {
     .join('');
   return `<!doctype html><html><head><meta charset="utf-8"><title>Skills &amp; Service</title><style>body{font:14px/1.5 Arial;margin:32px;color:#171715}h1,h2{font-family:Georgia,serif}button{float:right;padding:9px 14px}article{break-inside:avoid;border-bottom:1px solid #ddd;padding:12px 0}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print</button><h1>Skills &amp; Service</h1><p>${escapeHtml(print.disclaimer || '')}</p>${rows || '<p>No active listings.</p>'}</body></html>`;
 }
-
-function directoryMetric(label, value, iconPath) {
-  return `<div class="pdx-kpi-card">
-      <div class="pdx-kpi-label">${escapeHtml(label)}</div>
-      <div class="pdx-kpi-value">${escapeHtml(value ?? 0)}</div>
-      <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24">${iconPath || ''}</svg></div>
-    </div>`;
-}
-
 window.ParishFeatureRegistry.register('directory', {
   load: loadDirectoryAdminTab,
   refresh: () => loadDirectoryAdminTab(true),

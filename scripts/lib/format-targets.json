@@ -1119,7 +1119,11 @@
     "src/browser/listen/app-presentation.ts",
     "src/browser/listen/app.ts",
     "src/browser/listen/app-panels.ts",
-    "scripts/typecheck-browser/final-listen-learn-sacraments.ts"
+    "scripts/typecheck-browser/final-listen-learn-sacraments.ts",
+    "src/browser/parish/directory-feature-contracts.d.ts",
+    "src/browser/parish/directory-feature-presentation.ts",
+    "src/browser/parish/features/directory.ts",
+    "scripts/typecheck-browser/parish-directory-feature.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2272,6 +2276,10 @@
     "src/browser/listen/app-presentation.ts",
     "src/browser/listen/app.ts",
     "src/browser/listen/app-panels.ts",
-    "scripts/typecheck-browser/final-listen-learn-sacraments.ts"
+    "scripts/typecheck-browser/final-listen-learn-sacraments.ts",
+    "src/browser/parish/directory-feature-contracts.d.ts",
+    "src/browser/parish/directory-feature-presentation.ts",
+    "src/browser/parish/features/directory.ts",
+    "scripts/typecheck-browser/parish-directory-feature.ts"
   ]
 }

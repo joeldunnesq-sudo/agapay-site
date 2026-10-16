@@ -6,7 +6,7 @@ import { captureBrowserErrors } from './lib/browser-error-gate.mjs';
 // Globals read inside page.evaluate callbacks, provided by the actual dashboard.
 /* global currentParish, dashboardLoadPromise, loadDashboard, renderDashboard:writable,
   loadGivingSummary, loadRecurringHealth, renderQrCode, loadCommemorations,
-  loadGivingHistory, renderSetupWizard */
+  loadGivingHistory, renderSetupWizard, loadDirectoryAdminTab, openDirectoryHousehold */
 
 const browser = await chromium.launch({ headless: true });
 async function ready(page) {
@@ -222,6 +222,64 @@ try {
     {
       '/subscription-refresh': { status: 503, body: { error: 'secret-token' } },
       '/stripe-refresh': { status: 503, body: { error: 'secret-token' } },
+    }
+  );
+  await scenario(
+    'typed Directory retains escaped household browsing, staff privacy labels and household access details',
+    () => ({ parish: { ...parish, subscriptionTier: 'parish', directoryEnabled: true } }),
+    async (fixture) => {
+      await fixture.open();
+      await ready(fixture.page);
+      await fixture.page.evaluate(() => loadDirectoryAdminTab(true));
+      const rows = fixture.page.locator('#directoryBrowseList');
+      assert.ok((await rows.innerText()).includes('<Fixture Family>'));
+      assert.equal(await rows.locator('script').count(), 0);
+      assert.ok((await rows.innerText()).includes('staff@example.test'));
+      assert.equal(await rows.locator('[title="Private from parishioners"]').count(), 2);
+      await fixture.page.evaluate(() => openDirectoryHousehold('fixture-household'));
+      const detail = fixture.page.locator('#directoryRecordDetail');
+      assert.ok((await detail.innerText()).includes('Account connected'));
+      assert.ok((await detail.innerText()).includes('Koinonia allowed'));
+      assert.ok((await detail.innerText()).includes('Street private'));
+    },
+    {
+      '/directory/admin/settings': {
+        body: { settings: { directoryEnabled: true, ordinaryMemberAccessEnabled: true } },
+      },
+      '/directory/admin/dashboard': { body: { dashboard: { metrics: {} } } },
+      '/directory/admin/queue': { body: { items: [] } },
+      '/directory/admin/people': { body: { people: [] } },
+      '/directory/admin/households': {
+        body: {
+          households: [
+            {
+              id: 'fixture-household',
+              displayName: '<Fixture Family>',
+              staffContact: {
+                email: { value: 'staff@example.test', visibility: 'private' },
+                phone: { value: '555-0100', visibility: 'private' },
+                address: { city: 'Town', visibility: 'directory_members' },
+              },
+            },
+          ],
+        },
+      },
+      '/directory/admin/skills/listings': { body: { skills: { listings: [] } } },
+      '/directory/admin/maintenance': { body: { maintenance: {} } },
+      '/directory/admin/print/directory': { body: { print: { households: [] } } },
+      '/directory/admin/households/fixture-household': {
+        body: {
+          household: {
+            household: { id: 'fixture-household', displayName: '<Fixture Family>' },
+            verification: { status: 'current' },
+            members: [{ id: 'adult', preferredName: 'Fixture Adult', accountLinked: true, parishConnected: true }],
+            contacts: [],
+            addresses: [{ line1: 'Street private', visibility: 'private' }],
+            administrators: [],
+            notes: [],
+          },
+        },
+      },
     }
   );
 } finally {

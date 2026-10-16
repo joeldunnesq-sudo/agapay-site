@@ -1973,4 +1973,30 @@ export default [
     files: ['src/browser/listen/app-events.ts'],
     rules: { '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }] },
   },
+  // Preserve Directory classic handlers, cross-source declarations and legacy unused bindings.
+  {
+    files: ['src/browser/parish/directory-feature-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(directoryHouseholdSortKey|directoryHouseholdInitials|directoryEmptyState|directoryPriorityBadgeClass|directoryPhotoPlaceholderElement|directoryAccessStatusRow|directoryHouseholdSummaryCard|directoryReviewObjectRows|directoryReviewPrefs|directoryReviewMeta|directoryHealthTile|directoryReviewTypeLabel|directoryMetric)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/directory.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(directoryBrowseRow|switchDirectoryBrowseType|searchDirectoryBrowse|parishName|toggleDirectoryFeature|filterCanonicalDirectoryRows|directoryQueueRow|removeDirectoryPersonFromParish|openDirectoryReview|decideDirectoryReview|sendDirectoryAccountInvitation|sendDirectoryHouseholdInvitation|copyDirectoryInvitationLink|resendDirectoryAccountInvitation|revokeDirectoryAccountInvitation|directoryMaintenanceRow|moderateDirectorySkill|downloadDirectoryAdminExport|previewDirectoryAdminPrint)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
 ];
