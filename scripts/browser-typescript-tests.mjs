@@ -16,6 +16,8 @@ import { repoRoot } from './lib/server-typescript.mjs';
 import { appAssetUrl, contentVersion } from './lib/app-asset-versions.mjs';
 import { htmlFilesUnder } from './lib/browser-composed-source.mjs';
 
+assert.ok(includesJavaScriptFragment('const delay=15e3;', 'const delay=15000;'));
+assert.equal(includesJavaScriptFragment('const delay=15001;', 'const delay=15000;'), false);
 await synchronizeBrowserTypeScript();
 const sources = (await readdir(join(repoRoot, 'src/browser'), { recursive: true }))
   .map((file) => file.replaceAll('\\', '/'))

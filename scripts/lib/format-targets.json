@@ -1131,7 +1131,11 @@
     "src/browser/myagapay/groups-contracts.d.ts",
     "src/browser/myagapay/groups-presentation.ts",
     "src/browser/myagapay/groups.ts",
-    "scripts/typecheck-browser/myagapay-groups.ts"
+    "scripts/typecheck-browser/myagapay-groups.ts",
+    "src/browser/myagapay/teaching-contracts.d.ts",
+    "src/browser/myagapay/teaching-presentation.ts",
+    "src/browser/myagapay/teaching.ts",
+    "scripts/typecheck-browser/myagapay-teaching.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2296,6 +2300,10 @@
     "src/browser/myagapay/groups-contracts.d.ts",
     "src/browser/myagapay/groups-presentation.ts",
     "src/browser/myagapay/groups.ts",
-    "scripts/typecheck-browser/myagapay-groups.ts"
+    "scripts/typecheck-browser/myagapay-groups.ts",
+    "src/browser/myagapay/teaching-contracts.d.ts",
+    "src/browser/myagapay/teaching-presentation.ts",
+    "src/browser/myagapay/teaching.ts",
+    "scripts/typecheck-browser/myagapay-teaching.ts"
   ]
 }

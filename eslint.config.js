@@ -2054,4 +2054,33 @@ export default [
       ],
     },
   },
+  // Preserve explicitly named Teaching classic cross-source bindings.
+  {
+    files: ['src/browser/myagapay/teaching-contracts.d.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^()$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/teaching-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(parseKoinoniaPodcastFeed|renderKoinoniaContinueListening|renderKoinoniaPodcastDownloads|renderKoinoniaPodcastSubscriptions|renderKoinoniaPodcastLatest|renderKoinoniaPodcastResults|renderKoinoniaPodcastShow|renderKoinoniaPodcastQueue|renderTeaching|encodePodcastDownloadHeader|downloadedKoinoniaEpisode)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/teaching.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadKoinoniaPodcastDownloads|koinoniaPodcastIsSubscribed|teachingPostsForFilter|setTeachingCategoryFilter)$',
+        },
+      ],
+    },
+  },
 ];

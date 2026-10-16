@@ -401,6 +401,205 @@ try {
     await groupsContext.close();
   }
 
+  const teachingUrl = appAssetUrl('/myagapay/teaching-presentation.js');
+  const teachingContext = await browser.newContext({
+    viewport: { width: 393, height: 873 },
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  try {
+    const teachingPage = await teachingContext.newPage(),
+      teachingErrors = [],
+      teachingApi = [];
+    let position = 42,
+      postRead = false,
+      offlineMedia = false;
+    const feedUrl = 'https://feed.test/show.xml';
+    teachingPage.on('pageerror', (error) => teachingErrors.push(error.message));
+    await teachingPage.addInitScript(() => {
+      window.teachingFixture = { played: [], unread: [] };
+      window.MyAgapayShell = {
+        authHeaders: (extra) => ({ ...extra, Authorization: 'Bearer teaching-fixture' }),
+        handleUnauthorized: (response) => response.status === 401,
+        setTeachingUnreadCount: (n) => window.teachingFixture.unread.push(n),
+      };
+      document.addEventListener('DOMContentLoaded', () =>
+        document.documentElement.setAttribute('data-myagapay-page-ready', 'true')
+      );
+      const positions = new WeakMap(),
+        paused = new WeakMap(),
+        sources = new WeakMap();
+      Object.defineProperty(HTMLMediaElement.prototype, 'duration', { configurable: true, get: () => 300 });
+      Object.defineProperty(HTMLMediaElement.prototype, 'readyState', { configurable: true, get: () => 1 });
+      Object.defineProperty(HTMLMediaElement.prototype, 'paused', {
+        configurable: true,
+        get() {
+          return paused.get(this) ?? true;
+        },
+      });
+      Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+        configurable: true,
+        get() {
+          return sources.get(this) || '';
+        },
+        set(value) {
+          sources.set(this, String(value));
+        },
+      });
+      Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+        configurable: true,
+        get() {
+          return positions.get(this) || 0;
+        },
+        set(value) {
+          positions.set(this, Number(value));
+          queueMicrotask(() => this.dispatchEvent(new Event('seeked')));
+        },
+      });
+      HTMLMediaElement.prototype.play = function () {
+        paused.set(this, false);
+        window.teachingFixture.played.push(this.src);
+        this.dispatchEvent(new Event('play'));
+        return Promise.resolve();
+      };
+      HTMLMediaElement.prototype.pause = function () {
+        paused.set(this, true);
+        this.dispatchEvent(new Event('pause'));
+      };
+      HTMLMediaElement.prototype.load = function () {
+        queueMicrotask(() => this.dispatchEvent(new Event('loadedmetadata')));
+      };
+    });
+    await teachingContext.route('**/*', async (route) => {
+      const request = route.request(),
+        url = new URL(request.url());
+      if (request.resourceType() === 'script') {
+        if (['/myagapay/teaching.js', '/myagapay/teaching-presentation.js'].includes(url.pathname))
+          return route.continue();
+        return route.fulfill({ contentType: 'text/javascript', body: '' });
+      }
+      if (url.origin !== origin) return route.fulfill({ contentType: 'text/css', body: '' });
+      if (!url.pathname.startsWith('/api/')) return route.continue();
+      if (offlineMedia) return route.abort('internetdisconnected');
+      const body = request.postDataJSON();
+      teachingApi.push({ path: url.pathname, method: request.method(), body, auth: request.headers().authorization });
+      if (url.pathname === '/api/donor/teaching')
+        return route.fulfill({
+          json: {
+            parish: { name: 'Fixture Parish' },
+            posts: [
+              {
+                id: 'reflection',
+                title: '<Reflection>',
+                body: 'Safe reflection',
+                bodyHtml: '<p>Safe reflection</p>',
+                read: postRead,
+              },
+            ],
+            unreadCount: postRead ? 0 : 1,
+          },
+        });
+      if (url.pathname === '/api/donor/teaching/reflection/read') {
+        postRead = true;
+        return route.fulfill({ json: { ok: true } });
+      }
+      if (url.pathname === '/api/listen/progress') {
+        if (request.method() === 'POST') {
+          if (typeof body?.positionSeconds === 'number') position = body.positionSeconds;
+          return route.fulfill({ json: { ok: true } });
+        }
+        return route.fulfill({
+          json: {
+            items: [
+              {
+                episodeKey: 'episode-one',
+                feedUrl,
+                showTitle: 'Fixture Podcast',
+                episodeTitle: '<Episode>',
+                positionSeconds: position,
+                durationSeconds: 300,
+              },
+            ],
+            playbackRate: 1.25,
+          },
+        });
+      }
+      if (url.pathname === '/api/listen/subscriptions')
+        return route.fulfill({ json: { subscriptions: [{ feedUrl, title: 'Fixture Podcast' }] } });
+      if (url.pathname === '/api/listen/search')
+        return route.fulfill({ json: { feeds: [{ url: feedUrl, title: 'Fixture Podcast' }] } });
+      if (url.pathname === '/api/listen/rss')
+        return route.fulfill({
+          contentType: 'application/xml',
+          body: '<rss><channel><title>Fixture Podcast</title><item><guid>episode-one</guid><title>&lt;Episode&gt;</title><pubDate>2026-10-16</pubDate><duration>300</duration><description>Fixture description</description><enclosure url="https://media.test/one.mp3" /></item></channel></rss>',
+        });
+      if (url.pathname === '/api/listen/audio')
+        return route.fulfill({ contentType: 'audio/mpeg', body: Buffer.from([1, 2, 3, 4]) });
+      throw Error('Unexpected Teaching fixture API ' + url.pathname);
+    });
+    await teachingPage.goto(origin + '/myagapay/teaching.html');
+    await teachingPage.locator('[data-teaching-id="reflection"] .feed-card-summary').click();
+    await teachingPage.waitForFunction(() => document.querySelector('#teachingUnreadSummary')?.hidden);
+    assert.ok((await teachingPage.locator('#teachingList').innerText()).includes('<Reflection>'));
+    await teachingPage.locator('[data-audio-library-mode="podcasts"]').click();
+    await teachingPage.locator('[onclick="playKoinoniaPodcastLatestEpisode(0)"]').click();
+    await teachingPage.waitForFunction(() => navigator.mediaSession.metadata?.title === '<Episode>');
+    assert.equal(await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.currentTime), 42);
+    assert.equal(await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.playbackRate), 1.25);
+    await teachingPage.locator('[onclick="queueKoinoniaPodcastLatestEpisode(0)"]').click();
+    assert.ok((await teachingPage.locator('#koinoniaPodcastQueueCount').innerText()).includes('1 Up Next'));
+    await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => {
+      audio.currentTime = 80;
+    });
+    await teachingPage.waitForFunction(() =>
+      document.querySelector('#koinoniaContinueList')?.textContent.includes('1:20')
+    );
+    await teachingPage.evaluate(() => window.toggleKoinoniaPodcastPlayerExpanded(true));
+    await teachingPage.locator('#koinoniaPodcastActionsToggle').click();
+    await teachingPage.locator('#koinoniaPodcastDownloadAction').click();
+    await teachingPage.waitForFunction(async () =>
+      Boolean(
+        await (
+          await caches.open('agapay-podcast-downloads-v1')
+        ).match(location.origin + '/myagapay/offline-podcast?episode=episode-one')
+      )
+    );
+    await teachingPage.waitForFunction(() => !document.getElementById('koinoniaPodcastDownloadAction').disabled);
+    const downloadedBytes = await teachingPage.evaluate(async () => {
+      const cache = await caches.open('agapay-podcast-downloads-v1');
+      const response = await cache.match(location.origin + '/myagapay/offline-podcast?episode=episode-one');
+      if (!response)
+        throw Error('Missing fixture download: ' + (await cache.keys()).map((request) => request.url).join(','));
+      return Array.from(new Uint8Array(await response.arrayBuffer()));
+    });
+    assert.deepEqual(downloadedBytes, [1, 2, 3, 4]);
+    await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.pause());
+    await teachingPage.reload();
+    await teachingPage.waitForFunction(() =>
+      document.querySelector('#koinoniaContinueList')?.textContent.includes('1:20')
+    );
+    assert.ok((await teachingPage.locator('#koinoniaPodcastQueueList').innerText()).includes('Your queue is empty'));
+    await teachingPage.locator('[data-audio-library-mode="podcasts"]').click();
+    await teachingPage.locator('[data-podcast-library-view="downloads"]').click();
+    await teachingPage.locator('[onclick="playDownloadedKoinoniaPodcast(0)"]').waitFor();
+    offlineMedia = true;
+    await teachingPage.locator('[onclick="playDownloadedKoinoniaPodcast(0)"]').click();
+    await teachingPage.waitForFunction(() => window.teachingFixture.played.at(-1)?.startsWith('blob:'));
+    await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.pause());
+    assert.ok(teachingApi.some((r) => r.path === '/api/listen/progress' && r.body?.positionSeconds === 80));
+    assert.ok(
+      teachingApi
+        .filter((r) => r.path !== '/api/listen/rss' && r.path !== '/api/listen/search')
+        .every((r) => r.auth === 'Bearer teaching-fixture')
+    );
+    assert.deepEqual(teachingErrors, []);
+    console.log(
+      'PASS - mobile Teaching read state, RSS playback resume/rate, progress saving, memory-only queue, exact cached media and network-blocked playback with a media adapter'
+    );
+  } finally {
+    await teachingContext.close();
+  }
+
   await page.evaluate(
     async ({ cacheName, oldUrl }) => {
       window.AGAPAYDonorSession.saveSession({ token: 'migration-fixture', donor: { email: 'migration@example.test' } });
@@ -443,6 +642,11 @@ try {
   );
   await page.evaluate(async (url) => (await fetch(url)).text(), groupsUrl);
   await page.waitForFunction(async (url) => Boolean(await caches.match(url)), groupsUrl);
+  const teachingExpected = (
+    await readFile(resolve(publicRoot, 'myagapay/teaching-presentation.js'), 'utf8')
+  ).replaceAll('\r\n', '\n');
+  await page.evaluate(async (url) => (await fetch(url)).text(), teachingUrl);
+  await page.waitForFunction(async (url) => Boolean(await caches.match(url)), teachingUrl);
   await context.setOffline(true);
   const offline = await page.evaluate(async (url) => (await fetch(url)).text(), bookstoreUrl);
   assert.equal(offline.replaceAll('\r\n', '\n'), expected);
@@ -450,6 +654,11 @@ try {
     (await page.evaluate(async (url) => (await fetch(url)).text(), groupsUrl)).replaceAll('\r\n', '\n'),
     groupsExpected,
     'warm Groups support remains available offline by its exact content version'
+  );
+  assert.equal(
+    (await page.evaluate(async (url) => (await fetch(url)).text(), teachingUrl)).replaceAll('\r\n', '\n'),
+    teachingExpected,
+    'warm Teaching support retains exact content bytes offline'
   );
   const offlineListen = await context.newPage();
   const listenResponse = await offlineListen.goto(`${origin}/listen.html`);

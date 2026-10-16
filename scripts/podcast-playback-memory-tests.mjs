@@ -1,6 +1,8 @@
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { handleListenAudio, handleListenProgress, handleListenSubscriptions } from "../src/handlers/listen.js";
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { handleListenAudio, handleListenProgress, handleListenSubscriptions } from '../src/handlers/listen.js';
 
 class PodcastProgressDb {
   constructor() {
@@ -13,25 +15,32 @@ class PodcastProgressDb {
     const db = this;
     return {
       params: [],
-      bind(...params) { this.params = params; return this; },
+      bind(...params) {
+        this.params = params;
+        return this;
+      },
       async run() {
-        const normalized = sql.replace(/\s+/g, " ").trim();
-        if (normalized.startsWith("INSERT INTO donor_podcast_preferences")) {
+        const normalized = sql.replace(/\s+/g, ' ').trim();
+        if (normalized.startsWith('INSERT INTO donor_podcast_preferences')) {
           db.preferences.set(this.params[0], Number(this.params[1]));
           return { success: true };
         }
-        if (normalized.startsWith("DELETE FROM donor_podcast_progress")) {
+        if (normalized.startsWith('DELETE FROM donor_podcast_progress')) {
           db.progress.delete(`${this.params[0]}|${this.params[1]}`);
           return { success: true };
         }
-        if (normalized.startsWith("INSERT INTO donor_podcast_progress")) {
+        if (normalized.startsWith('INSERT INTO donor_podcast_progress')) {
           const [donorId, episodeKey, feedUrl, showTitle, episodeTitle, positionSeconds, durationSeconds] = this.params;
           db.clock += 1;
           db.progress.set(`${donorId}|${episodeKey}`, {
-            donor_id: donorId, episode_key: episodeKey, feed_url: feedUrl,
-            show_title: showTitle, episode_title: episodeTitle,
-            position_seconds: positionSeconds, duration_seconds: durationSeconds,
-            updated_at: `2026-08-01T00:00:${String(db.clock).padStart(2, "0")}Z`,
+            donor_id: donorId,
+            episode_key: episodeKey,
+            feed_url: feedUrl,
+            show_title: showTitle,
+            episode_title: episodeTitle,
+            position_seconds: positionSeconds,
+            duration_seconds: durationSeconds,
+            updated_at: `2026-08-01T00:00:${String(db.clock).padStart(2, '0')}Z`,
           });
           return { success: true };
         }
@@ -55,136 +64,213 @@ class PodcastProgressDb {
 const db = new PodcastProgressDb();
 const env = { AGAPAY_DB: db };
 const dependencies = {
-  requireDonor: async (request) => ({ email: request.headers.get("X-Test-Donor") }),
+  requireDonor: async (request) => ({ email: request.headers.get('X-Test-Donor') }),
 };
 
 function request(method, donor, body) {
-  return new Request("https://agapay.app/api/listen/progress", {
+  return new Request('https://agapay.app/api/listen/progress', {
     method,
-    headers: { "X-Test-Donor": donor, ...(body ? { "Content-Type": "application/json" } : {}) },
+    headers: { 'X-Test-Donor': donor, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined,
   });
 }
 
 const episode = {
-  episodeKey: "stable-rss-guid-42",
-  feedUrl: "https://example.org/podcast.xml",
-  showTitle: "Orthodox Talks",
-  episodeTitle: "Prayer and Attention",
+  episodeKey: 'stable-rss-guid-42',
+  feedUrl: 'https://example.org/podcast.xml',
+  showTitle: 'Orthodox Talks',
+  episodeTitle: 'Prayer and Attention',
   positionSeconds: 615,
   durationSeconds: 1800,
   playbackRate: 1.5,
 };
 
-let response = await handleListenProgress(request("POST", "one@example.org", episode), env, dependencies);
+let response = await handleListenProgress(request('POST', 'one@example.org', episode), env, dependencies);
 assert.equal(response.status, 200);
-response = await handleListenProgress(request("GET", "one@example.org"), env, dependencies);
+response = await handleListenProgress(request('GET', 'one@example.org'), env, dependencies);
 let payload = await response.json();
-assert.equal(payload.items[0].episodeKey, episode.episodeKey, "saved progress must be returned on the next playback lookup");
-assert.equal(payload.items[0].positionSeconds, 615, "resume must receive the saved position");
-assert.equal(payload.playbackRate, 1.5, "playback speed must persist across episodes");
+assert.equal(
+  payload.items[0].episodeKey,
+  episode.episodeKey,
+  'saved progress must be returned on the next playback lookup'
+);
+assert.equal(payload.items[0].positionSeconds, 615, 'resume must receive the saved position');
+assert.equal(payload.playbackRate, 1.5, 'playback speed must persist across episodes');
 
-await handleListenProgress(request("POST", "one@example.org", { playbackRate: 1.75, preferenceOnly: true }), env, dependencies);
-response = await handleListenProgress(request("GET", "one@example.org"), env, dependencies);
+await handleListenProgress(
+  request('POST', 'one@example.org', { playbackRate: 1.75, preferenceOnly: true }),
+  env,
+  dependencies
+);
+response = await handleListenProgress(request('GET', 'one@example.org'), env, dependencies);
 payload = await response.json();
-assert.equal(payload.playbackRate, 1.75, "a speed change at 0:00 must persist without requiring progress");
-assert.equal(payload.items.length, 1, "a speed-only save must not create a Continue Listening entry");
+assert.equal(payload.playbackRate, 1.75, 'a speed change at 0:00 must persist without requiring progress');
+assert.equal(payload.items.length, 1, 'a speed-only save must not create a Continue Listening entry');
 
-await handleListenProgress(request("POST", "two@example.org", { ...episode, positionSeconds: 90, playbackRate: 2 }), env, dependencies);
-response = await handleListenProgress(request("GET", "two@example.org"), env, dependencies);
+await handleListenProgress(
+  request('POST', 'two@example.org', { ...episode, positionSeconds: 90, playbackRate: 2 }),
+  env,
+  dependencies
+);
+response = await handleListenProgress(request('GET', 'two@example.org'), env, dependencies);
 payload = await response.json();
 assert.equal(payload.items[0].positionSeconds, 90);
 assert.equal(payload.playbackRate, 2);
-response = await handleListenProgress(request("GET", "one@example.org"), env, dependencies);
+response = await handleListenProgress(request('GET', 'one@example.org'), env, dependencies);
 payload = await response.json();
 assert.equal(payload.items[0].positionSeconds, 615, "one donor must never receive another donor's position");
 assert.equal(payload.playbackRate, 1.75, "one donor must never receive another donor's speed");
 
-await handleListenProgress(request("POST", "one@example.org", { ...episode, positionSeconds: 1797 }), env, dependencies);
-response = await handleListenProgress(request("GET", "one@example.org"), env, dependencies);
+await handleListenProgress(
+  request('POST', 'one@example.org', { ...episode, positionSeconds: 1797 }),
+  env,
+  dependencies
+);
+response = await handleListenProgress(request('GET', 'one@example.org'), env, dependencies);
 payload = await response.json();
-assert.deepEqual(payload.items, [], "near-complete episodes must leave Continue Listening");
+assert.deepEqual(payload.items, [], 'near-complete episodes must leave Continue Listening');
 assert.equal(payload.playbackRate, 1.5, "the episode save's selected speed remains after completion");
-response = await handleListenProgress(request("GET", "two@example.org"), env, dependencies);
+response = await handleListenProgress(request('GET', 'two@example.org'), env, dependencies);
 payload = await response.json();
 assert.equal(payload.items.length, 1, "completing an episode for one donor must not remove another donor's progress");
 
 class PodcastSubscriptionDb {
-  constructor() { this.subscriptions = new Map(); }
+  constructor() {
+    this.subscriptions = new Map();
+  }
   prepare(sql) {
     const db = this;
     return {
       params: [],
-      bind(...params) { this.params = params; return this; },
+      bind(...params) {
+        this.params = params;
+        return this;
+      },
       async run() {
-        const normalized = sql.replace(/\s+/g, " ").trim();
-        if (normalized.startsWith("INSERT INTO donor_podcast_subscriptions")) {
+        const normalized = sql.replace(/\s+/g, ' ').trim();
+        if (normalized.startsWith('INSERT INTO donor_podcast_subscriptions')) {
           const [donorId, feedUrl, title, artwork, website, author] = this.params;
           const existing = db.subscriptions.get(`${donorId}|${feedUrl}`);
-          db.subscriptions.set(`${donorId}|${feedUrl}`, { donor_id: donorId, feed_url: feedUrl, show_title: title, artwork_url: artwork, website_url: website, author, subscribed_at: existing?.subscribed_at || "2026-08-01 00:00:00", updated_at: "2026-08-01 00:00:01" });
+          db.subscriptions.set(`${donorId}|${feedUrl}`, {
+            donor_id: donorId,
+            feed_url: feedUrl,
+            show_title: title,
+            artwork_url: artwork,
+            website_url: website,
+            author,
+            subscribed_at: existing?.subscribed_at || '2026-08-01 00:00:00',
+            updated_at: '2026-08-01 00:00:01',
+          });
           return { success: true };
         }
-        if (normalized.startsWith("DELETE FROM donor_podcast_subscriptions")) {
+        if (normalized.startsWith('DELETE FROM donor_podcast_subscriptions')) {
           db.subscriptions.delete(`${this.params[0]}|${this.params[1]}`);
           return { success: true };
         }
         throw new Error(`Unexpected subscription run: ${normalized}`);
       },
-      async all() { return { results: [...db.subscriptions.values()].filter((row) => row.donor_id === this.params[0]) }; },
-      async first() { return db.subscriptions.get(`${this.params[0]}|${this.params[1]}`) || null; },
+      async all() {
+        return { results: [...db.subscriptions.values()].filter((row) => row.donor_id === this.params[0]) };
+      },
+      async first() {
+        return db.subscriptions.get(`${this.params[0]}|${this.params[1]}`) || null;
+      },
     };
   }
 }
 
 const subscriptionDb = new PodcastSubscriptionDb();
 const subscriptionEnv = { AGAPAY_DB: subscriptionDb };
-function subscriptionRequest(method, donor, body, feedUrl = "") {
-  return new Request(`https://agapay.app/api/listen/subscriptions${feedUrl ? `?url=${encodeURIComponent(feedUrl)}` : ""}`, {
-    method,
-    headers: { "X-Test-Donor": donor, ...(body ? { "Content-Type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+function subscriptionRequest(method, donor, body, feedUrl = '') {
+  return new Request(
+    `https://agapay.app/api/listen/subscriptions${feedUrl ? `?url=${encodeURIComponent(feedUrl)}` : ''}`,
+    {
+      method,
+      headers: { 'X-Test-Donor': donor, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    }
+  );
 }
-const subscription = { feedUrl: "https://example.org/orthodox.xml", title: "Orthodox Talks", artwork: "https://example.org/art.jpg", website: "https://example.org", author: "AGAPAY Test" };
-response = await handleListenSubscriptions(subscriptionRequest("POST", "one@example.org", subscription), subscriptionEnv, dependencies);
+const subscription = {
+  feedUrl: 'https://example.org/orthodox.xml',
+  title: 'Orthodox Talks',
+  artwork: 'https://example.org/art.jpg',
+  website: 'https://example.org',
+  author: 'AGAPAY Test',
+};
+response = await handleListenSubscriptions(
+  subscriptionRequest('POST', 'one@example.org', subscription),
+  subscriptionEnv,
+  dependencies
+);
 assert.equal(response.status, 201);
-response = await handleListenSubscriptions(subscriptionRequest("GET", "one@example.org"), subscriptionEnv, dependencies);
+response = await handleListenSubscriptions(
+  subscriptionRequest('GET', 'one@example.org'),
+  subscriptionEnv,
+  dependencies
+);
 payload = await response.json();
 assert.equal(payload.subscriptions.length, 1);
 assert.equal(payload.subscriptions[0].feedUrl, subscription.feedUrl);
-response = await handleListenSubscriptions(subscriptionRequest("GET", "two@example.org"), subscriptionEnv, dependencies);
+response = await handleListenSubscriptions(
+  subscriptionRequest('GET', 'two@example.org'),
+  subscriptionEnv,
+  dependencies
+);
 payload = await response.json();
-assert.deepEqual(payload.subscriptions, [], "podcast subscriptions must be private to each My AGAPAY account");
-await handleListenSubscriptions(subscriptionRequest("DELETE", "one@example.org", null, subscription.feedUrl), subscriptionEnv, dependencies);
-response = await handleListenSubscriptions(subscriptionRequest("GET", "one@example.org"), subscriptionEnv, dependencies);
+assert.deepEqual(payload.subscriptions, [], 'podcast subscriptions must be private to each My AGAPAY account');
+await handleListenSubscriptions(
+  subscriptionRequest('DELETE', 'one@example.org', null, subscription.feedUrl),
+  subscriptionEnv,
+  dependencies
+);
+response = await handleListenSubscriptions(
+  subscriptionRequest('GET', 'one@example.org'),
+  subscriptionEnv,
+  dependencies
+);
 payload = await response.json();
 assert.deepEqual(payload.subscriptions, []);
 
 const originalFetch = globalThis.fetch;
 try {
-  globalThis.fetch = async (url) => new Response(new Uint8Array([1, 2, 3, 4]), {
-    status: 200,
-    headers: { "Content-Type": "audio/mpeg", "Content-Length": "4" },
-  });
-  response = await handleListenAudio(new Request("https://agapay.app/api/listen/audio?url=https%3A%2F%2Fmedia.example.org%2Fepisode.mp3", { headers: { "X-Test-Donor": "one@example.org" } }), {}, dependencies);
-  assert.equal(response.status, 200, "an authenticated donor should be able to download public podcast audio");
-  assert.equal(response.headers.get("Content-Type"), "audio/mpeg");
+  globalThis.fetch = async (url) =>
+    new Response(new Uint8Array([1, 2, 3, 4]), {
+      status: 200,
+      headers: { 'Content-Type': 'audio/mpeg', 'Content-Length': '4' },
+    });
+  response = await handleListenAudio(
+    new Request('https://agapay.app/api/listen/audio?url=https%3A%2F%2Fmedia.example.org%2Fepisode.mp3', {
+      headers: { 'X-Test-Donor': 'one@example.org' },
+    }),
+    {},
+    dependencies
+  );
+  assert.equal(response.status, 200, 'an authenticated donor should be able to download public podcast audio');
+  assert.equal(response.headers.get('Content-Type'), 'audio/mpeg');
   assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [1, 2, 3, 4]);
-  response = await handleListenAudio(new Request("https://agapay.app/api/listen/audio?url=http%3A%2F%2F127.0.0.1%2Fprivate.mp3", { headers: { "X-Test-Donor": "one@example.org" } }), {}, dependencies);
-  assert.equal(response.status, 400, "offline downloads must reject private-network media URLs");
+  response = await handleListenAudio(
+    new Request('https://agapay.app/api/listen/audio?url=http%3A%2F%2F127.0.0.1%2Fprivate.mp3', {
+      headers: { 'X-Test-Donor': 'one@example.org' },
+    }),
+    {},
+    dependencies
+  );
+  assert.equal(response.status, 400, 'offline downloads must reject private-network media URLs');
 } finally {
   globalThis.fetch = originalFetch;
 }
 
-const [migration, subscriptionMigration, workerRoot, publicRoutes, teaching, teachingHtml, donorStyles] = await Promise.all([
-  readFile(new URL("../migrations/0078_donor_podcast_progress.sql", import.meta.url), "utf8"),
-  readFile(new URL("../migrations/0080_donor_podcast_subscriptions.sql", import.meta.url), "utf8"),
-  readFile(new URL("../src/worker.js", import.meta.url), "utf8"),
-  readFile(new URL("../src/routes/public.js", import.meta.url), "utf8"),
-  readFile(new URL("../public/myagapay/teaching.js", import.meta.url), "utf8"),
-  readFile(new URL("../public/myagapay/teaching.html", import.meta.url), "utf8"),
-  readFile(new URL("../public/donor/style.css", import.meta.url), "utf8"),
-]);
+const [migration, subscriptionMigration, workerRoot, publicRoutes, teaching, teachingHtml, donorStyles] =
+  await Promise.all([
+    readFile(new URL('../migrations/0078_donor_podcast_progress.sql', import.meta.url), 'utf8'),
+    readFile(new URL('../migrations/0080_donor_podcast_subscriptions.sql', import.meta.url), 'utf8'),
+    readFile(new URL('../src/worker.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/routes/public.js', import.meta.url), 'utf8'),
+    Promise.resolve(readBrowserContractSourceSync('public/myagapay/teaching.js')),
+    readFile(new URL('../public/myagapay/teaching.html', import.meta.url), 'utf8'),
+    readFile(new URL('../public/donor/style.css', import.meta.url), 'utf8'),
+  ]);
 const worker = `${workerRoot}\n${publicRoutes}`;
 
 assert.match(migration, /PRIMARY KEY \(donor_id, episode_key\)/);
@@ -194,74 +280,157 @@ assert.match(subscriptionMigration, /idx_donor_podcast_subscriptions_recent[\s\S
 assert.match(worker, /url\.pathname === ['"]\/api\/listen\/progress['"][\s\S]*handleListenProgress/);
 assert.match(worker, /url\.pathname === ['"]\/api\/listen\/subscriptions['"][\s\S]*handleListenSubscriptions/);
 assert.match(worker, /url\.pathname === ['"]\/api\/listen\/audio['"][\s\S]*handleListenAudio/);
-assert.match(teaching, /function podcastEpisodeKey\(guid, audioUrl\)[\s\S]*trim\(\) \|\| String\(audioUrl/,
-  "RSS guid must be preferred with audio URL only as fallback");
+assert.match(
+  teaching,
+  /function podcastEpisodeKey\(guid, audioUrl\)[\s\S]*trim\(\) \|\| String\(audioUrl/,
+  'RSS guid must be preferred with audio URL only as fallback'
+);
 const episodeKeyFunction = teaching.match(/function podcastEpisodeKey\(guid, audioUrl\) \{[\s\S]*?\n\}/)?.[0];
-assert.ok(episodeKeyFunction, "episode key helper must remain testable");
+assert.ok(episodeKeyFunction, 'episode key helper must remain testable');
 const resolveEpisodeKey = Function(`${episodeKeyFunction}; return podcastEpisodeKey;`)();
-assert.equal(resolveEpisodeKey("rss-guid", "https://cdn.example.org/old.mp3"), "rss-guid");
-assert.equal(resolveEpisodeKey("", "https://cdn.example.org/fallback.mp3"), "https://cdn.example.org/fallback.mp3");
-assert.match(teaching, /const savedPosition[\s\S]*audio\.currentTime = savedPosition/,
-  "saved progress must be applied automatically before playback");
-assert.match(teaching, /PODCAST_SAVE_INTERVAL_MS = 15000/);
+assert.equal(resolveEpisodeKey('rss-guid', 'https://cdn.example.org/old.mp3'), 'rss-guid');
+assert.equal(resolveEpisodeKey('', 'https://cdn.example.org/fallback.mp3'), 'https://cdn.example.org/fallback.mp3');
+assert.match(
+  teaching,
+  /const savedPosition[\s\S]*audio\.currentTime = savedPosition/,
+  'saved progress must be applied automatically before playback'
+);
+assert.ok(includesJavaScriptFragment(teaching, 'const PODCAST_SAVE_INTERVAL_MS = 15000;'));
 assert.match(teaching, /addEventListener\("pause"[\s\S]*saveKoinoniaPodcastProgress/);
 assert.match(teaching, /addEventListener\("seeked"[\s\S]*saveKoinoniaPodcastProgress/);
 assert.match(teaching, /visibilitychange[\s\S]*keepalive: true/);
 assert.match(teaching, /pagehide[\s\S]*koinoniaPodcastState\.queue = \[\]/);
 assert.match(teaching, /beforeunload[\s\S]*koinoniaPodcastState\.queue = \[\]/);
-assert.doesNotMatch(teaching, /localStorage|sessionStorage|indexedDB/, "Up Next must remain memory-only");
+assert.doesNotMatch(teaching, /localStorage|sessionStorage|indexedDB/, 'Up Next must remain memory-only');
 assert.match(teachingHtml, /id="koinoniaContinueListening"[\s\S]*Continue Listening/);
 assert.match(teachingHtml, /id="koinoniaPodcastSpeed"[\s\S]*1\.25x[\s\S]*2x/);
 assert.match(teachingHtml, /skipKoinoniaPodcast\(-15\)[\s\S]*skipKoinoniaPodcast\(30\)/);
-assert.match(teachingHtml, /data-podcast-library-view="latest"[\s\S]*data-podcast-library-view="subscriptions"[\s\S]*data-podcast-library-view="discover"/);
-assert.match(teachingHtml, /data-podcast-library-pane="discover"[\s\S]*id="koinoniaPodcastRssUrl"[\s\S]*Add RSS/,
-  "Discover must expose direct RSS feed import");
-assert.match(teaching, /function importKoinoniaPodcastFeed[\s\S]*\/api\/listen\/rss[\s\S]*\/api\/listen\/subscriptions/,
-  "RSS import must validate the feed before saving a subscription");
-assert.match(teachingHtml, /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/);
-assert.match(teachingHtml, /id="koinoniaPodcastQueueDrawer"[\s\S]*class="koinonia-drawer-close"[\s\S]*aria-label="Close Up Next"[\s\S]*>×<\/button>/,
-  "Up Next must use the same explicit X close control as episode details");
-assert.match(donorStyles, /\.koinonia-full-drawer > \.koinonia-drawer-close \{[^}]*border-radius:50%/,
-  "episode details and Up Next must share one mobile-friendly close-button design");
-assert.match(teachingHtml, /id="koinoniaPodcastActionsToggle"[\s\S]*id="koinoniaPodcastActionsMenu"[\s\S]*Download episode[\s\S]*Restart episode[\s\S]*Copy episode link[\s\S]*Share episode/,
-  "the full-player three-dot menu must expose useful episode actions");
-assert.match(teachingHtml, /data-podcast-library-view="downloads"[\s\S]*id="koinoniaPodcastDownloads"/,
-  "the podcast library must expose downloaded episodes for offline relaunch");
-assert.match(teaching, /PODCAST_DOWNLOAD_CACHE[\s\S]*cache\.put[\s\S]*playDownloadedKoinoniaPodcast/,
-  "downloads must persist episode media in device Cache Storage and remain playable");
-assert.match(teaching, /navigator\.storage\?\.persist/,
-  "mobile browsers should be asked to retain downloaded media when supported");
-assert.match(teachingHtml, /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodcastShare"[\s\S]*Share episode/,
-  "the expanded player must use its structured shell and expose the share action");
-assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0 !important/,
-  "the expanded player must cover the viewport at every responsive breakpoint");
-assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \{[^}]*height:100dvh[^}]*overflow:hidden/,
-  "the expanded player must fit the viewport without requiring page-level scrolling");
-assert.match(donorStyles, /\.koinonia-podcast-player \{ position:static;/,
-  "the mini player must consume its own bottom row instead of covering page controls");
-assert.match(donorStyles, /\.koinonia-podcast-mini-player \.koinonia-podcast-player-shell \{[^}]*grid-template-areas:"now expand" "timeline timeline" "transport transport"/,
-  "the mini player must stack track, progress, and transport instead of squeezing controls beside the timeline");
-assert.match(donorStyles, /\.koinonia-podcast-mini-player \.koinonia-podcast-player-controls > button\.is-primary \{[^}]*width:46px;[^}]*height:46px;/,
-  "the redesigned primary play control must remain a comfortable touch target");
-assert.match(teachingHtml, /koinoniaPodcastPlayToggle[\s\S]*aria-label="Skip forward 30 seconds"><svg/,
-  "the mini player must use structured playback icons rather than cramped text glyphs");
-assert.match(teaching, /progress\.style\.setProperty\("--podcast-progress", `\$\{progressPercent\}%`\)/,
-  "the mini player's custom progress track must visibly fill as playback advances");
-assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*overflow-y:auto/,
-  "the audio library must scroll independently above the docked player");
-assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*flex:1;[^}]*min-height:0;[^}]*-webkit-overflow-scrolling:touch/,
-  "the audio library must remain visible while using a bounded touch scroller");
-assert.doesNotMatch(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*(?:\{|;)height:0/,
-  "the installed Android app must never collapse the audio library to zero height");
-assert.match(donorStyles, /\.donor-teaching-page \.teaching-page-shell \{[^}]*scroll-padding-bottom:max\(104px,calc\(80px \+ env\(safe-area-inset-bottom\)\)\)/,
-  "the mobile audio library must leave enough scroll clearance for its final subscriptions");
-assert.match(donorStyles, /\.koinonia-podcast-player\.is-expanded \.koinonia-podcast-full-player \{[^}]*display:flex/,
-  "expanded playback must use the Listen-style full-screen surface");
-assert.match(donorStyles, /#koinoniaPodcastQueueList \{[^}]*overflow:auto/,
-  "only a long Up Next queue should scroll inside the fitted player");
-assert.match(donorStyles, /grid-template-areas:"now" "transport" "timeline" "options" "details"/,
-  "expanded controls must occupy explicit rows instead of overlapping through implicit grid placement");
+assert.match(
+  teachingHtml,
+  /data-podcast-library-view="latest"[\s\S]*data-podcast-library-view="subscriptions"[\s\S]*data-podcast-library-view="discover"/
+);
+assert.match(
+  teachingHtml,
+  /data-podcast-library-pane="discover"[\s\S]*id="koinoniaPodcastRssUrl"[\s\S]*Add RSS/,
+  'Discover must expose direct RSS feed import'
+);
+assert.match(
+  teaching,
+  /function importKoinoniaPodcastFeed[\s\S]*\/api\/listen\/rss[\s\S]*\/api\/listen\/subscriptions/,
+  'RSS import must validate the feed before saving a subscription'
+);
+assert.match(
+  teachingHtml,
+  /id="koinoniaPodcastExpand"[\s\S]*id="koinoniaPodcastSleepTimer"[\s\S]*id="koinoniaPodcastQueueList"/
+);
+assert.match(
+  teachingHtml,
+  /id="koinoniaPodcastQueueDrawer"[\s\S]*class="koinonia-drawer-close"[\s\S]*aria-label="Close Up Next"[\s\S]*>×<\/button>/,
+  'Up Next must use the same explicit X close control as episode details'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-full-drawer > \.koinonia-drawer-close \{[^}]*border-radius:50%/,
+  'episode details and Up Next must share one mobile-friendly close-button design'
+);
+assert.match(
+  teachingHtml,
+  /id="koinoniaPodcastActionsToggle"[\s\S]*id="koinoniaPodcastActionsMenu"[\s\S]*Download episode[\s\S]*Restart episode[\s\S]*Copy episode link[\s\S]*Share episode/,
+  'the full-player three-dot menu must expose useful episode actions'
+);
+assert.match(
+  teachingHtml,
+  /data-podcast-library-view="downloads"[\s\S]*id="koinoniaPodcastDownloads"/,
+  'the podcast library must expose downloaded episodes for offline relaunch'
+);
+assert.match(
+  teaching,
+  /PODCAST_DOWNLOAD_CACHE[\s\S]*cache\.put[\s\S]*playDownloadedKoinoniaPodcast/,
+  'downloads must persist episode media in device Cache Storage and remain playable'
+);
+assert.match(
+  teaching,
+  /navigator\.storage\?\.persist/,
+  'mobile browsers should be asked to retain downloaded media when supported'
+);
+assert.match(
+  teachingHtml,
+  /koinonia-podcast-player-shell[\s\S]*id="koinoniaPodcastShare"[\s\S]*Share episode/,
+  'the expanded player must use its structured shell and expose the share action'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-podcast-player\.is-expanded \{[^}]*inset:0 !important/,
+  'the expanded player must cover the viewport at every responsive breakpoint'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-podcast-player\.is-expanded \{[^}]*height:100dvh[^}]*overflow:hidden/,
+  'the expanded player must fit the viewport without requiring page-level scrolling'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-podcast-player \{ position:static;/,
+  'the mini player must consume its own bottom row instead of covering page controls'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-podcast-mini-player \.koinonia-podcast-player-shell \{[^}]*grid-template-areas:"now expand" "timeline timeline" "transport transport"/,
+  'the mini player must stack track, progress, and transport instead of squeezing controls beside the timeline'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-podcast-mini-player \.koinonia-podcast-player-controls > button\.is-primary \{[^}]*width:46px;[^}]*height:46px;/,
+  'the redesigned primary play control must remain a comfortable touch target'
+);
+assert.match(
+  teachingHtml,
+  /koinoniaPodcastPlayToggle[\s\S]*aria-label="Skip forward 30 seconds"><svg/,
+  'the mini player must use structured playback icons rather than cramped text glyphs'
+);
+assert.match(
+  teaching,
+  /progress\.style\.setProperty\("--podcast-progress", `\$\{progressPercent\}%`\)/,
+  "the mini player's custom progress track must visibly fill as playback advances"
+);
+assert.match(
+  donorStyles,
+  /\.donor-teaching-page \.teaching-page-shell \{[^}]*overflow-y:auto/,
+  'the audio library must scroll independently above the docked player'
+);
+assert.match(
+  donorStyles,
+  /\.donor-teaching-page \.teaching-page-shell \{[^}]*flex:1;[^}]*min-height:0;[^}]*-webkit-overflow-scrolling:touch/,
+  'the audio library must remain visible while using a bounded touch scroller'
+);
+assert.doesNotMatch(
+  donorStyles,
+  /\.donor-teaching-page \.teaching-page-shell \{[^}]*(?:\{|;)height:0/,
+  'the installed Android app must never collapse the audio library to zero height'
+);
+assert.match(
+  donorStyles,
+  /\.donor-teaching-page \.teaching-page-shell \{[^}]*scroll-padding-bottom:max\(104px,calc\(80px \+ env\(safe-area-inset-bottom\)\)\)/,
+  'the mobile audio library must leave enough scroll clearance for its final subscriptions'
+);
+assert.match(
+  donorStyles,
+  /\.koinonia-podcast-player\.is-expanded \.koinonia-podcast-full-player \{[^}]*display:flex/,
+  'expanded playback must use the Listen-style full-screen surface'
+);
+assert.match(
+  donorStyles,
+  /#koinoniaPodcastQueueList \{[^}]*overflow:auto/,
+  'only a long Up Next queue should scroll inside the fitted player'
+);
+assert.match(
+  donorStyles,
+  /grid-template-areas:"now" "transport" "timeline" "options" "details"/,
+  'expanded controls must occupy explicit rows instead of overlapping through implicit grid placement'
+);
 assert.match(teaching, /loadKoinoniaPodcastLatest[\s\S]*Promise\.allSettled[\s\S]*latestEpisodes/);
 assert.match(teaching, /toggleKoinoniaPodcastPlayerExpanded[\s\S]*podcast-player-expanded/);
 
-console.log("PASS - podcast playback memory is private, resumable, completion-aware, and session-scoped where required");
+console.log(
+  'PASS - podcast playback memory is private, resumable, completion-aware, and session-scoped where required'
+);

@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -11,7 +12,7 @@ const shell = readBrowserContractSourceSync('public/myagapay-shell.js');
 const styles = read('public/donor/style.css');
 const donorApp = readDonorAppSource();
 const directory = read('public/myagapay/directory.html');
-const teaching = read('public/myagapay/teaching.js');
+const teaching = readBrowserContractSourceSync('public/myagapay/teaching.js');
 const parishDashboard = read('public/parish/dashboard.html');
 const parishStyles = read('public/parish/style.css');
 const serviceWorker = read('public/service-worker.js');
@@ -69,9 +70,8 @@ assert.match(
   /\.dashboard-boot-screen \{[\s\S]*?background: #0B2130;/,
   "the parish loading screen must match the app icon's exact navy background"
 );
-assert.match(
-  teaching,
-  /image:"\/images\/app\/icon-512\.png"/,
+assert.ok(
+  includesJavaScriptFragment(teaching, 'image: "/images/app/icon-512.png"'),
   'parish audio playback must use the high-resolution regular AGAPAY app icon'
 );
 
