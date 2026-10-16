@@ -81,7 +81,10 @@ export function findNextOpenWeekday(row: PlannerRow | null | undefined, fromWeek
 // Returns { rows, reserveList } — rows is a new array (rows without an
 // override are returned unchanged), reserveList collects every item moved
 // to Reserve for display in the weekly Reserve card and on printables.
-export function applyPlannerOverrides(rows: PlannerRow[] | null = [], overridesForWeek: PlannerOverrides = {}) {
+export function applyPlannerOverrides<T extends PlannerRow>(
+  rows: T[] | null = [],
+  overridesForWeek: PlannerOverrides = {}
+) {
   const reserveList: ReserveItem[] = [];
   const nextRows = (rows || []).map((row) => {
     const rowOverrides = overridesForWeek?.[row.id];

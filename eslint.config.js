@@ -6,6 +6,11 @@ const handwrittenIgnores = ['node_modules/**', 'public/vendor/**', 'tmp/**', 'tm
 const recommendedRules = js.configs.recommended.rules;
 
 export default [
+  // Retain the transcript input destructuring without changing its default evaluation.
+  {
+    files: ['src/learn/print-academic-pdf.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^attendance$' }] },
+  },
   // Classic inline HTML handlers remain lexical globals after type erasure.
   {
     files: ['src/browser/bookstore/app.ts'],

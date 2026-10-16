@@ -9,6 +9,16 @@ export const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 // Authoritative sources. Runtime consumers retain the adjacent .js import paths.
 export const serverTypeScriptSources = Object.freeze([
+  'src/learn/print-documents-shared.ts',
+  'src/learn/print-document-builders.ts',
+  'src/learn/print-family-plans.ts',
+  'src/learn/print-pdf-layout.ts',
+  'src/learn/print-academic-pdf.ts',
+  'src/learn/print-documents.ts',
+  'src/learn/repository-shared.ts',
+  'src/learn/repository-progress.ts',
+  'src/learn/repository-planner.ts',
+  'src/learn/repository.ts',
   'src/learn/setup-persistence-shared.ts',
   'src/learn/setup-normalization.ts',
   'src/learn/setup-seed-application.ts',
@@ -547,6 +557,14 @@ export const serverTypeScriptSupportSources = Object.freeze([
   'src/learn/setup-persistence-shared.ts',
   'src/learn/setup-normalization.ts',
   'src/learn/setup-seed-application.ts',
+  'src/learn/repository-shared.ts',
+  'src/learn/repository-progress.ts',
+  'src/learn/repository-planner.ts',
+  'src/learn/print-documents-shared.ts',
+  'src/learn/print-document-builders.ts',
+  'src/learn/print-family-plans.ts',
+  'src/learn/print-pdf-layout.ts',
+  'src/learn/print-academic-pdf.ts',
 ]);
 export const serverTypeScriptCompositions = Object.freeze({
   'src/accounting/close/service.ts': [
@@ -674,6 +692,18 @@ export const serverTypeScriptCompositions = Object.freeze({
     'src/learn/setup-persistence-shared.ts',
     'src/learn/setup-normalization.ts',
     'src/learn/setup-seed-application.ts',
+  ],
+  'src/learn/repository.ts': [
+    'src/learn/repository-shared.ts',
+    'src/learn/repository-progress.ts',
+    'src/learn/repository-planner.ts',
+  ],
+  'src/learn/print-documents.ts': [
+    'src/learn/print-documents-shared.ts',
+    'src/learn/print-document-builders.ts',
+    'src/learn/print-family-plans.ts',
+    'src/learn/print-pdf-layout.ts',
+    'src/learn/print-academic-pdf.ts',
   ],
 });
 

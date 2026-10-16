@@ -333,7 +333,7 @@ assert(
   'Grace Mode should enforce daily caps in the planner engine.'
 );
 assert(
-  learnRepository.includes('modes: ["full", "medium", "light"]'),
+  includesJavaScriptFragment(learnRepository, 'modes: ["full", "medium", "light"]'),
   'Learn APIs should expose the three mom-facing Grace Mode options.'
 );
 assert(
@@ -989,7 +989,7 @@ assert(
   // The landscape lesson-plan-by-form printable should have its own notes strip, now labeled "Mom Notes".
   const printDocumentsSource = readServerModuleSourceSync('src/learn/print-documents.js');
   assert(
-    printDocumentsSource.includes('"Mom Notes:"'),
+    includesJavaScriptFragment(printDocumentsSource, '"Mom Notes:"'),
     "The landscape lesson-plan print should label its notes strip 'Mom Notes:' for consistent language."
   );
 

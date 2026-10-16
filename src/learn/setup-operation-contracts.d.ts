@@ -19,6 +19,7 @@ export interface SetupInputNode extends Record<string, unknown> {
   title?: string;
   label?: string;
   description?: string;
+  completedThroughChapter?: number | string;
   resource?: string;
   source?: string;
   formLabel?: string;
@@ -117,6 +118,7 @@ export type LearnRuntimeBook = Omit<
   planningMode?: string;
   sourceKind?: string;
   weeklyPlans?: string[];
+  completedThroughChapter?: number | string;
   resource?: string;
 };
 export interface LearnRuntimePlannerRow {
@@ -129,6 +131,7 @@ export interface LearnRuntimePlannerRow {
   streamId?: string;
   householdStreamId?: string;
   childId?: string | null;
+  kind?: string;
   sourceId?: string;
   resourceIndex?: number;
   childIds?: unknown[];
@@ -148,6 +151,9 @@ export interface LearnRuntimePlannerRow {
 }
 export type LearnRuntimeSeed = Omit<
   DemoLearnSeed,
+  | 'placeholderRecords'
+  | 'term'
+  | 'householdStreams'
   | 'children'
   | 'books'
   | 'libraryBooks'
@@ -163,6 +169,12 @@ export type LearnRuntimeSeed = Omit<
   | 'enrichmentBlocks'
 > & {
   household: DemoLearnSeed['household'] & Partial<LearnSetupSnapshot['household']>;
+  placeholderRecords: Omit<DemoLearnSeed['placeholderRecords'], 'academicRecords' | 'printJobs'> & {
+    printJobs: { id: string; householdId: string }[];
+    academicRecords: (StoredAcademicRecord & { householdId: string })[];
+  };
+  term: DemoLearnSeed['term'] & Partial<LearnSetupSnapshot['term']>;
+  householdStreams: (DemoLearnSeed['householdStreams'][number] & { minutesPlanned?: number; status?: string })[];
   children: LearnRuntimeChild[];
   books: LearnRuntimeBook[];
   libraryBooks: (LearnRuntimeBook & Partial<DemoLearnSeed['libraryBooks'][number]>)[];
@@ -205,6 +217,10 @@ export type LearnRuntimeSeed = Omit<
     Partial<LearnSetupSnapshot['formation']['hymnStudies'][number]> & { id: string; title: string })[];
   enrichmentBlocks: (Partial<DemoLearnSeed['enrichmentBlocks'][number]> &
     Partial<LearnSetupSnapshot['formation']['enrichmentBlocks'][number]> & { id: string; title: string })[];
+  plannerOverrides?: Record<string, import('./planner-overrides.js').PlannerOverrides>;
+  googleCalendarSync?: Partial<DemoLearnSeed['dashboardDaily']['2025-05-07']['googleCalendarSync']>;
+  thisDayInHistory?: Partial<DemoLearnSeed['dashboardDaily']['2025-05-07']['thisDayInHistory']>;
+  dashboard?: { today?: { churchRhythms?: LearnSetupSnapshot['formation']['churchRhythms'] } };
   setupSnapshot?: LearnSetupSnapshot;
   familyPlanning?: LearnSetupSnapshot['familyPlanning'];
   closedAcademicRecords?: StoredAcademicRecord[];

@@ -1,10 +1,4 @@
 {
-  "src/learn/print-documents.js": {
-    "max-lines": 1
-  },
-  "src/learn/repository.js": {
-    "max-lines": 1
-  },
   "public/admin/app.js": {
     "max-lines": 1
   },
