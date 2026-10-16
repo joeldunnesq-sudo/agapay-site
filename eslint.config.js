@@ -1999,4 +1999,30 @@ export default [
       ],
     },
   },
+  // Preserve explicitly named Sacraments inline handlers and composed classic cross-source bindings.
+  {
+    files: ['src/browser/parish/features/sacraments.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(SACRAMENT_STATUS_OPTIONS|SACRAMENT_STATUS_LABELS|setSacramentsDashboardTab|selectSacramentsPriest|SAC_TIMEZONE_OPTIONS|SAC_DAY_LABELS|SAC_EDITABLE_SERVICE_TYPES|selectedSacramentOfferingLabel|selectedSacramentsGoogleConnection|connectSacramentsGoogleCalendar|disconnectSacramentsGoogleCalendar|toggleSacramentsFeature|groupSacramentsRulesByType|toggleSacramentsOffering|addCustomSacramentsOffering|updateCustomSacramentsOfferingMode|removeCustomSacramentsOffering|saveSacramentsAvailabilityTimezone|addSacramentsAvailabilityRule|deleteSacramentsAvailabilityRule|addSacramentsAvailabilityBlackout|deleteSacramentsAvailabilityBlackout|SACRAMENT_OVERDUE_HOURS|reviewSacramentPreparationItem|reviewSacramentPreparationDocument|toggleSacramentRequestEditor|selectSacramentRuleDay|selectSacramentsCalendarDay|onSacramentStatusChange|saveSacramentRequest)$',
+        },
+      ],
+      '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
+    },
+  },
+  {
+    files: ['src/browser/parish/sacrament-feature-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderSacramentsPriestPicker|renderSacramentsFeatureToggle|renderSacramentsDisabledPanel|renderSacramentsAvailability|renderSacramentsBlackouts|renderSacramentsUpsell|isThisWeek|sacramentParishRow|renderSacramentsRules|renderSacramentsCalendar)$',
+        },
+      ],
+    },
+  },
 ];

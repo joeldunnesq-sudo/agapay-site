@@ -11,6 +11,11 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/parish/features/sacraments.ts',
+    output: 'public/parish/features/sacraments.js',
+    classicSupportSources: ['src/browser/parish/sacrament-feature-presentation.ts'],
+  },
+  {
     source: 'src/browser/parish/features/directory.ts',
     output: 'public/parish/features/directory.js',
     classicSupportSources: ['src/browser/parish/directory-feature-presentation.ts'],
@@ -384,11 +389,12 @@ export function compilePrivateBrowserEntry(entry, root = repoRoot) {
     throw new Error('Unregistered private browser dependency: ' + actual.join(', '));
   return result.outputFiles[0].text;
 }
-// Only function declarations may be composed before a classic entry: no initialization can move.
+// After type erasure only function declarations may be composed: no runtime initialization can move.
 export function readClassicBrowserEntry(entry, root = repoRoot) {
   const pieces = (entry.classicSupportSources || []).map((p) => {
     const code = readFileSync(resolve(root, p), 'utf8'),
-      ast = ts.createSourceFile(p, code, ts.ScriptTarget.Latest, true);
+      erased = transformSync(code, { loader: 'ts', target: 'es2022', legalComments: 'none' }).code,
+      ast = ts.createSourceFile(p, erased, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
     if (ast.statements.some((n) => !ts.isFunctionDeclaration(n)))
       throw new Error('Classic support must contain only function declarations: ' + p);
     return code;

@@ -1123,7 +1123,11 @@
     "src/browser/parish/directory-feature-contracts.d.ts",
     "src/browser/parish/directory-feature-presentation.ts",
     "src/browser/parish/features/directory.ts",
-    "scripts/typecheck-browser/parish-directory-feature.ts"
+    "scripts/typecheck-browser/parish-directory-feature.ts",
+    "src/browser/parish/features/sacraments.ts",
+    "src/browser/parish/sacrament-feature-contracts.d.ts",
+    "src/browser/parish/sacrament-feature-presentation.ts",
+    "scripts/typecheck-browser/parish-sacrament-feature.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2280,6 +2284,10 @@
     "src/browser/parish/directory-feature-contracts.d.ts",
     "src/browser/parish/directory-feature-presentation.ts",
     "src/browser/parish/features/directory.ts",
-    "scripts/typecheck-browser/parish-directory-feature.ts"
+    "scripts/typecheck-browser/parish-directory-feature.ts",
+    "src/browser/parish/features/sacraments.ts",
+    "src/browser/parish/sacrament-feature-contracts.d.ts",
+    "src/browser/parish/sacrament-feature-presentation.ts",
+    "scripts/typecheck-browser/parish-sacrament-feature.ts"
   ]
 }

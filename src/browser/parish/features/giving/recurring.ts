@@ -16,7 +16,7 @@ interface ParishRecurringHealthResponse {
 interface ParishWorkspaceIdentity {
   readonly parishId: string;
   readonly parishName?: string;
-  readonly timezone?: string;
+  timezone?: string;
   readonly liturgicalCalendar?: string;
   readonly patronalFeast?: string;
   readonly patronalFeastName?: string;

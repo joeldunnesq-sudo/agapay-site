@@ -6,7 +6,7 @@ import { captureBrowserErrors } from './lib/browser-error-gate.mjs';
 // Globals read inside page.evaluate callbacks, provided by the actual dashboard.
 /* global currentParish, dashboardLoadPromise, loadDashboard, renderDashboard:writable,
   loadGivingSummary, loadRecurringHealth, renderQrCode, loadCommemorations,
-  loadGivingHistory, renderSetupWizard, loadDirectoryAdminTab, openDirectoryHousehold */
+  loadGivingHistory, renderSetupWizard, loadDirectoryAdminTab, openDirectoryHousehold, loadSacramentsPanel, loadSacramentsAvailability, loadSacramentsGoogleStatus, setSacramentsDashboardTab */
 
 const browser = await chromium.launch({ headless: true });
 async function ready(page) {
@@ -278,6 +278,87 @@ try {
             administrators: [],
             notes: [],
           },
+        },
+      },
+    }
+  );
+  await scenario(
+    'typed Sacraments retains requests, private preparation links, availability and Google Calendar display',
+    () => ({
+      parish: {
+        ...parish,
+        subscriptionTier: 'parish',
+        sacramentsEnabled: true,
+        sacramentPriests: [
+          { name: 'Fixture Priest', email: 'priest@example.test', serviceTypes: ['baptism'], customServices: [] },
+        ],
+      },
+    }),
+    async (fixture) => {
+      await fixture.open();
+      await ready(fixture.page);
+      await fixture.page.evaluate(async () => {
+        await loadSacramentsPanel(true);
+        await loadSacramentsAvailability(true);
+        await loadSacramentsGoogleStatus(true);
+        setSacramentsDashboardTab('requests');
+      });
+      const pane = fixture.page.locator('#sacramentsPane');
+      assert.ok((await pane.innerText()).includes('<Fixture Participant>'));
+      assert.ok((await pane.innerText()).includes('Needs a response'));
+      assert.equal(await pane.locator('script').count(), 0);
+      assert.equal(await pane.locator('a[href$="/fixture-request/preparation/documents/fixture-document"]').count(), 1);
+      await fixture.page.evaluate(() => setSacramentsDashboardTab('calendar'));
+      assert.ok((await pane.innerText()).includes('Calendar connected'));
+      await fixture.page.evaluate(() => setSacramentsDashboardTab('availability'));
+      assert.ok((await pane.innerText()).includes('Open booking windows'));
+    },
+    {
+      '/sacraments': {
+        body: {
+          requests: [
+            {
+              id: 'fixture-request',
+              sacramentType: 'baptism',
+              status: 'requested',
+              createdAt: '2020-01-01',
+              participantNames: '<Fixture Participant>',
+              donorEmail: 'member@example.test',
+              preparation: {
+                items: [
+                  {
+                    id: 'step',
+                    status: 'pending',
+                    title: 'Preparation',
+                    documents: [{ id: 'fixture-document', displayName: 'Private guide', reviewStatus: 'pending' }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      '/sacraments/availability': {
+        body: {
+          timezone: 'America/Chicago',
+          rules: [
+            {
+              id: 'rule',
+              sacramentType: 'baptism',
+              priestName: 'Fixture Priest',
+              dayOfWeek: 1,
+              startTime: '10:00',
+              endTime: '12:00',
+              slotMinutes: 30,
+            },
+          ],
+          blackouts: [],
+        },
+      },
+      '/sacraments/google-calendar/status': {
+        body: {
+          configured: true,
+          connections: [{ email: 'priest@example.test', connected: true, calendarName: 'Fixture Calendar' }],
         },
       },
     }
