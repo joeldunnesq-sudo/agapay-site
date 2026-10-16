@@ -1,65 +1,65 @@
-import puppeteer from "@cloudflare/puppeteer";
-
-const DEFAULT_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const WEEK_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
+// Generated from src/learn/print-engine.ts by npm run build:server. Do not edit.
+import puppeteer from '@cloudflare/puppeteer';
+const DEFAULT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
-
-function plainText(value, fallback = "") {
-  const text = String(value ?? fallback ?? "").replace(/\s+/g, " ").trim();
+function plainText(value, fallback = '') {
+  const text = String(value ?? fallback ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
   return text || fallback;
 }
-
 function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
-
 function toKebab(value) {
-  return plainText(value, "section")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "section";
+  return (
+    plainText(value, 'section')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'section'
+  );
 }
-
-function joinText(parts, separator = " · ") {
-  return parts.map((part) => plainText(part)).filter(Boolean).join(separator);
+function joinText(parts, separator = ' · ') {
+  return parts
+    .map((part) => plainText(part))
+    .filter(Boolean)
+    .join(separator);
 }
-
 function fieldValue(row, column, index) {
-  if (Array.isArray(row)) return row[index] ?? "";
-  if (!row || typeof row !== "object") return index === 0 ? row : "";
-  const key = typeof column === "object"
-    ? column.key || column.id || column.accessor || column.field || column.label || column.title
-    : column;
-  return row[key] ?? row[toKebab(key)] ?? row[index] ?? "";
+  if (Array.isArray(row)) return row[index] ?? '';
+  if (!row || typeof row !== 'object') return index === 0 ? row : '';
+  const key =
+    typeof column === 'object'
+      ? column.key || column.id || column.accessor || column.field || column.label || column.title
+      : column;
+  return row[key] ?? row[toKebab(key)] ?? row[index] ?? '';
 }
-
 function normalizeColumns(section) {
   const columns = asArray(section.columns).map((column, index) => {
-    if (typeof column === "object" && column) {
+    if (typeof column === 'object' && column) {
       return {
-        key: column.key || column.id || column.accessor || column.field || column.label || column.title || `col_${index}`,
+        key:
+          column.key || column.id || column.accessor || column.field || column.label || column.title || `col_${index}`,
         label: plainText(column.label || column.title || column.heading || column.key || `Column ${index + 1}`),
       };
     }
     return { key: plainText(column, `col_${index}`), label: plainText(column, `Column ${index + 1}`) };
   });
-
   if (columns.length) return columns;
   const firstRow = asArray(section.rows)[0];
-  if (firstRow && typeof firstRow === "object" && !Array.isArray(firstRow)) {
-    return Object.keys(firstRow).map((key) => ({ key, label: key.replace(/[-_]/g, " ") }));
+  if (firstRow && typeof firstRow === 'object' && !Array.isArray(firstRow)) {
+    return Object.keys(firstRow).map((key) => ({ key, label: key.replace(/[-_]/g, ' ') }));
   }
-  return [{ key: "item", label: "Item" }];
+  return [{ key: 'item', label: 'Item' }];
 }
-
 function orthodoxCrossSvg() {
   return `
     <svg class="orthodox-cross" viewBox="0 0 240 300" role="img" aria-label="Gold Orthodox budded cross" xmlns="http://www.w3.org/2000/svg">
@@ -93,185 +93,209 @@ function orthodoxCrossSvg() {
       <text x="171" y="118" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="700" fill="#b78b32" letter-spacing="1.5">XC</text>
     </svg>`;
 }
-
 function renderDocumentHeader(document) {
   return `
     <header class="document-header">
       <div class="brand-mark">${orthodoxCrossSvg()}</div>
       <div class="brand-copy">
         <p class="brand-kicker">AGAPAY Learn</p>
-        <h1>${escapeHtml(document.title || "Print Document")}</h1>
-        <p class="subtitle">${escapeHtml(document.subtitle || document.footerRole || "Orthodox Christian homeschool planning")}</p>
+        <h1>${escapeHtml(document.title || 'Print Document')}</h1>
+        <p class="subtitle">${escapeHtml(document.subtitle || document.footerRole || 'Orthodox Christian homeschool planning')}</p>
       </div>
       <div class="header-meta">
-        <span>${escapeHtml(document.household || "Household")}</span>
+        <span>${escapeHtml(document.household || 'Household')}</span>
         <span>${escapeHtml(plainText(document.generatedAt).slice(0, 10))}</span>
       </div>
     </header>`;
 }
-
 function sectionHeading(section) {
-  return section.heading || section.title || section.label || "Print Section";
+  return section.heading || section.title || section.label || 'Print Section';
 }
-
 function renderSectionShell(section, body) {
-  const classes = ["print-section", `section-${toKebab(section.type || "content")}`];
-  if (section.pageBreakBefore || section.breakBefore) classes.push("section-break");
+  const classes = ['print-section', `section-${toKebab(section.type || 'content')}`];
+  if (section.pageBreakBefore || section.breakBefore) classes.push('section-break');
   return `
-    <section class="${classes.join(" ")}" aria-labelledby="${toKebab(sectionHeading(section))}-heading">
+    <section class="${classes.join(' ')}" aria-labelledby="${toKebab(sectionHeading(section))}-heading">
       <div class="section-heading">
-        <p>${escapeHtml(section.kicker || section.type || "Section")}</p>
+        <p>${escapeHtml(section.kicker || section.type || 'Section')}</p>
         <h2 id="${toKebab(sectionHeading(section))}-heading">${escapeHtml(sectionHeading(section))}</h2>
       </div>
       ${body}
     </section>`;
 }
-
 function renderTableSection(section) {
   const columns = normalizeColumns(section);
   const rows = asArray(section.rows);
-  const bodyRows = rows.map((row) => `
+  const bodyRows = rows
+    .map(
+      (row) => `
     <tr>
-      ${columns.map((column, index) => `<td>${escapeHtml(fieldValue(row, column, index))}</td>`).join("")}
-    </tr>`).join("");
-
-  return renderSectionShell(section, `
+      ${columns.map((column, index) => `<td>${escapeHtml(fieldValue(row, column, index))}</td>`).join('')}
+    </tr>`
+    )
+    .join('');
+  return renderSectionShell(
+    section,
+    `
     <div class="table-frame">
       <table>
         <thead>
-          <tr>${columns.map((column) => `<th scope="col">${escapeHtml(column.label)}</th>`).join("")}</tr>
+          <tr>${columns.map((column) => `<th scope="col">${escapeHtml(column.label)}</th>`).join('')}</tr>
         </thead>
         <tbody>${bodyRows || `<tr><td colspan="${columns.length}">No rows have been added yet.</td></tr>`}</tbody>
       </table>
-    </div>`);
+    </div>`
+  );
 }
-
 function renderListSection(section) {
-  const items = asArray(section.items || section.rows).map((item) => {
-    const label = typeof item === "object" && item
-      ? item.label || item.title || item.name || item.value || ""
-      : item;
-    const detail = typeof item === "object" && item
-      ? item.detail || item.description || item.note || item.subtitle || ""
-      : "";
-    return `
+  const items = asArray(section.items || section.rows)
+    .map((item) => {
+      const label = typeof item === 'object' && item ? item.label || item.title || item.name || item.value || '' : item;
+      const detail =
+        typeof item === 'object' && item ? item.detail || item.description || item.note || item.subtitle || '' : '';
+      return `
       <li>
         <span class="list-label">${escapeHtml(label)}</span>
-        ${plainText(detail) ? `<span class="list-detail">${escapeHtml(detail)}</span>` : ""}
+        ${plainText(detail) ? `<span class="list-detail">${escapeHtml(detail)}</span>` : ''}
       </li>`;
-  }).join("");
-
-  return renderSectionShell(section, `<ul class="structured-list">${items || "<li><span class=\"list-label\">No items yet.</span></li>"}</ul>`);
+    })
+    .join('');
+  return renderSectionShell(
+    section,
+    `<ul class="structured-list">${items || '<li><span class="list-label">No items yet.</span></li>'}</ul>`
+  );
 }
-
 function renderCheckboxesSection(section) {
   const days = asArray(section.days).length ? asArray(section.days) : DEFAULT_DAYS;
   const subjects = asArray(section.subjects || section.items || section.rows)
-    .map((subject) => typeof subject === "object" && subject ? subject.subject || subject.title || subject.label || subject.name : subject)
+    .map((subject) =>
+      typeof subject === 'object' && subject
+        ? subject.subject || subject.title || subject.label || subject.name
+        : subject
+    )
     .filter((subject) => plainText(subject));
-
-  const rows = subjects.map((subject) => `
+  const rows = subjects
+    .map(
+      (subject) => `
     <div class="check-row">
       <div class="check-subject">${escapeHtml(subject)}</div>
-      ${days.map((day) => `<div class="check-cell" aria-label="${escapeHtml(subject)} ${escapeHtml(day)}"><span></span></div>`).join("")}
-    </div>`).join("");
-
-  return renderSectionShell(section, `
+      ${days.map((day) => `<div class="check-cell" aria-label="${escapeHtml(subject)} ${escapeHtml(day)}"><span></span></div>`).join('')}
+    </div>`
+    )
+    .join('');
+  return renderSectionShell(
+    section,
+    `
     <div class="check-grid" style="--day-count:${days.length}">
       <div class="check-row check-head">
         <div>Subject</div>
-        ${days.map((day) => `<div>${escapeHtml(day)}</div>`).join("")}
+        ${days.map((day) => `<div>${escapeHtml(day)}</div>`).join('')}
       </div>
-      ${rows || `<div class="check-row"><div class="check-subject">Subject</div>${days.map(() => "<div class=\"check-cell\"><span></span></div>").join("")}</div>`}
-    </div>`);
+      ${rows || `<div class="check-row"><div class="check-subject">Subject</div>${days.map(() => '<div class="check-cell"><span></span></div>').join('')}</div>`}
+    </div>`
+  );
 }
-
 function renderLiturgicalSection(section) {
   const days = asArray(section.days || section.items).slice(0, 7);
-  const tiles = days.map((day, index) => {
-    const isFast = Boolean(day?.isFastDay || day?.fastingRule || day?.fastingType === "fast");
-    const weekday = day?.weekday || day?.dayName || WEEK_DAYS[index] || "";
-    const dayNumber = day?.dayNumber || day?.dateLabel || String(day?.date || day?.civilDate || "").slice(-2);
-    const feast = day?.feast || day?.title || day?.feastTitle || day?.summaryTitle || (isFast ? day?.fastingRule || "Fast day" : "Church rhythm");
-    return `
-      <article class="liturgical-day${isFast ? " is-fast" : ""}">
+  const tiles = days
+    .map((day, index) => {
+      const isFast = Boolean(day?.isFastDay || day?.fastingRule || day?.fastingType === 'fast');
+      const weekday = day?.weekday || day?.dayName || WEEK_DAYS[index] || '';
+      const dayNumber = day?.dayNumber || day?.dateLabel || String(day?.date || day?.civilDate || '').slice(-2);
+      const feast =
+        day?.feast ||
+        day?.title ||
+        day?.feastTitle ||
+        day?.summaryTitle ||
+        (isFast ? day?.fastingRule || 'Fast day' : 'Church rhythm');
+      return `
+      <article class="liturgical-day${isFast ? ' is-fast' : ''}">
         <p class="weekday">${escapeHtml(weekday)}</p>
         <p class="day-number">${escapeHtml(dayNumber)}</p>
         <h3>${escapeHtml(feast)}</h3>
-        ${day?.oldStyleDateLabel ? `<p class="old-style">${escapeHtml(day.oldStyleDateLabel)}</p>` : ""}
+        ${day?.oldStyleDateLabel ? `<p class="old-style">${escapeHtml(day.oldStyleDateLabel)}</p>` : ''}
       </article>`;
-  }).join("");
-
+    })
+    .join('');
   return renderSectionShell(section, `<div class="liturgical-ribbon">${tiles}</div>`);
 }
-
 function lessonItems(day) {
   return asArray(day.assignments || day.lessons || day.blocks || day.items);
 }
-
 function renderDesignedWeekSection(section) {
   const days = asArray(section.days).slice(0, 7);
-  const blocks = days.map((day, index) => {
-    const assignments = lessonItems(day);
-    const assignmentHtml = assignments.map((item) => {
-      const time = joinText([item.time, item.timeLabel, item.startTime && item.endTime ? `${item.startTime}-${item.endTime}` : ""]);
-      const title = item.subject || item.title || item.label || "Lesson";
-      const detail = item.assignment || item.detail || item.note || item.subtitle || item.sub || "";
-      return `
+  const blocks = days
+    .map((day, index) => {
+      const assignments = lessonItems(day);
+      const assignmentHtml = assignments
+        .map((item) => {
+          const time = joinText([
+            item.time,
+            item.timeLabel,
+            item.startTime && item.endTime ? `${item.startTime}-${item.endTime}` : '',
+          ]);
+          const title = item.subject || item.title || item.label || 'Lesson';
+          const detail = item.assignment || item.detail || item.note || item.subtitle || item.sub || '';
+          return `
         <article class="lesson-module">
-          ${time ? `<p class="lesson-time">${escapeHtml(time)}</p>` : ""}
+          ${time ? `<p class="lesson-time">${escapeHtml(time)}</p>` : ''}
           <h4>${escapeHtml(title)}</h4>
-          ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
+          ${detail ? `<p>${escapeHtml(detail)}</p>` : ''}
         </article>`;
-    }).join("");
-    const weekday = day.weekday || day.dayName || WEEK_DAYS[index] || `Day ${index + 1}`;
-    const meta = joinText([day.shortDate || day.date || day.civilDate, day.feast || day.feastTitle]);
-    return `
-      <article class="week-day${day.isSunday ? " is-sunday" : ""}">
+        })
+        .join('');
+      const weekday = day.weekday || day.dayName || WEEK_DAYS[index] || `Day ${index + 1}`;
+      const meta = joinText([day.shortDate || day.date || day.civilDate, day.feast || day.feastTitle]);
+      return `
+      <article class="week-day${day.isSunday ? ' is-sunday' : ''}">
         <header>
           <h3>${escapeHtml(weekday)}</h3>
-          ${meta ? `<p>${escapeHtml(meta)}</p>` : ""}
+          ${meta ? `<p>${escapeHtml(meta)}</p>` : ''}
         </header>
-        <div class="lesson-stack">${assignmentHtml || `<p class="open-day">${escapeHtml(day.isSunday ? "Church, rest, and family rhythm." : "Open lesson space.")}</p>`}</div>
+        <div class="lesson-stack">${assignmentHtml || `<p class="open-day">${escapeHtml(day.isSunday ? 'Church, rest, and family rhythm.' : 'Open lesson space.')}</p>`}</div>
       </article>`;
-  }).join("");
-
+    })
+    .join('');
   return renderSectionShell(section, `<div class="designed-week">${blocks}</div>`);
 }
-
 function renderCardsSection(section) {
   const items = asArray(section.items || section.rows);
-  const cards = items.map((item) => `
+  const cards = items
+    .map(
+      (item) => `
     <article class="summary-card">
-      <p>${escapeHtml(item.label || item.title || item.name || "Summary")}</p>
-      <h3>${escapeHtml(item.value || item.total || item.count || "")}</h3>
-      ${item.detail || item.note ? `<span>${escapeHtml(item.detail || item.note)}</span>` : ""}
-    </article>`).join("");
+      <p>${escapeHtml(item.label || item.title || item.name || 'Summary')}</p>
+      <h3>${escapeHtml(item.value || item.total || item.count || '')}</h3>
+      ${item.detail || item.note ? `<span>${escapeHtml(item.detail || item.note)}</span>` : ''}
+    </article>`
+    )
+    .join('');
   return renderSectionShell(section, `<div class="summary-grid">${cards}</div>`);
 }
-
 function renderCalendarGridSection(section) {
   const days = asArray(section.days);
-  const cells = days.map((day) => `
-    <article class="calendar-cell${day.inMonth === false ? " is-muted" : ""}${day.isFastDay ? " is-fast" : ""}">
-      <strong>${escapeHtml(day.dayNumber || String(day.date || day.civilDate || "").slice(-2))}</strong>
-      <span>${escapeHtml(day.feastTitle || day.feastMarker || day.fastingRule || "")}</span>
-    </article>`).join("");
+  const cells = days
+    .map(
+      (day) => `
+    <article class="calendar-cell${day.inMonth === false ? ' is-muted' : ''}${day.isFastDay ? ' is-fast' : ''}">
+      <strong>${escapeHtml(day.dayNumber || String(day.date || day.civilDate || '').slice(-2))}</strong>
+      <span>${escapeHtml(day.feastTitle || day.feastMarker || day.fastingRule || '')}</span>
+    </article>`
+    )
+    .join('');
   return renderSectionShell(section, `<div class="calendar-grid">${cells}</div>`);
 }
-
 function renderSection(section) {
-  if (!section || typeof section !== "object") return "";
-  if (section.type === "table") return renderTableSection(section);
-  if (section.type === "list") return renderListSection(section);
-  if (section.type === "checkboxes") return renderCheckboxesSection(section);
-  if (section.type === "liturgical") return renderLiturgicalSection(section);
-  if (section.type === "designed-week") return renderDesignedWeekSection(section);
-  if (section.type === "cards") return renderCardsSection(section);
-  if (section.type === "calendar-grid") return renderCalendarGridSection(section);
-  return renderListSection({ ...section, type: "list", items: section.items || section.rows || [] });
+  if (!section || typeof section !== 'object') return '';
+  if (section.type === 'table') return renderTableSection(section);
+  if (section.type === 'list') return renderListSection(section);
+  if (section.type === 'checkboxes') return renderCheckboxesSection(section);
+  if (section.type === 'liturgical') return renderLiturgicalSection(section);
+  if (section.type === 'designed-week') return renderDesignedWeekSection(section);
+  if (section.type === 'cards') return renderCardsSection(section);
+  if (section.type === 'calendar-grid') return renderCalendarGridSection(section);
+  return renderListSection({ ...section, type: 'list', items: section.items || section.rows || [] });
 }
-
 function renderStyles() {
   return `
     <style>
@@ -503,58 +527,64 @@ function renderStyles() {
       }
     </style>`;
 }
-
 function renderDesignedWeekFormsHtml(document) {
-  const forms = Array.isArray(document.designedForms) && document.designedForms.length
-    ? document.designedForms
-    : [{ label: "Household", days: [] }];
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  return forms.map((form, formIndex) => {
-    const days = asArray(form.days).slice(0, 7);
-    // Collect all unique subjects (rows) across all days
-    const subjectMap = new Map();
-    days.forEach((day, dayIndex) => {
-      asArray(day.assignments).forEach((item) => {
-        const key = item.id || item.title || `item-${dayIndex}`;
-        if (!subjectMap.has(key)) {
-          subjectMap.set(key, { title: item.title || "Subject", sub: item.sub || "", cells: Array.from({ length: 7 }, () => "") });
-        }
-        const note = item.note || item.sub || "✓";
-        subjectMap.get(key).cells[dayIndex] = note;
+  const forms =
+    Array.isArray(document.designedForms) && document.designedForms.length
+      ? document.designedForms
+      : [{ label: 'Household', days: [] }];
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return forms
+    .map((form, formIndex) => {
+      const days = asArray(form.days).slice(0, 7);
+      const subjectMap = /* @__PURE__ */ new Map();
+      days.forEach((day, dayIndex) => {
+        asArray(day.assignments).forEach((item) => {
+          const key = item.id || item.title || `item-${dayIndex}`;
+          if (!subjectMap.has(key)) {
+            subjectMap.set(key, {
+              title: item.title || 'Subject',
+              sub: item.sub || '',
+              cells: Array.from({ length: 7 }, () => ''),
+            });
+          }
+          const note = item.note || item.sub || '✓';
+          subjectMap.get(key).cells[dayIndex] = note;
+        });
       });
-    });
-    const rows = Array.from(subjectMap.values());
-
-    const headerCols = days.map((day, i) => {
-      const label = day.weekday || weekDays[i] || `Day ${i + 1}`;
-      const date  = day.shortDate || day.date || "";
-      const isSun = day.isSunday || label === "Sun" || label === "Sunday";
-      return `<th class="${isSun ? "col-sunday" : ""}">${escapeHtml(label)}<br><span class="col-date">${escapeHtml(date)}</span></th>`;
-    }).join("");
-
-    const bodyRows = rows.map((row, ri) => {
-      const cells = row.cells.map((note, di) => {
-        const day = days[di] || {};
-        const isSun = day.isSunday;
-        return `<td class="${isSun ? "col-sunday" : ""}${note ? " has-entry" : ""}">${note ? `<span class="cell-check">☐</span><span class="cell-note">${escapeHtml(note)}</span>` : ""}</td>`;
-      }).join("");
-      return `<tr class="${ri % 2 === 0 ? "" : "row-alt"}"><td class="subject-col"><strong>${escapeHtml(row.title)}</strong>${row.sub ? `<span class="subject-sub">${escapeHtml(row.sub)}</span>` : ""}</td>${cells}</tr>`;
-    }).join("");
-
-    const isFirst = formIndex === 0;
-    return `
-      <section class="form-page${isFirst ? "" : " page-break"}">
+      const rows = Array.from(subjectMap.values());
+      const headerCols = days
+        .map((day, i) => {
+          const label = day.weekday || weekDays[i] || `Day ${i + 1}`;
+          const date = day.shortDate || day.date || '';
+          const isSun = day.isSunday || label === 'Sun' || label === 'Sunday';
+          return `<th class="${isSun ? 'col-sunday' : ''}">${escapeHtml(label)}<br><span class="col-date">${escapeHtml(date)}</span></th>`;
+        })
+        .join('');
+      const bodyRows = rows
+        .map((row, ri) => {
+          const cells = row.cells
+            .map((note, di) => {
+              const day = days[di] || {};
+              const isSun = day.isSunday;
+              return `<td class="${isSun ? 'col-sunday' : ''}${note ? ' has-entry' : ''}">${note ? `<span class="cell-check">☐</span><span class="cell-note">${escapeHtml(note)}</span>` : ''}</td>`;
+            })
+            .join('');
+          return `<tr class="${ri % 2 === 0 ? '' : 'row-alt'}"><td class="subject-col"><strong>${escapeHtml(row.title)}</strong>${row.sub ? `<span class="subject-sub">${escapeHtml(row.sub)}</span>` : ''}</td>${cells}</tr>`;
+        })
+        .join('');
+      const isFirst = formIndex === 0;
+      return `
+      <section class="form-page${isFirst ? '' : ' page-break'}">
         <header class="form-header">
           <div class="form-header-brand">
             ${orthodoxCrossSvg()}
             <div>
               <p class="brand-kicker">AGAPAY Learn</p>
-              <p class="form-week-label">${escapeHtml(document.subtitle || "")}</p>
+              <p class="form-week-label">${escapeHtml(document.subtitle || '')}</p>
             </div>
           </div>
           <div class="form-title-block">
-            <h1>${escapeHtml(form.label === "Family" ? "Family Learning" : `${form.label} — Lesson Plan`)}</h1>
+            <h1>${escapeHtml(form.label === 'Family' ? 'Family Learning' : `${form.label} — Lesson Plan`)}</h1>
           </div>
         </header>
         <div class="form-grid-wrap">
@@ -572,12 +602,12 @@ function renderDesignedWeekFormsHtml(document) {
         </div>
         <div class="form-footer">
           <span>Notes: <span class="notes-line"></span></span>
-          <span>${escapeHtml(document.footerNote || "Generated by AGAPAY Learn")}</span>
+          <span>${escapeHtml(document.footerNote || 'Generated by AGAPAY Learn')}</span>
         </div>
       </section>`;
-  }).join("");
+    })
+    .join('');
 }
-
 function renderLandscapeStyles() {
   return `
     <style>
@@ -661,13 +691,10 @@ function renderLandscapeStyles() {
       }
     </style>`;
 }
-
 function buildPrintDocumentHtml(document = {}) {
-  const title = plainText(document.title, "AGAPAY Learn Print Document");
-  const generated = plainText(document.generatedAt, new Date().toISOString());
-
-  // Landscape layout: one page per form, Mon-Fri grid
-  if (document.layout === "designed-week-forms-landscape") {
+  const title = plainText(document.title, 'AGAPAY Learn Print Document');
+  const generated = plainText(document.generatedAt, /* @__PURE__ */ new Date().toISOString());
+  if (document.layout === 'designed-week-forms-landscape') {
     return `<!doctype html>
   <html lang="en">
     <head>
@@ -680,8 +707,6 @@ function buildPrintDocumentHtml(document = {}) {
     </body>
   </html>`;
   }
-
-  // Standard portrait layout
   const sections = asArray(document.sections);
   return `<!doctype html>
   <html lang="en">
@@ -699,13 +724,12 @@ function buildPrintDocumentHtml(document = {}) {
       </div>
       <main class="document">
         ${renderDocumentHeader({ ...document, title, generatedAt: generated })}
-        ${sections.map(renderSection).join("")}
-        <footer>${escapeHtml(document.footerNote || `${document.household || "Household"} · Generated by AGAPAY Learn`)}</footer>
+        ${sections.map(renderSection).join('')}
+        <footer>${escapeHtml(document.footerNote || `${document.household || 'Household'} · Generated by AGAPAY Learn`)}</footer>
       </main>
     </body>
   </html>`;
 }
-
 function toArrayBuffer(pdfBytes) {
   if (pdfBytes instanceof ArrayBuffer) return pdfBytes;
   if (ArrayBuffer.isView(pdfBytes)) {
@@ -713,26 +737,24 @@ function toArrayBuffer(pdfBytes) {
   }
   return new Uint8Array(pdfBytes).buffer;
 }
-
-export async function renderPrintDocumentPdf(document, env) {
+async function renderPrintDocumentPdf(document, env) {
   if (!env?.BROWSER) {
-    throw new Error("AGAPAY Learn PDF rendering requires a Cloudflare Browser Rendering binding named BROWSER.");
+    throw new Error('AGAPAY Learn PDF rendering requires a Cloudflare Browser Rendering binding named BROWSER.');
   }
-
   let browser;
   try {
     browser = await puppeteer.launch(env.BROWSER);
     const page = await browser.newPage();
-    await page.setContent(buildPrintDocumentHtml(document), { waitUntil: "load" });
-    await page.emulateMediaType("print");
-    const isLandscape = document.layout === "designed-week-forms-landscape";
+    await page.setContent(buildPrintDocumentHtml(document), { waitUntil: 'load' });
+    await page.emulateMediaType('print');
+    const isLandscape = document.layout === 'designed-week-forms-landscape';
     const pdfBytes = await page.pdf({
-      format: "Letter",
+      format: 'Letter',
       landscape: isLandscape,
       printBackground: true,
       margin: isLandscape
-        ? { top: "0", right: "0", bottom: "0", left: "0" }
-        : { top: "0.6in", right: "0.5in", bottom: "0.6in", left: "0.5in" },
+        ? { top: '0', right: '0', bottom: '0', left: '0' }
+        : { top: '0.6in', right: '0.5in', bottom: '0.6in', left: '0.5in' },
     });
     await page.close();
     return toArrayBuffer(pdfBytes);
@@ -740,3 +762,4 @@ export async function renderPrintDocumentPdf(document, env) {
     if (browser) await browser.close();
   }
 }
+export { renderPrintDocumentPdf };

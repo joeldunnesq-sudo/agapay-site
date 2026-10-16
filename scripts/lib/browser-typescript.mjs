@@ -8,6 +8,11 @@ import { repoRoot } from './server-typescript.mjs';
 // Classic scripts retain lexical globals; explicitly marked native modules retain ESM.
 // Neither delivery mode bundles, wraps, or renames runtime bindings.
 export const browserTypeScriptEntries = Object.freeze([
+  {
+    source: 'src/browser/parish/features/accounting/payables.ts',
+    output: 'public/parish/features/accounting/payables.js',
+  },
+  { source: 'src/browser/myagapay/parish-life.ts', output: 'public/myagapay/parish-life.js' },
   { source: 'src/browser/donor/controllers/calendar.ts', output: 'public/donor/controllers/calendar.js' },
   { source: 'src/browser/donor/controllers/bookstore.ts', output: 'public/donor/controllers/bookstore.js' },
   { source: 'src/browser/donor/controllers/history.ts', output: 'public/donor/controllers/history.js' },

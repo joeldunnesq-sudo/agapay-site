@@ -1,35 +1,23 @@
-import { hasModuleAccess } from '../lib/entitlements.js';
+// Generated from src/handlers/parish-bookstore-inventory.ts by npm run build:server. Do not edit.
+import '../lib/entitlements.js';
 import {
-  bookstoreEnabledFor,
   centsFromBody,
   d1All,
   d1Batch,
   d1First,
   d1Run,
-  findRegistrationByParishId,
   generateSecret,
-  getBearerToken,
-  hasProductionStore,
   json,
-  missingProductionStoreResponse,
   normalizeBookstoreBody,
-  parishDashboardPayload,
-  rateLimit,
-  recordAuditEvent,
-  unauthorized,
-  verifyParishDashboardBearer,
 } from './parish.js';
-
 const commerceDatabase = (env) => env.AGAPAY_DB || env.DB || null;
 const BOOKSTORE_INVENTORY_MARKER_PREFIX = '[inventory-applied:';
-export const BOOKSTORE_INVENTORY_ATTENTION =
+const BOOKSTORE_INVENTORY_ATTENTION =
   'Inventory attention: paid order exceeded available storefront stock. Review for a refund, backorder, or stock correction.';
-
-export function changedRows(result) {
+function changedRows(result) {
   return Number(result?.meta?.changes ?? result?.changes ?? 0);
 }
-
-export const BOOKSTORE_STARTER_CATALOG = [
+const BOOKSTORE_STARTER_CATALOG = [
   {
     label: 'Books',
     items: [
@@ -54,14 +42,13 @@ export const BOOKSTORE_STARTER_CATALOG = [
   {
     label: 'Church Goods',
     items: [
-      { key: 'cross-necklace', name: 'Baptismal cross necklace', category: 'jewelry', suggestedPriceCents: 3000 },
+      { key: 'cross-necklace', name: 'Baptismal cross necklace', category: 'jewelry', suggestedPriceCents: 3e3 },
       { key: 'frankincense-sampler', name: 'Frankincense sampler', category: 'incense', suggestedPriceCents: 1400 },
       { key: 'chant-cd', name: 'Parish chant recording', category: 'cd_dvd', suggestedPriceCents: 1500 },
     ],
   },
 ];
-
-export function normalizeBookstoreProduct(row) {
+function normalizeBookstoreProduct(row) {
   return {
     id: row.id,
     variantId: row.variant_id || '',
@@ -82,7 +69,6 @@ export function normalizeBookstoreProduct(row) {
     updatedAt: row.updated_at || '',
   };
 }
-
 function normalizeBookstoreCountSession(row) {
   let items = [];
   try {
@@ -99,8 +85,7 @@ function normalizeBookstoreCountSession(row) {
     items: Array.isArray(items) ? items : [],
   };
 }
-
-export async function listBookstoreCountSessions(env, parishId) {
+async function listBookstoreCountSessions(env, parishId) {
   const rows = await d1All(
     env,
     `
@@ -114,8 +99,7 @@ export async function listBookstoreCountSessions(env, parishId) {
   );
   return rows.map(normalizeBookstoreCountSession);
 }
-
-export async function getBookstoreCountSession(env, parishId, sessionId) {
+async function getBookstoreCountSession(env, parishId, sessionId) {
   const row = await d1First(
     env,
     `
@@ -143,24 +127,23 @@ export async function getBookstoreCountSession(env, parishId, sessionId) {
   );
   return {
     ...session,
-    movements: movements.map((row) => ({
-      productId: row.product_id || '',
-      variantId: row.variant_id || '',
-      name: row.name || 'Bookstore item',
-      movementType: row.movement_type,
-      quantityDelta: Number(row.quantity_delta || 0),
-      note: row.note || '',
+    movements: movements.map((row2) => ({
+      productId: row2.product_id || '',
+      variantId: row2.variant_id || '',
+      name: row2.name || 'Bookstore item',
+      movementType: row2.movement_type,
+      quantityDelta: Number(row2.quantity_delta || 0),
+      note: row2.note || '',
       countSessionId: sessionId,
-      createdAt: row.created_at || '',
+      createdAt: row2.created_at || '',
     })),
   };
 }
-
-export async function startBookstoreCountSession(
+async function startBookstoreCountSession(
   env,
   parishId,
   createdBy = 'parish_dashboard',
-  now = new Date().toISOString()
+  now = /* @__PURE__ */ new Date().toISOString()
 ) {
   const open = await d1First(
     env,
@@ -198,8 +181,13 @@ export async function startBookstoreCountSession(
     { status: 201 }
   );
 }
-
-export async function closeBookstoreCountSession(env, parishId, sessionId, body = {}, now = new Date().toISOString()) {
+async function closeBookstoreCountSession(
+  env,
+  parishId,
+  sessionId,
+  body = {},
+  now = /* @__PURE__ */ new Date().toISOString()
+) {
   const session = await d1First(
     env,
     `
@@ -210,7 +198,6 @@ export async function closeBookstoreCountSession(env, parishId, sessionId, body 
   );
   if (!session) return json({ error: 'Bookstore count session not found.' }, { status: 404 });
   if (session.status !== 'draft') return json({ error: 'This bookstore count is already completed.' }, { status: 409 });
-
   const submitted = Array.isArray(body.items) ? body.items : [];
   if (!submitted.length) return json({ error: 'Count at least one bookstore item before closing.' }, { status: 400 });
   if (submitted.length > 250)
@@ -224,7 +211,6 @@ export async function closeBookstoreCountSession(env, parishId, sessionId, body 
       return json({ error: 'Every counted quantity must be a non-negative whole number.' }, { status: 400 });
     }
   }
-
   const placeholders = variantIds.map(() => '?').join(',');
   const variants = await d1All(
     env,
@@ -271,7 +257,6 @@ export async function closeBookstoreCountSession(env, parishId, sessionId, body 
       );
     }
   }
-
   const unchangedConditions = items
     .map(
       () => `EXISTS (
@@ -289,7 +274,7 @@ export async function closeBookstoreCountSession(env, parishId, sessionId, body 
       params: [JSON.stringify(items), now, sessionId, parishId, ...unchangedParams],
     },
   ];
-  for (const item of items.filter((item) => item.difference !== 0)) {
+  for (const item of items.filter((item2) => item2.difference !== 0)) {
     statements.push({
       sql: `INSERT INTO commerce_inventory_movements
               (id, parish_id, commerce_module, product_id, variant_id, sku, movement_type,
@@ -338,8 +323,7 @@ export async function closeBookstoreCountSession(env, parishId, sessionId, body 
   }
   return json({ ok: true, session: await getBookstoreCountSession(env, parishId, sessionId) });
 }
-
-export async function listBookstoreLowStock(env, parishId) {
+async function listBookstoreLowStock(env, parishId) {
   const rows = await d1All(
     env,
     `
@@ -358,7 +342,6 @@ export async function listBookstoreLowStock(env, parishId) {
   );
   return rows.map(normalizeBookstoreProduct);
 }
-
 async function findBookstoreCatalogItemByCode(env, parishId, code) {
   if (!code) return null;
   return d1First(
@@ -377,8 +360,7 @@ async function findBookstoreCatalogItemByCode(env, parishId, code) {
     code
   );
 }
-
-export async function promotePaidScannedBooksToCatalog(env, order, now) {
+async function promotePaidScannedBooksToCatalog(env, order, now) {
   if (!order?.id || !['scan_and_go', 'shopper_added'].includes(order.source)) return;
   const items = await d1All(
     env,
@@ -391,7 +373,6 @@ export async function promotePaidScannedBooksToCatalog(env, order, now) {
     order.id,
     order.parish_id
   );
-
   let firstCatalogItem = null;
   for (const item of items) {
     const category =
@@ -409,7 +390,6 @@ export async function promotePaidScannedBooksToCatalog(env, order, now) {
       .slice(0, 80);
     if (!code) continue;
     let catalogItem = await findBookstoreCatalogItemByCode(env, order.parish_id, code);
-
     if (!catalogItem) {
       const productId = generateSecret('commerce_product');
       const variantId = generateSecret('commerce_variant');
@@ -455,13 +435,10 @@ export async function promotePaidScannedBooksToCatalog(env, order, now) {
         );
         catalogItem = { id: productId, variant_id: variantId };
       } catch (error) {
-        // A concurrent webhook may have inserted this ISBN first. Reuse it.
         catalogItem = await findBookstoreCatalogItemByCode(env, order.parish_id, code);
         if (!catalogItem) throw error;
       }
     }
-
-    // A fresh paid sale makes an archived matching ISBN available again.
     await d1Run(
       env,
       "UPDATE commerce_products SET status = 'active', updated_at = ? WHERE id = ? AND parish_id = ?",
@@ -476,7 +453,6 @@ export async function promotePaidScannedBooksToCatalog(env, order, now) {
       catalogItem.variant_id,
       order.parish_id
     );
-
     let snapshot = {};
     try {
       snapshot = JSON.parse(item.snapshot_json || '{}');
@@ -495,14 +471,13 @@ export async function promotePaidScannedBooksToCatalog(env, order, now) {
     `,
       catalogItem.id,
       catalogItem.variant_id,
-      JSON.stringify(snapshot).slice(0, 4000),
+      JSON.stringify(snapshot).slice(0, 4e3),
       now,
       item.id,
       order.id
     );
     if (!firstCatalogItem) firstCatalogItem = catalogItem;
   }
-
   if (firstCatalogItem) {
     await d1Run(
       env,
@@ -516,11 +491,10 @@ export async function promotePaidScannedBooksToCatalog(env, order, now) {
     );
   }
 }
-
-export async function applyBookstoreInventoryAtCompletion(
+async function applyBookstoreInventoryAtCompletion(
   env,
   order,
-  now = new Date().toISOString(),
+  now = /* @__PURE__ */ new Date().toISOString(),
   commerceModule = 'bookstore'
 ) {
   if (!order?.id || !order?.parish_id || !commerceDatabase(env)) return { applied: false, oversold: false };
@@ -542,7 +516,6 @@ export async function applyBookstoreInventoryAtCompletion(
     commerceModule
   );
   if (!trackedItems.length) return { applied: false, oversold: false };
-
   const marker = `${BOOKSTORE_INVENTORY_MARKER_PREFIX}${generateSecret('claim')}]`;
   const markerLike = `%${marker}%`;
   const statements = [
@@ -647,14 +620,18 @@ export async function applyBookstoreInventoryAtCompletion(
       ];
     }),
   ];
-
   const results = await d1Batch(env, statements);
   const applied = changedRows(results?.[0]) === 1;
   const oversold = applied && changedRows(results?.[1]) === 1;
   return { applied, oversold };
 }
-
-export async function patchBookstoreProduct(env, parishId, productId, body = {}, now = new Date().toISOString()) {
+async function patchBookstoreProduct(
+  env,
+  parishId,
+  productId,
+  body = {},
+  now = /* @__PURE__ */ new Date().toISOString()
+) {
   const product = await d1First(
     env,
     `SELECT p.id, v.id AS variant_id, v.stock_quantity, v.cost_basis_cents
@@ -665,7 +642,6 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
     parishId
   );
   if (!product) return json({ error: 'Bookstore item not found.' }, { status: 404 });
-
   const item = normalizeBookstoreBody(body);
   const salePriceCents =
     body.salePriceCents === null || body.salePriceCents === '' ? 0 : centsFromBody(body.salePriceCents, 0);
@@ -674,7 +650,6 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
   if (salePriceCents > 0 && salePriceCents >= item.priceCents) {
     return json({ error: 'Sale price must be lower than the regular price.' }, { status: 422 });
   }
-
   const stockSubmitted = Object.prototype.hasOwnProperty.call(body, 'stockQuantity');
   const costSubmitted = Object.prototype.hasOwnProperty.call(body, 'costBasisCents');
   const oldStock = Number(product.stock_quantity || 0);
@@ -688,7 +663,6 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
   if (stockChanged && !stockAdjustmentReason) {
     return json({ error: 'Explain the stock difference before saving this adjustment.' }, { status: 422 });
   }
-
   const statements = [
     {
       sql: `UPDATE commerce_products
@@ -697,7 +671,6 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
       params: [item.name, item.description, item.category, item.sku || null, item.imageUrl, now, productId, parishId],
     },
   ];
-
   if (product.variant_id) {
     if (stockChanged) {
       statements.push({
@@ -778,20 +751,18 @@ export async function patchBookstoreProduct(env, parishId, productId, body = {},
       });
     }
   }
-
   const results = await d1Batch(env, statements);
   if (product.variant_id && stockChanged && changedRows(results?.[results.length - 1]) !== 1) {
     return json({ error: 'Stock changed while this item was open. Reload it and try again.' }, { status: 409 });
   }
   return json({ ok: true });
 }
-
-export async function patchBookstoreReorderThreshold(
+async function patchBookstoreReorderThreshold(
   env,
   parishId,
   productId,
   body = {},
-  now = new Date().toISOString()
+  now = /* @__PURE__ */ new Date().toISOString()
 ) {
   const rawThreshold = body.reorderThreshold;
   const reorderThreshold = Number(rawThreshold);
@@ -810,7 +781,6 @@ export async function patchBookstoreReorderThreshold(
     parishId
   );
   if (!product) return json({ error: 'Bookstore item not found.' }, { status: 404 });
-
   const result = await d1Run(
     env,
     `
@@ -828,13 +798,17 @@ export async function patchBookstoreReorderThreshold(
   }
   return json({ ok: true, productId, variantId: product.variant_id, reorderThreshold });
 }
-
-export async function receiveBookstoreStock(env, parishId, productId, body = {}, now = new Date().toISOString()) {
+async function receiveBookstoreStock(
+  env,
+  parishId,
+  productId,
+  body = {},
+  now = /* @__PURE__ */ new Date().toISOString()
+) {
   const quantity = Number(body.quantity);
   if (!Number.isInteger(quantity) || quantity <= 0) {
     return json({ error: 'Receiving quantity must be a positive whole number.' }, { status: 422 });
   }
-
   const costProvided =
     Object.prototype.hasOwnProperty.call(body, 'unitCostCents') &&
     body.unitCostCents !== null &&
@@ -846,7 +820,6 @@ export async function receiveBookstoreStock(env, parishId, productId, body = {},
   const reference = String(body.reference || '')
     .trim()
     .slice(0, 500);
-
   const product = await d1First(
     env,
     `SELECT p.id, v.id AS variant_id, v.sku
@@ -859,7 +832,6 @@ export async function receiveBookstoreStock(env, parishId, productId, body = {},
     parishId
   );
   if (!product) return json({ error: 'Bookstore item not found.' }, { status: 404 });
-
   const statements = [
     {
       sql: `INSERT INTO commerce_inventory_movements
@@ -906,3 +878,19 @@ export async function receiveBookstoreStock(env, parishId, productId, body = {},
     costBasisCents: Number(updated?.cost_basis_cents || 0),
   });
 }
+export {
+  BOOKSTORE_INVENTORY_ATTENTION,
+  BOOKSTORE_STARTER_CATALOG,
+  applyBookstoreInventoryAtCompletion,
+  changedRows,
+  closeBookstoreCountSession,
+  getBookstoreCountSession,
+  listBookstoreCountSessions,
+  listBookstoreLowStock,
+  normalizeBookstoreProduct,
+  patchBookstoreProduct,
+  patchBookstoreReorderThreshold,
+  promotePaidScannedBooksToCatalog,
+  receiveBookstoreStock,
+  startBookstoreCountSession,
+};

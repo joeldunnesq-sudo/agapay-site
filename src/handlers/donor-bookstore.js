@@ -1,3 +1,4 @@
+// Generated from src/handlers/donor-bookstore.ts by npm run build:server. Do not edit.
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from '../lib/commerce-readiness.js';
 import {
   d1,
@@ -23,11 +24,6 @@ import {
   requireDonor,
   verifyParishDashboardBearer,
 } from './parish.js';
-
-// Donor and guest Bookstore catalog, cart validation, and Stripe checkout.
-// Route ownership remains in src/routes/donor.js; src/handlers/donor.js
-// re-exports this public surface while consumers migrate incrementally.
-
 const BOOKSTORE_ITEM_FIELD_CATEGORIES = [
   {
     category: 'book',
@@ -76,23 +72,19 @@ const BOOKSTORE_ITEM_FIELD_CATEGORIES = [
     fields: [{ key: 'description', label: 'Description', required: true, maxLength: 180 }],
   },
 ];
-
 function bookstoreCategoryLabel(category) {
   return BOOKSTORE_ITEM_FIELD_CATEGORIES.find((entry) => entry.category === category)?.label || 'Item';
 }
-
 function centsFromBookstoreAmount(value) {
   const number = Number(String(value || '').replace(/[^0-9.]/g, ''));
   return Number.isFinite(number) && number > 0 ? Math.round(number * 100) : 0;
 }
-
 function normalizeBookstoreQuantity(value) {
   const quantity = Math.trunc(Number(value || 1));
   if (!Number.isFinite(quantity) || quantity < 1) return 1;
   return Math.min(quantity, 50);
 }
-
-export function guestBookstoreItemError(items = []) {
+function guestBookstoreItemError(items = []) {
   for (const item of items) {
     if (String(item?.productId || '').trim() || String(item?.variantId || '').trim()) continue;
     const category = String(item?.itemCategory || '').trim();
@@ -107,22 +99,19 @@ export function guestBookstoreItemError(items = []) {
   }
   return '';
 }
-
-export function bookstoreOrderSource(items = [], isGuestCheckout = false) {
+function bookstoreOrderSource(items = [], isGuestCheckout = false) {
   if (items.some((item) => item.source === 'scan_and_go')) return 'scan_and_go';
   if (items.some((item) => item.source === 'shopper_added')) return 'shopper_added';
   if (isGuestCheckout) return 'guest_checkout';
   if (items.some((item) => item.source === 'catalog')) return 'catalog';
   return 'manual_entry';
 }
-
 function describeManualBookstoreItem(category, specifics = {}) {
   if (category === 'book')
     return [specifics.title, specifics.author ? `by ${specifics.author}` : ''].filter(Boolean).join(' ') || 'Book';
   if (category === 'icon') return specifics.saint_or_feast || specifics.description || 'Icon';
   return specifics.description || specifics.title || bookstoreCategoryLabel(category);
 }
-
 function normalizeBookstoreProduct(row = {}) {
   const regularPriceCents = Number(row.unit_price_cents || 0);
   const submittedSalePriceCents = Number(row.sale_price_cents || 0);
@@ -151,8 +140,7 @@ function normalizeBookstoreProduct(row = {}) {
     imageUrl: row.image_url || '',
   };
 }
-
-export async function loadDonorBookstoreProducts(env, parishId) {
+async function loadDonorBookstoreProducts(env, parishId) {
   if (!d1(env)) return [];
   const rows = await d1All(
     env,
@@ -182,7 +170,6 @@ export async function loadDonorBookstoreProducts(env, parishId) {
   );
   return rows.map(normalizeBookstoreProduct).filter((product) => product.variantId && product.priceCents > 0);
 }
-
 async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
   if (!d1(env)) return [];
   const rows = await d1All(
@@ -197,7 +184,6 @@ async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
     parishId,
     donorEmail
   );
-
   const orderIds = rows.map((row) => row.id);
   const itemsByOrder = {};
   if (orderIds.length) {
@@ -222,7 +208,6 @@ async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
       });
     }
   }
-
   return rows.map((row) => ({
     id: row.id,
     orderNumber: row.order_number || '',
@@ -257,7 +242,6 @@ async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
           ],
   }));
 }
-
 async function resolveDonorBookstoreParish(request, env, donor, explicitParishId = '') {
   const parishId = String(
     explicitParishId || request.headers.get('X-AGAPAY-Parish-Id') || donor.defaultParishId || ''
@@ -274,7 +258,6 @@ async function resolveDonorBookstoreParish(request, env, donor, explicitParishId
   }
   return { parishId, registration, available: true };
 }
-
 async function resolvePublicBookstoreParish(env, parishId = '') {
   const cleanParishId = String(parishId || '').trim();
   if (!cleanParishId) return { error: json({ error: 'Parish not found.' }, { status: 404 }) };
@@ -286,19 +269,16 @@ async function resolvePublicBookstoreParish(env, parishId = '') {
     available: bookstoreEnabledFor(found.registration),
   };
 }
-
-export async function handleDonorBookstoreItemFields(request, env) {
+async function handleDonorBookstoreItemFields(request, env) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   return json({ categories: BOOKSTORE_ITEM_FIELD_CATEGORIES });
 }
-
-export async function handleDonorBookstoreIsbnLookup(request, env) {
+async function handleDonorBookstoreIsbnLookup(request, env) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   const url = new URL(request.url);
   const isbn = String(url.searchParams.get('isbn') || '').replace(/[^0-9Xx]/g, '');
   if (isbn.length !== 10 && isbn.length !== 13)
     return json({ found: false, error: 'Enter a 10 or 13 digit ISBN.' }, { status: 422 });
-
   const donor = await requireDonor(request, env);
   const parishId = String(request.headers.get('X-AGAPAY-Parish-Id') || donor?.defaultParishId || '').trim();
   if (donor?.email && parishId && d1(env)) {
@@ -323,7 +303,6 @@ export async function handleDonorBookstoreIsbnLookup(request, env) {
     );
     if (row) return json({ found: true, source: 'catalog', product: normalizeBookstoreProduct(row) });
   }
-
   try {
     const response = await fetch(`https://openlibrary.org/isbn/${encodeURIComponent(isbn)}.json`, {
       headers: { Accept: 'application/json' },
@@ -338,24 +317,20 @@ export async function handleDonorBookstoreIsbnLookup(request, env) {
           headers: { Accept: 'application/json' },
         });
         if (authorRes.ok) author = (await authorRes.json()).name || '';
-      } catch {
-        /* best effort only */
-      }
+      } catch {}
     }
     return json({ found: true, source: 'open_library', title: book.title || '', author, isbn });
   } catch {
     return json({ found: false });
   }
 }
-
-export async function handleDonorBookstoreRequestFeature(request, env) {
+async function handleDonorBookstoreRequestFeature(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor?.email) return unauthorized();
   return json({ ok: true, alreadySent: false });
 }
-
-export async function normalizeBookstoreCartItems(env, parishId, items) {
+async function normalizeBookstoreCartItems(env, parishId, items) {
   const normalized = [];
   for (const raw of items) {
     const productId = String(raw.productId || '').trim();
@@ -409,7 +384,6 @@ export async function normalizeBookstoreCartItems(env, parishId, items) {
       });
       continue;
     }
-
     const category = BOOKSTORE_ITEM_FIELD_CATEGORIES.some((entry) => entry.category === raw.itemCategory)
       ? String(raw.itemCategory)
       : 'other';
@@ -443,57 +417,53 @@ export async function normalizeBookstoreCartItems(env, parishId, items) {
   if (normalized.length > 20) throw new Error('Checkout can include up to 20 items at a time.');
   return normalized;
 }
-
-export async function handleParishBookstoreReadiness(request, env, parishId) {
+async function handleParishBookstoreReadiness(request, env, parishId) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish not found' }, { status: 404 });
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
-
   return json(bookstoreReadinessSummary(found.registration));
 }
-
-export async function handleDonorBookstore(request, env, publicParishId = '') {
+async function handleDonorBookstore(request, env, publicParishId = '') {
   if (!['GET', 'POST'].includes(request.method)) return json({ error: 'Method not allowed' }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const limited = await rateLimit(request, env, 'donor-bookstore', { limit: 40, windowSeconds: 300 });
   if (limited) return limited;
-
   const isGuestCheckout = Boolean(publicParishId);
   const donor = isGuestCheckout ? null : await requireDonor(request, env);
   if (!isGuestCheckout && !donor?.email) return unauthorized();
-
   if (request.method === 'GET') {
-    const resolved = isGuestCheckout
+    const resolved2 = isGuestCheckout
       ? await resolvePublicBookstoreParish(env, publicParishId)
       : await resolveDonorBookstoreParish(request, env, donor);
-    if (resolved.error) return resolved.error;
+    if (resolved2.error) return resolved2.error;
     return json({
-      available: Boolean(resolved.available),
-      parish: { id: resolved.parishId, name: resolved.registration?.name || resolved.registration?.parishName || '' },
-      sellerDisclosure: resolved.registration
+      available: Boolean(resolved2.available),
+      parish: {
+        id: resolved2.parishId,
+        name: resolved2.registration?.name || resolved2.registration?.parishName || '',
+      },
+      sellerDisclosure: resolved2.registration
         ? bookstoreSellerDisclosure(
-            resolved.registration.commerceSellerDisplayName ||
-              resolved.registration.name ||
-              resolved.registration.parishName
+            resolved2.registration.commerceSellerDisplayName ||
+              resolved2.registration.name ||
+              resolved2.registration.parishName
           )
         : '',
-      products: resolved.available ? await loadDonorBookstoreProducts(env, resolved.parishId) : [],
+      products: resolved2.available ? await loadDonorBookstoreProducts(env, resolved2.parishId) : [],
       orders: isGuestCheckout
         ? []
-        : await loadDonorBookstoreOrders(env, resolved.parishId, normalizeEmail(donor.email)),
+        : await loadDonorBookstoreOrders(env, resolved2.parishId, normalizeEmail(donor.email)),
     });
   }
-
   let body;
   try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid JSON body' }, { status: 400 });
   }
-
   const resolved = isGuestCheckout
     ? await resolvePublicBookstoreParish(env, publicParishId)
     : await resolveDonorBookstoreParish(request, env, donor, body.parishId);
@@ -507,18 +477,15 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
     );
   }
   if (!d1(env)) return missingProductionStoreResponse();
-
   const submittedItems = Array.isArray(body.items) && body.items.length ? body.items : [body];
   const guestItemError = isGuestCheckout ? guestBookstoreItemError(submittedItems) : '';
   if (guestItemError) return json({ error: guestItemError }, { status: 422 });
-
   let items;
   try {
     items = await normalizeBookstoreCartItems(env, resolved.parishId, submittedItems);
   } catch (err) {
     return json({ error: err.message || 'Check your cart and try again.' }, { status: 422 });
   }
-
   const subtotalCents = items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
   const donorEmail = normalizeEmail(donor?.email || body.email);
   if (!donorEmail || !donorEmail.includes('@')) {
@@ -546,7 +513,7 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
     .slice(0, 240);
   const orderId = `bookstore_${generateSecret(18)}`;
   const checkoutLocalId = `checkout_${generateSecret(18)}`;
-  const now = new Date().toISOString();
+  const now = /* @__PURE__ */ new Date().toISOString();
   const firstItem = items[0];
   const itemDescription = items.length === 1 ? firstItem.itemName : `${items.length} bookstore items`;
   const quantityTotal = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -565,7 +532,6 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
       { status: 502 }
     );
   }
-
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const sellerDisplayName =
     resolved.registration.commerceSellerDisplayName ||
@@ -592,22 +558,17 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
     // placements are a documented follow-up (see Phase 3 report).
     'custom_text[submit][message]': sellerDisclosure.slice(0, 499),
   });
-  // Parish Commerce is included in AGAPAY Parish +. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
   const bookstoreFallbackTaxCode = env.BOOKSTORE_STRIPE_TAX_CODE || env.PARISH_COMMERCE_DEFAULT_TAX_CODE || '';
-
   items.forEach((item, index) => {
     const lineTaxCode = item.taxCode || bookstoreFallbackTaxCode;
-
     form.set(`line_items[${index}][quantity]`, String(item.quantity));
     form.set(`line_items[${index}][price_data][currency]`, 'usd');
     form.set(`line_items[${index}][price_data][unit_amount]`, String(item.unitPriceCents));
     form.set(`line_items[${index}][price_data][tax_behavior]`, 'exclusive');
     form.set(`line_items[${index}][price_data][product_data][name]`, item.itemName.slice(0, 180));
-
     if (item.itemDescription && item.itemDescription !== item.itemName) {
       form.set(`line_items[${index}][price_data][product_data][description]`, item.itemDescription.slice(0, 280));
     }
-
     if (lineTaxCode) {
       form.set(`line_items[${index}][price_data][product_data][tax_code]`, lineTaxCode);
     }
@@ -627,7 +588,6 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
     form.set(`metadata[${key}]`, value);
     form.set(`payment_intent_data[metadata][${key}]`, value);
   }
-
   const session = await stripeFormConnectedRequest(
     env,
     '/v1/checkout/sessions',
@@ -640,9 +600,7 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
       { status: 502 }
     );
   }
-
   const settlementProfileId = await resolveSettlementProfileId(env, resolved.parishId, 'bookstore');
-
   await d1Run(
     env,
     `
@@ -666,7 +624,7 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
     firstItem.sku,
     firstItem.variantId,
     firstItem.taxCode,
-    JSON.stringify({ items: items.map((item) => item.snapshot) }).slice(0, 12000),
+    JSON.stringify({ items: items.map((item) => item.snapshot) }).slice(0, 12e3),
     firstItem.itemCategory,
     itemDescription,
     quantityTotal,
@@ -684,7 +642,6 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
     now,
     now
   );
-
   for (const item of items) {
     const itemSubtotal = item.unitPriceCents * item.quantity;
     await d1Run(
@@ -713,12 +670,22 @@ export async function handleDonorBookstore(request, env, publicParishId = '') {
       itemSubtotal,
       itemSubtotal,
       item.taxCode,
-      JSON.stringify(item.snapshot).slice(0, 4000),
+      JSON.stringify(item.snapshot).slice(0, 4e3),
       item.fulfillmentType,
       now,
       now
     );
   }
-
   return json({ ok: true, id: session.body.id, orderId, url: session.body.url }, { status: 201 });
 }
+export {
+  bookstoreOrderSource,
+  guestBookstoreItemError,
+  handleDonorBookstore,
+  handleDonorBookstoreIsbnLookup,
+  handleDonorBookstoreItemFields,
+  handleDonorBookstoreRequestFeature,
+  handleParishBookstoreReadiness,
+  loadDonorBookstoreProducts,
+  normalizeBookstoreCartItems,
+};

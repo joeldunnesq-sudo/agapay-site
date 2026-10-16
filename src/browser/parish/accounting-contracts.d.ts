@@ -116,7 +116,7 @@ interface AccountingWorkspaceData {
   funds: AccountingFund[];
   bankAccounts: AccountingBankAccount[];
   payables: AccountingPayablesWorkspace | null;
-  budgets: { items?: unknown[] } | null;
+  budgets: { items: AccountingPayableItem[] } | null;
   banking: AccountingBanking | null;
   integrations: AccountingIntegrations | null;
   close: AccountingCloseWorkspace | null;

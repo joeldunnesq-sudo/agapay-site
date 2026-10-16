@@ -64,9 +64,9 @@ let accountingRecurringEditor: AccountingRecurring | null = null;
 
 let accountingPayablesView = 'bills';
 
-let accountingBudgetReport: unknown = null;
+let accountingBudgetReport: AccountingBudgetVariance | null = null;
 
-let accountingBudgetEditor: unknown = null;
+let accountingBudgetEditor: AccountingBudgetEditor | null = null;
 
 let accountingMigration: AccountingMigrationState = {
   active: false,

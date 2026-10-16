@@ -1,3 +1,5 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
+import { readServerModuleSourceSync } from './lib/server-typescript.mjs';
 import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import * as taxReadinessRuntime from '../src/lib/tax-readiness.js';
@@ -17,9 +19,9 @@ import { parishSlug } from "../src/lib/format.js";
 import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
 const worker = readWorkerCompositionSource();
-const hasWorkerRoute = (pathname) => worker.includes(`"${pathname}"`) || worker.includes(`'${pathname}'`);
+const hasWorkerRoute = (pathname) => includesJavaScriptFragment(worker,`"${pathname}"`) || includesJavaScriptFragment(worker,`'${pathname}'`);
 const localServerSource = await readFile("server.mjs", "utf8");
-const core = await readFile("src/lib/core.js", "utf8");
+const core = await readServerModuleSourceSync("src/lib/core.js");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = readDonorHandlerSource();
@@ -29,7 +31,7 @@ const parishCommemorationsHandler = await readFile("src/handlers/parish-commemor
 const parishGivingCatalogHandler = await readFile("src/handlers/parish-giving-catalog.js", "utf8");
 const parishGivingReportsHandler = await readFile("src/handlers/parish-giving-reports.js", "utf8");
 const parishSacramentsHandler = await readFile("src/handlers/parish-sacraments.js", "utf8");
-const parishReconciliationHandler = await readFile("src/handlers/parish-reconciliation.js", "utf8");
+const parishReconciliationHandler = await readServerContractSourceSync("src/handlers/parish-reconciliation.js");
 const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
 const stripeFees = await readFile("src/lib/stripe-fees.js", "utf8");
 const givingCheckout = await readFile("src/payments/giving-checkout.js", "utf8");
@@ -66,71 +68,71 @@ assert.ok(
     && parishFeatureRequestMigration.includes("parish_feature_request_dismissals"),
   "parish feature requests should use idempotent donor-level D1 storage and persistent dismissals"
 );
-assert.ok(backendSources.includes("AGAPAY_DB"), "worker should prefer D1 for production records");
-assert.ok(worker.includes("handleAdminMigrateKvToD1"), "worker should include an admin KV-to-D1 migration endpoint");
-assert.ok(backendSources.includes("AGAPAY_REGISTRATIONS"), "worker should retain KV fallback during migration");
-assert.ok(backendSources.includes("Stripe-Account"), "checkout should support routing payments to connected Stripe accounts");
-assert.ok(backendSources.includes("PASSWORD_HASH_VERSION"), "worker should use versioned password records");
-assert.ok(backendSources.includes("pbkdf2-sha256"), "worker should hash new passwords with PBKDF2-SHA256");
-assert.ok(backendSources.includes("rateLimit(request, env"), "worker should rate-limit sensitive API routes");
-assert.ok(backendSources.includes("verifyTurnstileIfConfigured"), "worker should support optional Cloudflare Turnstile checks");
-assert.ok(backendSources.includes("handleSecurityConfig"), "worker should expose public security config for Turnstile-capable clients");
-assert.ok(backendSources.includes('"admin-auth"'), "admin auth routes should be rate-limited before password checks");
-assert.ok(backendSources.includes('"parish-auth"'), "parish dashboard login routes should be rate-limited before password checks");
+assert.ok(includesJavaScriptFragment(backendSources,"AGAPAY_DB"), "worker should prefer D1 for production records");
+assert.ok(includesJavaScriptFragment(worker,"handleAdminMigrateKvToD1"), "worker should include an admin KV-to-D1 migration endpoint");
+assert.ok(includesJavaScriptFragment(backendSources,"AGAPAY_REGISTRATIONS"), "worker should retain KV fallback during migration");
+assert.ok(includesJavaScriptFragment(backendSources,"Stripe-Account"), "checkout should support routing payments to connected Stripe accounts");
+assert.ok(includesJavaScriptFragment(backendSources,"PASSWORD_HASH_VERSION"), "worker should use versioned password records");
+assert.ok(includesJavaScriptFragment(backendSources,"pbkdf2-sha256"), "worker should hash new passwords with PBKDF2-SHA256");
+assert.ok(includesJavaScriptFragment(backendSources,"rateLimit(request, env"), "worker should rate-limit sensitive API routes");
+assert.ok(includesJavaScriptFragment(backendSources,"verifyTurnstileIfConfigured"), "worker should support optional Cloudflare Turnstile checks");
+assert.ok(includesJavaScriptFragment(backendSources,"handleSecurityConfig"), "worker should expose public security config for Turnstile-capable clients");
+assert.ok(includesJavaScriptFragment(backendSources,'"admin-auth"'), "admin auth routes should be rate-limited before password checks");
+assert.ok(includesJavaScriptFragment(backendSources,'"parish-auth"'), "parish dashboard login routes should be rate-limited before password checks");
 assert.ok(
-  backendSources.includes("const dashboardParish = await enrichParishGivingOptions(env")
-    && backendSources.includes("parish: dashboardParish"),
+  includesJavaScriptFragment(backendSources,"const dashboardParish = await enrichParishGivingOptions(env")
+    && includesJavaScriptFragment(backendSources,"parish: dashboardParish"),
   "parish dashboard campaigns should aggregate progress from the same paid offerings as donor and public views"
 );
-assert.ok(backendSources.includes('"admin-money-actions"'), "admin Stripe/billing actions should be rate-limited");
-assert.ok(backendSources.includes('"parish-money-actions"'), "parish Stripe/billing actions should be rate-limited");
+assert.ok(includesJavaScriptFragment(backendSources,'"admin-money-actions"'), "admin Stripe/billing actions should be rate-limited");
+assert.ok(includesJavaScriptFragment(backendSources,'"parish-money-actions"'), "parish Stripe/billing actions should be rate-limited");
 assert.ok(
   parishHandler.includes('form.set("flow_data[type]", "subscription_cancel")')
     && parishHandler.includes('form.set("flow_data[subscription_cancel][subscription]", subscriptionId)'),
   "parish subscription cancellation should use Stripe's hosted confirmation flow"
 );
-assert.ok(backendSources.includes("claimStripeEvent(env, event)") && backendSources.includes("finishStripeEvent(env, event.id"), "Stripe webhooks should claim and finish events for idempotency");
-assert.ok(backendSources.includes("checkout.session.expired"), "Stripe webhooks should handle expired checkout sessions");
-assert.ok(backendSources.includes("checkout.session.async_payment_succeeded"), "Stripe webhooks should handle delayed successful checkout payments");
-assert.ok(backendSources.includes("checkout.session.async_payment_failed"), "Stripe webhooks should handle delayed failed checkout payments");
-assert.ok(backendSources.includes("payment_intent.succeeded"), "Stripe webhooks should handle successful payment intents");
-assert.ok(backendSources.includes("payment_intent.payment_failed"), "Stripe webhooks should handle failed payments");
-assert.ok(backendSources.includes("payment_intent.canceled"), "Stripe webhooks should handle canceled payments");
-assert.ok(backendSources.includes("charge.refunded"), "Stripe webhooks should handle refunds");
-assert.ok(backendSources.includes("charge.dispute.created"), "Stripe webhooks should handle disputes");
-assert.ok(backendSources.includes("charge.dispute.closed"), "Stripe webhooks should handle closed disputes");
-assert.ok(backendSources.includes("account.updated"), "Stripe webhooks should sync connected account status");
-assert.ok(backendSources.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Stripe webhooks should support a separate Connect signing secret");
-assert.ok(backendSources.includes("verifyStripeWebhookWithAnySecret"), "Stripe webhooks should validate against all configured Stripe signing secrets");
-assert.ok(backendSources.includes("handleParishStripeRefresh"), "parishes should be able to refresh Stripe Connect status after onboarding");
-assert.ok(backendSources.includes("PARISH_ID_INDEX_PREFIX"), "worker should maintain KV parish id indexes");
-assert.ok(backendSources.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
-assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
+assert.ok(includesJavaScriptFragment(backendSources,"claimStripeEvent(env, event)") && includesJavaScriptFragment(backendSources,"finishStripeEvent(env, event.id"), "Stripe webhooks should claim and finish events for idempotency");
+assert.ok(includesJavaScriptFragment(backendSources,"checkout.session.expired"), "Stripe webhooks should handle expired checkout sessions");
+assert.ok(includesJavaScriptFragment(backendSources,"checkout.session.async_payment_succeeded"), "Stripe webhooks should handle delayed successful checkout payments");
+assert.ok(includesJavaScriptFragment(backendSources,"checkout.session.async_payment_failed"), "Stripe webhooks should handle delayed failed checkout payments");
+assert.ok(includesJavaScriptFragment(backendSources,"payment_intent.succeeded"), "Stripe webhooks should handle successful payment intents");
+assert.ok(includesJavaScriptFragment(backendSources,"payment_intent.payment_failed"), "Stripe webhooks should handle failed payments");
+assert.ok(includesJavaScriptFragment(backendSources,"payment_intent.canceled"), "Stripe webhooks should handle canceled payments");
+assert.ok(includesJavaScriptFragment(backendSources,"charge.refunded"), "Stripe webhooks should handle refunds");
+assert.ok(includesJavaScriptFragment(backendSources,"charge.dispute.created"), "Stripe webhooks should handle disputes");
+assert.ok(includesJavaScriptFragment(backendSources,"charge.dispute.closed"), "Stripe webhooks should handle closed disputes");
+assert.ok(includesJavaScriptFragment(backendSources,"account.updated"), "Stripe webhooks should sync connected account status");
+assert.ok(includesJavaScriptFragment(backendSources,"STRIPE_WEBHOOK_SECRET_CONNECT"), "Stripe webhooks should support a separate Connect signing secret");
+assert.ok(includesJavaScriptFragment(backendSources,"verifyStripeWebhookWithAnySecret"), "Stripe webhooks should validate against all configured Stripe signing secrets");
+assert.ok(includesJavaScriptFragment(backendSources,"handleParishStripeRefresh"), "parishes should be able to refresh Stripe Connect status after onboarding");
+assert.ok(includesJavaScriptFragment(backendSources,"PARISH_ID_INDEX_PREFIX"), "worker should maintain KV parish id indexes");
+assert.ok(includesJavaScriptFragment(backendSources,"handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
+assert.ok(includesJavaScriptFragment(backendSources,"handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
 assert.ok(hasWorkerRoute("/api/admin/release-status"), "worker should route the admin release status endpoint");
-assert.ok(worker.includes("handleAdminWeeklyCommemorationEmails") && hasWorkerRoute("/api/admin/commemorations/send-weekly"), "worker should expose an admin-only weekly commemoration email diagnostic endpoint");
-assert.ok(worker.includes("weekly_commemoration_emails") && worker.includes("dryRun: body.dryRun !== false"), "weekly commemoration emails should be observable and dry-run by default when triggered manually");
-assert.ok(worker.includes("sendWeeklyTreasurerCommerceEmails") && hasWorkerRoute("/api/admin/commerce/send-weekly-treasurer"), "worker should expose an admin-only weekly treasurer commerce email endpoint");
-assert.ok(worker.includes("commerce_weekly_reports") && worker.includes("weekly_treasurer_commerce_emails"), "weekly treasurer commerce emails should be deduped and observable");
-assert.ok(worker.includes('["/parish/login", "/give/login"]'), "legacy parish login should redirect to the Give login URL");
+assert.ok(includesJavaScriptFragment(worker,"handleAdminWeeklyCommemorationEmails") && hasWorkerRoute("/api/admin/commemorations/send-weekly"), "worker should expose an admin-only weekly commemoration email diagnostic endpoint");
+assert.ok(includesJavaScriptFragment(worker,"weekly_commemoration_emails") && includesJavaScriptFragment(worker,"dryRun: body.dryRun !== false"), "weekly commemoration emails should be observable and dry-run by default when triggered manually");
+assert.ok(includesJavaScriptFragment(worker,"sendWeeklyTreasurerCommerceEmails") && hasWorkerRoute("/api/admin/commerce/send-weekly-treasurer"), "worker should expose an admin-only weekly treasurer commerce email endpoint");
+assert.ok(includesJavaScriptFragment(worker,"commerce_weekly_reports") && includesJavaScriptFragment(worker,"weekly_treasurer_commerce_emails"), "weekly treasurer commerce emails should be deduped and observable");
+assert.ok(includesJavaScriptFragment(worker,'["/parish/login", "/give/login"]'), "legacy parish login should redirect to the Give login URL");
 assert.ok(hasWorkerRoute("/give/login"), "worker should serve the Give login URL from the parish login shell");
-assert.ok(worker.includes('url.pathname.startsWith("/give/")') && worker.includes('url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
-assert.ok(worker.includes('url.pathname.startsWith("/giving/")'), "worker should permanently redirect legacy /giving URLs");
+assert.ok(includesJavaScriptFragment(worker,'url.pathname.startsWith("/give/")') && includesJavaScriptFragment(worker,'url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
+assert.ok(includesJavaScriptFragment(worker,'url.pathname.startsWith("/giving/")'), "worker should permanently redirect legacy /giving URLs");
 for (const [legacyPage, anchor] of [["features", "platform"], ["how-it-works", "how-it-works"], ["pricing", "pricing"]]) {
-  assert.ok(worker.includes(`["/${legacyPage}", "/give#${anchor}"]`), `worker should redirect /${legacyPage} to the canonical Give section`);
+  assert.ok(includesJavaScriptFragment(worker,`["/${legacyPage}", "/give#${anchor}"]`), `worker should redirect /${legacyPage} to the canonical Give section`);
 }
-assert.ok(worker.includes('["/why", "/give#why"]'), "worker should redirect /why to the dedicated Give overview anchor");
-assert.ok(worker.includes('["/give.html", "/give/index.html"]') && worker.includes('url.pathname = "/give"'), "worker should canonicalize legacy Give HTML aliases without redirecting /give away from its overview");
-assert.ok(backendSources.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
-assert.ok(!backendSources.includes("subscription_data[application_fee_percent]"), "worker should not apply an AGAPAY application fee to recurring donor gifts");
-assert.ok(!backendSources.includes("payment_intent_data[application_fee_amount]"), "worker should not apply an AGAPAY application fee to one-time donor gifts");
-assert.ok(backendSources.includes("AGAPAY does not collect an application fee on donations"), "worker should document that AGAPAY charges no donation platform fee");
-assert.ok(backendSources.includes("Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts"), "worker should document that Parish Commerce checkout has no AGAPAY application fee");
-assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose checkout return reconciliation");
-assert.ok(backendSources.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
-assert.ok(backendSources.includes("/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");
-assert.ok(!worker.includes("const parishes = ["), "worker should not hardcode demo parishes");
+assert.ok(includesJavaScriptFragment(worker,'["/why", "/give#why"]'), "worker should redirect /why to the dedicated Give overview anchor");
+assert.ok(includesJavaScriptFragment(worker,'["/give.html", "/give/index.html"]') && includesJavaScriptFragment(worker,'url.pathname = "/give"'), "worker should canonicalize legacy Give HTML aliases without redirecting /give away from its overview");
+assert.ok(includesJavaScriptFragment(backendSources,"checkoutFinancials("), "worker should centralize donation fee calculations");
+assert.ok(!includesJavaScriptFragment(backendSources,"subscription_data[application_fee_percent]"), "worker should not apply an AGAPAY application fee to recurring donor gifts");
+assert.ok(!includesJavaScriptFragment(backendSources,"payment_intent_data[application_fee_amount]"), "worker should not apply an AGAPAY application fee to one-time donor gifts");
+assert.ok(includesJavaScriptFragment(backendSources,"AGAPAY does not collect an application fee on donations"), "worker should document that AGAPAY charges no donation platform fee");
+assert.ok(includesJavaScriptFragment(backendSources,"Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts"), "worker should document that Parish Commerce checkout has no AGAPAY application fee");
+assert.ok(includesJavaScriptFragment(worker,"/api/checkout-session-status"), "worker should expose checkout return reconciliation");
+assert.ok(includesJavaScriptFragment(backendSources,"session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
+assert.ok(includesJavaScriptFragment(backendSources,"/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");
+assert.ok(!includesJavaScriptFragment(worker,"const parishes = ["), "worker should not hardcode demo parishes");
 assert.ok(hasWorkerRoute("/donor/verify"), "worker should route donor verification links before assets");
-assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor verification links server-side");
+assert.ok(includesJavaScriptFragment(worker,"handleDonorVerifyPage"), "worker should handle donor verification links server-side");
 await assert.rejects(access("functions/donor/verify.js"), undefined, "donor verification should not use a Pages Function adapter");
 await assert.rejects(access("public/_routes.json"), undefined, "Wrangler Worker deploy should not include Pages Functions route config");
 await assert.rejects(access("public/donor/verify.html"), undefined, "static donor verify HTML should not shadow the Worker route");
@@ -285,8 +287,8 @@ assert.ok(myAgapayShell.includes('pathname.startsWith("/myagapay/directory")') &
 assert.ok(!myAgapayShell.includes('data-myagapay-launch-gated') && !myAgapayShell.includes('release-flags'), "shared My AGAPAY shell should not gate Marketplace or Directory behind launch controls");
 assert.ok(myAgapayShell.includes('parishFeature: "sacramentsEnabled"'), "shared My AGAPAY shell should gate Sacraments & Services on the parish capability");
 assert.ok(myAgapayShell.includes('parishFeature: "directoryEnabled"'), "shared My AGAPAY shell should gate Directory on the parish capability");
-assert.ok(worker.includes("sacramentsEnabled: true") && worker.includes("ordinary_member_access_enabled = 1"), "the full St. Fiacre demo reseed should keep Sacraments and Directory visible to donors");
-assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && worker.includes('/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
+assert.ok(includesJavaScriptFragment(worker,"sacramentsEnabled: true") && includesJavaScriptFragment(worker,"ordinary_member_access_enabled = 1"), "the full St. Fiacre demo reseed should keep Sacraments and Directory visible to donors");
+assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && includesJavaScriptFragment(worker,'/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
 assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.includes("ready to serve"), "the parish dashboard should notify leaders about donor service interest");
 assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
 assert.ok(myAgapayShell.includes('featureOrFallback("library", "history")') && myAgapayShell.includes('label: "History"'), "History should replace unavailable Library in the bottom nav");
@@ -490,8 +492,8 @@ const giveEmbedLoader = await readFile("public/giving-box.js", "utf8");
 assert.match(parishGivingCatalogHandler, /if \(!parish \|\| parish\.status !== ['"]verified['"]\)/, "hidden onboarding parishes must return a normal 404 instead of throwing during public lookup");
 assert.match(giveHtml, /DEFAULT_PROCESSING_FEE_SCHEDULES\s*=\s*\{[\s\S]*rateBasisPoints:290[\s\S]*fixedFeeCents:30/, "the giving form must retain a standard card-fee fallback when parish data is unavailable");
 assert.match(giveHtml, /processingFeeSchedules:\s*\{ \.\.\.DEFAULT_PROCESSING_FEE_SCHEDULES/, "the parish response must merge over, not replace, the safe fee schedules");
-assert.match(giveHtml, /showGivingPageUnavailable\(\)/, "the giving form must fail closed instead of displaying placeholder parish or fee data");
-assert.match(giveHtml, /if \(!loaded\) return;/, "the giving form must stop initialization after an unavailable parish response");
+assert.ok(includesJavaScriptFragment(giveHtml,"showGivingPageUnavailable()"),"the giving form must fail closed instead of displaying placeholder parish or fee data");
+assert.ok(includesJavaScriptFragment(giveHtml,"if (!loaded) return;"),"the giving form must stop initialization after an unavailable parish response");
 assert.doesNotMatch(giveHtml, /St\. Seraphim|ROCOR|Lubbock/, "the shared giving form must not flash another parish's identity while dynamic data loads");
 assert.ok(
   giveHtml.includes('gift-type-name">Tithes</span>')
@@ -680,7 +682,7 @@ assert.ok(
     && giveEmbedHtml.includes("Powered by <strong>AGAPAY</strong>"),
   "the giving box should retain AGAPAY navy and gold defaults while allowing parish CSS themes and preserving platform branding"
 );
-assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('const staticGivePages = new Set(["request-demo", "embed"])'), "the Worker should serve clean /give/embed/:parish URLs");
+assert.ok(includesJavaScriptFragment(worker,'/^\\/give\\/embed\\/[^/]+\\/?$/') && includesJavaScriptFragment(worker,'const staticGivePages = new Set(["request-demo", "embed"])'), "the Worker should serve clean /give/embed/:parish URLs");
 assert.ok(localServerSource.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && localServerSource.includes('pathname = "/give/embed.html"'), "the local server should preview clean giving-box URLs");
 assert.ok(
   parishDashboardApp.includes("function dedicatedGivingEmbedUrl()")
@@ -704,11 +706,11 @@ assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should r
 assert.ok(campaignPage.includes("/api/create-checkout-session") && includesJavaScriptFragment(campaignPage, 'giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
 assert.ok(includesJavaScriptFragment(campaignPage, '"/give/"') && includesJavaScriptFragment(campaignPage, '"-campaign"'), "campaign share page should build canonical nested campaign URLs");
 assert.ok(hasWorkerRoute("/api/campaign"), "worker should route public campaign lookup API");
-assert.ok(hasWorkerRoute("/campaign-upload") && worker.includes("handleParishCampaignUpload"), "worker should route authenticated parish campaign photo uploads");
-assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
-assert.ok(worker.includes("async function fetchCleanAsset"), "worker should keep rewritten asset routes at their canonical public URLs");
-assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
-assert.ok(worker.includes('/^\\/give\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
+assert.ok(hasWorkerRoute("/campaign-upload") && includesJavaScriptFragment(worker,"handleParishCampaignUpload"), "worker should route authenticated parish campaign photo uploads");
+assert.ok(includesJavaScriptFragment(worker,'startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
+assert.ok(includesJavaScriptFragment(worker,"async function fetchCleanAsset"), "worker should keep rewritten asset routes at their canonical public URLs");
+assert.ok(includesJavaScriptFragment(worker,"canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
+assert.ok(includesJavaScriptFragment(worker,'/^\\/give\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
 assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
 assert.ok(
   parishDashboardApp.includes("function orderTierNavigation()")
@@ -780,11 +782,11 @@ assert.ok(parishDashboardApp.includes("sacramentsDashboardTab = 'rules'") && par
 assert.equal(parishDashboardApp.split("<em>${enabled ? 'On' : 'Off'}</em>").length - 1, 4, "Directory, Bookstore, Sacraments, and shared Events/Meals feature switches should use concise On/Off labels");
 assert.ok(parishDashboardHtml.includes("sacramentsPriestPicker") && parishDashboardApp.includes("function selectSacramentsPriest") && parishDashboardApp.includes("sacramentPriestsText"), "parish Sacraments & Services should support multiple priests managed from Settings");
 assert.ok(parishDashboardApp.includes("loadReconciliation") && parishDashboardApp.includes("exportReconciliationCsv") && parishDashboardApp.includes("saveReconciliationClose"), "parish dashboard should load, export, and close monthly reconciliations");
-assert.ok(worker.includes("handleParishReconciliation") && worker.includes("/reconciliation/close"), "worker should route authenticated parish reconciliation endpoints");
-assert.ok(parishDashboardApp.includes("sacramentsEnabled: enabled") && backendSources.includes("sacramentsEnabledFor(found.registration)") && /sacramentsEnabled:\s*Boolean\(body\.sacramentsEnabled \?\? current\.sacramentsEnabled \?\? false\)/.test(backendSources), "Sacraments & Services should default off and use the real donor-facing enable flag");
+assert.ok(includesJavaScriptFragment(worker,"handleParishReconciliation") && includesJavaScriptFragment(worker,"/reconciliation/close"), "worker should route authenticated parish reconciliation endpoints");
+assert.ok(parishDashboardApp.includes("sacramentsEnabled: enabled") && includesJavaScriptFragment(backendSources,"sacramentsEnabledFor(found.registration)") && /sacramentsEnabled:\s*Boolean\(body\.sacramentsEnabled \?\? current\.sacramentsEnabled \?\? false\)/.test(backendSources), "Sacraments & Services should default off and use the real donor-facing enable flag");
 const sacramentPriestsMigration = await readFile("migrations/0019_sacrament_priests.sql", "utf8");
 assert.ok(sacramentPriestsMigration.includes("priest_name") && sacramentPriestsMigration.includes("COALESCE(clergy_assigned"), "Sacraments & Services should migrate availability to priest-owned scheduling");
-assert.ok(donorApp.includes("priestName: slot.priestName") && backendSources.includes("priestName = String(body.priestName") && backendSources.includes("isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");
+assert.ok(donorApp.includes("priestName: slot.priestName") && includesJavaScriptFragment(backendSources,"priestName = String(body.priestName") && includesJavaScriptFragment(backendSources,"isSlotStillOpen(env, { parishId, date, time, priestName })"), "donor Sacraments booking should carry the selected priest through to the scheduled request");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
 const giveStyles = await readFile("public/styles/give.css", "utf8");
@@ -844,8 +846,8 @@ const designPage = await readFile("public/design.html", "utf8");
 assert.ok(designPage.includes("AGAPAY Design") && designPage.includes("site-chrome.js") && designPage.includes("Straightforward packages"), "AGAPAY Design should render as a canonical public product page");
 assert.ok(designPage.includes("/videos/design/chariot-concepts.webm") && designPage.includes("work-video-frame"), "AGAPAY Design should show the Chariot Concepts video preview");
 await assert.rejects(access("public/vision.html"), undefined, "the retired Vision page must stay unpublished");
-assert.match(worker, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?url\.pathname = "\/about";[\s\S]*?Response\.redirect\(url\.toString\(\), 301\)/, "the production worker must permanently redirect every retired Vision route");
-assert.match(localServerSource, /\["\/vision", "\/vision\/", "\/vision\.html"\][\s\S]*?requestUrl\.pathname = "\/about";[\s\S]*?writeHead\(301/, "the local server must mirror the retired Vision redirects");
+assert.match(worker, /\[['"]\/vision['"], ['"]\/vision\/['"], ['"]\/vision\.html['"]\][\s\S]*?url\.pathname = ['"]\/about['"];[\s\S]*?Response\.redirect\(url\.toString\(\), 301\)/, "the production worker must permanently redirect every retired Vision route");
+assert.match(localServerSource, /\[['"]\/vision['"], ['"]\/vision\/['"], ['"]\/vision\.html['"]\][\s\S]*?requestUrl\.pathname = ['"]\/about['"];[\s\S]*?writeHead\(301/, "the local server must mirror the retired Vision redirects");
 const siteMobileNav = await readFile("public/site-mobile-nav.js", "utf8");
 for (const [href, label] of [["/give#pricing", "Pricing"], ["/give#security", "Security"], ["/give#platform", "Platform"]]) {
   assert.ok(includesJavaScriptFragment(siteMobileNav, `{ href: "${href}", label: "${label}" }`), `legacy mobile navigation should include ${label}`);
@@ -923,12 +925,12 @@ assert.ok(auditLogMigration.includes("CREATE TABLE IF NOT EXISTS audit_log"), "m
 assert.ok(typeof auditExports.recordAuditEvent === "function", "audit-log.js should export recordAuditEvent");
 assert.ok(typeof auditExports.listAuditEvents === "function", "audit-log.js should export listAuditEvents");
 assert.ok(!auditLogLib.includes("DELETE FROM audit_log") && !auditLogLib.includes("UPDATE audit_log"), "audit_log must stay append-only -- no UPDATE/DELETE path");
-assert.ok(backendSources.includes("recordAuditEvent(env, request, {") && backendSources.includes('action: "admin.index_rebuild"'), "index rebuild should record an audit event");
-assert.ok(backendSources.includes('action: "registration.status_changed"'), "registration status changes should record an audit event");
-assert.ok(backendSources.includes("handleAdminAuditLog"), "worker should expose an admin audit-log viewer endpoint");
+assert.ok(includesJavaScriptFragment(backendSources,"recordAuditEvent(env, request, {") && includesJavaScriptFragment(backendSources,'action: "admin.index_rebuild"'), "index rebuild should record an audit event");
+assert.ok(includesJavaScriptFragment(backendSources,'action: "registration.status_changed"'), "registration status changes should record an audit event");
+assert.ok(includesJavaScriptFragment(backendSources,"handleAdminAuditLog"), "worker should expose an admin audit-log viewer endpoint");
 assert.ok(hasWorkerRoute("/api/admin/audit-log"), "worker should route GET /api/admin/audit-log");
-assert.ok(worker.includes("async function handleHealth") && hasWorkerRoute("/api/health"), "worker should expose GET /api/health for launch diagnostics");
-assert.ok(worker.includes("STRIPE_SECRET_KEY") && worker.includes("RESEND_API_KEY") && worker.includes("TAX_EXEMPTION_DOCS") && worker.includes("GIVING_STATEMENTS"), "health endpoint should report config presence without exposing secret values");
+assert.ok(includesJavaScriptFragment(worker,"async function handleHealth") && hasWorkerRoute("/api/health"), "worker should expose GET /api/health for launch diagnostics");
+assert.ok(includesJavaScriptFragment(worker,"STRIPE_SECRET_KEY") && includesJavaScriptFragment(worker,"RESEND_API_KEY") && includesJavaScriptFragment(worker,"TAX_EXEMPTION_DOCS") && includesJavaScriptFragment(worker,"GIVING_STATEMENTS"), "health endpoint should report config presence without exposing secret values");
 
 // Giving intelligence keeps the health overview and four giving charts
 // together, with the existing reports and records below them.
@@ -975,8 +977,8 @@ assert.ok(!parishDashboardHtml.includes('id="swGivingFullLink"'), "standalone Fu
 assert.ok(/handleStewardshipGivingFunds\(withYear\(['"]funds['"]\)/.test(worker), "monthly report should include the Giving by Fund breakdown that used to be exclusive to the standalone report");
 assert.ok(parishDashboardHtml.includes('id="stewardshipOutsideGivingMount"') && parishAppJs.includes("Record a collection total"), "Stewardship Health should provide a dedicated outside-giving entry card");
 assert.ok(parishAppJs.includes("function loadManualIncomePanel") && parishAppJs.includes("function submitManualIncomeEntry") && parishAppJs.includes("function deleteManualIncomeEntry"), "app.js should define the manual income entry functions");
-assert.ok(worker.includes("manual_income_entries"), "worker should reference the manual_income_entries table");
-assert.ok(worker.includes("manualIncomeTotalCents") && worker.includes("contribution_eligible = 1"), "only contribution-qualified outside giving should fold into Budget Pace and Stewardship Health");
+assert.ok(includesJavaScriptFragment(worker,"manual_income_entries"), "worker should reference the manual_income_entries table");
+assert.ok(includesJavaScriptFragment(worker,"manualIncomeTotalCents") && includesJavaScriptFragment(worker,"contribution_eligible = 1"), "only contribution-qualified outside giving should fold into Budget Pace and Stewardship Health");
 
 // Tax readiness gate -- parish canonical verification vs. AGAPAY billing/tax
 // readiness are separate (src/lib/tax-readiness.js). Functional coverage
@@ -985,7 +987,7 @@ assert.ok(worker.includes("manualIncomeTotalCents") && worker.includes("contribu
 // just the source-presence / wiring checks that belong alongside the rest
 // of this file's static assertions.
 const subscriptionCheckoutLib = await readFile("src/lib/subscription-checkout.js", "utf8");
-const learnBillingLib = await readFile("src/learn/billing.js", "utf8");
+const learnBillingLib = await readServerContractSourceSync("src/learn/billing.js");
 assert.ok(typeof taxReadinessRuntime.subscriptionCheckoutReadinessGate === "function", "tax-readiness.js should export the verification and billing checkout gate");
 assert.ok(typeof taxReadinessRuntime.withTaxReadinessDefaults === "function", "tax-readiness.js should export a non-destructive defaults helper");
 assert.ok(subscriptionCheckoutLib.includes("subscriptionCheckoutReadinessGate(billingRegistration)"), "subscription-checkout.js should validate inherited registration billing fields");
@@ -1001,12 +1003,12 @@ assert.ok(
 assert.ok(!adminApp.includes('id="taxReadinessStatus"') && !adminApp.includes("renderTaxReadinessPanel"), "admin onboarding must not require a manual parish tax-readiness review");
 assert.ok(adminApp.includes("Subscription billing address") && adminApp.includes("billingAddressLine1"), "admin subscription setup should retain an editable billing address inherited from registration");
 assert.ok(includesJavaScriptFragment(subscriptionCheckoutLib, '"automatic_tax[enabled]": "true"'), "AGAPAY subscription checkout should rely on platform-level Stripe automatic tax");
-assert.ok(!worker.includes('startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")'), "Admin must not expose a Stripe onboarding-link route");
+assert.ok(!includesJavaScriptFragment(worker,'startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")'), "Admin must not expose a Stripe onboarding-link route");
 assert.ok(adminHandler.includes('stripeAccountId: current.stripeAccountId || ""'), "Admin saves must preserve parish-created Stripe account IDs");
 assert.ok(adminHandler.includes('stripeAccountStatus: current.stripeAccountStatus || "not_started"'), "Admin saves must preserve server-confirmed Stripe status");
-assert.ok(learnBillingLib.includes('params.set("billing_address_collection", "required")'), "Learn billing checkout should require billing address collection");
-assert.ok(learnBillingLib.includes('params.set("automatic_tax[enabled]", "true")'), "Learn billing checkout should keep Stripe automatic tax enabled");
-assert.ok(learnBillingLib.includes("billingAddressLine1: record.billingAddressLine1"), "Learn household billing record should support storing a billing address");
+assert.ok(includesJavaScriptFragment(learnBillingLib,'params.set("billing_address_collection", "required")'), "Learn billing checkout should require billing address collection");
+assert.ok(includesJavaScriptFragment(learnBillingLib,'params.set("automatic_tax[enabled]", "true")'), "Learn billing checkout should keep Stripe automatic tax enabled");
+assert.ok(includesJavaScriptFragment(learnBillingLib,"billingAddressLine1: record.billingAddressLine1"), "Learn household billing record should support storing a billing address");
 
 console.log("AGAPAY platform checks passed.");
 import "./stripe-nonprofit-volume-tests.mjs";

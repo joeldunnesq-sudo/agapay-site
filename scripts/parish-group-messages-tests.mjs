@@ -1,3 +1,4 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
@@ -620,7 +621,7 @@ assert.match(
   /CHECK \(child_participation_policy = 'excluded'\)/,
   'ministry child participation must remain excluded by schema'
 );
-const handlerSource = readFileSync(path.join(root, 'src', 'handlers', 'donor-groups.js'), 'utf8');
+const handlerSource = readServerContractSourceSync('src/handlers/donor-groups.js');
 const koinoniaAccessSource = readFileSync(path.join(root, 'src', 'handlers', 'koinonia-access.js'), 'utf8');
 assert.match(
   handlerSource,
@@ -663,7 +664,7 @@ assert.match(
   /ministryGroupAvatar\(group/,
   'group images must surface beside ministry names in the chat list and header'
 );
-const ministryServiceSource = readFileSync(path.join(root, 'src', 'directory', 'ministries.js'), 'utf8');
+const ministryServiceSource = readServerContractSourceSync('src/directory/ministries.js');
 assert.match(
   ministryServiceSource,
   /DELETE FROM parish_content_reads[\s\S]*DELETE FROM parish_group_messages[\s\S]*DELETE FROM directory_ministries/,

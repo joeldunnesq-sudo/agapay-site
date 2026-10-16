@@ -39,7 +39,7 @@ async function dispatchParishDashboardPatch(
       headers,
       body: JSON.stringify(body),
     }),
-    env,
+    env as import('./parish-dashboard-handler.js').DashboardEnv,
     parishId
   );
   const payload = await response.json().catch(() => ({}));

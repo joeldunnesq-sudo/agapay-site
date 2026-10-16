@@ -1,3 +1,5 @@
+import { typeScriptMigrationInventory } from './lib/typescript-migration-inventory.mjs';
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -10,6 +12,8 @@ import {
   readServerModuleSource,
   repoRoot,
   serverTypeScriptSources,
+  serverTypeScriptSupportSources,
+  serverTypeScriptCompositions,
   synchronizeServerTypeScript,
 } from './lib/server-typescript.mjs';
 import * as classification from '../src/organizations/types.js';
@@ -31,6 +35,27 @@ const sources = (await readdir(join(repoRoot, 'src'), { recursive: true }))
   )
   .map((file) => `src/${file}`);
 assert.deepEqual(sources.sort(), [...serverTypeScriptSources].sort());
+
+const inventory = typeScriptMigrationInventory();
+assert.equal(inventory.total, 495, 'support extraction must not expand migration completion credit');
+assert.equal(inventory.converted + inventory.remaining, 495);
+assert.equal(new Set(inventory.supportPaths).size, inventory.supportModules);
+assert.ok(
+  inventory.supportPaths.every(
+    (path) => !inventory.convertedPaths.includes(path) && !inventory.remainingPaths.includes(path)
+  ),
+  'new support modules must stay outside the frozen baseline'
+);
+assert.deepEqual(
+  [...new Set(Object.values(serverTypeScriptCompositions).flat())].sort(),
+  [...serverTypeScriptSupportSources].sort(),
+  'every support file must have an owning existing entry'
+);
+for (const [entry, support] of Object.entries(serverTypeScriptCompositions)) {
+  assert.ok(serverTypeScriptSources.includes(entry));
+  assert.ok(support.length);
+  assert.ok(support.every((path) => serverTypeScriptSources.includes(path)));
+}
 
 assert.deepEqual(Object.keys(classification).sort(), [
   'ORGANIZATION_SUBTYPES',
@@ -73,10 +98,36 @@ await once(preview.server, 'listening');
 try {
   const response = await fetch(`http://127.0.0.1:${preview.server.address().port}/api/learn/meta`);
   assert.equal(response.status, 200);
-  assert.match(response.headers.get('content-type'), /application\/json/);
+  assert.ok(includesJavaScriptFragment(response.headers.get('content-type'), 'application/json'));
   assert.equal(typeof (await response.json()), 'object');
 } finally {
   await new Promise((resolve, reject) => preview.server.close((error) => (error ? reject(error) : resolve())));
+}
+
+// Exercise the Worker fallback directly: the public Listen app is a directory index.
+const workerRuntime = await import('../src/worker.js');
+for (const pathname of ['/listen', '/listen/']) {
+  const seen = [];
+  const result = await workerRuntime.default.fetch(
+    new Request('https://agapay.test' + pathname + '?source=fixture'),
+    {
+      ASSETS: {
+        async fetch(request) {
+          const target = new URL(request.url);
+          seen.push(target.pathname + target.search);
+          return new Response('<!doctype html><title>Listen</title>', { headers: { 'Content-Type': 'text/html' } });
+        },
+      },
+    },
+    { waitUntil() {} }
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(
+    seen,
+    ['/listen/index.html?source=fixture'],
+    'both Listen URLs must retain query parameters and use the real directory index'
+  );
+  assert.match(await result.text(), /Listen/);
 }
 
 const fixtureRoot = await mkdtemp(join(tmpdir(), 'agapay-server-typescript-'));
@@ -109,8 +160,8 @@ try {
   await writeFile(privateInput, privateDeclarations);
   await extractProvisionerEnvironment(pathToFileURL(privateInput), pathToFileURL(privateOutput));
   const extracted = await readFile(privateOutput, 'utf8');
-  assert.match(extracted, /ACCOUNTING_ACTIVATION: Workflow/);
-  assert.match(extracted, /AGAPAY_DB: D1Database/);
+  assert.ok(includesJavaScriptFragment(extracted, 'ACCOUNTING_ACTIVATION: Workflow'));
+  assert.ok(includesJavaScriptFragment(extracted, 'AGAPAY_DB: D1Database'));
   assert.doesNotMatch(extracted, /namespace Cloudflare|mainModule/);
   await writeFile(privateInput, 'interface AccountingProvisionerEnv {}');
   await assert.rejects(extractProvisionerEnvironment(privateInput, privateOutput), /expected Accounting provisioner/);
@@ -138,7 +189,9 @@ try {
   const input = await readFile(inputPath, 'utf8');
   await writeFile(inputPath, `${input}\nexport const newSourceExport = true;\n`);
   await assert.rejects(synchronizeServerTypeScript({ root: fixtureRoot }), /xml-text\.js/);
-  assert.match(await readServerModuleSource('src/lib/xml-text.js', fixtureRoot), /newSourceExport/);
+  assert.ok(
+    includesJavaScriptFragment(await readServerModuleSource('src/lib/xml-text.js', fixtureRoot), 'newSourceExport')
+  );
   await synchronizeServerTypeScript({ root: fixtureRoot, check: false });
   const runtime = await import(pathToFileURL(outputPath).href);
   assert.equal(runtime.newSourceExport, true);

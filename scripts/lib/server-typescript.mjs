@@ -1,13 +1,74 @@
+import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { transform } from 'esbuild';
+import { transform, transformSync } from 'esbuild';
 import { format } from 'prettier';
 
 export const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 // Authoritative sources. Runtime consumers retain the adjacent .js import paths.
 export const serverTypeScriptSources = Object.freeze([
+  'src/lib/core-shared.ts',
+  'src/lib/core-authentication.ts',
+  'src/lib/core-sessions.ts',
+  'src/handlers/koinonia-signups-shared.ts',
+  'src/handlers/signup-management.ts',
+  'src/handlers/signup-commitments.ts',
+  'src/handlers/donor-groups-shared.ts',
+  'src/handlers/group-attachments.ts',
+  'src/handlers/group-workspace.ts',
+  'src/handlers/parish-shared.ts',
+  'src/handlers/parish-authentication.ts',
+  'src/handlers/parish-registration-storage.ts',
+  'src/handlers/parish-checkout-shared.ts',
+  'src/handlers/parish-registration-intake.ts',
+  'src/handlers/parish-giving-checkout.ts',
+  'src/handlers/parish-checkout.ts',
+  'src/handlers/parish.ts',
+  'src/lib/core.ts',
+  'src/handlers/donor-groups.ts',
+  'src/handlers/koinonia-signups.ts',
+  'src/worker.ts',
+  'src/accounting/payables/service-shared.ts',
+  'src/accounting/payables/checks.ts',
+  'src/accounting/payables/payment-runs.ts',
+  'src/handlers/parish-reconciliation-shared.ts',
+  'src/handlers/parish-payout-diagnostics.ts',
+  'src/accounting/payables/service.ts',
+  'src/handlers/parish-reconciliation.ts',
+  'src/learn/handlers.ts',
+  'src/learn/billing.ts',
+  'src/handlers/donor-bookstore.ts',
+  'src/handlers/parish-bookstore-handler.ts',
+  'src/handlers/parish-bookstore-inventory.ts',
+  'src/learn/demo-data-1.ts',
+  'src/learn/demo-data-2.ts',
+  'src/learn/demo-data-3.ts',
+  'src/learn/demo-data-4.ts',
+  'src/accounting/close/service-shared.ts',
+  'src/accounting/close/adjustments.ts',
+  'src/accounting/close/year-end.ts',
+  'src/accounting/close/audit.ts',
+  'src/directory/skills-service-shared.ts',
+  'src/directory/skills-verification.ts',
+  'src/directory/skills-exports.ts',
+  'src/directory/ministries-shared.ts',
+  'src/directory/ministry-participants.ts',
+  'src/directory/ministry-publication.ts',
+  'src/directory/ministry-interest.ts',
+  'src/directory/media-shared.ts',
+  'src/directory/media-maintenance.ts',
+  'src/directory/media.ts',
+  'src/directory/member-directory.ts',
+  'src/directory/ministries.ts',
+  'src/directory/skills-service.ts',
+  'src/learn/grade-records.ts',
+  'src/learn/print-engine.ts',
+  'src/accounting/provisioning/schema.generated.ts',
+  'src/learn/demo-data.ts',
+  'src/accounting/close/service.ts',
+  'src/portability/schema.ts',
   'src/accounting/migration/service.ts',
   'src/accounting/reconciliation/service.ts',
   'src/accounting/commerce/service.ts',
@@ -333,13 +394,134 @@ export const serverTypeScriptSources = Object.freeze([
   'src/stewardship/council-reports.ts',
 ]);
 
+// Support modules preserve existing entry paths and are excluded from migration completion counts.
+export const serverTypeScriptSupportSources = Object.freeze([
+  'src/accounting/close/service-shared.ts',
+  'src/accounting/close/adjustments.ts',
+  'src/accounting/close/year-end.ts',
+  'src/accounting/close/audit.ts',
+  'src/directory/skills-service-shared.ts',
+  'src/directory/skills-verification.ts',
+  'src/directory/skills-exports.ts',
+  'src/directory/ministries-shared.ts',
+  'src/directory/ministry-participants.ts',
+  'src/directory/ministry-publication.ts',
+  'src/directory/ministry-interest.ts',
+  'src/directory/media-shared.ts',
+  'src/directory/media-maintenance.ts',
+  'src/learn/demo-data-1.ts',
+  'src/learn/demo-data-2.ts',
+  'src/learn/demo-data-3.ts',
+  'src/learn/demo-data-4.ts',
+  'src/accounting/payables/service-shared.ts',
+  'src/accounting/payables/checks.ts',
+  'src/accounting/payables/payment-runs.ts',
+  'src/handlers/parish-reconciliation-shared.ts',
+  'src/handlers/parish-payout-diagnostics.ts',
+  'src/lib/core-shared.ts',
+  'src/lib/core-authentication.ts',
+  'src/lib/core-sessions.ts',
+  'src/handlers/koinonia-signups-shared.ts',
+  'src/handlers/signup-management.ts',
+  'src/handlers/signup-commitments.ts',
+  'src/handlers/donor-groups-shared.ts',
+  'src/handlers/group-attachments.ts',
+  'src/handlers/group-workspace.ts',
+  'src/handlers/parish-shared.ts',
+  'src/handlers/parish-authentication.ts',
+  'src/handlers/parish-registration-storage.ts',
+  'src/handlers/parish-checkout-shared.ts',
+  'src/handlers/parish-registration-intake.ts',
+  'src/handlers/parish-giving-checkout.ts',
+]);
+export const serverTypeScriptCompositions = Object.freeze({
+  'src/accounting/close/service.ts': [
+    'src/accounting/close/service-shared.ts',
+    'src/accounting/close/adjustments.ts',
+    'src/accounting/close/year-end.ts',
+    'src/accounting/close/audit.ts',
+  ],
+  'src/directory/skills-service.ts': [
+    'src/directory/skills-service-shared.ts',
+    'src/directory/skills-verification.ts',
+    'src/directory/skills-exports.ts',
+  ],
+  'src/directory/ministries.ts': [
+    'src/directory/ministries-shared.ts',
+    'src/directory/ministry-participants.ts',
+    'src/directory/ministry-publication.ts',
+    'src/directory/ministry-interest.ts',
+  ],
+  'src/directory/media.ts': ['src/directory/media-shared.ts', 'src/directory/media-maintenance.ts'],
+  'src/learn/demo-data.ts': [
+    'src/learn/demo-data-1.ts',
+    'src/learn/demo-data-2.ts',
+    'src/learn/demo-data-3.ts',
+    'src/learn/demo-data-4.ts',
+  ],
+  'src/accounting/payables/service.ts': [
+    'src/accounting/payables/service-shared.ts',
+    'src/accounting/payables/checks.ts',
+    'src/accounting/payables/payment-runs.ts',
+  ],
+  'src/handlers/parish-reconciliation.ts': [
+    'src/handlers/parish-reconciliation-shared.ts',
+    'src/handlers/parish-payout-diagnostics.ts',
+  ],
+  'src/lib/core.ts': ['src/lib/core-shared.ts', 'src/lib/core-authentication.ts', 'src/lib/core-sessions.ts'],
+  'src/handlers/koinonia-signups.ts': [
+    'src/handlers/koinonia-signups-shared.ts',
+    'src/handlers/signup-management.ts',
+    'src/handlers/signup-commitments.ts',
+  ],
+  'src/handlers/donor-groups.ts': [
+    'src/handlers/donor-groups-shared.ts',
+    'src/handlers/group-attachments.ts',
+    'src/handlers/group-workspace.ts',
+  ],
+  'src/handlers/parish.ts': [
+    'src/handlers/parish-shared.ts',
+    'src/handlers/parish-authentication.ts',
+    'src/handlers/parish-registration-storage.ts',
+  ],
+  'src/handlers/parish-checkout.ts': [
+    'src/handlers/parish-checkout-shared.ts',
+    'src/handlers/parish-registration-intake.ts',
+    'src/handlers/parish-giving-checkout.ts',
+  ],
+});
+
 export function serverSourcePath(runtimePath) {
   const candidate = runtimePath.replace(/\.js$/, '.ts');
   return serverTypeScriptSources.includes(candidate) ? candidate : runtimePath;
 }
 
+export function readServerContractSourceSync(runtimePath, root = repoRoot) {
+  const source = serverSourcePath(runtimePath);
+  return [source, ...(serverTypeScriptCompositions[source] || [])]
+    .map((path) => {
+      const code = readFileSync(resolve(root, path), 'utf8');
+      return path.endsWith('.ts')
+        ? transformSync(code, { loader: 'ts', target: 'es2022', legalComments: 'inline' }).code
+        : code;
+    })
+    .join('\n');
+}
+
+export function readServerModuleSourceSync(runtimePath, root = repoRoot) {
+  const source = serverSourcePath(runtimePath);
+  return [source, ...(serverTypeScriptCompositions[source] || [])]
+    .map((path) => readFileSync(resolve(root, path), 'utf8'))
+    .join('\n');
+}
+
 export async function readServerModuleSource(runtimePath, root = repoRoot) {
-  return readFile(resolve(root, serverSourcePath(runtimePath)), 'utf8');
+  const source = serverSourcePath(runtimePath);
+  return (
+    await Promise.all(
+      [source, ...(serverTypeScriptCompositions[source] || [])].map((path) => readFile(resolve(root, path), 'utf8'))
+    )
+  ).join('\n');
 }
 
 export async function synchronizeServerTypeScript({ check = true, root = repoRoot } = {}) {
@@ -348,13 +530,17 @@ export async function synchronizeServerTypeScript({ check = true, root = repoRoo
   for (const sourcePath of serverTypeScriptSources) {
     const outputPath = sourcePath.replace(/\.ts$/, '.js');
     const source = await readFile(resolve(root, sourcePath), 'utf8');
-    const { code } = await transform(source, {
+    let { code } = await transform(source, {
       loader: 'ts',
       format: 'esm',
       target: 'es2022',
       charset: 'utf8',
       legalComments: 'none',
     });
+    // Keep the reviewed SQL table/column allowlist in readable rows, as in its source.
+    if (sourcePath === 'src/portability/schema.ts') {
+      code = code.replace('const PORTABILITY_SCHEMA =', '// prettier-ignore\nconst PORTABILITY_SCHEMA =');
+    }
     const generated = await format(`// Generated from ${sourcePath} by npm run build:server. Do not edit.\n${code}`, {
       ...prettier,
       parser: 'babel',

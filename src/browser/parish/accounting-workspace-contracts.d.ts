@@ -14,6 +14,7 @@ interface AccountingSetupOverview {
   initialization?: { operational?: boolean };
 }
 interface AccountingPayablesOverview {
+  overdue?: number;
   openPayables?: number;
   awaitingApproval?: number;
   openBills?: number;
@@ -22,14 +23,14 @@ interface AccountingPayablesOverview {
 }
 interface AccountingPayablesWorkspace {
   overview?: AccountingPayablesOverview;
-  vendors?: unknown[];
-  bills?: unknown[];
-  recurringBills?: unknown[];
-  payments?: unknown[];
-  paymentRuns?: unknown[];
-  tax1099?: AccountingReport | null;
+  vendors: AccountingPayableItem[];
+  bills: AccountingPayableItem[];
+  recurringBills?: AccountingPayableItem[];
+  payments?: AccountingPayableItem[];
+  paymentRuns?: AccountingPayableItem[];
+  tax1099?: AccountingTax1099Report | null;
   bankAccounts?: AccountingBankAccount[];
-  aging?: { rows: unknown[]; totalDue: number };
+  aging: { rows: AccountingPayableItem[]; totalDue: number };
 }
 interface AccountingServerReport extends AccountingReport {
   current?: AccountingServerReport;
@@ -67,8 +68,8 @@ interface AccountingWorkspaceResponse {
   entries?: AccountingJournalSummary[];
   rows?: AccountingLedgerEntry[];
   items?: AccountingRecurring[];
-  report: AccountingServerReport;
-  budgets?: AccountingBudgetSummary[];
+  report: AccountingServerReport & AccountingTax1099Report;
+  budgets?: AccountingPayableItem[];
   attachments?: {
     id: string;
     version: number;
@@ -77,12 +78,12 @@ interface AccountingWorkspaceResponse {
     sizeBytes: number;
     createdAt: string;
   }[];
-  vendors?: unknown[];
-  bills?: unknown[];
-  schedules?: unknown[];
-  payments?: unknown[];
-  paymentRuns?: unknown[];
-  aging?: { rows: unknown[]; totalDue: number };
+  vendors: AccountingPayableItem[];
+  bills: AccountingPayableItem[];
+  schedules?: AccountingPayableItem[];
+  payments?: AccountingPayableItem[];
+  paymentRuns?: AccountingPayableItem[];
+  aging?: { rows: AccountingPayableItem[]; totalDue: number };
 }
 interface AccountingReport {
   serverPath?: string;

@@ -52,7 +52,7 @@ export interface ParishActions<TEnv, TExecutionContext> {
     env: TEnv,
     resource: string,
     subpath: string,
-    context: string
+    context: 'attachment' | 'inline'
   ): AwaitableResult;
   handleParishOnboarding(request: Request, env: TEnv, resource: string): AwaitableResult;
   handleParishPasswordResetConfirm(request: Request, env: TEnv): AwaitableResult;

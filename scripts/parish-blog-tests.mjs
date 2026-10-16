@@ -116,10 +116,12 @@ const [
   readFile(new URL('../public/donor/style.css', import.meta.url), 'utf8'),
 ]);
 const worker = `${workerRoot}\n${donorRoutes}`;
-assert.match(migration, /CREATE TABLE IF NOT EXISTS parish_blog_feeds/);
-assert.match(migration, /CREATE TABLE IF NOT EXISTS donor_external_feed_subscriptions/);
-assert.match(preferencesMigration, /CREATE TABLE IF NOT EXISTS donor_news_source_subscriptions/);
-assert.match(preferencesMigration, /CREATE TABLE IF NOT EXISTS donor_custom_news_feeds/);
+assert.ok(includesJavaScriptFragment(migration, 'CREATE TABLE IF NOT EXISTS parish_blog_feeds'));
+assert.ok(includesJavaScriptFragment(migration, 'CREATE TABLE IF NOT EXISTS donor_external_feed_subscriptions'));
+assert.ok(
+  includesJavaScriptFragment(preferencesMigration, 'CREATE TABLE IF NOT EXISTS donor_news_source_subscriptions')
+);
+assert.ok(includesJavaScriptFragment(preferencesMigration, 'CREATE TABLE IF NOT EXISTS donor_custom_news_feeds'));
 for (const sourceKey of ['parish_blog', 'oca', 'orthochristian', 'spzh', 'orthodoxtimes', 'orthodoxethos']) {
   assert.ok(preferencesMigration.includes(`'${sourceKey}'`), `news preferences must allow ${sourceKey}`);
 }
@@ -145,9 +147,8 @@ assert.match(worker, /['"]\/api\/donor\/external-feeds\/['"][\s\S]*handleDonorEx
 assert.match(worker, /['"]\/api\/donor\/custom-news-feeds['"][\s\S]*handleDonorCustomNewsFeeds/);
 assert.match(dashboard, /id="parishBlogEnabled"[\s\S]*id="parishBlogSourceUrl"/);
 assert.match(parishApp, /saveParishBlogSettings[\s\S]*communicationsApi\('\/blog'\)/);
-assert.match(
-  dashboard,
-  /<span class="nav-label">Koinonia<\/span>/,
+assert.ok(
+  includesJavaScriptFragment(dashboard, '<span class="nav-label">Koinonia</span>'),
   'the parish navigation should use the donor-facing Koinonia name'
 );
 assert.match(
@@ -160,25 +161,27 @@ assert.match(
   /koinoniaPublishedAnnouncements[\s\S]*koinoniaPublishedAudio[\s\S]*koinoniaPublishedVideo[\s\S]*koinoniaBlogStatus/,
   'the studio overview should expose live channel health'
 );
-assert.match(parishApp, /function setKoinoniaStudioView/);
-assert.match(parishApp, /function renderKoinoniaOverview/);
+assert.ok(includesJavaScriptFragment(parishApp, 'function setKoinoniaStudioView'));
+assert.ok(includesJavaScriptFragment(parishApp, 'function renderKoinoniaOverview'));
 assert.match(
   parishApp,
   /renderKoinoniaOverview\(\);[\s\S]*setKoinoniaStudioView\(koinoniaStudioView\)/,
   'loaded content should refresh the studio overview'
 );
-assert.match(landing, /Recent News/);
+assert.ok(includesJavaScriptFragment(landing, 'Recent News'));
 assert.match(
   landing,
-  /post\.imageUrl[\s\S]*class="parish-life-blog-image"[\s\S]*loading="lazy"[\s\S]*referrerpolicy="no-referrer"/,
+  /post\.imageUrl[\s\S]*class=['"]parish-life-blog-image['"][\s\S]*loading=['"]lazy['"][\s\S]*referrerpolicy=['"]no-referrer['"]/,
   'Koinonia Recent News should render lazy, privacy-conscious article images when feeds provide them'
 );
-assert.match(
-  landing,
-  /class="parish-life-blog-source">\$\{parishLifeEscape\(post\.source\)\}/,
+assert.ok(
+  includesJavaScriptFragment(landing, 'class="parish-life-blog-source">${parishLifeEscape(post.source)}'),
   'Koinonia Recent News should identify the source of every article'
 );
-assert.match(landing, /\.slice\(0, 4\)/, 'Koinonia home should show only the four newest combined articles');
+assert.ok(
+  includesJavaScriptFragment(landing, '.slice(0, 4)'),
+  'Koinonia home should show only the four newest combined articles'
+);
 assert.match(landing, /Choose your news sources[\s\S]*Nothing appears until you follow/);
 assert.ok(
   landing.indexOf('Your Ministries') < landing.indexOf('id="listenHeading"'),
@@ -217,9 +220,8 @@ assert.match(
   /og:image[\s\S]*twitter:image[\s\S]*enrichParishBlogPostImages/,
   "news parsing should fall back to an article's social metadata for its main photo"
 );
-assert.match(
-  blogHandler,
-  /if \(!subscribed\) return json\(\{ \.\.\.basePayload, posts: \[\] \}\)/,
+assert.ok(
+  includesJavaScriptFragment(blogHandler, 'if (!subscribed) return json({ ...basePayload, posts: [] })'),
   'built-in feeds must return no articles until the donor follows them'
 );
 assert.match(
@@ -227,6 +229,6 @@ assert.match(
   /validateParishBlogUrl\(input\.url\)[\s\S]*resolveParishBlogFeed\(sourceUrl\)/,
   'custom feeds must use the existing public-HTTPS validation and feed discovery'
 );
-assert.match(worker, /"\/myagapay\/news", "\/myagapay\/news\.html"/);
+assert.ok(includesJavaScriptFragment(worker, '"/myagapay/news", "/myagapay/news.html"'));
 
 console.log('PASS - donor-curated news sources, custom RSS, main-photo enrichment, and four-article Koinonia preview');

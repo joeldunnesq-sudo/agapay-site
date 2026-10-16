@@ -273,8 +273,8 @@ assert.ok(
 );
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);
-assert.match(landingScript, /item\.status === "published" && item\.pinned === true && !item\.read/);
-assert.match(landingScript, /item\.kind === "coverage" \? "I can cover" : "Claim spot"/);
+assert.match(landingScript, /item\.status === ['"]published['"] && item\.pinned === true && !item\.read/);
+assert.match(landingScript, /item\.kind === ['"]coverage['"] \? ['"]I can cover['"] : ['"]Claim spot['"]/);
 assert.match(landingScript, /signups\/coverage\/\$\{encodeURIComponent\(id\)\}\/accept/);
 assert.doesNotMatch(parishTierMarkup, /Pinned Announcements/);
 assert.match(
@@ -282,36 +282,36 @@ assert.match(
   /\.parish-life-blog-list \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
   'Recent News should use a compact 2-by-2 grid'
 );
-assert.match(landingScript, /post\.status === "published" && Boolean\(post\.audioUrl\)/);
-assert.match(landingScript, /parishLifeFetch\("\/api\/donor\/videos"/);
-assert.match(landingScript, /href="\/myagapay\/media\/watch\?video=/);
+assert.match(landingScript, /post\.status === ['"]published['"] && Boolean\(post\.audioUrl\)/);
+assert.match(landingScript, /parishLifeFetch\(['"]\/api\/donor\/videos['"]/);
+assert.match(landingScript, /href=['"]\/myagapay\/media\/watch\?video=/);
 assert.match(
   landingScript,
-  /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\("\/api\/donor\/feed"/
+  /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\(['"]\/api\/donor\/feed['"]/
 );
 assert.match(
   landingScript,
-  /fetch\(path, \{ headers, cache: "no-store" \}\)/,
+  /fetch\(path, \{ headers, cache: ['"]no-store['"] \}\)/,
   'landing content requests must remain uncached'
 );
 assert.match(
   landingScript,
-  /initializeParishLifeStructure\(\);[\s\S]*fetch\("\/api\/donor\/dashboard\?view=context"/,
+  /initializeParishLifeStructure\(\);[\s\S]*fetch\(['"]\/api\/donor\/dashboard\?view=context['"]/,
   'cached structure must render before the landing dashboard request resolves'
 );
 assert.match(
   landingScript,
-  /parishLifeFetch\("\/api\/donor\/feed"[\s\S]*renderCommunityInbox/,
+  /parishLifeFetch\(['"]\/api\/donor\/feed['"][\s\S]*renderCommunityInbox/,
   'actionable announcements and signup actions should replace the Community Inbox placeholder'
 );
 assert.match(
   landingScript,
-  /parishLifeFetch\("\/api\/donor\/groups"[\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/,
+  /parishLifeFetch\(['"]\/api\/donor\/groups['"][\s\S]*\.then\(\(groups\)[\s\S]*renderMinistries/,
   'ministries should replace their own placeholder when their request resolves'
 );
 assert.match(
   landingScript,
-  /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/,
+  /parishLifeFetch\(['"]\/api\/donor\/teaching['"][\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings/,
   'recordings should replace their own placeholder when their request resolves'
 );
 

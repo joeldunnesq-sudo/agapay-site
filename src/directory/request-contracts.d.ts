@@ -1,5 +1,10 @@
 import type { DirectorySelfContext } from './contracts.js';
 export interface DirectoryMemberContext {
+  settings?: Awaited<ReturnType<typeof import('./settings.js').getDirectorySettings>>;
+  personId?: string;
+  viewerClass?: string;
+  capabilities?: string[];
+  parishIds?: string[];
   parishId: string;
   user: { id: string };
   [field: string]: unknown;

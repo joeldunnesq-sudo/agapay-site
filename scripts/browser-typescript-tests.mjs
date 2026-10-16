@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import ts from 'typescript';
 import path from 'node:path';
 import { CURRENT_TERMS_VERSION } from '../src/lib/legal-acceptance.js';
@@ -50,7 +51,7 @@ for (const { output, externalEmbed, delivery, module: nativeModule } of browserT
         delivery === 'unreferenced-classic' ? 'public/site-mobile-nav.js' : 'public/listen/service-worker.js',
         'Only these two pre-existing standalone scripts have no runtime consumer'
       );
-      if (delivery === 'unreferenced-worker') assert.match(code, /self\.addEventListener/);
+      if (delivery === 'unreferenced-worker') assert.ok(includesJavaScriptFragment(code, 'self.addEventListener'));
       assert.equal(nativeModule, undefined);
       new vm.Script(code, { filename: output });
       continue;

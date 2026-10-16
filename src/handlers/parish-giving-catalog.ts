@@ -25,6 +25,7 @@ export interface CatalogGift extends PaidOfferingStatusInput {
   completedAt?: unknown;
 }
 export interface CatalogCampaign extends FestalAlmsCampaign {
+  [field: string]: unknown;
   title?: string;
   slug?: string;
   code?: string;

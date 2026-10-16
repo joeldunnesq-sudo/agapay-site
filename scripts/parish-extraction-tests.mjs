@@ -1,3 +1,5 @@
+import { parishDashboardPayload as sharedDashboardPayload } from '../src/handlers/parish.js';
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readServerModuleSource } from './lib/server-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -103,12 +105,12 @@ try {
   assert.equal(emailRequest.url, 'https://api.resend.com/emails');
   const email = JSON.parse(emailRequest.init.body);
   assert.deepEqual(email.to, ['pastor@example.test']);
-  assert.match(email.subject, /Getting started with AGAPAY/);
-  assert.match(email.subject, /St\. Test Parish/);
-  assert.match(email.html, /https:\/\/example\.test/);
+  assert.ok(includesJavaScriptFragment(email.subject, 'Getting started with AGAPAY'));
+  assert.ok(includesJavaScriptFragment(email.subject, 'St. Test Parish'));
+  assert.ok(includesJavaScriptFragment(email.html, 'https://example.test'));
   for (const copy of [email.html, email.text]) {
-    assert.match(copy, /No card is required for the demo/);
-    assert.match(copy, /treasurer signoff before publishing/);
+    assert.ok(includesJavaScriptFragment(copy, 'No card is required for the demo'));
+    assert.ok(includesJavaScriptFragment(copy, 'treasurer signoff before publishing'));
     assert.doesNotMatch(copy, /complete billing|billing first|Once billing is active/);
   }
   assert.equal(email.attachments?.[0]?.filename, 'AGAPAY-Parish-Onboarding-Guide.pdf');
@@ -123,7 +125,7 @@ try {
     subscriptionTier: 'starter',
   });
   const welcomeEmail = JSON.parse(emailRequest.init.body);
-  assert.match(welcomeEmail.subject, /Welcome to AGAPAY/);
+  assert.ok(includesJavaScriptFragment(welcomeEmail.subject, 'Welcome to AGAPAY'));
   assert.equal(welcomeEmail.attachments, undefined, 'the initial welcome email must not attach the onboarding PDF');
 } finally {
   globalThis.fetch = originalFetch;
@@ -134,10 +136,7 @@ const parish = readParishHandlerSource();
 const parishCommemorations = await readServerModuleSource('src/handlers/parish-commemorations.js');
 const parishSacraments = await readServerModuleSource('src/handlers/parish-sacraments.js');
 const parishCommerce = readParishCommerceSource();
-const parishReconciliation = await readFile(
-  new URL('../src/handlers/parish-reconciliation.js', import.meta.url),
-  'utf8'
-);
+const parishReconciliation = await readServerModuleSource('src/handlers/parish-reconciliation.js');
 const parishGivingCatalog = await readServerModuleSource('src/handlers/parish-giving-catalog.js');
 const parishGivingReports = await readFile(
   new URL('../src/handlers/parish-giving-reports.js', import.meta.url),
@@ -351,7 +350,6 @@ assertImports(parishCommerce, './parish.js', [
   'json',
   'missingProductionStoreResponse',
   'normalizeBookstoreBody',
-  'parishDashboardPayload',
   'rateLimit',
   'recordAuditEvent',
   'stripePaymentIntentFinancialUpdates',
@@ -693,8 +691,8 @@ assert.match(
   /sendDashboardInvite[\s\S]*becamePaid/,
   'Stripe may use the notification module only for the intentional trial-to-paid treasurer invitation'
 );
-assert.match(donor, /from "\.\.\/lib\/stripe-fees\.js"/);
-assert.match(admin, /from "\.\.\/lib\/parish-notifications\.js"/);
+assert.ok(includesJavaScriptFragment(donor, 'from "../lib/stripe-fees.js"'));
+assert.ok(includesJavaScriptFragment(admin, 'from "../lib/parish-notifications.js"'));
 assert.match(
   parish,
   /async function createStripeOnboardingSession\([^)]*\)\s*{[\s\S]*?import\("\.\/stripe\.js"\)[\s\S]*?stripeModule\.createStripeOnboardingSession\(/,
@@ -702,3 +700,9 @@ assert.match(
 );
 
 console.log('Parish extraction tests passed.');
+
+assert.equal(
+  typeof sharedDashboardPayload,
+  'function',
+  'the shared dashboard presentation export remains available even when commerce has no need to import it'
+);

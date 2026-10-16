@@ -1899,4 +1899,43 @@ export default [
       ],
     },
   },
+  {
+    files: ['src/directory/member-directory.ts', 'src/directory/skills-exports.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }] },
+  },
+  {
+    files: ['src/learn/grade-records.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^loadSetup$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/parish-life.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^renderParishLifeCalendarEvents$' }],
+    },
+  },
+  {
+    files: ['src/handlers/donor-bookstore.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^env$' }] },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/payables.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(accountingParishOnly|renderAccountingPayables|accountingPayablesTabs|renderAccountingRecurringBills|renderAccountingPayments|renderAccountingPaymentRuns|renderAccounting1099Review|renderAccountingPledgeComparison|renderAccountingBudgets|setAccountingPayablesView|phaseDForm|openAccountingBillDetail|showAccountingVendorForm|saveAccountingVendor|createAccountingVendor|beginAccountingVendorLifecycle|changeAccountingVendorLifecycle|applyAccountingBillVendorDefaults|showAccountingBillForm|createAccountingBill|showAccountingRecurringBillForm|saveAccountingRecurringBill|toggleAccountingRecurringBill|showAccountingPaymentForm|syncAccountingPaymentMethod|loadNextAccountingCheckNumber|showAccountingCheckSettings|saveAccountingCheckSettings|syncAccountingPaymentSelection|createAccountingPayment|showAccountingPaymentRunForm|syncAccountingPaymentRun|createAccountingPaymentRun|postAccountingPaymentRun|printAccountingPaymentRun|loadAccounting1099Review|downloadAccounting1099Review|accountingPhaseDRequest|printAccountingCheck|postAccountingPayment|voidAccountingPayment|accountingBillAction|showAccountingBudgetForm|accountingBudgetLineTemplate|addAccountingBudgetLine|createAccountingBudget|accountingBudgetAction|editAccountingBudgetLines|updateAccountingBudgetLine|openAccountingBudgetVariance|closeAccountingBudgetReport|downloadAccountingBudgetVariance|openAccountingCouncilPacket|accountingPhaseDMutation)$',
+          argsIgnorePattern: '^success$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/lib/core.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^error$' }] },
+  },
+  {
+    files: ['src/worker.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^e$' }] },
+  },
 ];
