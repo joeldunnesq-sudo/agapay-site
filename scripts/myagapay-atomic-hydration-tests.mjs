@@ -125,12 +125,12 @@ assert.doesNotMatch(
 const dashboardLoader = donorApp.match(/async function loadDonorDashboardPage\(\)[\s\S]*?\n}/)?.[0] || '';
 assert.doesNotMatch(
   dashboardLoader,
-  /readDonorCache\("dashboard"\)|renderDonorDashboardPayload\(cached/,
+  /readDonorCache\(["']dashboard["']\)|renderDonorDashboardPayload\(cached/,
   'Home must never paint cached personalized data before the current dashboard response'
 );
 assert.match(
   dashboardLoader,
-  /await donorApi\("\/api\/donor\/dashboard"\)[\s\S]*renderDonorDashboardPayload\(data\)/,
+  /await donorApi\(["']\/api\/donor\/dashboard["']\)[\s\S]*renderDonorDashboardPayload\(data\)/,
   'Home must visibly commit the current live dashboard snapshot'
 );
 

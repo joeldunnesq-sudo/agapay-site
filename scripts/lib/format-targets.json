@@ -1154,7 +1154,15 @@
     "src/learn/print-documents.ts",
     "src/learn/print-family-plans.ts",
     "src/learn/print-pdf-layout.ts",
-    "scripts/typecheck/learn-repository-print-contracts.ts"
+    "scripts/typecheck/learn-repository-print-contracts.ts",
+    "src/browser/donor/app-account-and-dashboard.ts",
+    "src/browser/donor/app-commemorations-and-checkout.ts",
+    "src/browser/donor/app-contracts.d.ts",
+    "src/browser/donor/app-giving-and-login.ts",
+    "src/browser/donor/app-session-and-parish.ts",
+    "src/browser/donor/app.ts",
+    "scripts/donor-pledge-presentation-tests.mjs",
+    "scripts/typecheck-browser/donor-app-contracts.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2342,6 +2350,14 @@
     "src/learn/print-documents.ts",
     "src/learn/print-family-plans.ts",
     "src/learn/print-pdf-layout.ts",
-    "scripts/typecheck/learn-repository-print-contracts.ts"
+    "scripts/typecheck/learn-repository-print-contracts.ts",
+    "src/browser/donor/app-account-and-dashboard.ts",
+    "src/browser/donor/app-commemorations-and-checkout.ts",
+    "src/browser/donor/app-contracts.d.ts",
+    "src/browser/donor/app-giving-and-login.ts",
+    "src/browser/donor/app-session-and-parish.ts",
+    "src/browser/donor/app.ts",
+    "scripts/donor-pledge-presentation-tests.mjs",
+    "scripts/typecheck-browser/donor-app-contracts.ts"
   ]
 }

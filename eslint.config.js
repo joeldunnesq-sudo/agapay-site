@@ -2088,4 +2088,66 @@ export default [
       ],
     },
   },
+  // Explicit Donor inline handlers and classic cross-source bindings remain live globals.
+  {
+    files: ['src/browser/donor/app-account-and-dashboard.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(signupFromPage|verifyDonorEmail|cancelLearnSubscription|openMyAgapayLearnCheckout|requestDonorAccountDeletion|primeDonorDashboardParishUi|loadDonorDashboardPage|downloadGivingStatement|saveDonorSettings|commemorationEntriesForDisplay)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app-commemorations-and-checkout.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadDonorCommemorationsPage|submitCommemoration|startDonorCheckout|handleDonorCheckoutReturn|renderPledgeTracker|checkDonorNotifications)$',
+          argsIgnorePattern: '^frequency$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app-giving-and-login.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(shareCampaign|renderActiveCampaigns|renderActiveFunds|renderNextFeast|renderHomeParishWidgetsLoading|applyDonorGiveParams|toggleCandleIntentionFields|loginFromDashboard|initDonorPasswordResetPage|initDonorLoginPageControls)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app-session-and-parish.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(refreshStaleDashboardShell|isDonorUnauthorized|redirectToMyAgapayLogin|donorLoginReturnPath|clearDonorCache|money|donorInitials|donorDisplayName|shortDate|calendarLabel|nextFeastForCalendar|saveDonorSession|logoutDonor|closeDonorAccountMenus|showGuestDonorDashboard|loadPublicParishes|filterParishSelect|isGivingPlusGiftType|requestParishGivingPlusUpgrade|setGivingTierTilesLoading|markDonorGiftAmountEdited|syncDonorCommemorationAmount|applyDonorNavIcons|activeParishCampaigns|activeParishFeastCampaigns)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setDonorStatus|setHtml|isDonorUnauthorized|redirectToMyAgapayLogin|donorLoginReturnPath|clearDonorCache|money|shortDate|calendarLabel|nextFeastForCalendar|escapeHtml|saveDonorSession|clearDonorSession|showGuestDonorDashboard|loadPublicParishes|fetchPublicParishes|donorGiftUrl|quickDonorGiftUrl|normalizeDonorGiftType|isGivingPlusGiftType|parishHasGivingPlus|isGeneralDonorFund|isCandleDonorFund|parishCanUseGiftType|openGivingPlusPaywall|setGivingTierTilesLoading|updateGivingTierTiles|syncDonorCommemorationAmount|updateQuickGiveLinks|activeParishCampaigns|activeParishFeastCampaigns|selectedPublicParish|campaignLabel|selectedCampaign|renderActiveCampaigns|renderActiveFunds|renderNextFeast|renderHomeParishWidgetsLoading|toggleGiftDetailFields|loadDonorDashboardPage|commemorationEntriesForDisplay|loadDonorCommemorationsPage|renderPledgeTracker|donorStore|DONOR_SHELL_VERSION|donorApi|readDonorCache|writeDonorCache|donorGiftTypeCopy|donorGiftAmountEdited|activeDonorGiftType|_nudgeQueue|_nudgeCurrent)$',
+        },
+      ],
+    },
+  },
 ];

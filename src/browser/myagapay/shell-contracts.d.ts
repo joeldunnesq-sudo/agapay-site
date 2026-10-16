@@ -43,7 +43,7 @@ interface Window {
     setTeachingUnreadCount(count: number): void;
     capabilitiesLoaded(): boolean;
     parishLifeExperience(parish?: ShellParishCapabilities | null): { communicationsEnabled: boolean; label: string };
-    icons: { menu: string };
+    icons: { menu: string; [kind: string]: string };
     initializeMobileAppMenus(root?: Document | HTMLElement): void;
     openSupportDialog(): void;
   };

@@ -11,6 +11,16 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/donor/app.ts',
+    output: 'public/donor/app.js',
+    classicSupportSources: [
+      'src/browser/donor/app-session-and-parish.ts',
+      'src/browser/donor/app-giving-and-login.ts',
+      'src/browser/donor/app-account-and-dashboard.ts',
+      'src/browser/donor/app-commemorations-and-checkout.ts',
+    ],
+  },
+  {
     source: 'src/browser/myagapay/teaching-presentation.ts',
     output: 'public/myagapay/teaching-presentation.js',
     declarationsOnly: true,
