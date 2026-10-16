@@ -200,7 +200,12 @@ export async function approveMinistryInterestReview(
     row,
     reviewerNote = '',
     correlationId = '',
-  }: { context: MinistryContext; row: MinistrySqlRow; reviewerNote?: string; correlationId?: string }
+  }: {
+    context: MinistryContext;
+    row: Pick<MinistrySqlRow, 'source_id'>;
+    reviewerNote?: unknown;
+    correlationId?: string;
+  }
 ) {
   requireReview(context);
   const parishId = parishIdFor(context);
@@ -296,10 +301,10 @@ export async function closeMinistryInterestReview(
     correlationId = '',
   }: {
     context: MinistryContext;
-    row: MinistrySqlRow;
+    row: Pick<MinistrySqlRow, 'source_id'>;
     decision: string;
-    reviewerNote?: string;
-    reasonCode?: string;
+    reviewerNote?: unknown;
+    reasonCode?: unknown;
     correlationId?: string;
   }
 ) {

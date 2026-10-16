@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
@@ -94,7 +95,7 @@ for (const pathname of ['/myagapay/feed', '/myagapay/groups', '/myagapay/teachin
 const [hub, hubScript, shell, parishDashboard, parishApp, groupHandler, workerSource] = await Promise.all([
   readFile(new URL('../public/myagapay/parish-life.html', import.meta.url), 'utf8'),
   readFile(new URL('../public/myagapay/parish-life.js', import.meta.url), 'utf8'),
-  readFile(new URL('../public/myagapay-shell.js', import.meta.url), 'utf8'),
+  Promise.resolve(readBrowserContractSourceSync('public/myagapay-shell.js')),
   readFile(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8'),
   readParishDashboardSource(),
   readServerContractSourceSync('src/handlers/donor-groups.js'),

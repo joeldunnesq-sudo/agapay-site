@@ -1,3 +1,4 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -165,20 +166,20 @@ for (const [domain, names] of stewardshipFacadeDomains) {
   }
 }
 
-const facadeSource = read('src/handlers/donor.js');
+const facadeSource = readServerContractSourceSync('src/handlers/donor.js');
 const bookstoreSource = read('src/handlers/donor-bookstore.js');
 const calendarSource = read('src/handlers/donor-parish-calendar.js');
 const sacramentSource = read('src/handlers/donor-sacraments.js');
 const notificationSource = read('src/handlers/donor-notifications.js');
 const registrationAdminSource = read('src/handlers/registration-admin-page.js');
-const adminFacadeSource = read('src/handlers/admin.js');
+const adminFacadeSource = readServerContractSourceSync('src/handlers/admin.js');
 const adminLearningSource = read('src/handlers/admin-learning-support.js');
 const adminEmailSource = read('src/handlers/admin-email-diagnostics.js');
 const commerceFacadeSource = read('src/handlers/parish-commerce.js');
 const bookstoreInventorySource = read('src/handlers/parish-bookstore-inventory.js');
 const bookstoreHandlerSource = read('src/handlers/parish-bookstore-handler.js');
 const parishFacadeSource = read('src/handlers/parish.js');
-const stewardshipFacadeSource = read('src/handlers/stewardship.js');
+const stewardshipFacadeSource = readServerContractSourceSync('src/handlers/stewardship.js');
 for (const name of [
   ...bookstoreExports,
   ...calendarExports,

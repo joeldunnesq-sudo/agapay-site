@@ -1,6 +1,7 @@
-import { recordServiceInvoice, postServiceInvoices } from '../accounting/service-costs.js';
-import { resolveOperationalAccountingDatabase } from '../accounting/source-wiring.js';
-import { subscriptionSetupUpdates, invoiceDonationMetadata, invoicePaymentIntentId, invoiceSubscriptionId } from '../payments/donation-events.js';
+// Generated from src/handlers/stripe.ts by npm run build:server. Do not edit.
+import '../accounting/service-costs.js';
+import '../accounting/source-wiring.js';
+import '../payments/donation-events.js';
 import {
   claimStripeEvent,
   finishStripeEvent,
@@ -9,226 +10,61 @@ import {
   missingProductionStoreResponse,
   rateLimit,
   unauthorized,
-} from "../lib/core.js";
-
-import { logEvent } from "../lib/logging.js";
-
-import {
-  normalizeSubscriptionAddOns,
-  subscriptionTier,
-  subscriptionTierFromStripePriceId,
-} from "../lib/subscriptions.js";
-
-import {
-  createSubscriptionCheckoutForRegistration,
-} from "../lib/subscription-checkout.js";
-
-import {
-  persistLearnBillingFromStripe,
-} from "../learn/billing.js";
-
-import {
-  agapayEmailHtml,
-  sendEmail,
-} from "../lib/email.js";
-
-import {
-  absoluteWebsiteUrl,
-  slugify,
-} from "../lib/format.js";
-
-import {
-  booleanFromStripeMetadata,
-  checkoutPaymentIntentId,
-  numericCents,
-  stripeAccountStatus,
-  stripeFormRequest,
-  stripeGetRequest,
-  stripeGetConnectedRequest,
-  stripeObjectId,
-} from "../lib/stripe-connect.js";
-import { upsertStripeChargeVolumeRecord } from "../lib/stripe-volume.js";
-import { donorName } from "../lib/stripe-fees.js";
-import { STRIPE_READINESS_MAX_AGE_MS, invalidateOnboardingSignoffIfChanged } from "../lib/parish-onboarding.js";
-import { sendDashboardInvite } from "../lib/parish-notifications.js";
-import { activateEarlyAdopterPricing, releaseEarlyAdopterReservation, retireEarlyAdopterPricing } from "../lib/early-adopter-pricing.js";
-
+} from '../lib/core.js';
+import { logEvent } from '../lib/logging.js';
+import '../lib/subscriptions.js';
+import { createSubscriptionCheckoutForRegistration } from '../lib/subscription-checkout.js';
+import '../learn/billing.js';
+import '../lib/email.js';
+import '../lib/format.js';
+import '../lib/stripe-connect.js';
+import '../lib/stripe-volume.js';
+import '../lib/stripe-fees.js';
+import '../lib/parish-onboarding.js';
+import { sendDashboardInvite } from '../lib/parish-notifications.js';
+import { activateEarlyAdopterPricing, retireEarlyAdopterPricing } from '../lib/early-adopter-pricing.js';
 import {
   appendAdminAudit,
-  findRegistrationByStripeAccountId,
-  findRegistrationByStripeSubscriptionId,
-  findCheckoutParish,
-  loadDonorOfferingByCheckout,
-  loadDonorOfferingByPaymentIntent,
   loadRegistrationByReference,
   requireAdminContext,
   saveRegistrationRecord,
-  storeDonorOffering,
-  stripePaymentIntentFinancialUpdates,
-  updateDonorOfferingByCheckout,
-  updateDonorOfferingByPaymentIntent,
-} from "./parish.js";
-import { ensureCommemorationEntryFromOffering } from "./parish-commemorations.js";
+} from './parish.js';
+import './parish-commemorations.js';
+import './parish-commerce.js';
+import '../accounting/source-wiring.js';
+import './stripe-shared.js';
+import './stripe-shared.js';
+import { invalidateAndSaveMaterialRegistration, refreshStripeStatusForRegistration } from './stripe-account-refresh.js';
+import { processStripeWebhookEvent } from './stripe-webhook-processing.js';
 import {
-  completeCommerceOrderFromStripe,
-  disputeCommerceOrderFromStripe,
-  refundCommerceOrderFromStripe,
-  sendCommerceReceiptIfNeeded,
-} from "./parish-commerce.js";
-import {
-  wireCommerceDisputeToAccounting,
-  wireCommerceOrderToAccounting,
-  wireCommerceRefundsToAccounting,
-  wireGivingOfferingToAccounting,
-  wireGivingRefundsToAccounting,
-} from "../accounting/source-wiring.js";
-
-// src/handlers/stripe.js
-// Stripe webhook, onboarding, subscription checkout, and refresh handlers.
-
-
-async function sendDonationReceiptIfNeeded(env, offering = {}) {
-  const donorModule = await import("./donor.js");
-  return donorModule.sendDonationReceiptIfNeeded(env, offering);
-}
-
-function stripePayoutBankSummary(account = {}) {
-  const bank = (Array.isArray(account.external_accounts?.data) ? account.external_accounts.data : [])
-    .find((entry) => entry?.object === "bank_account");
-  if (!bank) return {};
-  return {
-    stripePayoutBankName: String(bank.bank_name || "").trim().slice(0, 160),
-    stripePayoutBankLast4: String(bank.last4 || "").trim().slice(-4)
-  };
-}
-
-const NON_PRODUCTION_ENVIRONMENTS = new Set(["development", "test", "staging", "preview"]);
-const ORDER_COMPLETION_COMMERCE_MODULES = new Set(["bookstore", "events"]);
-const ORDER_COMPLETION_ORDER_ID_PREFIXES = ["bookstore_", "event_"];
-
-function isCommerceOrderCompletion(object = {}) {
-  const module = String(object.metadata?.commerce_module || "");
-  const orderId = String(object.metadata?.order_id || "");
-  return ORDER_COMPLETION_COMMERCE_MODULES.has(module)
-    || ORDER_COMPLETION_ORDER_ID_PREFIXES.some((prefix) => orderId.startsWith(prefix));
-}
-
-function stripeAccountMaterialState(account = {}) {
-  return JSON.stringify({
-    id: String(account.id || ""),
-    chargesEnabled: Boolean(account.charges_enabled),
-    payoutsEnabled: Boolean(account.payouts_enabled),
-    detailsSubmitted: Boolean(account.details_submitted),
-    disabledReason: String(account.requirements?.disabled_reason || ""),
-    requirementsDue: [...(Array.isArray(account.requirements?.currently_due) ? account.requirements.currently_due : [])].sort(),
-    ...stripePayoutBankSummary(account)
-  });
-}
-
-function storedStripeMaterialState(registration = {}) {
-  return JSON.stringify({
-    id: String(registration.stripeAccountId || ""),
-    chargesEnabled: registration.stripeChargesEnabled === true,
-    payoutsEnabled: registration.stripePayoutsEnabled === true,
-    detailsSubmitted: registration.stripeDetailsSubmitted === true,
-    disabledReason: String(registration.stripeDisabledReason || ""),
-    requirementsDue: [...(Array.isArray(registration.stripeRequirementsDue) ? registration.stripeRequirementsDue : [])].sort(),
-    stripePayoutBankName: String(registration.stripePayoutBankName || ""),
-    stripePayoutBankLast4: String(registration.stripePayoutBankLast4 || "")
-  });
-}
-
-async function retrieveConnectedAccountForRefresh(env, registration = {}, referenceHint = "") {
-  const environment = String(env.AGAPAY_ENVIRONMENT || "").trim().toLowerCase();
-  const fixture = registration.onboardingStripeTestFixture;
-  if (NON_PRODUCTION_ENVIRONMENTS.has(environment)
-    && String(registration.stripeAccountId || "").startsWith("acct_staging_")
-    && fixture?.id === registration.stripeAccountId) {
-    return { ok: true, status: 200, body: fixture, simulated: true };
-  }
-  if (registration.stripeAccountId) {
-    const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
-    if (retrieved.ok || retrieved.status !== 404) return retrieved;
-  }
-
-  if (!registration.stripeOnboardingLinkCreatedAt) {
-    return { ok: false, status: 422, body: { error: { message: "This parish has not started Stripe onboarding yet" } } };
-  }
-
-  // An Admin page opened before parish-led onboarding could previously save a
-  // stale blank account ID over the newly connected account. Recover the
-  // account from the immutable AGAPAY metadata written when the parish started
-  // Stripe onboarding. Never guess from name or email.
-  const reference = String(registration.reference || referenceHint || "").trim();
-  const parishId = String(registration.parishId || "").trim();
-  if (!reference && !parishId) {
-    return { ok: false, status: 422, body: { error: { message: "No AGAPAY registration identity is available for Stripe recovery" } } };
-  }
-
-  const matches = [];
-  let startingAfter = "";
-  for (let page = 0; page < 5; page += 1) {
-    const query = new URLSearchParams({ limit: "100" });
-    if (startingAfter) query.set("starting_after", startingAfter);
-    const listed = await stripeGetRequest(env, `/v1/accounts?${query}`);
-    if (!listed.ok) return listed;
-    const accounts = Array.isArray(listed.body?.data) ? listed.body.data : [];
-    matches.push(...accounts.filter((account) => {
-      const metadata = account?.metadata || {};
-      return (reference && metadata.agapay_reference === reference)
-        || (parishId && metadata.agapay_parish_id === parishId);
-    }));
-    if (!listed.body?.has_more || !accounts.length) break;
-    startingAfter = String(accounts.at(-1)?.id || "");
-    if (!startingAfter) break;
-  }
-
-  const unique = [...new Map(matches.map((account) => [account.id, account])).values()];
-  if (unique.length === 1) return { ok: true, status: 200, body: unique[0], recovered: true };
-  if (unique.length > 1) {
-    return { ok: false, status: 409, body: { error: { message: "Multiple Stripe accounts match this parish. AGAPAY support must select the canonical account." } } };
-  }
-  return { ok: false, status: 422, body: { error: { message: "No connected Stripe account was found for this parish" } } };
-}
-
-async function invalidateAndSaveMaterialRegistration(env, reference, previous, next, actor, reason, persist = true) {
-  const updated = await invalidateOnboardingSignoffIfChanged(previous, next, {
-    actor,
-    reason,
-    receiptContact: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app"
-  });
-  if (persist) await saveRegistrationRecord(env, reference, updated, previous);
-  return updated;
-}
-
-
-export async function handleSubscriptionCheckout(request, env, reference) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 20, windowSeconds: 300 });
+  createStripeOnboardingSession,
+  refreshStripeStatusForRegistration as refreshStripeStatusForRegistration2,
+} from './stripe-account-refresh.js';
+import { processStripeWebhookEvent as processStripeWebhookEvent2 } from './stripe-webhook-processing.js';
+async function handleSubscriptionCheckout(request, env, reference) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+  const limited = await rateLimit(request, env, 'admin-money-actions', { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
   const adminContext = await requireAdminContext(request, env);
   if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const registration = await loadRegistrationByReference(env, reference);
-  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
-
+  if (!registration) return json({ error: 'Registration not found' }, { status: 404 });
   let body = {};
   try {
     body = await request.json();
   } catch {
     body = {};
   }
-
   const response = await createSubscriptionCheckoutForRegistration({
     request,
     env,
     reference,
     registration,
     body,
-    returnPath: "/admin",
+    returnPath: '/admin',
     allowTrial: true,
-    saveRegistrationRecord
+    saveRegistrationRecord,
   });
   let payload = null;
   try {
@@ -237,37 +73,33 @@ export async function handleSubscriptionCheckout(request, env, reference) {
     return response;
   }
   if (!response.ok || !payload?.registration) return response;
-
   const audited = appendAdminAudit(
     payload.registration,
-    payload.registration.subscriptionTrialDays ? "subscription_demo_checkout_created" : "subscription_checkout_created",
+    payload.registration.subscriptionTrialDays ? 'subscription_demo_checkout_created' : 'subscription_checkout_created',
     adminContext.actor,
     {
-    subscriptionTier: payload.registration.subscriptionTier || "",
-    subscriptionStatus: payload.registration.subscriptionStatus || "",
-    trialDays: payload.registration.subscriptionTrialDays || 0,
-    checkoutSessionId: payload.registration.stripeSubscriptionCheckoutSessionId || ""
+      subscriptionTier: payload.registration.subscriptionTier || '',
+      subscriptionStatus: payload.registration.subscriptionStatus || '',
+      trialDays: payload.registration.subscriptionTrialDays || 0,
+      checkoutSessionId: payload.registration.stripeSubscriptionCheckoutSessionId || '',
     }
   );
   await saveRegistrationRecord(env, reference, audited, payload.registration);
   payload.registration = audited;
   return json(payload, { status: response.status });
 }
-
-export function parseStripeSignature(header) {
+function parseStripeSignature(header) {
   const values = {};
-  for (const part of String(header || "").split(",")) {
-    const [key, value] = part.split("=");
+  for (const part of String(header || '').split(',')) {
+    const [key, value] = part.split('=');
     if (key && value) values[key.trim()] = value.trim();
   }
   return values;
 }
-
-export function toHex(buffer) {
-  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
+function toHex(buffer) {
+  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
-
-export function secureCompare(a, b) {
+function secureCompare(a, b) {
   if (!a || !b || a.length !== b.length) return false;
   let mismatch = 0;
   for (let index = 0; index < a.length; index += 1) {
@@ -275,182 +107,177 @@ export function secureCompare(a, b) {
   }
   return mismatch === 0;
 }
-
-export async function verifyStripeWebhook(payload, signatureHeader, secret) {
+async function verifyStripeWebhook(payload, signatureHeader, secret) {
   if (!secret) return false;
   const signature = parseStripeSignature(signatureHeader);
   if (!signature.t || !signature.v1) return false;
-
   const timestamp = Number(signature.t);
   if (!Number.isFinite(timestamp)) return false;
-  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestamp);
+  const ageSeconds = Math.abs(Math.floor(Date.now() / 1e3) - timestamp);
   if (ageSeconds > 300) return false;
-
   const key = await crypto.subtle.importKey(
-    "raw",
+    'raw',
     new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
+    { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ["sign"]
+    ['sign']
   );
   const signedPayload = `${signature.t}.${payload}`;
-  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
+  const digest = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
   return secureCompare(toHex(digest), signature.v1);
 }
-
-export function stripeWebhookSecrets(env) {
-  return [env.STRIPE_WEBHOOK_SECRET, env.STRIPE_WEBHOOK_SECRET_CONNECT]
-    .filter((secret, index, secrets) => secret && secrets.indexOf(secret) === index);
+function stripeWebhookSecrets(env) {
+  return [env.STRIPE_WEBHOOK_SECRET, env.STRIPE_WEBHOOK_SECRET_CONNECT].filter(
+    (secret, index, secrets) => secret && secrets.indexOf(secret) === index
+  );
 }
-
-export async function verifyStripeWebhookWithAnySecret(payload, signatureHeader, secrets) {
+async function verifyStripeWebhookWithAnySecret(payload, signatureHeader, secrets) {
   for (const secret of secrets) {
     if (await verifyStripeWebhook(payload, signatureHeader, secret)) return true;
   }
   return false;
 }
-
-export function subscriptionStatusFromStripe(status) {
-  if (status === "active" || status === "trialing") return status;
-  if (status === "past_due" || status === "unpaid") return "past_due";
-  if (status === "canceled" || status === "incomplete_expired") return "cancelled";
-  if (status === "paused") return "paused";
-  return status || "not_started";
+function subscriptionStatusFromStripe(status) {
+  if (status === 'active' || status === 'trialing') return status;
+  if (status === 'past_due' || status === 'unpaid') return 'past_due';
+  if (status === 'canceled' || status === 'incomplete_expired') return 'cancelled';
+  if (status === 'paused') return 'paused';
+  return status || 'not_started';
 }
-
-export async function updateSubscriptionRecord(env, reference, updates) {
+async function updateSubscriptionRecord(env, reference, updates) {
   if (!hasProductionStore(env) || !reference) return null;
   const current = await loadRegistrationByReference(env, reference);
   if (!current) return null;
-  const nextStatus = String(updates.subscriptionStatus || current.subscriptionStatus || "").toLowerCase();
-  if (current.subscriptionPricingProgram === "founding_20" && nextStatus === "active") {
+  const nextStatus = String(updates.subscriptionStatus || current.subscriptionStatus || '').toLowerCase();
+  if (current.subscriptionPricingProgram === 'founding_20' && nextStatus === 'active') {
     await activateEarlyAdopterPricing(env, reference);
-    updates = { ...updates, earlyAdopterActivatedAt: current.earlyAdopterActivatedAt || new Date().toISOString() };
+    updates = {
+      ...updates,
+      earlyAdopterActivatedAt: current.earlyAdopterActivatedAt || /* @__PURE__ */ new Date().toISOString(),
+    };
   }
-  if (current.subscriptionPricingProgram === "founding_20" && nextStatus === "cancelled") {
+  if (current.subscriptionPricingProgram === 'founding_20' && nextStatus === 'cancelled') {
     await retireEarlyAdopterPricing(env, reference);
-    updates = { ...updates, subscriptionPricingProgram: "standard", earlyAdopterEndedAt: new Date().toISOString(), earlyAdopterSlot: null };
+    updates = {
+      ...updates,
+      subscriptionPricingProgram: 'standard',
+      earlyAdopterEndedAt: /* @__PURE__ */ new Date().toISOString(),
+      earlyAdopterSlot: null,
+    };
   }
   const updated = {
     ...current,
     ...updates,
-    subscriptionUpdatedAt: new Date().toISOString()
+    subscriptionUpdatedAt: /* @__PURE__ */ new Date().toISOString(),
   };
   const saved = await invalidateAndSaveMaterialRegistration(
     env,
     reference,
     current,
     updated,
-    "stripe-webhook",
-    "Stripe changed the AGAPAY subscription configuration."
+    'stripe-webhook',
+    'Stripe changed the AGAPAY subscription configuration.'
   );
-  const becamePaid = String(current.subscriptionStatus || "").toLowerCase() !== "active"
-    && String(updates.subscriptionStatus || "").toLowerCase() === "active";
-  const treasurerAccepted = saved.onboardingAccess?.treasurer?.status === "accepted";
+  const becamePaid =
+    String(current.subscriptionStatus || '').toLowerCase() !== 'active' &&
+    String(updates.subscriptionStatus || '').toLowerCase() === 'active';
+  const treasurerAccepted = saved.onboardingAccess?.treasurer?.status === 'accepted';
   if (!becamePaid || treasurerAccepted) return saved;
-
   const invite = await sendDashboardInvite(
     env,
-    env.AGAPAY_APP_URL || env.AGAPAY_PUBLIC_URL || "https://agapay.app",
+    env.AGAPAY_APP_URL || env.AGAPAY_PUBLIC_URL || 'https://agapay.app',
     saved
   );
   const withTreasurerInvite = {
     ...saved,
     dashboardInviteEmailStatus: invite.status,
-    dashboardInviteEmailId: invite.id || "",
-    dashboardInviteEmailDetail: invite.detail || "",
+    dashboardInviteEmailId: invite.id || '',
+    dashboardInviteEmailDetail: invite.detail || '',
     dashboardInviteEmailRecipients: invite.recipients || [],
-    dashboardInviteEmailSentAt: invite.status === "sent" ? new Date().toISOString() : saved.dashboardInviteEmailSentAt,
-    onboardingAccess: invite.access
-      ? { ...(saved.onboardingAccess || {}), ...invite.access }
-      : saved.onboardingAccess,
-    paidTreasurerInviteRequestedAt: new Date().toISOString()
+    dashboardInviteEmailSentAt:
+      invite.status === 'sent' ? /* @__PURE__ */ new Date().toISOString() : saved.dashboardInviteEmailSentAt,
+    onboardingAccess: invite.access ? { ...(saved.onboardingAccess || {}), ...invite.access } : saved.onboardingAccess,
+    paidTreasurerInviteRequestedAt: /* @__PURE__ */ new Date().toISOString(),
   };
   await saveRegistrationRecord(env, reference, withTreasurerInvite, saved);
   return withTreasurerInvite;
 }
-
-export async function handleStripeWebhook(request, env) {
+async function handleStripeWebhook(request, env) {
   const requestId = crypto.randomUUID();
-  const route = "/api/stripe/webhook";
-
+  const route = '/api/stripe/webhook';
   const secrets = stripeWebhookSecrets(env);
   if (!secrets.length) {
     await logEvent(env, {
-      eventType: "stripe.webhook.misconfigured",
-      severity: "error",
+      eventType: 'stripe.webhook.misconfigured',
+      severity: 'error',
       requestId,
       route,
-      method: "POST",
+      method: 'POST',
       retryable: false,
     });
-    return json({ error: "STRIPE_WEBHOOK_SECRET is not configured" }, { status: 500 });
+    return json({ error: 'STRIPE_WEBHOOK_SECRET is not configured' }, { status: 500 });
   }
-
   const payload = await request.text();
-  const verified = await verifyStripeWebhookWithAnySecret(payload, request.headers.get("Stripe-Signature"), secrets);
+  const verified = await verifyStripeWebhookWithAnySecret(payload, request.headers.get('Stripe-Signature'), secrets);
   if (!verified) {
     await logEvent(env, {
-      eventType: "stripe.webhook.invalid_signature",
-      severity: "warn",
+      eventType: 'stripe.webhook.invalid_signature',
+      severity: 'warn',
       requestId,
       route,
-      method: "POST",
+      method: 'POST',
       retryable: false,
     });
-    return json({ error: "Invalid Stripe signature" }, { status: 400 });
+    return json({ error: 'Invalid Stripe signature' }, { status: 400 });
   }
-
   let event;
   try {
     event = JSON.parse(payload);
   } catch {
     await logEvent(env, {
-      eventType: "stripe.webhook.invalid_payload",
-      severity: "warn",
+      eventType: 'stripe.webhook.invalid_payload',
+      severity: 'warn',
       requestId,
       route,
-      method: "POST",
+      method: 'POST',
       retryable: false,
     });
-    return json({ error: "Invalid webhook payload" }, { status: 400 });
+    return json({ error: 'Invalid webhook payload' }, { status: 400 });
   }
-
   const claim = await claimStripeEvent(env, event);
   if (!claim.claimed) {
     await logEvent(env, {
-      eventType: "stripe.webhook.duplicate",
-      severity: "info",
+      eventType: 'stripe.webhook.duplicate',
+      severity: 'info',
       requestId,
       route,
-      method: "POST",
+      method: 'POST',
       stripeEventId: event.id,
-      metadata: { type: event.type, status: claim.status || "processed" },
+      metadata: { type: event.type, status: claim.status || 'processed' },
     });
-    return json({ received: true, duplicate: true, status: claim.status || "processed" });
+    return json({ received: true, duplicate: true, status: claim.status || 'processed' });
   }
-
   try {
     await processStripeWebhookEvent(env, event);
-    await finishStripeEvent(env, event.id, "processed");
+    await finishStripeEvent(env, event.id, 'processed');
     await logEvent(env, {
-      eventType: "stripe.webhook.processed",
-      severity: "info",
+      eventType: 'stripe.webhook.processed',
+      severity: 'info',
       requestId,
       route,
-      method: "POST",
+      method: 'POST',
       stripeEventId: event.id,
       metadata: { type: event.type },
     });
     return json({ received: true });
   } catch (error) {
-    await finishStripeEvent(env, event.id, "failed", error?.message || String(error));
+    await finishStripeEvent(env, event.id, 'failed', error?.message || String(error));
     await logEvent(env, {
-      eventType: "stripe.webhook.processing_failed",
-      severity: "error",
+      eventType: 'stripe.webhook.processing_failed',
+      severity: 'error',
       requestId,
       route,
-      method: "POST",
+      method: 'POST',
       stripeEventId: event.id,
       errorName: error?.name,
       error,
@@ -458,714 +285,48 @@ export async function handleStripeWebhook(request, env) {
       metadata: { type: event.type },
     });
     return json(
-      { error: "Webhook processing failed", detail: error?.message || "Unknown webhook error" },
+      { error: 'Webhook processing failed', detail: error?.message || 'Unknown webhook error' },
       { status: 500 }
     );
   }
 }
-
-export async function processStripeWebhookEvent(env, event) {
-  const object = event.data?.object || {};
-  if (event.type === "charge.succeeded" || event.type === "charge.updated" || event.type === "charge.refunded") {
-    const stripeAccountId = event.account || stripeObjectId(object.on_behalf_of);
-    const found = stripeAccountId
-      ? await findRegistrationByStripeAccountId(env, stripeAccountId)
-      : null;
-    const parishId = found?.registration?.parishId || object.metadata?.parish_id || "";
-    if (parishId && stripeAccountId && object.id) {
-      await upsertStripeChargeVolumeRecord(env, parishId, stripeAccountId, object);
-    }
-  }
-  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-    if (object.metadata?.product === "learn") {
-      await persistLearnBillingFromStripe(env, {
-        ...object,
-        status: object.mode === "subscription" ? "active" : object.payment_status || "active",
-        stripeSubscriptionId: object.subscription || "",
-        checkoutSessionId: object.id || ""
-      });
-      const toEmail = object.customer_details?.email || object.customer_email || object.metadata?.donor_email || "";
-      if (toEmail) {
-        const appUrl = env.AGAPAY_PUBLIC_URL || "https://agapay.app";
-        const setupUrl = `${appUrl}/myagapay/learn/setup`;
-        const dashUrl = `${appUrl}/myagapay/learn`;
-        await sendEmail(env, {
-          from: "AGAPAY Learn <learn@agapay.app>",
-          to: [toEmail],
-          subject: "Welcome to AGAPAY Learn",
-          html: agapayEmailHtml(appUrl, "Welcome to AGAPAY Learn", `
-            <p style="margin:0 0 18px;">Thank you for joining AGAPAY Learn. Your Family plan is now active.</p>
-            <p style="margin:0 0 18px;">AGAPAY Learn is an Orthodox Christian homeschool planning application for your household. It brings Church rhythms, lesson planning, books, Grace Mode, and printable plans into one calm workspace shaped by the liturgical calendar.</p>
-            <p style="margin:0 0 8px;"><strong>Get started in three steps:</strong></p>
-            <ol style="margin:0 0 18px;padding-left:22px;line-height:1.9;">
-              <li>Complete your household setup — name your children, set your school year and terms, and choose your Church calendar.</li>
-              <li>Add your subjects, books, and Church rhythm.</li>
-              <li>Open Today's dashboard each morning for your liturgical day, church rhythms, and household plan.</li>
-            </ol>
-            <div style="text-align:center;margin:28px 0;">
-              <a href="${setupUrl}" style="display:inline-block;background:#07284A;color:#ffffff;text-decoration:none;border-radius:10px;padding:14px 32px;font-size:16px;font-weight:700;border:1px solid #C9A25B;">Set Up Your Household →</a>
-            </div>
-            <p style="margin:0 0 10px;color:#595959;font-size:13px;">Already set up? <a href="${dashUrl}" style="color:#C9A25B;">Go to your dashboard</a>.</p>
-            <p style="margin:0;color:#595959;font-size:13px;">If you have any questions, reply to this email. We read every message.</p>
-          `)
-        }).catch(() => {});
-      }
-      return;
-    }
-
-    if (isCommerceOrderCompletion(object)) {
-      const order = await completeCommerceOrderFromStripe(env, object, "session");
-      if (order?.id) {
-        await wireCommerceOrderToAccounting(env, order.id);
-        await sendCommerceReceiptIfNeeded(env, order.id);
-      }
-      return;
-    }
-
-    const existingOffering = object.id ? await loadDonorOfferingByCheckout(env, object.id) : null;
-    const setup = (existingOffering || object.metadata?.donor_email) && subscriptionSetupUpdates(object);
-    if (setup) {
-      await updateDonorOfferingByCheckout(env, object.id, setup);
-      return;
-    }
-
-    const paymentStatus = object.payment_status || "pending";
-    const status = paymentStatus === "paid" ? "completed" : "pending";
-    const paymentIntentId = checkoutPaymentIntentId(object);
-    const feeUpdates = status === "completed" && paymentIntentId
-      ? await stripePaymentIntentFinancialUpdates(
-        env,
-        paymentIntentId,
-        object.metadata?.parish_id || existingOffering?.parishId || "",
-        existingOffering || object.metadata || {}
-      )
-      : {};
-    const updatedOffering = await updateDonorOfferingByCheckout(env, object.id, {
-      status,
-      paymentStatus,
-      stripeCustomerId: object.customer || "",
-      stripePaymentIntentId: paymentIntentId || "",
-      stripeSubscriptionId: object.subscription || "",
-      completedAt: status === "completed" ? (object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()) : "",
-      ...feeUpdates
-    });
-    if (status === "completed" || paymentStatus === "paid") {
-      if (updatedOffering) await wireGivingOfferingToAccounting(env, updatedOffering);
-      await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
-        checkoutSessionId: object.id,
-        id: object.id,
-        parishId: object.metadata?.parish_id || updatedOffering?.parishId || "",
-        parishName: object.metadata?.parish_name || updatedOffering?.parishName || "",
-        donorEmail: object.metadata?.donor_email || object.customer_details?.email || object.customer_email || updatedOffering?.donorEmail || "",
-        donorName: object.metadata?.donor_name || object.customer_details?.name || updatedOffering?.donorName || "",
-        giftType: object.metadata?.gift_type || updatedOffering?.giftType || "",
-        frequency: object.metadata?.frequency || updatedOffering?.frequency || "once",
-        amountCents: numericCents(object.metadata?.amount_cents) || updatedOffering?.amountCents || object.amount_subtotal || object.amount_total || 0,
-        namesLiving: object.metadata?.names_living || updatedOffering?.namesLiving || "",
-        namesDeparted: object.metadata?.names_departed || updatedOffering?.namesDeparted || "",
-        commemorationKind: object.metadata?.commemoration_kind || updatedOffering?.commemorationKind || "proskomedia_liturgy",
-        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-      });
-      await sendDonationReceiptIfNeeded(env, updatedOffering || {});
-    }
-  }
-
-  if (event.type === "checkout.session.async_payment_failed") {
-    await updateDonorOfferingByCheckout(env, object.id, {
-      status: "failed",
-      paymentStatus: object.payment_status || "failed",
-      stripeCustomerId: object.customer || "",
-      stripePaymentIntentId: object.payment_intent || "",
-      failureMessage: object.last_payment_error?.message || "",
-      failedAt: new Date().toISOString()
-    });
-  }
-
-  if (event.type === "checkout.session.expired") {
-    await updateDonorOfferingByCheckout(env, object.id, {
-      status: "expired",
-      paymentStatus: object.payment_status || "unpaid",
-      expiredAt: object.expires_at ? new Date(object.expires_at * 1000).toISOString() : new Date().toISOString()
-    });
-    if (object.mode === "subscription") {
-      const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
-      if (reference) {
-        await updateSubscriptionRecord(env, reference, {
-          subscriptionStatus: "not_started",
-          stripeSubscriptionCheckoutSessionId: object.id || "",
-          stripeSubscriptionCheckoutSessionStatus: "expired"
-        });
-      }
-    }
-  }
-
-  if (event.type === "payment_intent.succeeded") {
-    if (isCommerceOrderCompletion(object)) {
-      // PaymentIntent events do not contain Checkout Session automatic-tax
-      // totals. Complete payment/inventory now, then let the session webhook
-      // reconcile tax and become the accounting/receipt source of truth.
-      await completeCommerceOrderFromStripe(env, object, "payment_intent");
-      return;
-    }
-    const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
-    const feeUpdates = await stripePaymentIntentFinancialUpdates(
-      env,
-      object.id,
-      object.metadata?.parish_id || existingOffering?.parishId || "",
-      existingOffering || object.metadata || {}
-    );
-    const updatedOffering = await updateDonorOfferingByPaymentIntent(env, object.id, {
-      status: "completed",
-      paymentStatus: "paid",
-      stripeCustomerId: object.customer || "",
-      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
-      ...feeUpdates
-    });
-    if (updatedOffering) await wireGivingOfferingToAccounting(env, updatedOffering);
-    await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
-      id: updatedOffering?.checkoutSessionId || updatedOffering?.stripePaymentIntentId || object.id,
-      stripePaymentIntentId: object.id,
-      parishId: updatedOffering?.parishId || object.metadata?.parish_id || "",
-      parishName: updatedOffering?.parishName || object.metadata?.parish_name || "",
-      donorEmail: updatedOffering?.donorEmail || object.metadata?.donor_email || "",
-      donorName: updatedOffering?.donorName || object.metadata?.donor_name || "",
-      giftType: updatedOffering?.giftType || object.metadata?.gift_type || "",
-      frequency: updatedOffering?.frequency || object.metadata?.frequency || "once",
-      amountCents: updatedOffering?.amountCents || object.amount_received || object.amount || 0,
-      namesLiving: updatedOffering?.namesLiving || object.metadata?.names_living || "",
-      namesDeparted: updatedOffering?.namesDeparted || object.metadata?.names_departed || "",
-      commemorationKind: updatedOffering?.commemorationKind || object.metadata?.commemoration_kind || "proskomedia_liturgy",
-      createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-    });
-    await sendDonationReceiptIfNeeded(env, updatedOffering || {});
-  }
-
-  if (event.type === "payment_intent.payment_failed") {
-    await updateDonorOfferingByPaymentIntent(env, object.id, {
-      status: "failed",
-      paymentStatus: "failed",
-      failureMessage: object.last_payment_error?.message || "",
-      failedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-    });
-  }
-
-  if (event.type === "payment_intent.canceled") {
-    await updateDonorOfferingByPaymentIntent(env, object.id, {
-      status: "cancelled",
-      paymentStatus: "cancelled",
-      cancelledAt: object.canceled_at ? new Date(object.canceled_at * 1000).toISOString() : new Date().toISOString()
-    });
-  }
-
-  if (event.type === "charge.refunded") {
-    const commerceOrder = await refundCommerceOrderFromStripe(env, object);
-    if (commerceOrder?.id) await wireCommerceRefundsToAccounting(env, commerceOrder.id, object);
-    const refundedOffering = await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
-      status: object.amount_refunded >= object.amount ? "refunded" : "partially_refunded",
-      paymentStatus: object.amount_refunded >= object.amount ? "refunded" : "partially_refunded",
-      refundedCents: object.amount_refunded || 0,
-      refundedAt: new Date().toISOString()
-    });
-    if (refundedOffering) await wireGivingRefundsToAccounting(env, refundedOffering, object);
-  }
-
-  if (event.type === "charge.dispute.created") {
-    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, "created");
-    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, "created");
-    await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
-      status: "disputed",
-      paymentStatus: "disputed",
-      stripeDisputeId: object.id || "",
-      disputedCents: object.amount || 0,
-      disputeReason: object.reason || "",
-      disputedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-    });
-  }
-
-  if (event.type === "charge.dispute.closed") {
-    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, "closed");
-    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, "closed");
-    await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
-      status: object.status === "won" ? "completed" : "dispute_closed",
-      paymentStatus: object.status === "won" ? "paid" : "dispute_closed",
-      stripeDisputeId: object.id || "",
-      disputeStatus: object.status || "",
-      disputeClosedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-    });
-  }
-
-  if (event.type === "invoice.payment_succeeded" || event.type === "invoice.paid") {
-    if (!event.account && !invoiceDonationMetadata(object).donor_email && invoiceSubscriptionId(object)) {
-      const billed = await findRegistrationByStripeSubscriptionId(env, invoiceSubscriptionId(object));
-      const reference = invoiceDonationMetadata(object).agapay_reference;
-      if (!billed && reference && await loadRegistrationByReference(env, reference))
-        throw new Error('Subscription invoice is awaiting its parish checkout link; retry delivery.');
-      const facts = billed && await recordServiceInvoice(env, object, billed.registration);
-      if (facts) {
-        const db = await resolveOperationalAccountingDatabase(env, facts.parishId);
-        if (db) await postServiceInvoices(env, db, facts.parishId);
-      }
-    }
-    const metadata = invoiceDonationMetadata(object);
-    if (metadata.donor_email) {
-      let paymentIntentId = invoicePaymentIntentId(object);
-      if (!paymentIntentId && env.STRIPE_SECRET_KEY) {
-        const accountId = event.account || (await findCheckoutParish(env, metadata.parish_id))?.stripeAccountId;
-        if (!accountId) throw new Error('The recurring donation invoice has no connected parish account.');
-        const invoice = await stripeGetConnectedRequest(env,
-          `/v1/invoices/${encodeURIComponent(object.id)}?expand[]=payments.data.payment.payment_intent`, accountId);
-        if (!invoice.ok) throw new Error('Unable to resolve the recurring donation invoice payment.');
-        paymentIntentId = invoicePaymentIntentId(invoice.body);
-      }
-      const giftAmountCents = numericCents(metadata.amount_cents) || numericCents(object.amount_paid);
-      const feeUpdates = paymentIntentId
-        ? await stripePaymentIntentFinancialUpdates(
-          env,
-          paymentIntentId,
-          metadata.parish_id || "",
-          {
-            amountCents: giftAmountCents,
-            giftAmountCents,
-            chargeCents: numericCents(metadata.charge_cents) || numericCents(object.amount_paid),
-            stripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
-            estimatedStripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
-            agapayFeeCents: numericCents(metadata.agapay_fee_cents),
-            totalFeeCents: numericCents(metadata.total_fee_cents),
-            coverFees: booleanFromStripeMetadata(metadata.cover_fees, false),
-            paymentMethod: metadata.payment_method || ""
-          }
-        )
-        : {};
-      const storedOffering = await storeDonorOffering(env, {
-        id: object.id,
-        donorEmail: metadata.donor_email,
-        donorName: metadata.donor_name || object.customer_name || "",
-        parishId: metadata.parish_id || "",
-        parishName: metadata.parish_name || "",
-        giftType: metadata.gift_type || "recurring",
-        title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AGAPAY offering",
-        fund: metadata.fund || "",
-        fundId: metadata.fund_id || "",
-        campaign: metadata.campaign || "",
-        campaignId: metadata.campaign_id || "",
-        campaignDescription: metadata.campaign_description || "",
-        publicAnonymous: booleanFromStripeMetadata(metadata.public_anonymous, false),
-        publicDisplayName: metadata.public_display_name || metadata.donor_name || object.customer_name || "",
-        publicComment: metadata.public_comment || "",
-        frequency: metadata.frequency || "recurring",
-        amountCents: giftAmountCents,
-        giftAmountCents,
-        chargeCents: numericCents(metadata.charge_cents) || numericCents(object.amount_paid),
-        stripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
-        estimatedStripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
-        agapayFeeCents: numericCents(metadata.agapay_fee_cents),
-        totalFeeCents: numericCents(metadata.total_fee_cents),
-        coverFees: booleanFromStripeMetadata(metadata.cover_fees, false),
-        paymentMethod: metadata.payment_method || "",
-        status: "completed",
-        paymentStatus: "paid",
-        stripeCustomerId: object.customer || "",
-        stripePaymentIntentId: paymentIntentId,
-        stripeSubscriptionId: invoiceSubscriptionId(object),
-        stripeInvoiceId: object.id,
-        namesLiving: metadata.names_living || "",
-        namesDeparted: metadata.names_departed || "",
-        commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
-        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
-        ...feeUpdates
-      });
-      if (storedOffering) await wireGivingOfferingToAccounting(env, storedOffering);
-      await ensureCommemorationEntryFromOffering(env, storedOffering || {}, {
-        id: object.id,
-        parishId: metadata.parish_id || "",
-        parishName: metadata.parish_name || "",
-        donorEmail: metadata.donor_email || object.customer_email || object.customer_details?.email || "",
-        donorName: metadata.donor_name || object.customer_name || "",
-        giftType: metadata.gift_type || "recurring",
-        frequency: metadata.frequency || "recurring",
-        amountCents: giftAmountCents,
-        namesLiving: metadata.names_living || "",
-        namesDeparted: metadata.names_departed || "",
-        commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
-        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-      });
-      await sendDonationReceiptIfNeeded(env, storedOffering || {});
-    }
-  }
-
-  if (event.type === "checkout.session.expired" && object.mode === "subscription" && object.metadata?.product !== "learn") {
-    const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
-    if (reference) {
-      await releaseEarlyAdopterReservation(env, reference);
-      await updateSubscriptionRecord(env, reference, {
-        subscriptionStatus: "not_started",
-        earlyAdopterSlot: null,
-        earlyAdopterReservedAt: "",
-        stripeSubscriptionCheckoutSessionStatus: "expired"
-      });
-    }
-  }
-
-  if (event.type === "checkout.session.completed" && object.mode === "subscription") {
-    if (object.metadata?.product === "learn") {
-      await persistLearnBillingFromStripe(env, {
-        ...object,
-        status: "active",
-        stripeSubscriptionId: object.subscription || "",
-        checkoutSessionId: object.id || ""
-      });
-      return;
-    }
-
-    const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
-    const trialDays = Math.max(0, Number(object.metadata?.agapay_trial_days || 0));
-    const activatedAt = new Date().toISOString();
-    await updateSubscriptionRecord(env, reference, {
-      subscriptionStatus: trialDays ? "trialing" : "active",
-      subscriptionTrialDays: trialDays,
-      stripeCustomerId: object.customer || "",
-      stripeSubscriptionId: object.subscription || "",
-      stripeSubscriptionCheckoutSessionId: object.id || "",
-      subscriptionActivatedAt: activatedAt,
-      subscriptionIntroDemoRedeemedAt: trialDays ? activatedAt : "",
-      subscriptionTrialStartedAt: trialDays ? activatedAt : "",
-      subscriptionTrialEndsAt: trialDays ? new Date(Date.now() + trialDays * 86400000).toISOString() : ""
-    });
-  }
-
-  if (
-    event.type === "customer.subscription.created"
-    || event.type === "customer.subscription.updated"
-    || event.type === "customer.subscription.deleted"
-    || event.type === "customer.subscription.paused"
-    || event.type === "customer.subscription.resumed"
-  ) {
-    // A donor's recurring GIVING subscription (created via the /give
-    // checkout flow) carries donor_email in its metadata — distinct from
-    // the parish's own AGAPAY platform subscription, which uses
-    // agapay_reference instead (handled in the branch below). This was
-    // previously untracked entirely: nothing recorded when a parishioner
-    // canceled a recurring gift, so "canceled recurring gifts" had no real
-    // data source. Only the cancellation itself is recorded here — that's
-    // the actionable stewardship signal; created/updated/paused/resumed
-    // aren't needed for that metric.
-    if (object.metadata?.donor_email && event.type === "customer.subscription.deleted") {
-      await storeDonorOffering(env, {
-        id: `sub_cancel_${object.id}_${object.canceled_at || Math.floor(Date.now() / 1000)}`,
-        donorEmail: object.metadata.donor_email,
-        donorName: object.metadata.donor_name || "",
-        parishId: object.metadata.parish_id || "",
-        parishName: object.metadata.parish_name || "",
-        giftType: object.metadata.gift_type || "recurring",
-        title: "Recurring gift canceled",
-        fund: object.metadata.fund || "",
-        fundId: object.metadata.fund_id || "",
-        frequency: object.metadata.frequency || "recurring",
-        amountCents: 0,
-        chargeCents: 0,
-        status: "canceled",
-        paymentStatus: "canceled",
-        stripeCustomerId: object.customer || "",
-        stripeSubscriptionId: object.id || "",
-        createdAt: object.canceled_at ? new Date(object.canceled_at * 1000).toISOString() : new Date().toISOString()
-      }).catch(() => {});
-      return;
-    }
-
-    if (object.metadata?.product === "learn") {
-      const status = event.type === "customer.subscription.deleted"
-        ? "cancelled"
-        : event.type === "customer.subscription.paused"
-          ? "paused"
-          : event.type === "customer.subscription.resumed"
-            ? "active"
-            : subscriptionStatusFromStripe(object.status);
-      await persistLearnBillingFromStripe(env, {
-        ...object,
-        status,
-        stripeSubscriptionId: object.id || ""
-      });
-      return;
-    }
-
-    const reference = object.metadata?.agapay_reference || "";
-    const activePriceId = object.items?.data?.[0]?.price?.id || "";
-    const metadataTierId = object.metadata?.agapay_subscription_tier || "";
-    const selectedTier = subscriptionTierFromStripePriceId(env, activePriceId)
-      || (metadataTierId ? subscriptionTier({ subscriptionTier: metadataTierId, subscriptionPricingProgram: object.metadata?.agapay_pricing_program, parishHouseholdBand: object.metadata?.agapay_household_band }) : null);
-    const selectedAddOns = normalizeSubscriptionAddOns(object.metadata?.agapay_subscription_add_ons || "", selectedTier?.id || metadataTierId);
-    const stripeMonthlyCents = (object.items?.data || []).reduce((sum, item) => sum + (Number(item?.price?.unit_amount || 0) * Number(item?.quantity || 1)), 0);
-    const tierUpdates = selectedTier ? {
-      subscriptionTier: selectedTier.id,
-      subscriptionTierLabel: selectedTier.label,
-      subscriptionAddOns: selectedAddOns,
-      subscriptionBaseMonthlyCents: selectedTier.monthlyCents,
-      subscriptionMonthlyCents: stripeMonthlyCents || selectedTier.monthlyCents,
-      ...(selectedTier.pricingProgram ? { subscriptionPricingProgram: selectedTier.pricingProgram === "early_adopter" ? "founding_20" : selectedTier.pricingProgram } : {}),
-      ...(selectedTier.parishHouseholdBand ? { parishHouseholdBand: selectedTier.parishHouseholdBand } : {})
-    } : {};
-    const status = event.type === "customer.subscription.deleted"
-      ? "cancelled"
-      : event.type === "customer.subscription.paused"
-        ? "paused"
-        : event.type === "customer.subscription.resumed"
-          ? "active"
-      : subscriptionStatusFromStripe(object.status);
-    const trialUpdates = {
-      subscriptionCancelAtPeriodEnd: Boolean(object.cancel_at_period_end),
-      ...(object.status === "canceled" && object.canceled_at ? { subscriptionCancelledAt: new Date(object.canceled_at * 1000).toISOString() } : {}),
-      subscriptionTrialStartedAt: object.trial_start ? new Date(object.trial_start * 1000).toISOString() : "",
-      subscriptionTrialEndsAt: object.trial_end ? new Date(object.trial_end * 1000).toISOString() : ""
-    };
-    if (reference) {
-      await updateSubscriptionRecord(env, reference, {
-        subscriptionStatus: status,
-        stripeSubscriptionId: object.id || "",
-        stripeCustomerId: object.customer || "",
-        ...trialUpdates,
-        ...tierUpdates
-      });
-    } else {
-      const found = await findRegistrationByStripeSubscriptionId(env, object.id);
-      if (found) {
-        await updateSubscriptionRecord(env, found.key, {
-          subscriptionStatus: status,
-          stripeSubscriptionId: object.id || "",
-          stripeCustomerId: object.customer || "",
-          ...trialUpdates,
-          ...tierUpdates
-        });
-      }
-    }
-  }
-
-  if (event.type === "invoice.payment_failed" || event.type === "invoice.payment_action_required") {
-    const subscriptionId = object.subscription || "";
-    const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
-    if (metadata.donor_email) {
-      await storeDonorOffering(env, {
-        id: object.id,
-        donorEmail: metadata.donor_email,
-        donorName: metadata.donor_name || object.customer_name || "",
-        parishId: metadata.parish_id || "",
-        parishName: metadata.parish_name || "",
-        giftType: metadata.gift_type || "recurring",
-        title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AGAPAY offering",
-        fund: metadata.fund || "",
-        fundId: metadata.fund_id || "",
-        campaign: metadata.campaign || "",
-        campaignId: metadata.campaign || "",
-        campaignDescription: metadata.campaign_description || "",
-        publicAnonymous: booleanFromStripeMetadata(metadata.public_anonymous, false),
-        publicDisplayName: metadata.public_display_name || metadata.donor_name || object.customer_name || "",
-        publicComment: metadata.public_comment || "",
-        frequency: metadata.frequency || "recurring",
-        amountCents: object.amount_due || object.amount_remaining || object.total || 0,
-        chargeCents: object.amount_due || object.amount_remaining || object.total || 0,
-        status: "failed",
-        paymentStatus: "failed",
-        stripeCustomerId: object.customer || "",
-        stripePaymentIntentId: object.payment_intent || "",
-        stripeSubscriptionId: subscriptionId,
-        namesLiving: metadata.names_living || "",
-        namesDeparted: metadata.names_departed || "",
-        commemorationKind: metadata.commemoration_kind || "proskomedia_liturgy",
-        failureMessage: object.last_finalization_error?.message || "Recurring payment failed.",
-        failedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
-        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-      });
-    }
-    const found = await findRegistrationByStripeSubscriptionId(env, subscriptionId);
-    if (found) {
-      await updateSubscriptionRecord(env, found.key, {
-        subscriptionStatus: "past_due",
-        stripeSubscriptionId: subscriptionId,
-        stripeCustomerId: object.customer || found.registration.stripeCustomerId || "",
-        subscriptionPaymentIssueAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
-        subscriptionPaymentIssueType: event.type
-      });
-    }
-  }
-
-  if (event.type === "account.updated") {
-    const found = await findRegistrationByStripeAccountId(env, object.id);
-    if (found) {
-      const next = {
-        ...found.registration,
-        ...stripePayoutBankSummary(object),
-        stripeAccountStatus: stripeAccountStatus(object),
-        stripeChargesEnabled: Boolean(object.charges_enabled),
-        stripePayoutsEnabled: Boolean(object.payouts_enabled),
-        stripeDetailsSubmitted: Boolean(object.details_submitted),
-        stripeDisabledReason: object.requirements?.disabled_reason || "",
-        stripeRequirementsDue: object.requirements?.currently_due || [],
-        stripeStatusCheckedAt: new Date().toISOString()
-      };
-      await invalidateAndSaveMaterialRegistration(
-        env,
-        found.key,
-        found.registration,
-        next,
-        "stripe-webhook",
-        "Stripe changed the connected account readiness or payout destination."
-      );
-    }
-  }
-}
-
-export async function createStripeOnboardingSession(request, env, reference, registration, returnPath = "/admin") {
-  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  let stripeAccountId = registration.stripeAccountId || "";
-  let stripeAccount = null;
-
-  if (!stripeAccountId) {
-    const accountForm = new URLSearchParams({
-      type: "standard",
-      country: "US",
-      email: registration.treasurerEmail || registration.priestEmail || "",
-      business_type: "non_profit",
-      "business_profile[name]": registration.parishName || "AGAPAY Parish",
-      "business_profile[product_description]": "Online tithes, stewardship, and charitable donations for an Orthodox Christian parish.",
-      "capabilities[card_payments][requested]": "true",
-      "capabilities[transfers][requested]": "true",
-      "metadata[agapay_reference]": reference,
-      "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName)
-    });
-    const website = absoluteWebsiteUrl(registration.website);
-    if (website) accountForm.set("business_profile[url]", website);
-
-    const created = await stripeFormRequest(env, "/v1/accounts", accountForm);
-    if (!created.ok) {
-      return json(
-        { error: "Stripe connected account creation failed", detail: created.body.error?.message || "Unknown Stripe error" },
-        { status: 502 }
-      );
-    }
-
-    stripeAccount = created.body;
-    stripeAccountId = stripeAccount.id;
-  } else {
-    const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(stripeAccountId)}`);
-    if (!retrieved.ok) {
-      return json(
-        { error: "Stripe connected account lookup failed", detail: retrieved.body.error?.message || "Unknown Stripe error" },
-        { status: 502 }
-      );
-    }
-    stripeAccount = retrieved.body;
-  }
-
-  const returnSeparator = returnPath.includes("?") ? "&" : "?";
-  const linkForm = new URLSearchParams({
-    account: stripeAccountId,
-    refresh_url: `${appUrl}${returnPath}${returnSeparator}stripe_refresh=${encodeURIComponent(reference)}`,
-    return_url: `${appUrl}${returnPath}${returnSeparator}stripe_return=${encodeURIComponent(reference)}`,
-    type: "account_onboarding"
-  });
-  const link = await stripeFormRequest(env, "/v1/account_links", linkForm);
-  if (!link.ok) {
-    return json(
-      { error: "Stripe onboarding link failed", detail: link.body.error?.message || "Unknown Stripe error" },
-      { status: 502 }
-    );
-  }
-
-  const next = {
-    ...registration,
-    ...stripePayoutBankSummary(stripeAccount),
-    parishDashboardToken: registration.parishDashboardToken || crypto.randomUUID(),
-    stripeAccountId,
-    stripeAccountStatus: stripeAccountStatus(stripeAccount),
-    stripeChargesEnabled: Boolean(stripeAccount.charges_enabled),
-    stripePayoutsEnabled: Boolean(stripeAccount.payouts_enabled),
-    stripeDetailsSubmitted: Boolean(stripeAccount.details_submitted),
-    stripeDisabledReason: stripeAccount.requirements?.disabled_reason || "",
-    stripeRequirementsDue: stripeAccount.requirements?.currently_due || [],
-    stripeOnboardingLinkCreatedAt: new Date().toISOString(),
-    reviewedAt: registration.reviewedAt || new Date().toISOString()
-  };
-  const updated = await invalidateAndSaveMaterialRegistration(
-    env,
-    reference,
-    registration,
-    next,
-    "stripe-connect",
-    "The connected Stripe account or payout destination changed."
-  );
-
-  return { onboardingUrl: link.body.url, registration: updated };
-}
-
-export async function refreshStripeStatusForRegistration(env, reference, registration, options = {}) {
-  const retrieved = await retrieveConnectedAccountForRefresh(env, registration, reference);
-  if (!retrieved.ok) {
-    return {
-      ok: false,
-      status: retrieved.status === 409 ? 409 : retrieved.status === 422 ? 422 : 502,
-      body: {
-        error: retrieved.body.error?.message || "Stripe could not confirm the connected account. Please retry before going live.",
-        code: retrieved.status === 409 ? "stripe_account_ambiguous" : retrieved.status === 422 ? "stripe_account_not_found" : "stripe_refresh_failed",
-        retryable: ![409, 422].includes(retrieved.status),
-        detail: retrieved.body.error?.message || "Unknown Stripe error"
-      }
-    };
-  }
-
-  const account = retrieved.body;
-  const confirmedAt = new Date().toISOString();
-  const priorCheckedAtMs = new Date(registration.stripeStatusCheckedAt || "").getTime();
-  const unchanged = stripeAccountMaterialState(account) === storedStripeMaterialState(registration);
-  const preserveReviewedTimestamp = options.preserveReviewedTimestamp === true
-    && unchanged
-    && Number.isFinite(priorCheckedAtMs)
-    && Date.now() - priorCheckedAtMs <= STRIPE_READINESS_MAX_AGE_MS;
-  const next = {
-    ...registration,
-    ...stripePayoutBankSummary(account),
-    stripeAccountId: String(account.id || registration.stripeAccountId || ""),
-    stripeAccountStatus: stripeAccountStatus(account),
-    stripeChargesEnabled: Boolean(account.charges_enabled),
-    stripePayoutsEnabled: Boolean(account.payouts_enabled),
-    stripeDetailsSubmitted: Boolean(account.details_submitted),
-    stripeDisabledReason: account.requirements?.disabled_reason || "",
-    stripeRequirementsDue: account.requirements?.currently_due || [],
-    stripeStatusCheckedAt: preserveReviewedTimestamp ? registration.stripeStatusCheckedAt : confirmedAt,
-    stripeLastConfirmedAt: confirmedAt
-  };
-  const updated = await invalidateAndSaveMaterialRegistration(
-    env,
-    reference,
-    registration,
-    next,
-    options.actor || "stripe-refresh",
-    options.reason || "Stripe changed the connected account readiness or payout destination.",
-    options.persist !== false
-  );
-
-  return { ok: true, registration: updated, account, confirmedAt, recovered: retrieved.recovered === true, simulated: retrieved.simulated === true };
-}
-
-export async function handleStripeRefresh(request, env, reference) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 60, windowSeconds: 300 });
+async function handleStripeRefresh(request, env, reference) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+  const limited = await rateLimit(request, env, 'admin-money-actions', { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
   const adminContext = await requireAdminContext(request, env);
   if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
   const registration = await loadRegistrationByReference(env, reference);
-  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
-
+  if (!registration) return json({ error: 'Registration not found' }, { status: 404 });
   const refreshed = await refreshStripeStatusForRegistration(env, reference, registration);
   if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
   let updated = refreshed.registration;
-  if ((registration.stripeAccountStatus || "not_started") !== (refreshed.registration.stripeAccountStatus || "not_started")) {
-    updated = appendAdminAudit(refreshed.registration, "stripe_status_refreshed", adminContext.actor, {
-      from: registration.stripeAccountStatus || "not_started",
-      to: refreshed.registration.stripeAccountStatus || "not_started"
+  if (
+    (registration.stripeAccountStatus || 'not_started') !==
+    (refreshed.registration.stripeAccountStatus || 'not_started')
+  ) {
+    updated = appendAdminAudit(refreshed.registration, 'stripe_status_refreshed', adminContext.actor, {
+      from: registration.stripeAccountStatus || 'not_started',
+      to: refreshed.registration.stripeAccountStatus || 'not_started',
     });
     await saveRegistrationRecord(env, reference, updated, refreshed.registration);
   }
-
   return json({ ok: true, recovered: refreshed.recovered === true, registration: updated });
 }
+export {
+  createStripeOnboardingSession,
+  handleStripeRefresh,
+  handleStripeWebhook,
+  handleSubscriptionCheckout,
+  parseStripeSignature,
+  processStripeWebhookEvent2 as processStripeWebhookEvent,
+  refreshStripeStatusForRegistration2 as refreshStripeStatusForRegistration,
+  secureCompare,
+  stripeWebhookSecrets,
+  subscriptionStatusFromStripe,
+  toHex,
+  updateSubscriptionRecord,
+  verifyStripeWebhook,
+  verifyStripeWebhookWithAnySecret,
+};

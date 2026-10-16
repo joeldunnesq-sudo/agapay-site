@@ -20,6 +20,7 @@ export function typeScriptMigrationInventory() {
     remaining: remaining.length,
     percentage: Math.round((1000 * converted.length) / scope.size) / 10,
     supportModules: support.length,
+    privateBrowserSupportSources: browserTypeScriptEntries.flatMap((entry) => entry.supportSources || []),
     convertedPaths: converted,
     remainingPaths: remaining,
     supportPaths: support,

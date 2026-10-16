@@ -1,3 +1,4 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { parishDashboardPayload as sharedDashboardPayload } from '../src/handlers/parish.js';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readServerModuleSource } from './lib/server-typescript.mjs';
@@ -142,9 +143,9 @@ const parishGivingReports = await readFile(
   new URL('../src/handlers/parish-giving-reports.js', import.meta.url),
   'utf8'
 );
-const stripe = await readFile(new URL('../src/handlers/stripe.js', import.meta.url), 'utf8');
+const stripe = await Promise.resolve(readServerContractSourceSync('src/handlers/stripe.js'));
 const donor = readDonorHandlerSource();
-const admin = await readFile(new URL('../src/handlers/admin.js', import.meta.url), 'utf8');
+const admin = await Promise.resolve(readServerContractSourceSync('src/handlers/admin.js'));
 const worker = await readFile(new URL('../src/routes/worker-actions.js', import.meta.url), 'utf8');
 const weeklyEmailDigests = await readFile(
   new URL('../src/operations/weekly-email-digests.js', import.meta.url),
@@ -668,19 +669,13 @@ assertImports(stripe, '../lib/stripe-connect.js', [
   'stripeGetRequest',
   'stripeObjectId',
 ]);
+// The donor facade's unused stripeAccountStatus import was retired; retain its actual Stripe dependencies.
 assertImports(donor, '../lib/stripe-connect.js', [
   'normalizedCheckoutPaymentStatus',
-  'stripeAccountStatus',
   'stripeFormConnectedRequest',
   'stripeGetConnectedRequest',
 ]);
-assertImports(admin, '../lib/stripe-connect.js', [
-  'listYtdStripeCharges',
-  'stripeAccountStatus',
-  'stripeFormRequest',
-  'stripeReady',
-  'summarizeCharges',
-]);
+assertImports(admin, '../lib/stripe-connect.js', ['listYtdStripeCharges', 'stripeReady', 'summarizeCharges']);
 assert.doesNotMatch(
   stripe,
   /sendTreasurerStripeInvite/,

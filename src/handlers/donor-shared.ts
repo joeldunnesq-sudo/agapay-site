@@ -1,0 +1,48 @@
+import './donor-parish-context.js';
+
+import '../payments/donation-receipts.js';
+
+import '../payments/donation-events.js';
+
+import '../lib/outside-pledges.js';
+
+import '../lib/logging.js';
+
+import '../lib/directory-invitation-next.js';
+
+import '../lib/legal-acceptance.js';
+
+import '../lib/core.js';
+
+import '../lib/subscriptions.js';
+
+import '../lib/entitlements.js';
+
+import '../lib/parish-feature-requests.js';
+
+import '../lib/parish-support-tickets.js';
+
+import '../lib/safe-external-url.js';
+
+import '../directory/self-service.js';
+
+import '../lib/consumer-passkeys.js';
+
+import '../lib/email.js';
+
+import '../lib/format.js';
+
+import '../lib/stripe-connect.js';
+
+import '../lib/stripe-fees.js';
+
+import './parish.js';
+
+import './parish-commemorations.js';
+
+import './parish-giving-catalog.js';
+import './donor-authentication.js';
+import './donor-password-recovery.js';
+import './donor.js';
+import './donor-profile.js';
+import './donor-giving.js';

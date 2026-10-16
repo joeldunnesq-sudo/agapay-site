@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
@@ -60,9 +61,11 @@ const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching
     'media.html',
     'watch.html',
   ].map((file) =>
-    file === '../donor/app.js'
-      ? readDonorAppSource()
-      : readFile(new URL(`../public/myagapay/${file}`, import.meta.url), 'utf8')
+    file === '../myagapay-shell.js'
+      ? readBrowserContractSourceSync('public/myagapay-shell.js')
+      : file === '../donor/app.js'
+        ? readDonorAppSource()
+        : readFile(new URL(`../public/myagapay/${file}`, import.meta.url), 'utf8')
   )
 );
 const [parishDashboard, parishDashboardApp, parishDashboardStyles] = await Promise.all(

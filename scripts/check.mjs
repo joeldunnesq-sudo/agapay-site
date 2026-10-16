@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { readServerModuleSourceSync } from './lib/server-typescript.mjs';
 import { appAssetUrl } from './lib/app-asset-versions.mjs';
@@ -23,7 +24,7 @@ const hasWorkerRoute = (pathname) => includesJavaScriptFragment(worker,`"${pathn
 const localServerSource = await readFile("server.mjs", "utf8");
 const core = await readServerModuleSourceSync("src/lib/core.js");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
-const adminHandler = await readFile("src/handlers/admin.js", "utf8");
+const adminHandler = await Promise.resolve(readServerContractSourceSync("src/handlers/admin.js"));
 const donorHandler = readDonorHandlerSource();
 const parishSupportTickets = await readFile("src/lib/parish-support-tickets.js", "utf8");
 const parishHandler = readParishHandlerSource();
@@ -35,7 +36,7 @@ const parishReconciliationHandler = await readServerContractSourceSync("src/hand
 const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
 const stripeFees = await readFile("src/lib/stripe-fees.js", "utf8");
 const givingCheckout = await readFile("src/payments/giving-checkout.js", "utf8");
-const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
+const stripeHandler = await Promise.resolve(readServerContractSourceSync("src/handlers/stripe.js"));
 const parishInterestHandler = await readFile("src/handlers/parish-interest.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
@@ -179,7 +180,7 @@ const donorApp = readDonorAppSource();
 const publicLiturgicalCalendar = await readFile("public/liturgical-calendar.js", "utf8");
 const calendarContext = { window: {} };
 runInNewContext(publicLiturgicalCalendar, calendarContext);
-const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
+const myAgapayShell = await Promise.resolve(readBrowserContractSourceSync("public/myagapay-shell.js"));
 const manifest = await readFile("public/myagapay/manifest.webmanifest", "utf8");
 const adminHtml = await readFile("public/admin.html", "utf8");
 const adminLoginHtml = await readFile("public/admin/login.html", "utf8");

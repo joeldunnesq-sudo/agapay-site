@@ -25,6 +25,7 @@ export interface DirectoryAudit {
   correlationId?: string;
 }
 export interface DirectoryMutation {
+  correlationId?: string;
   actor: DirectoryActorInput;
   parishId?: unknown;
   personId?: unknown;

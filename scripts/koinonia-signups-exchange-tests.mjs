@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
@@ -29,7 +30,10 @@ import {
 import { getCommunityToolBadgeCounts, markCommunityToolOpened } from '../src/handlers/koinonia-community-tools.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative) => relative.startsWith('src/') ? readServerContractSourceSync(relative,root) : readFileSync(path.join(root,relative),'utf8');
+const read = (relative) =>
+  relative.startsWith('src/')
+    ? readServerContractSourceSync(relative, root)
+    : readFileSync(path.join(root, relative), 'utf8');
 
 function d1Environment(sqlite) {
   function prepare(sql) {
@@ -494,7 +498,7 @@ const sources = {
   signups: read('src/handlers/koinonia-signups.js'),
   exchange: read('src/handlers/koinonia-exchange.js'),
   pushes: read('src/lib/push-notifications.js'),
-  shell: read('public/myagapay-shell.js'),
+  shell: readBrowserContractSourceSync('public/myagapay-shell.js'),
   parishDashboard: read('public/parish/dashboard.html'),
   parishApp: readParishDashboardSource(),
   signupsPage: read('public/myagapay/signups.html'),

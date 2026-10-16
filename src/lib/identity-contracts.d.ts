@@ -13,6 +13,28 @@ export interface PlatformUserRow {
   session_mfa_verified_at?: string | null;
 }
 export interface DonorRecord extends Record<string, unknown> {
+  passwordResetExpiresAt?: string;
+  passwordResetSalt?: string;
+  passwordResetTokenHash?: string;
+  passwordResetEmailStatus?: string;
+  emailVerificationExpiresAt?: string;
+  emailVerificationSalt?: string;
+  emailVerificationTokenHash?: string;
+  emailVerificationStatus?: string;
+  emailChangedAt?: string;
+  contactPhone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  accountDeletionRequestId?: string;
+  pledgeAmountCents?: number;
+  pledgeCadence?: string;
+  pledgeYear?: string | number;
+  passwordResetEmailDetail?: unknown;
+  emailVerificationDetail?: unknown;
   createdAt?: string;
   updatedAt?: string;
   passwordSalt?: string;

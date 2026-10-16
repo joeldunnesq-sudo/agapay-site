@@ -17,7 +17,10 @@ const sources = (await readdir(join(repoRoot, 'src/browser'), { recursive: true 
   .map((file) => file.replaceAll('\\', '/'))
   .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'))
   .map((file) => `src/browser/${file}`);
-assert.deepEqual(sources.sort(), browserTypeScriptEntries.map(({ source }) => source).sort());
+assert.deepEqual(
+  sources.sort(),
+  browserTypeScriptEntries.flatMap(({ source, supportSources = [] }) => [source, ...supportSources]).sort()
+);
 
 // Native module and Worker URLs retain their existing runtime import/registration paths.
 const runtimeReferences = new Map();
@@ -110,7 +113,8 @@ for (const { output, externalEmbed, delivery, module: nativeModule } of browserT
   let consumers = 0;
   for (const page of htmlFilesUnder('public')) {
     const html = await readFile(join(repoRoot, page), 'utf8');
-    if (!html.includes(asset)) continue;
+    const tag = html.match(new RegExp(`<script\\b[^>]*src=["']${asset.replaceAll('.', '\\.')}[^"']*["'][^>]*>`));
+    if (!tag) continue;
     consumers += 1;
     if (page === 'public/terms.html') {
       assert.equal(
@@ -119,8 +123,8 @@ for (const { output, externalEmbed, delivery, module: nativeModule } of browserT
         'Published Terms must remain byte-identical to their preserved snapshot'
       );
       assert.equal(asset, '/site-chrome.js', 'Only the original chrome script uses the immutable Terms page exception');
-    } else assert.ok(html.includes(url), `${page} must use the generated content version`);
-    const tag = html.match(new RegExp(`<script\\b[^>]*src=["']${asset.replaceAll('.', '\\.')}[^"']*["'][^>]*>`));
+    } else assert.ok(tag[0].includes(url), `${page} must use the generated content version`);
+
     assert.ok(tag, `${page} must load ${asset} as a script`);
     assert.doesNotMatch(tag[0], /type=["']module["']|\basync\b/i);
   }
@@ -146,7 +150,7 @@ for (const [value, expected] of [
 const fixtureRoot = await mkdtemp(join(tmpdir(), 'agapay-browser-typescript-'));
 try {
   await writeFile(join(fixtureRoot, '.prettierrc.json'), await readFile(join(repoRoot, '.prettierrc.json')));
-  for (const { source } of browserTypeScriptEntries) {
+  for (const source of browserTypeScriptEntries.flatMap((entry) => [entry.source, ...(entry.supportSources || [])])) {
     await mkdir(dirname(join(fixtureRoot, source)), { recursive: true });
     await writeFile(join(fixtureRoot, source), await readFile(join(repoRoot, source)));
   }
@@ -169,6 +173,23 @@ try {
   assert.notEqual(contentVersion(await readFile(outputPath, 'utf8')), contentVersion(generated));
   await writeFile(sourcePath, `${source}\nexport const accidentalModule = true;\n`);
   await assert.rejects(synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }), /export/);
+  await writeFile(sourcePath, source);
+  const privateEntry = browserTypeScriptEntries.find((entry) => entry.supportSources?.length);
+  assert.equal(
+    new Set(privateEntry.supportSources).size,
+    privateEntry.supportSources.length,
+    'private support ownership is unique'
+  );
+  const privatePath = join(fixtureRoot, privateEntry.source),
+    privateSource = await readFile(privatePath, 'utf8');
+  await writeFile(join(fixtureRoot, 'unexpected-private.ts'), 'globalThis.unexpected=true;');
+  await writeFile(privatePath, "import '../../unexpected-private.ts';\n" + privateSource);
+  await assert.rejects(
+    synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }),
+    /Unregistered private browser dependency/,
+    'private bundles cannot absorb undeclared runtime dependencies'
+  );
+  await writeFile(privatePath, privateSource);
 } finally {
   assert.equal(dirname(resolve(fixtureRoot)), resolve(tmpdir()));
   await rm(fixtureRoot, { recursive: true, force: true });

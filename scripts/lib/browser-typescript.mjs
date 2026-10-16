@@ -1,13 +1,20 @@
+import ts from 'typescript';
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { Script } from 'node:vm';
-import { transform } from 'esbuild';
+import { transform, transformSync, buildSync } from 'esbuild';
 import { format } from 'prettier';
 import { repoRoot } from './server-typescript.mjs';
 
 // Classic scripts retain lexical globals; explicitly marked native modules retain ESM.
-// Neither delivery mode bundles, wraps, or renames runtime bindings.
+// Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
+  {
+    source: 'src/browser/myagapay-shell.ts',
+    output: 'public/myagapay-shell.js',
+    supportSources: ['src/browser/myagapay/shell-icons.ts', 'src/browser/myagapay/shell-products.ts'],
+  },
   {
     source: 'src/browser/parish/features/accounting/payables.ts',
     output: 'public/parish/features/accounting/payables.js',
@@ -276,17 +283,40 @@ export const browserTypeScriptEntries = Object.freeze([
   { source: 'src/browser/donor/bookstore-presentation.ts', output: 'public/donor/bookstore-presentation.js' },
 ]);
 
+// Private support files share one classic-script response; existing runtime dependencies are never bundled.
+export function compilePrivateBrowserEntry(entry, root = repoRoot) {
+  const result = buildSync({
+    absWorkingDir: root,
+    entryPoints: [entry.source],
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    target: 'es2022',
+    charset: 'utf8',
+    legalComments: 'none',
+    write: false,
+    metafile: true,
+  });
+  const actual = Object.keys(result.metafile.inputs).sort(),
+    expected = [entry.source, ...entry.supportSources].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected))
+    throw new Error('Unregistered private browser dependency: ' + actual.join(', '));
+  return result.outputFiles[0].text;
+}
 export async function synchronizeBrowserTypeScript({ check = true, root = repoRoot } = {}) {
   const prettier = JSON.parse(await readFile(resolve(root, '.prettierrc.json'), 'utf8'));
   const stale = [];
-  for (const { source, output, module: nativeModule } of browserTypeScriptEntries) {
-    const { code } = await transform(await readFile(resolve(root, source), 'utf8'), {
-      loader: 'ts',
-      ...(nativeModule ? { format: 'esm' } : {}),
-      target: 'es2022',
-      charset: 'utf8',
-      legalComments: 'none',
-    });
+  for (const entry of browserTypeScriptEntries) {
+    const { source, output, module: nativeModule } = entry;
+    const { code } = entry.supportSources
+      ? { code: compilePrivateBrowserEntry(entry, root) }
+      : await transform(await readFile(resolve(root, source), 'utf8'), {
+          loader: 'ts',
+          ...(nativeModule ? { format: 'esm' } : {}),
+          target: 'es2022',
+          charset: 'utf8',
+          legalComments: 'none',
+        });
     // Fail before writing if a runtime import/export would turn a classic script into a module.
     if (!nativeModule) new Script(code, { filename: output });
     const generated = await format(`// Generated from ${source} by npm run build:browser. Do not edit.\n${code}`, {
@@ -312,4 +342,44 @@ export async function synchronizeBrowserTypeScript({ check = true, root = repoRo
       `Stale or missing browser TypeScript output: ${stale.join(', ')}. Run npm run build:browser and npm run assets:version, and include the generated files.`
     );
   }
+}
+
+// Inspect authored browser logic without coupling source guards to emitted quote style.
+export function readBrowserContractSourceSync(runtimePath, root = repoRoot) {
+  const entry = browserTypeScriptEntries.find((e) => e.output === runtimePath);
+  const code = [entry?.source || runtimePath, ...(entry?.supportSources || [])]
+    .map((p) => readFileSync(resolve(root, p), 'utf8'))
+    .join('\n');
+  if (!entry) return code;
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, code);
+  const comments = [];
+  for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
+    if (token === ts.SyntaxKind.SingleLineCommentTrivia || token === ts.SyntaxKind.MultiLineCommentTrivia)
+      comments.push(scanner.getTokenText());
+  }
+  let contractCode = code;
+  if (entry.supportSources) {
+    contractCode = [...entry.supportSources, entry.source]
+      .map((p) => {
+        const raw = readFileSync(resolve(root, p), 'utf8'),
+          ast = ts.createSourceFile(p, raw, ts.ScriptTarget.Latest, true),
+          edits = [];
+        for (const node of ast.statements) {
+          if (ts.isImportDeclaration(node)) edits.push({ start: node.getStart(ast), end: node.end, text: '' });
+          else
+            for (const modifier of node.modifiers || [])
+              if (modifier.kind === ts.SyntaxKind.ExportKeyword)
+                edits.push({ start: modifier.getStart(ast), end: modifier.end, text: '' });
+        }
+        return edits
+          .sort((a, b) => b.start - a.start)
+          .reduce((text, e) => text.slice(0, e.start) + e.text + text.slice(e.end), raw);
+      })
+      .join('\n');
+  }
+  return (
+    comments.join('\n') +
+    '\n' +
+    transformSync(contractCode, { loader: 'ts', target: 'es2022', legalComments: 'inline' }).code
+  );
 }

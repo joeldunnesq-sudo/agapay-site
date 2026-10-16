@@ -1,59 +1,135 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { handleAccountingSetupReports } from "../src/handlers/accounting-setup-reports.js";
-import { handleAccountingPayablesBudgets } from "../src/handlers/accounting-payables-budgets.js";
-import { handleAccountingReconciliationCommerce } from "../src/handlers/accounting-reconciliation-commerce.js";
-import { handleAccountingClose } from "../src/handlers/accounting-close.js";
-import { handleAccountingAccess } from "../src/handlers/accounting-access.js";
-import { handleAccountingRecurring } from "../src/handlers/accounting-recurring.js";
-import { adminRegistrationSummary } from "../src/lib/registrations.js";
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { handleAccountingSetupReports } from '../src/handlers/accounting-setup-reports.js';
+import { handleAccountingPayablesBudgets } from '../src/handlers/accounting-payables-budgets.js';
+import { handleAccountingReconciliationCommerce } from '../src/handlers/accounting-reconciliation-commerce.js';
+import { handleAccountingClose } from '../src/handlers/accounting-close.js';
+import { handleAccountingAccess } from '../src/handlers/accounting-access.js';
+import { handleAccountingRecurring } from '../src/handlers/accounting-recurring.js';
+import { adminRegistrationSummary } from '../src/lib/registrations.js';
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const worker = readWorkerCompositionSource();
-const routes = read("src/handlers/accounting-setup-reports.js");
-const phaseDRoutes = read("src/handlers/accounting-payables-budgets.js");
-const phaseERoutes = read("src/handlers/accounting-reconciliation-commerce.js");
-const phaseFRoutes = read("src/handlers/accounting-close.js");
-const dashboard = read("public/parish/dashboard.html");
+const routes = read('src/handlers/accounting-setup-reports.js');
+const phaseDRoutes = read('src/handlers/accounting-payables-budgets.js');
+const phaseERoutes = read('src/handlers/accounting-reconciliation-commerce.js');
+const phaseFRoutes = read('src/handlers/accounting-close.js');
+const dashboard = read('public/parish/dashboard.html');
 const app = readParishDashboardSource();
-const css = read("public/parish/redesign.css");
-const admin = read("src/handlers/admin.js");
-const adminHtml = read("public/admin.html");
+const css = read('public/parish/redesign.css');
+const admin = readServerContractSourceSync('src/handlers/admin.js');
+const adminHtml = read('public/admin.html');
 const adminApp = readAdminAppSource();
-const ledgerHandler = read("src/handlers/accounting-ledger.js");
+const ledgerHandler = read('src/handlers/accounting-ledger.js');
 const parishHandler = readParishHandlerSource();
 
 assert.match(worker, /handleAccountingSetupReports/);
 assert.match(worker, /handleAccountingAccess/);
-assert.doesNotMatch(worker, /accountingAvailableForParish|ACCOUNTING_TEST_PARISH_IDS/, "routing must defer authorization and entitlement to authenticated handlers");
-assert.equal(adminRegistrationSummary({ parishId:"st-fiacre" }).parishId, "st-fiacre", "admin registration summaries must expose the parish target ID");
+assert.doesNotMatch(
+  worker,
+  /accountingAvailableForParish|ACCOUNTING_TEST_PARISH_IDS/,
+  'routing must defer authorization and entitlement to authenticated handlers'
+);
+assert.equal(
+  adminRegistrationSummary({ parishId: 'st-fiacre' }).parishId,
+  'st-fiacre',
+  'admin registration summaries must expose the parish target ID'
+);
 assert.match(app, /function accountingPreviewOnly\(\)/);
-assert.match(app, /!currentParish\?\.accountingAvailable/, "the parish UI must use server-computed Accounting availability");
-assert.doesNotMatch(app, /return !moduleIncluded\('accounting'\) \|\| currentParish\?\.parishId !== 'st-fiacre'/, "the parish UI must not hard-code a single Accounting parish");
-assert.match(app, /if \(data\.parish\) currentParish = \{ \.\.\.currentParish, \.\.\.data\.parish \};/, "Stripe refresh must preserve server-computed feature access");
-assert.match(parishHandler, /accountingAvailable:\s*accountingEnabledFor\(registration\)/, "all dashboard responses must expose entitlement-based Accounting availability");
-assert.match(ledgerHandler, /detectAccountingEnvironment\(env\)/, "accounting database resolution must use the active environment");
-assert.doesNotMatch(ledgerHandler, /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/, "staging must not resolve production registry records");
+assert.match(
+  app,
+  /!currentParish\?\.accountingAvailable/,
+  'the parish UI must use server-computed Accounting availability'
+);
+assert.doesNotMatch(
+  app,
+  /return !moduleIncluded\('accounting'\) \|\| currentParish\?\.parishId !== 'st-fiacre'/,
+  'the parish UI must not hard-code a single Accounting parish'
+);
+assert.match(
+  app,
+  /if \(data\.parish\) currentParish = \{ \.\.\.currentParish, \.\.\.data\.parish \};/,
+  'Stripe refresh must preserve server-computed feature access'
+);
+assert.match(
+  parishHandler,
+  /accountingAvailable:\s*accountingEnabledFor\(registration\)/,
+  'all dashboard responses must expose entitlement-based Accounting availability'
+);
+assert.match(
+  ledgerHandler,
+  /detectAccountingEnvironment\(env\)/,
+  'accounting database resolution must use the active environment'
+);
+assert.doesNotMatch(
+  ledgerHandler,
+  /loadAccountingDatabaseForEntity\(env,entity\.id,"production"\)/,
+  'staging must not resolve production registry records'
+);
 assert.match(admin, /\/api\/admin\/accounting\/activate-prepared/);
 assert.match(admin, /\/api\/admin\/accounting\/targets/);
-assert.match(admin, /internalCanary/, "the authenticated target list must identify the configured internal canary without exposing database identifiers");
-assert.match(admin, /environment:detectAccountingEnvironment\(env\)/, "the target response must let the UI hide non-production controls in production");
-assert.match(admin, /environment==="production"/, "prepared database activation must fail closed in production");
-assert.match(admin, /ACCOUNTING_PREPARED_PARISH_DATABASES/, "prepared database activation must use a configured parish mapping");
+assert.match(
+  admin,
+  /internalCanary/,
+  'the authenticated target list must identify the configured internal canary without exposing database identifiers'
+);
+assert.ok(
+  includesJavaScriptFragment(admin, 'environment:detectAccountingEnvironment(env)'),
+  'the target response must let the UI hide non-production controls in production'
+);
+assert.ok(
+  includesJavaScriptFragment(admin, 'environment === "production"'),
+  'prepared database activation must fail closed in production'
+);
+assert.match(
+  admin,
+  /ACCOUNTING_PREPARED_PARISH_DATABASES/,
+  'prepared database activation must use a configured parish mapping'
+);
 assert.match(adminHtml, /Activate prepared staging database/);
 assert.match(adminApp, /function activateAdminPreparedAccounting\b/);
-assert.match(adminApp, /parishId:'st-fiacre'/, "the built-in accounting parish must remain selectable when cached registration summaries omit IDs");
-assert.match(adminApp, /Internal monitoring fixtures/, "the selector must group internal fixtures separately from customer parishes");
-assert.match(adminApp, /synthetic operational data, not customer parish data/, "the canary selection must explain that it does not contain customer data");
-assert.match(adminHtml, /aria-describedby="accountingOpsTargetHelp"/, "the accounting target selector must provide concise usage guidance");
-assert.match(adminHtml, /role="status" aria-live="polite"/, "accounting target loading feedback must be announced accessibly");
-assert.match(adminHtml, /id="accountingPreparedActivation" hidden/, "prepared-database activation must be hidden until a non-production environment is confirmed");
-assert.match(adminApp, /activation\.hidden=!adminAccountingEnvironment\|\|adminAccountingEnvironment==='production'/, "production must not present an unusable staging-only action");
+assert.match(
+  adminApp,
+  /parishId:'st-fiacre'/,
+  'the built-in accounting parish must remain selectable when cached registration summaries omit IDs'
+);
+assert.match(
+  adminApp,
+  /Internal monitoring fixtures/,
+  'the selector must group internal fixtures separately from customer parishes'
+);
+assert.match(
+  adminApp,
+  /synthetic operational data, not customer parish data/,
+  'the canary selection must explain that it does not contain customer data'
+);
+assert.match(
+  adminHtml,
+  /aria-describedby="accountingOpsTargetHelp"/,
+  'the accounting target selector must provide concise usage guidance'
+);
+assert.match(
+  adminHtml,
+  /role="status" aria-live="polite"/,
+  'accounting target loading feedback must be announced accessibly'
+);
+assert.match(
+  adminHtml,
+  /id="accountingPreparedActivation" hidden/,
+  'prepared-database activation must be hidden until a non-production environment is confirmed'
+);
+assert.match(
+  adminApp,
+  /activation\.hidden=!adminAccountingEnvironment\|\|adminAccountingEnvironment==='production'/,
+  'production must not present an unusable staging-only action'
+);
 assert.match(app, /function renderAccountingPaywall\(/);
 assert.match(app, /Accounting is included — setup is required/);
 assert.doesNotMatch(app, /St\. Fiacre remains the live demonstration parish/);
@@ -61,113 +137,477 @@ assert.match(app, /Financial command center/);
 assert.match(app, /const accountingIncluded = moduleIncluded\('accounting'\)/);
 assert.match(app, /syncTierRequirementNavigation\('accounting', 'Accounting add-on', accountingIncluded\)/);
 assert.match(app, /syncModuleStatusNavigation\('accounting', accountingIncluded, accountingIncluded\)/);
-for (const route of ["/setup", "/setup/initialize", "/settings", "/workspace-reference", "/reports/trial-balance", "/reports/statement-of-activities", "/reports/statement-of-financial-position", "/reports/fund-activity"]) assert.ok(routes.includes(route), `missing Accounting route ${route}`);
+for (const route of [
+  '/setup',
+  '/setup/initialize',
+  '/settings',
+  '/workspace-reference',
+  '/reports/trial-balance',
+  '/reports/statement-of-activities',
+  '/reports/statement-of-financial-position',
+  '/reports/fund-activity',
+])
+  assert.ok(routes.includes(route), `missing Accounting route ${route}`);
 assert.match(routes, /accounting\.view/);
 assert.match(routes, /accounting\.configure/);
 assert.match(routes, /reportCsv/);
-for (const route of ["/payables/overview", "/payables/vendors", "/payables/bills", "/payables/aging", "/payables/payments", "/payables/check-settings", "/budgets", "variance", "council-packet"]) assert.ok(phaseDRoutes.includes(route), `missing Phase D/H route ${route}`);
-for (const capability of ["ap.view", "ap.enter", "ap.approve", "budgets.view", "budgets.manage", "budgets.approve", "budgets.lock"]) assert.ok(phaseDRoutes.includes(capability), `missing Phase D capability gate ${capability}`);
-for (const route of ["/bank/accounts", "/bank/imports/preview", "/bank/reconciliations", "/integrations/give-stripe/settings", "/integrations/give-stripe/clearing", "/commerce/overview", "/commerce/sales-tax"]) assert.ok(phaseERoutes.includes(route), `missing Phase E route ${route}`);
-for (const capability of ["accounting.bank_accounts.view", "accounting.bank_imports.manage", "accounting.reconciliation.complete", "accounting.integrations.configure", "accounting.commerce.reports.view"]) assert.ok(phaseERoutes.includes(capability), `missing Phase E capability gate ${capability}`);
-for (const route of ["/close/workspace", "/close/sessions", "year-end", "audit-readiness", "accountant-export", "audit-trail.csv"]) assert.ok(phaseFRoutes.includes(route), `missing Phase F route ${route}`);
-for (const capability of ["accounting.close.view", "accounting.close.create", "accounting.close.validate", "accounting.close.complete", "accounting.year_end.execute", "accounting.accountant_exports.generate"]) assert.ok(phaseFRoutes.includes(capability), `missing Phase F capability gate ${capability}`);
+for (const route of [
+  '/payables/overview',
+  '/payables/vendors',
+  '/payables/bills',
+  '/payables/aging',
+  '/payables/payments',
+  '/payables/check-settings',
+  '/budgets',
+  'variance',
+  'council-packet',
+])
+  assert.ok(phaseDRoutes.includes(route), `missing Phase D/H route ${route}`);
+for (const capability of [
+  'ap.view',
+  'ap.enter',
+  'ap.approve',
+  'budgets.view',
+  'budgets.manage',
+  'budgets.approve',
+  'budgets.lock',
+])
+  assert.ok(phaseDRoutes.includes(capability), `missing Phase D capability gate ${capability}`);
+for (const route of [
+  '/bank/accounts',
+  '/bank/imports/preview',
+  '/bank/reconciliations',
+  '/integrations/give-stripe/settings',
+  '/integrations/give-stripe/clearing',
+  '/commerce/overview',
+  '/commerce/sales-tax',
+])
+  assert.ok(phaseERoutes.includes(route), `missing Phase E route ${route}`);
+for (const capability of [
+  'accounting.bank_accounts.view',
+  'accounting.bank_imports.manage',
+  'accounting.reconciliation.complete',
+  'accounting.integrations.configure',
+  'accounting.commerce.reports.view',
+])
+  assert.ok(phaseERoutes.includes(capability), `missing Phase E capability gate ${capability}`);
+for (const route of [
+  '/close/workspace',
+  '/close/sessions',
+  'year-end',
+  'audit-readiness',
+  'accountant-export',
+  'audit-trail.csv',
+])
+  assert.ok(phaseFRoutes.includes(route), `missing Phase F route ${route}`);
+for (const capability of [
+  'accounting.close.view',
+  'accounting.close.create',
+  'accounting.close.validate',
+  'accounting.close.complete',
+  'accounting.year_end.execute',
+  'accounting.accountant_exports.generate',
+])
+  assert.ok(phaseFRoutes.includes(capability), `missing Phase F capability gate ${capability}`);
 assert.match(dashboard, /id="nav-accounting"/);
 assert.match(dashboard, /id="tab-accounting"/);
-assert.match(dashboard, /data-nav-tab="accounting"/, "Accounting must be reachable from the mobile parish navigation");
-for (const view of ["overview", "ledger", "funds", "payables", "banking", "reports", "budgets", "close", "setup", "settings"]) assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
-for (const nestedView of ["journals", "integrations"]) assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
-for (const canonicalFeature of ["acct-suite-shell", "acct-suite-rail", "Accounting suite navigation", "accountingPageTitle", "accountingFiscalYear"]) assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
-assert.match(css, /purpose-built top bar/, "Accounting module navigation should use the dedicated top bar");
-assert.doesNotMatch(css, /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/, "Accounting navigation must not retain the stale ten-column layout");
-assert.match(css, /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s, "Accountant view should keep all eleven tabs on one desktop row");
-assert.match(css, /\.acct-suite-rail nav button\s*\{[^}]*min-height:44px/s, "Accounting navigation needs a 44px desktop touch target");
-assert.match(css, /flex:0 0 auto/, "Accounting navigation must retain its full height above the cream workspace");
-assert.match(app, /acct-table-wrap acct-overview-activity-table/, "Overview activity needs its own non-scrolling table treatment");
+assert.match(dashboard, /data-nav-tab="accounting"/, 'Accounting must be reachable from the mobile parish navigation');
+for (const view of [
+  'overview',
+  'ledger',
+  'funds',
+  'payables',
+  'banking',
+  'reports',
+  'budgets',
+  'close',
+  'setup',
+  'settings',
+])
+  assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
+for (const nestedView of ['journals', 'integrations'])
+  assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
+for (const canonicalFeature of [
+  'acct-suite-shell',
+  'acct-suite-rail',
+  'Accounting suite navigation',
+  'accountingPageTitle',
+  'accountingFiscalYear',
+])
+  assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
+assert.match(css, /purpose-built top bar/, 'Accounting module navigation should use the dedicated top bar');
+assert.doesNotMatch(
+  css,
+  /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/,
+  'Accounting navigation must not retain the stale ten-column layout'
+);
+assert.match(
+  css,
+  /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s,
+  'Accountant view should keep all eleven tabs on one desktop row'
+);
+assert.match(
+  css,
+  /\.acct-suite-rail nav button\s*\{[^}]*min-height:44px/s,
+  'Accounting navigation needs a 44px desktop touch target'
+);
+assert.match(css, /flex:0 0 auto/, 'Accounting navigation must retain its full height above the cream workspace');
+assert.match(
+  app,
+  /acct-table-wrap acct-overview-activity-table/,
+  'Overview activity needs its own non-scrolling table treatment'
+);
 assert.match(css, /\.acct-overview-activity-table\s*\{[^}]*overflow-x:hidden/s);
 assert.match(css, /\.acct-overview-activity-table \.acct-table\s*\{[^}]*min-width:0;[^}]*table-layout:fixed/s);
-assert.match(app, /fetch\(accountingApi\('\/reports\/fund-activity'\)/, "Accounting overview must load canonical fund balances");
-assert.match(app, /reports:\s*\{[^}]*fundActivity:\s*fundActivity\.report/s, "Accounting state must retain the canonical fund-activity report");
-assert.match(app, /fundActivity\.find\(\(row\) => row\.fundId === fund\.id \|\| row\.code === fund\.code\)\?\.endingBalance/, "Overview and Funds must render the report's ending fund balance");
-assert.doesNotMatch(app, /const fundBalance = \(fund\) => accountingData\.ledger/, "Overview must not total balanced debit and credit lines as a fund balance");
-assert.match(routes, /giving_source_type givingSourceType,giving_source_id givingSourceId/, "Accounting fund references must retain their Giving catalog identity");
+assert.match(
+  app,
+  /fetch\(accountingApi\('\/reports\/fund-activity'\)/,
+  'Accounting overview must load canonical fund balances'
+);
+assert.match(
+  app,
+  /reports:\s*\{[^}]*fundActivity:\s*fundActivity\.report/s,
+  'Accounting state must retain the canonical fund-activity report'
+);
+assert.match(
+  app,
+  /fundActivity\.find\(\(row\) => row\.fundId === fund\.id \|\| row\.code === fund\.code\)\?\.endingBalance/,
+  "Overview and Funds must render the report's ending fund balance"
+);
+assert.doesNotMatch(
+  app,
+  /const fundBalance = \(fund\) => accountingData\.ledger/,
+  'Overview must not total balanced debit and credit lines as a fund balance'
+);
+assert.match(
+  routes,
+  /giving_source_type givingSourceType,giving_source_id givingSourceId/,
+  'Accounting fund references must retain their Giving catalog identity'
+);
 assert.match(app, /accountingOverviewFundSummary/);
 assert.match(app, /campaign\?\.raisedCents/);
-assert.match(app, /label:\s*'Campaign raised'/, "Unposted campaign progress must be labeled as raised giving, not a ledger balance");
+assert.match(
+  app,
+  /label:\s*'Campaign raised'/,
+  'Unposted campaign progress must be labeled as raised giving, not a ledger balance'
+);
 assert.match(app, /accountingOverviewFundRank/);
-assert.match(app, /benevolence/i, "Benevolence must be promoted into the visible overview fund group");
-assert.match(app, /\$\{overviewFunds\.length\} active/, "The overview must state how many active funds are listed");
-assert.match(app, /Accounting Suite Guide/, "Accounting Settings must surface the comprehensive guide");
-assert.match(app, /const subscriptionMonthlyCents = currentParish\?\.subscriptionMonthlyCents/, "Expense insights must use the parish's published monthly subscription price");
-assert.match(app, /<h2>AGAPAY Subscription<\/h2>/, "The expense insight must describe the monthly subscription rather than donation fees");
-assert.match(app, /No subscription payment has been posted to the ledger for this period\./, "Subscription price and posted accounting expense must remain distinct");
-assert.doesNotMatch(app, /Completed giving transactions feed this account directly\./, "AGAPAY does not charge a donation fee that completed gifts should feed into the card");
-assert.match(app, /\/docs\/AGAPAY-Accounting-Suite-Guide-Comprehensive\.pdf/g, "Accounting Settings must open and download the guide");
-assert.match(css, /\.acct-guide-card\s*\{[^}]*grid-column:1\/-1/s, "Accounting guide should be prominent across the Settings grid");
-for (const staffAction of ["renderAccountingAccess", "bootstrapAccountingStaff", "verifyAccountingStaff", "addAccountingStaff", "changeAccountingPin", "lockAccountingWorkspace"]) assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
+assert.match(app, /benevolence/i, 'Benevolence must be promoted into the visible overview fund group');
+assert.match(app, /\$\{overviewFunds\.length\} active/, 'The overview must state how many active funds are listed');
+assert.match(app, /Accounting Suite Guide/, 'Accounting Settings must surface the comprehensive guide');
+assert.match(
+  app,
+  /const subscriptionMonthlyCents = currentParish\?\.subscriptionMonthlyCents/,
+  "Expense insights must use the parish's published monthly subscription price"
+);
+assert.match(
+  app,
+  /<h2>AGAPAY Subscription<\/h2>/,
+  'The expense insight must describe the monthly subscription rather than donation fees'
+);
+assert.match(
+  app,
+  /No subscription payment has been posted to the ledger for this period\./,
+  'Subscription price and posted accounting expense must remain distinct'
+);
+assert.doesNotMatch(
+  app,
+  /Completed giving transactions feed this account directly\./,
+  'AGAPAY does not charge a donation fee that completed gifts should feed into the card'
+);
+assert.match(
+  app,
+  /\/docs\/AGAPAY-Accounting-Suite-Guide-Comprehensive\.pdf/g,
+  'Accounting Settings must open and download the guide'
+);
+assert.match(
+  css,
+  /\.acct-guide-card\s*\{[^}]*grid-column:1\/-1/s,
+  'Accounting guide should be prominent across the Settings grid'
+);
+for (const staffAction of [
+  'renderAccountingAccess',
+  'bootstrapAccountingStaff',
+  'verifyAccountingStaff',
+  'addAccountingStaff',
+  'changeAccountingPin',
+  'lockAccountingWorkspace',
+])
+  assert.match(app, new RegExp(`function ${staffAction}\\b`), `missing Accounting staff action ${staffAction}`);
 assert.match(app, /initializeAccounting/);
 assert.match(app, /saveAccountingSettings/);
 assert.match(app, /printAccountingReport/);
 assert.match(app, /downloadAccountingReport/);
-for (const action of ["newAccountingJournal", "editAccountingJournal", "saveAccountingJournal", "validateAccountingJournal", "postAccountingJournal"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing journal UI action ${action}`);
-for (const action of ["loadAccountingPhaseD", "createAccountingVendor", "createAccountingBill", "accountingBillAction", "createAccountingBudget", "accountingBudgetAction", "openAccountingBudgetVariance", "openAccountingCouncilPacket"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase D UI action ${action}`);
-for (const action of ["renderAccountingPayments", "showAccountingPaymentForm", "showAccountingCheckSettings", "saveAccountingCheckSettings", "loadNextAccountingCheckNumber", "createAccountingPayment", "printAccountingCheck", "postAccountingPayment", "voidAccountingPayment"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase H UI action ${action}`);
-assert.match(app, /function syncAccountingPaymentMethod\b/, "bill payments must switch between check and online-payment fields");
-for (const paymentOption of ["Online bill pay", "ACH / bank transfer", "Wire transfer", "Debit card", "Credit card", "Printed check"]) assert.ok(app.includes(paymentOption), `missing bill-payment method ${paymentOption}`);
+for (const action of [
+  'newAccountingJournal',
+  'editAccountingJournal',
+  'saveAccountingJournal',
+  'validateAccountingJournal',
+  'postAccountingJournal',
+])
+  assert.match(app, new RegExp(`function ${action}\\b`), `missing journal UI action ${action}`);
+for (const action of [
+  'loadAccountingPhaseD',
+  'createAccountingVendor',
+  'createAccountingBill',
+  'accountingBillAction',
+  'createAccountingBudget',
+  'accountingBudgetAction',
+  'openAccountingBudgetVariance',
+  'openAccountingCouncilPacket',
+])
+  assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase D UI action ${action}`);
+for (const action of [
+  'renderAccountingPayments',
+  'showAccountingPaymentForm',
+  'showAccountingCheckSettings',
+  'saveAccountingCheckSettings',
+  'loadNextAccountingCheckNumber',
+  'createAccountingPayment',
+  'printAccountingCheck',
+  'postAccountingPayment',
+  'voidAccountingPayment',
+])
+  assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase H UI action ${action}`);
+assert.match(
+  app,
+  /function syncAccountingPaymentMethod\b/,
+  'bill payments must switch between check and online-payment fields'
+);
+for (const paymentOption of [
+  'Online bill pay',
+  'ACH / bank transfer',
+  'Wire transfer',
+  'Debit card',
+  'Credit card',
+  'Printed check',
+])
+  assert.ok(app.includes(paymentOption), `missing bill-payment method ${paymentOption}`);
 assert.match(app, /Confirmation \/ reference number/);
-assert.match(app, /raw\.paymentMethod\s*!==\s*'check'/, "non-check bill payments should post immediately after they are recorded");
-assert.match(app, /isCheck\s*&&\s*!payment\.printCount/, "only unprinted check payments should have posting disabled");
-for (const stock of ["top_check_two_stubs", "bottom_check_two_stubs", "check_only"]) assert.ok(app.includes(stock) && phaseDRoutes.includes(stock), `missing Phase H check stock support ${stock}`);
+assert.match(
+  app,
+  /raw\.paymentMethod\s*!==\s*'check'/,
+  'non-check bill payments should post immediately after they are recorded'
+);
+assert.match(app, /isCheck\s*&&\s*!payment\.printCount/, 'only unprinted check payments should have posting disabled');
+for (const stock of ['top_check_two_stubs', 'bottom_check_two_stubs', 'check_only'])
+  assert.ok(app.includes(stock) && phaseDRoutes.includes(stock), `missing Phase H check stock support ${stock}`);
 assert.match(app, /Reason for reprinting this check/);
 assert.match(app, /Original printed/);
 assert.match(app, /Reprinted/);
 assert.match(app, /Voided/);
-for (const action of ["loadAccountingPhaseE", "createAccountingBankAccount", "previewAccountingBankCsv", "commitAccountingBankCsv", "createAccountingReconciliation", "completeAccountingReconciliation", "saveAccountingIntegrationSettings"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase E UI action ${action}`);
-for (const action of ["loadAccountingPhaseF", "createAccountingClose", "createAccountingYearEnd", "openAccountingClose", "validateAccountingClose", "waiveAccountingCloseCheck", "completeAccountingClose", "printAccountingClosePacket"]) assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase F UI action ${action}`);
+for (const action of [
+  'loadAccountingPhaseE',
+  'createAccountingBankAccount',
+  'previewAccountingBankCsv',
+  'commitAccountingBankCsv',
+  'createAccountingReconciliation',
+  'completeAccountingReconciliation',
+  'saveAccountingIntegrationSettings',
+])
+  assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase E UI action ${action}`);
+for (const action of [
+  'loadAccountingPhaseF',
+  'createAccountingClose',
+  'createAccountingYearEnd',
+  'openAccountingClose',
+  'validateAccountingClose',
+  'waiveAccountingCloseCheck',
+  'completeAccountingClose',
+  'printAccountingClosePacket',
+])
+  assert.match(app, new RegExp(`function ${action}\\b`), `missing Phase F UI action ${action}`);
 assert.match(app, /\/journals\/\$\{encodeURIComponent\(draft\.id\)\}\/validate/);
 assert.match(app, /\/journals\/\$\{encodeURIComponent\(draft\.id\)\}\/post/);
-assert.ok(app.includes("<th>Source</th><th>Amount</th><th>Status</th>"), "journal entry list should show an amount column");
-assert.ok(app.includes("row.totalDebits ?? row.total_debits ?? row.totalCredits"), "journal entry amount should use the balanced entry total");
-assert.match(app, /function toggleAccountingLedgerOrder\b/, "general ledger should expose a chronological order toggle");
-assert.ok(app.includes("accountingLedgerNewestFirst ? 'Oldest first' : 'Newest first'"), "general ledger should label both sort directions");
-assert.ok(app.includes("AGAPAY creates and posts the balanced journal entry behind every register transaction"), "general ledger should explain how the register relates to journal entries");
-for (const registerFeature of ["accountingRegisterModel", "Account register", "Current balance", "Transaction history", "Search this register", "registerBalance"]) assert.ok(app.includes(registerFeature), `missing premium account register feature ${registerFeature}`);
-for (const registerAction of ["setAccountingLedgerAccount", "searchAccountingLedger", "clearAccountingLedgerSearch", "setAccountingRegisterEntryMode", "applyAccountingRegisterDefaultFund", "submitAccountingRegisterEntry"]) assert.match(app, new RegExp(`function ${registerAction}\\b`), `missing account register action ${registerAction}`);
-for (const entryFeature of ["Deposit / Payment", "Contribution account", "Post transaction", "Post contribution", "manual_register_contribution", "manual_register_transaction"]) assert.ok(app.includes(entryFeature), `missing streamlined register-entry feature ${entryFeature}`);
-for (const fundFeature of ["Fund directory", "Funds &amp; accounts", "Equity / Fund Balances", "Unrestricted net assets", "Restricted net assets"]) assert.ok(app.includes(fundFeature), `missing premium fund-account feature ${fundFeature}`);
-const fundsRenderer = app.slice(app.indexOf("function renderAccountingFunds"), app.indexOf("function filterAccountingFunds"));
-assert.ok(fundsRenderer.indexOf("Fund balances at a glance") < fundsRenderer.indexOf("Fund directory"), "fund balances at a glance should be the first Funds-tab section");
-assert.ok(fundsRenderer.indexOf("Chart of accounts") < fundsRenderer.indexOf("Fund directory"), "fund directory should appear below the chart of accounts");
-assert.ok(fundsRenderer.includes('class="acct-fund-workspace"') && fundsRenderer.indexOf('class="acct-fund-summary"') < fundsRenderer.indexOf('class="acct-fund-accounts"'), "fund balances and chart of accounts should share one workspace card");
-assert.ok(fundsRenderer.includes("directoryFunds = accountingShowInactiveFunds ? accountingFundCatalog : active") && fundsRenderer.includes("Show archived &amp; unused"), "fund directory should hide inactive funds by default and provide a reveal control");
-assert.match(app, /function toggleAccountingInactiveFunds\b/, "fund directory should expose a reversible archived-fund visibility toggle");
-assert.match(app, /function toggleAccountingFundAccountSection\b/, "fund accounts should be expandable");
-assert.ok(app.includes("Fund Balance</strong>"), "each fund should surface as an automatic fund-balance row");
-for (const expenseFeature of ["Administrative Expenses", "Other Expenses", "Default fund", "Parent account", "Sub-account of"]) assert.ok(app.includes(expenseFeature), `missing expense-account feature ${expenseFeature}`);
-for (const expenseAction of ["showAccountingExpenseAccountForm", "saveAccountingExpenseAccount", "bindAccountingJournalLine"]) assert.match(app, new RegExp(`function ${expenseAction}\\b`), `missing expense-account action ${expenseAction}`);
-assert.ok(app.includes('data-default-fund='), "journal account choices should carry their configured default fund");
-assert.ok(app.includes("fundSelect.value = defaultFundId"), "selecting an expense account should automatically select its default fund");
-assert.ok(routes.includes('path.match(/^\\/accounts'), "accounting setup handler should expose account creation and editing");
-for (const reportName of ["Balance Sheet", "Income Statement", "Comparative Income Statement Periods", "Budget to Actual", "Income Statement by Fund", "Balance Sheet by Fund", "Income Statement by Month", "Comparative Income Statement", "Comparative Budget to Actual", "Budget by Fund"]) assert.ok(new RegExp(`title:\\s*'${reportName}'`).test(app), `missing report library option ${reportName}`);
-assert.ok(app.includes(`<button onclick="openAccountingReport('expenses')">Expense Report</button>`), "Reports quick access should include Expense Report");
-for (const reportAction of ["renderAccountingReportLibrary", "filterAccountingReportLibrary", "openAccountingReport", "loadAccountingBudgetLibraryReport", "renderAccountingReports"]) assert.match(app, new RegExp(`function ${reportAction}\\b`), `missing report library action ${reportAction}`);
-assert.ok(app.includes("accountingCustomReport"), "custom comparative and fund reports should support screen, print, and CSV output");
-for (const recurringFeature of ["Recurring expenses", "Schedule expense", "Due transactions post automatically each morning", "Every two weeks"]) assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
-for (const recurringAction of ["accountingRecurringPanel", "saveAccountingRecurring", "toggleAccountingRecurring"]) assert.match(app, new RegExp(`function ${recurringAction}\\b`), `missing recurring transaction action ${recurringAction}`);
-const unauthorized = await handleAccountingSetupReports(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/setup"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
+assert.ok(
+  app.includes('<th>Source</th><th>Amount</th><th>Status</th>'),
+  'journal entry list should show an amount column'
+);
+assert.ok(
+  app.includes('row.totalDebits ?? row.total_debits ?? row.totalCredits'),
+  'journal entry amount should use the balanced entry total'
+);
+assert.match(
+  app,
+  /function toggleAccountingLedgerOrder\b/,
+  'general ledger should expose a chronological order toggle'
+);
+assert.ok(
+  app.includes("accountingLedgerNewestFirst ? 'Oldest first' : 'Newest first'"),
+  'general ledger should label both sort directions'
+);
+assert.ok(
+  app.includes('AGAPAY creates and posts the balanced journal entry behind every register transaction'),
+  'general ledger should explain how the register relates to journal entries'
+);
+for (const registerFeature of [
+  'accountingRegisterModel',
+  'Account register',
+  'Current balance',
+  'Transaction history',
+  'Search this register',
+  'registerBalance',
+])
+  assert.ok(app.includes(registerFeature), `missing premium account register feature ${registerFeature}`);
+for (const registerAction of [
+  'setAccountingLedgerAccount',
+  'searchAccountingLedger',
+  'clearAccountingLedgerSearch',
+  'setAccountingRegisterEntryMode',
+  'applyAccountingRegisterDefaultFund',
+  'submitAccountingRegisterEntry',
+])
+  assert.match(app, new RegExp(`function ${registerAction}\\b`), `missing account register action ${registerAction}`);
+for (const entryFeature of [
+  'Deposit / Payment',
+  'Contribution account',
+  'Post transaction',
+  'Post contribution',
+  'manual_register_contribution',
+  'manual_register_transaction',
+])
+  assert.ok(app.includes(entryFeature), `missing streamlined register-entry feature ${entryFeature}`);
+for (const fundFeature of [
+  'Fund directory',
+  'Funds &amp; accounts',
+  'Equity / Fund Balances',
+  'Unrestricted net assets',
+  'Restricted net assets',
+])
+  assert.ok(app.includes(fundFeature), `missing premium fund-account feature ${fundFeature}`);
+const fundsRenderer = app.slice(
+  app.indexOf('function renderAccountingFunds'),
+  app.indexOf('function filterAccountingFunds')
+);
+assert.ok(
+  fundsRenderer.indexOf('Fund balances at a glance') < fundsRenderer.indexOf('Fund directory'),
+  'fund balances at a glance should be the first Funds-tab section'
+);
+assert.ok(
+  fundsRenderer.indexOf('Chart of accounts') < fundsRenderer.indexOf('Fund directory'),
+  'fund directory should appear below the chart of accounts'
+);
+assert.ok(
+  fundsRenderer.includes('class="acct-fund-workspace"') &&
+    fundsRenderer.indexOf('class="acct-fund-summary"') < fundsRenderer.indexOf('class="acct-fund-accounts"'),
+  'fund balances and chart of accounts should share one workspace card'
+);
+assert.ok(
+  fundsRenderer.includes('directoryFunds = accountingShowInactiveFunds ? accountingFundCatalog : active') &&
+    fundsRenderer.includes('Show archived &amp; unused'),
+  'fund directory should hide inactive funds by default and provide a reveal control'
+);
+assert.match(
+  app,
+  /function toggleAccountingInactiveFunds\b/,
+  'fund directory should expose a reversible archived-fund visibility toggle'
+);
+assert.match(app, /function toggleAccountingFundAccountSection\b/, 'fund accounts should be expandable');
+assert.ok(app.includes('Fund Balance</strong>'), 'each fund should surface as an automatic fund-balance row');
+for (const expenseFeature of [
+  'Administrative Expenses',
+  'Other Expenses',
+  'Default fund',
+  'Parent account',
+  'Sub-account of',
+])
+  assert.ok(app.includes(expenseFeature), `missing expense-account feature ${expenseFeature}`);
+for (const expenseAction of [
+  'showAccountingExpenseAccountForm',
+  'saveAccountingExpenseAccount',
+  'bindAccountingJournalLine',
+])
+  assert.match(app, new RegExp(`function ${expenseAction}\\b`), `missing expense-account action ${expenseAction}`);
+assert.ok(app.includes('data-default-fund='), 'journal account choices should carry their configured default fund');
+assert.ok(
+  app.includes('fundSelect.value = defaultFundId'),
+  'selecting an expense account should automatically select its default fund'
+);
+assert.ok(
+  routes.includes('path.match(/^\\/accounts'),
+  'accounting setup handler should expose account creation and editing'
+);
+for (const reportName of [
+  'Balance Sheet',
+  'Income Statement',
+  'Comparative Income Statement Periods',
+  'Budget to Actual',
+  'Income Statement by Fund',
+  'Balance Sheet by Fund',
+  'Income Statement by Month',
+  'Comparative Income Statement',
+  'Comparative Budget to Actual',
+  'Budget by Fund',
+])
+  assert.ok(new RegExp(`title:\\s*'${reportName}'`).test(app), `missing report library option ${reportName}`);
+assert.ok(
+  app.includes(`<button onclick="openAccountingReport('expenses')">Expense Report</button>`),
+  'Reports quick access should include Expense Report'
+);
+for (const reportAction of [
+  'renderAccountingReportLibrary',
+  'filterAccountingReportLibrary',
+  'openAccountingReport',
+  'loadAccountingBudgetLibraryReport',
+  'renderAccountingReports',
+])
+  assert.match(app, new RegExp(`function ${reportAction}\\b`), `missing report library action ${reportAction}`);
+assert.ok(
+  app.includes('accountingCustomReport'),
+  'custom comparative and fund reports should support screen, print, and CSV output'
+);
+for (const recurringFeature of [
+  'Recurring expenses',
+  'Schedule expense',
+  'Due transactions post automatically each morning',
+  'Every two weeks',
+])
+  assert.ok(app.includes(recurringFeature), `missing recurring transaction feature ${recurringFeature}`);
+for (const recurringAction of ['accountingRecurringPanel', 'saveAccountingRecurring', 'toggleAccountingRecurring'])
+  assert.match(
+    app,
+    new RegExp(`function ${recurringAction}\\b`),
+    `missing recurring transaction action ${recurringAction}`
+  );
+const unauthorized = await handleAccountingSetupReports(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/accounting/setup'),
+  { AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  'parish-a'
+);
 assert.equal(unauthorized.status, 401);
-assert.equal(unauthorized.headers.get("Cache-Control"), "private, no-store");
-const phaseDUnauthorized = await handleAccountingPayablesBudgets(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/payables/overview"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
+assert.equal(unauthorized.headers.get('Cache-Control'), 'private, no-store');
+const phaseDUnauthorized = await handleAccountingPayablesBudgets(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/accounting/payables/overview'),
+  { AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  'parish-a'
+);
 assert.equal(phaseDUnauthorized.status, 401);
-assert.equal(phaseDUnauthorized.headers.get("Cache-Control"), "private, no-store");
-const phaseEUnauthorized = await handleAccountingReconciliationCommerce(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/bank/accounts"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
+assert.equal(phaseDUnauthorized.headers.get('Cache-Control'), 'private, no-store');
+const phaseEUnauthorized = await handleAccountingReconciliationCommerce(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/accounting/bank/accounts'),
+  { AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  'parish-a'
+);
 assert.equal(phaseEUnauthorized.status, 401);
-assert.equal(phaseEUnauthorized.headers.get("Cache-Control"), "private, no-store");
-const phaseFUnauthorized = await handleAccountingClose(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
+assert.equal(phaseEUnauthorized.headers.get('Cache-Control'), 'private, no-store');
+const phaseFUnauthorized = await handleAccountingClose(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/accounting/close/workspace'),
+  { AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  'parish-a'
+);
 assert.equal(phaseFUnauthorized.status, 401);
-assert.equal(phaseFUnauthorized.headers.get("Cache-Control"), "private, no-store");
-const accessUnauthorized = await handleAccountingAccess(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
+assert.equal(phaseFUnauthorized.headers.get('Cache-Control'), 'private, no-store');
+const accessUnauthorized = await handleAccountingAccess(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/accounting-access/profiles'),
+  { AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  'parish-a'
+);
 assert.equal(accessUnauthorized.status, 401);
-const recurringUnauthorized = await handleAccountingRecurring(new Request("https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions"), { AGAPAY_RATE_LIMITER: memoryRateLimiter() }, "parish-a");
+const recurringUnauthorized = await handleAccountingRecurring(
+  new Request('https://agapay.app/api/parish/dashboard/parish-a/accounting/recurring-transactions'),
+  { AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  'parish-a'
+);
 assert.equal(recurringUnauthorized.status, 401);
 
-console.log("Accounting route and parish UI checks passed.");
+console.log('Accounting route and parish UI checks passed.');

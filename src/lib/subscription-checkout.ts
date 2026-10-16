@@ -1,8 +1,8 @@
 import type { SubscriptionRegistration } from './subscriptions.js';
 import type { StripeApiResponse } from './stripe-connect.js';
 export interface CheckoutRegistration extends SubscriptionRegistration {
-  treasurerEmail?: string;
-  priestEmail?: string;
+  treasurerEmail?: string | null;
+  priestEmail?: string | null;
   stripeSubscriptionId?: string;
   stripeCustomerId?: string;
   parishId?: string;

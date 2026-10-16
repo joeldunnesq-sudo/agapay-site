@@ -1914,7 +1914,7 @@ export default [
     },
   },
   {
-    files: ['src/handlers/donor-bookstore.ts'],
+    files: ['src/handlers/donor-bookstore.ts', 'src/handlers/tax-exemption-parish.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^env$' }] },
   },
   {
