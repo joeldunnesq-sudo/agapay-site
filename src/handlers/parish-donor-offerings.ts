@@ -308,7 +308,7 @@ export async function loadDonorOfferingByCheckout(env: ModuleEnv, checkoutSessio
 
 export async function updateDonorOfferingByPaymentIntent(
   env: ModuleEnv,
-  paymentIntentId: string,
+  paymentIntentId: string | undefined,
   updates: Partial<ReceiptOffering> = {}
 ) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;
@@ -316,7 +316,7 @@ export async function updateDonorOfferingByPaymentIntent(
   return current ? storeDonorOffering(env, { ...current, ...updates }) : null;
 }
 
-export async function loadDonorOfferingByPaymentIntent(env: ModuleEnv, paymentIntentId: string) {
+export async function loadDonorOfferingByPaymentIntent(env: ModuleEnv, paymentIntentId: string | undefined) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;
   if (d1(env)) {
     const row = await d1First<ModuleRow>(
@@ -407,8 +407,8 @@ export function stripeObjectMetadata(
 
 export async function stripePaymentIntentFinancialUpdates(
   env: ModuleEnv,
-  paymentIntentId: string,
-  parishId: string,
+  paymentIntentId: string | undefined,
+  parishId: string | undefined,
   fallback: ReceiptOffering = {}
 ) {
   if (!paymentIntentId || !parishId) return {};
@@ -552,7 +552,10 @@ export async function reconcilePendingDonorOfferings(env: ModuleEnv, offerings: 
     }
   }
 
-  return reconciled.sort((a, b) => String(b!.createdAt || '').localeCompare(String(a!.createdAt || '')));
+  // Existing callers assume tracked checkout reconciliation yields an offering; preserve this storage invariant.
+  return reconciled.sort((a, b) =>
+    String(b!.createdAt || '').localeCompare(String(a!.createdAt || ''))
+  ) as ReceiptOffering[];
 }
 
 export function paidCommemorationOfferingWithNames(offering: ReceiptOffering = {}) {

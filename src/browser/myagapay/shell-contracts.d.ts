@@ -20,14 +20,30 @@ interface Window {
     clearSession(): void;
   };
   MyAgapayShell?: {
+    activeProduct(pathname?: string): string;
+    clearSession(): void;
+    ensureParishLifeBackLink(pathname?: string): void;
+    isMyAgapayMainPage(pathname?: string): boolean;
+    isProtectedPath(pathname?: string): boolean;
+    normalizeProductNavs(root?: Document | HTMLElement): void;
+    productNav(active?: string, className?: string): string;
+    setParishCapabilities(
+      parish?: ShellParishCapabilities | null,
+      options?: { persist?: boolean; authoritative?: boolean }
+    ): void;
+    redirectToLogin(reason?: string): void;
+    session(): { email: string; token: string };
+    syncAuthVisibility(root?: Document | HTMLElement): void;
+    finishPageHydration(): void;
+    viewport(): 'desktop' | 'mobile';
     authHeaders(extra?: Record<string, string>): Record<string, string>;
     handleUnauthorized(response: Response): boolean;
     setFeedUnreadCount(count: number): void;
     setGroupsUnreadCount(count: number): void;
     setTeachingUnreadCount(count: number): void;
     capabilitiesLoaded(): boolean;
-    parishLifeExperience(parish?: AppHeaderParish | null): { communicationsEnabled: boolean; label: string };
-    icons: { menu: string };
+    parishLifeExperience(parish?: ShellParishCapabilities | null): { communicationsEnabled: boolean; label: string };
+    icons: { menu: string; [kind: string]: string };
     initializeMobileAppMenus(root?: Document | HTMLElement): void;
     openSupportDialog(): void;
   };

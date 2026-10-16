@@ -1,3 +1,4 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
@@ -145,7 +146,7 @@ assert.doesNotMatch(
   'the workflow must not reconstruct canonical policy evidence outside the policy module'
 );
 
-const adminSource = await readFile(new URL('../src/handlers/admin.js', import.meta.url), 'utf8');
+const adminSource = await Promise.resolve(readServerContractSourceSync('src/handlers/admin.js'));
 assert.match(adminSource, /evaluateOnboardingVerification/);
 assert.match(adminSource, /onboardingVerification\.incompleteMessage/);
 assert.match(adminSource, /onboardingVerification\.missingFields/);

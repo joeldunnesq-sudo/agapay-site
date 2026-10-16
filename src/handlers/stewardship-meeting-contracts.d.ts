@@ -54,29 +54,47 @@ export interface MeetingFinancialSummary {
   notes?: string;
 }
 export interface MeetingPayloadItem extends MeetingItem {
-  durationMinutes?: unknown;
-  reportType?: unknown;
-  createdBy?: unknown;
-  signedBy?: unknown;
-  signed_by?: unknown;
-  fundName?: unknown;
-  beginningBalance?: unknown;
-  beginning_balance?: unknown;
-  totalReceived?: unknown;
-  total_received?: unknown;
-  totalDisbursed?: unknown;
-  total_disbursed?: unknown;
-  endingBalance?: unknown;
-  ending_balance?: unknown;
-  fullName?: unknown;
-  nominatedBy?: unknown;
-  resolvedText?: unknown;
+  durationMinutes?: string | number;
+  reportType?: string;
+  createdBy?: string;
+  signedBy?: string;
+  signed_by?: string;
+  fundName?: string;
+  beginningBalance?: string | number;
+  beginning_balance?: string | number;
+  totalReceived?: string | number;
+  total_received?: string | number;
+  totalDisbursed?: string | number;
+  total_disbursed?: string | number;
+  endingBalance?: string | number;
+  ending_balance?: string | number;
+  fullName?: string;
+  nominatedBy?: string;
+  resolvedText?: string;
 }
 export interface MeetingPayload extends Record<string, unknown> {
+  title?: string;
+  fiscal_year?: string | number;
+  meeting_date?: string;
+  meeting_time?: string;
+  parish_name_override?: string;
+  fiscalYear?: string | number;
+  meetingDate?: string;
+  meetingTime?: string;
+  location?: string;
+  parishNameOverride?: string;
+  jurisdiction?: string;
+  address?: string;
   agendaItems?: MeetingPayloadItem[];
   reports?: MeetingPayloadItem[];
   restrictedFunds?: MeetingPayloadItem[];
   nominees?: MeetingPayloadItem[];
   resolutions?: MeetingPayloadItem[];
-  financialSummary?: Record<string, unknown>;
+  financialSummary?: {
+    totalIncome?: string | number;
+    total_income?: string | number;
+    totalExpense?: string | number;
+    total_expense?: string | number;
+    notes?: string;
+  };
 }

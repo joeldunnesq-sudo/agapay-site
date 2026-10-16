@@ -40,7 +40,12 @@ export interface AdminActions<TEnv> {
   handleAdminStewardshipCompStatus(request: Request, env: TEnv): AwaitableResult;
   handleAdminTaxExemptionApprove(request: Request, env: TEnv, resource: string): AwaitableResult;
   handleAdminTaxExemptionDetail(request: Request, env: TEnv, resource: string): AwaitableResult;
-  handleAdminTaxExemptionDocumentView(request: Request, env: TEnv, resource: string, subpath: string): AwaitableResult;
+  handleAdminTaxExemptionDocumentView(
+    request: Request,
+    env: TEnv,
+    resource: string,
+    subpath: 'inline' | 'attachment'
+  ): AwaitableResult;
   handleAdminTaxExemptionExpire(request: Request, env: TEnv, resource: string): AwaitableResult;
   handleAdminTaxExemptionNote(request: Request, env: TEnv, resource: string): AwaitableResult;
   handleAdminTaxExemptionQueue(request: Request, env: TEnv): AwaitableResult;

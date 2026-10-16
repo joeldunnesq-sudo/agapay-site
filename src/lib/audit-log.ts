@@ -5,7 +5,7 @@ export interface AuditEventFields extends Record<string, unknown> {
   actorRole?: string;
   householdId?: string;
   requestId?: string;
-  reason?: string;
+  reason?: string | null;
   targetType?: string;
   targetId?: string;
   organizationId?: string;

@@ -1,3 +1,4 @@
+import { parishAppScriptPaths } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
@@ -50,7 +51,7 @@ function createPage() {
 
 // Login deliberately loads no dashboard features: shared auth must remain usable.
 const login = createPage();
-login.load('public/parish/app.js');
+for (const source of parishAppScriptPaths()) login.load(source);
 assert.equal(login.run('authHeaders().Authorization'), 'Bearer test-parish-token');
 assert.equal(login.run('accountingStaffSession()'), null);
 assert.equal(login.run('isParishPlusActive()'), false, 'login entitlement checks must work without the registry');
@@ -71,7 +72,7 @@ assert.equal(login.run("authHeaders()['X-AGAPAY-Accounting-Profile']"), 'treasur
 const dashboard = createPage();
 const scripts = [
   ...read('public/parish/dashboard.html').matchAll(
-    /<script src="(\/parish\/(?:diagnostics|dashboard-runtime|feature-registry|features\/[^"?]+|app)\.js)\?[^\"]+"><\/script>/g
+    /<script src="(\/parish\/(?:diagnostics|dashboard-runtime|feature-registry|features\/[^"?]+|app(?:-[^/"?]+)?)\.js)\?[^\"]+"><\/script>/g
   ),
 ].map((match) => `public${match[1]}`);
 for (const file of scripts) dashboard.load(file);
@@ -83,7 +84,7 @@ assert.equal(dashboard.run('authHeaders().Authorization'), 'Bearer test-parish-t
 // Shared navigation reads legacy add-on status through the registered feature,
 // while the server-computed entitlement remains authoritative when present.
 dashboard.run("currentParish = { parishId: 'test-parish', subscriptionTier: 'giving' }");
-dashboard.run("stewardshipState.stewardship = { legacyAddOnActive: true }");
+dashboard.run('stewardshipState.stewardship = { legacyAddOnActive: true }');
 assert.equal(dashboard.run('isParishPlusActive()'), true);
 dashboard.run('currentParish.entitlements = { parishPlusActive: false }');
 assert.equal(dashboard.run('isParishPlusActive()'), false);
@@ -98,12 +99,22 @@ dashboard.run('currentParish = null; stewardshipState.stewardship = null');
 const giving = createPage();
 for (const file of scripts) giving.load(file);
 const givingCalls = [];
-for (const name of ['loadGivingHistory', 'renderGiversPanel', 'renderGivingOptionsEditor', 'loadSettlementProfilesPanel', 'loadReconciliation']) {
+for (const name of [
+  'loadGivingHistory',
+  'renderGiversPanel',
+  'renderGivingOptionsEditor',
+  'loadSettlementProfilesPanel',
+  'loadReconciliation',
+]) {
   giving.context[name] = () => givingCalls.push(name);
 }
 giving.run("currentParish = { parishId: 'test-parish' }");
 await giving.run("loadRegisteredParishFeature('giving', 'options')");
-assert.deepEqual(givingCalls.splice(0), ['loadGivingHistory', 'renderGivingOptionsEditor', 'loadSettlementProfilesPanel']);
+assert.deepEqual(givingCalls.splice(0), [
+  'loadGivingHistory',
+  'renderGivingOptionsEditor',
+  'loadSettlementProfilesPanel',
+]);
 giving.run('allGifts = [{}]');
 await giving.run("loadRegisteredParishFeature('giving', 'givers')");
 assert.deepEqual(givingCalls.splice(0), ['renderGiversPanel']);

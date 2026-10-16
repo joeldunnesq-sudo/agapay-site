@@ -577,7 +577,7 @@ assert.match(
 );
 assert.doesNotMatch(
   donorApp.match(/async function loadDonorDashboardPage\(\)[\s\S]*?\n}/)?.[0] || '',
-  /readDonorCache\("dashboard"\)|renderDonorDashboardPayload\(cached/,
+  /readDonorCache\(['"]dashboard['"]\)|renderDonorDashboardPayload\(cached/,
   'personalized dashboard and Give + entitlements must wait for live data'
 );
 assert.match(
@@ -587,7 +587,7 @@ assert.match(
 );
 assert.match(
   donorApp,
-  /clearDonorCache\("dashboard"\)/,
+  /clearDonorCache\(['"]dashboard['"]\)/,
   'failed dashboard refreshes must discard stale financial cache'
 );
 assert.match(worker, /f\.reportCode \|\| f\.id/, 'reporting aliases must not create duplicate accounting funds');
@@ -700,7 +700,7 @@ assert.match(
 );
 assert.match(
   app,
-  /function fallbackCampaigns\(v\) \{ return JSON\.stringify\(Array\.isArray\(v\) \? v : \[\]/,
+  /function fallbackCampaigns\(v\) \{\s*return JSON\.stringify\(Array\.isArray\(v\) \? v : \[\]/,
   'an empty campaign catalog must remain empty until the parish creates a campaign'
 );
 assert.doesNotMatch(

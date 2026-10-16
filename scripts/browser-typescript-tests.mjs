@@ -7,17 +7,47 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promis
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import vm from 'node:vm';
-import { browserTypeScriptEntries, synchronizeBrowserTypeScript } from './lib/browser-typescript.mjs';
+import {
+  browserTypeScriptEntries,
+  synchronizeBrowserTypeScript,
+  readClassicBrowserEntry,
+} from './lib/browser-typescript.mjs';
 import { repoRoot } from './lib/server-typescript.mjs';
 import { appAssetUrl, contentVersion } from './lib/app-asset-versions.mjs';
 import { htmlFilesUnder } from './lib/browser-composed-source.mjs';
 
+assert.ok(includesJavaScriptFragment('const delay=15e3;', 'const delay=15000;'));
+assert.equal(includesJavaScriptFragment('const delay=15001;', 'const delay=15000;'), false);
 await synchronizeBrowserTypeScript();
 const sources = (await readdir(join(repoRoot, 'src/browser'), { recursive: true }))
   .map((file) => file.replaceAll('\\', '/'))
   .filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'))
   .map((file) => `src/browser/${file}`);
-assert.deepEqual(sources.sort(), browserTypeScriptEntries.map(({ source }) => source).sort());
+assert.deepEqual(
+  sources.sort(),
+  browserTypeScriptEntries
+    .flatMap(({ source, supportSources = [], classicSupportSources = [] }) => [
+      source,
+      ...supportSources,
+      ...classicSupportSources,
+    ])
+    .sort()
+);
+
+// Runtime helpers are separately emitted and owned by exactly one migrated entry.
+const runtimeOwners = new Set();
+for (const entry of browserTypeScriptEntries) {
+  for (const source of entry.runtimeSupportSources || []) {
+    assert.equal(runtimeOwners.has(source), false, source + ' cannot have multiple runtime owners');
+    runtimeOwners.add(source);
+    const helper = browserTypeScriptEntries.find((candidate) => candidate.source === source);
+    assert.ok(helper, source + ' must be registered as an emitted entry');
+    assert.equal(helper.module, entry.module);
+    assert.equal(helper.delivery, entry.module ? 'native-module' : undefined);
+    if (!entry.module) assert.equal(helper.declarationsOnly, true);
+    assert.notEqual(source, entry.source);
+  }
+}
 
 // Native module and Worker URLs retain their existing runtime import/registration paths.
 const runtimeReferences = new Map();
@@ -110,8 +140,37 @@ for (const { output, externalEmbed, delivery, module: nativeModule } of browserT
   let consumers = 0;
   for (const page of htmlFilesUnder('public')) {
     const html = await readFile(join(repoRoot, page), 'utf8');
-    if (!html.includes(asset)) continue;
+    const tag = html.match(new RegExp(`<script\\b[^>]*src=["']${asset.replaceAll('.', '\\.')}[^"']*["'][^>]*>`));
+    if (!tag) continue;
     consumers += 1;
+    if (!nativeModule) {
+      const current = browserTypeScriptEntries.find((candidate) => candidate.output === output);
+      for (const helperSource of current.runtimeSupportSources || []) {
+        const helper = browserTypeScriptEntries.find((candidate) => candidate.source === helperSource);
+        const helperUrl = appAssetUrl(helper.output.slice('public'.length));
+        assert.ok(
+          html.indexOf(helperUrl) >= 0 && html.indexOf(helperUrl) < html.indexOf(tag[0]),
+          'classic support must load before its owner'
+        );
+        const helperTag = html.slice(
+          html.lastIndexOf('<script', html.indexOf(helperUrl)),
+          html.indexOf('>', html.indexOf(helperUrl)) + 1
+        );
+        assert.equal(
+          /\bdefer\b/.test(helperTag),
+          /\bdefer\b/.test(tag[0]),
+          'classic owner and support retain matching execution order'
+        );
+      }
+      const owner = browserTypeScriptEntries.find((candidate) =>
+        candidate.runtimeSupportSources?.includes(current.source)
+      );
+      if (owner)
+        assert.ok(
+          html.includes(appAssetUrl(owner.output.slice('public'.length))),
+          'classic support cannot load without its page owner'
+        );
+    }
     if (page === 'public/terms.html') {
       assert.equal(
         html,
@@ -119,10 +178,13 @@ for (const { output, externalEmbed, delivery, module: nativeModule } of browserT
         'Published Terms must remain byte-identical to their preserved snapshot'
       );
       assert.equal(asset, '/site-chrome.js', 'Only the original chrome script uses the immutable Terms page exception');
-    } else assert.ok(html.includes(url), `${page} must use the generated content version`);
-    const tag = html.match(new RegExp(`<script\\b[^>]*src=["']${asset.replaceAll('.', '\\.')}[^"']*["'][^>]*>`));
+    } else assert.ok(tag[0].includes(url), `${page} must use the generated content version`);
+
     assert.ok(tag, `${page} must load ${asset} as a script`);
-    assert.doesNotMatch(tag[0], /type=["']module["']|\basync\b/i);
+    if (nativeModule) {
+      assert.match(tag[0], /type=["']module["']/i);
+      assert.doesNotMatch(tag[0], /\basync\b/i);
+    } else assert.doesNotMatch(tag[0], /type=["']module["']|\basync\b/i);
   }
   assert.ok(consumers > 0);
 }
@@ -146,7 +208,11 @@ for (const [value, expected] of [
 const fixtureRoot = await mkdtemp(join(tmpdir(), 'agapay-browser-typescript-'));
 try {
   await writeFile(join(fixtureRoot, '.prettierrc.json'), await readFile(join(repoRoot, '.prettierrc.json')));
-  for (const { source } of browserTypeScriptEntries) {
+  for (const source of browserTypeScriptEntries.flatMap((entry) => [
+    entry.source,
+    ...(entry.supportSources || []),
+    ...(entry.classicSupportSources || []),
+  ])) {
     await mkdir(dirname(join(fixtureRoot, source)), { recursive: true });
     await writeFile(join(fixtureRoot, source), await readFile(join(repoRoot, source)));
   }
@@ -169,6 +235,61 @@ try {
   assert.notEqual(contentVersion(await readFile(outputPath, 'utf8')), contentVersion(generated));
   await writeFile(sourcePath, `${source}\nexport const accidentalModule = true;\n`);
   await assert.rejects(synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }), /export/);
+  await writeFile(sourcePath, source);
+  const declarationEntry = browserTypeScriptEntries.find((entry) => entry.declarationsOnly);
+  const declarationPath = join(fixtureRoot, declarationEntry.source),
+    declarationSource = await readFile(declarationPath, 'utf8');
+  await writeFile(declarationPath, declarationSource + '\nconst unexpectedStartup=true;\n');
+  await assert.rejects(
+    synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }),
+    /Classic runtime support must contain only function declarations/
+  );
+  await writeFile(declarationPath, declarationSource);
+  const privateEntry = browserTypeScriptEntries.find((entry) => entry.supportSources?.length);
+  assert.equal(
+    new Set(privateEntry.supportSources).size,
+    privateEntry.supportSources.length,
+    'private support ownership is unique'
+  );
+  const privatePath = join(fixtureRoot, privateEntry.source),
+    privateSource = await readFile(privatePath, 'utf8');
+  await writeFile(join(fixtureRoot, 'unexpected-private.ts'), 'globalThis.unexpected=true;');
+  await writeFile(privatePath, "import '../../unexpected-private.ts';\n" + privateSource);
+  await assert.rejects(
+    synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }),
+    /Unregistered private browser dependency/,
+    'private bundles cannot absorb undeclared runtime dependencies'
+  );
+  await writeFile(privatePath, privateSource);
+  await writeFile(join(fixtureRoot, 'classic-directive.ts'), "'use strict';\nfunction strictEntry(){ return this; }");
+  await writeFile(join(fixtureRoot, 'classic-helper.ts'), 'function strictHelper(){ return this; }');
+  const strictClassic = vm.createContext({});
+  vm.runInContext(
+    readClassicBrowserEntry(
+      { source: 'classic-directive.ts', classicSupportSources: ['classic-helper.ts'] },
+      fixtureRoot
+    ),
+    strictClassic
+  );
+  assert.equal(
+    vm.runInContext('strictEntry()', strictClassic),
+    undefined,
+    'classic entry retains its strict directive'
+  );
+  assert.equal(
+    vm.runInContext('strictHelper()', strictClassic),
+    undefined,
+    'composed helpers share the original strict directive'
+  );
+  const classicEntry = browserTypeScriptEntries.find((entry) => entry.classicSupportSources?.length);
+  const classicPath = join(fixtureRoot, classicEntry.classicSupportSources[0]),
+    classicSource = await readFile(classicPath, 'utf8');
+  await writeFile(classicPath, classicSource + '\nconst movedInitialization=true;\n');
+  await assert.rejects(
+    synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }),
+    /Classic support must contain only function declarations/
+  );
+  await writeFile(classicPath, classicSource);
 } finally {
   assert.equal(dirname(resolve(fixtureRoot)), resolve(tmpdir()));
   await rm(fixtureRoot, { recursive: true, force: true });

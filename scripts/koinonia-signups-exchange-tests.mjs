@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
@@ -29,7 +30,10 @@ import {
 import { getCommunityToolBadgeCounts, markCommunityToolOpened } from '../src/handlers/koinonia-community-tools.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative) => relative.startsWith('src/') ? readServerContractSourceSync(relative,root) : readFileSync(path.join(root,relative),'utf8');
+const read = (relative) =>
+  relative.startsWith('src/')
+    ? readServerContractSourceSync(relative, root)
+    : readFileSync(path.join(root, relative), 'utf8');
 
 function d1Environment(sqlite) {
   function prepare(sql) {
@@ -494,14 +498,14 @@ const sources = {
   signups: read('src/handlers/koinonia-signups.js'),
   exchange: read('src/handlers/koinonia-exchange.js'),
   pushes: read('src/lib/push-notifications.js'),
-  shell: read('public/myagapay-shell.js'),
+  shell: readBrowserContractSourceSync('public/myagapay-shell.js'),
   parishDashboard: read('public/parish/dashboard.html'),
   parishApp: readParishDashboardSource(),
   signupsPage: read('public/myagapay/signups.html'),
   signupsClient: read('public/myagapay/signups.js'),
   exchangePage: read('public/myagapay/exchange.html'),
   parishLife: read('public/myagapay/parish-life.js'),
-  groups: read('public/myagapay/groups.js'),
+  groups: readBrowserContractSourceSync('public/myagapay/groups.js'),
 };
 assert.match(sources.signups, /signupsEnabledFor\(found\.registration\)/);
 assert.match(sources.exchange, /exchangeEnabledFor\(found\.registration\)/);
@@ -543,12 +547,12 @@ assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, 'claim d
 assert.doesNotMatch(sources.signupsClient, /window\.prompt/, 'coverage requests must not use a browser prompt');
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);
 assert.match(sources.parishLife, /Signup ·/);
-assert.match(sources.groups, /\["overview","Home"\]/);
-assert.match(sources.groups, /\["messages","Conversation"\]/);
-assert.match(sources.groups, /\["signups","Signups"\]/);
-assert.match(sources.groups, /\["schedule","Schedule"\]/);
-assert.match(sources.groups, /\["members","Members"\]/);
-assert.match(sources.groups, /\["resources","Resources"\]/);
+assert.ok(includesJavaScriptFragment(sources.groups, '["overview","Home"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["messages","Conversation"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["signups","Signups"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["schedule","Schedule"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["members","Members"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["resources","Resources"]'));
 assert.match(sources.groups, /Create a signup form/);
 assert.match(sources.groups, /Delete form/);
 assert.match(

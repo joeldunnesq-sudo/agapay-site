@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -652,7 +653,7 @@ assert.match(
   /parts\.length === 2 && parts\[1\] === "image"/,
   'ministry images must have a member-authenticated delivery route'
 );
-const groupsUiSource = readFileSync(path.join(root, 'public', 'myagapay', 'groups.js'), 'utf8');
+const groupsUiSource = readBrowserContractSourceSync('public/myagapay/groups.js');
 const donorStylesSource = readFileSync(path.join(root, 'public', 'donor', 'style.css'), 'utf8');
 assert.match(
   groupsUiSource,
@@ -681,7 +682,7 @@ assert.match(
   /request\.method === ['"]DELETE['"] && !collection[\s\S]*deleteMinistry[\s\S]*purgeMinistryAssets/,
   'the parish API must expose authenticated permanent ministry deletion'
 );
-assert.match(groupsUiSource, /group\.role === "leader" \? `<button[^`]+Who’s caught up/);
+assert.match(groupsUiSource, /group\.role\s*===\s*"leader"\s*\?\s*`<button[^`]+Who’s caught up/);
 assert.match(groupsUiSource, /\/caught-up`/);
 assert.match(groupsUiSource, /navigator\.mediaDevices\?\.getUserMedia/);
 assert.match(groupsUiSource, /new MediaRecorder/);

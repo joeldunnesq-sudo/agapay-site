@@ -1,36 +1,52 @@
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { readDonorAppSource } from './lib/donor-app-source.mjs';
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
-const page = readFileSync("public/myagapay/directory.html", "utf8");
-const accountPage = readFileSync("public/myagapay/account.html", "utf8");
+const page = readFileSync('public/myagapay/directory.html', 'utf8');
+const accountPage = readFileSync('public/myagapay/account.html', 'utf8');
 const donorApp = readDonorAppSource();
-const myAgapayShell = readFileSync("public/myagapay-shell.js", "utf8");
+const myAgapayShell = readBrowserContractSourceSync('public/myagapay-shell.js');
 const worker = readWorkerCompositionSource();
 
 assert.match(page, /Four simple steps for your family directory entry/);
-assert.match(page, /const EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/);
+assert.match(
+  page,
+  /const EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/
+);
 assert.match(page, /Share Family in Directory/);
 assert.doesNotMatch(page, />Pending Changes</);
 assert.match(page, /\.directory-modal \{ position:fixed; inset:0; z-index:120;/);
 assert.match(page, /id="memberEditForm"[\s\S]*name="saintName"[\s\S]*name="feastMonth"[\s\S]*name="feastDay"/);
 assert.match(page, /Save family member/);
-assert.match(page, /id="memberContactFields"[\s\S]*name="email"[\s\S]*name="emailVisibility"[\s\S]*name="phone"[\s\S]*name="phoneVisibility"/);
+assert.match(
+  page,
+  /id="memberContactFields"[\s\S]*name="email"[\s\S]*name="emailVisibility"[\s\S]*name="phone"[\s\S]*name="phoneVisibility"/
+);
 assert.match(page, /Changing an email here does not change their My AGAPAY login email/);
 assert.match(page, /form\.elements\.dateOfBirth\.readOnly = false/);
 assert.match(page, /form\.elements\.birthdayVisibility\.disabled = Boolean\(member\.child\)/);
-assert.match(page, /birthdayVisibility: values\.birthdayVisibility \|\| "private"[\s\S]*emailVisibility: values\.emailVisibility \|\| "private"[\s\S]*phoneVisibility: values\.phoneVisibility \|\| "private"/);
+assert.match(
+  page,
+  /birthdayVisibility: values\.birthdayVisibility \|\| "private"[\s\S]*emailVisibility: values\.emailVisibility \|\| "private"[\s\S]*phoneVisibility: values\.phoneVisibility \|\| "private"/
+);
 assert.match(page, /feastMonthDay: `\$\{feastMonth\}-\$\{feastDay\.padStart\(2, "0"\)\}`/);
 assert.match(page, /id="householdDetailsForm"[\s\S]*name="city"[\s\S]*name="region"/);
 assert.doesNotMatch(page, /id="householdDetailsForm"(?:(?!<\/form>)[\s\S])*name="locationVisibility"/);
-assert.match(page, /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family or household name<input name="displayName"/);
+assert.match(
+  page,
+  /class="household-hub-identity" data-wizard-step="2"[\s\S]*Family or household name<input name="displayName"/
+);
 assert.doesNotMatch(page, /class="household-hub-identity" data-wizard-step="0"/);
 assert.match(page, /self\/addresses`, \{[\s\S]*city,[\s\S]*region,[\s\S]*visibility: locationVisibility/);
 assert.match(page, /class="topbar"[\s\S]*class="directory-nav-identity"/);
 assert.doesNotMatch(page, /class="directory-mobile-cross"/);
 assert.match(page, /class="topbar-title">Parish Directory</);
-assert.match(page, /class="koinonia-mobile-appbar"[\s\S]*?class="koinonia-mobile-menu-toggle"[^>]*data-myagapay-app-menu-toggle/);
+assert.match(
+  page,
+  /class="koinonia-mobile-appbar"[\s\S]*?class="koinonia-mobile-menu-toggle"[^>]*data-myagapay-app-menu-toggle/
+);
 assert.match(page, /class="[^"]*app-main-feature-page/);
 assert.doesNotMatch(page, /class="koinonia-page-heading directory-app-heading"/);
 assert.doesNotMatch(page, /class="directory-top cal-hero myagapay-page-hero"/);
@@ -41,9 +57,18 @@ assert.match(page, /data-mobile-target="browse"/);
 assert.doesNotMatch(page, /class="directory-mobile-nav"/);
 assert.doesNotMatch(page, /id="mobileGiveNav"/);
 assert.match(page, /class="directory-view-switcher"[^>]*role="tablist"/);
-assert.match(page, /\.directory-view-switcher \{[\s\S]*?top:calc\(58px \+ env\(safe-area-inset-top\)\);[\s\S]*?margin:0 0 20px;/);
-assert.match(page, /id="directoryViewTab"[^>]*aria-selected="true"[^>]*data-directory-view-target="directory"[^>]*>Directory</);
-assert.match(page, /id="familyInformationTab"[^>]*aria-selected="false"[^>]*data-directory-view-target="family"[^>]*>Family Information</);
+assert.match(
+  page,
+  /\.directory-view-switcher \{[\s\S]*?top:calc\(58px \+ env\(safe-area-inset-top\)\);[\s\S]*?margin:0 0 20px;/
+);
+assert.match(
+  page,
+  /id="directoryViewTab"[^>]*aria-selected="true"[^>]*data-directory-view-target="directory"[^>]*>Directory</
+);
+assert.match(
+  page,
+  /id="familyInformationTab"[^>]*aria-selected="false"[^>]*data-directory-view-target="family"[^>]*>Family Information</
+);
 assert.match(page, /function setDirectoryView\(view = "directory"/);
 assert.match(page, /settings\.open = next === "family"/);
 assert.match(page, /body\[data-directory-view="family"\] \.member-directory \{ display:none; \}/);
@@ -55,7 +80,10 @@ assert.doesNotMatch(page, /id="mobileFamilyNav"/);
 assert.doesNotMatch(page, /id="mobileHouseholdAvatar"/);
 assert.doesNotMatch(page, /mobileDirectoryTitle[\s\S]*type === "household" \? "Family" : "Parish Member"/);
 assert.match(page, /class="household-hub-photo" hidden/);
-assert.match(page, /function photoHtml\(item, className = "member-photo"\)[\s\S]*data-auth-src=[\s\S]*data-photo-fallback=[\s\S]*loading="lazy"/);
+assert.match(
+  page,
+  /function photoHtml\(item, className = "member-photo"\)[\s\S]*data-auth-src=[\s\S]*data-photo-fallback=[\s\S]*loading="lazy"/
+);
 assert.match(page, /function directoryLastName\(name, type = "person"\)/);
 assert.match(page, /replace\(\/\^the\\s\+\/i, ""\)\.replace\(\/\\s\+\(family\|household\)\$\/i, ""\)/);
 assert.match(page, /return `\$\{directoryLastName\(name, type\)\.charAt\(0\)\}H`\.toUpperCase\(\)/);
@@ -86,19 +114,41 @@ assert.match(page, /grid-template-columns:56px minmax\(0,1fr\)/);
 assert.match(page, /directory-profile-open/);
 assert.match(page, /data-reveal-directory-contact/);
 assert.match(page, /body\.donor-directory-page \.mobile-tabbar \{ display:none !important; \}/);
-assert.match(page, /body\.donor-directory-page\.directory-profile-open \{ height:auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch; \}/);
-assert.match(page, /body\.donor-directory-page\.directory-profile-open #memberProfile \{ padding-bottom:calc\(7\.75rem \+ env\(safe-area-inset-bottom\)\); scroll-margin-top:12px; \}/);
-assert.match(page, /\.directory-main \{[\s\S]*?padding:0 16px calc\(7rem \+ env\(safe-area-inset-bottom\)\);[\s\S]*?scroll-padding-bottom:calc\(7rem \+ env\(safe-area-inset-bottom\)\);/, "the Family Information footer must scroll completely above the fixed bottom navigation");
-assert.match(page, /pane\.hidden = false;[\s\S]*?document\.body\.style\.overflow = "";[\s\S]*?classList\.add\("directory-profile-open"\)/);
-assert.match(page, /body\.donor-directory-page\.myagapay-main-page \.directory-main > \.topbar \{[\s\S]*?width:100vw;[\s\S]*?margin-left:calc\(50% - 50vw\);/);
+assert.match(
+  page,
+  /body\.donor-directory-page\.directory-profile-open \{ height:auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch; \}/
+);
+assert.match(
+  page,
+  /body\.donor-directory-page\.directory-profile-open #memberProfile \{ padding-bottom:calc\(7\.75rem \+ env\(safe-area-inset-bottom\)\); scroll-margin-top:12px; \}/
+);
+assert.match(
+  page,
+  /\.directory-main \{[\s\S]*?padding:0 16px calc\(7rem \+ env\(safe-area-inset-bottom\)\);[\s\S]*?scroll-padding-bottom:calc\(7rem \+ env\(safe-area-inset-bottom\)\);/,
+  'the Family Information footer must scroll completely above the fixed bottom navigation'
+);
+assert.match(
+  page,
+  /pane\.hidden = false;[\s\S]*?document\.body\.style\.overflow = "";[\s\S]*?classList\.add\("directory-profile-open"\)/
+);
+assert.match(
+  page,
+  /body\.donor-directory-page\.myagapay-main-page \.directory-main > \.topbar \{[\s\S]*?width:100vw;[\s\S]*?margin-left:calc\(50% - 50vw\);/
+);
 assert.match(page, /body\.donor-directory-page \{[\s\S]*?overflow-x:hidden;/);
 assert.match(page, /\.donor-directory-page fieldset\.field-group,[\s\S]*?grid-template-columns:minmax\(0,1fr\);/);
 assert.match(page, /\.donor-directory-page input,[\s\S]*?max-width:100%;/);
-assert.match(page, /@media \(max-width: 430px\) \{[\s\S]*?\.donor-directory-page \.directory-tools \{[\s\S]*?grid-template-columns:minmax\(0,1fr\);/);
+assert.match(
+  page,
+  /@media \(max-width: 430px\) \{[\s\S]*?\.donor-directory-page \.directory-tools \{[\s\S]*?grid-template-columns:minmax\(0,1fr\);/
+);
 assert.match(page, /font-family:"Cormorant Garamond"/);
 assert.match(myAgapayShell, /linear-gradient\(135deg, #061522 0%, #0a2035 62%, #101d22 100%\)/);
 assert.match(page, /\.btn\.primary \{ background:linear-gradient\(155deg, #d8b66a, var\(--gold\)\); color:#241a04;/);
-assert.match(page, /\.directory-tab\[aria-selected="true"\] \{ background:var\(--gold\); color:#241a04; border-color:var\(--gold\); \}/);
+assert.match(
+  page,
+  /\.directory-tab\[aria-selected="true"\] \{ background:var\(--gold\); color:#241a04; border-color:var\(--gold\); \}/
+);
 assert.match(page, /class="edit-wizard-progress"/);
 assert.match(page, /id="adultAddStatus" role="status" aria-live="polite"/);
 assert.match(page, /button\.textContent = "Sending\.\.\."/);
@@ -108,7 +158,10 @@ assert.match(page, /form\.elements\.listingId\.value = listing\.id/);
 assert.match(page, /id="cancelSkillEdit" hidden/);
 assert.match(page, /EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/);
 assert.doesNotMatch(page, /id="ownDirectoryPreview"/);
-assert.match(page, /<details class="directory-filter-card" id="directoryFilters">[\s\S]*?Search directory[\s\S]*?Nameday[\s\S]*?Skills[\s\S]*?<\/details>/);
+assert.match(
+  page,
+  /<details class="directory-filter-card" id="directoryFilters">[\s\S]*?Search directory[\s\S]*?Nameday[\s\S]*?Skills[\s\S]*?<\/details>/
+);
 assert.match(page, /id="directoryFilterSummary">Find by family, nameday, or skill/);
 assert.match(page, /id="clearDirectoryFilters" type="button" hidden/);
 assert.match(page, /\.directory-filter-card \{[\s\S]*?linear-gradient[\s\S]*?box-shadow/);
@@ -117,7 +170,10 @@ assert.doesNotMatch(page, /<div class="own-preview-grid">/);
 assert.match(page, /settings\.scrollTop = 0;/);
 assert.match(page, /id="submitDirectoryListing"/);
 assert.match(page, /Publish Chosen Details/);
-assert.match(page, /id="contactForm"[\s\S]*name="shareNameVisibility"[\s\S]*name="shareEmailVisibility"[\s\S]*name="sharePhoneVisibility"[\s\S]*name="shareLocationVisibility"[\s\S]*name="sharePhotoVisibility"[\s\S]*name="shareChildren"[\s\S]*id="namedaySharingRows"/);
+assert.match(
+  page,
+  /id="contactForm"[\s\S]*name="shareNameVisibility"[\s\S]*name="shareEmailVisibility"[\s\S]*name="sharePhoneVisibility"[\s\S]*name="shareLocationVisibility"[\s\S]*name="sharePhotoVisibility"[\s\S]*name="shareChildren"[\s\S]*id="namedaySharingRows"/
+);
 assert.match(page, /function setDirectoryChildrenSharing\(enabled\)/);
 assert.match(page, /requestedFields: \["preferred_name", "relationship_label"\]/);
 assert.match(page, /householdNamedays\.forEach\(\(nameday\) => jobs\.push/);
@@ -142,18 +198,28 @@ assert.doesNotMatch(page, /id="namedayList"/);
 assert.doesNotMatch(page, /id="namedayForm"/);
 assert.match(page, /householdNamedays\.find\(\(item\) => item\.personId === member\.personId\)/);
 assert.match(page, /--green:#0b2130; --green-tint:#eef3f7;/);
-assert.match(page, /\.personal-settings > summary \{[\s\S]*background:linear-gradient\(150deg,var\(--navy\),var\(--navy-2\)\)/);
-assert.match(page, /\.personal-settings\[open\] \[data-mobile-section\]:not\(\[hidden\]\) \{ display:block !important; \}/);
+assert.match(
+  page,
+  /\.personal-settings > summary \{[\s\S]*background:linear-gradient\(150deg,var\(--navy\),var\(--navy-2\)\)/
+);
+assert.match(
+  page,
+  /\.personal-settings\[open\] \[data-mobile-section\]:not\(\[hidden\]\) \{ display:block !important; \}/
+);
 assert.match(page, /body \.personal-settings\[open\] > \.directory-grid \{ display:block !important; \}/);
 assert.match(page, /\.personal-settings \[data-wizard-step\]\.wizard-step-active,[\s\S]*display:block !important;/);
 assert.match(page, /section\.classList\.toggle\("wizard-step-active", active\);/);
 assert.match(page, /@media \(max-width: 860px\) \{[\s\S]*?\.edit-wizard-footer \{\s*position:static;/);
-assert.match(page, /@media \(max-width: 860px\) \{[\s\S]*?\.donor-directory-page \.sharing-row \{[\s\S]*?grid-template-columns:minmax\(0,1fr\);[\s\S]*?\.donor-directory-page \.sharing-row select \{[\s\S]*?width:100%;[\s\S]*?max-width:100%;/, "the Directory Sharing step must stack its privacy controls throughout the mobile wizard breakpoint");
+assert.match(
+  page,
+  /@media \(max-width: 860px\) \{[\s\S]*?\.donor-directory-page \.sharing-row \{[\s\S]*?grid-template-columns:minmax\(0,1fr\);[\s\S]*?\.donor-directory-page \.sharing-row select \{[\s\S]*?width:100%;[\s\S]*?max-width:100%;/,
+  'the Directory Sharing step must stack its privacy controls throughout the mobile wizard breakpoint'
+);
 assert.doesNotMatch(page, /\.personal-settings > \.directory-grid \{ min-height:calc\(100dvh - 214px\);/);
 assert.ok(
-  page.indexOf('body[data-mobile-view="browse"] .directory-grid { display:none; }')
-    < page.indexOf("body .personal-settings[open] > .directory-grid { display:block !important; }"),
-  "The open editor must override the mobile Browse grid-hiding rule."
+  page.indexOf('body[data-mobile-view="browse"] .directory-grid { display:none; }') <
+    page.indexOf('body .personal-settings[open] > .directory-grid { display:block !important; }'),
+  'The open editor must override the mobile Browse grid-hiding rule.'
 );
 assert.match(page, /Promise\.allSettled\(submissions\.map/);
 assert.match(page, /id="editWizardBack"/);
@@ -165,14 +231,26 @@ assert.match(page, /data-wizard-step="3"/);
 assert.match(page, /data-wizard-step="4"/);
 assert.doesNotMatch(page, /data-settings-section=/);
 assert.match(page, /Family member, birthday, and nameday saved\./);
-assert.match(page, /id="adultAddForm"[\s\S]*?name="saintName"[\s\S]*?name="feastMonthDay"[\s\S]*?name="namedayVisibility"/);
-assert.match(page, /id="childAddForm"[\s\S]*?name="saintName"[\s\S]*?name="feastMonthDay"[\s\S]*?name="namedayVisibility"/);
+assert.match(
+  page,
+  /id="adultAddForm"[\s\S]*?name="saintName"[\s\S]*?name="feastMonthDay"[\s\S]*?name="namedayVisibility"/
+);
+assert.match(
+  page,
+  /id="childAddForm"[\s\S]*?name="saintName"[\s\S]*?name="feastMonthDay"[\s\S]*?name="namedayVisibility"/
+);
 assert.match(page, /function personRequestPayload\(formEl\)/);
-assert.match(page, /await savePersonNameday\(household, nameday, (adultResult|childResult)\.request\?\.personId \|\| ""\)/);
+assert.match(
+  page,
+  /await savePersonNameday\(household, nameday, (adultResult|childResult)\.request\?\.personId \|\| ""\)/
+);
 assert.match(page, /householdAdminPublish: true/);
 assert.match(page, /function accountDirectoryDefaults\(\)/);
 assert.match(page, /directory\.households\?\.items/);
-assert.match(page, /void Promise\.allSettled\(\[loadMemberHome\(\), loadMySkills\(\), loadDirectoryReviewRequests\(\), householdData\.then\(loadHouseholdVerification\)\]\)/);
+assert.match(
+  page,
+  /void Promise\.allSettled\(\[loadMemberHome\(\), loadMySkills\(\), loadDirectoryReviewRequests\(\), householdData\.then\(loadHouseholdVerification\)\]\)/
+);
 assert.match(page, /function renderFamilyContact\(member, contact\)/);
 assert.match(page, /const memberContacts = \(profile\.members \|\| \[\]\)\.flatMap/);
 assert.match(page, /const familyContacts = contacts \+ memberContacts/);
@@ -182,9 +260,14 @@ assert.match(page, /function memberHasNamedayInMonth\(item, month\)/);
 assert.match(page, /function refreshMemberCards\(\)/);
 assert.doesNotMatch(page, /\.btn\.primary \{[^}]*background:var\(--green\)/);
 assert.doesNotMatch(page, /button\[aria-selected="true"\] \{[^}]*background:var\(--green\)/);
-assert.match(worker, /FROM directory_household_namedays[\s\S]*feast_month_day = \?2[\s\S]*visibility = 'directory_members'/);
+assert.match(
+  worker,
+  /FROM directory_household_namedays[\s\S]*feast_month_day = \?2[\s\S]*visibility = 'directory_members'/
+);
 assert.match(worker, /enriched\.nameDays = await loadDirectoryNamedaysForLiturgicalDay/);
 assert.match(donorApp, /const nameDays = Array\.isArray\(today\.nameDays\) \? today\.nameDays : \[\]/);
 assert.match(donorApp, /Name days today:/);
 
-console.log("PASS - Canonical mobile Directory header, family cards, detail privacy, navigation, and AGAPAY visual system");
+console.log(
+  'PASS - Canonical mobile Directory header, family cards, detail privacy, navigation, and AGAPAY visual system'
+);

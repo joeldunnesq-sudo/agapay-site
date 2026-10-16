@@ -1,6 +1,7 @@
 // Generated from src/browser/service-worker.ts by npm run build:browser. Do not edit.
 const AGAPAY_CACHE = 'agapay-static-v38';
 const STATIC_ASSETS = [
+  '/vendor/dompurify.es.mjs?v=3.4.14',
   '/learn/legacy-planner.js',
   '/myagapay/login',
   '/donor/login.html',
@@ -91,6 +92,7 @@ function shouldBypassCache(request) {
 function isStaticShellAsset(pathname) {
   return (
     STATIC_ASSETS.includes(pathname) ||
+    pathname === '/vendor/dompurify.es.mjs' ||
     pathname.startsWith('/listen/') ||
     pathname.startsWith('/favicons/') ||
     pathname.startsWith('/images/app/') ||

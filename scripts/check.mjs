@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { readServerModuleSourceSync } from './lib/server-typescript.mjs';
 import { appAssetUrl } from './lib/app-asset-versions.mjs';
@@ -23,7 +24,7 @@ const hasWorkerRoute = (pathname) => includesJavaScriptFragment(worker,`"${pathn
 const localServerSource = await readFile("server.mjs", "utf8");
 const core = await readServerModuleSourceSync("src/lib/core.js");
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
-const adminHandler = await readFile("src/handlers/admin.js", "utf8");
+const adminHandler = await Promise.resolve(readServerContractSourceSync("src/handlers/admin.js"));
 const donorHandler = readDonorHandlerSource();
 const parishSupportTickets = await readFile("src/lib/parish-support-tickets.js", "utf8");
 const parishHandler = readParishHandlerSource();
@@ -35,7 +36,7 @@ const parishReconciliationHandler = await readServerContractSourceSync("src/hand
 const parishNotifications = await readFile("src/lib/parish-notifications.js", "utf8");
 const stripeFees = await readFile("src/lib/stripe-fees.js", "utf8");
 const givingCheckout = await readFile("src/payments/giving-checkout.js", "utf8");
-const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
+const stripeHandler = await Promise.resolve(readServerContractSourceSync("src/handlers/stripe.js"));
 const parishInterestHandler = await readFile("src/handlers/parish-interest.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
@@ -179,7 +180,7 @@ const donorApp = readDonorAppSource();
 const publicLiturgicalCalendar = await readFile("public/liturgical-calendar.js", "utf8");
 const calendarContext = { window: {} };
 runInNewContext(publicLiturgicalCalendar, calendarContext);
-const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
+const myAgapayShell = await Promise.resolve(readBrowserContractSourceSync("public/myagapay-shell.js"));
 const manifest = await readFile("public/myagapay/manifest.webmanifest", "utf8");
 const adminHtml = await readFile("public/admin.html", "utf8");
 const adminLoginHtml = await readFile("public/admin/login.html", "utf8");
@@ -295,7 +296,7 @@ assert.ok(myAgapayShell.includes('featureOrFallback("library", "history")') && m
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard?view=context"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(includesJavaScriptFragment(siteChrome, "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
-assert.ok(parishDashboardApp.includes("Apply tier change") && parishDashboardApp.includes("startSubscriptionCheckout(this, \\'subscriptionTierUpgrade\\')"), "active parish subscriptions should change the selected tier without depending on Billing Portal product configuration");
+assert.ok(parishDashboardApp.includes("Apply tier change") && (parishDashboardApp.includes("startSubscriptionCheckout(this, 'subscriptionTierUpgrade')") || parishDashboardApp.includes("startSubscriptionCheckout(this, \\'subscriptionTierUpgrade\\')")), "active parish subscriptions should change the selected tier without depending on Billing Portal product configuration");
 assert.ok(parishDashboardApp.includes("sidebarStatusChip") && parishDashboardApp.includes("tierDisplay") && parishDashboardApp.includes("subscriptionTierLabel"), "Parish Dashboard active status should display the subscribed tier");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and services"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
@@ -334,9 +335,9 @@ assert.ok(
   "My AGAPAY support requests should use an authenticated, rate-limited endpoint and the shared support queue"
 );
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
-assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
+assert.ok(includesJavaScriptFragment(donorApp, 'nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
-assert.ok(donorApp.includes('link.closest("[data-myagapay-global-nav]")'), "donor icon enhancement should not overwrite canonical global product icons");
+assert.ok(includesJavaScriptFragment(donorApp, 'link.closest("[data-myagapay-global-nav]")'), "donor icon enhancement should not overwrite canonical global product icons");
 const donorHome = await readFile("public/donor/index.html", "utf8");
 const myAgapayGiveHome = await readFile("public/myagapay/index.html", "utf8");
 const myAgapayGivePage = await readFile("public/myagapay/giving/give.html", "utf8");
@@ -408,7 +409,7 @@ assert.ok(
     && myAgapayHistory.includes("Manage recurring giving")
     && myAgapayHistory.indexOf("historyRecurringHomeAction") < myAgapayHistory.indexOf("Activity Timeline")
     && donorApp.includes("function renderRecurringHomeCard")
-    && donorApp.includes('openDonorRecurringPortal("", button)'),
+    && includesJavaScriptFragment(donorApp, 'openDonorRecurringPortal("", button)'),
   "My AGAPAY History should show recurring-giving management immediately above the activity timeline"
 );
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
@@ -419,13 +420,13 @@ assert.ok(donorApp.includes("buildHistoryActivities") && donorApp.includes("setH
 const donorCommemorations = await readFile("public/donor/commemorations.html", "utf8");
 const myAgapaySacraments = await readFile("public/myagapay/sacraments.html", "utf8");
 assert.ok(donorCommemorations.includes("/myagapay/sacraments") && myAgapaySacraments.includes("sacramentAccordion") && myAgapaySacraments.includes("servicesAccordion"), "Commemorations should redirect into the merged Sacraments & Services page");
-assert.ok(donorApp.includes('id: "house_blessing", type: "house_blessing", section: "services"') && donorApp.includes('id: "counseling", type: "counseling", section: "services"'), "Blessings and Pastoral Counseling should appear under Services, not Sacraments");
+assert.ok(includesJavaScriptFragment(donorApp, 'id: "house_blessing", type: "house_blessing", section: "services"') && includesJavaScriptFragment(donorApp, 'id: "counseling", type: "counseling", section: "services"'), "Blessings and Pastoral Counseling should appear under Services, not Sacraments");
 assert.ok(donorApp.includes("function renderSacramentModal()") && donorApp.includes('aria-haspopup="dialog"'), "Sacraments & Services tiles should open focused modal dialogs");
 const donorCalendar = await readFile("public/donor/calendar.html", "utf8");
 const donorCalendarCss = await readFile("public/donor/style.css", "utf8");
 assert.ok(!donorCalendar.includes("saintLifeButton") && !donorCalendar.includes("Open saint life"), "Today hero should not duplicate the dedicated Saint of the Day card action");
 assert.ok(donorCalendar.includes('id="saintPreviewCard"') && donorCalendar.includes('onclick="openDonorSaintOfDay(this)"'), "Saint of the Day card should be the saint-life action");
-assert.ok(donorApp.includes("Tone of the Week") && donorApp.includes('return "";') && !donorApp.includes('return "Church day"') && !donorApp.includes('return "Liturgical Day"'), "Today hero chips should omit generic liturgical fallback labels and use clear tone labels");
+assert.ok(donorApp.includes("Tone of the Week") && includesJavaScriptFragment(donorApp, 'return "";') && !includesJavaScriptFragment(donorApp, 'return "Church day"') && !includesJavaScriptFragment(donorApp, 'return "Liturgical Day"'), "Today hero chips should omit generic liturgical fallback labels and use clear tone labels");
 assert.ok(!donorApp.includes("[today.tone, today.epistleRef"), "Today hero description should not duplicate the Tone of the Week beside the Epistle reading");
 assert.ok(donorApp.includes("calendarShortDateIso(pascha?.date)"), "Today Pascha metric should read the date returned by the calendar helper");
 for (const calendar of [calendarContext.window.AGAPAYLiturgicalCalendar, serverLiturgicalCalendar]) {

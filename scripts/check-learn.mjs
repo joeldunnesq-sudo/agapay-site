@@ -222,32 +222,34 @@ const learnGoogleCalendar = readServerModuleSourceSync('src/learn/google-calenda
 // Odyssey is a separate secular storefront experience, and marketing captures
 // must never expose the signed-in household's real records.
 assert(
-  learnShell.includes('function marketingPreviewActive()'),
+  includesJavaScriptFragment(learnShell, 'function marketingPreviewActive()'),
   'Odyssey should provide an explicit marketing-preview mode.'
 );
 assert(
-  learnShell.includes('function prepareOdysseyViewModel(vm)'),
+  includesJavaScriptFragment(learnShell, 'function prepareOdysseyViewModel(vm)'),
   'Odyssey should sanitize and reshape view models at a single presentation boundary.'
 );
 assert(
-  learnShell.includes('if (!isOdysseyLearnContext()) return "classic";\n  return "tefa";'),
+  includesJavaScriptFragment(learnShell, 'if (!isOdysseyLearnContext()) return "classic"; return "tefa";'),
   'Odyssey should stay locked to its secular TEFA presentation.'
 );
 assert(
-  learnShell.includes('const churchSectionHtml = experience.tefaActive\n    ? ""'),
+  /const churchSectionHtml\s*=\s*experience\.tefaActive\s*\?\s*['"]['"]/.test(learnShell),
   'The TEFA dashboard should omit the Church Rhythm section entirely.'
 );
 assert(
-  learnShell.includes('renderTefaFormation') && learnShell.includes('renderTefaCommunity'),
+  includesJavaScriptFragment(learnShell, 'renderTefaFormation') &&
+    includesJavaScriptFragment(learnShell, 'renderTefaCommunity'),
   'Odyssey should provide secular Formation and Community renderers.'
 );
 assert(
-  learnShell.includes('The Harper Family') && learnShell.includes('MARKETING_LEARNERS'),
+  includesJavaScriptFragment(learnShell, 'The Harper Family') &&
+    includesJavaScriptFragment(learnShell, 'MARKETING_LEARNERS'),
   'Marketing preview should render an obviously fictitious household and learner roster.'
 );
 assert(
-  learnShell.includes('if (!marketingPreviewActive()) wirePlanner(vm)') &&
-    learnShell.includes('if (!marketingPreviewActive()) wireSetupPage()'),
+  includesJavaScriptFragment(learnShell, 'if (!marketingPreviewActive()) wirePlanner(vm)') &&
+    includesJavaScriptFragment(learnShell, 'if (!marketingPreviewActive()) wireSetupPage()'),
   'Marketing preview should not wire planner or setup mutations.'
 );
 const learnRepository = readServerModuleSourceSync('src/learn/repository.js');
@@ -257,75 +259,110 @@ const learnOverviewHtml = readFileSync(new URL('../public/learn/index.html', imp
 const learnPricingHtml = readFileSync(new URL('../public/learn/pricing.html', import.meta.url), 'utf8');
 const learnPricingCss = readFileSync(new URL('../public/learn/pricing.css', import.meta.url), 'utf8');
 const learnShellCss = readFileSync(new URL('../public/learn/shell.css', import.meta.url), 'utf8');
-assert(learnShell.includes('data-dialog-checkout'), 'Learn shell should include checkout dialog hooks.');
-assert(learnShell.includes('data-grace-mode'), 'Learn shell should expose grace mode controls.');
-assert(learnShell.includes('data-print-generate'), 'Learn shell should expose print generation hooks.');
-assert(learnShell.includes('data-planner-month-print'), 'Learn planner should expose printable month calendar hooks.');
-assert(learnShell.includes('/api/learn/print/'), 'Learn shell should request route-scoped server-side PDF generation.');
-assert(!learnShell.includes('buildSimplePdf'), 'Learn shell should not use client-side raw PDF generation.');
-assert(!learnShell.includes('window.print'), 'Learn shell should not use browser print for report PDFs.');
-assert(learnShell.includes('today-in-the-church.jpg'), 'Learn shell should render the Today in the Church artwork.');
 assert(
-  !learnShell.includes('panel("Setup Progress"'),
+  includesJavaScriptFragment(learnShell, 'data-dialog-checkout'),
+  'Learn shell should include checkout dialog hooks.'
+);
+assert(includesJavaScriptFragment(learnShell, 'data-grace-mode'), 'Learn shell should expose grace mode controls.');
+assert(
+  includesJavaScriptFragment(learnShell, 'data-print-generate'),
+  'Learn shell should expose print generation hooks.'
+);
+assert(
+  includesJavaScriptFragment(learnShell, 'data-planner-month-print'),
+  'Learn planner should expose printable month calendar hooks.'
+);
+assert(
+  includesJavaScriptFragment(learnShell, '/api/learn/print/'),
+  'Learn shell should request route-scoped server-side PDF generation.'
+);
+assert(
+  !includesJavaScriptFragment(learnShell, 'buildSimplePdf'),
+  'Learn shell should not use client-side raw PDF generation.'
+);
+assert(
+  !includesJavaScriptFragment(learnShell, 'window.print'),
+  'Learn shell should not use browser print for report PDFs.'
+);
+assert(
+  includesJavaScriptFragment(learnShell, 'today-in-the-church.jpg'),
+  'Learn shell should render the Today in the Church artwork.'
+);
+assert(
+  !includesJavaScriptFragment(learnShell, 'panel("Setup Progress"'),
   'Advanced Setup should not repeat the first-run wizard progress card.'
 );
-assert(learnShell.includes('data-simple-setup-wizard'), 'Learn should provide a simplified first-run setup wizard.');
 assert(
-  learnShell.includes(
+  includesJavaScriptFragment(learnShell, 'data-simple-setup-wizard'),
+  'Learn should provide a simplified first-run setup wizard.'
+);
+assert(
+  includesJavaScriptFragment(
+    learnShell,
     'const SIMPLE_SETUP_STEPS = ["Household", "Rhythm", "Forms or Grades", "Children", "Grace Mode", "Starter Week"]'
   ),
   'Learn setup should establish rhythm and planning structure before collecting children, then introduce Grace Mode.'
 );
 assert(
-  learnShell.includes('agapay.learn.simpleSetup.v1'),
+  includesJavaScriptFragment(learnShell, 'agapay.learn.simpleSetup.v1'),
   'Learn setup wizard should persist unfinished progress locally.'
 );
-assert(learnShell.includes('data-wizard-advanced'), 'Learn setup wizard should link to Advanced Setup.');
 assert(
-  learnShell.includes('simpleSetupPayload'),
+  includesJavaScriptFragment(learnShell, 'data-wizard-advanced'),
+  'Learn setup wizard should link to Advanced Setup.'
+);
+assert(
+  includesJavaScriptFragment(learnShell, 'simpleSetupPayload'),
   'Learn setup wizard should save through the existing setup endpoint.'
 );
-assert(learnShell.includes('Create a gentle starter week'), 'Learn setup wizard should offer a starter-week plan.');
+assert(
+  includesJavaScriptFragment(learnShell, 'Create a gentle starter week'),
+  'Learn setup wizard should offer a starter-week plan.'
+);
 assert(
   ['Language Arts', 'Mathematics', 'History', 'Geography', 'Literature', 'Science'].every((title) =>
-    learnShell.includes(`title: "${title}"`)
+    includesJavaScriptFragment(learnShell, `title: "${title}"`)
   ) &&
-    learnShell.includes('title: "Morning Prayers"') &&
-    learnShell.includes('title: "Family Read-Aloud"'),
+    includesJavaScriptFragment(learnShell, 'title: "Morning Prayers"') &&
+    includesJavaScriptFragment(learnShell, 'title: "Family Read-Aloud"'),
   'The starter-week option should persist a full editable subject slate, Church rhythm, and enrichment data.'
 );
 assert(
-  learnShell.includes('panel("Family-Based Learning"') && !learnShell.includes('panel("Household Stream"'),
+  includesJavaScriptFragment(learnShell, 'panel("Family-Based Learning"') &&
+    !includesJavaScriptFragment(learnShell, 'panel("Household Stream"'),
   'Planner should use family-based learning language instead of the legacy Household Stream label.'
 );
 assert(
-  !learnShell.includes('// vm.activeView') &&
-    learnShell.includes('displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs"') &&
-    learnShell.includes('aria-current="${tab.active ? "page" : "false"}"'),
+  !includesJavaScriptFragment(learnShell, '// vm.activeView') &&
+    /displayView !== ['"]year['"] \? `<div class="learn-family-tabs learn-family-term-tabs"/.test(learnShell) &&
+    /aria-current="\$\{tab\.active \? ['"]page['"] : ['"]false['"]\}"/.test(learnShell),
   'Planner should show one explicit active term outside the combined Year view without leaking template code.'
 );
 assert(
-  learnShell.includes('TOGETHER THIS WEEK') && learnShell.includes('DAILY CHURCH RHYTHMS'),
+  includesJavaScriptFragment(learnShell, 'TOGETHER THIS WEEK') &&
+    includesJavaScriptFragment(learnShell, 'DAILY CHURCH RHYTHMS'),
   'Learn dashboard should distinguish weekly family work from daily Church rhythms.'
 );
 assert(
-  learnShell.includes('learn-week-overview') &&
-    learnShell.includes('learn-child-week-grid') &&
-    learnShell.includes('WEEK AT A GLANCE'),
+  includesJavaScriptFragment(learnShell, 'learn-week-overview') &&
+    includesJavaScriptFragment(learnShell, 'learn-child-week-grid') &&
+    includesJavaScriptFragment(learnShell, 'WEEK AT A GLANCE'),
   'Learn dashboard should keep household summaries separate from a scalable child grid.'
 );
 assert(
-  learnShell.includes('data-learn-completion') && learnShell.includes('/api/learn/completion'),
+  includesJavaScriptFragment(learnShell, 'data-learn-completion') &&
+    includesJavaScriptFragment(learnShell, '/api/learn/completion'),
   'Learn dashboard should persist daily and weekly completion through the backend.'
 );
 assert(
-  learnShell.includes('Full, Medium, or Light') &&
-    learnShell.includes('Each child keeps up to 4 ranked subjects') &&
-    learnShell.includes('Each child keeps up to 2 top-ranked subjects'),
+  includesJavaScriptFragment(learnShell, 'Full, Medium, or Light') &&
+    includesJavaScriptFragment(learnShell, 'Each child keeps up to 4 ranked subjects') &&
+    includesJavaScriptFragment(learnShell, 'Each child keeps up to 2 top-ranked subjects'),
   'The setup wizard should explain the exact Full, Medium, and Light Grace Mode caps.'
 );
 assert(
-  learnShell.includes('1 Core: chosen first in every mode') && learnShell.includes('4 Low: first moved to reserve'),
+  includesJavaScriptFragment(learnShell, '1 Core: chosen first in every mode') &&
+    includesJavaScriptFragment(learnShell, '4 Low: first moved to reserve'),
   'Advanced Setup should expose granular Grace priority ranking for each subject.'
 );
 assert(
@@ -333,7 +370,7 @@ assert(
   'Grace Mode should enforce daily caps in the planner engine.'
 );
 assert(
-  learnRepository.includes('modes: ["full", "medium", "light"]'),
+  includesJavaScriptFragment(learnRepository, 'modes: ["full", "medium", "light"]'),
   'Learn APIs should expose the three mom-facing Grace Mode options.'
 );
 assert(
@@ -341,93 +378,103 @@ assert(
   'Learn setup persistence should normalize legacy and current Grace Mode values.'
 );
 assert(
-  learnShell.includes('No permanent choice is required'),
+  includesJavaScriptFragment(learnShell, 'No permanent choice is required'),
   'The Grace Mode wizard step should explain that families can change modes day by day.'
 );
 assert(
-  learnShell.includes('id="reports"') && learnShell.includes('Reports & Records'),
+  includesJavaScriptFragment(learnShell, 'id="reports"') && includesJavaScriptFragment(learnShell, 'Reports & Records'),
   'Print Center should contain the staged Reports and Records workspace.'
 );
 assert(
-  !learnShell.includes('apiGet("/api/learn/reports")'),
+  !includesJavaScriptFragment(learnShell, 'apiGet("/api/learn/reports")'),
   'The Learn shell should not load a standalone Reports screen.'
 );
 assert(
-  learnShell.includes('data-community-category') &&
-    learnShell.includes('data-community-resource-type') &&
-    learnShell.includes('data-community-media-type'),
+  includesJavaScriptFragment(learnShell, 'data-community-category') &&
+    includesJavaScriptFragment(learnShell, 'data-community-resource-type') &&
+    includesJavaScriptFragment(learnShell, 'data-community-media-type'),
   'Community Resources should filter by subject, resource type, and media type.'
 );
 assert(
-  learnShell.includes('data-community-suggest-form') && learnShell.includes('data-community-flag'),
+  includesJavaScriptFragment(learnShell, 'data-community-suggest-form') &&
+    includesJavaScriptFragment(learnShell, 'data-community-flag'),
   'Community Resources should support moderated submissions and member flags.'
 );
 assert(
-  learnShell.includes('Free plan: up to 2 children'),
+  includesJavaScriptFragment(learnShell, 'Free plan: up to 2 children'),
   'Learn setup wizard should clearly disclose the free child limit.'
 );
 assert(
-  learnShell.includes('data-wizard-add-children="3"') && learnShell.includes('data-setup-add-children="3"'),
+  includesJavaScriptFragment(learnShell, 'data-wizard-add-children="3"') &&
+    includesJavaScriptFragment(learnShell, 'data-setup-add-children="3"'),
   'Family-plan setup should support adding several children at once in Quick and Advanced Setup.'
 );
 assert(
-  learnShell.includes('collapsibleSetupPanel("enrichment"') && learnShell.includes('collapsibleSetupPanel("subjects"'),
+  includesJavaScriptFragment(learnShell, 'collapsibleSetupPanel("enrichment"') &&
+    includesJavaScriptFragment(learnShell, 'collapsibleSetupPanel("subjects"'),
   'Advanced Setup should keep the two largest curriculum sections collapsible.'
 );
 assert(
-  !learnShell.includes('panel("Co-op"'),
+  !includesJavaScriptFragment(learnShell, 'panel("Co-op"'),
   'Advanced Setup should not crowd the launch-critical flow with the future Co-op panel.'
 );
 assert(
-  learnShell.includes('data-week-auto-fill') &&
-    learnShell.includes('Fill from Setup') &&
-    learnShell.includes('data-week-reset-form'),
+  includesJavaScriptFragment(learnShell, 'data-week-auto-fill') &&
+    includesJavaScriptFragment(learnShell, 'Fill from Setup') &&
+    includesJavaScriptFragment(learnShell, 'data-week-reset-form'),
   'Week planning should support filling and resetting one family/Form group from Setup.'
 );
 assert(
-  learnShell.includes('class="learn-form-plan-summary"'),
+  includesJavaScriptFragment(learnShell, 'class="learn-form-plan-summary"'),
   'Generated Form-plan review should be available without permanently expanding a duplicate summary.'
 );
 assert(
-  learnShell.includes('const starterChurchRhythms = isOdysseyLearnContext() ? []'),
+  includesJavaScriptFragment(learnShell, 'const starterChurchRhythms = isOdysseyLearnContext() ? []'),
   'Odyssey starter setup should not seed Orthodox Church rhythms into the secular marketplace edition.'
 );
 assert(
-  learnShell.includes('Your TEFA homeschool planner') &&
-    !learnShell.includes('Your TEFA-funded Orthodox homeschool planner'),
+  includesJavaScriptFragment(learnShell, 'Your TEFA homeschool planner') &&
+    !includesJavaScriptFragment(learnShell, 'Your TEFA-funded Orthodox homeschool planner'),
   'Odyssey/TEFA presentation copy should stay secular while classic AGAPAY Learn remains Orthodox.'
 );
 assert(
-  learnShell.includes('learnSectionHref("onboarding", "simple=1")') && learnShell.includes('>Quick Setup'),
+  includesJavaScriptFragment(learnShell, 'learnSectionHref("onboarding", "simple=1")') &&
+    includesJavaScriptFragment(learnShell, '>Quick Setup'),
   'Learn utility bar should open the simple setup wizard, resolved per-context (My AGAPAY vs. Odyssey/TEFA) via learnSectionHref.'
 );
-assert(learnShell.includes('class="learn-setup-savebar"'), 'Advanced Setup should use a dedicated reachable save bar.');
 assert(
-  learnShell.includes('data-day-choice') && learnShell.includes('name="scheduledDays"'),
+  includesJavaScriptFragment(learnShell, 'class="learn-setup-savebar"'),
+  'Advanced Setup should use a dedicated reachable save bar.'
+);
+assert(
+  includesJavaScriptFragment(learnShell, 'data-day-choice') &&
+    includesJavaScriptFragment(learnShell, 'name="scheduledDays"'),
   'Enrichment and Form subjects should support exact weekday scheduling.'
 );
 assert(
-  learnShell.includes('Family Planner & Meals') && learnShell.includes('familyPlanning.fastingPreference'),
+  includesJavaScriptFragment(learnShell, 'Family Planner & Meals') &&
+    includesJavaScriptFragment(learnShell, 'familyPlanning.fastingPreference'),
   'Planner should expose connected family calendar and fasting-aware meal planning.'
 );
 assert(
-  learnShell.includes('data-setup-row="familyEvents"') &&
-    learnShell.includes('data-setup-row="recipes"') &&
-    learnShell.includes('data-setup-row="groceryItems"'),
+  includesJavaScriptFragment(learnShell, 'data-setup-row="familyEvents"') &&
+    includesJavaScriptFragment(learnShell, 'data-setup-row="recipes"') &&
+    includesJavaScriptFragment(learnShell, 'data-setup-row="groceryItems"'),
   'Learn setup should persist events, recipes, and grocery items.'
 );
 assert(
-  learnShell.includes('name="childNameDay"') &&
-    learnShell.includes('motherNameDay') &&
-    learnShell.includes('fatherNameDay'),
+  includesJavaScriptFragment(learnShell, 'name="childNameDay"') &&
+    includesJavaScriptFragment(learnShell, 'motherNameDay') &&
+    includesJavaScriptFragment(learnShell, 'fatherNameDay'),
   'The Family Planner should collect annual household name days.'
 );
 assert(
-  learnShell.includes('data-family-planning-form') && learnShell.includes('/api/learn/family-planning'),
+  includesJavaScriptFragment(learnShell, 'data-family-planning-form') &&
+    includesJavaScriptFragment(learnShell, '/api/learn/family-planning'),
   'Family planning should live in Planner and save through its own endpoint.'
 );
 assert(
-  !learnShell.includes('panel("Family Calendar & Meals", familyPlanningSetupPanel(vm)'),
+  !includesJavaScriptFragment(learnShell, 'panel("Family Calendar & Meals", familyPlanningSetupPanel(vm)'),
   'Advanced school setup should not contain the family planning workspace.'
 );
 assert(
@@ -440,27 +487,28 @@ assert(
   'The mobile setup save bar should sit above the fixed product navigation.'
 );
 assert(
-  learnShell.includes('loginUrl.searchParams.set("reason", "session-expired")'),
+  includesJavaScriptFragment(learnShell, 'loginUrl.searchParams.set("reason", "session-expired")'),
   'Expired Learn sessions should return users to My AGAPAY sign-in.'
 );
 assert(
-  learnShell.includes('loginUrl.searchParams.set("next",'),
+  includesJavaScriptFragment(learnShell, 'loginUrl.searchParams.set("next",'),
   'Learn sign-in redirects should preserve the requested Learn page.'
 );
 assert(
-  learnShell.includes('existingSnapshot?.subjects || []'),
+  includesJavaScriptFragment(learnShell, 'existingSnapshot?.subjects || []'),
   "Quick Setup should preserve an existing household's advanced subject plan."
 );
 assert(
-  learnShell.includes('groupingMode: draft.useForms ? "forms" : "grades"'),
+  includesJavaScriptFragment(learnShell, 'groupingMode: draft.useForms ? "forms" : "grades"'),
   'The setup wizard should persist Forms versus grade-level planning.'
 );
 assert(
-  learnShell.includes('function setupExperience'),
+  includesJavaScriptFragment(learnShell, 'function setupExperience'),
   'Advanced Setup should adapt its organization to the selected homeschool method.'
 );
 assert(
-  learnShell.includes('name="gradeLabel"') && learnShell.includes('name="formLabel"'),
+  includesJavaScriptFragment(learnShell, 'name="gradeLabel"') &&
+    includesJavaScriptFragment(learnShell, 'name="formLabel"'),
   'Adaptive setup should retain both grade and Form mappings when users switch organization styles.'
 );
 assert(
@@ -472,13 +520,17 @@ assert(
   'Learn onboarding API should expose saved setup state.'
 );
 assert(
-  learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'),
+  includesJavaScriptFragment(
+    learnSetupPersistence,
+    '["Charlotte Mason", "Orthodox Classical", "Traditional", "Eclectic", "Unsure"]'
+  ),
   'Learn setup should accept every wizard rhythm preset.'
 );
 assert(learnSetupPersistence.includes('parentNames'), 'Learn setup should persist the wizard parent name.');
 assert(learnSetupPersistence.includes('groupingMode'), 'Learn setup should persist the selected planning-group model.');
 assert(
-  learnSetupPersistence.includes('currentWeekWindow') && learnSetupPersistence.includes('kind: "enrichment"'),
+  learnSetupPersistence.includes('currentWeekWindow') &&
+    includesJavaScriptFragment(learnSetupPersistence, 'kind: "enrichment"'),
   'Starter setup should generate a current editable week with enrichment rows.'
 );
 assert(
@@ -537,11 +589,12 @@ assert(
 );
 assert(learnDashboardHtml.includes('/myagapay-shell.js'), 'Learn dashboard should load the shared My AGAPAY shell.');
 assert(
-  learnShell.includes('window.MyAgapayShell.productNav') && learnShell.includes('window.MyAgapayShell.redirectToLogin'),
+  includesJavaScriptFragment(learnShell, 'window.MyAgapayShell.productNav') &&
+    includesJavaScriptFragment(learnShell, 'window.MyAgapayShell.redirectToLogin'),
   'Learn should share global product navigation and expired-session handling with My AGAPAY.'
 );
 assert(
-  learnShell.includes('renderSanitizedMarkup as renderLearnRoot'),
+  includesJavaScriptFragment(learnShell, 'renderSanitizedMarkup as renderLearnRoot'),
   'Every full Learn render should use the dedicated sanitized-render boundary.'
 );
 assert(
@@ -557,11 +610,12 @@ assert(
   'The legacy Learn shell must not bypass the dedicated sanitized-render module.'
 );
 assert(
-  learnShell.includes('learn-page-intro--dashboard') && learnShell.includes('"--cream:#f6f1e8"'),
+  includesJavaScriptFragment(learnShell, 'learn-page-intro--dashboard') &&
+    includesJavaScriptFragment(learnShell, '"--cream:#f6f1e8"'),
   'Learn Today should use the navy branded intro card on the shared Giving dashboard canvas color.'
 );
 assert(
-  learnShell.includes('dashboard-view-models.js'),
+  includesJavaScriptFragment(learnShell, 'dashboard-view-models.js'),
   'Learn dashboard shell should import the active view model bundle.'
 );
 assert(
@@ -925,23 +979,23 @@ assert(
 {
   const learnShellSource = readLearnDashboardSource();
   assert(
-    learnShellSource.includes('data-move-unfinished') &&
-      learnShellSource.includes('data-move-mode="next-open-day"') &&
-      learnShellSource.includes('data-move-mode="reserve"'),
+    includesJavaScriptFragment(learnShellSource, 'data-move-unfinished') &&
+      includesJavaScriptFragment(learnShellSource, 'data-move-mode="next-open-day"') &&
+      includesJavaScriptFragment(learnShellSource, 'data-move-mode="reserve"'),
     'The Day view should render Move / Reserve controls for unfinished work.'
   );
   assert(
-    learnShellSource.includes('/api/learn/planner/move'),
+    includesJavaScriptFragment(learnShellSource, '/api/learn/planner/move'),
     'The Move Unfinished Work control should call the move API.'
   );
   assert(
-    learnShellSource.includes('status !== "planned" && status !== "reduced"'),
+    includesJavaScriptFragment(learnShellSource, 'status !== "planned" && status !== "reduced"'),
     'The Move control should only appear on genuinely unfinished (planned/reduced) work, not completed or empty days.'
   );
   assert(
-    learnShellSource.includes('PLANNER_STATUS_META') &&
-      learnShellSource.includes('"Moved"') &&
-      learnShellSource.includes('"In Reserve"'),
+    includesJavaScriptFragment(learnShellSource, 'PLANNER_STATUS_META') &&
+      includesJavaScriptFragment(learnShellSource, '"Moved"') &&
+      includesJavaScriptFragment(learnShellSource, '"In Reserve"'),
     'Status pills should use plain-language labels (Moved / In Reserve) instead of raw status strings.'
   );
 
@@ -985,7 +1039,7 @@ assert(
   // The landscape lesson-plan-by-form printable should have its own notes strip, now labeled "Mom Notes".
   const printDocumentsSource = readServerModuleSourceSync('src/learn/print-documents.js');
   assert(
-    printDocumentsSource.includes('"Mom Notes:"'),
+    includesJavaScriptFragment(printDocumentsSource, '"Mom Notes:"'),
     "The landscape lesson-plan print should label its notes strip 'Mom Notes:' for consistent language."
   );
 

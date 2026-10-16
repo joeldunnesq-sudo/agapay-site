@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import assert from 'node:assert/strict';
 import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
@@ -245,7 +246,7 @@ const publicStore = readFileSync(new URL('../public/bookstore/index.html', impor
 const publicStoreApp = readFileSync(new URL('../public/bookstore/app.js', import.meta.url), 'utf8');
 const myAgapayStore = readFileSync(new URL('../public/myagapay/bookstore.html', import.meta.url), 'utf8');
 const donorApp = readDonorAppSource();
-const myAgapayShell = readFileSync(new URL('../public/myagapay-shell.js', import.meta.url), 'utf8');
+const myAgapayShell = readBrowserContractSourceSync('public/myagapay-shell.js');
 const workerSource = readFileSync(new URL('../src/worker.js', import.meta.url), 'utf8');
 assert.doesNotMatch(
   publicStore,

@@ -227,3 +227,12 @@ export {
 export { ingestAccountingSourceEvent, processAccountingSourceEvent } from './integrations/service.js';
 
 export { ingestCommerceSourceEvent, processCommerceSourceEvent } from './commerce/service.js';
+
+export { activatePreparedParishAccounting } from './provisioning/orchestrator.js';
+export { createBoundD1ProvisioningAdapter } from './provisioning/adapters.js';
+export {
+  activateProtectiveState,
+  releaseProtectiveState,
+  runIntegrityScan,
+  verifyRecoveryEvidence,
+} from './integrity/service.js';

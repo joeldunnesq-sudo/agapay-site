@@ -11,7 +11,11 @@ function canonicalTokens(source) {
       return;
     }
     if (node.kind === ts.SyntaxKind.EndOfFileToken || !node.getWidth(file)) return;
-    const value = ts.isStringLiteral(node) ? node.text : node.getText(file);
+    const value = ts.isStringLiteral(node)
+      ? node.text
+      : ts.isNumericLiteral(node)
+        ? String(Number(node.text))
+        : node.getText(file);
     tokens.push(JSON.stringify([node.kind, value]));
   }
   visit(file);

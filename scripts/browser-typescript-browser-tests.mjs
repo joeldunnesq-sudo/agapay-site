@@ -35,6 +35,11 @@ const server = createServer(async (req, res) => {
     );
     return;
   }
+  if (url.pathname === '/__listen_typescript_test__') {
+    res.setHeader('Content-Type', 'text/html');
+    res.end(await readFile(resolve(publicRoot, 'listen/index.html'), 'utf8'));
+    return;
+  }
   if (url.pathname.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json');
     res.end('{}');
@@ -102,6 +107,15 @@ try {
     const player = new AudioPlayer();
     player.setSpeed(1.25);
     const subscriptions = importOpml(exportOpml([{ title: 'Example', xmlUrl: 'https://example.test/feed' }]));
+    const safeOpml = importOpml(
+      '<?xml version="1.0"?><opml xmlns="" version="2.0"><body><outline text="Group"><outline type="rss" title="A &amp; B &lt;name&gt;" xmlUrl="https://example.test/feed?q=a&amp;b=2" htmlUrl="javascript:alert(1)" description="Episode: one &amp; two" onload="window.__opmlAttack=1"/><outline xmlUrl="javascript:alert(2)"/></outline><script>window.__opmlAttack=1</script></body></opml>'
+    );
+    const dtdOpml = importOpml(
+      '<!DOCTYPE opml [<!ENTITY payload "injected">]><opml><body><outline xmlUrl="https://example.test/" title="&payload;"/></body></opml>'
+    );
+    const malformedOpml = importOpml(
+      '<opml><body><outline xmlUrl="https://example.test/" title="unterminated></body></opml>'
+    );
     const table = parseDirectoryCsv('name,email\nExample,person@example.test');
     const rows = mapImportRows(table, { name: 0, email: 1 });
     const target = document.createElement('div');
@@ -114,6 +128,10 @@ try {
       removed,
       paused: player.paused,
       subscription: subscriptions[0].xmlUrl,
+      safeOpml,
+      dtdCount: dtdOpml.length,
+      malformedCount: malformedOpml.length,
+      opmlAttack: window.__opmlAttack || 0,
       email: rows[0].email,
       sanitized: target.innerHTML,
     };
@@ -125,9 +143,493 @@ try {
   assert.equal(native.removed, null);
   assert.equal(native.paused, true);
   assert.equal(native.subscription, 'https://example.test/feed');
+  assert.deepEqual(native.safeOpml, [
+    {
+      title: 'A & B name',
+      xmlUrl: 'https://example.test/feed?q=a&b=2',
+      htmlUrl: '',
+      description: 'Episode: one & two',
+    },
+  ]);
+  assert.equal(native.dtdCount, 0);
+  assert.equal(native.malformedCount, 0);
+  assert.equal(native.opmlAttack, 0);
   assert.equal(native.email, 'person@example.test');
   assert.doesNotMatch(native.sanitized, /<script|onerror=/i);
   assert.match(native.sanitized, /<b>Example<\/b>/);
+  // Exercise the real Listen module graph and IndexedDB/Cache APIs with a deterministic media adapter.
+  const listenContext = await browser.newContext({
+    viewport: { width: 393, height: 873 },
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  try {
+    const listenPage = await listenContext.newPage(),
+      listenErrors = [];
+    listenPage.on('pageerror', (error) => listenErrors.push(error.message));
+    await listenPage.addInitScript(
+      ({ origin }) => {
+        localStorage.setItem(
+          'agp_eps',
+          JSON.stringify([
+            {
+              guid: 'listen-ui-1',
+              url: origin + '/__native_audio__',
+              title: 'Migration Episode',
+              show: 'Fixture Podcast',
+              date: '2026-10-16',
+              duration: 300,
+              categories: ['Prayer'],
+            },
+          ])
+        );
+        HTMLMediaElement.prototype.play = function () {
+          window.__listenPlayedSrc = this.src;
+          this.dispatchEvent(new Event('playing'));
+          return Promise.resolve();
+        };
+        HTMLMediaElement.prototype.pause = function () {
+          this.dispatchEvent(new Event('pause'));
+        };
+        HTMLMediaElement.prototype.load = function () {
+          queueMicrotask(() => this.dispatchEvent(new Event('loadedmetadata')));
+        };
+        Object.defineProperty(HTMLMediaElement.prototype, 'duration', { configurable: true, get: () => 300 });
+      },
+      { origin }
+    );
+    await listenPage.goto(origin + '/__listen_typescript_test__');
+    await listenPage.locator('.ep-like-btn').first().click();
+    assert.deepEqual(await listenPage.evaluate(() => JSON.parse(localStorage.getItem('agp_liked'))), ['listen-ui-1']);
+    await listenPage.locator('.ep-play-next-btn').first().click();
+    assert.equal(await listenPage.evaluate(() => JSON.parse(localStorage.getItem('agp_queue'))[0].guid), 'listen-ui-1');
+    await listenPage.locator('.ep-download-btn').first().click();
+    await listenPage.waitForFunction(() =>
+      JSON.parse(localStorage.getItem('agp_downloaded') || '[]').includes('listen-ui-1')
+    );
+    assert.deepEqual(
+      await listenPage.evaluate(async () =>
+        Array.from(
+          new Uint8Array(
+            await (
+              await (await caches.open('agapay-listen-audio-v1')).match(location.origin + '/__native_audio__')
+            ).arrayBuffer()
+          )
+        )
+      ),
+      [1, 2, 3, 4]
+    );
+    await listenPage.locator('.ep-tap').first().click();
+    await listenPage.waitForFunction(() => localStorage.getItem('agp_current'));
+    assert.equal(await listenPage.evaluate(() => JSON.parse(localStorage.getItem('agp_current')).guid), 'listen-ui-1');
+    assert.ok(
+      await listenPage.evaluate(() => window.__listenPlayedSrc.startsWith('blob:')),
+      'downloaded audio uses the local Cache response'
+    );
+    assert.equal(await listenPage.evaluate(() => navigator.mediaSession.metadata.title), 'Migration Episode');
+    await listenPage.locator('.play-pause').click();
+    await listenPage.locator('.back-btn').click();
+    await listenPage.locator('[data-nav="library"]').last().click();
+    await listenPage.locator('[data-nav="profile"]').last().click();
+    assert.ok((await listenPage.locator('#listen-app').innerText()).includes('Guest Listener'));
+    assert.deepEqual(listenErrors, [], 'Listen helpers must boot and handle UI actions without runtime errors');
+    console.log(
+      'PASS - mobile Listen likes, queue, exact cached bytes, media-adapter playback, Media Session metadata and navigation'
+    );
+  } finally {
+    await listenContext.close();
+  }
+  // Exercise both deferred Groups scripts with real page markup and synthetic authenticated APIs.
+  const groupsUrl = appAssetUrl('/myagapay/groups-presentation.js');
+  assert.equal(requests.get(groupsUrl) || 0, 0, 'Groups support stays out of the existing login/shell boot');
+  const groupsContext = await browser.newContext({
+    viewport: { width: 393, height: 873 },
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  try {
+    const groupsPage = await groupsContext.newPage(),
+      groupsErrors = [],
+      groupApi = [];
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlWQAAAAASUVORK5CYII=',
+      'base64'
+    );
+    groupsPage.on('pageerror', (error) => groupsErrors.push(error.message));
+    await groupsPage.addInitScript(() => {
+      window.groupFixture = { unauthorized: 0, revoked: [] };
+      window.MyAgapayShell = {
+        authHeaders: (extra) => ({ ...extra, Authorization: 'Bearer groups-fixture' }),
+        handleUnauthorized: (response) => {
+          if (response.status !== 401) return false;
+          window.groupFixture.unauthorized++;
+          return true;
+        },
+      };
+      const revoke = URL.revokeObjectURL.bind(URL);
+      URL.revokeObjectURL = (url) => {
+        window.groupFixture.revoked.push(url);
+        revoke(url);
+      };
+      document.addEventListener('DOMContentLoaded', () =>
+        document.documentElement.setAttribute('data-myagapay-page-ready', 'true')
+      );
+    });
+    await groupsContext.route('**/*', async (route) => {
+      const request = route.request(),
+        url = new URL(request.url());
+      if (request.resourceType() === 'script') {
+        if (
+          ['/myagapay/groups.js', '/myagapay/groups-presentation.js', '/myagapay/ministry-home.js'].includes(
+            url.pathname
+          )
+        )
+          return route.continue();
+        return route.fulfill({ contentType: 'text/javascript', body: '' });
+      }
+      if (url.origin !== origin) return route.fulfill({ contentType: 'text/css', body: '' });
+      if (!url.pathname.startsWith('/api/')) return route.continue();
+      groupApi.push({
+        path: url.pathname,
+        method: request.method(),
+        headers: request.headers(),
+        bytes: request.postDataBuffer()?.length || 0,
+      });
+      const root = '/api/donor/groups/fixture-group';
+      let body;
+      if (url.pathname === '/api/donor/groups')
+        body = { groups: [{ id: 'fixture-group', name: '<Fixture Ministry>', role: 'leader', unreadCount: 2 }] };
+      else if (url.pathname === root + '/messages')
+        body = {
+          group: { id: 'fixture-group', name: '<Fixture Ministry>' },
+          messages: [
+            {
+              id: 'text',
+              messageType: 'text',
+              authorName: 'Fixture Adult',
+              body: '<img src=x onerror=alert(1)>',
+              createdAt: '2026-10-16',
+              read: false,
+            },
+            {
+              id: 'photo',
+              messageType: 'image',
+              authorName: 'Fixture Adult',
+              createdAt: '2026-10-16',
+              read: false,
+              attachmentUrl: root + '/private-photo',
+            },
+          ],
+        };
+      else if (url.pathname === root + '/private-photo') return route.fulfill({ contentType: 'image/png', body: png });
+      else if (url.pathname.endsWith('/read') || url.pathname === root + '/messages/attachment') body = { ok: true };
+      else if (url.pathname === root + '/overview') body = { myCommitments: [], coverageRequests: [] };
+      else if (url.pathname === root + '/members')
+        body = {
+          members: [
+            {
+              personId: 'adult',
+              name: 'Fixture Adult',
+              displayName: 'Fixture Adult',
+              role: 'leader',
+              accountLinked: true,
+              caughtUp: true,
+              mine: true,
+            },
+          ],
+        };
+      else if (url.pathname === root + '/caught-up')
+        body = {
+          latestMessage: { id: 'text', createdAt: '2026-10-16' },
+          members: [{ displayName: 'Fixture Adult', role: 'leader', accountLinked: true, caughtUp: true }],
+          caughtUpCount: 1,
+          memberCount: 1,
+        };
+      else if (url.pathname === '/api/donor/koinonia/signups')
+        body = {
+          sheets: [
+            {
+              id: 'fixture-sheet',
+              title: 'Fixture signup',
+              ministryId: 'fixture-group',
+              status: 'draft',
+              slotCount: 1,
+              openingCount: 1,
+            },
+          ],
+        };
+      else if (url.pathname === '/api/donor/koinonia/signups/templates/fixture-group') body = { templates: [] };
+      else if (url.pathname === '/api/donor/koinonia/signups/fixture-sheet')
+        body = {
+          sheet: { id: 'fixture-sheet', title: 'Fixture signup', status: 'draft', category: 'general' },
+          slots: [{ id: 'slot', label: 'Bring bread', filledCount: 0, neededCount: 1 }],
+        };
+      else if (url.pathname === root + '/commerce')
+        body = {
+          parishId: 'fixture-parish',
+          items: [
+            {
+              id: 'item',
+              variantId: 'variant',
+              name: 'Fixture dinner',
+              priceCents: 1800,
+              eventDate: '2026-10-16',
+              status: 'active',
+              showOnCalendar: true,
+            },
+          ],
+        };
+      else throw Error('Unexpected Groups fixture API ' + url.pathname);
+      return route.fulfill({ json: body });
+    });
+    await groupsPage.goto(origin + '/myagapay/groups.html');
+    await groupsPage.locator('.group-list-item').click();
+    await groupsPage.locator('[data-group-tab="messages"]').click();
+    await groupsPage.waitForFunction(() =>
+      document.querySelector('[data-group-photo]')?.getAttribute('src')?.startsWith('blob:')
+    );
+    assert.ok((await groupsPage.locator('.group-message-list').innerText()).includes('<img src=x onerror=alert(1)>'));
+    assert.equal(await groupsPage.locator('.group-message img[src="x"]').count(), 0);
+    await groupsPage.getByRole('button', { name: 'Who’s caught up' }).click();
+    await groupsPage.waitForFunction(() =>
+      document.querySelector('.group-catch-up')?.textContent.includes('Caught up')
+    );
+    await groupsPage
+      .locator('#groupPhotoInput')
+      .setInputFiles({ name: '<img src=x onerror=window.__groupsAttack=1>&.png', mimeType: 'image/png', buffer: png });
+    assert.equal(
+      await groupsPage.locator('#groupAttachmentPreview strong').textContent(),
+      '<img src=x onerror=window.__groupsAttack=1>&.png'
+    );
+    assert.equal(await groupsPage.locator('#groupAttachmentPreview img[src="x"]').count(), 0);
+    assert.equal(await groupsPage.evaluate(() => window.__groupsAttack || 0), 0);
+    await groupsPage.locator('#groupMessageBody').fill('Fixture caption');
+    await groupsPage.locator('#groupMessageSubmit').click();
+    await groupsPage.waitForFunction(() => document.querySelector('#groupAttachmentPreview')?.hidden);
+    const upload = groupApi.find((r) => r.path === '/api/donor/groups/fixture-group/messages/attachment');
+    assert.ok(upload, 'private image upload is submitted through the existing attachment route');
+    assert.equal(upload.bytes, png.length);
+    assert.equal(upload.headers['x-agapay-attachment-bytes'], String(png.length));
+    await groupsPage.locator('[data-group-tab="signups"]').click();
+    await groupsPage.locator('.group-signup-row').click();
+    await groupsPage.locator('.group-signup-slot-editor form').first().waitFor({ state: 'attached' });
+    assert.equal(await groupsPage.locator('.group-signup-slot-editor form').count(), 1);
+    await groupsPage.locator('[data-group-tab="commerce"]').click();
+    await groupsPage.getByRole('button', { name: 'Duplicate for next year' }).click();
+    assert.equal(await groupsPage.locator('#ministryCommerceCreateForm [name="eventDate"]').inputValue(), '');
+    assert.equal(await groupsPage.locator('#ministryCommerceCreateForm [name="status"]').inputValue(), 'draft');
+    await groupsPage.locator('.group-thread-back').click();
+    assert.equal(new URL(groupsPage.url()).searchParams.has('group'), false);
+    assert.ok(await groupsPage.evaluate(() => window.groupFixture.revoked.length > 0));
+    assert.ok(groupApi.every((r) => r.headers.authorization === 'Bearer groups-fixture'));
+    assert.deepEqual(groupsErrors, []);
+    assert.equal(requests.get(groupsUrl), 1, 'one deferred support response is fetched on the Groups page');
+    console.log(
+      'PASS - mobile Groups message escaping, private photo fetch/upload, read status, signup detail, commerce duplicate defaults and cleanup'
+    );
+  } finally {
+    await groupsContext.close();
+  }
+
+  const teachingUrl = appAssetUrl('/myagapay/teaching-presentation.js');
+  const teachingContext = await browser.newContext({
+    viewport: { width: 393, height: 873 },
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  try {
+    const teachingPage = await teachingContext.newPage(),
+      teachingErrors = [],
+      teachingApi = [];
+    let position = 42,
+      postRead = false,
+      offlineMedia = false;
+    const feedUrl = 'https://feed.test/show.xml';
+    teachingPage.on('pageerror', (error) => teachingErrors.push(error.message));
+    await teachingPage.addInitScript(() => {
+      window.teachingFixture = { played: [], unread: [] };
+      window.MyAgapayShell = {
+        authHeaders: (extra) => ({ ...extra, Authorization: 'Bearer teaching-fixture' }),
+        handleUnauthorized: (response) => response.status === 401,
+        setTeachingUnreadCount: (n) => window.teachingFixture.unread.push(n),
+      };
+      document.addEventListener('DOMContentLoaded', () =>
+        document.documentElement.setAttribute('data-myagapay-page-ready', 'true')
+      );
+      const positions = new WeakMap(),
+        paused = new WeakMap(),
+        sources = new WeakMap();
+      Object.defineProperty(HTMLMediaElement.prototype, 'duration', { configurable: true, get: () => 300 });
+      Object.defineProperty(HTMLMediaElement.prototype, 'readyState', { configurable: true, get: () => 1 });
+      Object.defineProperty(HTMLMediaElement.prototype, 'paused', {
+        configurable: true,
+        get() {
+          return paused.get(this) ?? true;
+        },
+      });
+      Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+        configurable: true,
+        get() {
+          return sources.get(this) || '';
+        },
+        set(value) {
+          sources.set(this, String(value));
+        },
+      });
+      Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
+        configurable: true,
+        get() {
+          return positions.get(this) || 0;
+        },
+        set(value) {
+          positions.set(this, Number(value));
+          queueMicrotask(() => this.dispatchEvent(new Event('seeked')));
+        },
+      });
+      HTMLMediaElement.prototype.play = function () {
+        paused.set(this, false);
+        window.teachingFixture.played.push(this.src);
+        this.dispatchEvent(new Event('play'));
+        return Promise.resolve();
+      };
+      HTMLMediaElement.prototype.pause = function () {
+        paused.set(this, true);
+        this.dispatchEvent(new Event('pause'));
+      };
+      HTMLMediaElement.prototype.load = function () {
+        queueMicrotask(() => this.dispatchEvent(new Event('loadedmetadata')));
+      };
+    });
+    await teachingContext.route('**/*', async (route) => {
+      const request = route.request(),
+        url = new URL(request.url());
+      if (request.resourceType() === 'script') {
+        if (['/myagapay/teaching.js', '/myagapay/teaching-presentation.js'].includes(url.pathname))
+          return route.continue();
+        return route.fulfill({ contentType: 'text/javascript', body: '' });
+      }
+      if (url.origin !== origin) return route.fulfill({ contentType: 'text/css', body: '' });
+      if (!url.pathname.startsWith('/api/')) return route.continue();
+      if (offlineMedia) return route.abort('internetdisconnected');
+      const body = request.postDataJSON();
+      teachingApi.push({ path: url.pathname, method: request.method(), body, auth: request.headers().authorization });
+      if (url.pathname === '/api/donor/teaching')
+        return route.fulfill({
+          json: {
+            parish: { name: 'Fixture Parish' },
+            posts: [
+              {
+                id: 'reflection',
+                title: '<Reflection>',
+                body: 'Safe reflection',
+                bodyHtml: '<p>Safe reflection</p>',
+                read: postRead,
+              },
+            ],
+            unreadCount: postRead ? 0 : 1,
+          },
+        });
+      if (url.pathname === '/api/donor/teaching/reflection/read') {
+        postRead = true;
+        return route.fulfill({ json: { ok: true } });
+      }
+      if (url.pathname === '/api/listen/progress') {
+        if (request.method() === 'POST') {
+          if (typeof body?.positionSeconds === 'number') position = body.positionSeconds;
+          return route.fulfill({ json: { ok: true } });
+        }
+        return route.fulfill({
+          json: {
+            items: [
+              {
+                episodeKey: 'episode-one',
+                feedUrl,
+                showTitle: 'Fixture Podcast',
+                episodeTitle: '<Episode>',
+                positionSeconds: position,
+                durationSeconds: 300,
+              },
+            ],
+            playbackRate: 1.25,
+          },
+        });
+      }
+      if (url.pathname === '/api/listen/subscriptions')
+        return route.fulfill({ json: { subscriptions: [{ feedUrl, title: 'Fixture Podcast' }] } });
+      if (url.pathname === '/api/listen/search')
+        return route.fulfill({ json: { feeds: [{ url: feedUrl, title: 'Fixture Podcast' }] } });
+      if (url.pathname === '/api/listen/rss')
+        return route.fulfill({
+          contentType: 'application/xml',
+          body: '<rss><channel><title>Fixture Podcast</title><item><guid>episode-one</guid><title>&lt;Episode&gt;</title><pubDate>2026-10-16</pubDate><duration>300</duration><description>Fixture description</description><enclosure url="https://media.test/one.mp3" /></item></channel></rss>',
+        });
+      if (url.pathname === '/api/listen/audio')
+        return route.fulfill({ contentType: 'audio/mpeg', body: Buffer.from([1, 2, 3, 4]) });
+      throw Error('Unexpected Teaching fixture API ' + url.pathname);
+    });
+    await teachingPage.goto(origin + '/myagapay/teaching.html');
+    await teachingPage.locator('[data-teaching-id="reflection"] .feed-card-summary').click();
+    await teachingPage.waitForFunction(() => document.querySelector('#teachingUnreadSummary')?.hidden);
+    assert.ok((await teachingPage.locator('#teachingList').innerText()).includes('<Reflection>'));
+    await teachingPage.locator('[data-audio-library-mode="podcasts"]').click();
+    await teachingPage.locator('[onclick="playKoinoniaPodcastLatestEpisode(0)"]').click();
+    await teachingPage.waitForFunction(() => navigator.mediaSession.metadata?.title === '<Episode>');
+    assert.equal(await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.currentTime), 42);
+    assert.equal(await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.playbackRate), 1.25);
+    await teachingPage.locator('[onclick="queueKoinoniaPodcastLatestEpisode(0)"]').click();
+    assert.ok((await teachingPage.locator('#koinoniaPodcastQueueCount').innerText()).includes('1 Up Next'));
+    await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => {
+      audio.currentTime = 80;
+    });
+    await teachingPage.waitForFunction(() =>
+      document.querySelector('#koinoniaContinueList')?.textContent.includes('1:20')
+    );
+    await teachingPage.evaluate(() => window.toggleKoinoniaPodcastPlayerExpanded(true));
+    await teachingPage.locator('#koinoniaPodcastActionsToggle').click();
+    await teachingPage.locator('#koinoniaPodcastDownloadAction').click();
+    await teachingPage.waitForFunction(async () =>
+      Boolean(
+        await (
+          await caches.open('agapay-podcast-downloads-v1')
+        ).match(location.origin + '/myagapay/offline-podcast?episode=episode-one')
+      )
+    );
+    await teachingPage.waitForFunction(() => !document.getElementById('koinoniaPodcastDownloadAction').disabled);
+    const downloadedBytes = await teachingPage.evaluate(async () => {
+      const cache = await caches.open('agapay-podcast-downloads-v1');
+      const response = await cache.match(location.origin + '/myagapay/offline-podcast?episode=episode-one');
+      if (!response)
+        throw Error('Missing fixture download: ' + (await cache.keys()).map((request) => request.url).join(','));
+      return Array.from(new Uint8Array(await response.arrayBuffer()));
+    });
+    assert.deepEqual(downloadedBytes, [1, 2, 3, 4]);
+    await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.pause());
+    await teachingPage.reload();
+    await teachingPage.waitForFunction(() =>
+      document.querySelector('#koinoniaContinueList')?.textContent.includes('1:20')
+    );
+    assert.ok((await teachingPage.locator('#koinoniaPodcastQueueList').innerText()).includes('Your queue is empty'));
+    await teachingPage.locator('[data-audio-library-mode="podcasts"]').click();
+    await teachingPage.locator('[data-podcast-library-view="downloads"]').click();
+    await teachingPage.locator('[onclick="playDownloadedKoinoniaPodcast(0)"]').waitFor();
+    offlineMedia = true;
+    await teachingPage.locator('[onclick="playDownloadedKoinoniaPodcast(0)"]').click();
+    await teachingPage.waitForFunction(() => window.teachingFixture.played.at(-1)?.startsWith('blob:'));
+    await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.pause());
+    assert.ok(teachingApi.some((r) => r.path === '/api/listen/progress' && r.body?.positionSeconds === 80));
+    assert.ok(
+      teachingApi
+        .filter((r) => r.path !== '/api/listen/rss' && r.path !== '/api/listen/search')
+        .every((r) => r.auth === 'Bearer teaching-fixture')
+    );
+    assert.deepEqual(teachingErrors, []);
+    console.log(
+      'PASS - mobile Teaching read state, RSS playback resume/rate, progress saving, memory-only queue, exact cached media and network-blocked playback with a media adapter'
+    );
+  } finally {
+    await teachingContext.close();
+  }
+
   await page.evaluate(
     async ({ cacheName, oldUrl }) => {
       window.AGAPAYDonorSession.saveSession({ token: 'migration-fixture', donor: { email: 'migration@example.test' } });
@@ -164,9 +666,39 @@ try {
     cacheName,
     url: bookstoreUrl,
   });
+  const groupsExpected = (await readFile(resolve(publicRoot, 'myagapay/groups-presentation.js'), 'utf8')).replaceAll(
+    '\r\n',
+    '\n'
+  );
+  await page.evaluate(async (url) => (await fetch(url)).text(), groupsUrl);
+  await page.waitForFunction(async (url) => Boolean(await caches.match(url)), groupsUrl);
+  const teachingExpected = (
+    await readFile(resolve(publicRoot, 'myagapay/teaching-presentation.js'), 'utf8')
+  ).replaceAll('\r\n', '\n');
+  await page.evaluate(async (url) => (await fetch(url)).text(), teachingUrl);
+  await page.waitForFunction(async (url) => Boolean(await caches.match(url)), teachingUrl);
   await context.setOffline(true);
   const offline = await page.evaluate(async (url) => (await fetch(url)).text(), bookstoreUrl);
   assert.equal(offline.replaceAll('\r\n', '\n'), expected);
+  assert.equal(
+    (await page.evaluate(async (url) => (await fetch(url)).text(), groupsUrl)).replaceAll('\r\n', '\n'),
+    groupsExpected,
+    'warm Groups support remains available offline by its exact content version'
+  );
+  assert.equal(
+    (await page.evaluate(async (url) => (await fetch(url)).text(), teachingUrl)).replaceAll('\r\n', '\n'),
+    teachingExpected,
+    'warm Teaching support retains exact content bytes offline'
+  );
+  const vendorBytes = await readFile(resolve(publicRoot, 'vendor/dompurify.es.mjs'), 'utf8');
+  assert.equal(
+    (await page.evaluate(async () => (await fetch('/vendor/dompurify.es.mjs?v=3.4.14')).text())).replaceAll(
+      '\r\n',
+      '\n'
+    ),
+    vendorBytes.replaceAll('\r\n', '\n'),
+    'The OPML sanitizer remains available offline after a normal worker update'
+  );
   const offlineListen = await context.newPage();
   const listenResponse = await offlineListen.goto(`${origin}/listen.html`);
   assert.equal(listenResponse.status(), 200);

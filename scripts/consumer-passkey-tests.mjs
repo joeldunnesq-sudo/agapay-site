@@ -1,9 +1,10 @@
-import assert from "node:assert/strict";
-import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import vm from "node:vm";
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
+import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import vm from 'node:vm';
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
 import {
@@ -13,23 +14,28 @@ import {
   listConsumerPasskeys,
   migrateConsumerPasskeyEmail,
   renameConsumerPasskey,
-} from "../src/lib/consumer-passkeys.js";
+} from '../src/lib/consumer-passkeys.js';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(dirname, "..");
+const root = path.join(dirname, '..');
 
 function makeD1Env() {
-  const db = new DatabaseSync(":memory:");
-  db.exec(readFileSync(path.join(root, "migrations", "0107_consumer_passkeys.sql"), "utf8"));
+  const db = new DatabaseSync(':memory:');
+  db.exec(readFileSync(path.join(root, 'migrations', '0107_consumer_passkeys.sql'), 'utf8'));
   function wrap(sql) {
     return {
       params: [],
-      bind(...params) { this.params = params; return this; },
+      bind(...params) {
+        this.params = params;
+        return this;
+      },
       async first() {
         const row = db.prepare(sql).get(...this.params);
         return row === undefined ? null : row;
       },
-      async all() { return { results: db.prepare(sql).all(...this.params), success: true }; },
+      async all() {
+        return { results: db.prepare(sql).all(...this.params), success: true };
+      },
       async run() {
         const info = db.prepare(sql).run(...this.params);
         return { success: true, meta: { changes: info.changes, last_row_id: info.lastInsertRowid } };
@@ -39,8 +45,8 @@ function makeD1Env() {
   return {
     db,
     env: {
-      AGAPAY_APP_URL: "https://agapay.app",
-      AGAPAY_DB: { prepare: sql => wrap(sql) },
+      AGAPAY_APP_URL: 'https://agapay.app',
+      AGAPAY_DB: { prepare: (sql) => wrap(sql) },
     },
   };
 }
@@ -58,72 +64,84 @@ async function test(name, run) {
   }
 }
 
-await test("consumer passkeys use a separate account, credential, and one-time challenge schema", async () => {
+await test('consumer passkeys use a separate account, credential, and one-time challenge schema', async () => {
   const { db } = makeD1Env();
-  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map(row => row.name);
-  assert.ok(tables.includes("consumer_passkey_accounts"));
-  assert.ok(tables.includes("consumer_webauthn_credentials"));
-  assert.ok(tables.includes("consumer_passkey_transactions"));
-  assert.ok(!tables.includes("privileged_mfa_profiles"));
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+    .all()
+    .map((row) => row.name);
+  assert.ok(tables.includes('consumer_passkey_accounts'));
+  assert.ok(tables.includes('consumer_webauthn_credentials'));
+  assert.ok(tables.includes('consumer_passkey_transactions'));
+  assert.ok(!tables.includes('privileged_mfa_profiles'));
 });
 
-await test("registration requires a discoverable, user-verifying credential and stores only a hashed transaction token", async () => {
+await test('registration requires a discoverable, user-verifying credential and stores only a hashed transaction token', async () => {
   const { env, db } = makeD1Env();
-  const donor = { email: "member@example.com", emailVerifiedAt: new Date().toISOString(), donorName: "Parish Member" };
-  const flow = await beginConsumerPasskeyRegistration(env, new Request("https://agapay.app/api/donor/passkeys/registration/options"), donor);
-  assert.equal(flow.options.authenticatorSelection.residentKey, "required");
-  assert.equal(flow.options.authenticatorSelection.userVerification, "required");
+  const donor = { email: 'member@example.com', emailVerifiedAt: new Date().toISOString(), donorName: 'Parish Member' };
+  const flow = await beginConsumerPasskeyRegistration(
+    env,
+    new Request('https://agapay.app/api/donor/passkeys/registration/options'),
+    donor
+  );
+  assert.equal(flow.options.authenticatorSelection.residentKey, 'required');
+  assert.equal(flow.options.authenticatorSelection.userVerification, 'required');
   assert.equal(flow.options.user.name, donor.email);
-  assert.ok(flow.pendingToken.includes("."));
-  const transaction = db.prepare("SELECT * FROM consumer_passkey_transactions").get();
-  assert.equal(transaction.purpose, "registration");
-  assert.notEqual(transaction.token_hash, flow.pendingToken.split(".")[1]);
+  assert.ok(flow.pendingToken.includes('.'));
+  const transaction = db.prepare('SELECT * FROM consumer_passkey_transactions').get();
+  assert.equal(transaction.purpose, 'registration');
+  assert.notEqual(transaction.token_hash, flow.pendingToken.split('.')[1]);
   assert.equal(transaction.webauthn_challenge, flow.options.challenge);
 });
 
-await test("passwordless authentication is account-neutral and eligible for conditional passkey autofill", async () => {
+await test('passwordless authentication is account-neutral and eligible for conditional passkey autofill', async () => {
   const { env, db } = makeD1Env();
-  const flow = await beginConsumerPasskeyAuthentication(env, new Request("https://agapay.app/api/donor/passkeys/authentication/options"));
-  assert.equal(flow.options.userVerification, "required");
+  const flow = await beginConsumerPasskeyAuthentication(
+    env,
+    new Request('https://agapay.app/api/donor/passkeys/authentication/options')
+  );
+  assert.equal(flow.options.userVerification, 'required');
   assert.ok(!flow.options.allowCredentials || flow.options.allowCredentials.length === 0);
-  const transaction = db.prepare("SELECT * FROM consumer_passkey_transactions").get();
-  assert.equal(transaction.purpose, "authentication");
+  const transaction = db.prepare('SELECT * FROM consumer_passkey_transactions').get();
+  assert.equal(transaction.purpose, 'authentication');
   assert.equal(transaction.account_id, null);
 });
 
-await test("passkey management is scoped to the authenticated consumer account", async () => {
+await test('passkey management is scoped to the authenticated consumer account', async () => {
   const { env, db } = makeD1Env();
-  const donor = { email: "owner@example.com", emailVerifiedAt: new Date().toISOString() };
-  await beginConsumerPasskeyRegistration(env, new Request("https://agapay.app"), donor);
-  const account = db.prepare("SELECT * FROM consumer_passkey_accounts WHERE donor_email = ?").get(donor.email);
-  db.prepare(`INSERT INTO consumer_webauthn_credentials
+  const donor = { email: 'owner@example.com', emailVerifiedAt: new Date().toISOString() };
+  await beginConsumerPasskeyRegistration(env, new Request('https://agapay.app'), donor);
+  const account = db.prepare('SELECT * FROM consumer_passkey_accounts WHERE donor_email = ?').get(donor.email);
+  db.prepare(
+    `INSERT INTO consumer_webauthn_credentials
     (credential_id, account_id, credential_public_key, label, created_at)
-    VALUES (?, ?, ?, ?, datetime('now'))`).run("credential-owner", account.id, "AA", "My phone");
-  assert.equal((await listConsumerPasskeys(env, donor.email))[0].label, "My phone");
-  assert.equal(await renameConsumerPasskey(env, "other@example.com", "credential-owner", "Stolen"), false);
-  assert.equal(await deleteConsumerPasskey(env, "other@example.com", "credential-owner"), false);
-  assert.equal(await renameConsumerPasskey(env, donor.email, "credential-owner", "My iPhone"), true);
-  assert.equal((await listConsumerPasskeys(env, donor.email))[0].label, "My iPhone");
-  assert.equal(await deleteConsumerPasskey(env, donor.email, "credential-owner"), true);
+    VALUES (?, ?, ?, ?, datetime('now'))`
+  ).run('credential-owner', account.id, 'AA', 'My phone');
+  assert.equal((await listConsumerPasskeys(env, donor.email))[0].label, 'My phone');
+  assert.equal(await renameConsumerPasskey(env, 'other@example.com', 'credential-owner', 'Stolen'), false);
+  assert.equal(await deleteConsumerPasskey(env, 'other@example.com', 'credential-owner'), false);
+  assert.equal(await renameConsumerPasskey(env, donor.email, 'credential-owner', 'My iPhone'), true);
+  assert.equal((await listConsumerPasskeys(env, donor.email))[0].label, 'My iPhone');
+  assert.equal(await deleteConsumerPasskey(env, donor.email, 'credential-owner'), true);
   assert.deepEqual(await listConsumerPasskeys(env, donor.email), []);
 });
 
-await test("a verified donor email change preserves the stable passkey account", async () => {
+await test('a verified donor email change preserves the stable passkey account', async () => {
   const { env, db } = makeD1Env();
-  const donor = { email: "before@example.com", emailVerifiedAt: new Date().toISOString() };
-  await beginConsumerPasskeyRegistration(env, new Request("https://agapay.app"), donor);
-  const before = db.prepare("SELECT * FROM consumer_passkey_accounts").get();
-  const result = await migrateConsumerPasskeyEmail(env, donor.email, "after@example.com");
-  const after = db.prepare("SELECT * FROM consumer_passkey_accounts").get();
+  const donor = { email: 'before@example.com', emailVerifiedAt: new Date().toISOString() };
+  await beginConsumerPasskeyRegistration(env, new Request('https://agapay.app'), donor);
+  const before = db.prepare('SELECT * FROM consumer_passkey_accounts').get();
+  const result = await migrateConsumerPasskeyEmail(env, donor.email, 'after@example.com');
+  const after = db.prepare('SELECT * FROM consumer_passkey_accounts').get();
   assert.equal(result.changed, true);
   assert.equal(after.id, before.id);
-  assert.equal(after.donor_email, "after@example.com");
+  assert.equal(after.donor_email, 'after@example.com');
 });
 
-await test("My AGAPAY automatically unlocks the installed app and keeps email recovery", async () => {
-  const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
-  const account = readFileSync(path.join(root, "public", "myagapay", "account.html"), "utf8");
-  const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
+await test('My AGAPAY automatically unlocks the installed app and keeps email recovery', async () => {
+  const login = readFileSync(path.join(root, 'public', 'myagapay', 'login.html'), 'utf8');
+  const account = readFileSync(path.join(root, 'public', 'myagapay', 'account.html'), 'utf8');
+  const client = readFileSync(path.join(root, 'public', 'scripts', 'consumer-passkeys.js'), 'utf8');
   const worker = readWorkerCompositionSource(root);
   assert.doesNotMatch(login, /id="donorPasskeyLogin"|Use my passkey/);
   assert.doesNotMatch(login, /First time using passkeys\?/);
@@ -142,31 +160,40 @@ await test("My AGAPAY automatically unlocks the installed app and keeps email re
   assert.match(worker, /handleConsumerPasskeyRegistrationVerify/);
 });
 
-await test("installed app starts one automatic required passkey request with email fallback", async () => {
-  const login = readFileSync(path.join(root, "public", "myagapay", "login.html"), "utf8");
-  const client = readFileSync(path.join(root, "public", "scripts", "consumer-passkeys.js"), "utf8");
+await test('installed app starts one automatic required passkey request with email fallback', async () => {
+  const login = readFileSync(path.join(root, 'public', 'myagapay', 'login.html'), 'utf8');
+  const client = readFileSync(path.join(root, 'public', 'scripts', 'consumer-passkeys.js'), 'utf8');
   assert.match(login, /function isInstalledApp\(\)/);
-  assert.match(login, /if \(isInstalledApp\(\)\) \{[\s\S]*clearSession\(\)[\s\S]*await signInWithPasskey\(\);[\s\S]*return;/);
+  assert.match(
+    login,
+    /if \(isInstalledApp\(\)\) \{[\s\S]*clearSession\(\)[\s\S]*await signInWithPasskey\(\);[\s\S]*return;/
+  );
   assert.doesNotMatch(login, /passkeyLoginButton|donorPasskeyLogin/);
   assert.match(login, /await stopConditionalPasskey\(\)/);
   assert.match(login, /Biometric sign-in was not completed/);
   assert.match(login, /recovery path/);
-  assert.match(client, /friendly\.code = operation === 'registration' \? 'passkey_setup_not_completed' : 'passkey_not_selected'/);
+  assert.match(
+    client,
+    /friendly\.code = operation === 'registration' \? 'passkey_setup_not_completed' : 'passkey_not_selected'/
+  );
   assert.doesNotMatch(client, /Passkey use was cancelled or timed out/);
-  const pwaInstall = readFileSync(path.join(root, "public", "donor", "pwa-install.js"), "utf8");
+  const pwaInstall = readFileSync(path.join(root, 'public', 'donor', 'pwa-install.js'), 'utf8');
   assert.doesNotMatch(pwaInstall, /redirectAuthenticatedPwaDonor|window\.location\.replace\("\/myagapay\/"\)/);
 });
 
-await test("switching apps preserves the session while unauthorized responses still require sign-in", async () => {
-  const shell = readFileSync(path.join(root, "public", "myagapay-shell.js"), "utf8");
+await test('switching apps preserves the session while unauthorized responses still require sign-in', async () => {
+  const shell = readBrowserContractSourceSync('public/myagapay-shell.js');
   for (const installed of [true, false]) {
     let now = 1000;
-    const values = new Map([["agapayDonorEmail", "member@example.com"], ["agapayDonorToken", "valid-session"]]);
+    const values = new Map([
+      ['agapayDonorEmail', 'member@example.com'],
+      ['agapayDonorToken', 'valid-session'],
+    ]);
     const listeners = new Map();
     const redirects = [];
     const document = {
       documentElement: { hasAttribute: () => false },
-      visibilityState: "visible",
+      visibilityState: 'visible',
       addEventListener(type, handler) {
         if (!listeners.has(type)) listeners.set(type, []);
         listeners.get(type).push(handler);
@@ -177,37 +204,42 @@ await test("switching apps preserves the session while unauthorized responses st
       navigator: { standalone: installed },
       matchMedia: () => ({ matches: installed }),
       location: {
-        pathname: "/myagapay/parish-life", search: "?week=2026-09-11",
-        origin: "https://agapay.test", href: "https://agapay.test/myagapay/parish-life?week=2026-09-11",
+        pathname: '/myagapay/parish-life',
+        search: '?week=2026-09-11',
+        origin: 'https://agapay.test',
+        href: 'https://agapay.test/myagapay/parish-life?week=2026-09-11',
         replace: (url) => redirects.push(url),
       },
       addEventListener() {},
     };
     const sessionSource = readFileSync(path.join(root, 'public/donor/session.js'), 'utf8');
     vm.runInNewContext(`${sessionSource}\n${shell}`, {
-      window, document, URL, Date: { now: () => now },
+      window,
+      document,
+      URL,
+      Date: { now: () => now },
       localStorage: {
         getItem: (key) => values.get(key) || null,
         removeItem: (key) => values.delete(key),
       },
     });
     for (const awayMs of [5000, 31000, 5 * 60 * 1000, 60 * 60 * 1000]) {
-      document.visibilityState = "hidden";
-      for (const handler of listeners.get("visibilitychange") || []) handler();
+      document.visibilityState = 'hidden';
+      for (const handler of listeners.get('visibilitychange') || []) handler();
       now += awayMs;
-      document.visibilityState = "visible";
-      for (const handler of listeners.get("visibilitychange") || []) handler();
-      assert.equal(values.get("agapayDonorToken"), "valid-session");
-      assert.equal(redirects.length, 0, "resuming must not force biometric sign-in");
+      document.visibilityState = 'visible';
+      for (const handler of listeners.get('visibilitychange') || []) handler();
+      assert.equal(values.get('agapayDonorToken'), 'valid-session');
+      assert.equal(redirects.length, 0, 'resuming must not force biometric sign-in');
     }
     assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 200 }), false);
     assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 401 }), true);
     assert.equal(window.MyAgapayShell.handleUnauthorized({ status: 401 }), true);
     assert.equal(redirects.length, 1, 'parallel unauthorized responses trigger only one login navigation');
-    assert.equal(values.has("agapayDonorToken"), false);
+    assert.equal(values.has('agapayDonorToken'), false);
     const loginUrl = new URL(redirects[0]);
-    assert.equal(loginUrl.searchParams.get("reason"), "session-expired");
-    assert.equal(loginUrl.searchParams.get("next"), "/myagapay/parish-life?week=2026-09-11");
+    assert.equal(loginUrl.searchParams.get('reason'), 'session-expired');
+    assert.equal(loginUrl.searchParams.get('next'), '/myagapay/parish-life?week=2026-09-11');
   }
 });
 

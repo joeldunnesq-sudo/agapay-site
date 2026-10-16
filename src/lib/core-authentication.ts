@@ -16,7 +16,7 @@ import { pbkdf2Hex } from './core.js';
 import { toHex } from './core-shared.js';
 import './core-sessions.js';
 
-export function secureCompare(a: string, b: string) {
+export function secureCompare(a: string | null | undefined, b: string | null | undefined) {
   const left = String(a || '');
   const right = String(b || '');
   if (left.length !== right.length) return false;
@@ -102,11 +102,11 @@ export async function verifyParishDashboardPassword(registration: DashboardRegis
   return Boolean(registration.parishDashboardToken && secureCompare(password, registration.parishDashboardToken));
 }
 
-export async function applyParishDashboardPassword(
-  registration: DashboardRegistration,
+export async function applyParishDashboardPassword<T extends DashboardRegistration>(
+  registration: T,
   password: string,
   { temporary = false, keepLegacyToken = false }: { temporary?: boolean; keepLegacyToken?: boolean } = {}
-) {
+): Promise<T & { parishDashboardTokenUpdatedAt?: string }> {
   if (!password) return registration;
   return {
     ...registration,

@@ -14,6 +14,13 @@
   var PHONE = '(max-width: 820px)';
 
   function bootShell() {
+    ['/learn/dashboard-shell-setup-calendar.js', '/learn/dashboard-shell-planner-family.js'].forEach(function (href) {
+      if (document.querySelector('link[rel="modulepreload"][href="' + href + '"]')) return;
+      var preload = document.createElement('link');
+      preload.rel = 'modulepreload';
+      preload.href = href;
+      document.head.appendChild(preload);
+    });
     import(SHELL).catch(function (err) {
       console.error('AGAPAY Learn failed to load', err);
       var root = document.getElementById('learnRoot');

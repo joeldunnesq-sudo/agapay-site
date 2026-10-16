@@ -5,8 +5,8 @@ export interface NotificationRegistration extends SubscriptionRegistration {
   parishId?: string;
   parishName?: string;
   city?: string;
-  priestEmail?: string;
-  treasurerEmail?: string;
+  priestEmail?: string | null;
+  treasurerEmail?: string | null;
   email?: string;
   attribution?: AttributionInput | null;
 }

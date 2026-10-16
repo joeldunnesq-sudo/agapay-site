@@ -20,6 +20,15 @@ export function typeScriptMigrationInventory() {
     remaining: remaining.length,
     percentage: Math.round((1000 * converted.length) / scope.size) / 10,
     supportModules: support.length,
+    browserRuntimeSupportPaths: browserTypeScriptEntries.flatMap((entry) =>
+      (entry.runtimeSupportSources || []).map((source) =>
+        source.replace('src/browser/', 'public/').replace(/\.ts$/, '.js')
+      )
+    ),
+    privateBrowserSupportSources: browserTypeScriptEntries.flatMap((entry) => [
+      ...(entry.supportSources || []),
+      ...(entry.classicSupportSources || []),
+    ]),
     convertedPaths: converted,
     remainingPaths: remaining,
     supportPaths: support,

@@ -1,3 +1,4 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildUpcomingDirectoryMilestones } from '../src/directory/milestones.js';
@@ -76,7 +77,7 @@ const [page, script, styles, calendarPage, donorApp, directory, privacy, selfSer
     readDonorAppSource(),
     readFile(new URL('../public/myagapay/directory.html', import.meta.url), 'utf8'),
     readFile(new URL('../src/directory/privacy.js', import.meta.url), 'utf8'),
-    readFile(new URL('../src/directory/self-service.js', import.meta.url), 'utf8'),
+    Promise.resolve(readServerContractSourceSync('src/directory/self-service.js')),
     readFile(new URL('../src/handlers/directory-member.js', import.meta.url), 'utf8'),
     readFile(new URL('../migrations/0104_directory_parish_milestones.sql', import.meta.url), 'utf8'),
   ]);

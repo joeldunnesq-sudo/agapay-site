@@ -109,7 +109,7 @@ export class ListenDB {
 
   async getProgress(guid: string) {
     const store = await this._tx('progress', 'readonly');
-    return idbGet(store, guid);
+    return idbGet<ListenProgress>(store, guid);
   }
 }
 

@@ -1,305 +1,274 @@
-let selectedReference = '';
-    window.AgapayMfa?.installFetchStepUp();
-    let registrationsCache = [];
-    const adminSessionKey = 'agapay_admin_token';
-    const adminActorKey = 'agapay_admin_actor';
-    const adminNoticeKey = 'agapay_admin_notice';
-    const autoRefreshKey = 'agapay_admin_auto_refresh';
-    const givingSummaryCache = new Map();
-    let autoRefreshTimer = null;
-    let isLoadingRegistrations = false;
-    let registrationAutosaveTimer = null;
-    let registrationAutosaveInFlight = false;
-    let registrationAutosaveQueued = false;
-    let registrationAutosavePromise = null;
-    let lastDataLoadedAt = null;
-    let latestPlatformSummary = null;
-    let latestLearnAdmin = null;
-    let adminAccountingHealth = null;
-    let adminAccountingTargets = [];
-    let adminAccountingTargetsLoaded = false;
-    let adminAccountingEnvironment = '';
-
-    function token() {
-      return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
+// Generated from src/browser/admin/app.ts by npm run build:browser. Do not edit.
+function saveAdminSession(value) {
+  try {
+    sessionStorage.setItem(adminSessionKey, value);
+    const input = document.getElementById('adminToken');
+    if (input) input.value = value;
+  } catch {}
+}
+function clearAdminSession() {
+  try {
+    sessionStorage.removeItem(adminSessionKey);
+  } catch {}
+  const input = document.getElementById('adminToken');
+  if (input) input.value = '';
+}
+function adminActor() {
+  const inline = document.getElementById('adminActor')?.value.trim();
+  if (inline) return inline;
+  return sessionStorage.getItem(adminActorKey) || 'Admin';
+}
+function setAdminNotice(message) {
+  if (!message) return;
+  try {
+    sessionStorage.setItem(adminNoticeKey, message);
+  } catch {}
+}
+function consumeAdminNotice() {
+  try {
+    const message = sessionStorage.getItem(adminNoticeKey) || '';
+    if (message) sessionStorage.removeItem(adminNoticeKey);
+    return message;
+  } catch {
+    return '';
+  }
+}
+function refreshDataAsOf() {
+  const el = document.getElementById('dataAsOf');
+  if (!el) return;
+  const stamp = lastDataLoadedAt ? formatClock(lastDataLoadedAt) : '—';
+  el.textContent = `Data as of ${stamp}`;
+}
+function isLoginPage() {
+  return Boolean(document.body?.classList.contains('admin-login-simple'));
+}
+function stopAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+}
+function toggleAutoRefresh(enabled) {
+  try {
+    sessionStorage.setItem(autoRefreshKey, enabled ? '1' : '0');
+  } catch {}
+  stopAutoRefresh();
+  if (!enabled || isLoginPage()) return;
+  autoRefreshTimer = setInterval(() => {
+    if (!token() || isLoadingRegistrations) return;
+    loadRegistrations({ silent: true, preserveSelection: activeTab === 'giving' });
+  }, 9e4);
+}
+function restoreAdminSession() {
+  const onLoginPage = isLoginPage();
+  const storedToken = sessionStorage.getItem(adminSessionKey) || '';
+  const requestedTab = new URLSearchParams(window.location.search).get('tab');
+  const input = document.getElementById('adminToken');
+  if (storedToken && input) input.value = storedToken;
+  refreshDataAsOf();
+  const notice = consumeAdminNotice();
+  if (notice) setStatus(notice, 'info');
+  const autoRefreshEnabled = (sessionStorage.getItem(autoRefreshKey) || '0') === '1';
+  const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+  if (autoRefreshToggle) {
+    autoRefreshToggle.checked = autoRefreshEnabled;
+  }
+  if (!onLoginPage && !storedToken) {
+    window.location.replace('/admin/login');
+    return;
+  }
+  if (onLoginPage && storedToken) {
+    window.location.replace('/admin');
+    return;
+  }
+  if (!onLoginPage && storedToken) {
+    if (requestedTab && document.getElementById('tab-' + requestedTab)) switchTab(requestedTab);
+    toggleAutoRefresh(autoRefreshEnabled);
+    setTimeout(() => loadRegistrations(), 80);
+  }
+}
+async function loginFromAdminPage(event) {
+  event.preventDefault();
+  const password = document.getElementById('adminToken')?.value.trim();
+  const actor = adminActor();
+  const submit = event.submitter;
+  if (!password) {
+    setStatus('Enter the admin password.', 'error');
+    return;
+  }
+  if (submit) {
+    submit.classList.add('loading');
+    submit.disabled = true;
+  }
+  try {
+    const response = await fetch('/api/admin/session', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, actor }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Unable to log in');
+    const authenticated = result.mfaRequired
+      ? await window.AgapayMfa.runFlow(result, { displayName: actor || 'AGAPAY administrator' })
+      : result;
+    if (!authenticated.token) throw new Error('Session token missing from response');
+    saveAdminSession(authenticated.token);
+    try {
+      sessionStorage.setItem(adminActorKey, authenticated.actor || actor || 'Admin');
+    } catch {}
+    window.location.href = '/admin';
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (submit) {
+      submit.classList.remove('loading');
+      submit.disabled = false;
     }
-
-    function saveAdminSession(value) {
-      try {
-        sessionStorage.setItem(adminSessionKey, value);
-        const input = document.getElementById('adminToken');
-        if (input) input.value = value;
-      } catch {}
+  }
+}
+function logoutAdmin() {
+  stopAutoRefresh();
+  clearAdminSession();
+  window.location.href = '/admin/login';
+}
+function setPaymentStatus(message, tone = '') {
+  const paymentStatus = document.getElementById('paymentStatus');
+  if (paymentStatus) paymentStatus.textContent = message || '';
+  setStatus(message, tone);
+}
+async function changeAdminPassword(btn) {
+  if (!token()) {
+    setStatus('Log in first to update the admin password.', 'error');
+    return;
+  }
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  const newPasswordInput = document.getElementById('newAdminPassword');
+  const confirmPasswordInput = document.getElementById('confirmAdminPassword');
+  const newAdminPassword = newPasswordInput.value.trim();
+  const confirmAdminPassword = confirmPasswordInput.value.trim();
+  if (newAdminPassword.length < 12) {
+    setStatus('Admin password must be at least 12 characters.', 'error');
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    function clearAdminSession() {
-      try { sessionStorage.removeItem(adminSessionKey); } catch {}
-      const input = document.getElementById('adminToken');
-      if (input) input.value = '';
+    return;
+  }
+  if (newAdminPassword !== confirmAdminPassword) {
+    setStatus('Admin passwords do not match.', 'error');
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    function adminActor() {
-      const inline = document.getElementById('adminActor')?.value.trim();
-      if (inline) return inline;
-      return sessionStorage.getItem(adminActorKey) || 'Admin';
-    }
-
-    function setAdminNotice(message) {
-      if (!message) return;
-      try { sessionStorage.setItem(adminNoticeKey, message); } catch {}
-    }
-
-    function consumeAdminNotice() {
-      try {
-        const message = sessionStorage.getItem(adminNoticeKey) || '';
-        if (message) sessionStorage.removeItem(adminNoticeKey);
-        return message;
-      } catch {
-        return '';
-      }
-    }
-
-    function refreshDataAsOf() {
-      const el = document.getElementById('dataAsOf');
-      if (!el) return;
-      const stamp = lastDataLoadedAt ? formatClock(lastDataLoadedAt) : '—';
-      el.textContent = `Data as of ${stamp}`;
-    }
-
-    function isLoginPage() {
-      return Boolean(document.body?.classList.contains('admin-login-simple'));
-    }
-
-    function stopAutoRefresh() {
-      if (autoRefreshTimer) {
-        clearInterval(autoRefreshTimer);
-        autoRefreshTimer = null;
-      }
-    }
-
-    function toggleAutoRefresh(enabled) {
-      try { sessionStorage.setItem(autoRefreshKey, enabled ? '1' : '0'); } catch {}
+    return;
+  }
+  setStatus('Updating admin password...');
+  try {
+    const response = await fetch('/api/admin/password', {
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newAdminPassword, confirmAdminPassword }),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to update admin password');
+    newPasswordInput.value = '';
+    confirmPasswordInput.value = '';
+    if (result.sessionsInvalidated) {
       stopAutoRefresh();
-      if (!enabled || isLoginPage()) return;
-      autoRefreshTimer = setInterval(() => {
-        if (!token() || isLoadingRegistrations) return;
-        loadRegistrations({ silent: true, preserveSelection: activeTab === 'giving' });
-      }, 90000);
-    }
-
-    function handleAuthFailure(response, payload) {
-      if (response.status !== 401) return false;
       clearAdminSession();
-      setAdminNotice(payload?.error || 'Your admin session expired. Please log in again.');
-      if (!isLoginPage()) {
-        window.location.replace('/admin/login');
-      } else {
-        setStatus(payload?.error || 'Your admin session expired. Please log in again.', 'error');
-      }
-      return true;
-    }
-
-    function restoreAdminSession() {
-      const onLoginPage = isLoginPage();
-      const storedToken = sessionStorage.getItem(adminSessionKey) || '';
-      const requestedTab = new URLSearchParams(window.location.search).get('tab');
-      const input = document.getElementById('adminToken');
-      if (storedToken && input) input.value = storedToken;
-      refreshDataAsOf();
-      const notice = consumeAdminNotice();
-      if (notice) setStatus(notice, 'info');
-      const autoRefreshEnabled = (sessionStorage.getItem(autoRefreshKey) || '0') === '1';
-      const autoRefreshToggle = document.getElementById('autoRefreshToggle');
-      if (autoRefreshToggle) {
-        autoRefreshToggle.checked = autoRefreshEnabled;
-      }
-      if (!onLoginPage && !storedToken) {
-        window.location.replace('/admin/login');
-        return;
-      }
-      if (onLoginPage && storedToken) {
-        window.location.replace('/admin');
-        return;
-      }
-      if (!onLoginPage && storedToken) {
-        if (requestedTab && document.getElementById('tab-' + requestedTab)) switchTab(requestedTab);
-        toggleAutoRefresh(autoRefreshEnabled);
-        setTimeout(() => loadRegistrations(), 80);
-      }
-    }
-
-    async function loginFromAdminPage(event) {
-      event.preventDefault();
-      const password = document.getElementById('adminToken')?.value.trim();
-      const actor = adminActor();
-      const submit = event.submitter;
-      if (!password) { setStatus('Enter the admin password.', 'error'); return; }
-      if (submit) { submit.classList.add('loading'); submit.disabled = true; }
-      try {
-        const response = await fetch('/api/admin/session', {
-          method: 'POST',
-          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password, actor })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || 'Unable to log in');
-        const authenticated = result.mfaRequired
-          ? await window.AgapayMfa.runFlow(result, { displayName: actor || 'AGAPAY administrator' })
-          : result;
-        if (!authenticated.token) throw new Error('Session token missing from response');
-        saveAdminSession(authenticated.token);
-        try { sessionStorage.setItem(adminActorKey, authenticated.actor || actor || 'Admin'); } catch {}
-        window.location.href = '/admin';
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (submit) { submit.classList.remove('loading'); submit.disabled = false; }
-      }
-    }
-
-    function logoutAdmin() {
-      stopAutoRefresh();
-      clearAdminSession();
+      setAdminNotice('Admin password updated. Please log in again with the new password.');
       window.location.href = '/admin/login';
+      return;
     }
-
-    // --- REBUILT SET STATUS FOR FLOATING TOASTS ---
-    function setStatus(message, tone = '') {
-      if (!message) return;
-      const container = document.getElementById('toastContainer');
-      if (!container) return;
-      
-      const toast = document.createElement('div');
-      toast.className = tone ? `toast ${tone}` : 'toast';
-      toast.textContent = message;
-      
-      container.appendChild(toast);
-      
-      // Trigger reflow to apply animation
-      void toast.offsetWidth;
-      toast.classList.add('show');
-      
-      setTimeout(() => {
-        toast.classList.remove('show');
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300); // Remove from DOM after fade out
-      }, 4000);
+    setStatus('Admin password updated successfully.', 'success');
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    function setPaymentStatus(message, tone = '') {
-      const paymentStatus = document.getElementById('paymentStatus');
-      if (paymentStatus) paymentStatus.textContent = message || '';
-      setStatus(message, tone);
-    }
-
-    function authHeaders(extra = {}) {
-      return {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ' + token(),
-        ...extra
-      };
-    }
-
-    async function changeAdminPassword(btn) {
-      if (!token()) {
-        setStatus('Log in first to update the admin password.', 'error');
-        return;
-      }
-      
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-
-      const newPasswordInput = document.getElementById('newAdminPassword');
-      const confirmPasswordInput = document.getElementById('confirmAdminPassword');
-      const newAdminPassword = newPasswordInput.value.trim();
-      const confirmAdminPassword = confirmPasswordInput.value.trim();
-
-      if (newAdminPassword.length < 12) {
-        setStatus('Admin password must be at least 12 characters.', 'error');
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-        return;
-      }
-      if (newAdminPassword !== confirmAdminPassword) {
-        setStatus('Admin passwords do not match.', 'error');
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-        return;
-      }
-
-      setStatus('Updating admin password...');
-      try {
-        const response = await fetch('/api/admin/password', {
-          method: 'PATCH',
-          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ newAdminPassword, confirmAdminPassword })
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to update admin password');
-
-        newPasswordInput.value = '';
-        confirmPasswordInput.value = '';
-        if (result.sessionsInvalidated) {
-          stopAutoRefresh();
-          clearAdminSession();
-          setAdminNotice('Admin password updated. Please log in again with the new password.');
-          window.location.href = '/admin/login';
-          return;
-        }
-        setStatus('Admin password updated successfully.', 'success');
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    function nextAction(reg) {
-      if (!reg) return { title: 'No registration selected', body: 'Load registrations, then choose a parish from the list.' };
-      const workflowBlocker = reg.onboardingWorkflow?.blockers?.[0];
-      if (workflowBlocker) return { title: onboardingActionTitle(workflowBlocker.title), body: workflowBlocker.detail || 'Open the parish record to continue.' };
-      if (reg.onboardingWorkflow?.canGoLive) return { title: 'Waiting for treasurer', body: 'The parish has one final action: review the launch summary and click Go Live.' };
-      if (reg.onboardingWorkflow?.state === 'LIVE') return { title: 'Parish is live', body: 'Giving is active and the treasurer signoff is recorded.' };
-      if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
-      if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send parish dashboard access', body: 'The trial uses one parish dashboard credential. Individual treasurer access begins after the subscription becomes paid.' };
-      if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Confirm Stripe', body: 'The parish connects Stripe in its dashboard. Check the saved connection and readiness here.' };
-      if (!['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout, start a free demo, or mark a monastery/skete as free forever.' };
-      return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
-    }
-
-    function renderQueueNext(reg) {
-      const action = nextAction(reg);
-      const queueNext = document.getElementById('queueNext');
-      if (!queueNext) return;
-      queueNext.innerHTML = `
+  }
+}
+function nextAction(reg) {
+  if (!reg)
+    return { title: 'No registration selected', body: 'Load registrations, then choose a parish from the list.' };
+  const workflowBlocker = reg.onboardingWorkflow?.blockers?.[0];
+  if (workflowBlocker)
+    return {
+      title: onboardingActionTitle(workflowBlocker.title),
+      body: workflowBlocker.detail || 'Open the parish record to continue.',
+    };
+  if (reg.onboardingWorkflow?.canGoLive)
+    return {
+      title: 'Waiting for treasurer',
+      body: 'The parish has one final action: review the launch summary and click Go Live.',
+    };
+  if (reg.onboardingWorkflow?.state === 'LIVE')
+    return { title: 'Parish is live', body: 'Giving is active and the treasurer signoff is recorded.' };
+  if ((reg.status || 'pending') !== 'verified')
+    return {
+      title: 'Review canonical standing',
+      body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.',
+    };
+  if (reg.dashboardInviteEmailStatus !== 'sent')
+    return {
+      title: 'Send parish dashboard access',
+      body: 'The trial uses one parish dashboard credential. Individual treasurer access begins after the subscription becomes paid.',
+    };
+  if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus))
+    return {
+      title: 'Confirm Stripe',
+      body: 'The parish connects Stripe in its dashboard. Check the saved connection and readiness here.',
+    };
+  if (!['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus))
+    return {
+      title: 'Set up AGAPAY subscription',
+      body: 'Create subscription checkout, start a free demo, or mark a monastery/skete as free forever.',
+    };
+  return {
+    title: 'Parish is ready',
+    body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.',
+  };
+}
+function renderQueueNext(reg) {
+  const action = nextAction(reg);
+  const queueNext = document.getElementById('queueNext');
+  if (!queueNext) return;
+  queueNext.innerHTML = `
         <div>
           <strong>${escapeHtml(action.title)}</strong>
           <span>${escapeHtml(action.body)}</span>
         </div>
         <button class="secondary" onclick="loadRegistrations()">Refresh queue</button>
       `;
-    }
-
-    // --- REBUILT WITH ANIMATION DELAYS ---
-    function renderGrowthBars(summary, mode) {
-      const monthly = summary.monthly || [];
-      const maxValue = Math.max(
-        ...monthly.map(item => mode === 'donations'
-          ? Number(item.ytdDonationsCents || 0)
-          : Math.max(Number(item.registered || 0), Number(item.verified || 0))
-        ),
-        1
-      );
-
-      return monthly.map((item, index) => {
-        const primary = mode === 'donations' ? Number(item.ytdDonationsCents || 0) : Number(item.registered || 0);
-        const secondary = mode === 'donations' ? Number(item.giftCount || 0) : Number(item.verified || 0);
-        const primaryHeight = Math.max(primary ? 5 : 3, Math.round((primary / maxValue) * 145));
-        const secondaryHeight = mode === 'donations'
-          ? 0
-          : Math.max(secondary ? 5 : 0, Math.round((secondary / maxValue) * 145));
-        const title = mode === 'donations'
+}
+function renderGrowthBars(summary, mode) {
+  const monthly = summary.monthly || [];
+  const maxValue = Math.max(
+    ...monthly.map((item) =>
+      mode === 'donations'
+        ? Number(item.ytdDonationsCents || 0)
+        : Math.max(Number(item.registered || 0), Number(item.verified || 0))
+    ),
+    1
+  );
+  return monthly
+    .map((item, index) => {
+      const primary = mode === 'donations' ? Number(item.ytdDonationsCents || 0) : Number(item.registered || 0);
+      const secondary = mode === 'donations' ? Number(item.giftCount || 0) : Number(item.verified || 0);
+      const primaryHeight = Math.max(primary ? 5 : 3, Math.round((primary / maxValue) * 145));
+      const secondaryHeight =
+        mode === 'donations' ? 0 : Math.max(secondary ? 5 : 0, Math.round((secondary / maxValue) * 145));
+      const title =
+        mode === 'donations'
           ? `${item.label}: ${moneyShort(primary)} / ${secondary} gifts`
           : `${item.label}: ${primary} registered / ${secondary} verified`;
-        return `
+      return `
           <div class="growth-bar-wrap" title="${escapeAttr(title)}">
             <div class="growth-bar-stack" style="animation-delay: ${index * 0.04}s">
               ${secondaryHeight ? `<div class="growth-bar alt" style="height:${secondaryHeight}px;"></div>` : ''}
@@ -308,35 +277,35 @@ let selectedReference = '';
             <div class="growth-label">${escapeHtml(item.label)}</div>
           </div>
         `;
-      }).join('');
-    }
-
-    function renderPlatformGrowth(summary) {
-      if (summary?.overviewMetrics) renderAdminOverviewMetrics(summary.overviewMetrics);
-      latestPlatformSummary = summary || null;
-      renderProductOverview();
-      const pane = document.getElementById('platformGrowthPane');
-      if (!pane) return;
-      const donationSource = summary.donationDataSource || 'local_only';
-      const donationNote = donationSource === 'stripe'
-        ? 'Donation volume is based on successful Stripe charges for connected parish accounts.'
-        : donationSource === 'partial'
-          ? `Stripe data is partially available. ${summary.donationError || ''}`
-          : donationSource === 'not_connected'
-            ? 'Donation volume will appear after parishes connect Stripe and receive gifts.'
-            : 'Donation volume needs admin Stripe reporting; registration growth is shown from AGAPAY records.';
-
-      pane.innerHTML = `
+    })
+    .join('');
+}
+function renderPlatformGrowth(summary) {
+  if (summary?.overviewMetrics) renderAdminOverviewMetrics(summary.overviewMetrics);
+  latestPlatformSummary = summary || null;
+  renderProductOverview();
+  const pane = document.getElementById('platformGrowthPane');
+  if (!pane) return;
+  const donationSource = summary.donationDataSource || 'local_only';
+  const donationNote =
+    donationSource === 'stripe'
+      ? 'Donation volume is based on successful Stripe charges for connected parish accounts.'
+      : donationSource === 'partial'
+        ? `Stripe data is partially available. ${summary.donationError || ''}`
+        : donationSource === 'not_connected'
+          ? 'Donation volume will appear after parishes connect Stripe and receive gifts.'
+          : 'Donation volume needs admin Stripe reporting; registration growth is shown from AGAPAY records.';
+  pane.innerHTML = `
         <div class="growth-stats">
           <div class="growth-stat"><strong>${summary.totalRegistered || 0}</strong><span>Total registrations</span></div>
           <div class="growth-stat"><strong>${summary.totalVerified || 0}</strong><span>Verified parishes</span></div>
           <div class="growth-stat"><strong>${summary.connectedStripeAccounts || 0}</strong><span>Stripe connected</span></div>
-          <div class="growth-stat"><strong>${moneyShort(summary.ytdDonationsCents || 0)}</strong><span>${summary.year || new Date().getFullYear()} donations</span></div>
+          <div class="growth-stat"><strong>${moneyShort(summary.ytdDonationsCents || 0)}</strong><span>${summary.year || /* @__PURE__ */ new Date().getFullYear()} donations</span></div>
         </div>
         <div class="growth-chart-card">
           <div class="growth-chart-title">Parish Growth <span>Gold registered / navy verified</span></div>
           <div class="growth-bars">${renderGrowthBars(summary, 'registrations')}</div>
-          <div class="growth-note">${summary.year || new Date().getFullYear()} monthly registration activity.</div>
+          <div class="growth-note">${summary.year || /* @__PURE__ */ new Date().getFullYear()} monthly registration activity.</div>
         </div>
         <div class="growth-chart-card">
           <div class="growth-chart-title">Donation Volume <span>${escapeHtml(readable(donationSource))}</span></div>
@@ -344,11 +313,10 @@ let selectedReference = '';
           <div class="growth-note">${escapeHtml(donationNote)}</div>
         </div>
       `;
-      renderRevenueCards(summary.revenue || {});
-    }
-
-    function productCard({ slug, title, status, statusTone = 'good', metric, metricLabel, body, action, tab }) {
-      return `
+  renderRevenueCards(summary.revenue || {});
+}
+function productCard({ slug, title, status, statusTone = 'good', metric, metricLabel, body, action, tab }) {
+  return `
         <article class="product-overview-card product-${escapeAttr(slug)}">
           <div class="product-overview-head">
             <span>${escapeHtml(title)}</span>
@@ -360,83 +328,87 @@ let selectedReference = '';
           <button class="secondary btn-sm" onclick="switchTab('${escapeAttr(tab)}')">${escapeHtml(action)}</button>
         </article>
       `;
-    }
-
-    function renderProductOverview() {
-      const grid = document.getElementById('productOverviewGrid');
-      if (!grid) return;
-      const summary = latestPlatformSummary || computeLocalPlatformSummary(registrationsCache);
-      const learn = latestLearnAdmin || {};
-      const learnSubs = learn.subscriptions || {};
-      const learnCounts = learnSubs.counts || {};
-      const verified = Number(summary.totalVerified || 0);
-      const connected = Number(summary.connectedStripeAccounts || 0);
-      const pending = registrationsCache.filter(item => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length;
-      const learnActive = Number(learnCounts.active || 0) + Number(learnCounts.trialing || 0) + Number(learnCounts.freeForever || 0);
-      const attentionCount = registrationsCache.filter(item => Boolean(nextActionPriority(item))).length;
-      const healthScore = registrationsCache.length
-        ? Math.round(((registrationsCache.length - attentionCount) / registrationsCache.length) * 100)
-        : 100;
-
-      const healthEl = document.getElementById('overviewHealthScore');
-      const healthNote = document.getElementById('overviewHealthNote');
-      if (healthEl) healthEl.textContent = `${Math.max(0, Math.min(100, healthScore))}%`;
-      healthEl?.closest('.admin-focus-score-ring')?.style.setProperty('--admin-score', `${Math.max(0, Math.min(100, healthScore))}%`);
-      if (healthNote) healthNote.textContent = attentionCount
-        ? `${attentionCount} parish record${attentionCount === 1 ? '' : 's'} need an admin action.`
-        : 'No parish onboarding actions are waiting.';
-
-      grid.innerHTML = [
-        productCard({
-          slug: 'giving',
-          title: 'AGAPAY Give',
-          status: connected ? 'Live' : verified ? 'Needs Stripe' : 'Onboarding',
-          statusTone: connected ? 'good' : 'warn',
-          metric: `${verified} verified`,
-          metricLabel: `${connected} Stripe connected · ${pending} pending`,
-          body: `${moneyShort(summary.ytdDonationsCents || 0)} in ${summary.year || new Date().getFullYear()} gifts tracked through the admin summary.`,
-          action: 'Manage Giving',
-          tab: 'giving'
-        }),
-        productCard({
-          slug: 'learn',
-          title: 'AGAPAY Learn',
-          status: learnActive ? 'Live' : 'Ready',
-          statusTone: learnActive ? 'good' : 'warn',
-          metric: moneyShort(learnSubs.monthlyRecurringCents || 0),
-          metricLabel: `${learnActive} active/full-access household${learnActive === 1 ? '' : 's'}`,
-          body: `${Number(learnCounts.cancelled || 0)} cancellations and ${(learn.scholarships || []).length} scholarship code${(learn.scholarships || []).length === 1 ? '' : 's'} tracked.`,
-          action: 'Manage Learn',
-          tab: 'learn'
-        }),
-        productCard({
-          slug: 'marketplace',
-          title: 'Marketplace',
-          status: 'Coming Soon',
-          statusTone: 'soon',
-          metric: 'Waitlist',
-          metricLabel: 'Vendor and catalog tooling pending',
-          body: 'Admin will track vendors, products, orders, refunds, shipments, and seller payout readiness.',
-          action: 'View Roadmap',
-          tab: 'marketplace'
-        }),
-        productCard({
-          slug: 'directory',
-          title: 'Directory',
-          status: 'Coming Soon',
-          statusTone: 'soon',
-          metric: `${verified} seed records`,
-          metricLabel: 'Verified Giving communities can seed launch',
-          body: 'Admin will manage verified Orthodox organizations, claims, location quality, and public listing status.',
-          action: 'View Roadmap',
-          tab: 'directory'
-        })
-      ].join('');
-    }
-
-    function revenueProductRows(products) {
-      const rows = Array.isArray(products) ? products : [];
-      return rows.map(product => {
+}
+function renderProductOverview() {
+  const grid = document.getElementById('productOverviewGrid');
+  if (!grid) return;
+  const summary = latestPlatformSummary || computeLocalPlatformSummary(registrationsCache);
+  const learn = latestLearnAdmin || {};
+  const learnSubs = learn.subscriptions || {};
+  const learnCounts = learnSubs.counts || {};
+  const verified = Number(summary.totalVerified || 0);
+  const connected = Number(summary.connectedStripeAccounts || 0);
+  const pending = registrationsCache.filter((item) =>
+    ['pending', 'needs_more_info'].includes(item.status || 'pending')
+  ).length;
+  const learnActive =
+    Number(learnCounts.active || 0) + Number(learnCounts.trialing || 0) + Number(learnCounts.freeForever || 0);
+  const attentionCount = registrationsCache.filter((item) => Boolean(nextActionPriority(item))).length;
+  const healthScore = registrationsCache.length
+    ? Math.round(((registrationsCache.length - attentionCount) / registrationsCache.length) * 100)
+    : 100;
+  const healthEl = document.getElementById('overviewHealthScore');
+  const healthNote = document.getElementById('overviewHealthNote');
+  if (healthEl) healthEl.textContent = `${Math.max(0, Math.min(100, healthScore))}%`;
+  healthEl
+    ?.closest('.admin-focus-score-ring')
+    ?.style.setProperty('--admin-score', `${Math.max(0, Math.min(100, healthScore))}%`);
+  if (healthNote)
+    healthNote.textContent = attentionCount
+      ? `${attentionCount} parish record${attentionCount === 1 ? '' : 's'} need an admin action.`
+      : 'No parish onboarding actions are waiting.';
+  grid.innerHTML = [
+    productCard({
+      slug: 'giving',
+      title: 'AGAPAY Give',
+      status: connected ? 'Live' : verified ? 'Needs Stripe' : 'Onboarding',
+      statusTone: connected ? 'good' : 'warn',
+      metric: `${verified} verified`,
+      metricLabel: `${connected} Stripe connected · ${pending} pending`,
+      body: `${moneyShort(summary.ytdDonationsCents || 0)} in ${summary.year || /* @__PURE__ */ new Date().getFullYear()} gifts tracked through the admin summary.`,
+      action: 'Manage Giving',
+      tab: 'giving',
+    }),
+    productCard({
+      slug: 'learn',
+      title: 'AGAPAY Learn',
+      status: learnActive ? 'Live' : 'Ready',
+      statusTone: learnActive ? 'good' : 'warn',
+      metric: moneyShort(learnSubs.monthlyRecurringCents || 0),
+      metricLabel: `${learnActive} active/full-access household${learnActive === 1 ? '' : 's'}`,
+      body: `${Number(learnCounts.cancelled || 0)} cancellations and ${(learn.scholarships || []).length} scholarship code${(learn.scholarships || []).length === 1 ? '' : 's'} tracked.`,
+      action: 'Manage Learn',
+      tab: 'learn',
+    }),
+    productCard({
+      slug: 'marketplace',
+      title: 'Marketplace',
+      status: 'Coming Soon',
+      statusTone: 'soon',
+      metric: 'Waitlist',
+      metricLabel: 'Vendor and catalog tooling pending',
+      body: 'Admin will track vendors, products, orders, refunds, shipments, and seller payout readiness.',
+      action: 'View Roadmap',
+      tab: 'marketplace',
+    }),
+    productCard({
+      slug: 'directory',
+      title: 'Directory',
+      status: 'Coming Soon',
+      statusTone: 'soon',
+      metric: `${verified} seed records`,
+      metricLabel: 'Verified Giving communities can seed launch',
+      body: 'Admin will manage verified Orthodox organizations, claims, location quality, and public listing status.',
+      action: 'View Roadmap',
+      tab: 'directory',
+    }),
+  ].join('');
+}
+function revenueProductRows(products) {
+  const rows = Array.isArray(products) ? products : [];
+  return (
+    rows
+      .map((product) => {
         const count = Number(product.activeCount || 0) + Number(product.trialingCount || 0);
         return `
           <div class="revenue-row">
@@ -447,22 +419,23 @@ let selectedReference = '';
             <b>${moneyShort(product.monthlyCents || 0)}</b>
           </div>
         `;
-      }).join('') || '<div class="revenue-empty">No active subscription records yet.</div>';
-    }
-
-    function renderRevenueCards(revenue) {
-      const grid = document.getElementById('adminRevenueGrid');
-      if (!grid) return;
-      const subscription = revenue.subscriptionRevenue || {};
-      const fees = revenue.donationFeeRevenue || {};
-      grid.innerHTML = `
+      })
+      .join('') || '<div class="revenue-empty">No active subscription records yet.</div>'
+  );
+}
+function renderRevenueCards(revenue) {
+  const grid = document.getElementById('adminRevenueGrid');
+  if (!grid) return;
+  const subscription = revenue.subscriptionRevenue || {};
+  const fees = revenue.donationFeeRevenue || {};
+  grid.innerHTML = `
         <article class="revenue-card revenue-card-subscriptions">
           <div class="revenue-card-head">
             <div>
               <span>Monthly subscriptions</span>
               <h3>${moneyShort(subscription.totalMonthlyCents || 0)}</h3>
             </div>
-            <small>${escapeHtml(subscription.monthLabel || monthLabel(new Date().getMonth()))}</small>
+            <small>${escapeHtml(subscription.monthLabel || monthLabel(/* @__PURE__ */ new Date().getMonth()))}</small>
           </div>
           <div class="revenue-rows">${revenueProductRows(subscription.products)}</div>
           <p>${escapeHtml(subscription.note || 'Estimated monthly subscription revenue by product.')}</p>
@@ -473,25 +446,36 @@ let selectedReference = '';
               <span>Legacy donation fees</span>
               <h3>${moneyShort(fees.agapayFeeCents || 0)}</h3>
             </div>
-            <small>${escapeHtml(fees.monthLabel || monthLabel(new Date().getMonth()))}</small>
+            <small>${escapeHtml(fees.monthLabel || monthLabel(/* @__PURE__ */ new Date().getMonth()))}</small>
           </div>
           <div class="revenue-fee-stats">
             <div><strong>${moneyShort(fees.grossGiftCents || 0)}</strong><span>Gross gifts</span></div>
             <div><strong>${fees.giftCount || 0}</strong><span>Gifts</span></div>
             <div><strong>${fees.connectedAccounts || 0}</strong><span>Accounts</span></div>
           </div>
-          <p>${escapeHtml(fees.note || "AGAPAY no longer charges a donation fee; this reflects legacy application-fee revenue from before the change.")}</p>
+          <p>${escapeHtml(fees.note || 'AGAPAY no longer charges a donation fee; this reflects legacy application-fee revenue from before the change.')}</p>
         </article>
       `;
-    }
-
-    function renderLearnGrowthBars(monthly = []) {
-      const maxValue = Math.max(...monthly.map(item => Math.max(Number(item.newSubscriptions || 0), Number(item.cancellations || 0), Number(item.active || 0))), 1);
-      return monthly.map((item, index) => {
-        const activeHeight = Math.max(item.active ? 5 : 3, Math.round((Number(item.active || 0) / maxValue) * 130));
-        const newHeight = Math.max(item.newSubscriptions ? 5 : 0, Math.round((Number(item.newSubscriptions || 0) / maxValue) * 130));
-        const cancelHeight = Math.max(item.cancellations ? 5 : 0, Math.round((Number(item.cancellations || 0) / maxValue) * 130));
-        return `
+}
+function renderLearnGrowthBars(monthly = []) {
+  const maxValue = Math.max(
+    ...monthly.map((item) =>
+      Math.max(Number(item.newSubscriptions || 0), Number(item.cancellations || 0), Number(item.active || 0))
+    ),
+    1
+  );
+  return monthly
+    .map((item, index) => {
+      const activeHeight = Math.max(item.active ? 5 : 3, Math.round((Number(item.active || 0) / maxValue) * 130));
+      const newHeight = Math.max(
+        item.newSubscriptions ? 5 : 0,
+        Math.round((Number(item.newSubscriptions || 0) / maxValue) * 130)
+      );
+      const cancelHeight = Math.max(
+        item.cancellations ? 5 : 0,
+        Math.round((Number(item.cancellations || 0) / maxValue) * 130)
+      );
+      return `
           <div class="growth-bar-wrap" title="${escapeAttr(`${item.label}: ${item.newSubscriptions || 0} new / ${item.cancellations || 0} cancelled / ${item.active || 0} net active`)}">
             <div class="growth-bar-stack" style="animation-delay:${index * 0.04}s">
               ${cancelHeight ? `<div class="growth-bar danger" style="height:${cancelHeight}px;"></div>` : ''}
@@ -501,17 +485,19 @@ let selectedReference = '';
             <div class="growth-label">${escapeHtml(item.label)}</div>
           </div>
         `;
-      }).join('');
-    }
-
-    function renderLearnScholarships(scholarships = []) {
-      const list = document.getElementById('learnScholarshipList');
-      if (!list) return;
-      if (!scholarships.length) {
-        list.innerHTML = '<div class="revenue-empty">No Learn scholarship codes have been generated yet.</div>';
-        return;
-      }
-      list.innerHTML = scholarships.map((item) => `
+    })
+    .join('');
+}
+function renderLearnScholarships(scholarships = []) {
+  const list = document.getElementById('learnScholarshipList');
+  if (!list) return;
+  if (!scholarships.length) {
+    list.innerHTML = '<div class="revenue-empty">No Learn scholarship codes have been generated yet.</div>';
+    return;
+  }
+  list.innerHTML = scholarships
+    .map(
+      (item) => `
         <div class="learn-scholarship-row">
           <div>
             <strong>${escapeHtml(item.code || '')}</strong>
@@ -519,47 +505,53 @@ let selectedReference = '';
           </div>
           <button class="secondary btn-sm" onclick="copyLearnText('${jsAttr(item.code || '')}', 'Scholarship code copied.')">Copy</button>
         </div>
-      `).join('');
-    }
-
-    function renderLearnCommunityModeration(moderation = {}) {
-      const list = document.getElementById('learnCommunityModeration');
-      if (!list) return;
-      const counts = moderation.counts || {};
-      const resources = moderation.resources || [];
-      list.innerHTML = `
+      `
+    )
+    .join('');
+}
+function renderLearnCommunityModeration(moderation = {}) {
+  const list = document.getElementById('learnCommunityModeration');
+  if (!list) return;
+  const counts = moderation.counts || {};
+  const resources = moderation.resources || [];
+  list.innerHTML = `
         <div class="learn-moderation-summary">
           <span><strong>${Number(counts.pending || 0)}</strong> Pending</span>
           <span><strong>${Number(counts.flagged || 0)}</strong> Flagged</span>
           <span><strong>${Number(counts.approved || 0)}</strong> Approved</span>
           <span><strong>${Number(counts.hidden || 0)}</strong> Hidden</span>
         </div>
-        <div class="learn-moderation-list">${resources.map((item) => {
-          const flags = Array.isArray(item.flags) ? item.flags : [];
-          const curated = item.vetted || item.source === 'agapay-curated';
-          return `<article class="learn-moderation-row ${flags.length ? 'is-flagged' : ''}">
+        <div class="learn-moderation-list">${
+          resources
+            .map((item) => {
+              const flags = Array.isArray(item.flags) ? item.flags : [];
+              const curated = item.vetted || item.source === 'agapay-curated';
+              return `<article class="learn-moderation-row ${flags.length ? 'is-flagged' : ''}">
             <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(item.status || 'pending'))}${curated ? ' · AGAPAY CURATED' : ''}${flags.length ? ` · ${flags.length} flag${flags.length === 1 ? '' : 's'}` : ''}</span><strong>${escapeHtml(item.title || 'Untitled resource')}</strong><a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url || '')}</a><small>${escapeHtml(item.description || '')}</small><small>${curated ? 'Published by' : 'Submitted by'} ${escapeHtml(item.submittedBy || 'Unknown')} · ${escapeHtml(shortDate(item.createdAt))}</small>${flags.length ? `<div class="learn-flag-reasons">${flags.map((flag) => `<span>${escapeHtml(flag.reason || 'Flagged for review')}</span>`).join('')}</div>` : ''}</div>
             <div class="learn-moderation-actions">${curated ? `<button class="secondary btn-sm" onclick="editLearnCuratedResource('${jsAttr(item.id || '')}')">Edit</button>` : ''}<button class="gold btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','approved',this)">Approve</button><button class="secondary btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','hidden',this)">Hide</button><button class="danger btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','removed',this)">Remove</button></div>
           </article>`;
-        }).join('') || '<div class="revenue-empty">No community submissions are waiting for review.</div>'}</div>`;
-    }
-
-    function renderLearnFeedbackQueue(feedback = {}) {
-      const list = document.getElementById('learnFeedbackQueue');
-      if (!list) return;
-      const counts = feedback.counts || {};
-      const suggestions = feedback.suggestions || [];
-      list.innerHTML = `
+            })
+            .join('') || '<div class="revenue-empty">No community submissions are waiting for review.</div>'
+        }</div>`;
+}
+function renderLearnFeedbackQueue(feedback = {}) {
+  const list = document.getElementById('learnFeedbackQueue');
+  if (!list) return;
+  const counts = feedback.counts || {};
+  const suggestions = feedback.suggestions || [];
+  list.innerHTML = `
         <div class="learn-moderation-summary">
           <span><strong>${Number(counts.new || 0)}</strong> New</span>
           <span><strong>${Number(counts['seen-considered'] || 0)}</strong> Seen</span>
           <span><strong>${Number(counts.archived || 0)}</strong> Archived</span>
           <span><strong>${Number(counts.total || 0)}</strong> Total</span>
         </div>
-        <div class="learn-feedback-list">${suggestions.map((item) => {
-          const isNew = (item.status || 'new') === 'new';
-          const notification = item.userNotification || {};
-          return `<article class="learn-feedback-row ${isNew ? 'is-new' : ''}">
+        <div class="learn-feedback-list">${
+          suggestions
+            .map((item) => {
+              const isNew = (item.status || 'new') === 'new';
+              const notification = item.userNotification || {};
+              return `<article class="learn-feedback-row ${isNew ? 'is-new' : ''}">
             <div class="learn-moderation-copy">
               <span class="learn-moderation-status">${escapeHtml(readable(item.status || 'new'))}${notification.status ? ` · Notification: ${escapeHtml(readable(notification.status))}` : ''}</span>
               <strong>${escapeHtml(item.subject || 'Learn Dashboard suggestion')}</strong>
@@ -571,72 +563,85 @@ let selectedReference = '';
               ${isNew ? `<button class="gold btn-sm" onclick="acknowledgeLearnFeedback('${jsAttr(item.id || '')}',this)">Seen & considered</button>` : '<span class="learn-feedback-done">Done</span>'}
             </div>
           </article>`;
-        }).join('') || '<div class="revenue-empty">No Learn dashboard suggestions have been submitted yet.</div>'}</div>`;
-    }
-
-    function renderParishSupportTickets(data = {}) {
-      const list = document.getElementById('parishSupportTicketQueue');
-      if (!list) return;
-      const counts = data.counts || {};
-      const tickets = data.tickets || [];
-      list.innerHTML = `
+            })
+            .join('') || '<div class="revenue-empty">No Learn dashboard suggestions have been submitted yet.</div>'
+        }</div>`;
+}
+function renderParishSupportTickets(data = {}) {
+  const list = document.getElementById('parishSupportTicketQueue');
+  if (!list) return;
+  const counts = data.counts || {};
+  const tickets = data.tickets || [];
+  list.innerHTML = `
         <div class="learn-moderation-summary"><span><strong>${Number(counts.new || 0)}</strong> New</span><span><strong>${Number(counts.in_progress || 0)}</strong> In progress</span><span><strong>${Number(counts.resolved || 0)}</strong> Resolved</span><span><strong>${Number(counts.total || 0)}</strong> Total</span></div>
-        <div class="learn-feedback-list">${tickets.map((ticket) => `<article class="learn-feedback-row ${(ticket.status || 'new') === 'new' ? 'is-new' : ''}">
+        <div class="learn-feedback-list">${
+          tickets
+            .map(
+              (ticket) => `<article class="learn-feedback-row ${(ticket.status || 'new') === 'new' ? 'is-new' : ''}">
           <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(ticket.status || 'new'))} · ${escapeHtml(readable(ticket.type || 'help'))} · ${escapeHtml(ticket.source === 'myagapay' ? 'My AGAPAY' : 'Parish dashboard')}${ticket.email?.status ? ` · Email: ${escapeHtml(readable(ticket.email.status))}` : ''}</span><strong>${escapeHtml(ticket.subject || 'Parish support ticket')}</strong><p>${escapeHtml(ticket.message || '')}</p><small>${escapeHtml(ticket.parishName || ticket.parishId || 'Parish')} · ${escapeHtml(ticket.page || 'dashboard')} · ${escapeHtml(ticket.submittedBy || 'No reply address')} · ${escapeHtml(shortDate(ticket.createdAt))}</small>${ticket.adminNote ? `<small>Note: ${escapeHtml(ticket.adminNote)} · ${escapeHtml(ticket.updatedBy || 'Admin')}</small>` : ''}</div>
           <div class="learn-moderation-actions"><select id="support-status-${jsAttr(ticket.id)}"><option value="new" ${ticket.status === 'new' ? 'selected' : ''}>New</option><option value="in_progress" ${ticket.status === 'in_progress' ? 'selected' : ''}>In progress</option><option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>Resolved</option><option value="closed" ${ticket.status === 'closed' ? 'selected' : ''}>Closed</option></select><button class="gold btn-sm" onclick="updateParishSupportTicket('${jsAttr(ticket.id)}',this)">Save</button></div>
-        </article>`).join('') || '<div class="revenue-empty">No parish support tickets have been submitted yet.</div>'}</div>`;
-    }
-
-    async function loadParishSupportTickets() {
-      const list = document.getElementById('parishSupportTicketQueue');
-      if (list) list.innerHTML = '<div class="revenue-empty">Loading parish support tickets…</div>';
-      try {
-        const response = await fetch('/api/admin/parish-support-tickets', { headers: authHeaders() });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load parish support tickets.');
-        renderParishSupportTickets(result);
-      } catch (error) { if (list) list.innerHTML = `<div class="revenue-empty">${escapeHtml(error.message || 'Unable to load parish support tickets.')}</div>`; }
-    }
-
-    async function updateParishSupportTicket(ticketId, button) {
-      const select = document.getElementById(`support-status-${ticketId}`);
-      if (!select) return;
-      button.disabled = true;
-      try {
-        const response = await fetch(`/api/admin/parish-support-tickets/${encodeURIComponent(ticketId)}`, { method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ status: select.value }) });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to update ticket.');
-        setStatus('Support ticket updated.', 'success');
-        await loadParishSupportTickets();
-      } catch (error) { setStatus(error.message || 'Unable to update ticket.', 'error'); } finally { button.disabled = false; }
-    }
-
-    function renderLearnAdmin(data = {}) {
-      const pane = document.getElementById('learnAdminPane');
-      if (!pane) return;
-      const subscriptions = data.subscriptions || {};
-      const counts = subscriptions.counts || {};
-      latestLearnAdmin = data || {};
-      renderProductOverview();
-
-      // Update Learn hero header
-      const learnHeaderSubs = document.getElementById('learnHeaderSubs');
-      const learnHeaderMrr = document.getElementById('learnHeaderMrr');
-      const learnActive = Number(counts.active || 0) + Number(counts.trialing || 0) + Number(counts.freeForever || 0);
-      if (learnHeaderSubs) learnHeaderSubs.textContent = learnActive || '0';
-      const newFeedbackCount = Number(data.feedback?.counts?.new || 0);
-      if (learnHeaderMrr) learnHeaderMrr.textContent = `${moneyShort(subscriptions.monthlyRecurringCents || 0)}/mo · ${counts.cancelled || 0} cancelled · ${newFeedbackCount} new suggestion${newFeedbackCount === 1 ? '' : 's'}`;
-
-      pane.innerHTML = `
+        </article>`
+            )
+            .join('') || '<div class="revenue-empty">No parish support tickets have been submitted yet.</div>'
+        }</div>`;
+}
+async function loadParishSupportTickets() {
+  const list = document.getElementById('parishSupportTicketQueue');
+  if (list) list.innerHTML = '<div class="revenue-empty">Loading parish support tickets…</div>';
+  try {
+    const response = await fetch('/api/admin/parish-support-tickets', { headers: authHeaders() });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to load parish support tickets.');
+    renderParishSupportTickets(result);
+  } catch (error) {
+    if (list)
+      list.innerHTML = `<div class="revenue-empty">${escapeHtml(error.message || 'Unable to load parish support tickets.')}</div>`;
+  }
+}
+async function updateParishSupportTicket(ticketId, button) {
+  const select = document.getElementById(`support-status-${ticketId}`);
+  if (!select) return;
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/admin/parish-support-tickets/${encodeURIComponent(ticketId)}`, {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ status: select.value }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to update ticket.');
+    setStatus('Support ticket updated.', 'success');
+    await loadParishSupportTickets();
+  } catch (error) {
+    setStatus(error.message || 'Unable to update ticket.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+function renderLearnAdmin(data = {}) {
+  const pane = document.getElementById('learnAdminPane');
+  if (!pane) return;
+  const subscriptions = data.subscriptions || {};
+  const counts = subscriptions.counts || {};
+  latestLearnAdmin = data || {};
+  renderProductOverview();
+  const learnHeaderSubs = document.getElementById('learnHeaderSubs');
+  const learnHeaderMrr = document.getElementById('learnHeaderMrr');
+  const learnActive = Number(counts.active || 0) + Number(counts.trialing || 0) + Number(counts.freeForever || 0);
+  if (learnHeaderSubs) learnHeaderSubs.textContent = learnActive || '0';
+  const newFeedbackCount = Number(data.feedback?.counts?.new || 0);
+  if (learnHeaderMrr)
+    learnHeaderMrr.textContent = `${moneyShort(subscriptions.monthlyRecurringCents || 0)}/mo · ${counts.cancelled || 0} cancelled · ${newFeedbackCount} new suggestion${newFeedbackCount === 1 ? '' : 's'}`;
+  pane.innerHTML = `
         <article class="revenue-card">
           <div class="revenue-card-head">
             <div>
               <span>Learn monthly revenue</span>
               <h3>${moneyShort(subscriptions.monthlyRecurringCents || 0)}</h3>
             </div>
-            <small>${escapeHtml(String(subscriptions.year || new Date().getFullYear()))}</small>
+            <small>${escapeHtml(String(subscriptions.year || /* @__PURE__ */ new Date().getFullYear()))}</small>
           </div>
           <div class="revenue-fee-stats">
             <div><strong>${counts.active || 0}</strong><span>Active</span></div>
@@ -668,7 +673,10 @@ let selectedReference = '';
         <article class="growth-chart-card">
           <div class="growth-chart-title">Recent Learn Accounts <span>Latest billing records</span></div>
           <div class="learn-admin-recent">
-            ${(subscriptions.recent || []).map((item) => `
+            ${
+              (subscriptions.recent || [])
+                .map(
+                  (item) => `
               <div class="revenue-row">
                 <div>
                   <strong>${escapeHtml(item.email || 'Unknown household')}</strong>
@@ -676,723 +684,765 @@ let selectedReference = '';
                 </div>
                 <b>${escapeHtml(shortDate(item.updatedAt || item.createdAt))}</b>
               </div>
-            `).join('') || '<div class="revenue-empty">No Learn billing records yet.</div>'}
+            `
+                )
+                .join('') || '<div class="revenue-empty">No Learn billing records yet.</div>'
+            }
           </div>
         </article>
       `;
-      renderLearnScholarships(data.scholarships || []);
-      renderLearnFeedbackQueue(data.feedback || {});
-      renderLearnCommunityModeration(data.communityModeration || {});
+  renderLearnScholarships(data.scholarships || []);
+  renderLearnFeedbackQueue(data.feedback || {});
+  renderLearnCommunityModeration(data.communityModeration || {});
+}
+async function acknowledgeLearnFeedback(feedbackId, btn) {
+  if (!feedbackId) return;
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  try {
+    const response = await fetch(`/api/admin/learn/feedback/${encodeURIComponent(feedbackId)}`, {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ status: 'seen-considered' }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to acknowledge suggestion');
+    const notice =
+      result.feedback?.userNotification?.status === 'sent'
+        ? 'Suggestion marked seen and considered. Thank-you notification sent.'
+        : `Suggestion marked seen and considered. Notification status: ${readable(result.feedback?.userNotification?.status || 'unknown')}.`;
+    setStatus(notice, 'success');
+    await loadLearnAdmin();
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    async function acknowledgeLearnFeedback(feedbackId, btn) {
-      if (!feedbackId) return;
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      try {
-        const response = await fetch(`/api/admin/learn/feedback/${encodeURIComponent(feedbackId)}`, {
-          method: 'PATCH',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ status: 'seen-considered' })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to acknowledge suggestion');
-        const notice = result.feedback?.userNotification?.status === 'sent'
-          ? 'Suggestion marked seen and considered. Thank-you notification sent.'
-          : `Suggestion marked seen and considered. Notification status: ${readable(result.feedback?.userNotification?.status || 'unknown')}.`;
-        setStatus(notice, 'success');
-        await loadLearnAdmin();
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
+  }
+}
+async function moderateLearnCommunity(resourceId, status, btn) {
+  if (!resourceId) return;
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  try {
+    const response = await fetch(`/api/admin/learn/community/${encodeURIComponent(resourceId)}`, {
+      method: 'PATCH',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ status }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to update community resource');
+    setStatus(`Community resource marked ${status}.`, 'success');
+    await loadLearnAdmin();
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    async function moderateLearnCommunity(resourceId, status, btn) {
-      if (!resourceId) return;
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      try {
-        const response = await fetch(`/api/admin/learn/community/${encodeURIComponent(resourceId)}`, {
-          method: 'PATCH',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ status })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to update community resource');
-        setStatus(`Community resource marked ${status}.`, 'success');
-        await loadLearnAdmin();
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+}
+function clearLearnCuratedResourceForm() {
+  const idField = document.getElementById('learnCuratedResourceId');
+  if (idField) idField.value = '';
+  [
+    'learnCuratedTitle',
+    'learnCuratedUrl',
+    'learnCuratedCategory',
+    'learnCuratedResourceType',
+    'learnCuratedMediaType',
+    'learnCuratedAgeRange',
+    'learnCuratedTags',
+    'learnCuratedDescription',
+  ].forEach((id) => {
+    const field2 = document.getElementById(id);
+    if (field2) field2.value = '';
+  });
+  const pinned = document.getElementById('learnCuratedPinned');
+  if (pinned) pinned.checked = false;
+  const submit = document.getElementById('learnCuratedResourceSubmit');
+  if (submit) submit.textContent = 'Publish curated resource';
+  const status = document.getElementById('learnCuratedResourceStatus');
+  if (status) {
+    status.textContent = '';
+    status.className = 'payment-status';
+  }
+}
+function editLearnCuratedResource(resourceId) {
+  const resources = latestLearnAdmin?.communityModeration?.resources || [];
+  const item = resources.find((resource) => resource.id === resourceId);
+  if (!item) {
+    setStatus('Unable to find that curated resource. Refresh and try again.', 'error');
+    return;
+  }
+  const setValue = (id, value) => {
+    const field2 = document.getElementById(id);
+    if (field2) field2.value = value || '';
+  };
+  setValue('learnCuratedResourceId', item.id);
+  setValue('learnCuratedTitle', item.title);
+  setValue('learnCuratedUrl', item.url);
+  setValue('learnCuratedCategory', item.category);
+  setValue('learnCuratedResourceType', item.resourceType);
+  setValue('learnCuratedMediaType', item.mediaType);
+  setValue('learnCuratedAgeRange', item.ageRange);
+  setValue('learnCuratedTags', Array.isArray(item.tags) ? item.tags.join(', ') : item.tags);
+  setValue('learnCuratedDescription', item.description);
+  const pinned = document.getElementById('learnCuratedPinned');
+  if (pinned) pinned.checked = Boolean(item.pinned);
+  const submit = document.getElementById('learnCuratedResourceSubmit');
+  if (submit) submit.textContent = 'Save curated resource';
+  const status = document.getElementById('learnCuratedResourceStatus');
+  if (status) {
+    status.textContent = `Editing: ${item.title || 'Curated resource'}`;
+    status.className = 'payment-status';
+  }
+  document.getElementById('learnCuratedTitle')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+  });
+}
+async function createLearnCuratedResource(btn) {
+  const status = document.getElementById('learnCuratedResourceStatus');
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  if (status) {
+    status.textContent = 'Publishing curated resource...';
+    status.className = 'payment-status';
+  }
+  try {
+    const payload = {
+      action: 'update',
+      title: document.getElementById('learnCuratedTitle')?.value || '',
+      url: document.getElementById('learnCuratedUrl')?.value || '',
+      category: document.getElementById('learnCuratedCategory')?.value || '',
+      resourceType: document.getElementById('learnCuratedResourceType')?.value || '',
+      mediaType: document.getElementById('learnCuratedMediaType')?.value || '',
+      ageRange: document.getElementById('learnCuratedAgeRange')?.value || '',
+      tags: document.getElementById('learnCuratedTags')?.value || '',
+      description: document.getElementById('learnCuratedDescription')?.value || '',
+      pinned: Boolean(document.getElementById('learnCuratedPinned')?.checked),
+    };
+    const resourceId = document.getElementById('learnCuratedResourceId')?.value || '';
+    const response = await fetch(
+      resourceId ? `/api/admin/learn/community/${encodeURIComponent(resourceId)}` : '/api/admin/learn/community',
+      {
+        method: resourceId ? 'PATCH' : 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
       }
+    );
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok)
+      throw new Error(
+        result.error || (resourceId ? 'Unable to save curated resource' : 'Unable to publish curated resource')
+      );
+    clearLearnCuratedResourceForm();
+    if (status) {
+      status.textContent = `${resourceId ? 'Saved' : 'Published'}: ${result.resource?.title || payload.title}`;
+      status.className = 'payment-status success';
     }
-
-    function clearLearnCuratedResourceForm() {
-      const idField = document.getElementById('learnCuratedResourceId');
-      if (idField) idField.value = '';
-      [
-        'learnCuratedTitle',
-        'learnCuratedUrl',
-        'learnCuratedCategory',
-        'learnCuratedResourceType',
-        'learnCuratedMediaType',
-        'learnCuratedAgeRange',
-        'learnCuratedTags',
-        'learnCuratedDescription'
-      ].forEach((id) => {
-        const field = document.getElementById(id);
-        if (field) field.value = '';
-      });
-      const pinned = document.getElementById('learnCuratedPinned');
-      if (pinned) pinned.checked = false;
-      const submit = document.getElementById('learnCuratedResourceSubmit');
-      if (submit) submit.textContent = 'Publish curated resource';
-      const status = document.getElementById('learnCuratedResourceStatus');
-      if (status) {
-        status.textContent = '';
-        status.className = 'payment-status';
-      }
+    setStatus(
+      resourceId ? 'AGAPAY curated Learn resource saved.' : 'AGAPAY curated Learn resource published.',
+      'success'
+    );
+    await loadLearnAdmin();
+  } catch (err) {
+    if (status) {
+      status.textContent = err.message;
+      status.className = 'payment-status error';
     }
-
-    function editLearnCuratedResource(resourceId) {
-      const resources = latestLearnAdmin?.communityModeration?.resources || [];
-      const item = resources.find((resource) => resource.id === resourceId);
-      if (!item) {
-        setStatus('Unable to find that curated resource. Refresh and try again.', 'error');
-        return;
-      }
-      const setValue = (id, value) => {
-        const field = document.getElementById(id);
-        if (field) field.value = value || '';
-      };
-      setValue('learnCuratedResourceId', item.id);
-      setValue('learnCuratedTitle', item.title);
-      setValue('learnCuratedUrl', item.url);
-      setValue('learnCuratedCategory', item.category);
-      setValue('learnCuratedResourceType', item.resourceType);
-      setValue('learnCuratedMediaType', item.mediaType);
-      setValue('learnCuratedAgeRange', item.ageRange);
-      setValue('learnCuratedTags', Array.isArray(item.tags) ? item.tags.join(', ') : item.tags);
-      setValue('learnCuratedDescription', item.description);
-      const pinned = document.getElementById('learnCuratedPinned');
-      if (pinned) pinned.checked = Boolean(item.pinned);
-      const submit = document.getElementById('learnCuratedResourceSubmit');
-      if (submit) submit.textContent = 'Save curated resource';
-      const status = document.getElementById('learnCuratedResourceStatus');
-      if (status) {
-        status.textContent = `Editing: ${item.title || 'Curated resource'}`;
-        status.className = 'payment-status';
-      }
-      document.getElementById('learnCuratedTitle')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    async function createLearnCuratedResource(btn) {
-      const status = document.getElementById('learnCuratedResourceStatus');
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      if (status) {
-        status.textContent = 'Publishing curated resource...';
-        status.className = 'payment-status';
-      }
-      try {
-        const payload = {
-          action: 'update',
-          title: document.getElementById('learnCuratedTitle')?.value || '',
-          url: document.getElementById('learnCuratedUrl')?.value || '',
-          category: document.getElementById('learnCuratedCategory')?.value || '',
-          resourceType: document.getElementById('learnCuratedResourceType')?.value || '',
-          mediaType: document.getElementById('learnCuratedMediaType')?.value || '',
-          ageRange: document.getElementById('learnCuratedAgeRange')?.value || '',
-          tags: document.getElementById('learnCuratedTags')?.value || '',
-          description: document.getElementById('learnCuratedDescription')?.value || '',
-          pinned: Boolean(document.getElementById('learnCuratedPinned')?.checked)
-        };
-        const resourceId = document.getElementById('learnCuratedResourceId')?.value || '';
-        const response = await fetch(resourceId ? `/api/admin/learn/community/${encodeURIComponent(resourceId)}` : '/api/admin/learn/community', {
-          method: resourceId ? 'PATCH' : 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify(payload)
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || (resourceId ? 'Unable to save curated resource' : 'Unable to publish curated resource'));
-        clearLearnCuratedResourceForm();
-        if (status) {
-          status.textContent = `${resourceId ? 'Saved' : 'Published'}: ${result.resource?.title || payload.title}`;
-          status.className = 'payment-status success';
-        }
-        setStatus(resourceId ? 'AGAPAY curated Learn resource saved.' : 'AGAPAY curated Learn resource published.', 'success');
-        await loadLearnAdmin();
-      } catch (err) {
-        if (status) {
-          status.textContent = err.message;
-          status.className = 'payment-status error';
-        }
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
+  }
+}
+async function loadLearnAdmin(btn) {
+  if (!token()) {
+    setStatus('Log in to load AGAPAY Learn admin.', 'error');
+    return;
+  }
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  try {
+    const response = await fetch('/api/admin/learn/summary', { headers: authHeaders() });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to load AGAPAY Learn admin');
+    renderLearnAdmin(result.learn || {});
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    async function loadLearnAdmin(btn) {
-      if (!token()) {
-        setStatus('Log in to load AGAPAY Learn admin.', 'error');
-        return;
-      }
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      try {
-        const response = await fetch('/api/admin/learn/summary', { headers: authHeaders() });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load AGAPAY Learn admin');
-        renderLearnAdmin(result.learn || {});
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
+  }
+}
+async function copyLearnText(value, message = 'Copied.') {
+  try {
+    await navigator.clipboard.writeText(value);
+    setStatus(message, 'success');
+  } catch {
+    setStatus(value, 'info');
+  }
+}
+async function createLearnScholarship(btn) {
+  const status = document.getElementById('learnScholarshipStatus');
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  if (status) {
+    status.textContent = 'Generating scholarship code...';
+    status.className = 'payment-status';
+  }
+  try {
+    const payload = {
+      label: document.getElementById('learnScholarshipLabel')?.value || 'AGAPAY Learn scholarship',
+      percentOff: document.getElementById('learnScholarshipPercent')?.value || 100,
+      maxRedemptions: document.getElementById('learnScholarshipMax')?.value || 1,
+      code: document.getElementById('learnScholarshipCode')?.value || '',
+    };
+    const response = await fetch('/api/admin/learn/scholarships', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to generate scholarship code');
+    if (status) {
+      status.textContent = `Scholarship code ready: ${result.scholarship?.code || ''}`;
+      status.className = 'payment-status success';
     }
-
-    async function copyLearnText(value, message = 'Copied.') {
-      try {
-        await navigator.clipboard.writeText(value);
-        setStatus(message, 'success');
-      } catch {
-        setStatus(value, 'info');
-      }
+    document.getElementById('learnScholarshipCode').value = '';
+    await copyLearnText(result.scholarship?.code || '', 'Scholarship code copied.');
+    await loadLearnAdmin();
+  } catch (err) {
+    if (status) {
+      status.textContent = err.message;
+      status.className = 'payment-status error';
     }
-
-    async function createLearnScholarship(btn) {
-      const status = document.getElementById('learnScholarshipStatus');
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      if (status) {
-        status.textContent = 'Generating scholarship code...';
-        status.className = 'payment-status';
-      }
-      try {
-        const payload = {
-          label: document.getElementById('learnScholarshipLabel')?.value || 'AGAPAY Learn scholarship',
-          percentOff: document.getElementById('learnScholarshipPercent')?.value || 100,
-          maxRedemptions: document.getElementById('learnScholarshipMax')?.value || 1,
-          code: document.getElementById('learnScholarshipCode')?.value || ''
-        };
-        const response = await fetch('/api/admin/learn/scholarships', {
-          method: 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify(payload)
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to generate scholarship code');
-        if (status) {
-          status.textContent = `Scholarship code ready: ${result.scholarship?.code || ''}`;
-          status.className = 'payment-status success';
-        }
-        document.getElementById('learnScholarshipCode').value = '';
-        await copyLearnText(result.scholarship?.code || '', 'Scholarship code copied.');
-        await loadLearnAdmin();
-      } catch (err) {
-        if (status) {
-          status.textContent = err.message;
-          status.className = 'payment-status error';
-        }
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    async function seedDemoParish(btn) {
-      const status = document.getElementById('seedDemoStatus');
-      const parishInput = document.getElementById('seedDemoParishId');
-      const parishId = (parishInput?.value || '').trim();
-      if (!parishId) {
-        if (status) {
-          status.textContent = 'Enter the parish dashboard ID first.';
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        parishInput?.focus();
-        return;
-      }
-      btn.disabled = true;
-      btn.textContent = 'Seeding...';
-      if (status) status.textContent = '';
-      try {
-        const res = await fetch('/api/admin/seed-demo', {
-          method: 'POST',
-          headers: {
-            ...authHeaders(),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ parishId })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.ok) throw new Error(data.error || 'Seed failed');
-        btn.textContent = 'Seeded';
-        if (status) {
-          status.textContent = `${data.message || 'Demo data seeded.'} Dashboard: ${data.dashboardUrl || '/parish/dashboard'} · Give: ${data.giveUrl || `/give/${parishId}`}`;
-          status.style.color = 'var(--green, #2a7a4b)';
-        }
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = 'Seed demo data';
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-      } finally {
-        btn.disabled = false;
-      }
+  }
+}
+async function seedDemoParish(btn) {
+  const status = document.getElementById('seedDemoStatus');
+  const parishInput = document.getElementById('seedDemoParishId');
+  const parishId = (parishInput?.value || '').trim();
+  if (!parishId) {
+    if (status) {
+      status.textContent = 'Enter the parish dashboard ID first.';
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    function weeklyCommemorationSummary(results = [], dryRun = true) {
-      if (!results.length) return 'No matching parish was found for that dashboard ID.';
-      return results.map((row) => {
-        if (row.status === 'skipped') {
-          return `${row.parishName || row.parishId}: skipped (${row.reason || 'not eligible'}).`;
-        }
-        const counts = `${Number(row.entryCount || 0)} submissions, ${Number(row.livingCount || 0)} living names, ${Number(row.departedCount || 0)} departed names`;
-        const destination = row.to ? ` to ${row.to}` : '';
-        const action = dryRun ? 'Ready to send' : row.status === 'sent' ? 'Sent' : `Result: ${row.status || 'unknown'}`;
-        return `${action}${destination} for ${row.parishName || row.parishId}: ${counts}.`;
-      }).join(' ');
+    parishInput?.focus();
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Seeding...';
+  if (status) status.textContent = '';
+  try {
+    const res = await fetch('/api/admin/seed-demo', {
+      method: 'POST',
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ parishId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Seed failed');
+    btn.textContent = 'Seeded';
+    if (status) {
+      status.textContent = `${data.message || 'Demo data seeded.'} Dashboard: ${data.dashboardUrl || '/parish/dashboard'} · Give: ${data.giveUrl || `/give/${parishId}`}`;
+      status.style.color = 'var(--green, #2a7a4b)';
     }
-
-    async function runWeeklyCommemorationEmail(dryRun, btn) {
-      const status = document.getElementById('weeklyCommemorationStatus');
-      const parishInput = document.getElementById('weeklyCommemorationParishId');
-      const parishId = (parishInput?.value || '').trim();
-      if (!parishId) {
-        if (status) {
-          status.textContent = 'Enter the parish dashboard ID first.';
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        parishInput?.focus();
-        return;
-      }
-      if (!dryRun && !window.confirm(`Send this week's commemoration email for ${parishId} now?`)) return;
-
-      const previewBtn = document.getElementById('weeklyCommemorationPreviewBtn');
-      const sendBtn = document.getElementById('weeklyCommemorationSendBtn');
-      if (previewBtn) previewBtn.disabled = true;
-      if (sendBtn) sendBtn.disabled = true;
-      if (btn) {
-        btn.classList.add('loading');
-        btn.textContent = dryRun ? 'Previewing...' : 'Sending...';
-      }
-      if (status) {
-        status.textContent = dryRun ? "Checking this week's submissions..." : 'Sending weekly commemoration email...';
-        status.style.color = 'var(--muted)';
-      }
-
-      try {
-        const response = await fetch('/api/admin/commemorations/send-weekly', {
-          method: 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ parishId, dryRun })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to run weekly commemoration email');
-        const message = weeklyCommemorationSummary(result.results || [], result.dryRun);
-        if (status) {
-          status.textContent = message;
-          status.style.color = result.dryRun ? 'var(--deep)' : 'var(--green, #2a7a4b)';
-        }
-        setStatus(result.dryRun ? 'Weekly commemoration email preview loaded.' : 'Weekly commemoration email sent.', 'success');
-      } catch (err) {
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        setStatus(err.message, 'error');
-      } finally {
-        if (previewBtn) previewBtn.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
-        if (btn) {
-          btn.classList.remove('loading');
-          btn.textContent = dryRun ? 'Preview email' : 'Send email now';
-        }
-      }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Seed demo data';
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    function moneyPlain(cents) {
-      return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  } finally {
+    btn.disabled = false;
+  }
+}
+function weeklyCommemorationSummary(results = [], dryRun = true) {
+  if (!results.length) return 'No matching parish was found for that dashboard ID.';
+  return results
+    .map((row) => {
+      if (row.status === 'skipped') {
+        return `${row.parishName || row.parishId}: skipped (${row.reason || 'not eligible'}).`;
+      }
+      const counts = `${Number(row.entryCount || 0)} submissions, ${Number(row.livingCount || 0)} living names, ${Number(row.departedCount || 0)} departed names`;
+      const destination = row.to ? ` to ${row.to}` : '';
+      const action = dryRun ? 'Ready to send' : row.status === 'sent' ? 'Sent' : `Result: ${row.status || 'unknown'}`;
+      return `${action}${destination} for ${row.parishName || row.parishId}: ${counts}.`;
+    })
+    .join(' ');
+}
+async function runWeeklyCommemorationEmail(dryRun, btn) {
+  const status = document.getElementById('weeklyCommemorationStatus');
+  const parishInput = document.getElementById('weeklyCommemorationParishId');
+  const parishId = (parishInput?.value || '').trim();
+  if (!parishId) {
+    if (status) {
+      status.textContent = 'Enter the parish dashboard ID first.';
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    function weeklyTreasurerSummary(results = [], dryRun = true) {
-      if (!results.length) return 'No matching bookstore-enabled parish was found for that dashboard ID.';
-      return results.map((row) => {
-        if (row.status === 'skipped') {
-          const reason = row.reason === 'already_sent'
+    parishInput?.focus();
+    return;
+  }
+  if (!dryRun && !window.confirm(`Send this week's commemoration email for ${parishId} now?`)) return;
+  const previewBtn = document.getElementById('weeklyCommemorationPreviewBtn');
+  const sendBtn = document.getElementById('weeklyCommemorationSendBtn');
+  if (previewBtn) previewBtn.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
+  if (btn) {
+    btn.classList.add('loading');
+    btn.textContent = dryRun ? 'Previewing...' : 'Sending...';
+  }
+  if (status) {
+    status.textContent = dryRun ? "Checking this week's submissions..." : 'Sending weekly commemoration email...';
+    status.style.color = 'var(--muted)';
+  }
+  try {
+    const response = await fetch('/api/admin/commemorations/send-weekly', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ parishId, dryRun }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to run weekly commemoration email');
+    const message = weeklyCommemorationSummary(result.results || [], result.dryRun);
+    if (status) {
+      status.textContent = message;
+      status.style.color = result.dryRun ? 'var(--deep)' : 'var(--green, #2a7a4b)';
+    }
+    setStatus(
+      result.dryRun ? 'Weekly commemoration email preview loaded.' : 'Weekly commemoration email sent.',
+      'success'
+    );
+  } catch (err) {
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
+    }
+    setStatus(err.message, 'error');
+  } finally {
+    if (previewBtn) previewBtn.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.textContent = dryRun ? 'Preview email' : 'Send email now';
+    }
+  }
+}
+function moneyPlain(cents) {
+  return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}
+function weeklyTreasurerSummary(results = [], dryRun = true) {
+  if (!results.length) return 'No matching bookstore-enabled parish was found for that dashboard ID.';
+  return results
+    .map((row) => {
+      if (row.status === 'skipped') {
+        const reason =
+          row.reason === 'already_sent'
             ? 'already sent for this week'
             : row.reason === 'no_paid_orders'
               ? 'no paid bookstore orders in this week window'
               : row.reason || 'not eligible';
-          return `${row.parishName || row.parishId}: skipped (${reason}).`;
-        }
-        const destination = row.to ? ` to ${row.to}` : '';
-        const action = dryRun ? 'Ready to send' : row.status === 'sent' ? 'Sent' : `Result: ${row.status || 'unknown'}`;
-        return `${action}${destination} for ${row.parishName || row.parishId}: ${Number(row.orderCount || 0)} orders, ${moneyPlain(row.totalChargedCents)} gross, ${moneyPlain(row.taxCents)} tax, ${moneyPlain(row.parishNetCents)} parish net.`;
-      }).join(' ');
+        return `${row.parishName || row.parishId}: skipped (${reason}).`;
+      }
+      const destination = row.to ? ` to ${row.to}` : '';
+      const action = dryRun ? 'Ready to send' : row.status === 'sent' ? 'Sent' : `Result: ${row.status || 'unknown'}`;
+      return `${action}${destination} for ${row.parishName || row.parishId}: ${Number(row.orderCount || 0)} orders, ${moneyPlain(row.totalChargedCents)} gross, ${moneyPlain(row.taxCents)} tax, ${moneyPlain(row.parishNetCents)} parish net.`;
+    })
+    .join(' ');
+}
+async function runWeeklyTreasurerEmail(dryRun, btn) {
+  const status = document.getElementById('weeklyTreasurerStatus');
+  const parishInput = document.getElementById('weeklyTreasurerParishId');
+  const parishId = (parishInput?.value || '').trim();
+  if (!parishId) {
+    if (status) {
+      status.textContent = 'Enter the parish dashboard ID first.';
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    async function runWeeklyTreasurerEmail(dryRun, btn) {
-      const status = document.getElementById('weeklyTreasurerStatus');
-      const parishInput = document.getElementById('weeklyTreasurerParishId');
-      const parishId = (parishInput?.value || '').trim();
-      if (!parishId) {
-        if (status) {
-          status.textContent = 'Enter the parish dashboard ID first.';
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        parishInput?.focus();
-        return;
-      }
-      if (!dryRun && !window.confirm(`Send this week's bookstore treasurer report for ${parishId} now?`)) return;
-
-      const previewBtn = document.getElementById('weeklyTreasurerPreviewBtn');
-      const sendBtn = document.getElementById('weeklyTreasurerSendBtn');
-      if (previewBtn) previewBtn.disabled = true;
-      if (sendBtn) sendBtn.disabled = true;
-      if (btn) {
-        btn.classList.add('loading');
-        btn.textContent = dryRun ? 'Previewing...' : 'Sending...';
-      }
-      if (status) {
-        status.textContent = dryRun ? "Checking this week's paid bookstore orders..." : 'Sending weekly treasurer report...';
-        status.style.color = 'var(--muted)';
-      }
-
-      try {
-        const response = await fetch('/api/admin/commerce/send-weekly-treasurer', {
-          method: 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({ parishId, dryRun, force: !dryRun })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to run weekly treasurer report');
-        const message = weeklyTreasurerSummary(result.results || [], result.dryRun);
-        if (status) {
-          status.textContent = message;
-          status.style.color = result.dryRun ? 'var(--deep)' : 'var(--green, #2a7a4b)';
-        }
-        setStatus(result.dryRun ? 'Weekly treasurer report preview loaded.' : 'Weekly treasurer report sent.', 'success');
-      } catch (err) {
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        setStatus(err.message, 'error');
-      } finally {
-        if (previewBtn) previewBtn.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
-        if (btn) {
-          btn.classList.remove('loading');
-          btn.textContent = dryRun ? 'Preview report' : 'Send report now';
-        }
-      }
+    parishInput?.focus();
+    return;
+  }
+  if (!dryRun && !window.confirm(`Send this week's bookstore treasurer report for ${parishId} now?`)) return;
+  const previewBtn = document.getElementById('weeklyTreasurerPreviewBtn');
+  const sendBtn = document.getElementById('weeklyTreasurerSendBtn');
+  if (previewBtn) previewBtn.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
+  if (btn) {
+    btn.classList.add('loading');
+    btn.textContent = dryRun ? 'Previewing...' : 'Sending...';
+  }
+  if (status) {
+    status.textContent = dryRun
+      ? "Checking this week's paid bookstore orders..."
+      : 'Sending weekly treasurer report...';
+    status.style.color = 'var(--muted)';
+  }
+  try {
+    const response = await fetch('/api/admin/commerce/send-weekly-treasurer', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ parishId, dryRun, force: !dryRun }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to run weekly treasurer report');
+    const message = weeklyTreasurerSummary(result.results || [], result.dryRun);
+    if (status) {
+      status.textContent = message;
+      status.style.color = result.dryRun ? 'var(--deep)' : 'var(--green, #2a7a4b)';
     }
-
-    async function loadStewardshipCompStatus() {
-      const counter = document.getElementById('stewardshipCompCounter');
-      if (!counter) return;
-      try {
-        const res = await fetch('/api/admin/stewardship/comp-status', { headers: authHeaders() });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'Unable to load comp status');
-        counter.textContent = `${data.claimed} of ${data.limit} claimed — ${data.remaining} remaining`;
-        counter.style.color = data.remaining > 0 ? 'var(--green, #2a7a4b)' : 'var(--red, #8b2020)';
-      } catch (err) {
-        counter.textContent = 'Unable to load claimed count: ' + err.message;
-        counter.style.color = 'var(--red, #8b2020)';
-      }
+    setStatus(result.dryRun ? 'Weekly treasurer report preview loaded.' : 'Weekly treasurer report sent.', 'success');
+  } catch (err) {
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    // Shared core used by both the Developer Tools card and the per-parish
-    // "Grant free year" shortcut in the registration detail view. Returns
-    // the parsed response so each caller can render its own status message.
-    async function submitStewardshipCompGrant(parishId) {
-      const res = await fetch('/api/admin/stewardship/comp', {
-        method: 'POST',
-        headers: {
-          ...authHeaders(),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ parishId })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Grant failed');
-      return data;
+    setStatus(err.message, 'error');
+  } finally {
+    if (previewBtn) previewBtn.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.textContent = dryRun ? 'Preview report' : 'Send report now';
     }
-
-    async function grantStewardshipComp(btn) {
-      const status = document.getElementById('stewardshipCompStatus');
-      const parishInput = document.getElementById('stewardshipCompParishId');
-      const parishId = (parishInput?.value || '').trim();
-      if (!parishId) {
-        if (status) {
-          status.textContent = 'Enter the parish dashboard ID first.';
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        parishInput?.focus();
-        return;
-      }
-      btn.disabled = true;
-      btn.textContent = 'Granting...';
-      if (status) status.textContent = '';
-      try {
-        const data = await submitStewardshipCompGrant(parishId);
-        btn.textContent = 'Granted';
-        if (status) {
-          const expires = data.comp?.expiresAt ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-          status.textContent = `Free year granted to ${parishId}${expires ? ' — expires ' + expires : ''}. ${data.claimed} of 20 claimed.`;
-          status.style.color = 'var(--green, #2a7a4b)';
-        }
-        await loadStewardshipCompStatus();
-        if (parishInput) parishInput.value = '';
-      } catch (err) {
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Grant free year';
-      }
+  }
+}
+async function loadStewardshipCompStatus() {
+  const counter = document.getElementById('stewardshipCompCounter');
+  if (!counter) return;
+  try {
+    const res = await fetch('/api/admin/stewardship/comp-status', { headers: authHeaders() });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Unable to load comp status');
+    counter.textContent = `${data.claimed} of ${data.limit} claimed — ${data.remaining} remaining`;
+    counter.style.color = data.remaining > 0 ? 'var(--green, #2a7a4b)' : 'var(--red, #8b2020)';
+  } catch (err) {
+    counter.textContent = 'Unable to load claimed count: ' + err.message;
+    counter.style.color = 'var(--red, #8b2020)';
+  }
+}
+async function submitStewardshipCompGrant(parishId) {
+  const res = await fetch('/api/admin/stewardship/comp', {
+    method: 'POST',
+    headers: {
+      ...authHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ parishId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.error || 'Grant failed');
+  return data;
+}
+async function grantStewardshipComp(btn) {
+  const status = document.getElementById('stewardshipCompStatus');
+  const parishInput = document.getElementById('stewardshipCompParishId');
+  const parishId = (parishInput?.value || '').trim();
+  if (!parishId) {
+    if (status) {
+      status.textContent = 'Enter the parish dashboard ID first.';
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    async function grantStewardshipCompFromDetail(parishId, btn) {
-      const status = document.getElementById('detailCompGrantStatus');
-      if (!parishId) return;
-      btn.disabled = true;
-      btn.textContent = 'Granting...';
-      if (status) status.textContent = '';
-      try {
-        const data = await submitStewardshipCompGrant(parishId);
-        btn.textContent = 'Granted';
-        if (status) {
-          const expires = data.comp?.expiresAt ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-          status.textContent = `Granted${expires ? ' — expires ' + expires : ''}. ${data.claimed} of 20 claimed.`;
-          status.style.color = 'var(--green, #2a7a4b)';
-        }
-        await loadStewardshipCompStatus();
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = 'Grant free year to ' + parishId;
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-      }
+    parishInput?.focus();
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Granting...';
+  if (status) status.textContent = '';
+  try {
+    const data = await submitStewardshipCompGrant(parishId);
+    btn.textContent = 'Granted';
+    if (status) {
+      const expires = data.comp?.expiresAt
+        ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : '';
+      status.textContent = `Free year granted to ${parishId}${expires ? ' — expires ' + expires : ''}. ${data.claimed} of 20 claimed.`;
+      status.style.color = 'var(--green, #2a7a4b)';
     }
-
-    // Shared core used by both the Developer Tools card and the per-parish
-    // detail-view shortcut. Returns the parsed response so each caller can
-    // render its own status message.
-    async function submitSacramentsEnabled(parishId, enabled) {
-      const res = await fetch('/api/admin/sacraments/enabled', {
-        method: 'POST',
-        headers: {
-          ...authHeaders(),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ parishId, enabled })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Update failed');
-      return data;
+    await loadStewardshipCompStatus();
+    if (parishInput) parishInput.value = '';
+  } catch (err) {
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    async function setSacramentsEnabled(btn, enabled) {
-      const status = document.getElementById('sacramentsEnabledStatus');
-      const parishInput = document.getElementById('sacramentsEnabledParishId');
-      const parishId = (parishInput?.value || '').trim();
-      if (!parishId) {
-        if (status) {
-          status.textContent = 'Enter the parish dashboard ID first.';
-          status.style.color = 'var(--red, #8b2020)';
-        }
-        parishInput?.focus();
-        return;
-      }
-      btn.disabled = true;
-      const originalText = btn.textContent;
-      btn.textContent = enabled ? 'Enabling...' : 'Disabling...';
-      if (status) status.textContent = '';
-      try {
-        await submitSacramentsEnabled(parishId, enabled);
-        if (status) {
-          status.textContent = `Sacraments & Services ${enabled ? 'enabled' : 'disabled'} for ${parishId}.`;
-          status.style.color = 'var(--green, #2a7a4b)';
-        }
-      } catch (err) {
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-      } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Grant free year';
+  }
+}
+async function grantStewardshipCompFromDetail(parishId, btn) {
+  const status = document.getElementById('detailCompGrantStatus');
+  if (!parishId) return;
+  btn.disabled = true;
+  btn.textContent = 'Granting...';
+  if (status) status.textContent = '';
+  try {
+    const data = await submitStewardshipCompGrant(parishId);
+    btn.textContent = 'Granted';
+    if (status) {
+      const expires = data.comp?.expiresAt
+        ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : '';
+      status.textContent = `Granted${expires ? ' — expires ' + expires : ''}. ${data.claimed} of 20 claimed.`;
+      status.style.color = 'var(--green, #2a7a4b)';
     }
-
-    async function setSacramentsEnabledFromDetail(parishId, enabled, btn) {
-      const status = document.getElementById('detailSacramentsStatus');
-      if (!parishId) return;
-      btn.disabled = true;
-      btn.textContent = enabled ? 'Enabling...' : 'Disabling...';
-      if (status) status.textContent = '';
-      try {
-        await submitSacramentsEnabled(parishId, enabled);
-        btn.textContent = enabled ? 'Disable' : 'Enable';
-        btn.setAttribute('onclick', `setSacramentsEnabledFromDetail('${parishId}', ${!enabled}, this)`);
-        if (status) {
-          status.textContent = `Sacraments & Services ${enabled ? 'enabled' : 'disabled'}.`;
-          status.style.color = 'var(--green, #2a7a4b)';
-        }
-      } catch (err) {
-        btn.textContent = enabled ? 'Enable' : 'Disable';
-        if (status) {
-          status.textContent = err.message;
-          status.style.color = 'var(--red, #8b2020)';
-        }
-      } finally {
-        btn.disabled = false;
-      }
+    await loadStewardshipCompStatus();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Grant free year to ' + parishId;
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    async function loadPlatformSummary(btn) {
-      window.loadParishRelationships?.();
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      document.getElementById('adminMetricsCard')?.setAttribute('aria-busy', 'true');
-      renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));
-      try {
-        const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load platform summary');
-        if (!result.summary?.overviewMetrics) renderAdminOverviewMetrics(null);
-        renderPlatformGrowth(result.summary);
-      } catch (err) {
-        renderAdminOverviewMetrics(null);
-        const localSummary = computeLocalPlatformSummary(registrationsCache);
-        localSummary.donationDataSource = 'local_only';
-        renderPlatformGrowth(localSummary);
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
+  }
+}
+async function submitSacramentsEnabled(parishId, enabled) {
+  const res = await fetch('/api/admin/sacraments/enabled', {
+    method: 'POST',
+    headers: {
+      ...authHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ parishId, enabled }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.error || 'Update failed');
+  return data;
+}
+async function setSacramentsEnabled(btn, enabled) {
+  const status = document.getElementById('sacramentsEnabledStatus');
+  const parishInput = document.getElementById('sacramentsEnabledParishId');
+  const parishId = (parishInput?.value || '').trim();
+  if (!parishId) {
+    if (status) {
+      status.textContent = 'Enter the parish dashboard ID first.';
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    function diagnosticsBadge(label, ok, { unknown = false } = {}) {
-      const cls = unknown ? 'not_configured' : (ok ? 'active' : 'rejected');
-      return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+    parishInput?.focus();
+    return;
+  }
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = enabled ? 'Enabling...' : 'Disabling...';
+  if (status) status.textContent = '';
+  try {
+    await submitSacramentsEnabled(parishId, enabled);
+    if (status) {
+      status.textContent = `Sacraments & Services ${enabled ? 'enabled' : 'disabled'} for ${parishId}.`;
+      status.style.color = 'var(--green, #2a7a4b)';
     }
-
-    function deploymentCheckOk(check, legacyValue) {
-      if (typeof check === 'boolean') return check;
-      if (typeof check === 'string') return check === 'ok';
-      if (check && typeof check === 'object') {
-        if (typeof check.ok === 'boolean') return check.ok;
-        if (typeof check.configured === 'boolean') return check.configured;
-        const values = Object.values(check);
-        return values.length > 0 && values.every(value => value === true);
-      }
-      return Boolean(legacyValue);
+  } catch (err) {
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    async function loadDeploymentDiagnostics() {
-      const badgeEl = document.getElementById('deploymentStatusBadge');
-      const versionEl = document.getElementById('diagVersion');
-      const deployedEl = document.getElementById('diagDeployedAt');
-      const envEl = document.getElementById('diagEnvironment');
-      const utcEl = document.getElementById('diagUtcNow');
-      const checksEl = document.getElementById('diagnosticsChecks');
-      const flagsEl = document.getElementById('diagnosticsFlags');
-      if (utcEl) utcEl.textContent = 'UTC: ' + new Date().toUTCString().replace(' GMT', ' UTC');
-
-      try {
-        const healthResponse = await fetch('/api/health', { headers: { Accept: 'application/json' } });
-        const health = await healthResponse.json();
-        if (badgeEl) {
-          badgeEl.className = 'badge ' + (health.ok ? 'active' : 'rejected');
-          badgeEl.textContent = health.ok ? 'Healthy' : 'Degraded';
-        }
-        if (versionEl) versionEl.textContent = health.version || 'unknown';
-        if (deployedEl) deployedEl.textContent = 'Deployed: ' + (health.deployedAt ? new Date(health.deployedAt).toUTCString().replace(' GMT', ' UTC') : 'unknown');
-        if (envEl) envEl.textContent = health.environment || (location.hostname === 'agapay.app' ? 'production' : 'unknown');
-        if (checksEl && health.checks) {
-          const checks = health.checks;
-          const workerOk = deploymentCheckOk(checks.worker);
-          const d1Ok = deploymentCheckOk(checks.d1, checks.database === 'ok');
-          const kvOk = deploymentCheckOk(checks.kv);
-          const stripeOk = deploymentCheckOk(checks.stripe, checks.stripeConfigured);
-          const emailOk = deploymentCheckOk(checks.email, checks.emailConfigured);
-          const r2Ok = deploymentCheckOk(checks.r2, checks.r2Configured);
-          checksEl.innerHTML = [
-            diagnosticsBadge(`Worker: ${workerOk ? 'ok' : 'failed'}`, workerOk),
-            diagnosticsBadge(`D1: ${d1Ok ? 'ok' : 'failed'}`, d1Ok),
-            diagnosticsBadge(`KV: ${kvOk ? 'ok' : 'failed'}`, kvOk),
-            diagnosticsBadge('Stripe', stripeOk, { unknown: !stripeOk }),
-            diagnosticsBadge('Email', emailOk, { unknown: !emailOk }),
-            diagnosticsBadge('R2', r2Ok, { unknown: !r2Ok })
-          ].join('');
-        }
-      } catch (err) {
-        if (badgeEl) { badgeEl.className = 'badge rejected'; badgeEl.textContent = 'Unreachable'; }
-        if (checksEl) checksEl.innerHTML = diagnosticsBadge('/api/health unreachable', false);
-      }
-
-      try {
-        const releaseResponse = await fetch('/api/admin/release-status', { headers: authHeaders() });
-        const releaseResult = await releaseResponse.json();
-        if (handleAuthFailure(releaseResponse, releaseResult)) return;
-        const flags = releaseResult?.releaseStatus?.featureFlags || {};
-        if (flagsEl) {
-          const entries = Object.entries(flags);
-          flagsEl.innerHTML = entries.length
-            ? entries.map(([name, value]) => diagnosticsBadge(name.replace(/_/g, ' ') + ': ' + (value ? 'ON' : 'off'), value)).join('')
-            : '<span class="badge not_configured">No flags reported</span>';
-        }
-      } catch (err) {
-        if (flagsEl) flagsEl.innerHTML = diagnosticsBadge('Release status unreachable', false);
-      }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+async function setSacramentsEnabledFromDetail(parishId, enabled, btn) {
+  const status = document.getElementById('detailSacramentsStatus');
+  if (!parishId) return;
+  btn.disabled = true;
+  btn.textContent = enabled ? 'Enabling...' : 'Disabling...';
+  if (status) status.textContent = '';
+  try {
+    await submitSacramentsEnabled(parishId, enabled);
+    btn.textContent = enabled ? 'Disable' : 'Enable';
+    btn.setAttribute('onclick', `setSacramentsEnabledFromDetail('${parishId}', ${!enabled}, this)`);
+    if (status) {
+      status.textContent = `Sacraments & Services ${enabled ? 'enabled' : 'disabled'}.`;
+      status.style.color = 'var(--green, #2a7a4b)';
     }
-
-    async function runEmailDiagnostics(btn) {
-      const status = document.getElementById('emailDiagnosticsStatus');
-      if (btn) { btn.disabled = true; btn.classList.add('loading'); }
-      if (status) status.textContent = 'Sending real templates and recording provider acceptance...';
-      try {
-        const response = await fetch('/api/admin/email-diagnostics', {
-          method: 'POST',
-          headers: authHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            kinds: ['verification', 'invitation', 'receipt', 'administrative'],
-            includeBounce: document.getElementById('emailDiagnosticsBounce')?.checked === true
-          })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to send email diagnostics.');
-        const accepted = Object.entries(result.results || {})
-          .map(([kind, delivery]) => `${kind}: ${delivery?.status || 'unknown'}`)
-          .join(' · ');
-        if (status) status.textContent = `Accepted by Resend for ${result.recipient}. ${accepted}`;
-        setStatus('Email diagnostics accepted. Verify the inbox rendering and the Resend webhook alert.', 'success');
-      } catch (error) {
-        if (status) status.textContent = error.message;
-        setStatus(error.message, 'error');
-      } finally {
-        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-      }
+  } catch (err) {
+    btn.textContent = enabled ? 'Enable' : 'Disable';
+    if (status) {
+      status.textContent = err.message;
+      status.style.color = 'var(--red, #8b2020)';
     }
-
-    function emptyDetailMarkup() {
-      return `
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function loadPlatformSummary(btn) {
+  window.loadParishRelationships?.();
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  document.getElementById('adminMetricsCard')?.setAttribute('aria-busy', 'true');
+  renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));
+  try {
+    const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to load platform summary');
+    if (!result.summary?.overviewMetrics) renderAdminOverviewMetrics(null);
+    renderPlatformGrowth(result.summary);
+  } catch (err) {
+    renderAdminOverviewMetrics(null);
+    const localSummary = computeLocalPlatformSummary(registrationsCache);
+    localSummary.donationDataSource = 'local_only';
+    renderPlatformGrowth(localSummary);
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+}
+function diagnosticsBadge(label, ok, { unknown = false } = {}) {
+  const cls = unknown ? 'not_configured' : ok ? 'active' : 'rejected';
+  return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+}
+function deploymentCheckOk(check, legacyValue) {
+  if (typeof check === 'boolean') return check;
+  if (typeof check === 'string') return check === 'ok';
+  if (check && typeof check === 'object') {
+    if (typeof check.ok === 'boolean') return check.ok;
+    if (typeof check.configured === 'boolean') return check.configured;
+    const values = Object.values(check);
+    return values.length > 0 && values.every((value) => value === true);
+  }
+  return Boolean(legacyValue);
+}
+async function loadDeploymentDiagnostics() {
+  const badgeEl = document.getElementById('deploymentStatusBadge');
+  const versionEl = document.getElementById('diagVersion');
+  const deployedEl = document.getElementById('diagDeployedAt');
+  const envEl = document.getElementById('diagEnvironment');
+  const utcEl = document.getElementById('diagUtcNow');
+  const checksEl = document.getElementById('diagnosticsChecks');
+  const flagsEl = document.getElementById('diagnosticsFlags');
+  if (utcEl) utcEl.textContent = 'UTC: ' + /* @__PURE__ */ new Date().toUTCString().replace(' GMT', ' UTC');
+  try {
+    const healthResponse = await fetch('/api/health', { headers: { Accept: 'application/json' } });
+    const health = await healthResponse.json();
+    if (badgeEl) {
+      badgeEl.className = 'badge ' + (health.ok ? 'active' : 'rejected');
+      badgeEl.textContent = health.ok ? 'Healthy' : 'Degraded';
+    }
+    if (versionEl) versionEl.textContent = health.version || 'unknown';
+    if (deployedEl)
+      deployedEl.textContent =
+        'Deployed: ' +
+        (health.deployedAt ? new Date(health.deployedAt).toUTCString().replace(' GMT', ' UTC') : 'unknown');
+    if (envEl)
+      envEl.textContent = health.environment || (location.hostname === 'agapay.app' ? 'production' : 'unknown');
+    if (checksEl && health.checks) {
+      const checks = health.checks;
+      const workerOk = deploymentCheckOk(checks.worker);
+      const d1Ok = deploymentCheckOk(checks.d1, checks.database === 'ok');
+      const kvOk = deploymentCheckOk(checks.kv);
+      const stripeOk = deploymentCheckOk(checks.stripe, checks.stripeConfigured);
+      const emailOk = deploymentCheckOk(checks.email, checks.emailConfigured);
+      const r2Ok = deploymentCheckOk(checks.r2, checks.r2Configured);
+      checksEl.innerHTML = [
+        diagnosticsBadge(`Worker: ${workerOk ? 'ok' : 'failed'}`, workerOk),
+        diagnosticsBadge(`D1: ${d1Ok ? 'ok' : 'failed'}`, d1Ok),
+        diagnosticsBadge(`KV: ${kvOk ? 'ok' : 'failed'}`, kvOk),
+        diagnosticsBadge('Stripe', stripeOk, { unknown: !stripeOk }),
+        diagnosticsBadge('Email', emailOk, { unknown: !emailOk }),
+        diagnosticsBadge('R2', r2Ok, { unknown: !r2Ok }),
+      ].join('');
+    }
+  } catch (err) {
+    if (badgeEl) {
+      badgeEl.className = 'badge rejected';
+      badgeEl.textContent = 'Unreachable';
+    }
+    if (checksEl) checksEl.innerHTML = diagnosticsBadge('/api/health unreachable', false);
+  }
+  try {
+    const releaseResponse = await fetch('/api/admin/release-status', { headers: authHeaders() });
+    const releaseResult = await releaseResponse.json();
+    if (handleAuthFailure(releaseResponse, releaseResult)) return;
+    const flags = releaseResult?.releaseStatus?.featureFlags || {};
+    if (flagsEl) {
+      const entries = Object.entries(flags);
+      flagsEl.innerHTML = entries.length
+        ? entries
+            .map(([name, value]) => diagnosticsBadge(name.replace(/_/g, ' ') + ': ' + (value ? 'ON' : 'off'), value))
+            .join('')
+        : '<span class="badge not_configured">No flags reported</span>';
+    }
+  } catch (err) {
+    if (flagsEl) flagsEl.innerHTML = diagnosticsBadge('Release status unreachable', false);
+  }
+}
+async function runEmailDiagnostics(btn) {
+  const status = document.getElementById('emailDiagnosticsStatus');
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('loading');
+  }
+  if (status) status.textContent = 'Sending real templates and recording provider acceptance...';
+  try {
+    const response = await fetch('/api/admin/email-diagnostics', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        kinds: ['verification', 'invitation', 'receipt', 'administrative'],
+        includeBounce: document.getElementById('emailDiagnosticsBounce')?.checked === true,
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to send email diagnostics.');
+    const accepted = Object.entries(result.results || {})
+      .map(([kind, delivery]) => `${kind}: ${delivery?.status || 'unknown'}`)
+      .join(' · ');
+    if (status) status.textContent = `Accepted by Resend for ${result.recipient}. ${accepted}`;
+    setStatus('Email diagnostics accepted. Verify the inbox rendering and the Resend webhook alert.', 'success');
+  } catch (error) {
+    if (status) status.textContent = error.message;
+    setStatus(error.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  }
+}
+function emptyDetailMarkup() {
+  return `
         <div class="detail-empty">
           <div class="detail-empty-inner">
             <div class="detail-empty-icon">
@@ -1403,201 +1453,208 @@ let selectedReference = '';
           </div>
         </div>
       `;
-    }
-
-    function collapseRegistrationDetail() {
-      if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
-      registrationAutosaveTimer = null;
+}
+function collapseRegistrationDetail() {
+  if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
+  registrationAutosaveTimer = null;
+  registrationAutosaveQueued = false;
+  selectedReference = '';
+  const refEl = document.getElementById('selectedReference');
+  if (refEl) {
+    refEl.textContent = 'No selection';
+  }
+  document.getElementById('backToQueueBtn')?.classList.add('hidden');
+  document.getElementById('copySummaryBtn')?.classList.add('hidden');
+  document.getElementById('registrationDetail').innerHTML = '';
+  renderFilteredList();
+  document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function setRegistrationAutosaveState(message, state = '') {
+  const indicator = document.getElementById('registrationAutosaveState');
+  if (!indicator) return;
+  indicator.textContent = message;
+  indicator.dataset.state = state;
+}
+function scheduleRegistrationAutosave(reference) {
+  if (!reference || reference !== selectedReference) return;
+  if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
+  setRegistrationAutosaveState('Unsaved changes', 'pending');
+  registrationAutosaveTimer = setTimeout(() => runRegistrationAutosave(reference), 900);
+}
+async function runRegistrationAutosave(reference) {
+  registrationAutosaveTimer = null;
+  if (!reference || reference !== selectedReference) return;
+  if (registrationAutosaveInFlight) {
+    registrationAutosaveQueued = true;
+    return;
+  }
+  registrationAutosaveInFlight = true;
+  setRegistrationAutosaveState('Saving...', 'saving');
+  registrationAutosavePromise = saveReview(reference, null, {
+    autosave: true,
+    sendDashboardInvite: false,
+    includeReviewerNotes: false,
+  });
+  try {
+    await registrationAutosavePromise;
+  } finally {
+    registrationAutosavePromise = null;
+    registrationAutosaveInFlight = false;
+    if (registrationAutosaveQueued && reference === selectedReference) {
       registrationAutosaveQueued = false;
-      selectedReference = '';
-      
-      const refEl = document.getElementById('selectedReference');
-      if (refEl) {
-        refEl.textContent = 'No selection';
-      }
-      
-      document.getElementById('backToQueueBtn')?.classList.add('hidden');
-      document.getElementById('copySummaryBtn')?.classList.add('hidden');
-      document.getElementById('registrationDetail').innerHTML = '';
-      renderFilteredList();
-      document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      registrationAutosaveTimer = setTimeout(() => runRegistrationAutosave(reference), 150);
     }
-
-    function setRegistrationAutosaveState(message, state = '') {
-      const indicator = document.getElementById('registrationAutosaveState');
-      if (!indicator) return;
-      indicator.textContent = message;
-      indicator.dataset.state = state;
+  }
+}
+function bindRegistrationAutosave(reference) {
+  const detail = document.getElementById('registrationDetail');
+  if (!detail) return;
+  const excluded = /* @__PURE__ */ new Set(['autoDashboardInvite', 'reviewerNotes', 'parishDashboardToken']);
+  detail.querySelectorAll('input, select, textarea').forEach((control) => {
+    if (!control.id || excluded.has(control.id) || control.disabled || control.readOnly || control.type === 'file')
+      return;
+    const eventName =
+      control.matches('select, input[type="checkbox"], input[type="radio"]') ||
+      control.id === 'fundsJson' ||
+      control.id === 'campaignsJson'
+        ? 'change'
+        : 'input';
+    control.addEventListener(eventName, () => scheduleRegistrationAutosave(reference));
+  });
+}
+function upsertRegistrationCache(registration) {
+  if (!registration?.reference) return;
+  const index = registrationsCache.findIndex((item) => item.reference === registration.reference);
+  if (index >= 0) registrationsCache[index] = { ...registrationsCache[index], ...registration };
+  else registrationsCache.push(registration);
+}
+async function loadRegistrations(options = {}) {
+  const { silent = false, preserveSelection = false } = options;
+  if (!token()) {
+    if (!silent) setStatus('Log in to load registrations.', 'error');
+    return;
+  }
+  if (isLoadingRegistrations) return;
+  isLoadingRegistrations = true;
+  const btn = document.getElementById('loadBtn');
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  if (!silent) setStatus('Loading registrations...');
+  try {
+    const loaded = [];
+    let cursor = '';
+    do {
+      const params = new URLSearchParams({ limit: '250' });
+      if (cursor) params.set('cursor', cursor);
+      const response = await fetch('/api/admin/registrations?' + params.toString(), { headers: authHeaders() });
+      const result = await response.json();
+      if (handleAuthFailure(response, result)) return;
+      if (!response.ok) throw new Error(result.error || 'Unable to load registrations');
+      loaded.push(...(result.registrations || []));
+      cursor = result.cursor || '';
+    } while (cursor);
+    registrationsCache = loaded;
+    await loadAdminAccountingTargets({ silent: true });
+    populateAdminAccountingParishes();
+    const hasCurrent =
+      preserveSelection && selectedReference && registrationsCache.some((item) => item.reference === selectedReference);
+    if (!hasCurrent) {
+      collapseRegistrationDetail();
     }
-
-    function scheduleRegistrationAutosave(reference) {
-      if (!reference || reference !== selectedReference) return;
-      if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
-      setRegistrationAutosaveState('Unsaved changes', 'pending');
-      registrationAutosaveTimer = setTimeout(() => runRegistrationAutosave(reference), 900);
+    renderMetrics(registrationsCache);
+    renderFilteredList();
+    if (hasCurrent) {
+      await loadDetail(selectedReference, { silent: true, noScroll: true });
     }
-
-    async function runRegistrationAutosave(reference) {
-      registrationAutosaveTimer = null;
-      if (!reference || reference !== selectedReference) return;
-      if (registrationAutosaveInFlight) {
-        registrationAutosaveQueued = true;
-        return;
-      }
-      registrationAutosaveInFlight = true;
-      setRegistrationAutosaveState('Saving...', 'saving');
-      registrationAutosavePromise = saveReview(reference, null, {
-        autosave: true,
-        sendDashboardInvite: false,
-        includeReviewerNotes: false
-      });
-      try {
-        await registrationAutosavePromise;
-      } finally {
-        registrationAutosavePromise = null;
-        registrationAutosaveInFlight = false;
-        if (registrationAutosaveQueued && reference === selectedReference) {
-          registrationAutosaveQueued = false;
-          registrationAutosaveTimer = setTimeout(() => runRegistrationAutosave(reference), 150);
-        }
-      }
+    loadPlatformSummary();
+    loadTaxExemptionSummary();
+    loadRecentActivity();
+    loadLearnAdmin();
+    loadStewardshipCompStatus();
+    loadDeploymentDiagnostics();
+    lastDataLoadedAt = /* @__PURE__ */ new Date();
+    refreshDataAsOf();
+    if (!silent) setStatus(`Loaded ${registrationsCache.length} registration(s).`, 'success');
+  } catch (err) {
+    if (!silent) setStatus(err.message, 'error');
+  } finally {
+    isLoadingRegistrations = false;
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
     }
-
-    function bindRegistrationAutosave(reference) {
-      const detail = document.getElementById('registrationDetail');
-      if (!detail) return;
-      const excluded = new Set(['autoDashboardInvite', 'reviewerNotes', 'parishDashboardToken']);
-      detail.querySelectorAll('input, select, textarea').forEach((control) => {
-        if (!control.id || excluded.has(control.id) || control.disabled || control.readOnly || control.type === 'file') return;
-        const eventName = control.matches('select, input[type="checkbox"], input[type="radio"]')
-          || control.id === 'fundsJson'
-          || control.id === 'campaignsJson'
-          ? 'change'
-          : 'input';
-        control.addEventListener(eventName, () => scheduleRegistrationAutosave(reference));
-      });
+  }
+}
+function renderMetrics(registrations) {
+  const attentionCount = registrations.filter((item) => {
+    const action = nextActionPriority(item);
+    return action && action.priority < 99;
+  }).length;
+  document.getElementById('metricTotal').textContent = registrations.length;
+  document.getElementById('metricPending').textContent = registrations.filter((item) =>
+    ['pending', 'needs_more_info'].includes(item.status || 'pending')
+  ).length;
+  document.getElementById('metricVerified').textContent = registrations.filter(
+    (item) => item.status === 'verified'
+  ).length;
+  document.getElementById('metricStripeReady').textContent = registrations.filter((item) =>
+    ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)
+  ).length;
+  const navCount = document.getElementById('navOnboardingCount');
+  if (navCount) {
+    navCount.textContent = String(attentionCount);
+    navCount.hidden = attentionCount === 0;
+  }
+  renderCommunitySnapshot(registrations);
+  renderNextActionQueue(registrations);
+  renderOnboardingHealth(registrations);
+  renderProductOverview();
+  renderOverviewEmailLog(registrations);
+}
+function renderOverviewEmailLog(registrations) {
+  const container = document.getElementById('overviewEmailLog');
+  if (!container) return;
+  const events = [];
+  for (const reg of registrations) {
+    const name = reg.parishName || reg.reference || 'Unknown';
+    const emailFields = [
+      { key: 'adminNotificationEmailStatus', label: 'AGAPAY alert', to: 'hello@agapay.app', time: reg.receivedAt },
+      {
+        key: 'dashboardInviteEmailStatus',
+        label: 'Dashboard invite',
+        to: reg.priestEmail || reg.treasurerEmail || '',
+        time: reg.dashboardInviteEmailSentAt || reg.reviewedAt,
+      },
+      {
+        key: 'stripeOnboardingEmailStatus',
+        label: 'Stripe invite',
+        to: reg.treasurerEmail || reg.priestEmail || '',
+        time: reg.stripeOnboardingEmailSentAt || reg.reviewedAt,
+      },
+    ];
+    for (const f of emailFields) {
+      const status = reg[f.key];
+      if (!status || status === 'not_configured' || status === 'not_sent' || status === 'pending') continue;
+      events.push({ name, type: f.label, status, to: f.to, time: f.time || reg.updatedAt || reg.receivedAt || '' });
     }
-
-    function upsertRegistrationCache(registration) {
-      if (!registration?.reference) return;
-      const index = registrationsCache.findIndex((item) => item.reference === registration.reference);
-      if (index >= 0) registrationsCache[index] = { ...registrationsCache[index], ...registration };
-      else registrationsCache.push(registration);
+    for (const e of reg.emailLog || []) {
+      events.push({ name, type: e.type || 'Email', status: e.status || 'sent', to: e.to || '', time: e.sentAt || '' });
     }
-
-    async function loadRegistrations(options = {}) {
-      const { silent = false, preserveSelection = false } = options;
-      if (!token()) {
-        if (!silent) setStatus('Log in to load registrations.', 'error');
-        return;
-      }
-      if (isLoadingRegistrations) return;
-      isLoadingRegistrations = true;
-
-      const btn = document.getElementById('loadBtn');
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      if (!silent) setStatus('Loading registrations...');
-
-      try {
-        const loaded = [];
-        let cursor = '';
-        do {
-          const params = new URLSearchParams({ limit: '250' });
-          if (cursor) params.set('cursor', cursor);
-          const response = await fetch('/api/admin/registrations?' + params.toString(), { headers: authHeaders() });
-          const result = await response.json();
-          if (handleAuthFailure(response, result)) return;
-          if (!response.ok) throw new Error(result.error || 'Unable to load registrations');
-          loaded.push(...(result.registrations || []));
-          cursor = result.cursor || '';
-        } while (cursor);
-
-        registrationsCache = loaded;
-        await loadAdminAccountingTargets({ silent: true });
-        populateAdminAccountingParishes();
-        const hasCurrent = preserveSelection && selectedReference && registrationsCache.some(item => item.reference === selectedReference);
-        if (!hasCurrent) {
-          collapseRegistrationDetail();
-        }
-        renderMetrics(registrationsCache);
-        renderFilteredList();
-        if (hasCurrent) {
-          await loadDetail(selectedReference, { silent: true, noScroll: true });
-        }
-        loadPlatformSummary();
-        loadTaxExemptionSummary();
-        loadRecentActivity();
-        loadLearnAdmin();
-        loadStewardshipCompStatus();
-        loadDeploymentDiagnostics();
-        lastDataLoadedAt = new Date();
-        refreshDataAsOf();
-        if (!silent) setStatus(`Loaded ${registrationsCache.length} registration(s).`, 'success');
-      } catch (err) {
-        if (!silent) setStatus(err.message, 'error');
-      } finally {
-        isLoadingRegistrations = false;
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    function renderMetrics(registrations) {
-      const attentionCount = registrations.filter(item => {
-        const action = nextActionPriority(item);
-        return action && action.priority < 99;
-      }).length;
-      document.getElementById('metricTotal').textContent = registrations.length;
-      document.getElementById('metricPending').textContent = registrations.filter(item => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length;
-      document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
-      document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
-      const navCount = document.getElementById('navOnboardingCount');
-      if (navCount) {
-        navCount.textContent = String(attentionCount);
-        navCount.hidden = attentionCount === 0;
-      }
-      renderCommunitySnapshot(registrations);
-      renderNextActionQueue(registrations);
-      renderOnboardingHealth(registrations);
-      renderProductOverview();
-      renderOverviewEmailLog(registrations);
-    }
-
-    function renderOverviewEmailLog(registrations) {
-      const container = document.getElementById('overviewEmailLog');
-      if (!container) return;
-
-      // Collect all email events across all registrations, most recent first
-      const events = [];
-      for (const reg of registrations) {
-        const name = reg.parishName || reg.reference || 'Unknown';
-        const emailFields = [
-          { key: 'adminNotificationEmailStatus', label: 'AGAPAY alert', to: 'hello@agapay.app', time: reg.receivedAt },
-          { key: 'dashboardInviteEmailStatus',    label: 'Dashboard invite', to: reg.priestEmail || reg.treasurerEmail || '', time: reg.dashboardInviteEmailSentAt || reg.reviewedAt },
-          { key: 'stripeOnboardingEmailStatus',   label: 'Stripe invite', to: reg.treasurerEmail || reg.priestEmail || '', time: reg.stripeOnboardingEmailSentAt || reg.reviewedAt },
-        ];
-        for (const f of emailFields) {
-          const status = reg[f.key];
-          if (!status || status === 'not_configured' || status === 'not_sent' || status === 'pending') continue;
-          events.push({ name, type: f.label, status, to: f.to, time: f.time || reg.updatedAt || reg.receivedAt || '' });
-        }
-        for (const e of (reg.emailLog || [])) {
-          events.push({ name, type: e.type || 'Email', status: e.status || 'sent', to: e.to || '', time: e.sentAt || '' });
-        }
-      }
-
-      if (!events.length) {
-        container.innerHTML = '<div class="email-log-empty">No email activity recorded yet. Load registrations to populate this log.</div>';
-        return;
-      }
-
-      // Sort by time descending, show 12 most recent
-      events.sort((a, b) => (parseDateMs(b.time) || 0) - (parseDateMs(a.time) || 0));
-      const recent = events.slice(0, 12);
-
-      container.innerHTML = recent.map(e => {
-        const dotClass = e.status === 'sent' ? 'sent' : e.status === 'failed' ? 'failed' : 'skipped';
-        const to = e.to ? ` → ${escapeHtml(e.to)}` : '';
-        return `<div class="email-log-entry">
+  }
+  if (!events.length) {
+    container.innerHTML =
+      '<div class="email-log-empty">No email activity recorded yet. Load registrations to populate this log.</div>';
+    return;
+  }
+  events.sort((a, b) => (parseDateMs(b.time) || 0) - (parseDateMs(a.time) || 0));
+  const recent = events.slice(0, 12);
+  container.innerHTML = recent
+    .map((e) => {
+      const dotClass = e.status === 'sent' ? 'sent' : e.status === 'failed' ? 'failed' : 'skipped';
+      const to = e.to ? ` → ${escapeHtml(e.to)}` : '';
+      return `<div class="email-log-entry">
           <div class="email-log-dot ${dotClass}"></div>
           <div>
             <div class="email-log-type">${escapeHtml(e.name)} — ${escapeHtml(e.type)}</div>
@@ -1605,47 +1662,52 @@ let selectedReference = '';
           </div>
           <div class="email-log-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
         </div>`;
-      }).join('');
-    }
-
-    async function loadRecentActivity() {
-      const container = document.getElementById('recentActivityFeed');
-      if (!container) return;
-      container.innerHTML = '<div class="activity-feed-empty">Loading…</div>';
-      try {
-        const response = await fetch('/api/admin/recent-activity', { headers: authHeaders() });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Failed to load activity');
-        renderRecentActivity(result.events || []);
-      } catch (err) {
-        container.innerHTML = `<div class="activity-feed-empty">${escapeHtml(err.message)}</div>`;
-      }
-    }
-
-    function renderRecentActivity(events) {
-      const container = document.getElementById('recentActivityFeed');
-      if (!container) return;
-
-      if (!events.length) {
-        container.innerHTML = '<div class="activity-feed-empty">No activity yet.</div>';
-        return;
-      }
-
-      const iconFor = (type) => {
-        if (type === 'donor_signup') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-        if (type === 'stewardship_activated') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
-        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
-      };
-
-      container.innerHTML = events.map(e => {
-        const isDonor = e.type === 'donor_signup';
-        const name = isDonor && e.name ? `<div class="activity-name">${escapeHtml(e.name)}</div>` : '';
-        const email = isDonor && e.detail ? `<a class="activity-email" href="mailto:${escapeAttr(e.detail)}">${escapeHtml(e.detail)}</a>` : escapeHtml(e.detail || '');
-        const church = isDonor && (e.church || e.sub)
+    })
+    .join('');
+}
+async function loadRecentActivity() {
+  const container = document.getElementById('recentActivityFeed');
+  if (!container) return;
+  container.innerHTML = '<div class="activity-feed-empty">Loading…</div>';
+  try {
+    const response = await fetch('/api/admin/recent-activity', { headers: authHeaders() });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Failed to load activity');
+    renderRecentActivity(result.events || []);
+  } catch (err) {
+    container.innerHTML = `<div class="activity-feed-empty">${escapeHtml(err.message)}</div>`;
+  }
+}
+function renderRecentActivity(events) {
+  const container = document.getElementById('recentActivityFeed');
+  if (!container) return;
+  if (!events.length) {
+    container.innerHTML = '<div class="activity-feed-empty">No activity yet.</div>';
+    return;
+  }
+  const iconFor = (type) => {
+    if (type === 'donor_signup')
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    if (type === 'stewardship_activated')
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+  };
+  container.innerHTML = events
+    .map((e) => {
+      const isDonor = e.type === 'donor_signup';
+      const name = isDonor && e.name ? `<div class="activity-name">${escapeHtml(e.name)}</div>` : '';
+      const email =
+        isDonor && e.detail
+          ? `<a class="activity-email" href="mailto:${escapeAttr(e.detail)}">${escapeHtml(e.detail)}</a>`
+          : escapeHtml(e.detail || '');
+      const church =
+        isDonor && (e.church || e.sub)
           ? `<span class="activity-chip">${escapeHtml(e.church || e.sub)}</span>`
-          : e.sub ? `<div class="activity-sub">${escapeHtml(e.sub)}</div>` : '';
-        return `<div class="activity-entry activity-${escapeAttr(e.type)}">
+          : e.sub
+            ? `<div class="activity-sub">${escapeHtml(e.sub)}</div>`
+            : '';
+      return `<div class="activity-entry activity-${escapeAttr(e.type)}">
           <div class="activity-icon">${iconFor(e.type)}</div>
           <div class="activity-body">
             <div class="activity-label">${escapeHtml(e.label)}</div>
@@ -1655,250 +1717,249 @@ let selectedReference = '';
           </div>
           <div class="activity-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
         </div>`;
-      }).join('');
-    }
-
-
-    function communityTypeOf(registration) {
-      const raw = `${registration.communityType || ''} ${registration.parishName || ''}`.toLowerCase();
-      if (raw.includes('monastery') || raw.includes('skete')) return 'monastery';
-      if (raw.includes('cathedral')) return 'cathedral';
-      if (raw.includes('mission')) return 'mission';
-      return 'church';
-    }
-
-    function renderCommunitySnapshot(registrations) {
-      const active = registrations.filter(item => item.status === 'verified' && item.givingStatus !== 'cancelled' && item.givingStatus !== 'hidden');
-      const counts = active.reduce((acc, item) => {
-        acc[communityTypeOf(item)] += 1;
-        return acc;
-      }, { mission: 0, church: 0, cathedral: 0, monastery: 0 });
-
-      document.getElementById('snapshotMissions').textContent = counts.mission;
-      document.getElementById('snapshotChurches').textContent = counts.church;
-      document.getElementById('snapshotCathedrals').textContent = counts.cathedral;
-      document.getElementById('snapshotMonasteries').textContent = counts.monastery;
-      const directoryVerified = document.getElementById('directoryVerifiedCount');
-      const directoryChurch = document.getElementById('directoryChurchCount');
-      const directoryMonastery = document.getElementById('directoryMonasteryCount');
-      if (directoryVerified) directoryVerified.textContent = String(active.length);
-      if (directoryChurch) directoryChurch.textContent = String(counts.church + counts.mission + counts.cathedral);
-      if (directoryMonastery) directoryMonastery.textContent = String(counts.monastery);
-    }
-
-    function renderOnboardingHealth(registrations) {
-      const pane = document.getElementById('onboardingHealthPane');
-      if (!pane) return;
-
-      const total = registrations.length;
-      const awaitingReview = registrations.filter(item => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length;
-      const verified = registrations.filter(item => item.status === 'verified');
-      const invitesNeeded = verified.filter(item => item.dashboardInviteEmailStatus !== 'sent').length;
-      const stripeNeeded = verified.filter(item => !['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
-      const stripeReady = verified.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus));
-      const billingNeeded = stripeReady.filter(item => !['active', 'trialing', 'free_forever'].includes(item.subscriptionStatus)).length;
-      const ready = verified.filter(item =>
-        item.dashboardInviteEmailStatus === 'sent' &&
-        ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus) &&
-        ['active', 'trialing', 'free_forever'].includes(item.subscriptionStatus)
-      ).length;
-      const readyPercent = total ? Math.round((ready / total) * 100) : 0;
-
-      const readyEl = document.getElementById('healthReadyPercent');
-      if (readyEl) readyEl.textContent = `${readyPercent}%`;
-      const ringEl = document.getElementById('healthReadyRing');
-      if (ringEl) ringEl.style.strokeDasharray = `${readyPercent} 100`;
-      const readinessEl = document.querySelector('.health-readiness');
-      if (readinessEl) readinessEl.setAttribute('aria-label', `${readyPercent} percent ready`);
-
-      pane.innerHTML = `
+    })
+    .join('');
+}
+function communityTypeOf(registration) {
+  const raw = `${registration.communityType || ''} ${registration.parishName || ''}`.toLowerCase();
+  if (raw.includes('monastery') || raw.includes('skete')) return 'monastery';
+  if (raw.includes('cathedral')) return 'cathedral';
+  if (raw.includes('mission')) return 'mission';
+  return 'church';
+}
+function renderCommunitySnapshot(registrations) {
+  const active = registrations.filter(
+    (item) => item.status === 'verified' && item.givingStatus !== 'cancelled' && item.givingStatus !== 'hidden'
+  );
+  const counts = active.reduce(
+    (acc, item) => {
+      acc[communityTypeOf(item)] += 1;
+      return acc;
+    },
+    { mission: 0, church: 0, cathedral: 0, monastery: 0 }
+  );
+  document.getElementById('snapshotMissions').textContent = counts.mission;
+  document.getElementById('snapshotChurches').textContent = counts.church;
+  document.getElementById('snapshotCathedrals').textContent = counts.cathedral;
+  document.getElementById('snapshotMonasteries').textContent = counts.monastery;
+  const directoryVerified = document.getElementById('directoryVerifiedCount');
+  const directoryChurch = document.getElementById('directoryChurchCount');
+  const directoryMonastery = document.getElementById('directoryMonasteryCount');
+  if (directoryVerified) directoryVerified.textContent = String(active.length);
+  if (directoryChurch) directoryChurch.textContent = String(counts.church + counts.mission + counts.cathedral);
+  if (directoryMonastery) directoryMonastery.textContent = String(counts.monastery);
+}
+function renderOnboardingHealth(registrations) {
+  const pane = document.getElementById('onboardingHealthPane');
+  if (!pane) return;
+  const total = registrations.length;
+  const awaitingReview = registrations.filter((item) =>
+    ['pending', 'needs_more_info'].includes(item.status || 'pending')
+  ).length;
+  const verified = registrations.filter((item) => item.status === 'verified');
+  const invitesNeeded = verified.filter((item) => item.dashboardInviteEmailStatus !== 'sent').length;
+  const stripeNeeded = verified.filter(
+    (item) => !['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)
+  ).length;
+  const stripeReady = verified.filter((item) =>
+    ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)
+  );
+  const billingNeeded = stripeReady.filter(
+    (item) => !['active', 'trialing', 'free_forever'].includes(item.subscriptionStatus)
+  ).length;
+  const ready = verified.filter(
+    (item) =>
+      item.dashboardInviteEmailStatus === 'sent' &&
+      ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus) &&
+      ['active', 'trialing', 'free_forever'].includes(item.subscriptionStatus)
+  ).length;
+  const readyPercent = total ? Math.round((ready / total) * 100) : 0;
+  const readyEl = document.getElementById('healthReadyPercent');
+  if (readyEl) readyEl.textContent = `${readyPercent}%`;
+  const ringEl = document.getElementById('healthReadyRing');
+  if (ringEl) ringEl.style.strokeDasharray = `${readyPercent} 100`;
+  const readinessEl = document.querySelector('.health-readiness');
+  if (readinessEl) readinessEl.setAttribute('aria-label', `${readyPercent} percent ready`);
+  pane.innerHTML = `
         <div class="health-item"><strong>${awaitingReview}</strong><span>Awaiting review</span><p>Canonical standing still needs a decision.</p></div>
         <div class="health-item"><strong>${invitesNeeded}</strong><span>Invites needed</span><p>Verified parishes that still need dashboard access.</p></div>
         <div class="health-item"><strong>${stripeNeeded}</strong><span>Stripe needed</span><p>Verified parishes without connected payments.</p></div>
         <div class="health-item"><strong>${billingNeeded}</strong><span>Billing needed</span><p>Stripe-ready parishes without active billing.</p></div>
       `;
-    }
-
-    function parseDateMs(value) {
-      if (!value) return 0;
-      const ms = new Date(value).getTime();
-      return Number.isFinite(ms) ? ms : 0;
-    }
-
-    function daysSince(value) {
-      const ms = parseDateMs(value);
-      if (!ms) return 0;
-      const diff = Date.now() - ms;
-      if (diff <= 0) return 0;
-      return Math.floor(diff / (1000 * 60 * 60 * 24));
-    }
-
-    function currentWorkflowStep(reg) {
-      const blocker = reg.onboardingWorkflow?.blockers?.[0];
-      if (blocker) return { key: blocker.key, label: onboardingActionTitle(blocker.title).toLowerCase() };
-      if (reg.onboardingWorkflow?.canGoLive) return { key: 'signoff', label: 'treasurer review and launch' };
-      if (reg.onboardingWorkflow?.state === 'LIVE') return { key: 'complete', label: 'completed onboarding' };
-      const status = reg.status || 'pending';
-      const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
-      const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
-      if (status === 'pending') return { key: 'review', label: 'canonical review' };
-      if (status === 'needs_more_info') return { key: 'follow_up', label: 'follow-up review' };
-      if (status !== 'verified') return { key: 'inactive', label: 'inactive status' };
-      if (reg.dashboardInviteEmailStatus !== 'sent') return { key: 'invite', label: 'dashboard invite' };
-      if (!stripeDone) return { key: 'stripe', label: 'Stripe connection' };
-      if (!subscriptionDone) return { key: 'subscription', label: 'subscription setup' };
-      return { key: 'complete', label: 'completed onboarding' };
-    }
-
-    function workflowLastActivityAt(reg) {
-      const candidates = [
-        reg.subscriptionUpdatedAt,
-        reg.stripeStatusUpdatedAt,
-        reg.stripeAccountUpdatedAt,
-        reg.stripeOnboardingEmailSentAt,
-        reg.dashboardInviteEmailSentAt,
-        reg.reviewedAt,
-        reg.updatedAt,
-        reg.receivedAt
-      ].filter(Boolean);
-      if (!candidates.length) return '';
-      return candidates.sort((a, b) => parseDateMs(b) - parseDateMs(a))[0] || '';
-    }
-
-    function nextActionPriority(reg) {
-      const status = reg.status || 'pending';
-      const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
-      const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
-      const step = currentWorkflowStep(reg);
-      const stalledDays = daysSince(workflowLastActivityAt(reg));
-
-      if (status === 'verified' && reg.stripeAccountStatus === 'restricted') {
-        return { priority: 1, label: 'Stripe account regressed to restricted' };
-      }
-      if (status === 'verified' && reg.subscriptionStatus === 'past_due') {
-        return { priority: 1, label: 'Subscription is past due' };
-      }
-      if (step.key !== 'complete' && stalledDays >= 10) {
-        return { priority: 2, label: `Stalled ${stalledDays}d at ${step.label}` };
-      }
-      if (status === 'pending') return { priority: 3, label: 'Review canonical standing' };
-      if (status === 'needs_more_info') return { priority: 4, label: 'Follow up for more info' };
-      if (status !== 'verified') return null;
-      if (reg.dashboardInviteEmailStatus !== 'sent') return { priority: 5, label: 'Send dashboard invite' };
-      if (!stripeDone) return { priority: 6, label: 'Connect Stripe account' };
-      if (!subscriptionDone) return { priority: 7, label: 'Set platform subscription' };
-      return null;
-    }
-
-    function renderNextActionQueue(registrations) {
-      const container = document.getElementById('nextActionQueue');
-      if (!container) return;
-
-      const items = registrations
-        .map(reg => ({ reg, action: nextActionPriority(reg) }))
-        .filter(item => item.action)
-        .sort((a, b) => {
-          if (a.action.priority !== b.action.priority) return a.action.priority - b.action.priority;
-          return String(b.reg.receivedAt || '').localeCompare(String(a.reg.receivedAt || ''));
-        })
-        .slice(0, 5);
-
-      if (!items.length) {
-        container.innerHTML = '<div class="next-action-empty">Nothing needs attention right now.</div>';
-        return;
-      }
-
-      container.innerHTML = items.map(({ reg, action }) => `
+}
+function parseDateMs(value) {
+  if (!value) return 0;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+function daysSince(value) {
+  const ms = parseDateMs(value);
+  if (!ms) return 0;
+  const diff = Date.now() - ms;
+  if (diff <= 0) return 0;
+  return Math.floor(diff / (1e3 * 60 * 60 * 24));
+}
+function currentWorkflowStep(reg) {
+  const blocker = reg.onboardingWorkflow?.blockers?.[0];
+  if (blocker) return { key: blocker.key, label: onboardingActionTitle(blocker.title).toLowerCase() };
+  if (reg.onboardingWorkflow?.canGoLive) return { key: 'signoff', label: 'treasurer review and launch' };
+  if (reg.onboardingWorkflow?.state === 'LIVE') return { key: 'complete', label: 'completed onboarding' };
+  const status = reg.status || 'pending';
+  const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
+  const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
+  if (status === 'pending') return { key: 'review', label: 'canonical review' };
+  if (status === 'needs_more_info') return { key: 'follow_up', label: 'follow-up review' };
+  if (status !== 'verified') return { key: 'inactive', label: 'inactive status' };
+  if (reg.dashboardInviteEmailStatus !== 'sent') return { key: 'invite', label: 'dashboard invite' };
+  if (!stripeDone) return { key: 'stripe', label: 'Stripe connection' };
+  if (!subscriptionDone) return { key: 'subscription', label: 'subscription setup' };
+  return { key: 'complete', label: 'completed onboarding' };
+}
+function workflowLastActivityAt(reg) {
+  const candidates = [
+    reg.subscriptionUpdatedAt,
+    reg.stripeStatusUpdatedAt,
+    reg.stripeAccountUpdatedAt,
+    reg.stripeOnboardingEmailSentAt,
+    reg.dashboardInviteEmailSentAt,
+    reg.reviewedAt,
+    reg.updatedAt,
+    reg.receivedAt,
+  ].filter(Boolean);
+  if (!candidates.length) return '';
+  return candidates.sort((a, b) => parseDateMs(b) - parseDateMs(a))[0] || '';
+}
+function nextActionPriority(reg) {
+  const status = reg.status || 'pending';
+  const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
+  const subscriptionDone = ['active', 'trialing', 'free_forever'].includes(reg.subscriptionStatus);
+  const step = currentWorkflowStep(reg);
+  const stalledDays = daysSince(workflowLastActivityAt(reg));
+  if (status === 'verified' && reg.stripeAccountStatus === 'restricted') {
+    return { priority: 1, label: 'Stripe account regressed to restricted' };
+  }
+  if (status === 'verified' && reg.subscriptionStatus === 'past_due') {
+    return { priority: 1, label: 'Subscription is past due' };
+  }
+  if (step.key !== 'complete' && stalledDays >= 10) {
+    return { priority: 2, label: `Stalled ${stalledDays}d at ${step.label}` };
+  }
+  if (status === 'pending') return { priority: 3, label: 'Review canonical standing' };
+  if (status === 'needs_more_info') return { priority: 4, label: 'Follow up for more info' };
+  if (status !== 'verified') return null;
+  if (reg.dashboardInviteEmailStatus !== 'sent') return { priority: 5, label: 'Send dashboard invite' };
+  if (!stripeDone) return { priority: 6, label: 'Connect Stripe account' };
+  if (!subscriptionDone) return { priority: 7, label: 'Set platform subscription' };
+  return null;
+}
+function renderNextActionQueue(registrations) {
+  const container = document.getElementById('nextActionQueue');
+  if (!container) return;
+  const items = registrations
+    .map((reg) => ({ reg, action: nextActionPriority(reg) }))
+    .filter((item) => item.action)
+    .sort((a, b) => {
+      if (a.action.priority !== b.action.priority) return a.action.priority - b.action.priority;
+      return String(b.reg.receivedAt || '').localeCompare(String(a.reg.receivedAt || ''));
+    })
+    .slice(0, 5);
+  if (!items.length) {
+    container.innerHTML = '<div class="next-action-empty">Nothing needs attention right now.</div>';
+    return;
+  }
+  container.innerHTML = items
+    .map(
+      ({ reg, action }) => `
         <button type="button" class="next-action-item" onclick="loadDetail('${jsAttr(reg.reference)}')">
           <div class="next-action-name">${escapeHtml(reg.parishName || reg.reference)}</div>
           <div class="next-action-label">${escapeHtml(action.label)}</div>
         </button>
-      `).join('');
+      `
+    )
+    .join('');
+}
+function renderFilteredList() {
+  const query = (document.getElementById('searchInputMain')?.value || '').trim().toLowerCase();
+  const status = document.getElementById('statusFilterMain')?.value || 'needs_attention';
+  const sort = document.getElementById('sortOrderMain')?.value || 'urgency';
+  let filtered = registrationsCache.filter((item) => {
+    const haystack = [
+      item.reference,
+      item.parishName,
+      item.communityType,
+      item.jurisdiction,
+      item.city,
+      item.state,
+      item.priestEmail,
+      item.treasurerEmail,
+      item.status,
+      item.subscriptionTier,
+      item.subscriptionStatus,
+      item.stripeAccountStatus,
+    ]
+      .join(' ')
+      .toLowerCase();
+    const matchesQuery = !query || haystack.includes(query);
+    const itemStatus = item.status || 'pending';
+    let matchesStatus;
+    if (status === 'needs_attention') {
+      matchesStatus = Boolean(nextActionPriority(item));
+    } else if (status === 'all') {
+      matchesStatus = true;
+    } else {
+      matchesStatus = itemStatus === status;
     }
-
-    function renderFilteredList() {
-      const query = (document.getElementById('searchInputMain')?.value || '').trim().toLowerCase();
-      const status = document.getElementById('statusFilterMain')?.value || 'needs_attention';
-      const sort = document.getElementById('sortOrderMain')?.value || 'urgency';
-
-      let filtered = registrationsCache.filter((item) => {
-        const haystack = [
-          item.reference,
-          item.parishName,
-          item.communityType,
-          item.jurisdiction,
-          item.city,
-          item.state,
-          item.priestEmail,
-          item.treasurerEmail,
-          item.status,
-          item.subscriptionTier,
-          item.subscriptionStatus,
-          item.stripeAccountStatus
-        ].join(' ').toLowerCase();
-        const matchesQuery = !query || haystack.includes(query);
-        const itemStatus = item.status || 'pending';
-        let matchesStatus;
-        if (status === 'needs_attention') {
-          matchesStatus = Boolean(nextActionPriority(item));
-        } else if (status === 'all') {
-          matchesStatus = true;
-        } else {
-          matchesStatus = itemStatus === status;
-        }
-        return matchesQuery && matchesStatus;
-      });
-
-      if (sort === 'urgency') {
-        filtered = filtered.sort((a, b) => {
-          const pa = nextActionPriority(a);
-          const pb = nextActionPriority(b);
-          const priorityA = pa ? pa.priority : 99;
-          const priorityB = pb ? pb.priority : 99;
-          if (priorityA !== priorityB) return priorityA - priorityB;
-          return daysSince(workflowLastActivityAt(b)) - daysSince(workflowLastActivityAt(a));
-        });
-      } else {
-        filtered = filtered.sort((a, b) => {
-          if (sort === 'oldest') return String(a.receivedAt).localeCompare(String(b.receivedAt));
-          if (sort === 'name') return String(a.parishName).localeCompare(String(b.parishName));
-          return String(b.receivedAt).localeCompare(String(a.receivedAt));
-        });
-      }
-
-      renderList(filtered);
-    }
-
-    function renderList(registrations) {
-      const list = document.getElementById('registrationList');
-      const queueCount = document.getElementById('queueCount');
-      if (queueCount) {
-        queueCount.textContent = registrations.length
-          ? `${registrations.length} shown / ${registrationsCache.length} total`
-          : registrationsCache.length ? 'No matches' : 'No registrations loaded';
-      }
-      if (!registrations.length) {
-        list.innerHTML = '<div class="queue-empty">No matching registrations found. Adjust the filters or refresh the queue.</div>';
-        return;
-      }
-
-      list.innerHTML = `
+    return matchesQuery && matchesStatus;
+  });
+  if (sort === 'urgency') {
+    filtered = filtered.sort((a, b) => {
+      const pa = nextActionPriority(a);
+      const pb = nextActionPriority(b);
+      const priorityA = pa ? pa.priority : 99;
+      const priorityB = pb ? pb.priority : 99;
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      return daysSince(workflowLastActivityAt(b)) - daysSince(workflowLastActivityAt(a));
+    });
+  } else {
+    filtered = filtered.sort((a, b) => {
+      if (sort === 'oldest') return String(a.receivedAt).localeCompare(String(b.receivedAt));
+      if (sort === 'name') return String(a.parishName).localeCompare(String(b.parishName));
+      return String(b.receivedAt).localeCompare(String(a.receivedAt));
+    });
+  }
+  renderList(filtered);
+}
+function renderList(registrations) {
+  const list = document.getElementById('registrationList');
+  const queueCount = document.getElementById('queueCount');
+  if (queueCount) {
+    queueCount.textContent = registrations.length
+      ? `${registrations.length} shown / ${registrationsCache.length} total`
+      : registrationsCache.length
+        ? 'No matches'
+        : 'No registrations loaded';
+  }
+  if (!registrations.length) {
+    list.innerHTML =
+      '<div class="queue-empty">No matching registrations found. Adjust the filters or refresh the queue.</div>';
+    return;
+  }
+  list.innerHTML = `
         <div class="queue-list">
-          ${registrations.map((item) => {
-            const action = nextAction(item);
-            const priority = nextActionPriority(item);
-            const location = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
-            const community = item.communityType || 'Community';
-            const jurisdiction = item.jurisdiction || 'Jurisdiction';
-            const firstContact = item.priestEmail || item.treasurerEmail || 'No email on file';
-            const age = daysSince(item.receivedAt);
-            const stalledAge = daysSince(workflowLastActivityAt(item));
-            const ageLabel = age === 0 ? 'Today' : age === 1 ? '1d ago' : `${age}d ago`;
-            const urgencyClass = priority && priority.priority <= 2 ? 'urgent'
-              : stalledAge >= 10 ? 'stale'
-              : age <= 2 ? 'fresh'
-              : '';
-            return `
+          ${registrations
+            .map((item) => {
+              const action = nextAction(item);
+              const priority = nextActionPriority(item);
+              const location2 = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
+              const community = item.communityType || 'Community';
+              const jurisdiction = item.jurisdiction || 'Jurisdiction';
+              const firstContact = item.priestEmail || item.treasurerEmail || 'No email on file';
+              const age = daysSince(item.receivedAt);
+              const stalledAge = daysSince(workflowLastActivityAt(item));
+              const ageLabel = age === 0 ? 'Today' : age === 1 ? '1d ago' : `${age}d ago`;
+              const urgencyClass =
+                priority && priority.priority <= 2 ? 'urgent' : stalledAge >= 10 ? 'stale' : age <= 2 ? 'fresh' : '';
+              return `
               <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
                 <label class="queue-check" onclick="event.stopPropagation()" aria-label="Select ${escapeAttr(item.parishName || item.reference)}">
                   <input class="row-chk" type="checkbox" value="${escapeAttr(item.reference)}" onchange="updateBulkBar()" />
@@ -1909,7 +1970,7 @@ let selectedReference = '';
                   <div class="queue-meta-line">
                     <span>${escapeHtml(community)}</span>
                     <span>${escapeHtml(jurisdiction)}</span>
-                    <span>${escapeHtml(location)}</span>
+                    <span>${escapeHtml(location2)}</span>
                   </div>
                   <div class="queue-reference">${escapeHtml(item.reference || '')}</div>
                 </div>
@@ -1949,77 +2010,72 @@ let selectedReference = '';
                 </div>
               </div>
             `;
-          }).join('')}
+            })
+            .join('')}
         </div>
       `;
+}
+async function copyText(value) {
+  if (!value) {
+    setStatus('Nothing to copy.');
+    return;
+  }
+  await navigator.clipboard.writeText(value);
+  setStatus('Copied to clipboard.');
+}
+async function loadDetail(reference, options = {}) {
+  const { silent = false, noScroll = false } = options;
+  selectedReference = reference;
+  const refEl = document.getElementById('selectedReference');
+  if (refEl) {
+    refEl.textContent = reference;
+  }
+  document.getElementById('backToQueueBtn')?.classList.remove('hidden');
+  document.getElementById('copySummaryBtn')?.classList.remove('hidden');
+  if (activeTab !== 'giving') switchTab('giving');
+  if (!silent) setStatus('Loading details...');
+  try {
+    const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), {
+      headers: authHeaders(),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to load registration');
+    renderDetail(result.registration);
+    renderQueueNext(result.registration);
+    renderFilteredList();
+    loadRegistrationGivingSummary(reference, { force: true });
+    if (!noScroll) {
+      document.getElementById('registrationDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-
-    async function copyText(value) {
-      if (!value) {
-        setStatus('Nothing to copy.');
-        return;
-      }
-      await navigator.clipboard.writeText(value);
-      setStatus('Copied to clipboard.');
-    }
-
-    async function loadDetail(reference, options = {}) {
-      const { silent = false, noScroll = false } = options;
-      selectedReference = reference;
-      
-      const refEl = document.getElementById('selectedReference');
-      if (refEl) {
-        refEl.textContent = reference;
-      }
-      
-      document.getElementById('backToQueueBtn')?.classList.remove('hidden');
-      document.getElementById('copySummaryBtn')?.classList.remove('hidden');
-      if (activeTab !== 'giving') switchTab('giving');
-      if (!silent) setStatus('Loading details...');
-
-      try {
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), { headers: authHeaders() });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load registration');
-
-        renderDetail(result.registration);
-        renderQueueNext(result.registration);
-        renderFilteredList();
-        loadRegistrationGivingSummary(reference, { force: true });
-        if (!noScroll) {
-          document.getElementById('registrationDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      } catch (err) {
-        if (!silent) setStatus(err.message, 'error');
-      }
-    }
-
-    function renderRegistrationGivingSummary(summary) {
-      const panel = document.getElementById('registrationGivingSummary');
-      if (!panel) return;
-      if (!summary) {
-        panel.innerHTML = '<div class="giving-summary-empty">Loading giving summary…</div>';
-        return;
-      }
-      if (summary.dataSource === 'not_connected') {
-        panel.innerHTML = '<div class="giving-summary-empty">Stripe is not connected yet for this parish.</div>';
-        return;
-      }
-      if (summary.dataSource === 'not_configured') {
-        panel.innerHTML = '<div class="giving-summary-empty">Stripe reporting is not configured on this environment.</div>';
-        return;
-      }
-      if (summary.error) {
-        panel.innerHTML = `<div class="giving-summary-empty">${escapeHtml(summary.error)}</div>`;
-        return;
-      }
-
-      panel.innerHTML = `
+  } catch (err) {
+    if (!silent) setStatus(err.message, 'error');
+  }
+}
+function renderRegistrationGivingSummary(summary) {
+  const panel = document.getElementById('registrationGivingSummary');
+  if (!panel) return;
+  if (!summary) {
+    panel.innerHTML = '<div class="giving-summary-empty">Loading giving summary…</div>';
+    return;
+  }
+  if (summary.dataSource === 'not_connected') {
+    panel.innerHTML = '<div class="giving-summary-empty">Stripe is not connected yet for this parish.</div>';
+    return;
+  }
+  if (summary.dataSource === 'not_configured') {
+    panel.innerHTML = '<div class="giving-summary-empty">Stripe reporting is not configured on this environment.</div>';
+    return;
+  }
+  if (summary.error) {
+    panel.innerHTML = `<div class="giving-summary-empty">${escapeHtml(summary.error)}</div>`;
+    return;
+  }
+  panel.innerHTML = `
         <div class="giving-summary-grid">
           <div class="giving-summary-stat">
             <strong>${moneyShort(summary.ytdCents || 0)}</strong>
-            <span>${summary.year || new Date().getFullYear()} received</span>
+            <span>${summary.year || /* @__PURE__ */ new Date().getFullYear()} received</span>
           </div>
           <div class="giving-summary-stat">
             <strong>${summary.giftCount || 0}</strong>
@@ -2031,45 +2087,49 @@ let selectedReference = '';
           </div>
         </div>
       `;
-    }
-
-    async function loadRegistrationGivingSummary(reference, options = {}) {
-      const { force = false } = options;
-      const cached = givingSummaryCache.get(reference);
-      if (cached && !force) {
-        renderRegistrationGivingSummary(cached);
-        return cached;
-      }
-      renderRegistrationGivingSummary(null);
-      try {
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/giving-summary', { headers: authHeaders() });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return null;
-        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to load giving summary');
-        const summary = result.summary || {};
-        givingSummaryCache.set(reference, summary);
-        renderRegistrationGivingSummary(summary);
-        return summary;
-      } catch (err) {
-        const summary = { error: err.message || 'Unable to load giving summary.' };
-        renderRegistrationGivingSummary(summary);
-        return summary;
-      }
-    }
-
-    function renderAdminAuditLog(reg) {
-      const entries = Array.isArray(reg.adminAuditLog) ? reg.adminAuditLog.slice().reverse() : [];
-      if (!entries.length) {
-        return '<div class="audit-log-empty">No admin actions logged for this registration yet.</div>';
-      }
-      return entries.map((entry) => {
-        const details = entry.details && typeof entry.details === 'object'
-          ? Object.entries(entry.details).filter(([, value]) => value !== '' && value !== null && value !== undefined)
+}
+async function loadRegistrationGivingSummary(reference, options = {}) {
+  const { force = false } = options;
+  const cached = givingSummaryCache.get(reference);
+  if (cached && !force) {
+    renderRegistrationGivingSummary(cached);
+    return cached;
+  }
+  renderRegistrationGivingSummary(null);
+  try {
+    const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/giving-summary', {
+      headers: authHeaders(),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return null;
+    if (!response.ok) throw new Error(result.detail || result.error || 'Unable to load giving summary');
+    const summary = result.summary || {};
+    givingSummaryCache.set(reference, summary);
+    renderRegistrationGivingSummary(summary);
+    return summary;
+  } catch (err) {
+    const summary = { error: err.message || 'Unable to load giving summary.' };
+    renderRegistrationGivingSummary(summary);
+    return summary;
+  }
+}
+function renderAdminAuditLog(reg) {
+  const entries = Array.isArray(reg.adminAuditLog) ? reg.adminAuditLog.slice().reverse() : [];
+  if (!entries.length) {
+    return '<div class="audit-log-empty">No admin actions logged for this registration yet.</div>';
+  }
+  return entries
+    .map((entry) => {
+      const details =
+        entry.details && typeof entry.details === 'object'
+          ? Object.entries(entry.details).filter(([, value]) => value !== '' && value !== null && value !== void 0)
           : [];
-        const detailText = details.length
-          ? details.map(([key, value]) => `${readable(key)}: ${Array.isArray(value) ? value.join(', ') : value}`).join(' · ')
-          : 'No extra details.';
-        return `
+      const detailText = details.length
+        ? details
+            .map(([key, value]) => `${readable(key)}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join(' · ')
+        : 'No extra details.';
+      return `
           <div class="audit-log-entry">
             <div class="audit-log-head">
               <strong>${escapeHtml(readable(entry.action || 'unknown'))}</strong>
@@ -2079,33 +2139,37 @@ let selectedReference = '';
             <div class="audit-log-detail">${escapeHtml(detailText)}</div>
           </div>
         `;
-      }).join('');
-    }
-
-    const onboardingManualFields = [
-      ['authorizedRepresentative', 'Priest confirms treasurer access', 'Do not search for a public treasurer listing. Verify the parish and priest from an official source, then have that verified priest or parish leader confirm the treasurer\'s name and email.', 'Confirmation source', 'Priest email, call to published parish number, or diocesan introduction', 'Confirmation note', 'Who confirmed the treasurer, by what channel, and when?'],
-      ['givingConfiguration', 'Funds and campaigns', 'Confirm the donor-facing catalog and restrictions.'],
-      ['importDecision', 'Donor and pledge import', 'Choose Passed when reconciled, or Not applicable.']
-    ];
-
-    function onboardingStatusOptions(status, key) {
-      const values = [
-        ['not_started', 'Not started'],
-        ['in_progress', 'In progress'],
-        ['blocked', 'Blocked'],
-        ['passed', 'Passed']
-      ];
-      if (key === 'importDecision') values.push(['not_applicable', 'Not applicable']);
-      return values.map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`).join('');
-    }
-
-    function renderOnboardingManualChecks(checks, keys) {
-      return `<div class="onboarding-manual-list">${keys.map((key) => {
-        const definition = onboardingManualFields.find(([fieldKey]) => fieldKey === key);
-        if (!definition) return '';
-        const [, label, help, evidenceLabel = 'Evidence reference', evidencePlaceholder = 'Payment ID, screenshot, ticket, or source link', noteLabel = 'Operator note', notePlaceholder = 'What was checked and by whom?'] = definition;
-        const check = checks[key] || {};
-        return `<details class="onboarding-manual-row" ${check.status === 'blocked' || check.status === 'in_progress' || check.status === 'not_started' ? 'open' : ''}>
+    })
+    .join('');
+}
+function onboardingStatusOptions(status, key) {
+  const values = [
+    ['not_started', 'Not started'],
+    ['in_progress', 'In progress'],
+    ['blocked', 'Blocked'],
+    ['passed', 'Passed'],
+  ];
+  if (key === 'importDecision') values.push(['not_applicable', 'Not applicable']);
+  return values
+    .map(([value, label]) => `<option value="${value}" ${status === value ? 'selected' : ''}>${label}</option>`)
+    .join('');
+}
+function renderOnboardingManualChecks(checks, keys) {
+  return `<div class="onboarding-manual-list">${keys
+    .map((key) => {
+      const definition = onboardingManualFields.find(([fieldKey]) => fieldKey === key);
+      if (!definition) return '';
+      const [
+        ,
+        label,
+        help,
+        evidenceLabel = 'Evidence reference',
+        evidencePlaceholder = 'Payment ID, screenshot, ticket, or source link',
+        noteLabel = 'Operator note',
+        notePlaceholder = 'What was checked and by whom?',
+      ] = definition;
+      const check = checks[key] || {};
+      return `<details class="onboarding-manual-row" ${check.status === 'blocked' || check.status === 'in_progress' || check.status === 'not_started' ? 'open' : ''}>
           <summary><span class="onboarding-manual-state ${escapeAttr(check.status || 'not_started')}"></span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(readable(check.status || 'not_started'))}</em></summary>
           <p>${escapeHtml(help)}</p>
           <div class="form-grid">
@@ -2114,15 +2178,15 @@ let selectedReference = '';
             <div class="full"><label for="onboarding-${key}-note">${escapeHtml(noteLabel)}</label><textarea id="onboarding-${key}-note" rows="2" placeholder="${escapeAttr(notePlaceholder)}">${escapeHtml(check.note || '')}</textarea></div>
           </div>
         </details>`;
-      }).join('')}</div>`;
-    }
-
-    function renderOnboardingProgress(reg) {
-      const workflow = reg.onboardingWorkflow || {};
-      const steps = Array.isArray(workflow.steps) ? workflow.steps : [];
-      const completed = Number(workflow.completedSteps || 0);
-      const total = Number(workflow.totalSteps || steps.length || 17);
-      return `
+    })
+    .join('')}</div>`;
+}
+function renderOnboardingProgress(reg) {
+  const workflow = reg.onboardingWorkflow || {};
+  const steps = Array.isArray(workflow.steps) ? workflow.steps : [];
+  const completed = Number(workflow.completedSteps || 0);
+  const total = Number(workflow.totalSteps || steps.length || 17);
+  return `
         <details class="onboarding-workflow-audit">
           <summary><span>Audit checklist</span><strong>${completed} of ${total} gates complete</strong><em>View details</em></summary>
           <div class="onboarding-gates-disclosure">
@@ -2131,87 +2195,80 @@ let selectedReference = '';
             </div>
           </div>
         </details>`;
-    }
-
-    const onboardingPhases = [
-      ['identity', 'Verify parish'],
-      ['access', 'Give access'],
-      ['stripe', 'Connect Stripe'],
-      ['subscription', 'Configure giving']
-    ];
-
-    function onboardingCurrentPhase(reg) {
-      const workflow = reg.onboardingWorkflow || {};
-      if (workflow.state === 'LIVE' || workflow.canGoLive) return 'subscription';
-      const key = workflow.blockers?.[0]?.key || 'registration';
-      if (['registration', 'canonical', 'representative', 'verifiedHidden'].includes(key)) return 'identity';
-      if (['invite', 'credential'].includes(key)) return 'access';
-      if (['stripeConnected', 'stripeReady'].includes(key)) return 'stripe';
-      if (['subscription', 'generalFund', 'givingConfiguration', 'importDecision'].includes(key)) return 'subscription';
-      return 'subscription';
-    }
-
-    function onboardingPhaseState(reg, phase) {
-      if (reg.onboardingWorkflow?.state === 'LIVE') return 'done';
-      const currentIndex = onboardingPhases.findIndex(([key]) => key === onboardingCurrentPhase(reg));
-      const index = onboardingPhases.findIndex(([key]) => key === phase);
-      if (index < currentIndex) return 'done';
-      if (index === currentIndex) return 'current';
-      return 'upcoming';
-    }
-
-    function activateOnboardingPhase(phase) {
-      document.querySelectorAll('.onboarding-phase-card').forEach(card => card.classList.remove('is-current'));
-      const target = document.getElementById(`onboarding-phase-${phase}`);
-      if (!target) return;
-      target.classList.add('is-current');
-      target.scrollIntoView({ behavior:'smooth', block:'start' });
-    }
-
-    function onboardingActionTitle(title) {
-      const actions = {
-        'Registration received': 'Review registration',
-        'Canonical parish confirmed': 'Confirm canonical parish',
-        'Approving priest confirmed treasurer': 'Record priest confirmation of the treasurer',
-        'Organization verified and hidden': 'Verify organization and keep giving hidden',
-        'Dashboard invite delivered': 'Send parish dashboard access',
-        'Parish dashboard access secured': 'Wait for the parish credential to be secured',
-        'Treasurer dashboard access secured': 'Send or confirm the paid treasurer account',
-        'Stripe connected': 'Connect Stripe',
-        'Stripe charges and payouts ready': 'Confirm Stripe charges and payouts',
-        'Subscription configured': 'Configure the subscription',
-        'General Operating Fund configured': 'Configure the General Operating Fund',
-        'Designated funds and campaigns approved': 'Approve designated funds and campaigns',
-        'Donor and pledge import decided': 'Decide the donor and pledge import',
-        'Giving URL and QR verified': 'Verify the giving URL and QR code'
-      };
-      return actions[title] || title || 'Continue onboarding';
-    }
-
-    function renderOnboardingCommandHeader(reg) {
-      const workflow = reg.onboardingWorkflow || {};
-      const state = workflow.state || (reg.status === 'verified' ? 'VERIFIED_HIDDEN' : 'IDENTITY_REVIEW');
-      const next = (workflow.blockers || [])[0];
-      const actionTitle = state === 'LIVE'
-        ? 'Launch complete'
-        : workflow.canGoLive
-          ? 'Waiting for treasurer Go-Live signoff'
-          : onboardingActionTitle(next?.title || 'Confirm the canonical parish');
-      const actionDetail = state === 'LIVE'
-        ? 'Giving is public and the treasurer-approved snapshot is on record.'
-        : workflow.canGoLive
-          ? 'The configuration is locked. The verified treasurer must review all eight attestations and publish from the parish dashboard.'
-          : next?.detail || 'Verify the canonical parish and priest from an official source. The verified priest or parish leader confirms the treasurer.';
-      const location = [reg.communityType, reg.jurisdiction, [reg.city, reg.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-      const currentPhase = onboardingCurrentPhase(reg);
-      const completed = Number(workflow.completedSteps || 0);
-      const total = Number(workflow.totalSteps || 17);
-      return `<section class="onboarding-command-header">
+}
+function onboardingCurrentPhase(reg) {
+  const workflow = reg.onboardingWorkflow || {};
+  if (workflow.state === 'LIVE' || workflow.canGoLive) return 'subscription';
+  const key = workflow.blockers?.[0]?.key || 'registration';
+  if (['registration', 'canonical', 'representative', 'verifiedHidden'].includes(key)) return 'identity';
+  if (['invite', 'credential'].includes(key)) return 'access';
+  if (['stripeConnected', 'stripeReady'].includes(key)) return 'stripe';
+  if (['subscription', 'generalFund', 'givingConfiguration', 'importDecision'].includes(key)) return 'subscription';
+  return 'subscription';
+}
+function onboardingPhaseState(reg, phase) {
+  if (reg.onboardingWorkflow?.state === 'LIVE') return 'done';
+  const currentIndex = onboardingPhases.findIndex(([key]) => key === onboardingCurrentPhase(reg));
+  const index = onboardingPhases.findIndex(([key]) => key === phase);
+  if (index < currentIndex) return 'done';
+  if (index === currentIndex) return 'current';
+  return 'upcoming';
+}
+function activateOnboardingPhase(phase) {
+  document.querySelectorAll('.onboarding-phase-card').forEach((card) => card.classList.remove('is-current'));
+  const target = document.getElementById(`onboarding-phase-${phase}`);
+  if (!target) return;
+  target.classList.add('is-current');
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function onboardingActionTitle(title) {
+  const actions = {
+    'Registration received': 'Review registration',
+    'Canonical parish confirmed': 'Confirm canonical parish',
+    'Approving priest confirmed treasurer': 'Record priest confirmation of the treasurer',
+    'Organization verified and hidden': 'Verify organization and keep giving hidden',
+    'Dashboard invite delivered': 'Send parish dashboard access',
+    'Parish dashboard access secured': 'Wait for the parish credential to be secured',
+    'Treasurer dashboard access secured': 'Send or confirm the paid treasurer account',
+    'Stripe connected': 'Connect Stripe',
+    'Stripe charges and payouts ready': 'Confirm Stripe charges and payouts',
+    'Subscription configured': 'Configure the subscription',
+    'General Operating Fund configured': 'Configure the General Operating Fund',
+    'Designated funds and campaigns approved': 'Approve designated funds and campaigns',
+    'Donor and pledge import decided': 'Decide the donor and pledge import',
+    'Giving URL and QR verified': 'Verify the giving URL and QR code',
+  };
+  return actions[title] || title || 'Continue onboarding';
+}
+function renderOnboardingCommandHeader(reg) {
+  const workflow = reg.onboardingWorkflow || {};
+  const state = workflow.state || (reg.status === 'verified' ? 'VERIFIED_HIDDEN' : 'IDENTITY_REVIEW');
+  const next = (workflow.blockers || [])[0];
+  const actionTitle =
+    state === 'LIVE'
+      ? 'Launch complete'
+      : workflow.canGoLive
+        ? 'Waiting for treasurer Go-Live signoff'
+        : onboardingActionTitle(next?.title || 'Confirm the canonical parish');
+  const actionDetail =
+    state === 'LIVE'
+      ? 'Giving is public and the treasurer-approved snapshot is on record.'
+      : workflow.canGoLive
+        ? 'The configuration is locked. The verified treasurer must review all eight attestations and publish from the parish dashboard.'
+        : next?.detail ||
+          'Verify the canonical parish and priest from an official source. The verified priest or parish leader confirms the treasurer.';
+  const location2 = [reg.communityType, reg.jurisdiction, [reg.city, reg.state].filter(Boolean).join(', ')]
+    .filter(Boolean)
+    .join(' · ');
+  const currentPhase = onboardingCurrentPhase(reg);
+  const completed = Number(workflow.completedSteps || 0);
+  const total = Number(workflow.totalSteps || 17);
+  return `<section class="onboarding-command-header">
         <div class="onboarding-command-main">
           <button class="onboarding-back-link" type="button" onclick="collapseRegistrationDetail()">← Parish queue</button>
           <div class="onboarding-command-eyebrow">${escapeHtml(reg.reference || '')}</div>
           <h2>${escapeHtml(reg.parishName || 'Unnamed parish')}</h2>
-          <p>${escapeHtml(location || 'Registration details pending')}</p>
+          <p>${escapeHtml(location2 || 'Registration details pending')}</p>
         </div>
         <div class="onboarding-command-next ${state === 'LIVE' ? 'complete' : ''}">
           <span>${state === 'LIVE' ? 'Complete' : 'Do this now'}</span>
@@ -2225,18 +2282,19 @@ let selectedReference = '';
           <button class="gold btn-sm" type="button" onclick="saveReview('${jsAttr(reg.reference)}', this)">Save progress</button>
         </div>
         <nav class="onboarding-phase-nav" aria-label="Onboarding phases">
-          ${onboardingPhases.map(([key, label], index) => {
-            const phaseState = onboardingPhaseState(reg, key);
-            return `<button class="${phaseState}" type="button" onclick="activateOnboardingPhase('${key}')"><span>${phaseState === 'done' ? '✓' : index + 1}</span><strong>${escapeHtml(label)}</strong><small>${phaseState === 'current' ? 'Current step' : phaseState === 'done' ? 'Complete' : 'Later'}</small></button>`;
-          }).join('')}
+          ${onboardingPhases
+            .map(([key, label], index) => {
+              const phaseState = onboardingPhaseState(reg, key);
+              return `<button class="${phaseState}" type="button" onclick="activateOnboardingPhase('${key}')"><span>${phaseState === 'done' ? '✓' : index + 1}</span><strong>${escapeHtml(label)}</strong><small>${phaseState === 'current' ? 'Current step' : phaseState === 'done' ? 'Complete' : 'Later'}</small></button>`;
+            })
+            .join('')}
         </nav>
       </section>`;
-    }
-
-    function renderOnboardingControls(reg) {
-      const workflow = reg.onboardingWorkflow || {};
-      const signoff = workflow.signoff || {};
-      return `<div class="admin-section onboarding-admin-section onboarding-ready-panel">
+}
+function renderOnboardingControls(reg) {
+  const workflow = reg.onboardingWorkflow || {};
+  const signoff = workflow.signoff || {};
+  return `<div class="admin-section onboarding-admin-section onboarding-ready-panel">
         <div class="onboarding-signoff-state ${signoff.status === 'signed' ? 'signed' : workflow.canGoLive ? 'ready' : 'waiting'}">
           <span>${signoff.status === 'signed' ? 'Launch complete' : workflow.canGoLive ? 'Waiting for treasurer' : 'Launch readiness'}</span>
           <strong>${signoff.status === 'signed' ? `${escapeHtml(signoff.signerName || 'Treasurer')} approved launch ${escapeHtml(shortDate(signoff.signedAt))}` : workflow.canGoLive ? 'The parish has one final action: review and launch.' : 'Complete the current setup action. AGAPAY handles internal launch checks.'}</strong>
@@ -2244,61 +2302,77 @@ let selectedReference = '';
         </div>
         ${reg.onboardingTestMode ? `<div class="onboarding-staging-tools"><div><span>Staging only</span><strong>Test the 10-minute parish setup</strong><p>Prepare a ready parish record, then open the parish dashboard to test the treasurer review and launch.</p></div><div class="btn-row"><button class="secondary btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','reset_workflow',this)">Reset test</button><button class="gold btn-sm" type="button" onclick="runOnboardingTestAction('${jsAttr(reg.reference)}','prepare_ready',this)">Prepare parish test</button></div><div id="stagingOnboardingResult" class="staging-onboarding-result" aria-live="polite"></div></div>` : ''}
       </div>`;
-    }
-
-    function readOnboardingChecks() {
-      return Object.fromEntries(onboardingManualFields.map(([key]) => [key, {
+}
+function readOnboardingChecks() {
+  return Object.fromEntries(
+    onboardingManualFields.map(([key]) => [
+      key,
+      {
         status: document.getElementById(`onboarding-${key}-status`)?.value || 'not_started',
         evidence: document.getElementById(`onboarding-${key}-evidence`)?.value.trim() || '',
-        note: document.getElementById(`onboarding-${key}-note`)?.value.trim() || ''
-      }]));
+        note: document.getElementById(`onboarding-${key}-note`)?.value.trim() || '',
+      },
+    ])
+  );
+}
+async function runOnboardingTestAction(reference, action, button) {
+  if (
+    (action === 'reset_workflow' || action === 'reset_signoff') &&
+    !window.confirm(
+      'Reset this staging onboarding exercise? The giving page will be hidden until the treasurer signs again.'
+    )
+  )
+    return;
+  if (button) {
+    button.disabled = true;
+    button.classList.add('loading');
+  }
+  try {
+    const response = await fetch(`/api/admin/registrations/${encodeURIComponent(reference)}/onboarding-test`, {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to run staging onboarding control');
+    renderDetail(result.registration);
+    renderQueueNext(result.registration);
+    const target = document.getElementById('stagingOnboardingResult');
+    if (target) {
+      const password = result.stagingPassword || '';
+      target.innerHTML = password
+        ? `<strong>Single parish trial access created.</strong><span>The parish password is shown once. Use it to test the complete trial setup and Go Live flow; no separate treasurer login is required.</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy parish password</button>`
+        : `<strong>${escapeHtml(readable(action))} complete.</strong><span>The workflow was recalculated from persisted staging data.</span>`;
     }
-
-    async function runOnboardingTestAction(reference, action, button) {
-      if ((action === 'reset_workflow' || action === 'reset_signoff') && !window.confirm('Reset this staging onboarding exercise? The giving page will be hidden until the treasurer signs again.')) return;
-      if (button) { button.disabled = true; button.classList.add('loading'); }
-      try {
-        const response = await fetch(`/api/admin/registrations/${encodeURIComponent(reference)}/onboarding-test`, {
-          method: 'POST',
-          headers: { ...authHeaders(), 'Content-Type':'application/json' },
-          body: JSON.stringify({ action })
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to run staging onboarding control');
-        renderDetail(result.registration);
-        renderQueueNext(result.registration);
-        const target = document.getElementById('stagingOnboardingResult');
-        if (target) {
-          const password = result.stagingPassword || '';
-          target.innerHTML = password
-            ? `<strong>Single parish trial access created.</strong><span>The parish password is shown once. Use it to test the complete trial setup and Go Live flow; no separate treasurer login is required.</span><code>${escapeHtml(password)}</code><button class="secondary btn-sm" type="button" onclick="copyText('${jsAttr(password)}')">Copy parish password</button>`
-            : `<strong>${escapeHtml(readable(action))} complete.</strong><span>The workflow was recalculated from persisted staging data.</span>`;
-        }
-        setStatus('Staging onboarding state updated.', 'success');
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (button?.isConnected) { button.disabled = false; button.classList.remove('loading'); }
-      }
+    setStatus('Staging onboarding state updated.', 'success');
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (button?.isConnected) {
+      button.disabled = false;
+      button.classList.remove('loading');
     }
-
-    function renderDetail(reg) {
-      const reference = jsAttr(reg.reference);
-      const publicParishId = escapeHtml(reg.parishId || '');
-      const currentPhase = onboardingCurrentPhase(reg);
-      const onboardingChecks = reg.onboardingWorkflow?.checks || reg.onboardingChecks || {};
-      const paidSubscription = String(reg.subscriptionStatus || '').toLowerCase() === 'active';
-      const parishAddress = [
-        reg.addressLine1,
-        reg.addressLine2,
-        [reg.city, reg.state, reg.postalCode].filter(Boolean).join(' '),
-        reg.country && reg.country !== 'US' ? reg.country : ''
-      ].filter(Boolean).join(', ');
-      const priestName = [reg.priestFirst, reg.priestLast].filter(Boolean).join(' ') || 'Not provided';
-      const treasurerName = [reg.treasurerFirst, reg.treasurerLast].filter(Boolean).join(' ') || 'Not provided';
-      const publicGivingPath = reg.status === 'verified' && reg.parishId ? `/give/${reg.parishId}` : '';
-      document.getElementById('registrationDetail').innerHTML = `
+  }
+}
+function renderDetail(reg) {
+  const reference = jsAttr(reg.reference);
+  const publicParishId = escapeHtml(reg.parishId || '');
+  const currentPhase = onboardingCurrentPhase(reg);
+  const onboardingChecks = reg.onboardingWorkflow?.checks || reg.onboardingChecks || {};
+  const paidSubscription = String(reg.subscriptionStatus || '').toLowerCase() === 'active';
+  const parishAddress = [
+    reg.addressLine1,
+    reg.addressLine2,
+    [reg.city, reg.state, reg.postalCode].filter(Boolean).join(' '),
+    reg.country && reg.country !== 'US' ? reg.country : '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const priestName = [reg.priestFirst, reg.priestLast].filter(Boolean).join(' ') || 'Not provided';
+  const treasurerName = [reg.treasurerFirst, reg.treasurerLast].filter(Boolean).join(' ') || 'Not provided';
+  const publicGivingPath = reg.status === 'verified' && reg.parishId ? `/give/${reg.parishId}` : '';
+  document.getElementById('registrationDetail').innerHTML = `
         ${renderOnboardingCommandHeader(reg)}
         ${renderOnboardingProgress(reg)}
         <details class="onboarding-record-details">
@@ -2335,9 +2409,7 @@ let selectedReference = '';
           <section class="onboarding-record-summary-card">
             <span>Public giving</span>
             <strong>${escapeHtml(readable(reg.givingStatus || 'not active'))}</strong>
-            ${publicGivingPath
-              ? `<p class="onboarding-record-url">${escapeHtml(publicGivingPath)}</p><p>Published after every gate passes and the treasurer clicks Go Live.</p>`
-              : '<p>The public giving URL is created after canonical verification and parish ID assignment.</p>'}
+            ${publicGivingPath ? `<p class="onboarding-record-url">${escapeHtml(publicGivingPath)}</p><p>Published after every gate passes and the treasurer clicks Go Live.</p>` : '<p>The public giving URL is created after canonical verification and parish ID assignment.</p>'}
           </section>
         </div>
         <details class="onboarding-record-subdetails">
@@ -2369,14 +2441,14 @@ let selectedReference = '';
           ${field('Subscription', `${subscriptionTierLabel(reg)} / ${readable(reg.subscriptionStatus)} / ${money(reg.subscriptionMonthlyCents)}`)}
           ${field('Transaction fee', transactionFeeLabel(reg))}
           ${field('Stripe Account ID', reg.stripeAccountId)}
-          ${field('Charges Enabled', reg.stripeChargesEnabled === undefined ? '' : String(reg.stripeChargesEnabled))}
-          ${field('Payouts Enabled', reg.stripePayoutsEnabled === undefined ? '' : String(reg.stripePayoutsEnabled))}
+          ${field('Charges Enabled', reg.stripeChargesEnabled === void 0 ? '' : String(reg.stripeChargesEnabled))}
+          ${field('Payouts Enabled', reg.stripePayoutsEnabled === void 0 ? '' : String(reg.stripePayoutsEnabled))}
           ${field('Stripe Invite Email', reg.stripeOnboardingEmailStatus)}
           ${field('Dashboard Invite Email', reg.dashboardInviteEmailStatus)}
           ${field('AGAPAY Alert Email', reg.adminNotificationEmailStatus)}
           ${field('Dashboard Invite Recipients', Array.isArray(reg.dashboardInviteEmailRecipients) ? reg.dashboardInviteEmailRecipients.join(', ') : '', 'full')}
           ${field('Public Parish ID', reg.parishId)}
-          ${field('Parish Dashboard Password', (reg.parishDashboardToken || reg.parishDashboardPasswordRecord) ? 'Set' : 'Not set')}
+          ${field('Parish Dashboard Password', reg.parishDashboardToken || reg.parishDashboardPasswordRecord ? 'Set' : 'Not set')}
           ${field('Received', reg.receivedAt)}
           ${field('Reviewed', reg.reviewedAt)}
           ${field('Community', reg.parishName)}
@@ -2398,7 +2470,9 @@ let selectedReference = '';
           ${field('Reviewer Notes', reg.reviewerNotes, 'full')}
         </div>
         ${renderStripeRequirements(reg)}
-        ${reg.status === 'verified' && reg.parishId ? `
+        ${
+          reg.status === 'verified' && reg.parishId
+            ? `
           <div class="field full">
             <div class="field-key">Public profile</div>
             <div class="field-val">
@@ -2407,7 +2481,9 @@ let selectedReference = '';
               Public giving URL: <code>/give/${publicParishId}</code>
             </div>
           </div>
-        ` : ''}
+        `
+            : ''
+        }
           </div>
         </details>
           </div>
@@ -2451,12 +2527,10 @@ let selectedReference = '';
           <div class="admin-section onboarding-phase-card ${currentPhase === 'access' ? 'is-current' : ''}" id="onboarding-phase-access">
             <button class="onboarding-phase-heading" type="button" onclick="activateOnboardingPhase('access')"><span>2</span><div><small>Give access</small><strong>${paidSubscription ? 'Set up the treasurer account' : 'Send one parish dashboard credential'}</strong></div><em>${currentPhase === 'access' ? 'Current' : 'Open'}</em></button>
             <div class="onboarding-access-summary">
-              ${paidSubscription
-                ? `<div class="${reg.onboardingAccess?.treasurer?.status === 'accepted' ? 'accepted' : ''}"><span>Paid treasurer account</span><strong>${escapeHtml(reg.treasurerEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.treasurer?.status || 'not sent'))}</em></div>`
-                : `<div class="${reg.dashboardInviteEmailStatus === 'sent' ? 'accepted' : ''}"><span>Trial parish credential</span><strong>${escapeHtml(reg.parishId || 'Parish ID assigned after verification')}</strong><em>${reg.dashboardInviteEmailStatus === 'sent' ? 'Sent' : 'Not sent'}</em></div>`}
+              ${paidSubscription ? `<div class="${reg.onboardingAccess?.treasurer?.status === 'accepted' ? 'accepted' : ''}"><span>Paid treasurer account</span><strong>${escapeHtml(reg.treasurerEmail || 'Email required')}</strong><em>${escapeHtml(readable(reg.onboardingAccess?.treasurer?.status || 'not sent'))}</em></div>` : `<div class="${reg.dashboardInviteEmailStatus === 'sent' ? 'accepted' : ''}"><span>Trial parish credential</span><strong>${escapeHtml(reg.parishId || 'Parish ID assigned after verification')}</strong><em>${reg.dashboardInviteEmailStatus === 'sent' ? 'Sent' : 'Not sent'}</em></div>`}
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
-              <button class="gold" onclick="sendDashboardInvite('${reference}', this)">${paidSubscription ? (reg.onboardingAccess?.treasurer?.status ? 'Resend treasurer invitation' : 'Send treasurer invitation') : (reg.dashboardInviteEmailStatus === 'sent' ? 'Resend parish dashboard access' : 'Send parish dashboard access')}</button>
+              <button class="gold" onclick="sendDashboardInvite('${reference}', this)">${paidSubscription ? (reg.onboardingAccess?.treasurer?.status ? 'Resend treasurer invitation' : 'Send treasurer invitation') : reg.dashboardInviteEmailStatus === 'sent' ? 'Resend parish dashboard access' : 'Send parish dashboard access'}</button>
             </div>
             <label class="check-card" style="margin-top:0.75rem;">
               <input id="autoDashboardInvite" type="checkbox" ${reg.status === 'verified' && reg.dashboardInviteEmailStatus === 'sent' ? '' : 'checked'} />
@@ -2473,9 +2547,9 @@ let selectedReference = '';
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
                 <select id="subscriptionTier">
-                  <option value="starter" ${['starter','mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Give - $9/mo</option>
+                  <option value="starter" ${['starter', 'mission'].includes(reg.subscriptionTier || '') ? 'selected' : ''}>Give - $9/mo</option>
                   <option value="giving" ${reg.subscriptionTier === 'giving' ? 'selected' : ''}>Give + - $79/mo</option>
-                  <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - household-priced</option>
+                  <option value="parish" ${!reg.subscriptionTier || reg.subscriptionTier === 'parish' ? 'selected' : ''}>Parish - household-priced</option>
                   <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Cathedral / Diocese - negotiated subscription, no donation fee</option>
                   <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - no monthly fee, no donation fee</option>
                 </select>
@@ -2645,791 +2719,435 @@ let selectedReference = '';
         </div>
       </div>
       `;
-      bindRegistrationAutosave(reg.reference);
+  bindRegistrationAutosave(reg.reference);
+}
+function copyRegistrationSummary() {
+  const fields = Array.from(document.querySelectorAll('#registrationDetail .field'))
+    .map((field2) => {
+      const key = field2.querySelector('.field-key')?.textContent || '';
+      const value = field2.querySelector('.field-val')?.textContent.trim() || '';
+      return `${key}: ${value}`;
+    })
+    .filter((line) => line.trim() !== ':');
+  if (!fields.length) {
+    setStatus('No registration loaded yet.', 'error');
+    return;
+  }
+  navigator.clipboard.writeText(fields.join('\n'));
+  setStatus('Registration summary copied.', 'success');
+}
+function dashboardInviteMessage(invite) {
+  if (!invite) return '';
+  if (invite.status === 'sent') return ` Dashboard invite sent to ${(invite.recipients || []).join(', ')}.`;
+  if (invite.status === 'not_configured')
+    return ' Dashboard invite prepared, but email was not sent because RESEND_API_KEY is not configured.';
+  if (invite.status === 'missing_recipient')
+    return ' Dashboard invite prepared, but no priest or treasurer email is on this registration.';
+  if (invite.status === 'failed')
+    return ` Dashboard invite email failed: ${invite.detail || 'provider rejected the message'}.`;
+  return ` Dashboard invite status: ${invite.status || 'unknown'}.`;
+}
+async function saveReview(reference, btn, options = {}) {
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  if (!options.autosave) {
+    if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
+    registrationAutosaveTimer = null;
+    registrationAutosaveQueued = false;
+    if (registrationAutosavePromise) await registrationAutosavePromise;
+  }
+  try {
+    const selectedStatus = document.getElementById('statusSelect').value;
+    const shouldSendVerifiedInvite =
+      !options.autosave &&
+      selectedStatus === 'verified' &&
+      (options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked);
+    let funds = [];
+    let campaigns = [];
+    try {
+      funds = JSON.parse(document.getElementById('fundsJson').value || '[]');
+      campaigns = JSON.parse(document.getElementById('campaignsJson').value || '[]');
+    } catch {
+      if (options.autosave) setRegistrationAutosaveState('Fix invalid JSON to save', 'error');
+      else setStatus('Funds or campaigns JSON is invalid.', 'error');
+      return false;
     }
-
-    function copyRegistrationSummary() {
-      const fields = Array.from(document.querySelectorAll('#registrationDetail .field')).map((field) => {
-        const key = field.querySelector('.field-key')?.textContent || '';
-        const value = field.querySelector('.field-val')?.textContent.trim() || '';
-        return `${key}: ${value}`;
-      }).filter(line => line.trim() !== ':');
-      if (!fields.length) {
-        setStatus('No registration loaded yet.', 'error');
-        return;
-      }
-      navigator.clipboard.writeText(fields.join('\n'));
-      setStatus('Registration summary copied.', 'success');
-    }
-
-    function dashboardInviteMessage(invite) {
-      if (!invite) return '';
-      if (invite.status === 'sent') return ` Dashboard invite sent to ${(invite.recipients || []).join(', ')}.`;
-      if (invite.status === 'not_configured') return ' Dashboard invite prepared, but email was not sent because RESEND_API_KEY is not configured.';
-      if (invite.status === 'missing_recipient') return ' Dashboard invite prepared, but no priest or treasurer email is on this registration.';
-      if (invite.status === 'failed') return ` Dashboard invite email failed: ${invite.detail || 'provider rejected the message'}.`;
-      return ` Dashboard invite status: ${invite.status || 'unknown'}.`;
-    }
-
-    async function saveReview(reference, btn, options = {}) {
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      if (!options.autosave) {
-        if (registrationAutosaveTimer) clearTimeout(registrationAutosaveTimer);
-        registrationAutosaveTimer = null;
-        registrationAutosaveQueued = false;
-        if (registrationAutosavePromise) await registrationAutosavePromise;
-      }
-      
+    const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), {
+      method: 'PATCH',
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        status: selectedStatus,
+        givingStatus: document.getElementById('givingStatus').value,
+        reviewedBy: document.getElementById('reviewedBy').value,
+        verificationSource: document.getElementById('verificationSource').value,
+        bishopOrAuthority: document.getElementById('bishopOrAuthority').value,
+        dioceseOrDeanery: document.getElementById('dioceseOrDeanery').value,
+        platformFee: document.getElementById('platformFee').value,
+        liturgicalCalendar: document.getElementById('liturgicalCalendar').value,
+        subscriptionTier: document.getElementById('subscriptionTier').value,
+        parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
+        subscriptionStatus: document.getElementById('subscriptionStatus').value,
+        stripeCustomerId: document.getElementById('stripeCustomerId').value,
+        stripeSubscriptionId: document.getElementById('stripeSubscriptionId').value,
+        recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
+        candlesEnabled: document.getElementById('candlesEnabled').checked,
+        commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
+        funds,
+        campaigns,
+        onboardingChecks: readOnboardingChecks(),
+        parishDashboardToken: document.getElementById('parishDashboardToken')?.value.trim() || void 0,
+        sendDashboardInvite: shouldSendVerifiedInvite,
+        reviewerNotes: options.includeReviewerNotes === false ? '' : document.getElementById('reviewerNotes').value,
+        billingLegalName: document.getElementById('billingLegalName').value,
+        billingAddressLine1: document.getElementById('billingAddressLine1').value,
+        billingAddressLine2: document.getElementById('billingAddressLine2').value,
+        billingCity: document.getElementById('billingCity').value,
+        billingState: document.getElementById('billingState').value,
+        billingPostalCode: document.getElementById('billingPostalCode').value,
+        billingCountry: document.getElementById('billingCountry').value,
+      }),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.error || 'Unable to save review');
+    const finalRegistration = result.registration;
+    upsertRegistrationCache(finalRegistration);
+    const notesEl = document.getElementById('reviewerNotes');
+    if (notesEl && options.includeReviewerNotes !== false) notesEl.value = '';
+    const reviewerName = document.getElementById('reviewedBy')?.value.trim();
+    if (reviewerName) {
       try {
-        const selectedStatus = document.getElementById('statusSelect').value;
-        const shouldSendVerifiedInvite = !options.autosave && selectedStatus === 'verified'
-          && (options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked);
-        let funds = [];
-        let campaigns = [];
-        try {
-          funds = JSON.parse(document.getElementById('fundsJson').value || '[]');
-          campaigns = JSON.parse(document.getElementById('campaignsJson').value || '[]');
-        } catch {
-          if (options.autosave) setRegistrationAutosaveState('Fix invalid JSON to save', 'error');
-          else setStatus('Funds or campaigns JSON is invalid.', 'error');
-          return false;
-        }
-
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), {
-          method: 'PATCH',
-          headers: {
-            ...authHeaders(),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: selectedStatus,
-            givingStatus: document.getElementById('givingStatus').value,
-            reviewedBy: document.getElementById('reviewedBy').value,
-            verificationSource: document.getElementById('verificationSource').value,
-            bishopOrAuthority: document.getElementById('bishopOrAuthority').value,
-            dioceseOrDeanery: document.getElementById('dioceseOrDeanery').value,
-            platformFee: document.getElementById('platformFee').value,
-            liturgicalCalendar: document.getElementById('liturgicalCalendar').value,
-            subscriptionTier: document.getElementById('subscriptionTier').value,
-            parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
-            subscriptionStatus: document.getElementById('subscriptionStatus').value,
-            stripeCustomerId: document.getElementById('stripeCustomerId').value,
-            stripeSubscriptionId: document.getElementById('stripeSubscriptionId').value,
-            recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
-            candlesEnabled: document.getElementById('candlesEnabled').checked,
-            commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
-            funds,
-            campaigns,
-            onboardingChecks: readOnboardingChecks(),
-            parishDashboardToken: document.getElementById('parishDashboardToken')?.value.trim() || undefined,
-            sendDashboardInvite: shouldSendVerifiedInvite,
-            reviewerNotes: options.includeReviewerNotes === false ? '' : document.getElementById('reviewerNotes').value,
-            billingLegalName: document.getElementById('billingLegalName').value,
-            billingAddressLine1: document.getElementById('billingAddressLine1').value,
-            billingAddressLine2: document.getElementById('billingAddressLine2').value,
-            billingCity: document.getElementById('billingCity').value,
-            billingState: document.getElementById('billingState').value,
-            billingPostalCode: document.getElementById('billingPostalCode').value,
-            billingCountry: document.getElementById('billingCountry').value
-          })
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to save review');
-
-        const finalRegistration = result.registration;
-        upsertRegistrationCache(finalRegistration);
-
-        // Clear the notes textarea after successful save
-        const notesEl = document.getElementById('reviewerNotes');
-        if (notesEl && options.includeReviewerNotes !== false) notesEl.value = '';
-        const reviewerName = document.getElementById('reviewedBy')?.value.trim();
-        if (reviewerName) {
-          try { sessionStorage.setItem(adminActorKey, reviewerName); } catch {}
-        }
-
-        renderQueueNext(finalRegistration);
-        if (options.autosave) {
-          renderMetrics(registrationsCache);
-          renderFilteredList();
-          setRegistrationAutosaveState(`Saved ${formatClock(new Date())}`, 'saved');
-          return true;
-        }
-
-        const activePhase = document.querySelector('.onboarding-phase-card.is-current')?.id?.replace('onboarding-phase-', '') || '';
-        await loadRegistrations({ silent: true, preserveSelection: true });
-        if (activePhase && selectedReference === reference) activateOnboardingPhase(activePhase);
-        const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
-        if (finalRegistration.status === 'verified' && finalRegistration.parishId) {
-          setStatus(`Review saved. ${finalRegistration.parishName} is verified and hidden while onboarding continues.${inviteMessage}`, 'success');
-          return true;
-        }
-        setStatus(`Review saved.${inviteMessage}`, 'success');
-        return true;
-      } catch (err) {
-        if (options.autosave) setRegistrationAutosaveState('Save failed - use Save progress', 'error');
-        else setStatus(err.message, 'error');
-        return false;
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
+        sessionStorage.setItem(adminActorKey, reviewerName);
+      } catch {}
     }
-
-    function generateDashboardToken() {
-      const bytes = new Uint8Array(18);
-      crypto.getRandomValues(bytes);
-      const tokenValue = 'agp_tmp_' + Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
-      const tokenInput = document.getElementById('parishDashboardToken');
-      if (tokenInput) tokenInput.value = tokenValue;
-      setStatus('Temporary dashboard token generated. Saving will email the invite.');
+    renderQueueNext(finalRegistration);
+    if (options.autosave) {
+      renderMetrics(registrationsCache);
+      renderFilteredList();
+      setRegistrationAutosaveState(`Saved ${formatClock(/* @__PURE__ */ new Date())}`, 'saved');
+      return true;
     }
-
-    async function sendDashboardInvite(reference, btn) {
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      
-      try {
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
-          method: 'POST',
-          headers: authHeaders()
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to send dashboard invite');
-
-        await loadDetail(reference, { silent: true, noScroll: true });
-        await loadRegistrations();
-        if (result.email?.status === 'sent') {
-          setStatus(`Dashboard invite sent to ${(result.email.recipients || []).join(', ')}.`, 'success');
-          return;
-        }
-        if (result.email?.status === 'not_configured') {
-          setStatus('Invite prepared, but email was not sent (RESEND_API_KEY missing).', 'info');
-          return;
-        }
-        if (result.email?.status === 'missing_recipient') {
-          setStatus('Invite prepared, but no priest or treasurer email is on this registration.', 'error');
-          return;
-        }
-        throw new Error(result.email?.detail || `Email status: ${result.email?.status || 'unknown'}`);
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    function setSubscriptionStatus(message, tone = '') {
-      const box = document.getElementById('subscriptionStatusMessage');
-      if (box) box.textContent = message || '';
-      setStatus(message, tone);
-    }
-
-    async function createSubscriptionCheckout(reference, btn, options = {}) {
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      
-      try {
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/subscription-checkout', {
-          method: 'POST',
-          headers: {
-            ...authHeaders(),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            subscriptionTier: document.getElementById('subscriptionTier').value,
-            parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
-            trialDays: options.trialDays || 0
-          })
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
-
-        await loadDetail(reference, { silent: true, noScroll: true });
-        renderQueueNext(result.registration);
-        await loadRegistrations();
-
-        if (!result.checkoutUrl) {
-          setSubscriptionStatus('Subscription updated. This tier does not require Stripe checkout.', 'info');
-          return;
-        }
-
-        const linkBox = document.getElementById('subscriptionLinkBox');
-        const link = document.getElementById('subscriptionCheckoutLink');
-        const help = document.getElementById('subscriptionLinkHelp');
-        if (linkBox && link) {
-          link.href = result.checkoutUrl;
-          linkBox.classList.add('visible');
-        }
-        let copied = false;
-        try {
-          await navigator.clipboard.writeText(result.checkoutUrl);
-          copied = true;
-        } catch {
-          copied = false;
-        }
-        const isTrial = Number(options.trialDays || 0) > 0;
-        if (help) help.textContent = isTrial
-          ? (copied
-            ? 'The 30-day demo link was copied. No card is required; Stripe cancels the subscription at the end unless the church adds a payment method.'
-            : 'The 30-day demo link is ready here. No card is required; Stripe cancels the subscription at the end unless the church adds a payment method.')
-          : (copied
-            ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AGAPAY billing.'
-            : 'Clipboard access was blocked, but the subscription checkout link is ready here.');
-        setSubscriptionStatus(isTrial
-          ? (copied ? '30-day free demo created and copied.' : '30-day free demo created.')
-          : (copied ? 'Subscription checkout created and copied.' : 'Subscription checkout created.'), 'success');
-      } catch (err) {
-        setSubscriptionStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    async function refreshStripeStatus(reference, btn) {
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      
-      try {
-        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-refresh', {
-          method: 'POST',
-          headers: authHeaders()
-        });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to refresh Stripe status');
-
-        await loadDetail(reference, { silent: true, noScroll: true });
-        await loadRegistrations();
-        setPaymentStatus(result.recovered
-          ? `Existing Stripe connection recovered and confirmed: ${result.registration.stripeAccountStatus || 'unknown'}.`
-          : `Stripe connection confirmed: ${result.registration.stripeAccountStatus || 'unknown'}.`, 'success');
-      } catch (err) {
-        setPaymentStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    // ── TAB NAVIGATION ────────────────────────────────────────────────────
-    let activeTab = 'overview';
-
-    function toggleMobileMore(force) {
-      const menu = document.getElementById('mobileMoreMenu');
-      const button = document.getElementById('mobileMoreButton');
-      if (!menu || !button) return;
-      const shouldOpen = typeof force === 'boolean' ? force : menu.hidden;
-      menu.hidden = !shouldOpen;
-      button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-      button.classList.toggle('active', shouldOpen);
-    }
-
-    function switchTab(tab) {
-      if (tab === 'queue') tab = 'giving';
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
-      const panel = document.getElementById('tab-' + tab);
-      const nav   = document.getElementById('nav-' + tab);
-      const mobileNav = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
-      if (panel) panel.classList.add('active');
-      if (nav)   nav.classList.add('active');
-      const navToolbox = nav?.closest('.sidebar-toolbox');
-      if (navToolbox) navToolbox.open = true;
-      if (mobileNav) mobileNav.classList.add('active');
-      activeTab = tab;
-      const titles = {
-        overview: 'Today',
-        giving: 'Parish Onboarding',
-        learn: 'AGAPAY Learn',
-        marketplace: 'AGAPAY Marketplace',
-        directory: 'AGAPAY Directory',
-        support: 'Support Inbox',
-        taxexemptions: 'Tax Exemption Review',
-        nonprofitpricing: 'Stripe Nonprofit Pricing',
-        auditlog: 'Audit Log',
-        accountingops: 'Accounting Health',
-        settings: 'Settings',
-        developer: 'Developer Tools'
-      };
-      const descriptions = {
-        overview: 'What needs your attention today.',
-        giving: 'Complete the next required action for one parish at a time.',
-        learn: 'Subscriptions, scholarships, feedback, and community review.',
-        marketplace: 'Marketplace readiness and seller activity.',
-        directory: 'Directory participation and publication health.',
-        support: 'Questions and requests waiting for a response.',
-        taxexemptions: 'Review documentation and Stripe tax synchronization.',
-        nonprofitpricing: 'Monitor nonprofit rate applications and thresholds.',
-        auditlog: 'Trace sensitive administrative changes.',
-        accountingops: 'Integrity, protective state, and recovery controls.',
-        settings: 'Security and platform configuration.',
-        developer: 'Low-frequency maintenance and manual tools.'
-      };
-      const titleEl = document.getElementById('topbarTitle');
-      if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
-      const descriptionEl = document.getElementById('topbarDescription');
-      if (descriptionEl) descriptionEl.textContent = descriptions[tab] || '';
-      toggleMobileMore(false);
-      document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
-      if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (tab === 'learn') loadLearnAdmin();
-      if (tab === 'support') loadParishSupportTickets();
-      if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
-      if (tab === 'accountingops') loadAdminAccountingTargets({ silent: true }).then(() => loadAdminAccountingOperations());
-      if (tab === 'nonprofitpricing') loadAdminNonprofitPricing();
-      if (tab === 'auditlog') {
-        populateAuditLogFilterOptions();
-        refreshAuditLogOrgOptions();
-        if (!auditLogLoadedOnce) loadAuditLog(true);
-      }
-    }
-
-    function populateAdminAccountingParishes() {
-      const select=document.getElementById('accountingOpsParish');if(!select)return;const current=select.value;
-      const registrationNames=new Map(registrationsCache.filter(reg=>reg.parishId).map(reg=>[reg.parishId,reg.parishName||reg.parishId]));
-      const provisioned=adminAccountingTargetsLoaded?adminAccountingTargets:[{parishId:'st-fiacre',internalCanary:false}];
-      const targets=provisioned.filter((target,index,rows)=>target.parishId&&rows.findIndex(item=>item.parishId===target.parishId)===index);
-      const optionMarkup=target=>{const label=registrationNames.get(target.parishId)||target.parishId;return `<option value="${escapeAttr(target.parishId)}">${escapeHtml(label)} · ${escapeHtml(target.parishId)}</option>`;};
-      const parishes=targets.filter(target=>!target.internalCanary),fixtures=targets.filter(target=>target.internalCanary);
-      const parishGroup=parishes.length?`<optgroup label="Provisioned parishes">${parishes.map(optionMarkup).join('')}</optgroup>`:'';
-      const fixtureGroup=fixtures.length?`<optgroup label="Internal monitoring fixtures">${fixtures.map(target=>`<option value="${escapeAttr(target.parishId)}">Phase G integrity canary · ${escapeHtml(target.parishId)}</option>`).join('')}</optgroup>`:'';
-      select.innerHTML=`<option value="">${targets.length?'Select a target':'No provisioned accounting targets'}</option>${parishGroup}${fixtureGroup}`;
-      select.disabled=!targets.length;
-      select.setAttribute('aria-busy','false');
-      if([...select.options].some(option=>option.value===current))select.value=current;
-    }
-
-    async function loadAdminAccountingTargets({silent=false}={}){const select=document.getElementById('accountingOpsParish');if(select)select.setAttribute('aria-busy','true');try{const response=await fetch('/api/admin/accounting/targets',{headers:authHeaders()}),payload=await response.json().catch(()=>({}));if(handleAuthFailure(response,payload))return false;if(!response.ok)throw new Error(payload.message||payload.error||'Unable to load provisioned accounting targets.');adminAccountingTargets=Array.isArray(payload.targets)?payload.targets:[];adminAccountingTargetsLoaded=true;adminAccountingEnvironment=String(payload.environment||'').trim().toLowerCase();const activation=document.getElementById('accountingPreparedActivation');if(activation)activation.hidden=!adminAccountingEnvironment||adminAccountingEnvironment==='production';populateAdminAccountingParishes();return true;}catch(error){if(select)select.setAttribute('aria-busy','false');if(!silent)setStatus(error.message,'error');return false;}}
-    function selectedAdminAccountingTarget(){const parishId=adminAccountingParish();return adminAccountingTargets.find(target=>target.parishId===parishId)||null;}
-    function adminAccountingParish(){return document.getElementById('accountingOpsParish')?.value||'';}
-    async function adminAccountingFetch(path,options={}){const parishId=adminAccountingParish();if(!parishId)throw new Error('Select a parish first.');const method=options.method||'GET',url=method==='GET'?`${path}?parishId=${encodeURIComponent(parishId)}`:path,body=method==='GET'?undefined:JSON.stringify({parishId,...(options.body||{})}),response=await fetch(url,{method,headers:authHeaders(body?{'Content-Type':'application/json'}:{}),body}),payload=await response.json().catch(()=>({}));if(handleAuthFailure(response,payload))throw new Error('Admin session expired.');if(!response.ok)throw new Error(payload.message||payload.error||'Accounting operation failed.');return payload;}
-    async function activateAdminPreparedAccounting(btn){if(btn){btn.disabled=true;btn.classList.add('loading');}try{await adminAccountingFetch('/api/admin/accounting/activate-prepared',{method:'POST'});await loadAdminAccountingOperations();setStatus('Prepared staging accounting database activated.','success');}catch(error){setStatus(error.message,'error');const status=document.getElementById('accountingOpsStatus');if(status)status.textContent=error.message;}finally{if(btn){btn.disabled=false;btn.classList.remove('loading');}}}
-    async function loadAdminAccountingOperations(){const parishId=adminAccountingParish(),status=document.getElementById('accountingOpsStatus'),target=selectedAdminAccountingTarget();if(!parishId){if(status)status.textContent='Select a target to load accounting health.';return;}if(status)status.textContent=target?.internalCanary?'Loading the internal integrity canary…':'Loading parish accounting operations…';try{const [health,scans,recovery]=await Promise.all([adminAccountingFetch('/api/admin/accounting/health'),adminAccountingFetch('/api/admin/accounting/integrity-scans'),adminAccountingFetch('/api/admin/accounting/recovery-verifications')]);adminAccountingHealth=health.health||null;renderAdminAccountingHealth(health.health||{});renderAdminIntegrityScans(scans.scans||[]);renderAdminRecoveryVerifications(recovery.verifications||[]);status.textContent=target?.internalCanary?`Loaded internal monitoring fixture ${parishId}. It contains synthetic operational data, not customer parish data.`:`Loaded ${parishId}.`; }catch(error){status.textContent=error.message;setStatus(error.message,'error');}}
-    function renderAdminAccountingHealth(health){const box=document.getElementById('accountingOpsHealth'),protective=health.protectiveState||{},target=selectedAdminAccountingTarget();if(!box)return;const targetType=target?.internalCanary?'Internal monitoring fixture':'Provisioned parish';const fixtureNote=target?.internalCanary?'<p class="muted"><strong>Internal fixture:</strong> Actions here affect the scheduled integrity-monitoring canary only; no customer parish data is involved.</p>':'';box.innerHTML=`<div class="fields-grid"><div class="field"><div class="field-key">Target type</div><div class="field-val">${targetType}</div></div><div class="field"><div class="field-key">Registry health</div><div class="field-val">${escapeHtml(String(target?.healthStatus||'unknown').replaceAll('_',' '))}</div></div><div class="field"><div class="field-key">Health</div><div class="field-val">${escapeHtml(String(health.status||'unknown').replaceAll('_',' '))}</div></div><div class="field"><div class="field-key">Protective state</div><div class="field-val">${escapeHtml(String(protective.state||'unknown').replaceAll('_',' '))} · version ${Number(protective.version||0)}</div></div><div class="field"><div class="field-key">Open findings</div><div class="field-val">${(health.findings||[]).length}</div></div><div class="field"><div class="field-key">Active work</div><div class="field-val">${Number(health.activeWork||0)}</div></div></div>${fixtureNote}<p class="muted">${escapeHtml(protective.safeSummary||'No protective restriction is active.')}</p><p class="muted">${escapeHtml(health.disclaimer||'')}</p>`;}
-    function renderAdminIntegrityScans(scans){const box=document.getElementById('accountingOpsScans');if(!box)return;box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Started</th><th>Type / scope</th><th>Status</th><th>Checks</th><th>Findings</th></tr></thead><tbody>${scans.map(scan=>`<tr><td>${escapeHtml(shortDate(scan.startedAt||scan.completedAt))}</td><td>${escapeHtml(scan.scanType)} · ${escapeHtml(scan.scope)}</td><td>${escapeHtml(scan.status)}</td><td>${Number(scan.checksPassed||0)} passed / ${Number(scan.checksFailed||0)} failed</td><td>${Number(scan.findingCount||0)} total · ${Number(scan.criticalFindingCount||0)} critical</td></tr>`).join('')||'<tr><td colspan="5">No integrity scans.</td></tr>'}</tbody></table></div>`;}
-    function renderAdminRecoveryVerifications(rows){const box=document.getElementById('accountingOpsRecovery');if(!box)return;box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Verified</th><th>Type</th><th>Artifact</th><th>Status</th></tr></thead><tbody>${rows.map(row=>`<tr><td>${escapeHtml(shortDate(row.verifiedAt))}</td><td>${escapeHtml(row.verificationType)}</td><td>${escapeHtml(row.artifactReference||'—')}</td><td>${escapeHtml(row.status)}</td></tr>`).join('')||'<tr><td colspan="4">No recovery verifications.</td></tr>'}</tbody></table></div>`;}
-    async function runAdminIntegrityScan(btn){if(btn){btn.disabled=true;btn.classList.add('loading');}try{await adminAccountingFetch('/api/admin/accounting/integrity-scan',{method:'POST',body:{scanType:'manual',scope:document.getElementById('accountingScanScope').value,correlationId:`admin-${Date.now()}`}});await loadAdminAccountingOperations();setStatus('Integrity scan completed.','success');}catch(error){setStatus(error.message,'error');}finally{if(btn){btn.disabled=false;btn.classList.remove('loading');}}}
-    async function changeAdminProtectiveState(release,btn){const parishId=adminAccountingParish(),confirmation=document.getElementById('accountingProtectiveConfirm').value.trim(),reason=document.getElementById('accountingProtectiveReason').value.trim(),state=document.getElementById('accountingProtectiveState').value;if(!parishId||confirmation!==parishId){setStatus('Type the exact parish ID to confirm this protective-state change.','error');return;}if(!reason){setStatus('A free-text reason is required.','error');return;}if(btn){btn.disabled=true;btn.classList.add('loading');}try{const expectedVersion=adminAccountingHealth?.protectiveState?.version;if(release)await adminAccountingFetch('/api/admin/accounting/protective-state/release',{method:'POST',body:{expectedVersion,reason}});else await adminAccountingFetch('/api/admin/accounting/protective-state',{method:'POST',body:{state,reasonCode:reason,safeSummary:reason,expectedVersion}});document.getElementById('accountingProtectiveConfirm').value='';await loadAdminAccountingOperations();setStatus(release?'Protective state released.':'Protective state updated.','success');}catch(error){setStatus(error.message,'error');}finally{if(btn){btn.disabled=false;btn.classList.remove('loading');}}}
-    async function verifyAdminRecoveryEvidence(event){event.preventDefault();const form=event.currentTarget,raw=Object.fromEntries(new FormData(form));try{raw.manifest=JSON.parse(raw.manifest);await adminAccountingFetch('/api/admin/accounting/recovery-verification',{method:'POST',body:{...raw,correlationId:`admin-recovery-${Date.now()}`}});form.reset();await loadAdminAccountingOperations();setStatus('Recovery evidence verification completed.','success');}catch(error){setStatus(error.message,'error');}}
-    async function loadAdminNonprofitPricing(btn) {
-      const tableBody = document.getElementById('nonprofitPricingTableBody');
-      const cards = document.getElementById('nonprofitPricingSummaryCards');
-      if (!tableBody || !cards) return;
-      if (btn) { btn.disabled = true; btn.classList.add('loading'); }
-      try {
-        const response = await fetch('/api/admin/nonprofit-pricing', { headers: authHeaders() });
-        const data = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, data)) return;
-        if (!response.ok) throw new Error(data.error || 'Unable to load nonprofit-pricing thresholds');
-        const totals = data.totals || {};
-        cards.innerHTML = [
-          ['Monitored', totals.monitored || 0, 'Connected parish accounts'],
-          ['Watch', totals.watch || 0, '15–17.49% exposure'],
-          ['Near threshold', totals.near || 0, '17.5–19.99% exposure'],
-          ['At or over 20%', totals.breached || 0, 'Immediate review']
-        ].map(([label, value, note]) => `<article class="revenue-card"><div class="revenue-label">${escapeHtml(label)}</div><div class="revenue-value">${Number(value).toLocaleString()}</div><div class="revenue-meta">${escapeHtml(note)}</div></article>`).join('');
-        const parishes = data.parishes || [];
-        tableBody.innerHTML = parishes.length ? parishes.map(parish => {
-          const exposure = Number(parish.risk?.thresholdExposurePercent || 0);
-          const width = Math.max(0, Math.min(100, (exposure / 20) * 100));
-          const color = parish.risk?.riskBand === 'breached' ? '#8a2828' : parish.risk?.riskBand === 'near' ? '#b66a1c' : parish.risk?.riskBand === 'watch' ? '#c49a3e' : '#2f6e55';
-          return `<tr>
-            <td><strong>${escapeHtml(parish.parishName)}</strong><br><small>${escapeHtml(parish.parishId)}</small></td>
-            <td>${escapeHtml(String(parish.applicationStatus || 'not_started').replaceAll('_', ' '))}</td>
-            <td>${Number(parish.volume?.donationPercent || 0).toFixed(2)}%<br><small>${money(parish.volume?.donationNetCents || 0)}</small></td>
-            <td>${Number(parish.risk?.classifiedNonDonationPercent || 0).toFixed(2)}%<br><small>${money(parish.volume?.nonDonationNetCents || 0)}</small></td>
-            <td>${money(parish.volume?.unclassifiedNetCents || 0)}</td>
-            <td style="min-width:240px;"><div style="height:10px;background:#e8e2d5;border-radius:999px;overflow:hidden;"><div style="height:100%;width:${width}%;background:${color};"></div></div><small>${exposure.toFixed(2)}% of 20% · ${Number(parish.risk?.headroomPercent || 0).toFixed(2)} points left<br>Current capacity: ${money(parish.risk?.additionalNonDonationCapacityCents || 0)}</small><div style="display:flex;gap:6px;margin-top:6px;"><input type="number" min="0" step="0.01" placeholder="Planned non-donation $" style="width:145px;" oninput="calculateNonprofitProjection(this,${Number(parish.volume?.totalNetCents || 0)},${Number(parish.risk?.thresholdExposureCents || 0)})"><small class="nonprofit-projection-result"></small></div></td>
-            <td><span class="status-badge status-${escapeAttr(parish.risk?.riskBand || 'safe')}">${escapeHtml(parish.risk?.riskBand || 'safe')}</span></td>
-            <td>${parish.volume?.scan?.complete ? 'Complete' : 'Incomplete'}<br><small>${escapeHtml(shortDate(parish.volume?.scan?.lastCompletedAt) || '')}</small></td>
-          </tr>`;
-        }).join('') : '<tr><td colspan="8"><div class="revenue-empty">No connected parish Stripe accounts are available.</div></td></tr>';
-      } catch (err) {
-        tableBody.innerHTML = `<tr><td colspan="8"><div class="revenue-empty">${escapeHtml(err.message)}</div></td></tr>`;
-      } finally {
-        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-      }
-    }
-
-    function calculateNonprofitProjection(input, currentTotalCents, currentExposureCents) {
-      const addedCents = Math.max(0, Math.round((Number(input.value) || 0) * 100));
-      const projectedTotal = Number(currentTotalCents || 0) + addedCents;
-      const projectedExposure = Number(currentExposureCents || 0) + addedCents;
-      const percent = projectedTotal ? (projectedExposure / projectedTotal) * 100 : 0;
-      const output = input.parentElement?.querySelector('.nonprofit-projection-result');
-      if (output) output.textContent = input.value ? `${percent.toFixed(2)}% projected` : '';
-    }
-
-    async function runNonprofitPricingAlerts(btn) {
-      if (btn) { btn.disabled = true; btn.classList.add('loading'); }
-      try {
-        const response = await fetch('/api/admin/nonprofit-pricing/alerts/run', { method: 'POST', headers: authHeaders() });
-        const data = await response.json().catch(() => ({}));
-        if (handleAuthFailure(response, data)) return;
-        if (!response.ok) throw new Error(data.error || 'Unable to run threshold alerts');
-        setStatus(`Threshold alert check complete. ${Number(data.result?.sent || 0)} email alert(s) sent.`, 'success');
-        await loadAdminNonprofitPricing();
-      } catch (err) {
-        setStatus(err.message, 'error');
-      } finally {
-        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-      }
-    }
-
-    // ── AUDIT LOG (Phase 6) ──────────────────────────────────────────────
-    let auditLogLoadedOnce = false;
-    let auditLogCursor = '';
-    let auditLogOptionsPopulated = false;
-
-    // Every `action` value that recordAuditEvent() is actually called with
-    // anywhere in the codebase, grouped by the area of the app that writes
-    // it. Kept here (not fetched from the server) so the dropdown/legend
-    // work even before any matching event exists yet. If you add a new
-    // recordAuditEvent() call site with a new action string, add it here too
-    // so it shows up as a real filter option instead of only reachable by
-    // typing the raw string.
-    const AUDIT_ACTION_CATALOG = [
-      { group: 'Nonprofit Pricing', value: 'nonprofit_pricing.alert_check_run', label: 'Threshold alert check run', description: 'An admin manually ran the site-wide nonprofit-pricing threshold notification check.' },
-      { group: 'Registrations', value: 'registration.status_changed', label: 'Registration status changed', description: "An admin moved a parish's registration through the verification pipeline (e.g. pending → verified)." },
-      { group: 'Registrations', value: 'admin.index_rebuild', label: 'Registration index rebuilt', description: 'An admin manually rebuilt the parish-ID lookup index — a bulk operation, not tied to one parish.' },
-
-      { group: 'Revenue Streams', value: 'settlement_profile.renamed', label: 'Revenue stream renamed', description: 'A settlement profile (how giving/bookstore money gets routed to a bank account) was renamed.' },
-      { group: 'Revenue Streams', value: 'settlement_profile.active_changed', label: 'Revenue stream activated/deactivated', description: 'A settlement profile was turned on or off.' },
-      { group: 'Revenue Streams', value: 'settlement_profile.default_giving_changed', label: 'Default giving stream changed', description: "A parish's default revenue stream for donations was changed." },
-      { group: 'Revenue Streams', value: 'settlement_profile.default_commerce_changed', label: 'Default bookstore stream changed', description: "A parish's default revenue stream for bookstore sales was changed." },
-      { group: 'Revenue Streams', value: 'settlement_profile.module_assigned', label: 'Module routed to a revenue stream', description: 'Giving or Bookstore was explicitly pointed at a specific revenue stream/Stripe account.' },
-
-      { group: 'Sales-Tax Exemptions', value: 'claim_created', label: 'Exemption claim submitted', description: 'A parish submitted a new sales-tax exemption claim.' },
-      { group: 'Sales-Tax Exemptions', value: 'document_viewed', label: 'Exemption certificate viewed', description: 'An admin opened an uploaded exemption certificate/document.' },
-      { group: 'Sales-Tax Exemptions', value: 'admin_note_added', label: 'Internal note added', description: 'An admin added a private review note to an exemption claim (never shown to the parish).' },
-      { group: 'Sales-Tax Exemptions', value: 'approved', label: 'Exemption claim approved', description: "An admin approved a parish's exemption claim." },
-      { group: 'Sales-Tax Exemptions', value: 'rejected', label: 'Exemption claim rejected', description: "An admin rejected a parish's exemption claim." },
-      { group: 'Sales-Tax Exemptions', value: 'replacement_requested', label: 'Replacement documentation requested', description: 'An admin asked the parish to re-submit their exemption certificate.' },
-      { group: 'Sales-Tax Exemptions', value: 'revoked', label: 'Exemption revoked', description: 'A previously-approved exemption was revoked.' },
-      { group: 'Sales-Tax Exemptions', value: 'reconciliation_required', label: 'Stripe mismatch flagged', description: "The system found Stripe's exemption state no longer matches AGAPAY's record — needs manual reconciliation." },
-      { group: 'Sales-Tax Exemptions', value: 'stripe_sync_attempted', label: 'Stripe sync attempted', description: 'AGAPAY tried to push the exemption status to a Stripe customer.' },
-      { group: 'Sales-Tax Exemptions', value: 'stripe_sync_succeeded', label: 'Stripe sync succeeded', description: 'The exemption status was successfully applied in Stripe.' },
-      { group: 'Sales-Tax Exemptions', value: 'stripe_sync_partial', label: 'Stripe sync partially succeeded', description: 'One of two linked Stripe customers synced; the other still needs attention.' },
-      { group: 'Sales-Tax Exemptions', value: 'expiration_processed', label: 'Exemption expired/processed', description: 'An approved exemption passed its expiration date and was disabled (automatically or by an admin).' },
-    ];
-
-    const AUDIT_ACTOR_TYPES = [
-      { value: 'admin', label: 'Admin', description: 'An AGAPAY staff member, acting from the admin dashboard.' },
-      { value: 'parish', label: 'Parish', description: "A parish's own dashboard user (priest or treasurer)." },
-      { value: 'donor', label: 'Donor', description: 'A donor, acting from My AGAPAY.' },
-      { value: 'system', label: 'System', description: 'Automated — a scheduled job or webhook. No human involved.' },
-    ];
-
-    const AUDIT_TARGET_TYPES = [
-      { value: 'registration', label: 'Registration', description: "A single parish's registration record." },
-      { value: 'registrations', label: 'Registrations (bulk)', description: 'A platform-wide operation affecting the whole registration index, not one parish.' },
-      { value: 'settlement_profile', label: 'Revenue stream', description: 'A settlement profile — how a parish routes giving/bookstore money to a bank account.' },
-    ];
-
-    function auditActionLabel(action) {
-      const entry = AUDIT_ACTION_CATALOG.find((a) => a.value === action);
-      return entry ? entry.label : (action || 'Unknown action');
-    }
-
-    function auditActorTypeLabel(value) {
-      const entry = AUDIT_ACTOR_TYPES.find((t) => t.value === value);
-      return entry ? entry.label : (value || '');
-    }
-
-    function auditTargetTypeLabel(value) {
-      const entry = AUDIT_TARGET_TYPES.find((t) => t.value === value);
-      return entry ? entry.label : (value || '—');
-    }
-
-    function populateAuditLogFilterOptions() {
-      if (auditLogOptionsPopulated) return;
-      auditLogOptionsPopulated = true;
-
-      const actionSelect = document.getElementById('auditLogAction');
-      if (actionSelect) {
-        const groups = {};
-        AUDIT_ACTION_CATALOG.forEach((a) => { (groups[a.group] = groups[a.group] || []).push(a); });
-        actionSelect.innerHTML = '<option value="">All actions</option>' + Object.keys(groups).map((groupName) => `
-          <optgroup label="${escapeAttr(groupName)}">
-            ${groups[groupName].map((a) => `<option value="${escapeAttr(a.value)}" title="${escapeAttr(a.description)}">${escapeHtml(a.label)}</option>`).join('')}
-          </optgroup>
-        `).join('');
-      }
-
-      const actorTypeSelect = document.getElementById('auditLogActorType');
-      if (actorTypeSelect) {
-        actorTypeSelect.innerHTML = '<option value="">All actor types</option>' +
-          AUDIT_ACTOR_TYPES.map((t) => `<option value="${escapeAttr(t.value)}" title="${escapeAttr(t.description)}">${escapeHtml(t.label)}</option>`).join('');
-      }
-
-      const targetTypeSelect = document.getElementById('auditLogTargetType');
-      if (targetTypeSelect) {
-        targetTypeSelect.innerHTML = '<option value="">All target types</option>' +
-          AUDIT_TARGET_TYPES.map((t) => `<option value="${escapeAttr(t.value)}" title="${escapeAttr(t.description)}">${escapeHtml(t.label)}</option>`).join('');
-      }
-
-      const actorLegend = document.getElementById('auditLogActorTypeLegend');
-      if (actorLegend) {
-        actorLegend.innerHTML = AUDIT_ACTOR_TYPES.map((t) => `<div><strong style="color:var(--ink,inherit);">${escapeHtml(t.label)}</strong> — ${escapeHtml(t.description)}</div>`).join('');
-      }
-      const targetLegend = document.getElementById('auditLogTargetTypeLegend');
-      if (targetLegend) {
-        targetLegend.innerHTML = AUDIT_TARGET_TYPES.map((t) => `<div><strong style="color:var(--ink,inherit);">${escapeHtml(t.label)}</strong> — ${escapeHtml(t.description)}</div>`).join('');
-      }
-      const actionLegend = document.getElementById('auditLogActionLegend');
-      if (actionLegend) {
-        const groups = {};
-        AUDIT_ACTION_CATALOG.forEach((a) => { (groups[a.group] = groups[a.group] || []).push(a); });
-        actionLegend.innerHTML = Object.keys(groups).map((groupName) => `
-          <div style="margin-bottom:0.5rem;">
-            <div style="font-weight:600;color:var(--ink,inherit);">${escapeHtml(groupName)}</div>
-            ${groups[groupName].map((a) => `<div style="padding-left:0.75rem;">${escapeHtml(a.label)} — ${escapeHtml(a.description)}</div>`).join('')}
-          </div>
-        `).join('');
-      }
-
-      refreshAuditLogOrgOptions();
-    }
-
-    function refreshAuditLogOrgOptions() {
-      const list = document.getElementById('auditLogOrgList');
-      if (!list || !Array.isArray(registrationsCache) || !registrationsCache.length) return;
-      const seen = new Set();
-      list.innerHTML = registrationsCache
-        .filter((item) => item.parishId && !seen.has(item.parishId) && seen.add(item.parishId))
-        .map((item) => `<option value="${escapeAttr(item.parishId)}">${escapeHtml(item.parishName || item.parishId)}</option>`)
-        .join('');
-    }
-
-    function setAuditLogQuickRange(days) {
-      const until = new Date();
-      const since = new Date(until.getTime() - days * 24 * 60 * 60 * 1000);
-      const toLocalInputValue = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      const sinceEl = document.getElementById('auditLogSince');
-      const untilEl = document.getElementById('auditLogUntil');
-      if (sinceEl) sinceEl.value = toLocalInputValue(since);
-      if (untilEl) untilEl.value = toLocalInputValue(until);
-      loadAuditLog(true);
-    }
-
-    function resetAuditLogFilters() {
-      ['auditLogAction', 'auditLogActorType', 'auditLogActor', 'auditLogTargetType', 'auditLogTargetId', 'auditLogOrganization', 'auditLogSince', 'auditLogUntil'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      loadAuditLog(true);
-    }
-
-    function auditActionBadgeClass(action) {
-      if (!action) return 'not_configured';
-      if (action.includes('status_changed') || action.includes('active_changed')) return 'pending';
-      if (action.includes('rebuild') || action.includes('default') || action.includes('module_assigned') || action.includes('renamed')) return 'active';
-      return 'not_configured';
-    }
-
-    function renderAuditLogTable(events, append) {
-      const wrap = document.getElementById('auditLogTableWrap');
-      if (!wrap) return;
-      if (!append && events.length === 0) {
-        wrap.innerHTML = '<div class="revenue-empty">No audit events match these filters yet.</div>';
-        return;
-      }
-      const rows = events.map((event) => `
-        <tr>
-          <td style="white-space:nowrap;font-size:12px;color:var(--muted);">${escapeHtml(new Date(event.createdAt + 'Z').toUTCString().replace(' GMT', ' UTC'))}</td>
-          <td><span class="badge ${escapeAttr(auditActionBadgeClass(event.action))}" title="${escapeAttr(event.action || '')}">${escapeHtml(auditActionLabel(event.action))}</span></td>
-          <td style="font-size:12px;">${escapeHtml(event.actorUserId || '—')}<br><span class="muted" style="font-size:10px;">${escapeHtml(auditActorTypeLabel(event.actorType))}</span></td>
-          <td style="font-size:12px;">${escapeHtml(auditTargetTypeLabel(event.targetType))}${event.targetId ? '<br><span class="muted" style="font-size:10px;">' + escapeHtml(event.targetId) + '</span>' : ''}</td>
-          <td style="font-size:12px;">${escapeHtml(event.organizationId || '—')}</td>
-          <td style="font-size:11px;color:var(--stone);max-width:220px;">${event.before ? '<div><strong>before:</strong> ' + escapeHtml(JSON.stringify(event.before)) + '</div>' : ''}${event.after ? '<div><strong>after:</strong> ' + escapeHtml(JSON.stringify(event.after)) + '</div>' : ''}${event.reason ? '<div><strong>reason:</strong> ' + escapeHtml(event.reason) + '</div>' : ''}</td>
-        </tr>
-      `).join('');
-      const table = `
-        <div style="overflow-x:auto;">
-          <table class="admin-table" style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">
-                <th style="padding:0.5rem 0.6rem;">When</th>
-                <th style="padding:0.5rem 0.6rem;">Action</th>
-                <th style="padding:0.5rem 0.6rem;">Actor</th>
-                <th style="padding:0.5rem 0.6rem;">Target</th>
-                <th style="padding:0.5rem 0.6rem;">Organization</th>
-                <th style="padding:0.5rem 0.6rem;">Detail</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      `;
-      if (append) {
-        wrap.insertAdjacentHTML('beforeend', table);
-      } else {
-        wrap.innerHTML = table;
-      }
-    }
-
-    async function loadAuditLog(reset, btn) {
-      auditLogLoadedOnce = true;
-      if (reset) auditLogCursor = '';
-      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-
-      const params = new URLSearchParams();
-      const action = document.getElementById('auditLogAction')?.value.trim();
-      const actorType = document.getElementById('auditLogActorType')?.value.trim();
-      const actor = document.getElementById('auditLogActor')?.value.trim();
-      const targetType = document.getElementById('auditLogTargetType')?.value.trim();
-      const targetId = document.getElementById('auditLogTargetId')?.value.trim();
-      const organization = document.getElementById('auditLogOrganization')?.value.trim();
-      const since = document.getElementById('auditLogSince')?.value;
-      const until = document.getElementById('auditLogUntil')?.value;
-      if (action) params.set('action', action);
-      if (actorType) params.set('actorType', actorType);
-      if (actor) params.set('actor', actor);
-      if (targetType) params.set('targetType', targetType);
-      if (targetId) params.set('targetId', targetId);
-      if (organization) params.set('organization', organization);
-      if (since) params.set('since', new Date(since).toISOString());
-      if (until) params.set('until', new Date(until).toISOString());
-      if (auditLogCursor) params.set('cursor', auditLogCursor);
-
-      try {
-        const response = await fetch('/api/admin/audit-log?' + params.toString(), { headers: authHeaders() });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load audit log');
-
-        renderAuditLogTable(result.events || [], !reset);
-        auditLogCursor = result.cursor || '';
-        const moreBtn = document.getElementById('auditLogMoreBtn');
-        if (moreBtn) moreBtn.style.display = result.hasMore ? '' : 'none';
-        const countEl = document.getElementById('auditLogCount');
-        if (countEl) countEl.textContent = (result.events || []).length + (reset ? '' : ' more') + ' event(s) shown';
-      } catch (err) {
-        const wrap = document.getElementById('auditLogTableWrap');
-        if (wrap && reset) wrap.innerHTML = '<div class="revenue-empty">' + escapeHtml(err.message) + '</div>';
-      } finally {
-        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      }
-    }
-
-    // ── BULK ACTIONS ──────────────────────────────────────────────────────
-    let selectedRefs = new Set();
-
-    function updateBulkBar() {
-      selectedRefs = new Set(
-        Array.from(document.querySelectorAll('.row-chk:checked')).map(c => c.value)
+    const activePhase =
+      document.querySelector('.onboarding-phase-card.is-current')?.id?.replace('onboarding-phase-', '') || '';
+    await loadRegistrations({ silent: true, preserveSelection: true });
+    if (activePhase && selectedReference === reference) activateOnboardingPhase(activePhase);
+    const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
+    if (finalRegistration.status === 'verified' && finalRegistration.parishId) {
+      setStatus(
+        `Review saved. ${finalRegistration.parishName} is verified and hidden while onboarding continues.${inviteMessage}`,
+        'success'
       );
-      const bar = document.getElementById('bulkBar');
-      const cnt = document.getElementById('bulkCount');
-      if (!bar) return;
-      if (selectedRefs.size > 0) {
-        bar.classList.add('visible');
-        cnt.textContent = selectedRefs.size + ' selected';
-      } else {
-        bar.classList.remove('visible');
+      return true;
+    }
+    setStatus(`Review saved.${inviteMessage}`, 'success');
+    return true;
+  } catch (err) {
+    if (options.autosave) setRegistrationAutosaveState('Save failed - use Save progress', 'error');
+    else setStatus(err.message, 'error');
+    return false;
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+}
+function generateDashboardToken() {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  const tokenValue = 'agp_tmp_' + Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  const tokenInput = document.getElementById('parishDashboardToken');
+  if (tokenInput) tokenInput.value = tokenValue;
+  setStatus('Temporary dashboard token generated. Saving will email the invite.');
+}
+async function sendDashboardInvite(reference, btn) {
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  try {
+    const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.detail || result.error || 'Unable to send dashboard invite');
+    await loadDetail(reference, { silent: true, noScroll: true });
+    await loadRegistrations();
+    if (result.email?.status === 'sent') {
+      setStatus(`Dashboard invite sent to ${(result.email.recipients || []).join(', ')}.`, 'success');
+      return;
+    }
+    if (result.email?.status === 'not_configured') {
+      setStatus('Invite prepared, but email was not sent (RESEND_API_KEY missing).', 'info');
+      return;
+    }
+    if (result.email?.status === 'missing_recipient') {
+      setStatus('Invite prepared, but no priest or treasurer email is on this registration.', 'error');
+      return;
+    }
+    throw new Error(result.email?.detail || `Email status: ${result.email?.status || 'unknown'}`);
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+}
+function setSubscriptionStatus(message, tone = '') {
+  const box = document.getElementById('subscriptionStatusMessage');
+  if (box) box.textContent = message || '';
+  setStatus(message, tone);
+}
+async function createSubscriptionCheckout(reference, btn, options = {}) {
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  try {
+    const response = await fetch(
+      '/api/admin/registrations/' + encodeURIComponent(reference) + '/subscription-checkout',
+      {
+        method: 'POST',
+        headers: {
+          ...authHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subscriptionTier: document.getElementById('subscriptionTier').value,
+          parishHouseholdBand: document.getElementById('parishHouseholdBand').value,
+          trialDays: options.trialDays || 0,
+        }),
       }
+    );
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
+    await loadDetail(reference, { silent: true, noScroll: true });
+    renderQueueNext(result.registration);
+    await loadRegistrations();
+    if (!result.checkoutUrl) {
+      setSubscriptionStatus('Subscription updated. This tier does not require Stripe checkout.', 'info');
+      return;
     }
-
-    function toggleSelectAll(chk) {
-      document.querySelectorAll('.row-chk').forEach(c => { c.checked = chk.checked; });
-      updateBulkBar();
+    const linkBox = document.getElementById('subscriptionLinkBox');
+    const link = document.getElementById('subscriptionCheckoutLink');
+    const help = document.getElementById('subscriptionLinkHelp');
+    if (linkBox && link) {
+      link.href = result.checkoutUrl;
+      linkBox.classList.add('visible');
     }
-
-    function clearSelection() {
-      document.querySelectorAll('.row-chk').forEach(c => { c.checked = false; });
-      const all = document.getElementById('selectAllChk');
-      if (all) all.checked = false;
-      updateBulkBar();
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(result.checkoutUrl);
+      copied = true;
+    } catch {
+      copied = false;
     }
-
-    function renderBulkResults(title, rows = []) {
-      const panel = document.getElementById('bulkResults');
-      if (!panel) return;
-      if (!rows.length) {
-        panel.classList.remove('visible');
-        panel.innerHTML = '';
-        return;
-      }
-      panel.classList.add('visible');
-      panel.innerHTML = `
+    const isTrial = Number(options.trialDays || 0) > 0;
+    if (help)
+      help.textContent = isTrial
+        ? copied
+          ? 'The 30-day demo link was copied. No card is required; Stripe cancels the subscription at the end unless the church adds a payment method.'
+          : 'The 30-day demo link is ready here. No card is required; Stripe cancels the subscription at the end unless the church adds a payment method.'
+        : copied
+          ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AGAPAY billing.'
+          : 'Clipboard access was blocked, but the subscription checkout link is ready here.';
+    setSubscriptionStatus(
+      isTrial
+        ? copied
+          ? '30-day free demo created and copied.'
+          : '30-day free demo created.'
+        : copied
+          ? 'Subscription checkout created and copied.'
+          : 'Subscription checkout created.',
+      'success'
+    );
+  } catch (err) {
+    setSubscriptionStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+}
+async function refreshStripeStatus(reference, btn) {
+  if (btn) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+  }
+  try {
+    const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-refresh', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    const result = await response.json();
+    if (handleAuthFailure(response, result)) return;
+    if (!response.ok) throw new Error(result.detail || result.error || 'Unable to refresh Stripe status');
+    await loadDetail(reference, { silent: true, noScroll: true });
+    await loadRegistrations();
+    setPaymentStatus(
+      result.recovered
+        ? `Existing Stripe connection recovered and confirmed: ${result.registration.stripeAccountStatus || 'unknown'}.`
+        : `Stripe connection confirmed: ${result.registration.stripeAccountStatus || 'unknown'}.`,
+      'success'
+    );
+  } catch (err) {
+    setPaymentStatus(err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+}
+function toggleMobileMore(force) {
+  const menu = document.getElementById('mobileMoreMenu');
+  const button = document.getElementById('mobileMoreButton');
+  if (!menu || !button) return;
+  const shouldOpen = typeof force === 'boolean' ? force : menu.hidden;
+  menu.hidden = !shouldOpen;
+  button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  button.classList.toggle('active', shouldOpen);
+}
+function updateBulkBar() {
+  selectedRefs = new Set(Array.from(document.querySelectorAll('.row-chk:checked')).map((c) => c.value));
+  const bar = document.getElementById('bulkBar');
+  const cnt = document.getElementById('bulkCount');
+  if (!bar) return;
+  if (selectedRefs.size > 0) {
+    bar.classList.add('visible');
+    cnt.textContent = selectedRefs.size + ' selected';
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+function toggleSelectAll(chk) {
+  document.querySelectorAll('.row-chk').forEach((c) => {
+    c.checked = chk.checked;
+  });
+  updateBulkBar();
+}
+function clearSelection() {
+  document.querySelectorAll('.row-chk').forEach((c) => {
+    c.checked = false;
+  });
+  const all = document.getElementById('selectAllChk');
+  if (all) all.checked = false;
+  updateBulkBar();
+}
+function renderBulkResults(title, rows = []) {
+  const panel = document.getElementById('bulkResults');
+  if (!panel) return;
+  if (!rows.length) {
+    panel.classList.remove('visible');
+    panel.innerHTML = '';
+    return;
+  }
+  panel.classList.add('visible');
+  panel.innerHTML = `
         <div class="bulk-results-head">
           <strong>${escapeHtml(title)}</strong>
           <button class="secondary btn-sm" onclick="renderBulkResults('', [])">Clear log</button>
         </div>
         <div class="bulk-results-log">
-          ${rows.map((row) => `
+          ${rows
+            .map(
+              (row) => `
             <div class="bulk-result-row ${escapeAttr(row.tone || '')}">
               ${escapeHtml(row.message || '')}
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       `;
+}
+async function bulkAction(action) {
+  if (!selectedRefs.size) return;
+  const refs = Array.from(selectedRefs);
+  const labels = { invite: 'dashboard invites' };
+  const label = labels[action];
+  if (!label) return;
+  if (!confirm(`Send ${label} to ${refs.length} parish(es)?`)) return;
+  const rows = [];
+  setStatus(`Running bulk action on ${refs.length} parish(es)...`);
+  renderBulkResults(`Running ${label}`, rows);
+  let done = 0;
+  let failed = 0;
+  for (const ref of refs) {
+    try {
+      const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/dashboard-invite', {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (handleAuthFailure(r, body)) return;
+      if (!r.ok) throw new Error(body.detail || body.error || 'Invite failed');
+      done++;
+      rows.push({ tone: 'success', message: `${ref}: Success` });
+    } catch (err) {
+      failed++;
+      rows.push({ tone: 'error', message: `${ref}: Failed (${err.message || 'unknown error'})` });
     }
-
-    async function bulkAction(action) {
-      if (!selectedRefs.size) return;
-      const refs = Array.from(selectedRefs);
-      const labels = { invite: 'dashboard invites' };
-      const label = labels[action];
-      if (!label) return;
-      if (!confirm(`Send ${label} to ${refs.length} parish(es)?`)) return;
-
-      const rows = [];
-      setStatus(`Running bulk action on ${refs.length} parish(es)...`);
-      renderBulkResults(`Running ${label}`, rows);
-      let done = 0;
-      let failed = 0;
-
-      for (const ref of refs) {
-        try {
-          const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/dashboard-invite', { method: 'POST', headers: authHeaders() });
-          const body = await r.json().catch(() => ({}));
-          if (handleAuthFailure(r, body)) return;
-          if (!r.ok) throw new Error(body.detail || body.error || 'Invite failed');
-          done++;
-          rows.push({ tone: 'success', message: `${ref}: Success` });
-        } catch (err) {
-          failed++;
-          rows.push({ tone: 'error', message: `${ref}: Failed (${err.message || 'unknown error'})` });
-        }
-        renderBulkResults(`Running ${label} (${done + failed}/${refs.length})`, rows);
-      }
-
-      clearSelection();
-      await loadRegistrations({ silent: true, preserveSelection: true });
-      const summary = `Bulk action complete: ${done} succeeded${failed ? `, ${failed} failed` : ''}.`;
-      rows.push({ tone: failed ? 'error' : 'success', message: summary });
-      renderBulkResults(`${label} complete`, rows);
-      setStatus(summary, failed ? 'error' : 'success');
-    }
-
-    // ── EMAIL LOG ─────────────────────────────────────────────────────────
-    function renderEmailLog(reg) {
-      const emailFields = [
-        { key: 'adminNotificationEmailStatus',  label: 'AGAPAY alert',     to: 'hello@agapay.app' },
-        { key: 'dashboardInviteEmailStatus',     label: 'Dashboard invite',  to: reg.priestEmail || reg.treasurerEmail || 'priest/treasurer' },
-        { key: 'stripeOnboardingEmailStatus',    label: 'Stripe invite',     to: reg.treasurerEmail || reg.priestEmail || 'treasurer' },
-      ];
-      const logEntries = (reg.emailLog || []);
-      const combined = [];
-
-      for (const f of emailFields) {
-        const status = reg[f.key];
-        if (!status || status === 'not_configured' || status === 'not_sent') continue;
-        combined.push({ type: f.label, status, to: f.to, time: reg.reviewedAt || reg.receivedAt || '', source: 'field' });
-      }
-
-      for (const e of logEntries) {
-        combined.push({ type: e.type || 'Email', status: e.status || 'sent', to: e.to || '', time: e.sentAt || '', detail: e.detail || '', source: 'log' });
-      }
-
-      if (!combined.length) {
-        return '<div class="email-log-empty">No emails recorded for this registration yet.</div>';
-      }
-
-      return combined.map(e => {
-        const dotClass = e.status === 'sent' ? 'sent' : e.status === 'failed' ? 'failed' : 'skipped';
-        const detail = e.detail ? ` — ${escapeHtml(e.detail)}` : '';
-        const to = e.to ? ` → ${escapeHtml(e.to)}` : '';
-        return `<div class="email-log-entry">
+    renderBulkResults(`Running ${label} (${done + failed}/${refs.length})`, rows);
+  }
+  clearSelection();
+  await loadRegistrations({ silent: true, preserveSelection: true });
+  const summary = `Bulk action complete: ${done} succeeded${failed ? `, ${failed} failed` : ''}.`;
+  rows.push({ tone: failed ? 'error' : 'success', message: summary });
+  renderBulkResults(`${label} complete`, rows);
+  setStatus(summary, failed ? 'error' : 'success');
+}
+function renderEmailLog(reg) {
+  const emailFields = [
+    { key: 'adminNotificationEmailStatus', label: 'AGAPAY alert', to: 'hello@agapay.app' },
+    {
+      key: 'dashboardInviteEmailStatus',
+      label: 'Dashboard invite',
+      to: reg.priestEmail || reg.treasurerEmail || 'priest/treasurer',
+    },
+    {
+      key: 'stripeOnboardingEmailStatus',
+      label: 'Stripe invite',
+      to: reg.treasurerEmail || reg.priestEmail || 'treasurer',
+    },
+  ];
+  const logEntries = reg.emailLog || [];
+  const combined = [];
+  for (const f of emailFields) {
+    const status = reg[f.key];
+    if (!status || status === 'not_configured' || status === 'not_sent') continue;
+    combined.push({ type: f.label, status, to: f.to, time: reg.reviewedAt || reg.receivedAt || '', source: 'field' });
+  }
+  for (const e of logEntries) {
+    combined.push({
+      type: e.type || 'Email',
+      status: e.status || 'sent',
+      to: e.to || '',
+      time: e.sentAt || '',
+      detail: e.detail || '',
+      source: 'log',
+    });
+  }
+  if (!combined.length) {
+    return '<div class="email-log-empty">No emails recorded for this registration yet.</div>';
+  }
+  return combined
+    .map((e) => {
+      const dotClass = e.status === 'sent' ? 'sent' : e.status === 'failed' ? 'failed' : 'skipped';
+      const detail = e.detail ? ` — ${escapeHtml(e.detail)}` : '';
+      const to = e.to ? ` → ${escapeHtml(e.to)}` : '';
+      return `<div class="email-log-entry">
           <div class="email-log-dot ${dotClass}"></div>
           <div>
             <div class="email-log-type">${escapeHtml(e.type)}</div>
@@ -3437,40 +3155,265 @@ let selectedReference = '';
           </div>
           <div class="email-log-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
         </div>`;
-      }).join('');
-    }
-
-    // ── NOTES HISTORY ─────────────────────────────────────────────────────
-    function renderNotesHistory(reg) {
-      const history = reg.notesHistory || [];
-      if (!history.length) {
-        const legacy = (reg.reviewerNotes || '').trim();
-        if (!legacy) return '<div class="notes-empty">No notes yet. Use the field below to add the first note.</div>';
-        return `<div class="notes-entry">
+    })
+    .join('');
+}
+function renderNotesHistory(reg) {
+  const history = reg.notesHistory || [];
+  if (!history.length) {
+    const legacy = (reg.reviewerNotes || '').trim();
+    if (!legacy) return '<div class="notes-empty">No notes yet. Use the field below to add the first note.</div>';
+    return `<div class="notes-entry">
           <div class="notes-entry-meta">Legacy note (no timestamp)</div>
           <div class="notes-entry-text">${escapeHtml(legacy)}</div>
         </div>`;
-      }
-      return history.slice().reverse().map(n => `
+  }
+  return history
+    .slice()
+    .reverse()
+    .map(
+      (n) => `
         <div class="notes-entry">
           <div class="notes-entry-meta">${escapeHtml(n.author || 'Admin')} · ${n.createdAt ? escapeHtml(shortDate(n.createdAt)) : 'Unknown date'}</div>
           <div class="notes-entry-text">${escapeHtml(n.text || '')}</div>
         </div>
-      `).join('');
-    }
-
-
-
-    const adminSearchParams = new URLSearchParams(window.location.search);
-    
-    const stripeReturnReference = adminSearchParams.get('stripe_return');
-    if (stripeReturnReference) {
-      setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Log in, then refresh Stripe status.`);
-    }
-    
-    const subscriptionReturnReference = adminSearchParams.get('subscription_return');
-    if (subscriptionReturnReference) {
-      setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Log in to review the registration. The Stripe webhook will mark it active after payment is confirmed.`);
-    }
-    
-    restoreAdminSession();
+      `
+    )
+    .join('');
+}
+let selectedReference = '';
+window.AgapayMfa?.installFetchStepUp();
+let registrationsCache = [];
+const adminSessionKey = 'agapay_admin_token';
+const adminActorKey = 'agapay_admin_actor';
+const adminNoticeKey = 'agapay_admin_notice';
+const autoRefreshKey = 'agapay_admin_auto_refresh';
+const givingSummaryCache = /* @__PURE__ */ new Map();
+let autoRefreshTimer = null;
+let isLoadingRegistrations = false;
+let registrationAutosaveTimer = null;
+let registrationAutosaveInFlight = false;
+let registrationAutosaveQueued = false;
+let registrationAutosavePromise = null;
+let lastDataLoadedAt = null;
+let latestPlatformSummary = null;
+let latestLearnAdmin = null;
+let adminAccountingHealth = null;
+let adminAccountingTargets = [];
+let adminAccountingTargetsLoaded = false;
+let adminAccountingEnvironment = '';
+function token() {
+  return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
+}
+function handleAuthFailure(response, payload) {
+  if (response.status !== 401) return false;
+  clearAdminSession();
+  setAdminNotice(payload?.error || 'Your admin session expired. Please log in again.');
+  if (!isLoginPage()) {
+    window.location.replace('/admin/login');
+  } else {
+    setStatus(payload?.error || 'Your admin session expired. Please log in again.', 'error');
+  }
+  return true;
+}
+function setStatus(message, tone = '') {
+  if (!message) return;
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = tone ? `toast ${tone}` : 'toast';
+  toast.textContent = message;
+  container.appendChild(toast);
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 4e3);
+}
+function authHeaders(extra = {}) {
+  return {
+    Accept: 'application/json',
+    Authorization: 'Bearer ' + token(),
+    ...extra,
+  };
+}
+const onboardingManualFields = [
+  [
+    'authorizedRepresentative',
+    'Priest confirms treasurer access',
+    "Do not search for a public treasurer listing. Verify the parish and priest from an official source, then have that verified priest or parish leader confirm the treasurer's name and email.",
+    'Confirmation source',
+    'Priest email, call to published parish number, or diocesan introduction',
+    'Confirmation note',
+    'Who confirmed the treasurer, by what channel, and when?',
+  ],
+  ['givingConfiguration', 'Funds and campaigns', 'Confirm the donor-facing catalog and restrictions.'],
+  ['importDecision', 'Donor and pledge import', 'Choose Passed when reconciled, or Not applicable.'],
+];
+const onboardingPhases = [
+  ['identity', 'Verify parish'],
+  ['access', 'Give access'],
+  ['stripe', 'Connect Stripe'],
+  ['subscription', 'Configure giving'],
+];
+let activeTab = 'overview';
+let auditLogLoadedOnce = false;
+let auditLogCursor = '';
+let auditLogOptionsPopulated = false;
+const AUDIT_ACTION_CATALOG = [
+  {
+    group: 'Nonprofit Pricing',
+    value: 'nonprofit_pricing.alert_check_run',
+    label: 'Threshold alert check run',
+    description: 'An admin manually ran the site-wide nonprofit-pricing threshold notification check.',
+  },
+  {
+    group: 'Registrations',
+    value: 'registration.status_changed',
+    label: 'Registration status changed',
+    description: "An admin moved a parish's registration through the verification pipeline (e.g. pending → verified).",
+  },
+  {
+    group: 'Registrations',
+    value: 'admin.index_rebuild',
+    label: 'Registration index rebuilt',
+    description: 'An admin manually rebuilt the parish-ID lookup index — a bulk operation, not tied to one parish.',
+  },
+  {
+    group: 'Revenue Streams',
+    value: 'settlement_profile.renamed',
+    label: 'Revenue stream renamed',
+    description: 'A settlement profile (how giving/bookstore money gets routed to a bank account) was renamed.',
+  },
+  {
+    group: 'Revenue Streams',
+    value: 'settlement_profile.active_changed',
+    label: 'Revenue stream activated/deactivated',
+    description: 'A settlement profile was turned on or off.',
+  },
+  {
+    group: 'Revenue Streams',
+    value: 'settlement_profile.default_giving_changed',
+    label: 'Default giving stream changed',
+    description: "A parish's default revenue stream for donations was changed.",
+  },
+  {
+    group: 'Revenue Streams',
+    value: 'settlement_profile.default_commerce_changed',
+    label: 'Default bookstore stream changed',
+    description: "A parish's default revenue stream for bookstore sales was changed.",
+  },
+  {
+    group: 'Revenue Streams',
+    value: 'settlement_profile.module_assigned',
+    label: 'Module routed to a revenue stream',
+    description: 'Giving or Bookstore was explicitly pointed at a specific revenue stream/Stripe account.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'claim_created',
+    label: 'Exemption claim submitted',
+    description: 'A parish submitted a new sales-tax exemption claim.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'document_viewed',
+    label: 'Exemption certificate viewed',
+    description: 'An admin opened an uploaded exemption certificate/document.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'admin_note_added',
+    label: 'Internal note added',
+    description: 'An admin added a private review note to an exemption claim (never shown to the parish).',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'approved',
+    label: 'Exemption claim approved',
+    description: "An admin approved a parish's exemption claim.",
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'rejected',
+    label: 'Exemption claim rejected',
+    description: "An admin rejected a parish's exemption claim.",
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'replacement_requested',
+    label: 'Replacement documentation requested',
+    description: 'An admin asked the parish to re-submit their exemption certificate.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'revoked',
+    label: 'Exemption revoked',
+    description: 'A previously-approved exemption was revoked.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'reconciliation_required',
+    label: 'Stripe mismatch flagged',
+    description:
+      "The system found Stripe's exemption state no longer matches AGAPAY's record — needs manual reconciliation.",
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'stripe_sync_attempted',
+    label: 'Stripe sync attempted',
+    description: 'AGAPAY tried to push the exemption status to a Stripe customer.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'stripe_sync_succeeded',
+    label: 'Stripe sync succeeded',
+    description: 'The exemption status was successfully applied in Stripe.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'stripe_sync_partial',
+    label: 'Stripe sync partially succeeded',
+    description: 'One of two linked Stripe customers synced; the other still needs attention.',
+  },
+  {
+    group: 'Sales-Tax Exemptions',
+    value: 'expiration_processed',
+    label: 'Exemption expired/processed',
+    description: 'An approved exemption passed its expiration date and was disabled (automatically or by an admin).',
+  },
+];
+const AUDIT_ACTOR_TYPES = [
+  { value: 'admin', label: 'Admin', description: 'An AGAPAY staff member, acting from the admin dashboard.' },
+  { value: 'parish', label: 'Parish', description: "A parish's own dashboard user (priest or treasurer)." },
+  { value: 'donor', label: 'Donor', description: 'A donor, acting from My AGAPAY.' },
+  { value: 'system', label: 'System', description: 'Automated — a scheduled job or webhook. No human involved.' },
+];
+const AUDIT_TARGET_TYPES = [
+  { value: 'registration', label: 'Registration', description: "A single parish's registration record." },
+  {
+    value: 'registrations',
+    label: 'Registrations (bulk)',
+    description: 'A platform-wide operation affecting the whole registration index, not one parish.',
+  },
+  {
+    value: 'settlement_profile',
+    label: 'Revenue stream',
+    description: 'A settlement profile — how a parish routes giving/bookstore money to a bank account.',
+  },
+];
+let selectedRefs = /* @__PURE__ */ new Set();
+const adminSearchParams = new URLSearchParams(window.location.search);
+const stripeReturnReference = adminSearchParams.get('stripe_return');
+if (stripeReturnReference) {
+  setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Log in, then refresh Stripe status.`);
+}
+const subscriptionReturnReference = adminSearchParams.get('subscription_return');
+if (subscriptionReturnReference) {
+  setStatus(
+    `Subscription checkout returned for ${subscriptionReturnReference}. Log in to review the registration. The Stripe webhook will mark it active after payment is confirmed.`
+  );
+}
+restoreAdminSession();

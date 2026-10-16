@@ -49,6 +49,8 @@ assert.deepEqual(sources.sort(), [...serverTypeScriptSources].sort());
 const inventory = typeScriptMigrationInventory();
 assert.equal(inventory.total, 495, 'support extraction must not expand migration completion credit');
 assert.equal(inventory.converted + inventory.remaining, 495);
+assert.equal(inventory.converted, 495, 'Every frozen original runtime module must retain its TypeScript owner.');
+assert.deepEqual(inventory.remainingPaths, [], 'Completed runtime migrations must not regress.');
 assert.equal(new Set(inventory.supportPaths).size, inventory.supportModules);
 assert.ok(
   inventory.supportPaths.every(

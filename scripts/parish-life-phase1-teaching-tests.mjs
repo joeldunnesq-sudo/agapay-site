@@ -1,3 +1,4 @@
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
@@ -346,7 +347,11 @@ const sourceFiles = await Promise.all(
     'src/routes/parish.js',
   ].map(async (relative) => [
     relative,
-    relative === 'public/parish/app.js' ? readParishDashboardSource() : readFileSync(path.join(root, relative), 'utf8'),
+    relative === 'public/parish/app.js'
+      ? readParishDashboardSource()
+      : relative === 'public/myagapay/teaching.js'
+        ? readBrowserContractSourceSync(relative)
+        : readFileSync(path.join(root, relative), 'utf8'),
   ])
 );
 const sources = Object.fromEntries(sourceFiles);
@@ -462,7 +467,7 @@ assert.match(
 assert.match(sources['public/myagapay/teaching.js'], /post\.pinned[\s\S]*Linked audio/);
 assert.match(
   sources['public/myagapay/teaching.js'],
-  /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress:false/,
+  /playParishTeachingAudio[\s\S]*playKoinoniaPodcast\(\{[\s\S]*trackProgress\s*:\s*false/,
   'parish recordings must launch the shared Koinonia mini and full-screen player'
 );
 assert.match(

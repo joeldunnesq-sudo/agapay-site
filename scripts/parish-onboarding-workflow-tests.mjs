@@ -1,3 +1,4 @@
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
@@ -361,18 +362,34 @@ assert.equal(
   'initial launch must accept shared dashboard access even if billing is already active'
 );
 assert.equal(paidWithoutTreasurer.canGoLive, true);
-const detailedPlan = await buildParishOnboardingWorkflow(readyRegistration({ subscriptionTier: 'giving', subscriptionAddOns: ['accounting'] }));
+const detailedPlan = await buildParishOnboardingWorkflow(
+  readyRegistration({ subscriptionTier: 'giving', subscriptionAddOns: ['accounting'] })
+);
 assert.equal(detailedPlan.summary.plan.totalMonthlyCents, 20800);
 assert.ok(detailedPlan.summary.plan.modules.includes('accounting'));
 const legacyLiveRegistration = readyRegistration({ givingStatus: 'active', onboardingState: 'LIVE', goLiveAt: now });
-legacyLiveRegistration.treasurerSignoff = { status: 'signed', snapshotVersion: await onboardingMaterialVersion(legacyLiveRegistration, { legacyPlanSummary: true }) };
+legacyLiveRegistration.treasurerSignoff = {
+  status: 'signed',
+  snapshotVersion: await onboardingMaterialVersion(legacyLiveRegistration, { legacyPlanSummary: true }),
+};
 const legacyLiveWorkflow = await buildParishOnboardingWorkflow(legacyLiveRegistration);
-assert.equal(legacyLiveWorkflow.signedCurrentSnapshot, true, 'expanded review must not invalidate unchanged historical approvals');
-const previouslyLaunched = await buildParishOnboardingWorkflow(readyRegistration({
-  onboardingAccess: {}, goLiveAt: now,
-}), { now: Date.now() });
-assert.equal(previouslyLaunched.steps.find((step) => step.key === 'credential')?.passed, false,
-  'existing paid-account access requirements still apply after initial launch');
+assert.equal(
+  legacyLiveWorkflow.signedCurrentSnapshot,
+  true,
+  'expanded review must not invalidate unchanged historical approvals'
+);
+const previouslyLaunched = await buildParishOnboardingWorkflow(
+  readyRegistration({
+    onboardingAccess: {},
+    goLiveAt: now,
+  }),
+  { now: Date.now() }
+);
+assert.equal(
+  previouslyLaunched.steps.find((step) => step.key === 'credential')?.passed,
+  false,
+  'existing paid-account access requirements still apply after initial launch'
+);
 const sanitizedRegistration = sanitizePublicRegistrationInput({
   parishName: 'Test',
   legacySharedAccessAllowed: { approved: true, reason: 'self-created', approvedBy: 'submitter', approvedAt: now },
@@ -528,11 +545,7 @@ const dashboardResponse = await worker.fetch(
   }),
   dashboardFixture.env
 );
-assert.equal(
-  dashboardResponse.status,
-  503,
-  'KV-only storage must not publish without an atomic database comparison'
-);
+assert.equal(dashboardResponse.status, 503, 'KV-only storage must not publish without an atomic database comparison');
 assert.equal((await dashboardResponse.json()).code, 'publication_store_required');
 
 const [
@@ -553,7 +566,7 @@ const [
   readFile(new URL('../public/parish/redesign.css', import.meta.url), 'utf8'),
   readAdminAppSource(),
   readFile(new URL('../public/admin/style.css', import.meta.url), 'utf8'),
-  readFile(new URL('../src/handlers/stripe.js', import.meta.url), 'utf8'),
+  Promise.resolve(readServerContractSourceSync('src/handlers/stripe.js')),
   readFile(new URL('../src/lib/subscription-checkout.js', import.meta.url), 'utf8'),
   Promise.resolve(readParishHandlerSource()),
   readFile(new URL('../src/handlers/parish-onboarding.js', import.meta.url), 'utf8'),

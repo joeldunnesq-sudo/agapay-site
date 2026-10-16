@@ -6,6 +6,11 @@ const handwrittenIgnores = ['node_modules/**', 'public/vendor/**', 'tmp/**', 'tm
 const recommendedRules = js.configs.recommended.rules;
 
 export default [
+  // Retain the transcript input destructuring without changing its default evaluation.
+  {
+    files: ['src/learn/print-academic-pdf.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^attendance$' }] },
+  },
   // Classic inline HTML handlers remain lexical globals after type erasure.
   {
     files: ['src/browser/bookstore/app.ts'],
@@ -1914,7 +1919,7 @@ export default [
     },
   },
   {
-    files: ['src/handlers/donor-bookstore.ts'],
+    files: ['src/handlers/donor-bookstore.ts', 'src/handlers/tax-exemption-parish.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^env$' }] },
   },
   {
@@ -1937,5 +1942,680 @@ export default [
   {
     files: ['src/worker.ts'],
     rules: { '@typescript-eslint/no-unused-vars': ['error', { caughtErrorsIgnorePattern: '^e$' }] },
+  },
+  // Retain original inline handlers, composed classic globals and existing Listen compatibility functions.
+  {
+    files: ['src/browser/donor/controllers/sacraments.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(SACRAMENT_TYPE_LABELS|selectSacramentSlot|toggleSacramentAddressFieldByLocation|openSacramentAccordion|selectSacramentAccordionSlot|updateSacramentPreparationItem|uploadSacramentPreparationDocument|deleteSacramentPreparationDocument|submitCustomSacramentRequest|requestParishStewardshipUpgrade|submitSacramentAccordionBooking|submitSacramentAccordionRequest|submitSacramentRequest|cancelSacramentRequest)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/sacrament-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(sacramentLocationHint|sacramentIcon|sacramentSummary|sacramentPreparationStatusLabel|sacramentRequestRow)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/listen/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(handleImport|renderMiniPlayer)$' }],
+    },
+  },
+  {
+    files: ['src/browser/listen/app-events.ts'],
+    rules: { '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }] },
+  },
+  // Preserve Directory classic handlers, cross-source declarations and legacy unused bindings.
+  {
+    files: ['src/browser/parish/directory-feature-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(directoryHouseholdSortKey|directoryHouseholdInitials|directoryEmptyState|directoryPriorityBadgeClass|directoryPhotoPlaceholderElement|directoryAccessStatusRow|directoryHouseholdSummaryCard|directoryReviewObjectRows|directoryReviewPrefs|directoryReviewMeta|directoryHealthTile|directoryReviewTypeLabel|directoryMetric)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/directory.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(directoryBrowseRow|switchDirectoryBrowseType|searchDirectoryBrowse|parishName|toggleDirectoryFeature|filterCanonicalDirectoryRows|directoryQueueRow|removeDirectoryPersonFromParish|openDirectoryReview|decideDirectoryReview|sendDirectoryAccountInvitation|sendDirectoryHouseholdInvitation|copyDirectoryInvitationLink|resendDirectoryAccountInvitation|revokeDirectoryAccountInvitation|directoryMaintenanceRow|moderateDirectorySkill|downloadDirectoryAdminExport|previewDirectoryAdminPrint)$',
+          caughtErrorsIgnorePattern: '^err$',
+        },
+      ],
+    },
+  },
+  // Preserve explicitly named Sacraments inline handlers and composed classic cross-source bindings.
+  {
+    files: ['src/browser/parish/features/sacraments.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(SACRAMENT_STATUS_OPTIONS|SACRAMENT_STATUS_LABELS|setSacramentsDashboardTab|selectSacramentsPriest|SAC_TIMEZONE_OPTIONS|SAC_DAY_LABELS|SAC_EDITABLE_SERVICE_TYPES|selectedSacramentOfferingLabel|selectedSacramentsGoogleConnection|connectSacramentsGoogleCalendar|disconnectSacramentsGoogleCalendar|toggleSacramentsFeature|groupSacramentsRulesByType|toggleSacramentsOffering|addCustomSacramentsOffering|updateCustomSacramentsOfferingMode|removeCustomSacramentsOffering|saveSacramentsAvailabilityTimezone|addSacramentsAvailabilityRule|deleteSacramentsAvailabilityRule|addSacramentsAvailabilityBlackout|deleteSacramentsAvailabilityBlackout|SACRAMENT_OVERDUE_HOURS|reviewSacramentPreparationItem|reviewSacramentPreparationDocument|toggleSacramentRequestEditor|selectSacramentRuleDay|selectSacramentsCalendarDay|onSacramentStatusChange|saveSacramentRequest)$',
+        },
+      ],
+      '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
+    },
+  },
+  {
+    files: ['src/browser/parish/sacrament-feature-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderSacramentsPriestPicker|renderSacramentsFeatureToggle|renderSacramentsDisabledPanel|renderSacramentsAvailability|renderSacramentsBlackouts|renderSacramentsUpsell|isThisWeek|sacramentParishRow|renderSacramentsRules|renderSacramentsCalendar)$',
+        },
+      ],
+    },
+  },
+  // Preserve explicitly named Groups inline handlers and composed classic cross-source bindings.
+  {
+    files: ['src/browser/myagapay/groups-contracts.d.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^()$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/groups-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderGroupWorkspaceError|renderGroupMessageContent|renderDecodedWaveform|renderMinistrySchedule|renderMinistryMembers|renderMinistryResources|renderMinistryCommerce|renderGroupSignupManager|renderGroupCatchUp|downloadMinistryCommerceQr|copyMinistryCommerceLink|duplicateMinistryCommerceItem|createMinistryCommerceItemUI|toggleMinistryCommerceItemStatus|toggleMinistryCommerceCalendar)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/groups.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(toggleGroupVoiceMessage|groupSignupCategoryOptions|groupSignupLocalDate|switchGroupWorkspace|acceptMinistryCoverage|delegatedHeadcountPanel|recordDelegatedHeadcount|createMinistryEvent|deleteMinistryEvent|recordMinistryAttendance|saveMinistryAvailability|createMinistryResource|deleteMinistryResource|ministryCommerceMoney|ministryCommerceQrSvgByVariant|ministryCommerceMarkDataUri|ministryCommerceQrUrl|closeGroupSignup|createGroupSignup|updateGroupSignup|setGroupSignupStatus|deleteGroupSignup|addGroupSignupSlot|updateGroupSignupSlot|deleteGroupSignupSlot|saveGroupSignupTemplate|createGroupSignupFromTemplate|showGroupSignupHistory|completeGroupSignupEntry|closeMinistryGroup|toggleGroupCatchUp|chooseGroupPhoto|selectGroupPhoto|toggleGroupVoiceRecording|postMinistryGroupMessage)$',
+        },
+      ],
+    },
+  },
+  // Preserve explicitly named Teaching classic cross-source bindings.
+  {
+    files: ['src/browser/myagapay/teaching-contracts.d.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^()$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/teaching-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(parseKoinoniaPodcastFeed|renderKoinoniaContinueListening|renderKoinoniaPodcastDownloads|renderKoinoniaPodcastSubscriptions|renderKoinoniaPodcastLatest|renderKoinoniaPodcastResults|renderKoinoniaPodcastShow|renderKoinoniaPodcastQueue|renderTeaching|encodePodcastDownloadHeader|downloadedKoinoniaEpisode)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/teaching.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadKoinoniaPodcastDownloads|koinoniaPodcastIsSubscribed|teachingPostsForFilter|setTeachingCategoryFilter)$',
+        },
+      ],
+    },
+  },
+  // Explicit Donor inline handlers and classic cross-source bindings remain live globals.
+  {
+    files: ['src/browser/donor/app-account-and-dashboard.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(signupFromPage|verifyDonorEmail|cancelLearnSubscription|openMyAgapayLearnCheckout|requestDonorAccountDeletion|primeDonorDashboardParishUi|loadDonorDashboardPage|downloadGivingStatement|saveDonorSettings|commemorationEntriesForDisplay)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app-commemorations-and-checkout.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadDonorCommemorationsPage|submitCommemoration|startDonorCheckout|handleDonorCheckoutReturn|renderPledgeTracker|checkDonorNotifications)$',
+          argsIgnorePattern: '^frequency$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app-giving-and-login.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(shareCampaign|renderActiveCampaigns|renderActiveFunds|renderNextFeast|renderHomeParishWidgetsLoading|applyDonorGiveParams|toggleCandleIntentionFields|loginFromDashboard|initDonorPasswordResetPage|initDonorLoginPageControls)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app-session-and-parish.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(refreshStaleDashboardShell|isDonorUnauthorized|redirectToMyAgapayLogin|donorLoginReturnPath|clearDonorCache|money|donorInitials|donorDisplayName|shortDate|calendarLabel|nextFeastForCalendar|saveDonorSession|logoutDonor|closeDonorAccountMenus|showGuestDonorDashboard|loadPublicParishes|filterParishSelect|isGivingPlusGiftType|requestParishGivingPlusUpgrade|setGivingTierTilesLoading|markDonorGiftAmountEdited|syncDonorCommemorationAmount|applyDonorNavIcons|activeParishCampaigns|activeParishFeastCampaigns)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/donor/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setDonorStatus|setHtml|isDonorUnauthorized|redirectToMyAgapayLogin|donorLoginReturnPath|clearDonorCache|money|shortDate|calendarLabel|nextFeastForCalendar|escapeHtml|saveDonorSession|clearDonorSession|showGuestDonorDashboard|loadPublicParishes|fetchPublicParishes|donorGiftUrl|quickDonorGiftUrl|normalizeDonorGiftType|isGivingPlusGiftType|parishHasGivingPlus|isGeneralDonorFund|isCandleDonorFund|parishCanUseGiftType|openGivingPlusPaywall|setGivingTierTilesLoading|updateGivingTierTiles|syncDonorCommemorationAmount|updateQuickGiveLinks|activeParishCampaigns|activeParishFeastCampaigns|selectedPublicParish|campaignLabel|selectedCampaign|renderActiveCampaigns|renderActiveFunds|renderNextFeast|renderHomeParishWidgetsLoading|toggleGiftDetailFields|loadDonorDashboardPage|commemorationEntriesForDisplay|loadDonorCommemorationsPage|renderPledgeTracker|donorStore|DONOR_SHELL_VERSION|donorApi|readDonorCache|writeDonorCache|donorGiftTypeCopy|donorGiftAmountEdited|activeDonorGiftType|_nudgeQueue|_nudgeCurrent)$',
+        },
+      ],
+    },
+  },
+  // Explicit Parish inline handlers and classic cross-source bindings remain live globals.
+  {
+    files: ['src/browser/parish/app-session-and-navigation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(givingCatalogSnapshot|accountingCatalogSnapshot|saveSession|logoutParish|setPaymentStatus|openParishSupportTicket|showParishFeatureRequestPopup|dismissParishFeatureRequest|submitParishSupportTicket|renderDirectoryAdminAccessError|renderDirectoryAdminGenericError|statusLabel|loginFromParishPage|showParishLogin|showParishPasswordReset|requestParishPasswordReset|confirmParishPasswordReset|initParishPasswordResetPage|fallbackFundsArray|fallbackCampaignsArray|dedicatedGivingUrl|dedicatedGivingEmbedUrl|downloadBlob|slugifyLocal|money|moneyFull|shortDate|fullDate|isoDateLabel|isParishTier|isParishPlusActive|isStarterTier|openParishPortability|acceptParishAccessInvitation|initParishAccessInvitationPage|hasFundManagementAccess|isGeneralDashboardFund|isCandleDashboardFund|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app-settings-and-nonprofit.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(uploadParishLogo|removeParishLogo|formatSacramentPriestsForSettings|parseSacramentPriestsFromSettings|saveDashboard|copyPayload|startStripeOnboarding|startSubscriptionCheckout|loadStripeVolume|copyNonprofitPricingStatement|saveNonprofitPricingAttestation|uploadNonprofitPricingDocument|markNonprofitPricingSubmitted|recordNonprofitPricingDecision|viewNonprofitPricingDocument)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app-subscriptions-and-settlement.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(updateStarterPaywalls|accountingStaffSession|updateStewardshipBadges|createSettlementProfile|renameSettlementProfile|toggleSettlementProfileActive|setDefaultGivingProfile|setDefaultCommerceProfile|assignSettlementModule|formatSacramentDateRange|syncSacramentsBlackoutEndDate|parishHouseholdPickerMarkup|syncParishHouseholdPricing|parishPricingUsageMarkup|tierOptionsMarkup|subscriptionAddOnPickerMarkup|syncSubscriptionAddOnVisibility|setupCheckMarkup|refreshStripeStatus|communityMarkIcon|renderSubscriptionPanel|updateTierScopedNavigation|changeDemoTier|openSubscriptionPortal|openSubscriptionCancellation)$',
+          argsIgnorePattern: '^options$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app-tax-exemption.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(submitParishTaxExemption|uploadParishTaxExemptionDocument|viewParishTaxExemptionDocument)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(saveSession|switchTab|money|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation|selectedSubscriptionAddOns|dashboardLoadPromise|activeParishFeatureRequest|parishFeatureRequests|identitySessionStorageKey|identityEmailStorageKey|escapeAttr|starterLockedFeatures|settlementProfilesState|SETTLEMENT_MODULE_LABELS|SETTLEMENT_TYPE_LABELS|taxExemptionJurisdictions|renderDashboard|payload)$',
+        },
+      ],
+    },
+  },
+  // Explicit Admin inline handlers and classic live cross-source bindings.
+  {
+    files: ['src/browser/admin/app-accounting-and-audit.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(auditLogLoadedOnce|loadAdminAccountingTargets|activateAdminPreparedAccounting|runAdminIntegrityScan|changeAdminProtectiveState|verifyAdminRecoveryEvidence|calculateNonprofitProjection|runNonprofitPricingAlerts|populateAuditLogFilterOptions|setAuditLogQuickRange|resetAuditLogFilters)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-bulk-and-history.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(toggleSelectAll|bulkAction|renderEmailLog|renderNotesHistory)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-learn-and-support.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(field|updateParishSupportTicket|acknowledgeLearnFeedback|moderateLearnCommunity|editLearnCuratedResource|createLearnCuratedResource|createLearnScholarship)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-onboarding-and-review.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(registrationAutosaveQueued|sendDashboardInvite|runOnboardingTestAction|copyRegistrationSummary|saveReview)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-parish-tools-and-diagnostics.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(seedDemoParish|runWeeklyCommemorationEmail|runWeeklyTreasurerEmail|grantStewardshipComp|grantStewardshipCompFromDetail|setSacramentsEnabled|setSacramentsEnabledFromDetail|loadPlatformSummary|err|loadDeploymentDiagnostics|runEmailDiagnostics)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-registration-details.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadRegistrationGivingSummary|renderAdminAuditLog|renderOnboardingManualChecks|renderOnboardingProgress|activateOnboardingPhase|renderOnboardingCommandHeader|renderOnboardingControls|readOnboardingChecks)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-registration-queue.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(sendDashboardInvite|lastDataLoadedAt|emptyDetailMarkup|bindRegistrationAutosave|upsertRegistrationCache|loadRegistrations|copyText)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-session-and-platform.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(restoreAdminSession|loginFromAdminPage|logoutAdmin|setPaymentStatus|changeAdminPassword|renderQueueNext|renderPlatformGrowth)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-subscription-and-navigation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(activeTab|generateDashboardToken|sendDashboardInvite|createSubscriptionCheckout|refreshStripeStatus|switchTab)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(saveAdminSession|adminActor|consumeAdminNotice|refreshDataAsOf|stopAutoRefresh|toggleAutoRefresh|loginFromAdminPage|logoutAdmin|setPaymentStatus|changeAdminPassword|nextAction|renderQueueNext|renderGrowthBars|renderPlatformGrowth|productCard|renderProductOverview|revenueProductRows|renderRevenueCards|renderLearnGrowthBars|renderLearnScholarships|renderLearnCommunityModeration|renderLearnFeedbackQueue|renderParishSupportTickets|loadParishSupportTickets|updateParishSupportTicket|renderLearnAdmin|acknowledgeLearnFeedback|moderateLearnCommunity|clearLearnCuratedResourceForm|editLearnCuratedResource|createLearnCuratedResource|loadLearnAdmin|copyLearnText|createLearnScholarship|seedDemoParish|weeklyCommemorationSummary|runWeeklyCommemorationEmail|moneyPlain|weeklyTreasurerSummary|runWeeklyTreasurerEmail|loadStewardshipCompStatus|submitStewardshipCompGrant|grantStewardshipComp|grantStewardshipCompFromDetail|submitSacramentsEnabled|setSacramentsEnabled|setSacramentsEnabledFromDetail|loadPlatformSummary|diagnosticsBadge|deploymentCheckOk|loadDeploymentDiagnostics|runEmailDiagnostics|emptyDetailMarkup|collapseRegistrationDetail|setRegistrationAutosaveState|scheduleRegistrationAutosave|runRegistrationAutosave|bindRegistrationAutosave|upsertRegistrationCache|loadRegistrations|renderMetrics|renderOverviewEmailLog|loadRecentActivity|renderRecentActivity|communityTypeOf|renderCommunitySnapshot|renderOnboardingHealth|parseDateMs|daysSince|currentWorkflowStep|workflowLastActivityAt|nextActionPriority|renderNextActionQueue|renderFilteredList|renderList|copyText|loadDetail|renderRegistrationGivingSummary|loadRegistrationGivingSummary|renderAdminAuditLog|onboardingStatusOptions|renderOnboardingManualChecks|renderOnboardingProgress|onboardingCurrentPhase|onboardingPhaseState|activateOnboardingPhase|onboardingActionTitle|renderOnboardingCommandHeader|renderOnboardingControls|readOnboardingChecks|runOnboardingTestAction|renderDetail|copyRegistrationSummary|dashboardInviteMessage|saveReview|generateDashboardToken|sendDashboardInvite|setSubscriptionStatus|createSubscriptionCheckout|refreshStripeStatus|toggleMobileMore|switchTab|populateAdminAccountingParishes|loadAdminAccountingTargets|selectedAdminAccountingTarget|adminAccountingParish|adminAccountingFetch|activateAdminPreparedAccounting|loadAdminAccountingOperations|renderAdminAccountingHealth|renderAdminIntegrityScans|renderAdminRecoveryVerifications|runAdminIntegrityScan|changeAdminProtectiveState|verifyAdminRecoveryEvidence|loadAdminNonprofitPricing|calculateNonprofitProjection|runNonprofitPricingAlerts|auditActionLabel|auditActorTypeLabel|auditTargetTypeLabel|populateAuditLogFilterOptions|refreshAuditLogOrgOptions|setAuditLogQuickRange|resetAuditLogFilters|auditActionBadgeClass|renderAuditLogTable|loadAuditLog|updateBulkBar|toggleSelectAll|clearSelection|renderBulkResults|bulkAction|renderEmailLog|renderNotesHistory|selectedReference|registrationsCache|adminActorKey|adminNoticeKey|autoRefreshKey|givingSummaryCache|autoRefreshTimer|isLoadingRegistrations|registrationAutosaveTimer|registrationAutosaveInFlight|registrationAutosaveQueued|registrationAutosavePromise|lastDataLoadedAt|latestPlatformSummary|latestLearnAdmin|adminAccountingHealth|adminAccountingTargets|adminAccountingTargetsLoaded|adminAccountingEnvironment|handleAuthFailure|authHeaders|onboardingManualFields|onboardingPhases|activeTab|auditLogLoadedOnce|auditLogCursor|auditLogOptionsPopulated|AUDIT_ACTION_CATALOG|AUDIT_ACTOR_TYPES|AUDIT_TARGET_TYPES|selectedRefs|formatClock|escapeHtml|escapeAttr|jsString|jsAttr|field|readableStripeRequirement|renderStripeRequirements|money|moneyShort|monthLabel|readable|shortDate|subscriptionTierLabel|transactionFeeLabel|jsonForTextarea|computeLocalPlatformSummary)$',
+        },
+      ],
+    },
+  },
+  // These exact globals span the Admin operations/navigation classic composition. Locals remain checked.
+  {
+    files: ['src/browser/admin/app-accounting-and-audit.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(registrationsCache|adminAccountingTargetsLoaded|adminAccountingTargets|escapeAttr|escapeHtml|authHeaders|handleAuthFailure|adminAccountingEnvironment|setStatus|adminAccountingHealth|shortDate|money|AUDIT_ACTION_CATALOG|AUDIT_ACTOR_TYPES|AUDIT_TARGET_TYPES|auditLogOptionsPopulated|auditLogLoadedOnce|auditLogCursor|populateAdminAccountingParishes|loadAdminAccountingTargets|selectedAdminAccountingTarget|adminAccountingParish|adminAccountingFetch|activateAdminPreparedAccounting|loadAdminAccountingOperations|renderAdminAccountingHealth|renderAdminIntegrityScans|renderAdminRecoveryVerifications|runAdminIntegrityScan|changeAdminProtectiveState|verifyAdminRecoveryEvidence|loadAdminNonprofitPricing|calculateNonprofitProjection|runNonprofitPricingAlerts|auditActionLabel|auditActorTypeLabel|auditTargetTypeLabel|populateAuditLogFilterOptions|refreshAuditLogOrgOptions|setAuditLogQuickRange|resetAuditLogFilters|auditActionBadgeClass|renderAuditLogTable|loadAuditLog|activeTab|loadLearnAdmin|loadParishSupportTickets|switchTab)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-subscription-and-navigation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setStatus|authHeaders|handleAuthFailure|loadDetail|loadRegistrations|renderQueueNext|setPaymentStatus|generateDashboardToken|sendDashboardInvite|setSubscriptionStatus|createSubscriptionCheckout|refreshStripeStatus|toggleMobileMore)$',
+        },
+      ],
+    },
+  },
+  // Explicit Learn cross-source bindings and retained legacy reads; local variables remain checked.
+  {
+    files: ['src/browser/learn/dashboard-shell-part-1.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(prepareOdysseyViewModel|setLearnViewMode|safeExternalUrl|cssVars|check|completionCheck|bar|pageIntro|downloadBlob|isLearnFamilyPlan)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-10.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(rowWeeklyPlans|rowResources|moveResourceRowToLane|moveResourceRowToSubject|snapshotResourceModal|restoreResourceModal|rowTileMinutes|collectRows|wireDashboard)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-11.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setupPayloadFromForm|familyPlanningPayloadFromForm|syncSetupChildLimit|setupBlankRow|setSetupSectionOpen|syncSetupTermSelects)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-12.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(panel|wireSetupPage)$' }] },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-13.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(wireWeeklyAssignmentBoard|itemId)$' }],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-14.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(wireMoveUnfinishedWork)$' }] },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-15.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(wirePlanner|introEl|scope|displayView)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-16.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(panel|wireCommunityLegacy|wireCommunity|wireReports|wireGrades|testScoreFromElement)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-17.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(learnGoogleCalendarStatus|mount)$' }],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-2.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(panel|printCount|setPrintCount|learnRequestHeaders|showLearnFeedbackDialog|saintStoryDialogHtml|forceDisplayedSaintFirst|saintCardTitle|mealToolFromQuery|shell|renderGraceModePanel)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-3.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(panel|renderTermProgressPanel|renderDashboard|i)$', argsIgnorePattern: '^i$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-4.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderPlanner|gracePriorityBadge|renderTermAtAGlance|renderFamilyPlanningEditor|renderFamilyPlannerScopeLegacy|intro|icon|dayKeyForChore|prototypeRecipeType|prototypeMonthSeed)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-5.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(seedFamilyPrototypeState|wireFamilyPrototypeBackend|renderFormation|bookCover)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-6.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderBooks|i|renderReports|renderGrades|renderCoOp|setupDayPicker|setupSourceInput|setupWeeklyPlanFields|setupMultiChildPicker|churchRhythmSetupPanel|formationSetupPanel)$',
+          argsIgnorePattern: '^i$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-7.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(panel|formSubjectsSetupPanel|setupProgressCard|collapsibleSetupPanel|loadSimpleSetupDraft|saveSimpleSetupDraft|renderSimpleSetupWizard|renderTefaCommunity)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-8.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderCommunity|renderReportsComingSoon|applySimpleDraftToSetupVm|wireSimpleSetupWizard)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-9.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(familyPlanningSetupPanel|renderSetup|renderPrintCenter|apiGet|syncLearnGoogleCalendar|localIsoDate|setupChildRowsFromForm)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family-part-1.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(designedAssignmentsByDateForMonth|renderWeeklyAssignmentBoard|choreTimeLabel|eventRecurrenceLabel|index|familyPlannerModel|renderFeastsPanel|renderFastingLegend|plannerHiddenData|plannerMonthQuery|renderPlannerDaySelector|renderMealCard)$',
+          argsIgnorePattern: '^index$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family-part-2.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderFamilyPlannerScope|isImportantPlannerFeast|prototypeStateToFamilyPlanningPayload|renderPlannerMonth)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family-part-3.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(familyEventSetupRow|recipeSetupRow|grocerySetupRow|nextSevenDates)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(designedAssignmentsByDateForMonth|choreCadence|choreAssigneeOptions|dayOfMonthOptions|choreTimeLabel|choreTimeCheckboxes|isoDateParts|eventOccursOnDate|renderFeastsPanel|renderFastingLegend|plannerHiddenData|plannerMonthQuery|renderPlannerDaySelector|renderMealCard|renderMealsPlan|renderRecipesTool|renderGroceriesTool|renderPantryTool|renderFamilyMonthOverview|monthDiffBetween|choreAssignedParts|choreOpenAttributes|renderEventsScope|renderFamilyPlannerModals|recipeTitleFromPrototypeId|adjacentMonthKey|uniqueMonthLessons|renderMonthLessonChip|choreTimeOptions|eventRecurrenceOptions)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-setup-calendar-part-1.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(learnExperience|renderPlannerTerm|renderPlannerYear|renderAttendanceTracker|setupTermOptions|termSetupRow|setupGraceModeBehavior|planningModeOptionsFor|setupGroupOptions|activeSetupGroupLabels|primaryResourceGroupLabel|selectedTermWeeks|setupTermWeekPicker)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-setup-calendar-part-2.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(index|label|childSetupRow|subjectSetupRow|bookSetupRow|formationSetupRow|formationRhythmSetupRow|formationRecitationSetupRow|formationEnrichmentSetupRow)$',
+          argsIgnorePattern: '^index$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-setup-calendar.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(learnViewMode|attendanceDateLabel|isoDateFromUTC|utcHolidayDate|addHoliday|addObservedFixedHoliday|nthWeekdayOfMonth|lastWeekdayOfMonth|usFederalHolidayMap|nationalHolidayForDate|setupGracePriorityValue|setupGraceModeBehavior|setupGroupOptions|activeSetupGroupLabels|setupTermWeekPicker|setupResourceWeekPicker|setupResourceWeeklyPlanFields|setupResourcePlanningModePicker|setupResourceChildPicker|setupResourcePlanningCard|normalizeSetupResource|setupResourceLane|setupResourceList|setupPlanningModePicker|setupColorSelect|setupChildColor|US_FEDERAL_HOLIDAY_CACHE|graceModeOptions|planningModeOptions|weeklyFrequencyOptions|simpleScheduleOptions)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(cloneLearnViewModel|isFaithSpecific|secularPrintText|itemIsFaithSpecific|secularPlannerDay|demoPlannerItems|demoBooks|prepareOdysseyViewModel|setLearnViewMode|safeExternalUrl|cssVars|check|completionCheck|bar|pageIntroIcon|pageIntroMeta|pageIntro|downloadBlob|isLearnFamilyPlan|printCount|setPrintCount|learnAccountEmail|learnRequestHeaders|openLearnCheckout|saintStoryDialogHtml|saintMatchKey|saintMatchScore|saintPrecedence|orderSaintsByPrecedence|orderSaintsForCard|forceDisplayedSaintFirst|saintCardTitle|plannerScopeFromQuery|mealToolFromQuery|plannerSidebarSubnav|sidebar|globalProductNav|topbar|shell|renderGraceModePanel|renderTermProgressPanel|renderTodayLearnContext|weekAssignmentStorageKey|readWeekAssignmentState|designedAssignmentsForDate|timeLabel|eventsForDate|mealForDate|choresForDate|renderDesignedLessonList|renderDashboardDesignedLessons|renderDashboardFamilyCards|renderTefaViewToggleBanner|renderDashboard|renderPlanner|plannerStatusMeta|statusPill|renderPlannerReserveCard|gracePriorityBadge|renderTermAtAGlance|renderPlannerWeek|moveUnfinishedWorkControl|renderPlannerDay|renderFamilyPlanningEditor|renderFamilyPlannerIntro|renderFamilyPlannerScopeLegacy|dayKeyForChore|prototypeRecipeType|prototypeDaySeeds|prototypeMonthSeed|prototypeSetupSeed|prototypeKidsSeed|backendRecipeToPrototype|seedFamilyPrototypeState|wireFamilyPrototypeBackend|renderTefaFormation|renderFormation|bookCover|renderBooks|renderReports|gradeOption|renderGradeTermFields|renderGradeCourseEditor|renderTestScoreRow|renderTestScoresPanel|renderGrades|renderCoOp|scheduledDays|setupDayPicker|setupSourceInput|setupWeeklyPlanFields|setupMultiChildPicker|churchRhythmSetupPanel|setupTileValue|setupSectionCard|setupSectionPanel|formationSetupPanel|formSubjectsSetupPanel|setupStepTarget|setupStepState|setupProgressCard|setupPanelCollapsed|collapsibleSetupPanel|simpleSetupDraftKey|suggestedFormForChild|defaultSimpleSetupDraft|loadSimpleSetupDraft|saveSimpleSetupDraft|simpleSetupField|simpleSetupStepBody|renderSimpleSetupWizard|renderTefaCommunity|renderCommunity|renderReportsComingSoon|captureSimpleSetupStep|validateSimpleSetupStep|validateSimpleSetupMinimum|simpleSetupDates|simpleSetupPayload|applySimpleDraftToSetupVm|wireSimpleSetupWizard|setupExperience|mealSetupRow|familyPlanningSetupPanel|renderSetup|renderPrintCenter|redirectExpiredLearnSession|waitForLearnSignIn|syncLearnGoogleCalendar|localIsoDate|storedLearnCalendar|learnApiUrl|rowValue|setupChildRowsFromForm|rowWeeklyPlans|rowResourceValue|rowResourceWeeklyPlans|rowResources|resourceRowPrimaryGroupLabel|refreshResourceLaneCounts|moveResourceRowToLane|reindexResourceList|moveResourceRowToSubject|refreshResourceSummary|snapshotResourceModal|restoreResourceModal|rowTileMinutes|collectRows|openSaintOfDay|wireDashboard|setupPayloadFromForm|currentSetupChildren|familyPlanningPayloadFromForm|currentSetupTerms|setupChildCount|syncSetupChildLimit|setupBlankRow|setSetupSectionOpen|syncSetupTermSelects|wireSetupPage|wireWeeklyAssignmentBoard|wireMoveUnfinishedWork|wirePlanner|updateActiveButton|wireCommunityLegacy|wireCommunity|wireReports|gradeCourseFromElement|blankGradeCourse|attendanceEntryFromCell|setAttendanceCellStatus|wireGrades|testScoreFromElement|wireTestScores|canUsePrint|wirePrintCenter|wireFormation|learnGoogleCalendarStatus|ODYSSEY_FAITH_SPECIFIC|MARKETING_LEARNERS|LEARN_VIEW_MODE_KEY|learnCheckoutOpening|PLANNER_STATUS_META|homeschoolMethodOptions|subjectTypeOptions|schedulingModeOptions|lessonPriorityOptions|instructionModeOptions|setupWeekdays|sourceTypeOptions|SIMPLE_SETUP_STEPS)$',
+        },
+      ],
+    },
   },
 ];

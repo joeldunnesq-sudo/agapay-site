@@ -1,13 +1,221 @@
+import ts from 'typescript';
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { Script } from 'node:vm';
-import { transform } from 'esbuild';
+import { transform, transformSync, buildSync } from 'esbuild';
 import { format } from 'prettier';
 import { repoRoot } from './server-typescript.mjs';
 
 // Classic scripts retain lexical globals; explicitly marked native modules retain ESM.
-// Neither delivery mode bundles, wraps, or renames runtime bindings.
+// Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
+  {
+    source: 'src/browser/learn/dashboard-shell-setup-calendar.ts',
+    output: 'public/learn/dashboard-shell-setup-calendar.js',
+    module: true,
+    delivery: 'native-module',
+    classicSupportSources: [
+      'src/browser/learn/dashboard-shell-setup-calendar-part-1.ts',
+      'src/browser/learn/dashboard-shell-setup-calendar-part-2.ts',
+    ],
+  },
+  {
+    source: 'src/browser/learn/dashboard-shell-planner-family.ts',
+    output: 'public/learn/dashboard-shell-planner-family.js',
+    module: true,
+    delivery: 'native-module',
+    classicSupportSources: [
+      'src/browser/learn/dashboard-shell-planner-family-part-1.ts',
+      'src/browser/learn/dashboard-shell-planner-family-part-2.ts',
+      'src/browser/learn/dashboard-shell-planner-family-part-3.ts',
+    ],
+  },
+  {
+    source: 'src/browser/learn/dashboard-shell.ts',
+    output: 'public/learn/dashboard-shell.js',
+    module: true,
+    delivery: 'native-module',
+    classicSupportSources: [
+      'src/browser/learn/dashboard-shell-part-1.ts',
+      'src/browser/learn/dashboard-shell-part-2.ts',
+      'src/browser/learn/dashboard-shell-part-3.ts',
+      'src/browser/learn/dashboard-shell-part-4.ts',
+      'src/browser/learn/dashboard-shell-part-5.ts',
+      'src/browser/learn/dashboard-shell-part-6.ts',
+      'src/browser/learn/dashboard-shell-part-7.ts',
+      'src/browser/learn/dashboard-shell-part-8.ts',
+      'src/browser/learn/dashboard-shell-part-9.ts',
+      'src/browser/learn/dashboard-shell-part-10.ts',
+      'src/browser/learn/dashboard-shell-part-11.ts',
+      'src/browser/learn/dashboard-shell-part-12.ts',
+      'src/browser/learn/dashboard-shell-part-13.ts',
+      'src/browser/learn/dashboard-shell-part-14.ts',
+      'src/browser/learn/dashboard-shell-part-15.ts',
+      'src/browser/learn/dashboard-shell-part-16.ts',
+      'src/browser/learn/dashboard-shell-part-17.ts',
+    ],
+    runtimeSupportSources: [
+      'src/browser/learn/dashboard-shell-setup-calendar.ts',
+      'src/browser/learn/dashboard-shell-planner-family.ts',
+    ],
+  },
+  {
+    source: 'src/browser/admin/app-accounting-and-audit.ts',
+    output: 'public/admin/app-accounting-and-audit.js',
+    declarationsOnly: true,
+  },
+  {
+    source: 'src/browser/admin/app.ts',
+    output: 'public/admin/app.js',
+    classicSupportSources: [
+      'src/browser/admin/app-session-and-platform.ts',
+      'src/browser/admin/app-learn-and-support.ts',
+      'src/browser/admin/app-parish-tools-and-diagnostics.ts',
+      'src/browser/admin/app-registration-queue.ts',
+      'src/browser/admin/app-registration-details.ts',
+      'src/browser/admin/app-onboarding-and-review.ts',
+      'src/browser/admin/app-subscription-and-navigation.ts',
+      'src/browser/admin/app-bulk-and-history.ts',
+    ],
+    runtimeSupportSources: ['src/browser/admin/app-accounting-and-audit.ts'],
+  },
+  {
+    source: 'src/browser/parish/app-subscriptions-and-settlement.ts',
+    output: 'public/parish/app-subscriptions-and-settlement.js',
+    declarationsOnly: true,
+  },
+  {
+    source: 'src/browser/parish/app.ts',
+    output: 'public/parish/app.js',
+    classicSupportSources: [
+      'src/browser/parish/app-session-and-navigation.ts',
+      'src/browser/parish/app-tax-exemption.ts',
+      'src/browser/parish/app-settings-and-nonprofit.ts',
+    ],
+    runtimeSupportSources: ['src/browser/parish/app-subscriptions-and-settlement.ts'],
+  },
+  {
+    source: 'src/browser/donor/app.ts',
+    output: 'public/donor/app.js',
+    classicSupportSources: [
+      'src/browser/donor/app-session-and-parish.ts',
+      'src/browser/donor/app-giving-and-login.ts',
+      'src/browser/donor/app-account-and-dashboard.ts',
+      'src/browser/donor/app-commemorations-and-checkout.ts',
+    ],
+  },
+  {
+    source: 'src/browser/myagapay/teaching-presentation.ts',
+    output: 'public/myagapay/teaching-presentation.js',
+    declarationsOnly: true,
+  },
+  {
+    source: 'src/browser/myagapay/teaching.ts',
+    output: 'public/myagapay/teaching.js',
+    runtimeSupportSources: ['src/browser/myagapay/teaching-presentation.ts'],
+  },
+  {
+    source: 'src/browser/myagapay/groups-presentation.ts',
+    output: 'public/myagapay/groups-presentation.js',
+    declarationsOnly: true,
+  },
+  {
+    source: 'src/browser/myagapay/groups.ts',
+    output: 'public/myagapay/groups.js',
+    runtimeSupportSources: ['src/browser/myagapay/groups-presentation.ts'],
+  },
+  {
+    source: 'src/browser/parish/features/sacraments.ts',
+    output: 'public/parish/features/sacraments.js',
+    classicSupportSources: ['src/browser/parish/sacrament-feature-presentation.ts'],
+  },
+  {
+    source: 'src/browser/parish/features/directory.ts',
+    output: 'public/parish/features/directory.js',
+    classicSupportSources: ['src/browser/parish/directory-feature-presentation.ts'],
+  },
+  {
+    source: 'src/browser/listen/app-panels.ts',
+    output: 'public/listen/app-panels.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app-catalog.ts',
+    output: 'public/listen/app-catalog.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app-presentation.ts',
+    output: 'public/listen/app-presentation.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app-events.ts',
+    output: 'public/listen/app-events.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/listen/app.ts',
+    output: 'public/listen/app.js',
+    module: true,
+    runtimeSupportSources: [
+      'src/browser/listen/app-catalog.ts',
+      'src/browser/listen/app-presentation.ts',
+      'src/browser/listen/app-events.ts',
+      'src/browser/listen/app-panels.ts',
+    ],
+  },
+  {
+    source: 'src/browser/learn/dashboard-view-models-shared.ts',
+    output: 'public/learn/dashboard-view-models-shared.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/view-model-dashboard-planner.ts',
+    output: 'public/learn/view-model-dashboard-planner.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/view-model-academic.ts',
+    output: 'public/learn/view-model-academic.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/view-model-setup-print.ts',
+    output: 'public/learn/view-model-setup-print.js',
+    module: true,
+    delivery: 'native-module',
+  },
+  {
+    source: 'src/browser/learn/dashboard-view-models.ts',
+    output: 'public/learn/dashboard-view-models.js',
+    module: true,
+    delivery: 'native-module',
+    runtimeSupportSources: [
+      'src/browser/learn/dashboard-view-models-shared.ts',
+      'src/browser/learn/view-model-dashboard-planner.ts',
+      'src/browser/learn/view-model-academic.ts',
+      'src/browser/learn/view-model-setup-print.ts',
+    ],
+  },
+  {
+    source: 'src/browser/donor/controllers/sacraments.ts',
+    output: 'public/donor/controllers/sacraments.js',
+    classicSupportSources: ['src/browser/donor/sacrament-presentation.ts'],
+  },
+  {
+    source: 'src/browser/myagapay-shell.ts',
+    output: 'public/myagapay-shell.js',
+    supportSources: ['src/browser/myagapay/shell-icons.ts', 'src/browser/myagapay/shell-products.ts'],
+  },
   {
     source: 'src/browser/parish/features/accounting/payables.ts',
     output: 'public/parish/features/accounting/payables.js',
@@ -276,17 +484,70 @@ export const browserTypeScriptEntries = Object.freeze([
   { source: 'src/browser/donor/bookstore-presentation.ts', output: 'public/donor/bookstore-presentation.js' },
 ]);
 
+// Private support files share one classic-script response; existing runtime dependencies are never bundled.
+export function compilePrivateBrowserEntry(entry, root = repoRoot) {
+  const result = buildSync({
+    absWorkingDir: root,
+    entryPoints: [entry.source],
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    target: 'es2022',
+    charset: 'utf8',
+    legalComments: 'none',
+    write: false,
+    metafile: true,
+  });
+  const actual = Object.keys(result.metafile.inputs).sort(),
+    expected = [entry.source, ...entry.supportSources].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected))
+    throw new Error('Unregistered private browser dependency: ' + actual.join(', '));
+  return result.outputFiles[0].text;
+}
+// After type erasure only function declarations may be composed: no runtime initialization can move.
+export function readClassicBrowserEntry(entry, root = repoRoot) {
+  const pieces = (entry.classicSupportSources || []).map((p) => {
+    const code = readFileSync(resolve(root, p), 'utf8'),
+      erased = transformSync(code, { loader: 'ts', target: 'es2022', legalComments: 'none' }).code,
+      ast = ts.createSourceFile(p, erased, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+    if (ast.statements.some((n) => !ts.isFunctionDeclaration(n)))
+      throw new Error('Classic support must contain only function declarations: ' + p);
+    return code;
+  });
+  const main = readFileSync(resolve(root, entry.source), 'utf8');
+  const ast = ts.createSourceFile(entry.source, main, ts.ScriptTarget.Latest, true);
+  let prologueEnd = 0;
+  for (const statement of ast.statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) break;
+    prologueEnd = statement.end;
+  }
+  // A classic entry's directive prologue must remain before every composed declaration.
+  return [main.slice(0, prologueEnd), ...pieces, main.slice(prologueEnd)].join('\n');
+}
 export async function synchronizeBrowserTypeScript({ check = true, root = repoRoot } = {}) {
   const prettier = JSON.parse(await readFile(resolve(root, '.prettierrc.json'), 'utf8'));
   const stale = [];
-  for (const { source, output, module: nativeModule } of browserTypeScriptEntries) {
-    const { code } = await transform(await readFile(resolve(root, source), 'utf8'), {
-      loader: 'ts',
-      ...(nativeModule ? { format: 'esm' } : {}),
-      target: 'es2022',
-      charset: 'utf8',
-      legalComments: 'none',
-    });
+  for (const entry of browserTypeScriptEntries) {
+    const { source, output, module: nativeModule } = entry;
+    const { code } = entry.supportSources
+      ? { code: compilePrivateBrowserEntry(entry, root) }
+      : await transform(
+          entry.classicSupportSources
+            ? readClassicBrowserEntry(entry, root)
+            : await readFile(resolve(root, source), 'utf8'),
+          {
+            loader: 'ts',
+            ...(nativeModule ? { format: 'esm' } : {}),
+            target: 'es2022',
+            charset: 'utf8',
+            legalComments: 'none',
+          }
+        );
+    if (entry.declarationsOnly) {
+      const ast = ts.createSourceFile(source, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+      if (ast.statements.some((node) => !ts.isFunctionDeclaration(node)))
+        throw new Error('Classic runtime support must contain only function declarations: ' + source);
+    }
     // Fail before writing if a runtime import/export would turn a classic script into a module.
     if (!nativeModule) new Script(code, { filename: output });
     const generated = await format(`// Generated from ${source} by npm run build:browser. Do not edit.\n${code}`, {
@@ -312,4 +573,49 @@ export async function synchronizeBrowserTypeScript({ check = true, root = repoRo
       `Stale or missing browser TypeScript output: ${stale.join(', ')}. Run npm run build:browser and npm run assets:version, and include the generated files.`
     );
   }
+}
+
+// Inspect authored browser logic without coupling source guards to emitted quote style.
+export function readBrowserContractSourceSync(runtimePath, root = repoRoot) {
+  const entry = browserTypeScriptEntries.find((e) => e.output === runtimePath);
+  const code = [
+    entry?.source || runtimePath,
+    ...(entry?.supportSources || []),
+    ...(entry?.classicSupportSources || []),
+    ...(!entry?.module ? entry?.runtimeSupportSources || [] : []),
+  ]
+    .map((p) => readFileSync(resolve(root, p), 'utf8'))
+    .join('\n');
+  if (!entry) return code;
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, code);
+  const comments = [];
+  for (let token = scanner.scan(); token !== ts.SyntaxKind.EndOfFileToken; token = scanner.scan()) {
+    if (token === ts.SyntaxKind.SingleLineCommentTrivia || token === ts.SyntaxKind.MultiLineCommentTrivia)
+      comments.push(scanner.getTokenText());
+  }
+  let contractCode = code;
+  if (entry.supportSources) {
+    contractCode = [...entry.supportSources, entry.source]
+      .map((p) => {
+        const raw = readFileSync(resolve(root, p), 'utf8'),
+          ast = ts.createSourceFile(p, raw, ts.ScriptTarget.Latest, true),
+          edits = [];
+        for (const node of ast.statements) {
+          if (ts.isImportDeclaration(node)) edits.push({ start: node.getStart(ast), end: node.end, text: '' });
+          else
+            for (const modifier of node.modifiers || [])
+              if (modifier.kind === ts.SyntaxKind.ExportKeyword)
+                edits.push({ start: modifier.getStart(ast), end: modifier.end, text: '' });
+        }
+        return edits
+          .sort((a, b) => b.start - a.start)
+          .reduce((text, e) => text.slice(0, e.start) + e.text + text.slice(e.end), raw);
+      })
+      .join('\n');
+  }
+  return (
+    comments.join('\n') +
+    '\n' +
+    transformSync(contractCode, { loader: 'ts', target: 'es2022', legalComments: 'inline', charset: 'utf8' }).code
+  );
 }
