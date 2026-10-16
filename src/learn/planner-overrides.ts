@@ -8,7 +8,7 @@ export interface PlannerRow {
 }
 export interface PlannerOverride {
   action: string;
-  movedToWeekday?: number;
+  movedToWeekday?: number | null;
   minutes?: unknown;
   note?: string;
 }

@@ -5,9 +5,6 @@
   "src/learn/repository.js": {
     "max-lines": 1
   },
-  "src/learn/setup-persistence.js": {
-    "max-lines": 1
-  },
   "public/admin/app.js": {
     "max-lines": 1
   },

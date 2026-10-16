@@ -585,7 +585,6 @@
     "src/operations/rate-limiter.js",
     "src/learn/community-store-contracts.d.ts",
     "src/learn/test-score-contracts.d.ts",
-    "src/learn/setup-persistence.d.ts",
     "src/learn/demo-data.d.ts",
     "scripts/typecheck/directory-recovery-runtime-contracts.ts",
     "src/learn/academic-records.ts",
@@ -1135,7 +1134,14 @@
     "src/browser/myagapay/teaching-contracts.d.ts",
     "src/browser/myagapay/teaching-presentation.ts",
     "src/browser/myagapay/teaching.ts",
-    "scripts/typecheck-browser/myagapay-teaching.ts"
+    "scripts/typecheck-browser/myagapay-teaching.ts",
+    "src/learn/setup-normalization.ts",
+    "src/learn/setup-operation-contracts.d.ts",
+    "src/learn/setup-persistence-composition-contracts.d.ts",
+    "src/learn/setup-persistence-shared.ts",
+    "src/learn/setup-persistence.ts",
+    "src/learn/setup-seed-application.ts",
+    "scripts/typecheck/learn-setup-runtime-contracts.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -1754,7 +1760,6 @@
     "src/operations/rate-limiter.js",
     "src/learn/community-store-contracts.d.ts",
     "src/learn/test-score-contracts.d.ts",
-    "src/learn/setup-persistence.d.ts",
     "src/learn/demo-data.d.ts",
     "scripts/typecheck/directory-recovery-runtime-contracts.ts",
     "src/learn/academic-records.ts",
@@ -2304,6 +2309,13 @@
     "src/browser/myagapay/teaching-contracts.d.ts",
     "src/browser/myagapay/teaching-presentation.ts",
     "src/browser/myagapay/teaching.ts",
-    "scripts/typecheck-browser/myagapay-teaching.ts"
+    "scripts/typecheck-browser/myagapay-teaching.ts",
+    "src/learn/setup-normalization.ts",
+    "src/learn/setup-operation-contracts.d.ts",
+    "src/learn/setup-persistence-composition-contracts.d.ts",
+    "src/learn/setup-persistence-shared.ts",
+    "src/learn/setup-persistence.ts",
+    "src/learn/setup-seed-application.ts",
+    "scripts/typecheck/learn-setup-runtime-contracts.ts"
   ]
 }

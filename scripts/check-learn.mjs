@@ -472,13 +472,17 @@ assert(
   'Learn onboarding API should expose saved setup state.'
 );
 assert(
-  learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'),
+  includesJavaScriptFragment(
+    learnSetupPersistence,
+    '["Charlotte Mason", "Orthodox Classical", "Traditional", "Eclectic", "Unsure"]'
+  ),
   'Learn setup should accept every wizard rhythm preset.'
 );
 assert(learnSetupPersistence.includes('parentNames'), 'Learn setup should persist the wizard parent name.');
 assert(learnSetupPersistence.includes('groupingMode'), 'Learn setup should persist the selected planning-group model.');
 assert(
-  learnSetupPersistence.includes('currentWeekWindow') && learnSetupPersistence.includes('kind: "enrichment"'),
+  learnSetupPersistence.includes('currentWeekWindow') &&
+    includesJavaScriptFragment(learnSetupPersistence, 'kind: "enrichment"'),
   'Starter setup should generate a current editable week with enrichment rows.'
 );
 assert(

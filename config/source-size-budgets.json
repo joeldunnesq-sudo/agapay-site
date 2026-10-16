@@ -9,7 +9,6 @@
     "scripts/tax-exemption-tests.mjs": 1302,
     "scripts/worker-hardening-tests.mjs": 1874,
     "src/learn/print-documents.js": 1950,
-    "src/learn/repository.js": 1487,
-    "src/learn/setup-persistence.js": 1687
+    "src/learn/repository.js": 1487
   }
 }

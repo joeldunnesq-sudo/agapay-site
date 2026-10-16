@@ -9,6 +9,10 @@ export const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 // Authoritative sources. Runtime consumers retain the adjacent .js import paths.
 export const serverTypeScriptSources = Object.freeze([
+  'src/learn/setup-persistence-shared.ts',
+  'src/learn/setup-normalization.ts',
+  'src/learn/setup-seed-application.ts',
+  'src/learn/setup-persistence.ts',
   'src/handlers/admin-shared.ts',
   'src/handlers/admin-revenue.ts',
   'src/handlers/admin-registration-storage.ts',
@@ -540,6 +544,9 @@ export const serverTypeScriptSupportSources = Object.freeze([
   'src/directory/admin-review-approval.ts',
   'src/directory/admin-household-records.ts',
   'src/directory/admin-notes-duplicates.ts',
+  'src/learn/setup-persistence-shared.ts',
+  'src/learn/setup-normalization.ts',
+  'src/learn/setup-seed-application.ts',
 ]);
 export const serverTypeScriptCompositions = Object.freeze({
   'src/accounting/close/service.ts': [
@@ -662,6 +669,11 @@ export const serverTypeScriptCompositions = Object.freeze({
     'src/directory/admin-review-approval.ts',
     'src/directory/admin-household-records.ts',
     'src/directory/admin-notes-duplicates.ts',
+  ],
+  'src/learn/setup-persistence.ts': [
+    'src/learn/setup-persistence-shared.ts',
+    'src/learn/setup-normalization.ts',
+    'src/learn/setup-seed-application.ts',
   ],
 });
 
