@@ -11,6 +11,56 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/learn/dashboard-shell-setup-calendar.ts',
+    output: 'public/learn/dashboard-shell-setup-calendar.js',
+    module: true,
+    delivery: 'native-module',
+    classicSupportSources: [
+      'src/browser/learn/dashboard-shell-setup-calendar-part-1.ts',
+      'src/browser/learn/dashboard-shell-setup-calendar-part-2.ts',
+    ],
+  },
+  {
+    source: 'src/browser/learn/dashboard-shell-planner-family.ts',
+    output: 'public/learn/dashboard-shell-planner-family.js',
+    module: true,
+    delivery: 'native-module',
+    classicSupportSources: [
+      'src/browser/learn/dashboard-shell-planner-family-part-1.ts',
+      'src/browser/learn/dashboard-shell-planner-family-part-2.ts',
+      'src/browser/learn/dashboard-shell-planner-family-part-3.ts',
+    ],
+  },
+  {
+    source: 'src/browser/learn/dashboard-shell.ts',
+    output: 'public/learn/dashboard-shell.js',
+    module: true,
+    delivery: 'native-module',
+    classicSupportSources: [
+      'src/browser/learn/dashboard-shell-part-1.ts',
+      'src/browser/learn/dashboard-shell-part-2.ts',
+      'src/browser/learn/dashboard-shell-part-3.ts',
+      'src/browser/learn/dashboard-shell-part-4.ts',
+      'src/browser/learn/dashboard-shell-part-5.ts',
+      'src/browser/learn/dashboard-shell-part-6.ts',
+      'src/browser/learn/dashboard-shell-part-7.ts',
+      'src/browser/learn/dashboard-shell-part-8.ts',
+      'src/browser/learn/dashboard-shell-part-9.ts',
+      'src/browser/learn/dashboard-shell-part-10.ts',
+      'src/browser/learn/dashboard-shell-part-11.ts',
+      'src/browser/learn/dashboard-shell-part-12.ts',
+      'src/browser/learn/dashboard-shell-part-13.ts',
+      'src/browser/learn/dashboard-shell-part-14.ts',
+      'src/browser/learn/dashboard-shell-part-15.ts',
+      'src/browser/learn/dashboard-shell-part-16.ts',
+      'src/browser/learn/dashboard-shell-part-17.ts',
+    ],
+    runtimeSupportSources: [
+      'src/browser/learn/dashboard-shell-setup-calendar.ts',
+      'src/browser/learn/dashboard-shell-planner-family.ts',
+    ],
+  },
+  {
     source: 'src/browser/admin/app-accounting-and-audit.ts',
     output: 'public/admin/app-accounting-and-audit.js',
     declarationsOnly: true,

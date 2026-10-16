@@ -1,3 +1,4 @@
+import type { LearnViewSections } from './view-model-contracts.js';
 import type {
   LearnViewEntity,
   LearnViewPayload,
@@ -23,6 +24,8 @@ export function resourceTypeStyle(value: unknown = '') {
     .toLowerCase();
   return RESOURCE_TYPE_STYLES[normalized] || RESOURCE_TYPE_STYLES.default;
 }
+export function safeArray<T = LearnViewEntity>(value: T[] | null | undefined): T[];
+export function safeArray<T = LearnViewEntity>(value: unknown): T[];
 export function safeArray<T = LearnViewEntity>(value: unknown): T[] {
   return (Array.isArray(value) ? value : []) as T[];
 }
@@ -247,7 +250,7 @@ export function dateParts(isoDate: string) {
     isSunday: date.getDay() === 0,
   };
 }
-export function shellFromPayload(page: string, payload: LearnViewPayload) {
+export function shellFromPayload(page: keyof LearnViewSections, payload: LearnViewPayload) {
   const section = payload?.[page] || payload?.dashboard || payload?.planner || {};
   const household = section.household || {};
   const children = safeArray(section.children);

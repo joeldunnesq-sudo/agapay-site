@@ -95,9 +95,8 @@ assert.match(
 );
 assert.match(adminHtml, /Activate prepared staging database/);
 assert.match(adminApp, /function activateAdminPreparedAccounting\b/);
-assert.match(
-  adminApp,
-  /parishId:'st-fiacre'/,
+assert.ok(
+  includesJavaScriptFragment(adminApp, "parishId: 'st-fiacre'"),
   'the built-in accounting parish must remain selectable when cached registration summaries omit IDs'
 );
 assert.match(
@@ -125,9 +124,11 @@ assert.match(
   /id="accountingPreparedActivation" hidden/,
   'prepared-database activation must be hidden until a non-production environment is confirmed'
 );
-assert.match(
-  adminApp,
-  /activation\.hidden=!adminAccountingEnvironment\|\|adminAccountingEnvironment==='production'/,
+assert.ok(
+  includesJavaScriptFragment(
+    adminApp,
+    "activation.hidden = !adminAccountingEnvironment || adminAccountingEnvironment === 'production'"
+  ),
   'production must not present an unusable staging-only action'
 );
 assert.match(app, /function renderAccountingPaywall\(/);

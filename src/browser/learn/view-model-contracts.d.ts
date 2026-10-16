@@ -1,4 +1,50 @@
 export interface LearnViewEntity {
+  initial?: string;
+  daysOfWeek?: (string | number)[];
+  personName?: string;
+  premium?: boolean;
+  writingScore?: number | string;
+  scienceScore?: number | string;
+  readingScore?: number | string;
+  englishScore?: number | string;
+  compositeScore?: number | string;
+  mathScore?: number | string;
+  readingWritingScore?: number | string;
+  totalScore?: number | string;
+  testDate?: string;
+  testType?: string;
+  completion?: LearnViewEntity;
+  clientId?: string;
+  age?: string | number;
+  missedLessonBehavior?: string;
+  priorityLevel?: string;
+  instructionMode?: string;
+  quantity?: string;
+  eventType?: string;
+  item?: string;
+  have?: boolean;
+  instructions?: string;
+  ingredients?: string;
+  sourceUrl?: string;
+  checked?: boolean;
+  inPantry?: boolean;
+  pantry?: boolean;
+  timeOfDay?: string;
+  assignedDate?: string;
+  quarterMonth?: string | number;
+  dayOfMonth?: string | number;
+  recurrence?: string;
+  day?: string;
+  frequency?: string;
+  endTime?: string;
+  startTime?: string;
+  rule?: { mode?: string };
+  assignee?: string;
+  dinner?: string;
+  lunch?: string;
+  breakfast?: string;
+  saintNames?: string[];
+  complete?: boolean;
   format?: string;
   entries?: LearnViewEntity[];
   byChild?: LearnViewEntity[];
@@ -57,7 +103,7 @@ export interface LearnViewEntity {
   color?: string;
   comingSoon?: boolean;
   communityResources?: LearnViewEntity[];
-  completed?: number;
+  completed?: number | boolean;
   completedThroughChapter?: number | string;
   completedThroughNumber?: number | string;
   configured?: boolean;
@@ -69,7 +115,7 @@ export interface LearnViewEntity {
   courses?: LearnViewEntity[];
   creditHours?: string;
   credit_hours?: string;
-  credits?: number;
+  credits?: string | number;
   current?: number;
   currentChapter?: string;
   currentLesson?: string;
@@ -84,7 +130,7 @@ export interface LearnViewEntity {
   date?: string;
   dateLabel?: string;
   dateRange?: string;
-  dates?: LearnViewEntity[];
+  dates?: string[];
   dayNumber?: number;
   days?: LearnViewEntity[];
   description?: string;
@@ -159,7 +205,7 @@ export interface LearnViewEntity {
   icon?: string;
   iconUrl?: string;
   id?: string;
-  inMonth?: string;
+  inMonth?: string | boolean;
   instructionalDays?: string;
   isFastDay?: boolean;
   isSunday?: boolean;
@@ -192,7 +238,7 @@ export interface LearnViewEntity {
   meetingDay?: string;
   memberNotes?: string;
   minutes?: unknown;
-  minutesPlanned?: number;
+  minutesPlanned?: string | number;
   mode?: string;
   monMinutes?: string;
   month?: LearnViewEntity;
@@ -215,7 +261,7 @@ export interface LearnViewEntity {
   oldStyleDateLabel?: string;
   onboarding?: LearnViewEntity;
   options?: LearnViewEntity[];
-  orthodox?: string;
+  orthodox?: string | boolean;
   orthodoxSuggestions?: LearnViewEntity[];
   paceMode?: string;
   pacingRows?: LearnViewEntity[];
@@ -229,7 +275,7 @@ export interface LearnViewEntity {
   patronSaintFeastDate?: string;
   patronSaintName?: string;
   percent?: number;
-  pinned?: string;
+  pinned?: boolean | string;
   planningMode?: string;
   ponomarIconUrl?: string;
   preferences?: LearnViewEntity;
@@ -257,7 +303,7 @@ export interface LearnViewEntity {
   saintStories?: LearnViewEntity[];
   saints?: LearnViewEntity[];
   sampleOutputs?: { mom?: unknown[]; child?: unknown[]; planner?: unknown[] };
-  scheduledDays?: LearnViewEntity[];
+  scheduledDays?: (string | number)[];
   scheduledWeeks?: number[];
   schoolYear?: LearnViewEntity;
   seasonLabel?: string;
@@ -268,7 +314,7 @@ export interface LearnViewEntity {
   setupCards?: LearnViewEntity[];
   setupCompleted?: boolean;
   setupSnapshot?: LearnViewEntity;
-  setupTiles?: LearnViewEntity;
+  setupTiles?: Record<string, Record<string, { title?: string; detail?: string; minutes?: string }>>;
   sharedBy?: string;
   sharingGuidance?: LearnViewEntity[];
   source?: string;
@@ -343,12 +389,12 @@ export interface LearnViewEntity {
   url?: string;
   value?: string;
   vendor?: string;
-  vetted?: string;
+  vetted?: boolean | string;
   visibleFrameworks?: LearnViewEntity[];
-  votes?: string;
+  votes?: number | string;
   wedMinutes?: string;
   week?: LearnViewEntity;
-  weekDates?: LearnViewEntity[];
+  weekDates?: string[];
   weekStart?: string;
   weekdayLabel?: string;
   weekdayLong?: string;
@@ -360,7 +406,24 @@ export interface LearnViewEntity {
   weeksCount?: number;
   year?: LearnViewEntity;
 }
-export type LearnViewPayload = Record<string, LearnViewEntity | undefined>;
+export interface LearnViewSections {
+  dashboard?: LearnViewEntity;
+  planner?: LearnViewEntity;
+  formation?: LearnViewEntity;
+  books?: LearnViewEntity;
+  grades?: LearnViewEntity;
+  community?: LearnViewEntity;
+  coOp?: LearnViewEntity;
+  reports?: LearnViewEntity;
+  onboarding?: LearnViewEntity;
+  printCenter?: LearnViewEntity;
+  'co-op'?: LearnViewEntity;
+  'print-center'?: LearnViewEntity;
+}
+export interface LearnViewPayload extends LearnViewSections, Record<string, unknown> {
+  printLimit?: number;
+}
+
 export interface LearnViewContext extends Record<string, unknown> {
   civilDate?: string;
   todayLabel?: string;

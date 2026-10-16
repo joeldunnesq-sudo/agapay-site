@@ -2355,4 +2355,267 @@ export default [
       ],
     },
   },
+  // Explicit Learn cross-source bindings and retained legacy reads; local variables remain checked.
+  {
+    files: ['src/browser/learn/dashboard-shell-part-1.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(prepareOdysseyViewModel|setLearnViewMode|safeExternalUrl|cssVars|check|completionCheck|bar|pageIntro|downloadBlob|isLearnFamilyPlan)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-10.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(rowWeeklyPlans|rowResources|moveResourceRowToLane|moveResourceRowToSubject|snapshotResourceModal|restoreResourceModal|rowTileMinutes|collectRows|wireDashboard)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-11.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setupPayloadFromForm|familyPlanningPayloadFromForm|syncSetupChildLimit|setupBlankRow|setSetupSectionOpen|syncSetupTermSelects)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-12.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(panel|wireSetupPage)$' }] },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-13.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(wireWeeklyAssignmentBoard|itemId)$' }],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-14.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(wireMoveUnfinishedWork)$' }] },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-15.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(wirePlanner|introEl|scope|displayView)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-16.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^(panel|wireCommunityLegacy|wireCommunity|wireReports|wireGrades|testScoreFromElement)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-17.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(learnGoogleCalendarStatus|mount)$' }],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-2.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(panel|printCount|setPrintCount|learnRequestHeaders|showLearnFeedbackDialog|saintStoryDialogHtml|forceDisplayedSaintFirst|saintCardTitle|mealToolFromQuery|shell|renderGraceModePanel)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-3.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(panel|renderTermProgressPanel|renderDashboard|i)$', argsIgnorePattern: '^i$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-4.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderPlanner|gracePriorityBadge|renderTermAtAGlance|renderFamilyPlanningEditor|renderFamilyPlannerScopeLegacy|intro|icon|dayKeyForChore|prototypeRecipeType|prototypeMonthSeed)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-5.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(seedFamilyPrototypeState|wireFamilyPrototypeBackend|renderFormation|bookCover)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-6.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderBooks|i|renderReports|renderGrades|renderCoOp|setupDayPicker|setupSourceInput|setupWeeklyPlanFields|setupMultiChildPicker|churchRhythmSetupPanel|formationSetupPanel)$',
+          argsIgnorePattern: '^i$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-7.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(panel|formSubjectsSetupPanel|setupProgressCard|collapsibleSetupPanel|loadSimpleSetupDraft|saveSimpleSetupDraft|renderSimpleSetupWizard|renderTefaCommunity)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-8.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderCommunity|renderReportsComingSoon|applySimpleDraftToSetupVm|wireSimpleSetupWizard)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-part-9.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(familyPlanningSetupPanel|renderSetup|renderPrintCenter|apiGet|syncLearnGoogleCalendar|localIsoDate|setupChildRowsFromForm)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family-part-1.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(designedAssignmentsByDateForMonth|renderWeeklyAssignmentBoard|choreTimeLabel|eventRecurrenceLabel|index|familyPlannerModel|renderFeastsPanel|renderFastingLegend|plannerHiddenData|plannerMonthQuery|renderPlannerDaySelector|renderMealCard)$',
+          argsIgnorePattern: '^index$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family-part-2.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderFamilyPlannerScope|isImportantPlannerFeast|prototypeStateToFamilyPlanningPayload|renderPlannerMonth)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family-part-3.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(familyEventSetupRow|recipeSetupRow|grocerySetupRow|nextSevenDates)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-planner-family.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(designedAssignmentsByDateForMonth|choreCadence|choreAssigneeOptions|dayOfMonthOptions|choreTimeLabel|choreTimeCheckboxes|isoDateParts|eventOccursOnDate|renderFeastsPanel|renderFastingLegend|plannerHiddenData|plannerMonthQuery|renderPlannerDaySelector|renderMealCard|renderMealsPlan|renderRecipesTool|renderGroceriesTool|renderPantryTool|renderFamilyMonthOverview|monthDiffBetween|choreAssignedParts|choreOpenAttributes|renderEventsScope|renderFamilyPlannerModals|recipeTitleFromPrototypeId|adjacentMonthKey|uniqueMonthLessons|renderMonthLessonChip|choreTimeOptions|eventRecurrenceOptions)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-setup-calendar-part-1.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(learnExperience|renderPlannerTerm|renderPlannerYear|renderAttendanceTracker|setupTermOptions|termSetupRow|setupGraceModeBehavior|planningModeOptionsFor|setupGroupOptions|activeSetupGroupLabels|primaryResourceGroupLabel|selectedTermWeeks|setupTermWeekPicker)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-setup-calendar-part-2.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(index|label|childSetupRow|subjectSetupRow|bookSetupRow|formationSetupRow|formationRhythmSetupRow|formationRecitationSetupRow|formationEnrichmentSetupRow)$',
+          argsIgnorePattern: '^index$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell-setup-calendar.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(learnViewMode|attendanceDateLabel|isoDateFromUTC|utcHolidayDate|addHoliday|addObservedFixedHoliday|nthWeekdayOfMonth|lastWeekdayOfMonth|usFederalHolidayMap|nationalHolidayForDate|setupGracePriorityValue|setupGraceModeBehavior|setupGroupOptions|activeSetupGroupLabels|setupTermWeekPicker|setupResourceWeekPicker|setupResourceWeeklyPlanFields|setupResourcePlanningModePicker|setupResourceChildPicker|setupResourcePlanningCard|normalizeSetupResource|setupResourceLane|setupResourceList|setupPlanningModePicker|setupColorSelect|setupChildColor|US_FEDERAL_HOLIDAY_CACHE|graceModeOptions|planningModeOptions|weeklyFrequencyOptions|simpleScheduleOptions)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/learn/dashboard-shell.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(cloneLearnViewModel|isFaithSpecific|secularPrintText|itemIsFaithSpecific|secularPlannerDay|demoPlannerItems|demoBooks|prepareOdysseyViewModel|setLearnViewMode|safeExternalUrl|cssVars|check|completionCheck|bar|pageIntroIcon|pageIntroMeta|pageIntro|downloadBlob|isLearnFamilyPlan|printCount|setPrintCount|learnAccountEmail|learnRequestHeaders|openLearnCheckout|saintStoryDialogHtml|saintMatchKey|saintMatchScore|saintPrecedence|orderSaintsByPrecedence|orderSaintsForCard|forceDisplayedSaintFirst|saintCardTitle|plannerScopeFromQuery|mealToolFromQuery|plannerSidebarSubnav|sidebar|globalProductNav|topbar|shell|renderGraceModePanel|renderTermProgressPanel|renderTodayLearnContext|weekAssignmentStorageKey|readWeekAssignmentState|designedAssignmentsForDate|timeLabel|eventsForDate|mealForDate|choresForDate|renderDesignedLessonList|renderDashboardDesignedLessons|renderDashboardFamilyCards|renderTefaViewToggleBanner|renderDashboard|renderPlanner|plannerStatusMeta|statusPill|renderPlannerReserveCard|gracePriorityBadge|renderTermAtAGlance|renderPlannerWeek|moveUnfinishedWorkControl|renderPlannerDay|renderFamilyPlanningEditor|renderFamilyPlannerIntro|renderFamilyPlannerScopeLegacy|dayKeyForChore|prototypeRecipeType|prototypeDaySeeds|prototypeMonthSeed|prototypeSetupSeed|prototypeKidsSeed|backendRecipeToPrototype|seedFamilyPrototypeState|wireFamilyPrototypeBackend|renderTefaFormation|renderFormation|bookCover|renderBooks|renderReports|gradeOption|renderGradeTermFields|renderGradeCourseEditor|renderTestScoreRow|renderTestScoresPanel|renderGrades|renderCoOp|scheduledDays|setupDayPicker|setupSourceInput|setupWeeklyPlanFields|setupMultiChildPicker|churchRhythmSetupPanel|setupTileValue|setupSectionCard|setupSectionPanel|formationSetupPanel|formSubjectsSetupPanel|setupStepTarget|setupStepState|setupProgressCard|setupPanelCollapsed|collapsibleSetupPanel|simpleSetupDraftKey|suggestedFormForChild|defaultSimpleSetupDraft|loadSimpleSetupDraft|saveSimpleSetupDraft|simpleSetupField|simpleSetupStepBody|renderSimpleSetupWizard|renderTefaCommunity|renderCommunity|renderReportsComingSoon|captureSimpleSetupStep|validateSimpleSetupStep|validateSimpleSetupMinimum|simpleSetupDates|simpleSetupPayload|applySimpleDraftToSetupVm|wireSimpleSetupWizard|setupExperience|mealSetupRow|familyPlanningSetupPanel|renderSetup|renderPrintCenter|redirectExpiredLearnSession|waitForLearnSignIn|syncLearnGoogleCalendar|localIsoDate|storedLearnCalendar|learnApiUrl|rowValue|setupChildRowsFromForm|rowWeeklyPlans|rowResourceValue|rowResourceWeeklyPlans|rowResources|resourceRowPrimaryGroupLabel|refreshResourceLaneCounts|moveResourceRowToLane|reindexResourceList|moveResourceRowToSubject|refreshResourceSummary|snapshotResourceModal|restoreResourceModal|rowTileMinutes|collectRows|openSaintOfDay|wireDashboard|setupPayloadFromForm|currentSetupChildren|familyPlanningPayloadFromForm|currentSetupTerms|setupChildCount|syncSetupChildLimit|setupBlankRow|setSetupSectionOpen|syncSetupTermSelects|wireSetupPage|wireWeeklyAssignmentBoard|wireMoveUnfinishedWork|wirePlanner|updateActiveButton|wireCommunityLegacy|wireCommunity|wireReports|gradeCourseFromElement|blankGradeCourse|attendanceEntryFromCell|setAttendanceCellStatus|wireGrades|testScoreFromElement|wireTestScores|canUsePrint|wirePrintCenter|wireFormation|learnGoogleCalendarStatus|ODYSSEY_FAITH_SPECIFIC|MARKETING_LEARNERS|LEARN_VIEW_MODE_KEY|learnCheckoutOpening|PLANNER_STATUS_META|homeschoolMethodOptions|subjectTypeOptions|schedulingModeOptions|lessonPriorityOptions|instructionModeOptions|setupWeekdays|sourceTypeOptions|SIMPLE_SETUP_STEPS)$',
+        },
+      ],
+    },
+  },
 ];

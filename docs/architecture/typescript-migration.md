@@ -4,17 +4,23 @@ The migration adds checked contracts while preserving the platform's runtime beh
 
 ## Roadmap and completion criteria
 
-Plan for seven major stages, with multiple independently tested batches inside the expansion stages. A completed pilot establishes a safe migration pattern; it does not mean every module in that area is converted.
+The seven-stage plan now has implementation coverage for all 495 frozen original runtime modules. The historical batches below document the progression; final local and hosted acceptance is recorded separately.
 
-1. Type-checking foundation: completed.
-2. Core server utilities and reproducible server output: first batch completed.
-3. Service and data contracts: first batch completed; additional services remain.
-4. Browser compilation and asset/cache protection: foundation and first batch completed.
-5. Browser controllers and UI data contracts: underway; expand from small controllers to larger shells in bounded batches.
-6. Broader backend adoption: underway with content services; continue through remaining services and storage boundaries, then isolate authentication, payments, webhooks, accounting writes, and scheduled jobs behind their dedicated regression and release gates.
-7. Cleanup and enforcement: inventory remaining JavaScript, document intentional exceptions, expand typed-caller coverage, and prevent new untyped implementations within migrated areas. Consolidate generated output only if all runtime entrypoints and rollback paths support it.
+1. Type-checking foundation: complete.
+2. Core server utilities and reproducible server output: complete for the frozen runtime inventory.
+3. Service and data contracts: complete for the frozen runtime inventory.
+4. Browser compilation and asset/cache protection: complete, preserving original JavaScript delivery contracts.
+5. Browser controllers and UI data contracts: complete through Admin, Donor, Parish and Learn shells.
+6. Broader backend adoption: complete through the frozen authentication, payments, webhook, accounting, storage and scheduled-job boundaries, with their regression gates retained.
+7. Cleanup and enforcement: complete for this migration scope. The inventory has no remaining original modules, every source has an output owner, the old migrated facades are retired, and regression checks prevent loss of a TypeScript owner. Generated JavaScript, intentional forwarding shims, vendor assets, inline scripts and tooling remain documented scope exceptions.
 
-The batch count is not yet fixed. It depends on module coupling and the effort needed to protect existing behavior; seven stages is an organizational plan, not seven remaining changes or releases. The latest accepted release is PR #241, covering batch 89 and bringing production to 471 migrated runtime modules (95.2%) while retaining the Android PWA performance fix. Local validation does not establish deployment acceptance. Unconverted JavaScript callers and unvalidated external JSON remain outside the guarantees of TypeScript checking.
+Production remains the accepted PR #241 release (471 / 495, 95.2%) until the final protected release is accepted. Type assertions over external JSON do not provide runtime validation, and the frozen module count does not measure complete static safety or performance. The Android PWA performance fix is retained.
+
+### Completion checkpoint (batch 90, local conversion complete; release acceptance pending)
+
+All **495 / 495 frozen original runtime modules (100%)** now have authoritative TypeScript implementations. The final Learn shell completes the remaining 14 modules requested for this continuation. This percentage excludes extracted helpers, vendor bundles, forwarding shims, pre-existing Learn TypeScript, inline scripts and tooling. It measures original module conversion, not full validation of external JSON or absence of type assertions. Generated JavaScript remains the shipped runtime. The regression suite now requires every original module to retain its TypeScript owner.
+
+The clean local release run has passed all 320 platform commands and four prechecks, together with complete quality and focused post-correction lint/format/budget checks. Protected hosted release acceptance remains pending. The accepted production version remains de7251ae663acb40c58fbcd5e6c81d9c4ee20ce8 until deployment acceptance is recorded below.
 
 ### Current completion measurement (batch 89, accepted production release)
 
@@ -1424,3 +1430,21 @@ Compiler coverage/ownership and emitted-module rejection, Admin usability/presen
 Quality evidence includes four strict projects, deterministic output, content versions, zero-error lint across 1,879 files with six existing warnings, warning-baseline fixtures, all formatting batches and the immutable accounting ledger. After the final function move, strict browser typing, focused lint, generated/asset checks, size/ledger and browser/parity checks pass again; the original quality failure and successful continuation are retained. A fresh full quality/platform run remains required once the final Learn module is complete. Evidence is under ignored tmp-typescript-100/admin-app-_.log, admin-types-last.log, admin-lint-last.log, admin-parity-last.log, admin-browser-final.log and admin-_-final.log.
 
 Inventory is **494 / 495 (99.8%)**, leaving the Learn dashboard shell. This remains original-module completion, not lines or effort. No batch 90 push or deployment has occurred; accepted production remains de7251ae663acb40c58fbcd5e6c81d9c4ee20ce8. The authorized 100% push/deploy request remains open.
+
+### Batch 90 Learn shell completion: 495 / 495
+
+The final dashboard shell now has strict authored TypeScript for navigation, setup wizard and advanced setup, family planning, attendance, grades/test scores, print-center actions, community resources, billing status and Google Calendar presentation. Twenty-two bounded private function-only sources compose into three native modules at the original dashboard-shell URL and two owned setup/calendar and planner/family URLs. Only twelve audited pure constants move to native helper initialization; mutable session/DOM state and startup stay in the root owner. Existing query-qualified view-model and sanitizer dependencies retain their order. Every original function body (293), initializer value and root startup statement matches 645458a4 after type erasure, syntax normalization and explicitly counted compiler local renames. The existing missing ACCENTS binding is repaired by importing the already used shared palette; fallback colors preserve explicit colors and never mutate saved children.
+
+Named payload, view-model, draft, assignment, grade and DOM contracts preserve existing native coercions, null postconditions, JSON storage, pending sign-in redirects, entitlement decisions, sanitization and server-side write enforcement. Positive and negative caller fixtures check API result types, numeric week arrays, authentication URLs and live entitlement booleans. New declaration files also pass their own check with skipLibCheck disabled. The final source audit finds no any-typed function parameters or Map/Set values. These checks do not turn unchecked JSON assertions into runtime validation.
+
+The two helpers preload in parallel with the root module. The mobile gate creates these preloads only when desktop startup or the explicit phone Continue action starts Learn, preserving the phone interstitial and avoiding unwanted planner downloads. Existing service-worker and cache policies are retained. Real Chromium fixtures pass authenticated read-only dashboard startup on desktop and phone, one request per helper, identical preload/import URLs and parallel fetches under synthetic latency. Existing Learn functional checks pass. All source-guard assertions are retained (190 Learn and 23 Quick Give assertions); Quick Give selects named functions from the composed source instead of slicing across unrelated session initializers.
+
+Evidence is retained under ignored tmp-typescript-100: learn-integrated-parity-final.log, learn-shell-browser-3.log, learn-checked-boundaries-final.json, learn-integrated-declarations.log, learn-check-integrated-5.log, final-startup.log and final-private-provisioner-packaging.log. Local Worker startup profile is 326.5 ms on this machine; the private Accounting provisioner packages successfully in a dry run. Neither is a production latency claim. Full platform, final quality and hosted acceptance results will be recorded after completion. Earlier failed fixtures and checks are retained alongside their corrected reruns.
+
+### Batch 90 final local release acceptance
+
+All 495 frozen original runtime modules are converted (100%), with no remaining original JavaScript implementation. A clean uninterrupted run passes all **320 platform commands and four release prechecks** after the source-guard updates. Full quality passes four strict projects, deterministic server/browser generation, asset versions, zero-error lint across 1,911 files with the same six recorded warnings, all formatting batches, seven unchanged legacy size budgets and the immutable accounting ledger. Final lint/format/budget checks pass after the last regression-fixture edits. Every original assertion and negative-check count is retained across the eleven modified regression files. The completed-inventory guard and Node preview/export compatibility pass again.
+
+Learn authored declarations pass with skipLibCheck disabled, its new parameter/collection audit has no any values, and all 293 original function bodies plus initializer values and root startup retain their reviewed parity. Browser desktop/phone startup and helper-fetch checks pass. The root output is 9,043 lines under its unchanged 9,272-line cap; helpers are 833 and 1,173 lines, and all new authored sources remain below 1,200. Native Worker startup and private Accounting provisioner packaging pass.
+
+The failed exploratory/source-format fixture runs are retained with their successful corrections. The final clean end-to-end evidence is tmp-typescript-100/final-clean-platform-check.log, final-quality-accepted.log, final-release-lint.log, final-release-format.log, final-release-budgets.log and local-validation.json. The release remains pending push, exact-head staging/CodeQL/authenticated gates and protected production acceptance; production is still de7251ae663acb40c58fbcd5e6c81d9c4ee20ce8 at this checkpoint.

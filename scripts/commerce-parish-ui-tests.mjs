@@ -27,7 +27,8 @@ const checks = [
   ],
   [
     'Commerce remains backward compatible with the Bookstore route',
-    app.includes(`if (tab === 'commerce') tab = 'bookstore';`) && app.includes(`bookstore:'Commerce'`),
+    app.includes(`if (tab === 'commerce') tab = 'bookstore';`) &&
+      includesJavaScriptFragment(app, `bookstore:'Commerce'`),
   ],
   [
     'Commerce overview is the active default product tab',

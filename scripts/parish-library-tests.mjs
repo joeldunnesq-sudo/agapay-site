@@ -1,3 +1,4 @@
+import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { appAssetUrl } from './lib/app-asset-versions.mjs';
 import assert from 'node:assert/strict';
@@ -212,7 +213,7 @@ assert.match(handler, /PARISH_LIBRARY_ASSETS|parish-library\/|Parish Library fil
 assert.match(handler, /parts\[0\] === ['"]settings['"] && request\.method === ['"]GET['"]/);
 const parishDashboardCore = readFileSync(path.join(root, 'public', 'parish', 'app.js'), 'utf8');
 const parishLibraryFeature = readFileSync(path.join(root, 'public', 'parish', 'features', 'library.js'), 'utf8');
-const parishDashboardScript = `${parishDashboardCore}\n${parishLibraryFeature}`;
+const parishDashboardScript = `${readParishDashboardSource()}\n${parishLibraryFeature}`;
 assert.ok(adminPage.indexOf('/parish/feature-registry.js?v=') < adminPage.indexOf('/parish/features/library.js?v='));
 assert.ok(adminPage.indexOf('/parish/features/library.js?v=') < adminPage.indexOf('/parish/app.js?'));
 assert.match(parishLibraryFeature, /ParishFeatureRegistry\.register\(['"]library['"]/);
