@@ -1,6 +1,6 @@
+// Generated from src/handlers/parish-bookstore-handler.ts by npm run build:server. Do not edit.
 import { hasModuleAccess } from '../lib/entitlements.js';
 import {
-  bookstoreEnabledFor,
   centsFromBody,
   d1All,
   d1First,
@@ -29,18 +29,14 @@ import {
   receiveBookstoreStock,
   startBookstoreCountSession,
 } from './parish-bookstore-inventory.js';
-
 const commerceDatabase = (env) => env.AGAPAY_DB || env.DB || null;
-
-export async function handleParishBookstore(request, env, parishId, subpath = '') {
+async function handleParishBookstore(request, env, parishId, subpath = '') {
   const limited = await rateLimit(request, env, 'parish-bookstore', { limit: 80, windowSeconds: 300 });
   if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   if (!commerceDatabase(env)) return missingProductionStoreResponse();
-
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
-
   const token = getBearerToken(request);
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
@@ -48,13 +44,11 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
   if (!hasModuleAccess(found.registration, 'bookstore')) {
     return json({ error: 'Bookstore is included with Give + or Parish.' }, { status: 403 });
   }
-
   const segments = String(subpath || '')
     .replace(/^\/+/, '')
     .split('/')
     .filter(Boolean);
-  const now = new Date().toISOString();
-
+  const now = /* @__PURE__ */ new Date().toISOString();
   if (request.method === 'GET' && segments[0] === 'starter-catalog') {
     const existing = await d1All(
       env,
@@ -73,7 +67,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       })),
     });
   }
-
   if (request.method === 'POST' && segments[0] === 'starter-catalog' && segments[1] === 'add') {
     let body = {};
     try {
@@ -85,7 +78,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
     const flattened = BOOKSTORE_STARTER_CATALOG.flatMap((group) => group.items);
     const starterByKey = new Map(flattened.map((item) => [item.key, item]));
     const added = [];
-
     for (const entry of requested.slice(0, 25)) {
       const key = String(entry.key || '').trim();
       const starter = starterByKey.get(key);
@@ -143,14 +135,12 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       );
       added.push({ key, name: item.name });
     }
-
     return json({ ok: true, added });
   }
-
   if (segments[0] === 'sales-summary' && request.method === 'GET') {
-    // Paid orders only. payment_status becomes 'paid' once Stripe confirms;
-    // status/fulfillment are separate lifecycle fields we intentionally ignore here.
-    const startOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
+    const startOfMonth = new Date(
+      Date.UTC(/* @__PURE__ */ new Date().getUTCFullYear(), /* @__PURE__ */ new Date().getUTCMonth(), 1)
+    ).toISOString();
     const monthRow = await d1First(
       env,
       `SELECT COUNT(*) AS order_count,
@@ -189,19 +179,13 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       },
     });
   }
-
-  // Sales & customers tracking — who is buying from My AGAPAY, what they buy,
-  // and what the parish nets. First paint returns KPIs + trend + top customers
-  // + top products + the first page of the order ledger; passing ?cursor= returns
-  // only the next page of orders (keyset pagination).
   if (segments[0] === 'sales' && request.method === 'GET') {
     const params = new URL(request.url).searchParams;
     const rangeParam = params.get('range') || '90d';
     const cursorParam = params.get('cursor') || '';
     const qRaw = (params.get('q') || '').trim().toLowerCase().slice(0, 80);
     const pageLimit = Math.min(Math.max(Number(params.get('limit')) || 25, 1), 50);
-
-    const nowDate = new Date();
+    const nowDate = /* @__PURE__ */ new Date();
     let rangeStart;
     if (rangeParam === 'ytd') {
       rangeStart = new Date(Date.UTC(nowDate.getUTCFullYear(), 0, 1)).toISOString();
@@ -209,10 +193,8 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       rangeStart = '1970-01-01T00:00:00.000Z';
     } else {
       const days = { '30d': 30, '90d': 90, '12m': 365 }[rangeParam] || 90;
-      rangeStart = new Date(Date.now() - days * 86400000).toISOString();
+      rangeStart = new Date(Date.now() - days * 864e5).toISOString();
     }
-
-    // ── Order ledger page (paid + refunded, keyset paginated) ──────────────
     const orderBinds = [parishId];
     let whereSearch = '';
     if (qRaw) {
@@ -238,7 +220,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       }
     }
     orderBinds.push(pageLimit + 1);
-
     const orderRows = await d1All(
       env,
       `SELECT o.id, o.order_number, o.donor_email, o.donor_name, o.item_description,
@@ -257,15 +238,12 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
        LIMIT ?`,
       ...orderBinds
     );
-
     let nextCursor = null;
     if (orderRows.length > pageLimit) {
       const last = orderRows[pageLimit - 1];
       nextCursor = btoa(`${last.created_at}|${last.id}`);
       orderRows.length = pageLimit;
     }
-
-    // Attach line items for the visible page (one grouped query).
     const pageIds = orderRows.map((r) => r.id);
     const itemsByOrder = {};
     if (pageIds.length) {
@@ -289,7 +267,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
         });
       }
     }
-
     const orders = orderRows.map((r) => ({
       id: r.id,
       orderNumber: r.order_number || null,
@@ -314,13 +291,9 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       isHomeParish: Number(r.is_home_parish) === 1,
       items: itemsByOrder[r.id] || [],
     }));
-
-    // "Load more" — orders only.
     if (cursorParam) {
       return json({ orders, nextCursor });
     }
-
-    // ── First paint: KPIs, trend, top customers, top products, refunds ─────
     const kpi = await d1First(
       env,
       `SELECT COUNT(*) AS orders, COALESCE(SUM(total_charged_cents),0) AS gross,
@@ -358,7 +331,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       parishId,
       rangeStart
     );
-
     const trendStart = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth() - 5, 1)).toISOString();
     const trendRows = await d1All(
       env,
@@ -382,7 +354,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
         orders: Number(row?.orders || 0),
       });
     }
-
     const customerRows = await d1All(
       env,
       `SELECT o.donor_email, MAX(o.donor_name) AS donor_name, COUNT(*) AS orders,
@@ -410,7 +381,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       isMyAgapay: Number(r.is_myagapay) === 1,
       isHomeParish: Number(r.is_home_parish) === 1,
     }));
-
     const productRows = await d1All(
       env,
       `SELECT i.item_name, COALESCE(SUM(i.quantity),0) AS units,
@@ -430,7 +400,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       grossCents: Number(r.gross || 0),
       orders: Number(r.orders || 0),
     }));
-
     const orderCount = Number(kpi?.orders || 0);
     const grossCents = Number(kpi?.gross || 0);
     return json({
@@ -461,7 +430,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       nextCursor,
     });
   }
-
   if (segments[0] === 'products' && request.method === 'GET' && segments.length === 1) {
     const rows = await d1All(
       env,
@@ -476,20 +444,16 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
     );
     return json({ products: rows.map(normalizeBookstoreProduct) });
   }
-
   if (segments[0] === 'count-sessions' && segments.length === 1 && request.method === 'GET') {
     return json({ sessions: await listBookstoreCountSessions(env, parishId) });
   }
-
   if (segments[0] === 'count-sessions' && segments.length === 1 && request.method === 'POST') {
     return startBookstoreCountSession(env, parishId, 'parish_dashboard', now);
   }
-
   if (segments[0] === 'count-sessions' && segments[1] && segments.length === 2 && request.method === 'GET') {
     const session = await getBookstoreCountSession(env, parishId, decodeURIComponent(segments[1]));
     return session ? json({ session }) : json({ error: 'Bookstore count session not found.' }, { status: 404 });
   }
-
   if (
     segments[0] === 'count-sessions' &&
     segments[1] &&
@@ -505,12 +469,10 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
     }
     return closeBookstoreCountSession(env, parishId, decodeURIComponent(segments[1]), body, now);
   }
-
   if (segments[0] === 'products' && segments[1] === 'low-stock' && request.method === 'GET' && segments.length === 2) {
     const products = await listBookstoreLowStock(env, parishId);
     return json({ products, count: products.length });
   }
-
   if (segments[0] === 'products' && request.method === 'POST' && segments.length === 1) {
     let body = {};
     try {
@@ -557,7 +519,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
     );
     return json({ ok: true, product: { id: productId } });
   }
-
   if (segments[0] === 'products' && segments[1]) {
     const productId = decodeURIComponent(segments[1]);
     const product = await d1First(
@@ -570,7 +531,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       parishId
     );
     if (!product) return json({ error: 'Bookstore item not found.' }, { status: 404 });
-
     if (request.method === 'GET' && segments[2] === 'movements' && segments.length === 3) {
       const rows = await d1All(
         env,
@@ -595,7 +555,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
         })),
       });
     }
-
     if (request.method === 'POST' && segments[2] === 'receive' && segments.length === 3) {
       let body = {};
       try {
@@ -605,7 +564,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       }
       return receiveBookstoreStock(env, parishId, productId, body, now);
     }
-
     if (request.method === 'PATCH' && segments.length === 2) {
       let body = {};
       try {
@@ -619,7 +577,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       }
       return patchBookstoreProduct(env, parishId, productId, body, now);
     }
-
     if (request.method === 'DELETE') {
       await d1Run(
         env,
@@ -638,15 +595,6 @@ export async function handleParishBookstore(request, env, parishId, subpath = ''
       return json({ ok: true });
     }
   }
-
   return json({ error: 'Method not allowed' }, { status: 405 });
 }
-
-// Settlement Profiles admin API — Settings tab, "payment-settings" scope.
-// Gated the same way as every other parish dashboard endpoint: a valid
-// parish dashboard bearer token. AGAPAY doesn't yet have per-user roles
-// within a single parish login (the whole dashboard is one shared parish
-// credential), so "only admins/treasurers with payment-settings permission"
-// is satisfied by the existing parish-dashboard auth boundary — this is
-// never reachable from the donor-facing My AGAPAY app, which has no bearer
-// token for parish dashboard auth at all.
+export { handleParishBookstore };

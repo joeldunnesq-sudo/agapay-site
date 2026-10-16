@@ -1,7 +1,7 @@
 export interface PrintablePaymentDetail {
   payment: { checkNumber: unknown; paymentDate: unknown; totalAmount: number; referenceNumber?: unknown };
   prints: readonly unknown[];
-  applications: {
+  applications: readonly {
     vendorInvoiceNumber?: string;
     billNumber?: string;
     billDate?: unknown;

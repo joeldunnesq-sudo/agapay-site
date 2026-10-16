@@ -1,7 +1,7 @@
 import type { RegistrationRecord } from '../organizations/types.js';
 import type { RegistrationLookup } from '../organizations/context.js';
 export interface OrganizationActions<TEnv, TRecord extends RegistrationRecord> {
-  json(body: unknown, init?: ResponseInit): Response;
+  json(body: unknown, init?: import('../lib/http-responses.js').JsonResponseInit): Response;
   findRegistrationByParishId: RegistrationLookup<TEnv, TRecord>;
   getBearerToken(request: Request): string;
   verifyParishDashboardBearer(registration: TRecord, token: string): boolean | Promise<boolean>;

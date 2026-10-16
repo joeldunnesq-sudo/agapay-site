@@ -23,6 +23,10 @@ interface Window {
     authHeaders(extra?: Record<string, string>): Record<string, string>;
     handleUnauthorized(response: Response): boolean;
     setFeedUnreadCount(count: number): void;
+    setGroupsUnreadCount(count: number): void;
+    setTeachingUnreadCount(count: number): void;
+    capabilitiesLoaded(): boolean;
+    parishLifeExperience(parish?: AppHeaderParish | null): { communicationsEnabled: boolean; label: string };
     icons: { menu: string };
     initializeMobileAppMenus(root?: Document | HTMLElement): void;
     openSupportDialog(): void;

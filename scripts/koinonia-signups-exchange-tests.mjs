@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from 'node:assert/strict';
@@ -28,7 +29,7 @@ import {
 import { getCommunityToolBadgeCounts, markCommunityToolOpened } from '../src/handlers/koinonia-community-tools.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (relative) => readFileSync(path.join(root, relative), 'utf8');
+const read = (relative) => relative.startsWith('src/') ? readServerContractSourceSync(relative,root) : readFileSync(path.join(root,relative),'utf8');
 
 function d1Environment(sqlite) {
   function prepare(sql) {

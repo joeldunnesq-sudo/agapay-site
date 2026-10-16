@@ -58,9 +58,9 @@ assert.deepEqual(TEACHING_CATEGORIES, ['homilies', 'catechism', 'liturgical', 'c
 const formatted = renderTeachingBody(
   'A **strong** word, *emphasis*, and [link](https://example.test).\n- One\n- Two\n<script>alert(1)</script><img onerror="bad">'
 );
-assert.match(formatted, /<strong>strong<\/strong>/);
-assert.match(formatted, /<em>emphasis<\/em>/);
-assert.match(formatted, /<ul><li>One<\/li><li>Two<\/li><\/ul>/);
+assert.ok(includesJavaScriptFragment(formatted, '<strong>strong</strong>'));
+assert.ok(includesJavaScriptFragment(formatted, '<em>emphasis</em>'));
+assert.ok(includesJavaScriptFragment(formatted, '<ul><li>One</li><li>Two</li></ul>'));
 assert.doesNotMatch(formatted, /<script|<img|onerror/i);
 
 const draft = await createParishTeachingPost(db, {
@@ -367,30 +367,38 @@ assert.ok(
     'import { renderBoundedRichText } from "../lib/rich-text.js";'
   )
 );
-assert.match(sources['src/handlers/parish-teaching.js'], /sendTeachingPush\(env, \{/);
+assert.ok(includesJavaScriptFragment(sources['src/handlers/parish-teaching.js'], 'sendTeachingPush(env, {'));
 assert.match(
   sources['src/handlers/parish-teaching.js'],
   /contentLength: metadata\.contentLength[\s\S]*teaching_audio_storage_failed/,
   'R2 uploads must preserve known-length request streams and return an actionable storage error'
 );
 assert.match(sources['src/routes/parish.js'], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
-assert.match(sources['public/myagapay/parish-life.js'], />Listen<[\s\S]*href="\/myagapay\/teaching">Open Library/);
-assert.match(sources['public/myagapay/parish-life.js'], /post\.status === "published" && Boolean\(post\.audioUrl\)/);
 assert.match(
   sources['public/myagapay/parish-life.js'],
-  /parishLifeFetch\("\/api\/donor\/teaching"[\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/,
+  />Listen<[\s\S]*href=['"]\/myagapay\/teaching['"]>Open Library/
+);
+assert.ok(
+  includesJavaScriptFragment(
+    sources['public/myagapay/parish-life.js'],
+    'post.status === "published" && Boolean(post.audioUrl)'
+  )
+);
+assert.match(
+  sources['public/myagapay/parish-life.js'],
+  /parishLifeFetch\(['"]\/api\/donor\/teaching['"][\s\S]*\.then\(\(teaching\)[\s\S]*renderRecentRecordings[\s\S]*setTeachingUnreadCount\(Math\.max\(0, Number\(teaching\?\.unreadCount\) \|\| 0\)\)/,
   'the teaching request must fill the unified Listen section and update unread state independently'
 );
-assert.match(sources['public/parish/dashboard.html'], /id="teachingAudio"/);
+assert.ok(includesJavaScriptFragment(sources['public/parish/dashboard.html'], 'id="teachingAudio"'));
 assert.match(
   sources['public/parish/dashboard.html'],
-  /id="teachingAudioUrl"[\s\S]*id="teachingPinned"[\s\S]*Pin when published/
+  /id=['"]teachingAudioUrl['"][\s\S]*id=['"]teachingPinned['"][\s\S]*Pin when published/
 );
 assert.match(
   sources['public/parish/dashboard.html'],
-  /id="teachingCategory"[\s\S]*?value="homilies"[\s\S]*?value="special_events"/
+  /id=['"]teachingCategory['"][\s\S]*?value=['"]homilies['"][\s\S]*?value=['"]special_events['"]/
 );
-assert.match(sources['public/parish/app.js'], /createTeachingDraft/);
+assert.ok(includesJavaScriptFragment(sources['public/parish/app.js'], 'createTeachingDraft'));
 assert.match(sources['public/parish/app.js'], /category:\s*document\.getElementById\('teachingCategory'\)\.value/);
 assert.match(sources['public/parish/app.js'], /audioUrl[\s\S]*toggleTeachingPin/);
 assert.match(
@@ -439,14 +447,16 @@ assert.match(
   /Latest audio[\s\S]*\/api\/listen\/subscriptions[\s\S]*Promise\.allSettled[\s\S]*slice\(0, 5\)/,
   'the unified list may draw from the five most recent subscribed podcast episodes'
 );
-assert.match(
-  sources['public/myagapay/parish-life.js'],
-  /mode=podcasts&feed=\$\{encodeURIComponent\(episode\.feedUrl\)\}&episode=\$\{encodeURIComponent\(episode\.episodeKey\)\}/,
+assert.ok(
+  includesJavaScriptFragment(
+    sources['public/myagapay/parish-life.js'],
+    'mode=podcasts&feed=${encodeURIComponent(episode.feedUrl)}&episode=${encodeURIComponent(episode.episodeKey)}'
+  ),
   'landing-page podcast episodes must deep-link to the selected playable episode'
 );
 assert.match(
   sources['public/myagapay/parish-life.js'],
-  /item\.image \? `<img src="\$\{parishLifeEscape\(item\.image\)\}"[^`]*` : "▶"/,
+  /item\.image \? `<img src=['"]\$\{parishLifeEscape\(item\.image\)\}['"][^`]*` : ['"]▶['"]/,
   'podcast items in the combined list must show feed artwork and reserve the generic play icon as a fallback'
 );
 assert.match(sources['public/myagapay/teaching.js'], /post\.pinned[\s\S]*Linked audio/);
@@ -457,17 +467,17 @@ assert.match(
 );
 assert.match(
   sources['public/myagapay/teaching.js'],
-  /post\.audioUrl \? "playParishTeachingAudio" : "openTeachingPost"[\s\S]*Play in Koinonia/,
+  /post\.audioUrl \? ['"]playParishTeachingAudio['"] : ['"]openTeachingPost['"][\s\S]*Play in Koinonia/,
   'a donor post with stored audio must expose the shared player rather than render as text-only'
 );
 assert.match(
   sources['public/myagapay/teaching.js'],
-  /artist: "AGAPAY Audio"[\s\S]*album: episode\.show \|\| "Koinonia Audio Library"/,
+  /artist: ['"]AGAPAY Audio['"][\s\S]*album: episode\.show \|\| ['"]Koinonia Audio Library['"]/,
   'Bluetooth media metadata must identify every Koinonia source as AGAPAY Audio'
 );
 assert.match(
   sources['public/myagapay/teaching.js'],
-  /openRequestedKoinoniaPodcastEpisode[\s\S]*parameters\.get\("feed"\)[\s\S]*parameters\.get\("episode"\)[\s\S]*playKoinoniaPodcast\(episode\)/,
+  /openRequestedKoinoniaPodcastEpisode[\s\S]*parameters\.get\(['"]feed['"]\)[\s\S]*parameters\.get\(['"]episode['"]\)[\s\S]*playKoinoniaPodcast\(episode\)/,
   'podcast landing links must open the selected episode in the shared player'
 );
 assert.doesNotMatch(
@@ -479,7 +489,7 @@ assert.match(
   sources['public/myagapay/teaching.js'],
   /All[\s\S]*Homilies[\s\S]*Catechism[\s\S]*Liturgical[\s\S]*Choir[\s\S]*Special Events/
 );
-assert.match(sources['public/myagapay/teaching.js'], /teachingPostsForFilter\(value\)\.length/);
+assert.ok(includesJavaScriptFragment(sources['public/myagapay/teaching.js'], 'teachingPostsForFilter(value).length'));
 assert.match(
   sources['public/myagapay/teaching.html'],
   /Parish Audio[\s\S]*Orthodox Podcasts[\s\S]*koinoniaPodcastQuery[\s\S]*koinoniaPodcastPlayer/
@@ -492,7 +502,7 @@ assert.doesNotMatch(
 assert.match(sources['public/myagapay/teaching.js'], /runKoinoniaPodcastSearch[\s\S]*\/api\/listen\/search/);
 assert.match(
   sources['public/myagapay/teaching.js'],
-  /runKoinoniaPodcastSearch\("Orthodox"\)[\s\S]*AbortController[\s\S]*data\.error/,
+  /runKoinoniaPodcastSearch\(['"]Orthodox['"]\)[\s\S]*AbortController[\s\S]*data\.error/,
   'podcast discovery must load automatically and surface API failures'
 );
 assert.match(sources['public/myagapay/teaching.js'], /openKoinoniaPodcast[\s\S]*\/api\/listen\/rss/);

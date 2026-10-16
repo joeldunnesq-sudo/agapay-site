@@ -13,6 +13,12 @@ export interface PlatformUserRow {
   session_mfa_verified_at?: string | null;
 }
 export interface DonorRecord extends Record<string, unknown> {
+  createdAt?: string;
+  updatedAt?: string;
+  passwordSalt?: string;
+  passwordHash?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   donorName?: string;
   householdName?: string;

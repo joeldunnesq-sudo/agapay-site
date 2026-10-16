@@ -66,7 +66,7 @@ const draft = await createVideoDraft(db, {
   streamVideoId: 'stream-one',
   input: { title: 'Sunday homily', description: 'A **private** reflection.', pinned: true },
 });
-assert.match(renderVideoDescription(draft.description), /<strong>private<\/strong>/);
+assert.ok(includesJavaScriptFragment(renderVideoDescription(draft.description), '<strong>private</strong>'));
 assert.deepEqual(
   await getDonorVideoFeed(db, { parishId: 'parish-one', donorId: 'donor@example.test' }),
   [],
@@ -260,7 +260,7 @@ assert.equal(parseLatestYouTubeChannelVideo(channelFeed).title, 'Newest parish h
 let channelFeedRequests = 0;
 const latestChannelVideo = await fetchLatestYouTubeChannelVideo(savedChannel, async (url, init) => {
   channelFeedRequests += 1;
-  assert.match(String(url), /youtube\.com\/feeds\/videos\.xml\?channel_id=/);
+  assert.ok(includesJavaScriptFragment(String(url), 'youtube.com/feeds/videos.xml?channel_id='));
   assert.equal(init.cf.cacheTtl, 900, 'the public channel feed should use a short adjustable edge cache');
   return new Response(channelFeed, { headers: { 'content-type': 'application/atom+xml' } });
 });
@@ -288,7 +288,12 @@ const sources = Object.fromEntries(
   ])
 );
 assert.match(sources['src/handlers/parish-video.js'], /requireSignedURLs:\s*true/);
-assert.match(sources['src/handlers/parish-video.js'], /WHERE id = \? AND parish_id = \? AND status = 'published'/);
+assert.ok(
+  includesJavaScriptFragment(
+    sources['src/handlers/parish-video.js'],
+    "WHERE id = ? AND parish_id = ? AND status = 'published'"
+  )
+);
 for (const functionName of ['createStreamUpload', 'createVideoDraft', 'privateStreamAssets', 'updateVideoPost']) {
   assert.equal(typeof videoExports[functionName], 'function');
   assert.match(
@@ -301,7 +306,7 @@ assert.ok(
   includesJavaScriptFragment(sources['src/handlers/parish-video.js'], 'parts[0] === "upload-url"'),
   'the direct Stream upload route must remain callable'
 );
-assert.match(sources['public/parish/app.js'], /uploadVideoDirectly\(data\.uploadUrl, file/);
+assert.ok(includesJavaScriptFragment(sources['public/parish/app.js'], 'uploadVideoDirectly(data.uploadUrl, file'));
 assert.match(
   sources['public/parish/app.js'],
   /KOINONIA_NATIVE_VIDEO_UPLOADS_VISIBLE\s*=\s*false/,
@@ -326,10 +331,13 @@ assert.match(
   /Announcements, Groups, and Teaching[\s\S]*verified-household gate[\s\S]*YouTube-hosted video—even Unlisted—does not carry that same guarantee[\s\S]*AGAPAY cannot control YouTube access[\s\S]*youtubeVideoUrl[\s\S]*Validate and add/i,
   'privacy guidance must be permanent and appear before submission controls'
 );
-assert.match(sources['public/myagapay/media.html'], /href="\/myagapay\/parish-life"[^>]*>← Back</);
-assert.match(sources['public/myagapay/watch.html'], /href="\/myagapay\/parish-life"[^>]*>← Back</);
-assert.match(sources['public/myagapay/parish-life.js'], />Latest Video<[\s\S]*href="\/myagapay\/media">All Media/);
-assert.match(sources['public/myagapay/parish-life.js'], /parishLifeFetch\("\/api\/donor\/videos"/);
+assert.match(sources['public/myagapay/media.html'], /href=['"]\/myagapay\/parish-life['"][^>]*>← Back</);
+assert.match(sources['public/myagapay/watch.html'], /href=['"]\/myagapay\/parish-life['"][^>]*>← Back</);
+assert.match(
+  sources['public/myagapay/parish-life.js'],
+  />Latest Video<[\s\S]*href=['"]\/myagapay\/media['"]>All Media/
+);
+assert.ok(includesJavaScriptFragment(sources['public/myagapay/parish-life.js'], 'parishLifeFetch("/api/donor/videos"'));
 assert.match(
   sources['public/myagapay/parish-life.js'],
   /media\.youtubeLatest[\s\S]*Pinned ·[\s\S]*Latest from YouTube/
@@ -344,24 +352,28 @@ assert.doesNotMatch(
   /\.parish-life-video-card:last-child:nth-child\(odd\)\s*\{\s*display:\s*none;/,
   'mobile Koinonia must never hide its only recent video'
 );
-assert.match(
-  sources['public/myagapay/watch.html'],
-  /<video id="streamVideo" playsinline preload="metadata"><\/video>/,
+assert.ok(
+  includesJavaScriptFragment(
+    sources['public/myagapay/watch.html'],
+    '<video id="streamVideo" playsinline preload="metadata"></video>'
+  ),
   'custom watch page must not use Stream iframe or native controls'
 );
 assert.doesNotMatch(sources['public/myagapay/watch.html'], /<iframe|<video[^>]+controls/);
-assert.match(sources['public/myagapay/watch.js'], /new Hls/);
+assert.ok(includesJavaScriptFragment(sources['public/myagapay/watch.js'], 'new Hls'));
 assert.match(sources['public/myagapay/media.html'], /Public parish channel[\s\S]*public YouTube media/i);
-assert.match(sources['public/myagapay/media.html'], /id="youtubePlayerModal"[\s\S]*youtubePlayerFrame/);
+assert.match(sources['public/myagapay/media.html'], /id=['"]youtubePlayerModal['"][\s\S]*youtubePlayerFrame/);
 assert.match(sources['public/myagapay/media.js'], /youtube-nocookie\.com\/embed\/[\s\S]*openYouTubeMedia/);
 assert.match(
   sources['public/myagapay/media.js'],
   /openYouTubeMediaFullscreen[\s\S]*requestFullscreen[\s\S]*orientation\?\.lock\?\.\(['"]landscape['"]\)/,
   'YouTube playback must offer native fullscreen with a landscape request'
 );
-assert.match(
-  sources['public/myagapay/media.js'],
-  /dialog\.requestFullscreen \|\| dialog\.webkitRequestFullscreen/,
+assert.ok(
+  includesJavaScriptFragment(
+    sources['public/myagapay/media.js'],
+    'dialog.requestFullscreen || dialog.webkitRequestFullscreen'
+  ),
   'Android fullscreen must target the same-origin player shell rather than the cross-origin YouTube iframe'
 );
 assert.match(
@@ -374,9 +386,8 @@ assert.match(
   /youtube-player-fullscreen[\s\S]*allowfullscreen/,
   'the YouTube player must expose a visible fullscreen control and grant iframe fullscreen permission'
 );
-assert.match(
-  sources['public/myagapay/media.js'],
-  /youtube-nocookie\.com\/embed\/videoseries\?list=/,
+assert.ok(
+  includesJavaScriptFragment(sources['public/myagapay/media.js'], 'youtube-nocookie.com/embed/videoseries?list='),
   'the connected channel must render its auto-updating uploads playlist inside Koinonia'
 );
 assert.match(
@@ -415,7 +426,7 @@ assert.doesNotMatch(
 );
 assert.match(
   sources['public/parish/dashboard.html'],
-  /id="nav-communications"[\s\S]*?<svg viewBox="0 0 24 24">([\s\S]*?)<\/svg>[\s\S]*?koinonia-studio-mark[\s\S]*?<svg viewBox="0 0 24 24">\1<\/svg>/,
+  /id=['"]nav-communications['"][\s\S]*?<svg viewBox=['"]0 0 24 24['"]>([\s\S]*?)<\/svg>[\s\S]*?koinonia-studio-mark[\s\S]*?<svg viewBox=['"]0 0 24 24['"]>\1<\/svg>/,
   'the Koinonia hero must reuse its sidebar navigation icon'
 );
 assert.doesNotMatch(

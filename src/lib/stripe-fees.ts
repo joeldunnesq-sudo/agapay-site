@@ -1,4 +1,5 @@
 export interface DonorNameInput {
+  householdName?: unknown;
   firstName?: unknown;
   lastName?: unknown;
 }

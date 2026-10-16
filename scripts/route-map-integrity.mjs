@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+import { readServerModuleSourceSync } from './lib/server-typescript.mjs';
+import {
+  javascriptStringPairs,
+  javascriptExportNames,
+  javascriptFunctionNames,
+} from './lib/javascript-source-contract.mjs';
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 // Verifies that every static-file target in src/worker.js's route tables
 // actually exists under public/. Fails the build if a Worker route points
 // at a file that doesn't exist -- this is what would otherwise surface as
@@ -15,14 +22,14 @@
 // this reads it as text and parses out just the route table literals,
 // the same convention scripts/check.mjs already uses.
 
-import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, "..");
-const workerSource = readFileSync(path.join(repoRoot, "src/worker.js"), "utf8");
-const publicDir = path.join(repoRoot, "public");
+const repoRoot = path.resolve(__dirname, '..');
+const workerSource = readFileSync(path.join(repoRoot, 'src/worker.js'), 'utf8');
+const publicDir = path.join(repoRoot, 'public');
 
 let failures = 0;
 let fileTargetsChecked = 0;
@@ -43,18 +50,12 @@ function checkFile(routeLabel, targetPath) {
 // rewrites (e.g. "/marketplace", "/learn/dashboard") that get re-routed
 // again elsewhere, not direct file targets -- those are skipped, not
 // silently ignored (logged at the end).
-const assetRoutesBlock = workerSource.match(
-  /const MYAGAPAY_ASSET_ROUTES = new Map\(\[([\s\S]*?)\]\);/
-);
-if (!assetRoutesBlock) {
-  console.error("FAIL: could not find MYAGAPAY_ASSET_ROUTES in src/worker.js -- has it been renamed?");
-  process.exit(1);
-}
-const assetRoutePairs = [...assetRoutesBlock[1].matchAll(/\[\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\]/g)];
-if (assetRoutePairs.length === 0) {
-  console.error("FAIL: MYAGAPAY_ASSET_ROUTES parsed to zero entries -- check the regex against the current file format.");
-  process.exit(1);
-}
+const assetRoutePairs = javascriptStringPairs(workerSource, 'MYAGAPAY_ASSET_ROUTES').map(([route, target]) => [
+  '',
+  route,
+  target,
+]);
+if (!assetRoutePairs.length) throw Error('Worker asset route Map must not be empty');
 for (const [, routePath, target] of assetRoutePairs) {
   if (/\.(html|js|css)$/i.test(target)) {
     checkFile(routePath, target);
@@ -69,12 +70,12 @@ for (const [, routePath, target] of assetRoutePairs) {
 // within the function body.
 const cleanAssetFnMatch = workerSource.match(/function cleanAssetRequest\(request\) \{([\s\S]*?)\n\}/);
 if (!cleanAssetFnMatch) {
-  console.error("FAIL: could not find cleanAssetRequest() in src/worker.js -- has it been renamed?");
+  console.error('FAIL: could not find cleanAssetRequest() in src/worker.js -- has it been renamed?');
   process.exit(1);
 }
-const literalRewrites = [...cleanAssetFnMatch[1].matchAll(/url\.pathname\s*=\s*"([^"]+\.(?:html|js|css))"/g)];
+const literalRewrites = [...cleanAssetFnMatch[1].matchAll(/url\.pathname\s*=\s*['"]([^'"]+\.(?:html|js|css))['"]/g)];
 for (const [, target] of literalRewrites) {
-  checkFile("cleanAssetRequest() literal rewrite", target);
+  checkFile('cleanAssetRequest() literal rewrite', target);
 }
 
 // --- 3. staticGivePages dynamic set --------------------------------------
@@ -82,7 +83,7 @@ for (const [, target] of literalRewrites) {
 // the Set values and check each corresponding file.
 const staticGivePagesMatch = cleanAssetFnMatch[1].match(/const staticGivePages = new Set\(\[([^\]]+)\]\)/);
 if (staticGivePagesMatch) {
-  const pages = [...staticGivePagesMatch[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  const pages = [...staticGivePagesMatch[1].matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
   for (const page of pages) {
     checkFile(`staticGivePages: ${page}`, `/give/${page}.html`);
   }
@@ -93,74 +94,74 @@ if (staticGivePagesMatch) {
 // routes most likely to regress after the Odyssey restructuring, so check
 // them directly even though they're also covered by #1 above.
 const odysseyFiles = [
-  "/learn/odyssey/index.html",
-  "/learn/odyssey/dashboard/index.html",
-  "/learn/odyssey/dashboard/login.html",
-  "/learn/odyssey/dashboard/activate.html",
+  '/learn/odyssey/index.html',
+  '/learn/odyssey/dashboard/index.html',
+  '/learn/odyssey/dashboard/login.html',
+  '/learn/odyssey/dashboard/activate.html',
   // The Odyssey dashboard shell logic is NOT a separate file — it is folded
   // into the shared /learn/dashboard-shell.js (see isOdysseyLearnContext()
   // and learnExperience() there). A per-namespace shell.js/odyssey-shell.js
   // used to exist here as an unreferenced, drifted duplicate of the shared
   // renderer and was removed; check the shared file instead so this test
   // still fails loudly if the shared shell ever goes missing.
-  "/learn/dashboard-shell.js",
+  '/learn/dashboard-shell.js',
 ];
 for (const f of odysseyFiles) {
-  checkFile("explicit Odyssey coverage", f);
+  checkFile('explicit Odyssey coverage', f);
 }
 
 // --- 5. Accounting service route coverage ---------------------------------
 const accountingServiceAllowList = new Set([
-  "processDueRecurringTransactions",
-  "runAutoReversal",
-  "processAccountingSourceEvent",
-  "ingestAccountingSourceEvent",
-  "processCommerceSourceEvent",
-  "ingestCommerceSourceEvent",
-  "provisionAccountingDatabase",
-  "validateProvisionedAccountingDatabase",
-  "initializeLedgerChart", // Internal bootstrap between migrations 0005 and 0006; never a public route.
-  "nextCheckNumber",
-  "reserveCheckNumbers",
-  "classifyIntegritySeverity",
+  'processDueRecurringTransactions',
+  'runAutoReversal',
+  'processAccountingSourceEvent',
+  'ingestAccountingSourceEvent',
+  'processCommerceSourceEvent',
+  'ingestCommerceSourceEvent',
+  'provisionAccountingDatabase',
+  'validateProvisionedAccountingDatabase',
+  'initializeLedgerChart', // Internal bootstrap between migrations 0005 and 0006; never a public route.
+  'nextCheckNumber',
+  'reserveCheckNumbers',
+  'classifyIntegritySeverity',
 ]);
-const accountingDir = path.join(repoRoot, "src/accounting");
-const handlerDir = path.join(repoRoot, "src/handlers");
+const accountingDir = path.join(repoRoot, 'src/accounting');
+const handlerDir = path.join(repoRoot, 'src/handlers');
 const handlerSource = readdirSync(handlerDir)
-  .filter((name) => name.endsWith(".js"))
-  .map((name) => readFileSync(path.join(handlerDir, name), "utf8"))
-  .join("\n");
+  .filter((name) => name.endsWith('.js'))
+  .map((name) => readFileSync(path.join(handlerDir, name), 'utf8'))
+  .join('\n');
 let accountingExportsChecked = 0;
 for (const domain of readdirSync(accountingDir, { withFileTypes: true })) {
   if (!domain.isDirectory()) continue;
-  const servicePath = path.join(accountingDir, domain.name, "service.js");
+  const servicePath = path.join(accountingDir, domain.name, 'service.js');
   if (!existsSync(servicePath)) continue;
-  const serviceSource = readFileSync(servicePath, "utf8");
-  for (const match of serviceSource.matchAll(/export\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g)) {
-    const functionName = match[1];
+  const serviceSource = readFileSync(servicePath, 'utf8');
+  const implemented = new Set(
+    javascriptFunctionNames(readServerModuleSourceSync('src/accounting/' + domain.name + '/service.js', repoRoot))
+  );
+  for (const functionName of javascriptExportNames(serviceSource).filter((name) => implemented.has(name))) {
     accountingExportsChecked++;
-    if (!handlerSource.includes(functionName) && !accountingServiceAllowList.has(functionName)) {
+    if (!includesJavaScriptFragment(handlerSource, functionName) && !accountingServiceAllowList.has(functionName)) {
       failures++;
-      console.error(`FAIL: accounting service export ${domain.name}/${functionName} is neither referenced by a handler nor explicitly allow-listed.`);
+      console.error(
+        `FAIL: accounting service export ${domain.name}/${functionName} is neither referenced by a handler nor explicitly allow-listed.`
+      );
     }
   }
 }
 
 // --- Report ---------------------------------------------------------------
-console.log(
-  `Route-map integrity: ${fileTargetsChecked} file-backed route target(s) checked against public/.`
-);
+console.log(`Route-map integrity: ${fileTargetsChecked} file-backed route target(s) checked against public/.`);
 console.log(`Accounting route integrity: ${accountingExportsChecked} service export(s) checked.`);
 if (skippedNonFileTargets.length) {
-  console.log(
-    `(${skippedNonFileTargets.length} internal path-rewrite entries skipped -- not file targets, e.g.:`
-  );
+  console.log(`(${skippedNonFileTargets.length} internal path-rewrite entries skipped -- not file targets, e.g.:`);
   for (const entry of skippedNonFileTargets.slice(0, 5)) console.log(`   ${entry}`);
-  console.log(")");
+  console.log(')');
 }
 
 if (failures > 0) {
   console.error(`\n${failures} route(s) point at missing files.`);
   process.exit(1);
 }
-console.log("Route-map integrity OK.");
+console.log('Route-map integrity OK.');

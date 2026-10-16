@@ -1,0 +1,435 @@
+// Development/preview fixtures only; no real user data.
+// ── DEVELOPMENT / DEMO DATA ONLY ────────────────────────────────────────────
+// This file contains the Martin family seed used for local development and
+// unauthenticated preview paths. It is NOT used for real user data.
+// getLearnSeedSnapshot() is the default parameter fallback on SeedLearnRepository
+// and is only reached when no real seed is passed (i.e. createSeedLearnRepository()
+// with no arguments, used in dev/preview contexts only).
+//
+// DO NOT reference specific titles, names, or book data from this file in
+// any production code path (repository.js, handlers.js, print-engine.js).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const nowIso = '2026-06-15T12:00:00.000Z';
+
+export const learnHousehold = {
+  id: 'household_martin',
+  slug: 'martin-family',
+  name: 'The Martin Family',
+  parentNames: ['Stephen Martin', 'Rachel Martin'],
+  childrenCount: 5,
+  primaryMethod: 'Charlotte Mason',
+  parishName: 'St. Catherine Orthodox Church',
+  city: 'Charlotte, North Carolina',
+  liturgicalCalendarType: 'julian',
+  activeProductSlugs: ['give', 'learn'],
+  topbarTimeLabel: '9:14 AM',
+};
+
+export const children = [
+  {
+    id: 'child_elias',
+    householdId: learnHousehold.id,
+    firstName: 'Elias',
+    ageYears: 9,
+    gradeLabel: 'Grade 4',
+    avatarMonogram: 'E',
+    accentToken: 'navy',
+  },
+  {
+    id: 'child_maria',
+    householdId: learnHousehold.id,
+    firstName: 'Maria',
+    ageYears: 7,
+    gradeLabel: 'Grade 2',
+    avatarMonogram: 'M',
+    accentToken: 'wine',
+  },
+  {
+    id: 'child_nicholas',
+    householdId: learnHousehold.id,
+    firstName: 'Nicholas',
+    ageYears: 5,
+    gradeLabel: 'Kindergarten',
+    avatarMonogram: 'N',
+    accentToken: 'forest',
+  },
+  {
+    id: 'child_anna',
+    householdId: learnHousehold.id,
+    firstName: 'Anna',
+    ageYears: 3,
+    gradeLabel: 'Pre-K',
+    avatarMonogram: 'A',
+    accentToken: 'gold',
+  },
+  {
+    id: 'child_charlotte',
+    householdId: learnHousehold.id,
+    firstName: 'Charlotte',
+    ageYears: 1,
+    gradeLabel: 'Little Ones',
+    avatarMonogram: 'C',
+    accentToken: 'plum',
+  },
+];
+
+export const schoolYear = {
+  id: 'school_year_2024_2025',
+  householdId: learnHousehold.id,
+  label: '2024-2025 School Year',
+  startDate: '2024-08-19',
+  endDate: '2025-06-13',
+  currentTermId: 'term_pascha',
+};
+
+export const term = {
+  id: 'term_pascha',
+  schoolYearId: schoolYear.id,
+  label: 'Pascha Term',
+  startDate: '2025-04-21',
+  endDate: '2025-07-11',
+  paceMode: 'grace',
+};
+
+export const cycleFramework = {
+  id: 'cycle_framework_history_catechesis',
+  frameworkType: 'combined',
+  title: 'History & Catechesis Cycle',
+  summary: 'A four-year family cycle pairing church history, Scripture memory, and feast-centered catechesis.',
+};
+
+export const cycleYear = {
+  id: 'cycle_year_2',
+  cycleFrameworkId: cycleFramework.id,
+  yearNumber: 2,
+  title: 'Cycle 2: Apostles & Early Church',
+};
+
+export const cycleTopics = [
+  {
+    id: 'cycle_topic_pascha',
+    cycleYearId: cycleYear.id,
+    subjectType: 'catechesis',
+    title: 'The Resurrection and the Bright Week witness',
+    seasonLabel: 'Pascha Season',
+  },
+  {
+    id: 'cycle_topic_acts',
+    cycleYearId: cycleYear.id,
+    subjectType: 'history',
+    title: 'Acts of the Apostles and the spread of the Gospel',
+    seasonLabel: 'Spring',
+  },
+];
+
+export const curriculumPackage = {
+  id: 'curriculum_package_st_catherine',
+  householdId: learnHousehold.id,
+  title: 'St. Catherine Learn Package',
+  vendor: 'AGAPAY Learn',
+  sourceKind: 'agapay-default',
+  summary: 'A Charlotte Mason, Orthodox-first package that can be mixed with household custom resources.',
+};
+
+export const curriculumPackages = [
+  curriculumPackage,
+  {
+    id: 'curriculum_package_martin_custom',
+    householdId: learnHousehold.id,
+    title: 'Martin Household Custom Additions',
+    vendor: 'Household',
+    sourceKind: 'household-custom',
+    summary: 'Family-chosen living books, parish resources, and copywork sources.',
+  },
+];
+
+export const curriculumSubjects = [
+  {
+    id: 'curr_subject_history',
+    curriculumPackageId: curriculumPackage.id,
+    subjectType: 'history',
+    title: 'History Cycle',
+    sortOrder: 1,
+  },
+  {
+    id: 'curr_subject_catechesis',
+    curriculumPackageId: curriculumPackage.id,
+    subjectType: 'catechesis',
+    title: 'Catechesis Cycle',
+    sortOrder: 2,
+  },
+  {
+    id: 'curr_subject_enrichment',
+    curriculumPackageId: curriculumPackage.id,
+    subjectType: 'enrichment',
+    title: 'Enrichment',
+    sortOrder: 3,
+  },
+  {
+    id: 'curr_subject_recitation',
+    curriculumPackageId: curriculumPackage.id,
+    subjectType: 'recitation',
+    title: 'Recitation & Memory',
+    sortOrder: 4,
+  },
+  {
+    id: 'curr_subject_custom_books',
+    curriculumPackageId: 'curriculum_package_martin_custom',
+    subjectType: 'independent-reading',
+    title: 'Household Living Books',
+    sortOrder: 1,
+  },
+];
+
+export const curriculumResources = [
+  {
+    id: 'resource_acts',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumSubjectId: 'curr_subject_history',
+    title: 'Acts of the Apostles',
+    author: 'KJV Scripture',
+    resourceType: 'scripture',
+    sourceKind: 'agapay-default',
+  },
+  {
+    id: 'resource_creed',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumSubjectId: 'curr_subject_catechesis',
+    title: 'The Creed Lessons 7-12',
+    author: 'AGAPAY Learn',
+    resourceType: 'custom',
+    sourceKind: 'agapay-default',
+  },
+  {
+    id: 'resource_giotto',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumSubjectId: 'curr_subject_enrichment',
+    title: 'Giotto Picture Study',
+    author: 'AGAPAY Learn',
+    resourceType: 'icon',
+    sourceKind: 'agapay-default',
+  },
+  {
+    id: 'resource_paschal_hymns',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumSubjectId: 'curr_subject_recitation',
+    title: 'Paschal Hymns',
+    author: 'Church Hymnody',
+    resourceType: 'hymn',
+    sourceKind: 'agapay-default',
+  },
+  {
+    id: 'resource_wingfeather',
+    curriculumPackageId: 'curriculum_package_martin_custom',
+    curriculumSubjectId: 'curr_subject_custom_books',
+    title: 'The Wingfeather Saga',
+    author: 'Andrew Peterson',
+    resourceType: 'book',
+    sourceKind: 'household-custom',
+  },
+  {
+    id: 'resource_bronze_bow',
+    curriculumPackageId: 'curriculum_package_martin_custom',
+    curriculumSubjectId: 'curr_subject_custom_books',
+    title: 'The Bronze Bow',
+    author: 'Elizabeth George Speare',
+    resourceType: 'book',
+    sourceKind: 'household-custom',
+  },
+];
+
+export const curriculumMappings = [
+  {
+    id: 'mapping_acts_cycle',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumResourceId: 'resource_acts',
+    mappingScope: 'cycle',
+    targetId: cycleYear.id,
+    cycleFrameworkId: cycleFramework.id,
+    cycleYearId: cycleYear.id,
+    termId: term.id,
+    priority: 1,
+  },
+  {
+    id: 'mapping_creed_term',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumResourceId: 'resource_creed',
+    mappingScope: 'term',
+    targetId: term.id,
+    cycleFrameworkId: cycleFramework.id,
+    cycleYearId: cycleYear.id,
+    termId: term.id,
+    priority: 1,
+  },
+  {
+    id: 'mapping_hymns_stream',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumResourceId: 'resource_paschal_hymns',
+    mappingScope: 'household-stream',
+    targetId: 'stream_morning_basket',
+    termId: term.id,
+    priority: 1,
+  },
+  {
+    id: 'mapping_giotto_stream',
+    curriculumPackageId: curriculumPackage.id,
+    curriculumResourceId: 'resource_giotto',
+    mappingScope: 'household-stream',
+    targetId: 'stream_morning_basket',
+    termId: term.id,
+    priority: 2,
+  },
+  {
+    id: 'mapping_wingfeather_stream',
+    curriculumPackageId: 'curriculum_package_martin_custom',
+    curriculumResourceId: 'resource_wingfeather',
+    mappingScope: 'household-stream',
+    targetId: 'stream_read_aloud',
+    termId: term.id,
+    priority: 2,
+  },
+  {
+    id: 'mapping_bronze_bow_elias',
+    curriculumPackageId: 'curriculum_package_martin_custom',
+    curriculumResourceId: 'resource_bronze_bow',
+    mappingScope: 'child-track',
+    targetId: 'track_elias_reading',
+    termId: term.id,
+    priority: 3,
+  },
+];
+
+export const paceProfile = {
+  id: 'pace_profile_grace',
+  householdId: learnHousehold.id,
+  title: 'Gentle Grace Mode',
+  paceMode: 'grace',
+};
+
+export const seasonAdjustment = {
+  id: 'season_adjustment_new_baby',
+  householdId: learnHousehold.id,
+  paceProfileId: paceProfile.id,
+  title: 'New baby season',
+  adjustmentKind: 'new-baby',
+  startsOn: '2025-04-28',
+  endsOn: '2025-06-20',
+  summary: 'Reduce cognitive load, keep family prayers steady, and favor short wins.',
+};
+
+export const graceModeRule = {
+  id: 'grace_rule_new_baby_light',
+  seasonAdjustmentId: seasonAdjustment.id,
+  mode: 'light',
+  preserveChurchRhythms: true,
+  preserveMorningBasket: true,
+  reducePriorityThreshold: 4,
+  changedSummary: [
+    'Kept Morning Prayers, Saint of the Day, Gospel Reading, Morning Basket, and Catechesis.',
+    'Reduced picture study, fine motor, and optional nature journaling to lighter blocks.',
+    'Deferred unfinished art and practical life work to the next available day.',
+  ],
+};
+
+export const householdStreams = [
+  {
+    id: 'stream_morning_basket',
+    householdId: learnHousehold.id,
+    streamType: 'morning-basket',
+    title: 'Morning Basket',
+    cadenceLabel: 'Daily',
+  },
+  {
+    id: 'stream_read_aloud',
+    householdId: learnHousehold.id,
+    streamType: 'family-read-aloud',
+    title: 'Family Read-Aloud',
+    cadenceLabel: 'Daily',
+  },
+  {
+    id: 'stream_nature',
+    householdId: learnHousehold.id,
+    streamType: 'nature-study',
+    title: 'Nature Study',
+    cadenceLabel: '3x weekly',
+  },
+  {
+    id: 'stream_catechesis',
+    householdId: learnHousehold.id,
+    streamType: 'catechesis',
+    title: 'Catechesis',
+    cadenceLabel: 'Daily',
+  },
+  {
+    id: 'stream_feast',
+    householdId: learnHousehold.id,
+    streamType: 'feast-day-activity',
+    title: 'Feast Day Activity',
+    cadenceLabel: 'As needed',
+  },
+];
+
+export const childTracks = [
+  { id: 'track_elias_math', childId: 'child_elias', subjectType: 'math', title: 'Math' },
+  { id: 'track_elias_narration', childId: 'child_elias', subjectType: 'written-narration', title: 'Written Narration' },
+  { id: 'track_elias_copywork', childId: 'child_elias', subjectType: 'copywork', title: 'Copywork' },
+  {
+    id: 'track_elias_reading',
+    childId: 'child_elias',
+    subjectType: 'independent-reading',
+    title: 'Independent Reading',
+  },
+  { id: 'track_elias_nature', childId: 'child_elias', subjectType: 'memory-work', title: 'Nature Journal' },
+  { id: 'track_maria_math', childId: 'child_maria', subjectType: 'math', title: 'Math' },
+  { id: 'track_maria_phonics', childId: 'child_maria', subjectType: 'phonics', title: 'Phonics' },
+  { id: 'track_maria_handwriting', childId: 'child_maria', subjectType: 'handwriting', title: 'Handwriting' },
+  { id: 'track_maria_readaloud', childId: 'child_maria', subjectType: 'independent-reading', title: 'Read-Aloud Time' },
+  { id: 'track_maria_picture', childId: 'child_maria', subjectType: 'art', title: 'Picture Study' },
+  { id: 'track_nicholas_math', childId: 'child_nicholas', subjectType: 'math', title: 'Math' },
+  { id: 'track_nicholas_phonics', childId: 'child_nicholas', subjectType: 'phonics', title: 'Phonics' },
+  { id: 'track_nicholas_memory', childId: 'child_nicholas', subjectType: 'memory-work', title: 'Memory Work' },
+  { id: 'track_nicholas_practical', childId: 'child_nicholas', subjectType: 'practical-life', title: 'Practical Life' },
+  { id: 'track_nicholas_art', childId: 'child_nicholas', subjectType: 'art', title: 'Art' },
+  { id: 'track_anna_poetry', childId: 'child_anna', subjectType: 'poetry', title: 'Poetry' },
+  { id: 'track_anna_picture', childId: 'child_anna', subjectType: 'art', title: 'Picture Talk' },
+  { id: 'track_anna_fine_motor', childId: 'child_anna', subjectType: 'fine-motor', title: 'Fine Motor' },
+  { id: 'track_anna_blocks', childId: 'child_anna', subjectType: 'practical-life', title: 'Blocks' },
+  { id: 'track_anna_songs', childId: 'child_anna', subjectType: 'songs', title: 'Songs' },
+];
+
+export const books = [
+  {
+    id: 'book_wingfeather',
+    householdId: learnHousehold.id,
+    title: 'The Wingfeather Saga',
+    author: 'Andrew Peterson',
+    category: 'Living Books',
+  },
+  {
+    id: 'book_bronze_bow',
+    householdId: learnHousehold.id,
+    title: 'The Bronze Bow',
+    author: 'Elizabeth George Speare',
+    category: 'History',
+  },
+];
+
+export const bookAssignments = [
+  {
+    id: 'assignment_wingfeather_household',
+    bookId: 'book_wingfeather',
+    assignmentType: 'household',
+    assigneeId: learnHousehold.id,
+    progressPercent: 65,
+    currentLabel: 'Chapter 14 of 24',
+  },
+  {
+    id: 'assignment_bronze_bow_elias',
+    bookId: 'book_bronze_bow',
+    assignmentType: 'child',
+    assigneeId: 'child_elias',
+    progressPercent: 35,
+    currentLabel: 'Chapter 5 of 14',
+  },
+];

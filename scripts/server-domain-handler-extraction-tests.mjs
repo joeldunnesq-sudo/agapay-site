@@ -1,3 +1,4 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -205,11 +206,11 @@ for (const name of [...bookstoreFacadeExports, ...bookstoreHandlerExports]) {
     `${name} implementation must move out of parish-commerce.js`
   );
 }
-assert.match(facadeSource, /from ["']\.\/donor-bookstore\.js["']/);
-assert.match(facadeSource, /from ["']\.\/donor-parish-calendar\.js["']/);
-assert.match(facadeSource, /from ["']\.\/donor-sacraments\.js["']/);
-assert.match(facadeSource, /from ["']\.\/donor-notifications\.js["']/);
-assert.match(facadeSource, /from ["']\.\/registration-admin-page\.js["']/);
+assert.match(facadeSource, /from ['"]\.\/donor-bookstore\.js['"]/);
+assert.match(facadeSource, /from ['"]\.\/donor-parish-calendar\.js['"]/);
+assert.match(facadeSource, /from ['"]\.\/donor-sacraments\.js['"]/);
+assert.match(facadeSource, /from ['"]\.\/donor-notifications\.js['"]/);
+assert.match(facadeSource, /from ['"]\.\/registration-admin-page\.js['"]/);
 for (const [file, names] of Object.entries(parishDomainExports)) {
   assert.match(parishFacadeSource, new RegExp(`from ["']\\./${file.replace(/\.js$/, '\\.js')}["']`));
   for (const name of names) {
@@ -264,8 +265,10 @@ assert.deepEqual(donorHandlerPaths, [
   'src/handlers/donor-notifications.js',
   'src/handlers/registration-admin-page.js',
 ]);
-assert.match(readDonorHandlerSource(), /Do not add any AGAPAY platform\/application fee to bookstore/);
-assert.match(readDonorHandlerSource(), /loadPublishedCommerceCalendarEvents/);
+assert.ok(
+  includesJavaScriptFragment(readDonorHandlerSource(), 'Do not add any AGAPAY platform/application fee to bookstore')
+);
+assert.ok(includesJavaScriptFragment(readDonorHandlerSource(), 'loadPublishedCommerceCalendarEvents'));
 assert.equal(parishFacadeSource.split(/\r?\n/).length <= 1200, true, 'parish.js must remain a bounded facade');
 assert.ok(
   stewardshipFacadeSource.split(/\r?\n/).length <= 1400,
@@ -280,9 +283,11 @@ assert.equal(
   ]),
   ''
 );
-assert.match(
-  bookstoreDomain.guestBookstoreItemError([{ source: 'shopper_added', itemCategory: 'other', specifics: {} }]),
-  /Describe every shopper-added item/
+assert.ok(
+  includesJavaScriptFragment(
+    bookstoreDomain.guestBookstoreItemError([{ source: 'shopper_added', itemCategory: 'other', specifics: {} }]),
+    'Describe every shopper-added item'
+  )
 );
 
 const calendarEvents = calendarDomain.parseKoinoniaCalendarIcs(

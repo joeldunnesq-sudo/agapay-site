@@ -1,64 +1,105 @@
-import { json, rateLimit, unauthorized } from "../lib/core.js";
-import { closeLearnTerm } from "./academic-records.js";
-import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
-import { LEARN_FREE_PRINT_LIMIT, learnBillingCancel, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
-import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
-import { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave, loadSetupForIdentity, loadChildren, loadCourses, loadAllCoursesForHousehold, loadAttendance, defaultAcademicYearName, attendanceSummary, devAttendanceFor } from "./grade-records.js";
-import { flagLearnCommunityResource, listLearnCommunityResources, submitLearnCommunityResource } from "./community-store.js";
-import { submitLearnFeedback } from "./feedback-store.js";
-import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
-import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
-import { renderPrintDocumentPdf } from "./print-engine.js";
-import { buildAcademicReportCardPdf, buildAcademicTranscriptPdf, buildLearnPrintDocument, buildLearnReportPrintDocument, renderPrintDocumentPdf as renderLocalPrintDocumentPdf } from "./print-documents.js";
-import { loadTestScores } from "./test-scores.js";
-import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
-import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnMoveUnfinishedWork, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
-
-const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
-
-import { handleLearnTestScores, handleLearnTestScoresSave } from "./test-scores.js";
-
-export { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave, handleLearnTestScores, handleLearnTestScoresSave };
-
+// Generated from src/learn/handlers.ts by npm run build:server. Do not edit.
+import { json, rateLimit, unauthorized } from '../lib/core.js';
+import { closeLearnTerm } from './academic-records.js';
+import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from './access.js';
+import {
+  LEARN_FREE_PRINT_LIMIT,
+  learnBillingCancel,
+  learnBillingCheckout,
+  learnBillingStatus,
+  learnRequestHasFamilyAccessAsync,
+} from './billing.js';
+import {
+  googleCalendarCallback,
+  googleCalendarConnect,
+  googleCalendarPreview,
+  googleCalendarStatus,
+  googleCalendarSync,
+} from './google-calendar.js';
+import {
+  handleLearnAttendanceSave,
+  handleLearnGrades,
+  handleLearnGradesSave,
+  loadSetupForIdentity,
+  loadChildren,
+  loadCourses,
+  loadAllCoursesForHousehold,
+  loadAttendance,
+  defaultAcademicYearName,
+  attendanceSummary,
+  devAttendanceFor,
+} from './grade-records.js';
+import {
+  flagLearnCommunityResource,
+  listLearnCommunityResources,
+  submitLearnCommunityResource,
+} from './community-store.js';
+import { submitLearnFeedback } from './feedback-store.js';
+import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from './hymn-source.js';
+import {
+  enrichLiturgicalDayWithOrthocal,
+  fetchOrthocalDay,
+  handleLearnReadingsStatus,
+  orthocalSaintStories,
+} from './readings-source.js';
+import { renderPrintDocumentPdf } from './print-engine.js';
+import {
+  buildAcademicReportCardPdf,
+  buildAcademicTranscriptPdf,
+  buildLearnPrintDocument,
+  buildLearnReportPrintDocument,
+  renderPrintDocumentPdf as renderLocalPrintDocumentPdf,
+} from './print-documents.js';
+import { loadTestScores } from './test-scores.js';
+import { createLearnRepositoryForRequest, SeedLearnRepository } from './repository.js';
+import {
+  learnSetupIdentity,
+  saveLearnCompletion,
+  saveLearnFamilyPlanning,
+  saveLearnGraceMode,
+  saveLearnMoveUnfinishedWork,
+  saveLearnPlannerBlock,
+  saveLearnSetup,
+} from './setup-persistence.js';
+const LEARN_PRINT_USAGE_PREFIX = '__agapay_learn_print_usage:';
+import { handleLearnTestScores, handleLearnTestScoresSave } from './test-scores.js';
 function requestedCalendarType(url) {
-  return url.searchParams.get("calendar") || "";
+  return url.searchParams.get('calendar') || '';
 }
-
-function repositoryCalendarType(repository, fallback = "julian") {
-  return repository?.seed?.setupSnapshot?.preferences?.calendarType
-    || repository?.seed?.setupSnapshot?.household?.liturgicalCalendarType
-    || repository?.seed?.household?.liturgicalCalendarType
-    || fallback;
+function repositoryCalendarType(repository, fallback = 'julian') {
+  return (
+    repository?.seed?.setupSnapshot?.preferences?.calendarType ||
+    repository?.seed?.setupSnapshot?.household?.liturgicalCalendarType ||
+    repository?.seed?.household?.liturgicalCalendarType ||
+    fallback
+  );
 }
-
 function calendarTypeForRequest(url, repository) {
   return requestedCalendarType(url) || repositoryCalendarType(repository);
 }
-
 function todayIso(env = {}) {
-  const timeZone = env.AGAPAY_LEARN_TIME_ZONE || env.TZ || "America/Chicago";
-  const parts = new Intl.DateTimeFormat("en-US", {
+  const timeZone = env.AGAPAY_LEARN_TIME_ZONE || env.TZ || 'America/Chicago';
+  const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(new Date()).reduce((acc, part) => {
-    acc[part.type] = part.value;
-    return acc;
-  }, {});
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .formatToParts(/* @__PURE__ */ new Date())
+    .reduce((acc, part) => {
+      acc[part.type] = part.value;
+      return acc;
+    }, {});
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
-
 async function requireLearnRepository(request, env, options = {}) {
   const repository = await createLearnRepositoryForRequest(request, env, options);
   if (!repository) return { response: unauthorized() };
   return { repository };
 }
-
 function learnPrintUsageKey(identity) {
-  return `${LEARN_PRINT_USAGE_PREFIX}${identity?.householdId || identity?.email || "unknown"}`;
+  return `${LEARN_PRINT_USAGE_PREFIX}${identity?.householdId || identity?.email || 'unknown'}`;
 }
-
 async function loadLearnPrintUsage(env, identity) {
   if (!env.AGAPAY_REGISTRATIONS || !identity) return { count: 0 };
   const raw = await env.AGAPAY_REGISTRATIONS.get(learnPrintUsageKey(identity));
@@ -67,24 +108,22 @@ async function loadLearnPrintUsage(env, identity) {
     const parsed = JSON.parse(raw);
     return {
       count: Math.max(0, Number(parsed.count || 0)),
-      updatedAt: parsed.updatedAt || ""
+      updatedAt: parsed.updatedAt || '',
     };
   } catch {
     return { count: 0 };
   }
 }
-
 async function incrementLearnPrintUsage(env, identity) {
   if (!env.AGAPAY_REGISTRATIONS || !identity) return { count: 0 };
   const current = await loadLearnPrintUsage(env, identity);
   const next = {
     count: current.count + 1,
-    updatedAt: new Date().toISOString()
+    updatedAt: /* @__PURE__ */ new Date().toISOString(),
   };
   await env.AGAPAY_REGISTRATIONS.put(learnPrintUsageKey(identity), JSON.stringify(next));
   return next;
 }
-
 async function enforceLearnPrintLimit(request, env, identity) {
   if (await learnRequestHasFamilyAccessAsync(request, env, identity)) {
     return { ok: true, family: true, count: 0, limit: LEARN_FREE_PRINT_LIMIT };
@@ -93,176 +132,183 @@ async function enforceLearnPrintLimit(request, env, identity) {
   if (usage.count >= LEARN_FREE_PRINT_LIMIT) {
     return {
       ok: false,
-      response: json({
-        ok: false,
-        error: `The free AGAPAY Learn plan includes ${LEARN_FREE_PRINT_LIMIT} PDF prints. Upgrade to keep generating print packs.`,
-        upgradeRequired: true,
-        printLimit: LEARN_FREE_PRINT_LIMIT,
-        printCount: usage.count
-      }, { status: 403 })
+      response: json(
+        {
+          ok: false,
+          error: `The free AGAPAY Learn plan includes ${LEARN_FREE_PRINT_LIMIT} PDF prints. Upgrade to keep generating print packs.`,
+          upgradeRequired: true,
+          printLimit: LEARN_FREE_PRINT_LIMIT,
+          printCount: usage.count,
+        },
+        { status: 403 }
+      ),
     };
   }
   const updated = await incrementLearnPrintUsage(env, identity);
   return { ok: true, family: false, count: updated.count, limit: LEARN_FREE_PRINT_LIMIT };
 }
-
-export function handleLearnMeta(env) {
+function handleLearnMeta(env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   return json({
     ok: true,
     product: {
       slug: LEARN_PRODUCT_SLUG,
       enabled: true,
-      enabledProducts: enabledProductSlugs(env)
+      enabledProducts: enabledProductSlugs(env),
     },
     navigation: [
-      { href: "/learn", label: "Dashboard", implemented: true },
-      { href: "/myagapay/learn/planner", label: "Planner", implemented: true },
-      { href: "/myagapay/learn/formation", label: "Formation", implemented: true },
-      { href: "/myagapay/learn/books", label: "Books", implemented: true },
-      { href: "/myagapay/learn/grades", label: "Grades & Attendance", implemented: true },
-      { href: "/myagapay/learn/community", label: "Community", implemented: true },
-      { href: "/myagapay/learn/co-op", label: "Co-op", implemented: learnCoOpEnabled(env), featureFlag: "learn-coop" },
-      { href: "/myagapay/learn/print", label: "Print Center", implemented: true },
-      { href: "/myagapay/learn/setup", label: "Setup", implemented: true }
-    ]
+      { href: '/learn', label: 'Dashboard', implemented: true },
+      { href: '/myagapay/learn/planner', label: 'Planner', implemented: true },
+      { href: '/myagapay/learn/formation', label: 'Formation', implemented: true },
+      { href: '/myagapay/learn/books', label: 'Books', implemented: true },
+      { href: '/myagapay/learn/grades', label: 'Grades & Attendance', implemented: true },
+      { href: '/myagapay/learn/community', label: 'Community', implemented: true },
+      { href: '/myagapay/learn/co-op', label: 'Co-op', implemented: learnCoOpEnabled(env), featureFlag: 'learn-coop' },
+      { href: '/myagapay/learn/print', label: 'Print Center', implemented: true },
+      { href: '/myagapay/learn/setup', label: 'Setup', implemented: true },
+    ],
   });
 }
-
 async function applyReadingsProvider(payload, { calendarType, civilDate, env }) {
   if (!payload?.dashboard?.today?.liturgicalDay) return payload;
   payload.dashboard.today.liturgicalDay = await enrichLiturgicalDayWithOrthocal(payload.dashboard.today.liturgicalDay, {
     calendarType,
-    civilDate
+    civilDate,
   });
   payload.dashboard.today.liturgicalDay = await enrichLiturgicalDayWithPonomar(payload.dashboard.today.liturgicalDay, {
     civilDate,
-    env
+    env,
   });
   payload.dashboard.today.churchRhythms = (payload.dashboard.today.churchRhythms || []).map((entry) => {
-    if (entry.title === "Daily Readings" || entry.title === "Gospel Reading") {
+    if (entry.title === 'Daily Readings' || entry.title === 'Gospel Reading') {
       return { ...entry, note: payload.dashboard.today.liturgicalDay.gospelRef || entry.note };
     }
-    if (entry.title === "Fasting Rule" || entry.title.includes("Fast")) {
+    if (entry.title === 'Fasting Rule' || entry.title.includes('Fast')) {
       return { ...entry, note: payload.dashboard.today.liturgicalDay.fastingRule || entry.note };
     }
     return entry;
   });
   return payload;
 }
-
-export async function handleLearnDashboard(request, env) {
+async function handleLearnDashboard(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const url = new URL(request.url);
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   const calendarType = calendarTypeForRequest(url, repository);
-  const civilDate = url.searchParams.get("date") || todayIso(env);
+  const civilDate = url.searchParams.get('date') || todayIso(env);
   const dashboard = repository.getDashboard({
     calendarType,
-    civilDate
+    civilDate,
   });
-
-  return json(await applyReadingsProvider({
-    ok: true,
-    setupCompleted: Boolean(repository.seed?.setupSnapshot),
-    product: {
-      slug: LEARN_PRODUCT_SLUG,
-      enabled: true
-    },
-    dashboard
-  }, { calendarType, civilDate, env }));
+  return json(
+    await applyReadingsProvider(
+      {
+        ok: true,
+        setupCompleted: Boolean(repository.seed?.setupSnapshot),
+        product: {
+          slug: LEARN_PRODUCT_SLUG,
+          enabled: true,
+        },
+        dashboard,
+      },
+      { calendarType, civilDate, env }
+    )
+  );
 }
-
-export async function handleLearnPlanner(request, env) {
+async function handleLearnPlanner(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const url = new URL(request.url);
-  const civilDate = url.searchParams.get("date") || todayIso(env);
-  const auth = await requireLearnRepository(request, env, { termId: url.searchParams.get("termId") || "", weekDate: civilDate });
+  const civilDate = url.searchParams.get('date') || todayIso(env);
+  const auth = await requireLearnRepository(request, env, {
+    termId: url.searchParams.get('termId') || '',
+    weekDate: civilDate,
+  });
   if (auth.response) return auth.response;
   const { repository } = auth;
   const planner = repository.getPlanner({
     calendarType: calendarTypeForRequest(url, repository),
-    view: url.searchParams.get("view") || "week",
-    month: url.searchParams.get("month") || "",
-    civilDate
+    view: url.searchParams.get('view') || 'week',
+    month: url.searchParams.get('month') || '',
+    civilDate,
   });
-
   return json({
     ok: true,
     product: {
       slug: LEARN_PRODUCT_SLUG,
-      enabled: true
+      enabled: true,
     },
-    planner
+    planner,
   });
 }
-
-export async function handleLearnPrintCenter(request, env) {
+async function handleLearnPrintCenter(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const url = new URL(request.url);
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   const printCenter = repository.getPrintCenter({
     calendarType: calendarTypeForRequest(url, repository),
-    month: url.searchParams.get("month") || ""
+    month: url.searchParams.get('month') || '',
   });
-
   return json({
     ok: true,
     product: {
       slug: LEARN_PRODUCT_SLUG,
-      enabled: true
+      enabled: true,
     },
     printCenter: {
       ...printCenter,
-      reports: repository.getReports()
-    }
+      reports: repository.getReports(),
+    },
   });
 }
-
-export async function handleLearnCompletionSave(request, env) {
+async function handleLearnCompletionSave(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+  if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, { status: 405 });
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const payload = await request.json().catch(() => null);
-  if (!payload || typeof payload !== "object") return json({ ok: false, error: "Progress payload was invalid." }, { status: 400 });
-
+  if (!payload || typeof payload !== 'object')
+    return json({ ok: false, error: 'Progress payload was invalid.' }, { status: 400 });
   const saved = await saveLearnCompletion(env, request, payload);
   if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
   const repository = await createLearnRepositoryForRequest(request, env);
   const calendarType = calendarTypeForRequest(new URL(request.url), repository);
-  const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : todayIso(env);
+  const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || ''))
+    ? String(payload.civilDate)
+    : todayIso(env);
   const dashboard = repository.getDashboard({ calendarType, civilDate });
-  return json(await applyReadingsProvider({
-    ok: true,
-    setupCompleted: true,
-    product: { slug: LEARN_PRODUCT_SLUG, enabled: true },
-    completion: { scope: saved.scope, periodKey: saved.periodKey, itemId: saved.itemId, completed: saved.completed },
-    dashboard
-  }, { calendarType, civilDate, env }));
+  return json(
+    await applyReadingsProvider(
+      {
+        ok: true,
+        setupCompleted: true,
+        product: { slug: LEARN_PRODUCT_SLUG, enabled: true },
+        completion: {
+          scope: saved.scope,
+          periodKey: saved.periodKey,
+          itemId: saved.itemId,
+          completed: saved.completed,
+        },
+        dashboard,
+      },
+      { calendarType, civilDate, env }
+    )
+  );
 }
-
 async function loadAcademicPrintData(env, identity) {
   const setupSnapshot = await loadSetupForIdentity(env, identity);
   const children = await loadChildren(env, identity.householdId, setupSnapshot);
   const academicYearName = defaultAcademicYearName(setupSnapshot);
   const d1Available = Boolean(env.AGAPAY_DB);
   const courses = d1Available ? await loadCourses(env, identity.householdId, academicYearName) : [];
-  // Report cards are single-term; transcripts span every academic year on
-  // file, so they get their own household-wide course history.
   const allYearsCourses = d1Available ? await loadAllCoursesForHousehold(env, identity.householdId) : [];
   const attendanceEntries = d1Available
     ? await loadAttendance(env, identity.householdId, academicYearName)
@@ -270,149 +316,156 @@ async function loadAcademicPrintData(env, identity) {
   return {
     household: {
       id: identity.householdId,
-      name: setupSnapshot?.household?.name || "Your Household",
-      homeschoolName: setupSnapshot?.household?.homeschoolName || "",
-      patronSaintName: setupSnapshot?.household?.patronSaintName || ""
+      name: setupSnapshot?.household?.name || 'Your Household',
+      homeschoolName: setupSnapshot?.household?.homeschoolName || '',
+      patronSaintName: setupSnapshot?.household?.patronSaintName || '',
     },
     academicYear: { name: academicYearName },
     children,
     courses,
     allYearsCourses,
-    attendance: attendanceSummary(children, attendanceEntries)
+    attendance: attendanceSummary(children, attendanceEntries),
   };
 }
-
-export async function handleLearnPrintPdf(request, env, templateId = "") {
+async function handleLearnPrintPdf(request, env, templateId = '') {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const url = new URL(request.url);
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   const identity = await learnSetupIdentity(request, env);
   if (!identity) return unauthorized();
-
   let body = {};
   try {
     body = await request.json();
   } catch {
     body = {};
   }
-
   const limit = await enforceLearnPrintLimit(request, env, identity);
   if (!limit.ok) return limit.response;
-  const resolvedTemplateId = templateId || body.templateId || "print_mom_weekly";
-
-  // Report Card and Transcript are fixed, data-driven forms sourced from the
-  // real Grades & Attendance gradebook (courses/terms/credits), not the
-  // free-form section-based report engine below — see print-documents.js.
-  // They always render via pdf-lib (no Cloudflare Browser Rendering
-  // dependency) since a report card shouldn't depend on that binding.
+  const resolvedTemplateId = templateId || body.templateId || 'print_mom_weekly';
   const academicFormTemplate = /^(report-card|transcript)$/i.test(resolvedTemplateId);
   if (academicFormTemplate) {
     const data = await loadAcademicPrintData(env, identity);
     const child = data.children.find((c) => c.id === body.childId) || data.children[0];
-    if (!child) return json({ error: "Add a child in Setup before printing academic records." }, { status: 400 });
+    if (!child) return json({ error: 'Add a child in Setup before printing academic records.' }, { status: 400 });
     const gradeLevelForChildRow = (row) => {
-      const match = String(row.gradeLabel || "").match(/\b(9|10|11|12)\b/);
+      const match = String(row.gradeLabel || '').match(/\b(9|10|11|12)\b/);
       return match ? Number(match[1]) : 9;
     };
     const childForForm = { ...child, gradeLevel: gradeLevelForChildRow(child) };
-    const coursesWithGradeLevel = data.courses.map((course) => ({ ...course, gradeLevel: Number(course.gradeLevel) || 9 }));
-    const allYearsCoursesWithGradeLevel = data.allYearsCourses.map((course) => ({ ...course, gradeLevel: Number(course.gradeLevel) || 9 }));
-    const generatedAt = new Date().toISOString();
+    const coursesWithGradeLevel = data.courses.map((course) => ({
+      ...course,
+      gradeLevel: Number(course.gradeLevel) || 9,
+    }));
+    const allYearsCoursesWithGradeLevel = data.allYearsCourses.map((course) => ({
+      ...course,
+      gradeLevel: Number(course.gradeLevel) || 9,
+    }));
+    const generatedAt = /* @__PURE__ */ new Date().toISOString();
     const testScores = /^transcript$/i.test(resolvedTemplateId)
       ? (await loadTestScores(env, identity.householdId)).filter((row) => row.childId === child.id)
       : [];
-    const pdfBuffer = /^transcript$/i.test(resolvedTemplateId)
-      ? await buildAcademicTranscriptPdf({ household: data.household, child: childForForm, courses: allYearsCoursesWithGradeLevel, attendance: data.attendance, testScores, generatedAt })
-      : await buildAcademicReportCardPdf({ household: data.household, child: childForForm, academicYear: data.academicYear, courses: coursesWithGradeLevel, attendance: data.attendance, generatedAt });
-    return new Response(pdfBuffer, {
+    const pdfBuffer2 = /^transcript$/i.test(resolvedTemplateId)
+      ? await buildAcademicTranscriptPdf({
+          household: data.household,
+          child: childForForm,
+          courses: allYearsCoursesWithGradeLevel,
+          attendance: data.attendance,
+          testScores,
+          generatedAt,
+        })
+      : await buildAcademicReportCardPdf({
+          household: data.household,
+          child: childForForm,
+          academicYear: data.academicYear,
+          courses: coursesWithGradeLevel,
+          attendance: data.attendance,
+          generatedAt,
+        });
+    return new Response(pdfBuffer2, {
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${resolvedTemplateId}-${(child.firstName || "student").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf"`,
-        "Cache-Control": "no-store",
-        "x-agapay-learn-print-count": String(limit.count),
-        "x-agapay-learn-print-limit": String(limit.limit)
-      }
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${resolvedTemplateId}-${(child.firstName || 'student').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf"`,
+        'Cache-Control': 'no-store',
+        'x-agapay-learn-print-count': String(limit.count),
+        'x-agapay-learn-print-limit': String(limit.limit),
+      },
     });
   }
-
   const reportTemplate = /report|transcript|subject-progress|year-end/i.test(resolvedTemplateId);
   const document = reportTemplate
     ? buildLearnReportPrintDocument(repository.getReports(), {
         templateId: resolvedTemplateId,
-        label: body.label || "",
-        generatedAt: new Date().toISOString()
+        label: body.label || '',
+        generatedAt: /* @__PURE__ */ new Date().toISOString(),
       })
-    : buildLearnPrintDocument(repository.getPrintCenter({
-        calendarType: calendarTypeForRequest(url, repository),
-        month: body.month || url.searchParams.get("month") || ""
-      }), {
-        templateId: resolvedTemplateId,
-        childId: body.childId || "",
-        termId: body.termId || "",
-        month: body.month || "",
-        year: body.year || "",
-        designedWeek: body.designedWeek || null,
-        generatedAt: new Date().toISOString()
-      });
-  const pdfBuffer = env.AGAPAY_TEST_MODE && !env.BROWSER
-    ? await renderLocalPrintDocumentPdf(document)
-    : await renderPrintDocumentPdf(document, env);
-
+    : buildLearnPrintDocument(
+        repository.getPrintCenter({
+          calendarType: calendarTypeForRequest(url, repository),
+          month: body.month || url.searchParams.get('month') || '',
+        }),
+        {
+          templateId: resolvedTemplateId,
+          childId: body.childId || '',
+          termId: body.termId || '',
+          month: body.month || '',
+          year: body.year || '',
+          designedWeek: body.designedWeek || null,
+          generatedAt: /* @__PURE__ */ new Date().toISOString(),
+        }
+      );
+  const pdfBuffer =
+    env.AGAPAY_TEST_MODE && !env.BROWSER
+      ? await renderLocalPrintDocumentPdf(document)
+      : await renderPrintDocumentPdf(document, env);
   return new Response(pdfBuffer, {
     headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "attachment; filename=agapay-lesson-plan.pdf",
-      "Cache-Control": "no-store",
-      "x-agapay-learn-print-count": String(limit.count),
-      "x-agapay-learn-print-limit": String(limit.limit)
-    }
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename=agapay-lesson-plan.pdf',
+      'Cache-Control': 'no-store',
+      'x-agapay-learn-print-count': String(limit.count),
+      'x-agapay-learn-print-limit': String(limit.limit),
+    },
   });
 }
-
-export async function handleLearnFormation(request, env) {
+async function handleLearnFormation(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const url = new URL(request.url);
-  const civilDate = url.searchParams.get("date") || todayIso(env);
+  const civilDate = url.searchParams.get('date') || todayIso(env);
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   const calendarType = calendarTypeForRequest(url, repository);
   const formation = repository.getFormation({
     calendarType,
-    civilDate
+    civilDate,
   });
   formation.today.liturgicalDay = await enrichLiturgicalDayWithOrthocal(formation.today.liturgicalDay, {
     calendarType,
-    civilDate
+    civilDate,
   });
   formation.today.liturgicalDay = await enrichLiturgicalDayWithPonomar(formation.today.liturgicalDay, {
     civilDate,
-    env
+    env,
   });
   return json({
     ok: true,
-    formation
+    formation,
   });
 }
-
-export async function handleLearnSaints(request, env) {
+async function handleLearnSaints(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const url = new URL(request.url);
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
-  const civilDate = url.searchParams.get("date") || todayIso(env);
-  const calendarType = url.searchParams.get("calendar") || repositoryCalendarType(repository);
-
+  const civilDate = url.searchParams.get('date') || todayIso(env);
+  const calendarType = url.searchParams.get('calendar') || repositoryCalendarType(repository);
   try {
     const day = await fetchOrthocalDay({ calendarType, civilDate });
     const saintStories = orthocalSaintStories(day);
@@ -421,11 +474,11 @@ export async function handleLearnSaints(request, env) {
       date: civilDate,
       calendar: calendarType,
       sourceConnected: true,
-      sourceLabel: "Orthocal.info",
-      sourceUrl: `https://orthocal.info/api/${calendarType === "revised-julian" ? "gregorian" : "julian"}/${civilDate.split("-").map(Number).join("/")}/`,
+      sourceLabel: 'Orthocal.info',
+      sourceUrl: `https://orthocal.info/api/${calendarType === 'revised-julian' ? 'gregorian' : 'julian'}/${civilDate.split('-').map(Number).join('/')}/`,
       saints: saintStories,
       saintNames: Array.isArray(day?.saints) ? day.saints : [],
-      feastRank: day?.feast_level_description || ""
+      feastRank: day?.feast_level_description || '',
     });
   } catch (error) {
     return json({
@@ -433,32 +486,28 @@ export async function handleLearnSaints(request, env) {
       date: civilDate,
       calendar: calendarType,
       sourceConnected: false,
-      sourceLabel: "Orthocal.info unavailable",
+      sourceLabel: 'Orthocal.info unavailable',
       sourceError: error.message,
       saints: [],
       saintNames: [],
-      message: "Lives of the Saints are unavailable right now. Please try again later."
+      message: 'Lives of the Saints are unavailable right now. Please try again later.',
     });
   }
 }
-
-export async function handleLearnBooks(request, env) {
+async function handleLearnBooks(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   return json({
     ok: true,
-    books: repository.getBooks()
+    books: repository.getBooks(),
   });
 }
-
-export async function handleLearnCommunity(request, env) {
+async function handleLearnCommunity(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
@@ -466,31 +515,30 @@ export async function handleLearnCommunity(request, env) {
   return json({
     ok: true,
     community: repository.getCommunity({
-      facebookGroupUrl: String(env.AGAPAY_LEARN_FACEBOOK_GROUP_URL || "").trim(),
-      communityResources
-    })
+      facebookGroupUrl: String(env.AGAPAY_LEARN_FACEBOOK_GROUP_URL || '').trim(),
+      communityResources,
+    }),
   });
 }
-
-export async function handleLearnCommunitySubmit(request, env) {
+async function handleLearnCommunitySubmit(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "learn-community-submit", { limit: 10, windowSeconds: 86400 });
+  if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, { status: 405 });
+  const limited = await rateLimit(request, env, 'learn-community-submit', { limit: 10, windowSeconds: 86400 });
   if (limited) return limited;
   const identity = await learnSetupIdentity(request, env);
   if (!identity) return unauthorized();
   const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object") return json({ ok: false, error: "Resource submission was invalid." }, { status: 400 });
+  if (!body || typeof body !== 'object')
+    return json({ ok: false, error: 'Resource submission was invalid.' }, { status: 400 });
   const result = await submitLearnCommunityResource(env, identity, body);
   return json(result, { status: result.ok ? 201 : result.status || 500 });
 }
-
-export async function handleLearnCommunityFlag(request, env, resourceId = "") {
+async function handleLearnCommunityFlag(request, env, resourceId = '') {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "learn-community-flag", { limit: 20, windowSeconds: 300 });
+  if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, { status: 405 });
+  const limited = await rateLimit(request, env, 'learn-community-flag', { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
   const identity = await learnSetupIdentity(request, env);
   if (!identity) return unauthorized();
@@ -498,275 +546,243 @@ export async function handleLearnCommunityFlag(request, env, resourceId = "") {
   const result = await flagLearnCommunityResource(env, identity, resourceId, body.reason);
   return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
-
-export async function handleLearnReports(request, env) {
+async function handleLearnReports(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   return json({
     ok: true,
-    reports: repository.getReports()
+    reports: repository.getReports(),
   });
 }
-
-export async function handleLearnFeedbackSubmit(request, env) {
+async function handleLearnFeedbackSubmit(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "learn-feedback", { limit: 12, windowSeconds: 300 });
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+  const limited = await rateLimit(request, env, 'learn-feedback', { limit: 12, windowSeconds: 300 });
   if (limited) return limited;
   const identity = await learnSetupIdentity(request, env);
   if (!identity) return unauthorized();
   const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object") return json({ ok: false, error: "Suggestion payload was invalid." }, { status: 400 });
+  if (!body || typeof body !== 'object')
+    return json({ ok: false, error: 'Suggestion payload was invalid.' }, { status: 400 });
   const result = await submitLearnFeedback(env, identity, body);
   return json(result, { status: result.ok ? 201 : result.status || 500 });
 }
-
-export async function handleLearnTermClose(request, env, termId = "") {
+async function handleLearnTermClose(request, env, termId = '') {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
-
+  if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, { status: 405 });
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   const setupSnapshot = repository.seed?.setupSnapshot;
   if (!setupSnapshot) {
-    return json({ ok: false, error: "Complete Learn setup before closing a term." }, { status: 400 });
+    return json({ ok: false, error: 'Complete Learn setup before closing a term.' }, { status: 400 });
   }
-
   const result = await closeLearnTerm(env, setupSnapshot, termId);
   if (!result.ok) return json(result, { status: result.status || 500 });
   return json(result);
 }
-
-export async function handleLearnCoOp(request, env) {
+async function handleLearnCoOp(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   return json({
     ok: true,
     coOp: repository.getCoOp({
-      enabled: learnCoOpEnabled(env)
-    })
+      enabled: learnCoOpEnabled(env),
+    }),
   });
 }
-
-export async function handleLearnOnboarding(request, env) {
+async function handleLearnOnboarding(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
   return json({
     ok: true,
-    onboarding: repository.getOnboarding()
+    onboarding: repository.getOnboarding(),
   });
 }
-
-export async function handleLearnOnboardingSave(request, env) {
+async function handleLearnOnboardingSave(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const payload = await request.json().catch(() => null);
-  if (!payload || typeof payload !== "object") {
-    return json({ ok: false, error: "Setup could not be saved because the form payload was invalid." }, { status: 400 });
+  if (!payload || typeof payload !== 'object') {
+    return json(
+      { ok: false, error: 'Setup could not be saved because the form payload was invalid.' },
+      { status: 400 }
+    );
   }
-
   const saved = await saveLearnSetup(env, request, payload);
   if (!saved.ok) {
     return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
   }
-
   const repository = new SeedLearnRepository(saved.onboarding);
   return json({
     ok: true,
     onboarding: repository.getOnboarding(),
-    savedAt: saved.setupSnapshot.savedAt
+    savedAt: saved.setupSnapshot.savedAt,
   });
 }
-
-export async function handleLearnGraceModeSave(request, env) {
+async function handleLearnGraceModeSave(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-
   const payload = await request.json().catch(() => null);
-  if (!payload || typeof payload !== "object") {
-    return json({ ok: false, error: "Grace Mode could not be saved because the payload was invalid." }, { status: 400 });
+  if (!payload || typeof payload !== 'object') {
+    return json(
+      { ok: false, error: 'Grace Mode could not be saved because the payload was invalid.' },
+      { status: 400 }
+    );
   }
-
   const saved = await saveLearnGraceMode(env, request, payload);
   if (!saved.ok) {
     return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
   }
-
   const repository = new SeedLearnRepository(saved.onboarding);
   const url = new URL(request.url);
   const calendarType = calendarTypeForRequest(url, repository);
-  const civilDate = url.searchParams.get("date") || todayIso(env);
+  const civilDate = url.searchParams.get('date') || todayIso(env);
   const dashboard = repository.getDashboard({ calendarType, civilDate });
-
-  return json(await applyReadingsProvider({
-    ok: true,
-    savedAt: saved.setupSnapshot.savedAt,
-    product: {
-      slug: LEARN_PRODUCT_SLUG,
-      enabled: true
-    },
-    dashboard
-  }, { calendarType, civilDate, env }));
+  return json(
+    await applyReadingsProvider(
+      {
+        ok: true,
+        savedAt: saved.setupSnapshot.savedAt,
+        product: {
+          slug: LEARN_PRODUCT_SLUG,
+          enabled: true,
+        },
+        dashboard,
+      },
+      { calendarType, civilDate, env }
+    )
+  );
 }
-
-export async function handleLearnGoogleCalendarStatus(request, env) {
+async function handleLearnGoogleCalendarStatus(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarStatus(request, env);
 }
-
-export async function handleLearnFamilyPlanningSave(request, env) {
+async function handleLearnFamilyPlanningSave(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   const payload = await request.json().catch(() => null);
-  if (!payload || typeof payload !== "object") return json({ ok: false, error: "Family planner data was invalid." }, { status: 400 });
+  if (!payload || typeof payload !== 'object')
+    return json({ ok: false, error: 'Family planner data was invalid.' }, { status: 400 });
   const saved = await saveLearnFamilyPlanning(env, request, payload);
   if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
   const url = new URL(request.url);
   const repository = new SeedLearnRepository(saved.onboarding);
-  return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner: repository.getPlanner({
-    calendarType: calendarTypeForRequest(url, repository),
-    view: url.searchParams.get("view") || "week",
-    month: url.searchParams.get("month") || "",
-    civilDate: url.searchParams.get("date") || todayIso(env)
-  }) });
+  return json({
+    ok: true,
+    savedAt: saved.setupSnapshot.savedAt,
+    planner: repository.getPlanner({
+      calendarType: calendarTypeForRequest(url, repository),
+      view: url.searchParams.get('view') || 'week',
+      month: url.searchParams.get('month') || '',
+      civilDate: url.searchParams.get('date') || todayIso(env),
+    }),
+  });
 }
-
-export async function handleLearnGoogleCalendarConnect(request, env) {
+async function handleLearnGoogleCalendarConnect(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarConnect(request, env);
 }
-
-export async function handleLearnGoogleCalendarCallback(request, env) {
+async function handleLearnGoogleCalendarCallback(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarCallback(request, env);
 }
-
-export async function handleLearnGoogleCalendarPreview(request, env) {
+async function handleLearnGoogleCalendarPreview(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   return googleCalendarPreview(auth.repository, request);
 }
-
-export async function handleLearnGoogleCalendarSync(request, env) {
+async function handleLearnGoogleCalendarSync(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   const url = new URL(request.url);
-  // The sync must build its repository around the same week the client is
-  // viewing/editing, not always "today's" week — otherwise appointments and
-  // lessons outside the literal current calendar week silently vanish from
-  // the sync payload because previewEvents filters strictly to weekDates.
-  const weekDate = url.searchParams.get("date") || url.searchParams.get("weekDate") || "";
-  const termId = url.searchParams.get("termId") || "";
+  const weekDate = url.searchParams.get('date') || url.searchParams.get('weekDate') || '';
+  const termId = url.searchParams.get('termId') || '';
   const auth = await requireLearnRepository(request, env, { termId, weekDate });
   if (auth.response) return auth.response;
   return googleCalendarSync(auth.repository, request, env);
 }
-
-export async function handleLearnBillingStatus(request, env) {
+async function handleLearnBillingStatus(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return learnBillingStatus(request, env);
 }
-
-export function handleLearnBillingCheckout(request, env) {
+function handleLearnBillingCheckout(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return learnBillingCheckout(request, env);
 }
-
-export function handleLearnBillingCancel(request, env) {
+function handleLearnBillingCancel(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return learnBillingCancel(request, env);
 }
-
-export function handleLearnReadingsProviderStatus(_request, env) {
+function handleLearnReadingsProviderStatus(_request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return handleLearnReadingsStatus();
 }
-
-export function handleLearnHymnsProviderStatus(_request, env) {
+function handleLearnHymnsProviderStatus(_request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return handleLearnHymnsStatus(env);
 }
-
-export async function handleLearnPlannerBlockSave(request, env) {
+async function handleLearnPlannerBlockSave(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
-
+  if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, { status: 405 });
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
-
   const payload = await request.json().catch(() => null);
-  if (!payload || typeof payload !== "object") {
-    return json({ ok: false, error: "Planner block payload was invalid." }, { status: 400 });
+  if (!payload || typeof payload !== 'object') {
+    return json({ ok: false, error: 'Planner block payload was invalid.' }, { status: 400 });
   }
-
   const saved = await saveLearnPlannerBlock(env, request, payload);
   if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
-
-  // Return the refreshed planner so the UI can re-render without a full reload.
   const url = new URL(request.url);
   const repository = new SeedLearnRepository(saved.onboarding);
   const planner = repository.getPlanner({
     calendarType: calendarTypeForRequest(url, repository),
-    view: url.searchParams.get("view") || "week",
-    month: url.searchParams.get("month") || ""
+    view: url.searchParams.get('view') || 'week',
+    month: url.searchParams.get('month') || '',
   });
   return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner });
 }
-
-// "Move unfinished work": move a day's unfinished lesson to the next open
-// day this week, or set it aside in Reserve.
-// Accepts: { scope: "household"|"child", rowId, fromWeekday (0-6), mode: "next-open-day"|"reserve", weekDate }
-export async function handleLearnMoveUnfinishedWork(request, env) {
+async function handleLearnMoveUnfinishedWork(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
-
+  if (request.method !== 'POST') return json({ ok: false, error: 'Method not allowed' }, { status: 405 });
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
-
   const payload = await request.json().catch(() => null);
-  if (!payload || typeof payload !== "object") {
-    return json({ ok: false, error: "Move request payload was invalid." }, { status: 400 });
+  if (!payload || typeof payload !== 'object') {
+    return json({ ok: false, error: 'Move request payload was invalid.' }, { status: 400 });
   }
-
   const saved = await saveLearnMoveUnfinishedWork(env, request, payload);
   if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
-
-  // Return the refreshed planner so the UI can re-render without a full reload.
   const url = new URL(request.url);
   const repository = new SeedLearnRepository(saved.onboarding);
   const planner = repository.getPlanner({
     calendarType: calendarTypeForRequest(url, repository),
-    view: url.searchParams.get("view") || "week",
-    month: url.searchParams.get("month") || ""
+    view: url.searchParams.get('view') || 'week',
+    month: url.searchParams.get('month') || '',
   });
   return json({
     ok: true,
@@ -775,6 +791,45 @@ export async function handleLearnMoveUnfinishedWork(request, env) {
     movedToWeekday: saved.movedToWeekday,
     fallbackToReserve: Boolean(saved.fallbackToReserve),
     title: saved.title,
-    planner
+    planner,
   });
 }
+export {
+  handleLearnAttendanceSave,
+  handleLearnBillingCancel,
+  handleLearnBillingCheckout,
+  handleLearnBillingStatus,
+  handleLearnBooks,
+  handleLearnCoOp,
+  handleLearnCommunity,
+  handleLearnCommunityFlag,
+  handleLearnCommunitySubmit,
+  handleLearnCompletionSave,
+  handleLearnDashboard,
+  handleLearnFamilyPlanningSave,
+  handleLearnFeedbackSubmit,
+  handleLearnFormation,
+  handleLearnGoogleCalendarCallback,
+  handleLearnGoogleCalendarConnect,
+  handleLearnGoogleCalendarPreview,
+  handleLearnGoogleCalendarStatus,
+  handleLearnGoogleCalendarSync,
+  handleLearnGraceModeSave,
+  handleLearnGrades,
+  handleLearnGradesSave,
+  handleLearnHymnsProviderStatus,
+  handleLearnMeta,
+  handleLearnMoveUnfinishedWork,
+  handleLearnOnboarding,
+  handleLearnOnboardingSave,
+  handleLearnPlanner,
+  handleLearnPlannerBlockSave,
+  handleLearnPrintCenter,
+  handleLearnPrintPdf,
+  handleLearnReadingsProviderStatus,
+  handleLearnReports,
+  handleLearnSaints,
+  handleLearnTermClose,
+  handleLearnTestScores,
+  handleLearnTestScoresSave,
+};

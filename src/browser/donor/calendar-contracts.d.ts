@@ -105,3 +105,14 @@ declare function campaignLabel(campaign: ParishGivingOption): string;
 declare const sacramentTypeLabels: Record<string, string>;
 
 declare function setHtml(id: string, html: string): void;
+
+interface DonorCalendarCelebration {
+  icon?: string;
+}
+interface DonorSacramentRequest {
+  id: string;
+  locationAddress?: string;
+}
+interface AppHeaderParish {
+  signupsEnabled?: boolean;
+}

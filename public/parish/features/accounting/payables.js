@@ -1,12 +1,8 @@
+// Generated from src/browser/parish/features/accounting/payables.ts by npm run build:browser. Do not edit.
 'use strict';
-
-// Parish dashboard accounting: payables.
-// Classic script; preserve global names used by the dashboard and inline actions.
-
 function accountingParishOnly() {
   return `<div class="acct-tier-gate"><span class="acct-kicker">Parish Accounting</span><h2>Advanced parish operations</h2><p>Payables and budgeting are included with the Parish tier. Mission Accounting continues to include the essential ledger and reports.</p></div>`;
 }
-
 function renderAccountingPayables(pane) {
   if (accountingData.tier !== 'advanced_operations') {
     pane.innerHTML = accountingParishOnly();
@@ -62,7 +58,6 @@ function renderAccountingPayables(pane) {
     body = `<div class="acct-list-head"><div><span class="acct-kicker">Bill workflow</span><h2>Vendor bills & approvals</h2></div><button class="acct-primary" type="button" onclick="showAccountingBillForm()">Enter bill</button></div><div id="accountingPhaseDForm"></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Due</th><th>Vendor</th><th>Invoice</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${data.bills.map((bill) => `<tr><td>${accountingDate(bill.dueDate)}</td><td><strong>${escapeHtml(bill.vendorName)}</strong></td><td>${escapeHtml(bill.vendorInvoiceNumber || bill.billNumber)}</td><td>${accountingMoney(bill.amountDue ?? bill.totalAmount)}</td><td><span class="acct-status ${escapeAttr(bill.status)}">${escapeHtml(bill.status)}</span></td><td><div class="acct-row-actions"><button onclick="openAccountingBillDetail('${escapeAttr(bill.id)}')">Details & attachments</button>${bill.status === 'draft' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','submit',${bill.version})">Submit</button>` : ''}${bill.status === 'submitted' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','approve',${bill.version})">Approve</button>` : ''}${bill.status === 'approved' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','post',${bill.version})">Post</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="6">No bills entered.</td></tr>'}</tbody></table></div>`;
   pane.innerHTML = `<div class="acct-kpis"><div><span>Open payables</span><strong>${accountingMoney(overview.openPayables)}</strong></div><div><span>Awaiting approval</span><strong>${overview.awaitingApproval || 0}</strong></div><div><span>Overdue bills</span><strong>${overview.overdue || 0}</strong></div></div><div class="acct-subtabs">${tabs.map(([id, label]) => `<button class="${accountingPayablesView === id ? 'active' : ''}" onclick="setAccountingPayablesView('${id}')">${label}</button>`).join('')}</div>${body}`;
 }
-
 function accountingPayablesTabs() {
   return [
     ['bills', 'Bills'],
@@ -79,12 +74,10 @@ function accountingPayablesTabs() {
     )
     .join('');
 }
-
 function renderAccountingRecurringBills(pane, data) {
   const schedules = data.recurringBills || [];
   pane.innerHTML = `<div class="acct-subtabs">${accountingPayablesTabs()}</div><div class="acct-list-head"><div><span class="acct-kicker">Accounts payable automation</span><h2>Recurring vendor bills</h2><p>Each due date creates a reviewable draft bill. Nothing is approved, posted, or paid automatically.</p></div><button class="acct-primary" type="button" onclick="showAccountingRecurringBillForm()">New recurring bill</button></div><div id="accountingPhaseDForm"></div><div class="acct-card-grid">${schedules.map((item) => `<article class="acct-mini-card"><span>${escapeHtml(item.frequency)} · next ${accountingDate(item.nextBillDate)}</span><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.vendorName)} · ${escapeHtml(item.accountName)} · ${escapeHtml(item.fundName)}</p><strong>${accountingMoney(item.amount)}</strong><div class="acct-lifecycle-actions"><span class="acct-status ${item.status === 'active' ? 'posted' : 'draft'}">${escapeHtml(item.status)}</span>${item.status === 'active' ? `<button type="button" onclick="toggleAccountingRecurringBill('${escapeAttr(item.id)}',${item.version},'paused')">Pause</button>` : item.status === 'paused' ? `<button type="button" onclick="toggleAccountingRecurringBill('${escapeAttr(item.id)}',${item.version},'active')">Resume</button>` : ''}</div></article>`).join('') || accountingEmpty('No recurring bills yet', 'Create a schedule for utilities, insurance, subscriptions, or another repeating vendor bill.')}</div>`;
 }
-
 function renderAccountingPayments(pane, data) {
   const overview = data.overview || {},
     payments = data.payments || [];
@@ -106,20 +99,17 @@ function renderAccountingPayments(pane, data) {
     .join('');
   pane.innerHTML = `<div class="acct-kpis"><div><span>Open payables</span><strong>${accountingMoney(overview.openPayables)}</strong></div><div><span>Payments ready</span><strong>${payments.filter((payment) => payment.status === 'approved').length}</strong></div><div><span>Payments posted</span><strong>${payments.filter((payment) => payment.status === 'posted').length}</strong></div></div><div class="acct-subtabs">${accountingPayablesTabs()}</div><div class="acct-list-head"><div><span class="acct-kicker">Payment desk</span><h2>Bill payment register</h2></div><div class="acct-report-actions"><button class="acct-refresh" type="button" onclick="showAccountingCheckSettings()">Check settings</button><button class="acct-primary" type="button" onclick="showAccountingPaymentForm()">Pay bills</button></div></div><div id="accountingPhaseDForm"></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Reference</th><th>Method</th><th>Vendor</th><th>Bank</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${paymentRows || '<tr><td colspan="8">No bill payments yet.</td></tr>'}</tbody></table></div>`;
 }
-
 function renderAccountingPaymentRuns(pane, data) {
   pane.innerHTML = `<div class="acct-subtabs">${accountingPayablesTabs()}</div><div class="acct-list-head"><div><span class="acct-kicker">Month-end payables</span><h2>Payment runs</h2><p>Reserve a unique check range, review each vendor payment, post, then print one stack.</p></div><button class="acct-primary" onclick="showAccountingPaymentRunForm()">New payment run</button></div><div id="accountingPhaseDForm"></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Bank</th><th>Payments</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody>${(data.paymentRuns || []).map((run) => `<tr><td>${accountingDate(run.runDate)}</td><td>${escapeHtml(run.bankAccountName)}</td><td>${run.paymentCount}</td><td>${accountingMoney(run.totalAmount)}</td><td><span class="acct-status ${escapeAttr(run.status)}">${escapeHtml(run.status)}</span></td><td><div class="acct-row-actions">${run.status === 'draft' ? `<button onclick="postAccountingPaymentRun('${escapeAttr(run.id)}',${run.version})">Post remainder</button>` : ''}<button onclick="printAccountingPaymentRun('${escapeAttr(run.id)}')">Print stack</button></div></td></tr>`).join('') || '<tr><td colspan="6">No payment runs yet.</td></tr>'}</tbody></table></div>`;
 }
-
 function renderAccounting1099Review(pane, data) {
   const report = data.tax1099 || {
-    calendarYear: new Date().getFullYear(),
+    calendarYear: /* @__PURE__ */ new Date().getFullYear(),
     vendors: [],
     disclaimer: 'Data-preparation aid only; not a filed or filing-ready Form 1099-NEC or Form 1096.',
   };
   pane.innerHTML = `<div class="acct-subtabs">${accountingPayablesTabs()}</div><div class="acct-list-head"><div><span class="acct-kicker">Vendor tax review</span><h2>1099 review</h2><p>${escapeHtml(report.disclaimer)}</p></div><div class="acct-report-actions"><label>Calendar year <input id="accounting1099Year" type="number" min="2000" max="2200" value="${escapeAttr(report.calendarYear)}"></label><button class="acct-refresh" onclick="loadAccounting1099Review()">Run report</button><button class="acct-primary" onclick="downloadAccounting1099Review()">Export CSV</button></div></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Vendor</th><th>Legal name</th><th>Tax ID</th><th>Classification</th><th>Eligible paid</th><th>$600 threshold</th></tr></thead><tbody>${(report.vendors || []).map((vendor) => `<tr><td><strong>${escapeHtml(vendor.displayName)}</strong></td><td>${escapeHtml(vendor.legalName || '—')}</td><td>${vendor.taxIdLast4 ? `•••• ${escapeHtml(vendor.taxIdLast4)}` : '—'}</td><td>${escapeHtml(vendor.taxClassification || '—')}</td><td>${accountingMoney(vendor.totalPaid)}</td><td><span class="acct-status ${vendor.meetsThreshold ? 'posted' : 'draft'}">${vendor.meetsThreshold ? 'Threshold met' : 'Below threshold'}</span></td></tr>`).join('') || '<tr><td colspan="6">No vendors are flagged for 1099 review.</td></tr>'}</tbody></table></div><p class="acct-report-disclaimer">Card and third-party network payments are excluded because those amounts are generally reported by the payment network on Form 1099-K. Confirm filing obligations with a qualified tax professional.</p>`;
 }
-
 function renderAccountingPledgeComparison(comparison = {}) {
   if (!comparison.accountId)
     return `<aside class="acct-card"><span class="acct-kicker">Compared to pledges</span><h3>Choose a stewardship revenue account</h3><p>Pledge totals are available, but AGAPAY will not guess which revenue account belongs in this comparison.</p><button class="acct-refresh" onclick="setAccountingView('settings')">Configure account</button></aside>`;
@@ -127,7 +117,6 @@ function renderAccountingPledgeComparison(comparison = {}) {
     return `<aside class="acct-card"><span class="acct-kicker">Compared to pledges</span><h3>${accountingMoney(comparison.pledgedTotalCents)} pledged</h3><p>${comparison.pledgingHouseholds} pledging households for ${comparison.fiscalYear}. Add a draft line for ${escapeHtml(comparison.accountNumber)} · ${escapeHtml(comparison.accountName)} to compare it.</p></aside>`;
   return `<aside class="acct-card"><span class="acct-kicker">Compared to pledges</span><h3>${accountingMoney(comparison.pledgedTotalCents)} pledged</h3><div class="acct-facts"><div><strong>${accountingMoney(comparison.budgetedLineAmountCents)}</strong><span>Budgeted for ${escapeHtml(comparison.accountNumber)} · ${escapeHtml(comparison.accountName)}</span></div><div><strong>${accountingMoney(comparison.varianceCents)}</strong><span>Budget less pledges · informational only</span></div></div><p>${comparison.pledgingHouseholds} pledging households. This panel never changes a budget line.</p></aside>`;
 }
-
 function renderAccountingBudgets(pane) {
   if (accountingData.tier !== 'advanced_operations') {
     pane.innerHTML = accountingParishOnly();
@@ -145,18 +134,15 @@ function renderAccountingBudgets(pane) {
   }
   pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Financial planning</span><h2>Budget versions</h2></div><button class="acct-primary" onclick="showAccountingBudgetForm()">New budget</button></div><div id="accountingPhaseDForm">${accountingBudgetEditor ? `<div class="acct-setup-grid">${renderAccountingPledgeComparison(accountingBudgetEditor.pledgeComparison)}<section class="acct-card"><span class="acct-kicker">Inline budget-line editing</span><h2>Edit draft lines</h2>${accountingBudgetEditor.lines.map((line) => `<form class="acct-phase-form" onsubmit="updateAccountingBudgetLine(event,'${escapeAttr(accountingBudgetEditor.budgetId)}','${escapeAttr(line.id)}',${line.version})"><strong>${escapeHtml(line.accountNumber)} · ${escapeHtml(line.accountName)}</strong><div class="acct-form-grid"><label>Annual amount<input name="annualAmount" type="number" step="0.01" value="${Number(line.annualAmount || 0) / 100}" required></label><label>Allocation<select name="allocationStrategy"><option value="even" ${line.allocationStrategy === 'even' ? 'selected' : ''}>Even monthly</option><option value="custom" ${line.allocationStrategy === 'custom' ? 'selected' : ''}>Custom</option></select></label></div><button class="acct-primary">Save line</button><span class="acct-form-status"></span></form>`).join('')}</section></div>` : ''}</div><div class="acct-card-grid">${data.items.map((budget) => `<article class="acct-budget-card"><div><span>Version ${budget.versionNumber}</span><h3>${escapeHtml(budget.name)}</h3><p>${escapeHtml(budget.description || 'Parish operating plan')}</p></div><span class="acct-status ${escapeAttr(budget.status)}">${escapeHtml(budget.status)}</span><div class="acct-row-actions"><button onclick="openAccountingBudgetVariance('${escapeAttr(budget.id)}')">Variance</button><button onclick="openAccountingCouncilPacket('${escapeAttr(budget.id)}')">Council packet</button>${budget.status === 'draft' ? `<button onclick="editAccountingBudgetLines('${escapeAttr(budget.id)}')">Edit lines</button><button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','submit',${budget.version})">Submit</button>` : ''}${budget.status === 'submitted' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','approve',${budget.version})">Approve</button>` : ''}${budget.status === 'approved' ? `<button onclick="accountingBudgetAction('${escapeAttr(budget.id)}','lock',${budget.version})">Lock</button>` : ''}</div></article>`).join('') || accountingEmpty('No budgets yet', 'Create the first operating budget and allocate it by account and fund.')}</div>`;
 }
-
 function setAccountingPayablesView(view) {
   accountingPayablesView = ['bills', 'recurring', 'payments', 'runs', '1099', 'vendors', 'aging'].includes(view)
     ? view
     : 'bills';
   renderAccountingPane();
 }
-
 function phaseDForm() {
   return document.getElementById('accountingPhaseDForm');
 }
-
 function openAccountingBillDetail(id) {
   const bill = accountingData.payables?.bills?.find((item) => item.id === id),
     holder = phaseDForm();
@@ -164,7 +150,6 @@ function openAccountingBillDetail(id) {
   holder.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><span class="acct-kicker">Bill detail</span><h2>${escapeHtml(bill.vendorInvoiceNumber || bill.billNumber)}</h2><p>${escapeHtml(bill.vendorName)} · ${accountingMoney(bill.totalAmount)}</p></div><button class="acct-link" onclick="phaseDForm().innerHTML=''">Close</button></div><div data-accounting-attachments></div></section>`;
   renderAccountingAttachments('bill', id, holder.querySelector('[data-accounting-attachments]'));
 }
-
 function showAccountingVendorForm(id = '') {
   const holder = phaseDForm();
   if (!holder) return;
@@ -183,7 +168,6 @@ function showAccountingVendorForm(id = '') {
     .join('');
   holder.innerHTML = `<form class="acct-phase-form" onsubmit="saveAccountingVendor(event,'${escapeAttr(vendor?.id || '')}',${Number(vendor?.version || 0)})"><div class="acct-list-head"><div><span class="acct-kicker">${vendor ? 'Edit vendor' : 'New vendor'}</span><h2>${vendor ? escapeHtml(vendor.displayName) : 'Add a payee'}</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Vendor name<input name="displayName" required value="${escapeAttr(vendor?.displayName || '')}"></label><label>Email<input name="email" type="email" value="${escapeAttr(vendor?.email || '')}"></label><label>Default expense or prepaid-asset account<select name="defaultExpenseAccountId"><option value="">None</option>${expenseOptions.replace(`value="${escapeAttr(vendor?.defaultExpenseAccountId || '')}"`, `value="${escapeAttr(vendor?.defaultExpenseAccountId || '')}" selected`)}</select></label><label>Default fund<select name="defaultFundId"><option value="">None</option>${fundOptions.replace(`value="${escapeAttr(vendor?.defaultFundId || '')}"`, `value="${escapeAttr(vendor?.defaultFundId || '')}" selected`)}</select></label></div><button class="acct-primary" type="submit">Save vendor</button><span class="acct-form-status"></span></form>`;
 }
-
 async function saveAccountingVendor(event, vendorId, expectedVersion) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -204,17 +188,14 @@ async function saveAccountingVendor(event, vendorId, expectedVersion) {
   accountingData.payables = null;
   await loadAccountingPhaseD();
 }
-
 async function createAccountingVendor(event) {
   return saveAccountingVendor(event, '', 0);
 }
-
 function beginAccountingVendorLifecycle(id, action) {
   accountingVendorLifecycleConfirm = { id, action };
   accountingLifecycleMessage = null;
   renderAccountingPane();
 }
-
 async function changeAccountingVendorLifecycle(id, action, expectedVersion) {
   const response = await fetch(accountingApi(`/payables/vendors/${encodeURIComponent(id)}/${action}`), {
     method: 'POST',
@@ -237,7 +218,6 @@ async function changeAccountingVendorLifecycle(id, action, expectedVersion) {
   accountingData.payables = null;
   await loadAccountingPhaseD();
 }
-
 function applyAccountingBillVendorDefaults(vendorSelect) {
   const vendor = accountingData.payables?.vendors?.find((item) => item.id === vendorSelect.value);
   const form = vendorSelect.form;
@@ -250,7 +230,6 @@ function applyAccountingBillVendorDefaults(vendorSelect) {
   if (form.elements.description && !form.elements.description.value)
     form.elements.description.value = `${vendor.displayName} bill`;
 }
-
 function showAccountingBillForm() {
   const holder = phaseDForm();
   if (!holder) return;
@@ -270,9 +249,8 @@ function showAccountingBillForm() {
       (fund) => `<option value="${escapeAttr(fund.id)}">${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`
     )
     .join('');
-  holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingBill(event)"><div class="acct-list-head"><div><span class="acct-kicker">Bill entry</span><h2>Record a vendor bill</h2><p>Selecting a vendor applies its saved account and fund defaults.</p></div><div class="acct-report-actions"><button type="button" class="acct-link" onclick="showAccountingRecurringBillForm()">Make recurring</button><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div></div><div class="acct-form-grid"><label>Vendor<select name="vendorId" required onchange="applyAccountingBillVendorDefaults(this)"><option value="">Choose vendor</option>${vendors}</select></label><label>Invoice number<input name="vendorInvoiceNumber"></label><label>Bill date<input name="billDate" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label><label>Description<input name="description" required></label><label>Expense or prepaid-asset account<select name="accountId" required><option value="">Choose account</option>${accounts}</select></label><label>Fund<select name="fundId" required><option value="">Choose fund</option>${funds}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required></label></div><button class="acct-primary" type="submit">Save draft bill</button><span class="acct-form-status"></span></form>`;
+  holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingBill(event)"><div class="acct-list-head"><div><span class="acct-kicker">Bill entry</span><h2>Record a vendor bill</h2><p>Selecting a vendor applies its saved account and fund defaults.</p></div><div class="acct-report-actions"><button type="button" class="acct-link" onclick="showAccountingRecurringBillForm()">Make recurring</button><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div></div><div class="acct-form-grid"><label>Vendor<select name="vendorId" required onchange="applyAccountingBillVendorDefaults(this)"><option value="">Choose vendor</option>${vendors}</select></label><label>Invoice number<input name="vendorInvoiceNumber"></label><label>Bill date<input name="billDate" type="date" value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}" required></label><label>Description<input name="description" required></label><label>Expense or prepaid-asset account<select name="accountId" required><option value="">Choose account</option>${accounts}</select></label><label>Fund<select name="fundId" required><option value="">Choose fund</option>${funds}</select></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required></label></div><button class="acct-primary" type="submit">Save draft bill</button><span class="acct-form-status"></span></form>`;
 }
-
 async function createAccountingBill(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -294,7 +272,6 @@ async function createAccountingBill(event) {
   };
   await accountingPhaseDMutation('/payables/bills', data, 'Draft bill saved.');
 }
-
 function showAccountingRecurringBillForm() {
   const holder = phaseDForm();
   if (!holder) return;
@@ -314,9 +291,8 @@ function showAccountingRecurringBillForm() {
       (fund) => `<option value="${escapeAttr(fund.id)}">${escapeHtml(fund.code)} · ${escapeHtml(fund.name)}</option>`
     )
     .join('');
-  holder.innerHTML = `<form class="acct-phase-form" onsubmit="saveAccountingRecurringBill(event)"><div class="acct-list-head"><div><span class="acct-kicker">Recurring bill</span><h2>Create reviewable draft bills automatically</h2><p>The schedule creates drafts only. Approval, posting, and payment remain separate controls.</p></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Vendor<select name="vendorId" required onchange="applyAccountingBillVendorDefaults(this)"><option value="">Choose vendor</option>${vendors}</select></label><label>Schedule name<input name="name" required maxlength="120" placeholder="Monthly internet"></label><label>Description<input name="description" required maxlength="240" placeholder="Internet service"></label><label>Expense or prepaid-asset account<select name="accountId" required><option value="">Choose account</option>${accounts}</select></label><label>Fund<select name="fundId" required><option value="">Choose fund</option>${funds}</select></label><label>Amount<input name="amountDollars" type="number" min="0.01" step="0.01" required></label><label>Frequency<select name="frequency"><option value="weekly">Weekly</option><option value="biweekly">Every two weeks</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annually</option></select></label><label>First bill date<input name="nextBillDate" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label><label>End date <small>Optional</small><input name="endDate" type="date"></label></div><button class="acct-primary" type="submit">Start recurring bill</button><span class="acct-form-status"></span></form>`;
+  holder.innerHTML = `<form class="acct-phase-form" onsubmit="saveAccountingRecurringBill(event)"><div class="acct-list-head"><div><span class="acct-kicker">Recurring bill</span><h2>Create reviewable draft bills automatically</h2><p>The schedule creates drafts only. Approval, posting, and payment remain separate controls.</p></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Vendor<select name="vendorId" required onchange="applyAccountingBillVendorDefaults(this)"><option value="">Choose vendor</option>${vendors}</select></label><label>Schedule name<input name="name" required maxlength="120" placeholder="Monthly internet"></label><label>Description<input name="description" required maxlength="240" placeholder="Internet service"></label><label>Expense or prepaid-asset account<select name="accountId" required><option value="">Choose account</option>${accounts}</select></label><label>Fund<select name="fundId" required><option value="">Choose fund</option>${funds}</select></label><label>Amount<input name="amountDollars" type="number" min="0.01" step="0.01" required></label><label>Frequency<select name="frequency"><option value="weekly">Weekly</option><option value="biweekly">Every two weeks</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annually</option></select></label><label>First bill date<input name="nextBillDate" type="date" value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}" required></label><label>End date <small>Optional</small><input name="endDate" type="date"></label></div><button class="acct-primary" type="submit">Start recurring bill</button><span class="acct-form-status"></span></form>`;
 }
-
 async function saveAccountingRecurringBill(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -338,7 +314,6 @@ async function saveAccountingRecurringBill(event) {
   accountingPayablesView = 'recurring';
   renderAccountingPane();
 }
-
 async function toggleAccountingRecurringBill(id, expectedVersion, status) {
   const response = await fetch(accountingApi(`/payables/recurring-bills/${encodeURIComponent(id)}`), {
     method: 'PATCH',
@@ -353,7 +328,6 @@ async function toggleAccountingRecurringBill(id, expectedVersion, status) {
   accountingData.payables = null;
   await loadAccountingPhaseD();
 }
-
 function showAccountingPaymentForm() {
   const holder = phaseDForm();
   if (!holder) return;
@@ -370,10 +344,9 @@ function showAccountingPaymentForm() {
     );
     return;
   }
-  holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingPayment(event)"><div class="acct-list-head"><div><span class="acct-kicker">Bill payment</span><h2>Select bills and how they were paid</h2><p>Online payments are recorded and posted immediately. Checks retain the print-then-post workflow.</p></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Payment method<select name="paymentMethod" required onchange="syncAccountingPaymentMethod(this.form)"><option value="external">Online bill pay</option><option value="ach">ACH / bank transfer</option><option value="wire">Wire transfer</option><option value="debit_card">Debit card</option><option value="credit_card">Credit card</option><option value="check">Printed check</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>Paid from<select name="bankAccountId" required onchange="syncAccountingPaymentMethod(this.form)">${banks.map((b) => `<option value="${escapeAttr(b.id)}">${escapeHtml(b.name)}${b.maskedLast4 ? ` · •••• ${escapeHtml(b.maskedLast4)}` : ''}</option>`).join('')}</select></label><label data-payment-reference>Confirmation / reference number<input name="referenceNumber" autocomplete="off" required placeholder="Receipt or confirmation number"></label><label data-payment-check hidden>Check number<input id="accountingCheckNumber" name="checkNumber" inputmode="numeric"></label><label>Payment date<input name="paymentDate" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label><label>Memo<input name="memo" placeholder="Optional payment memo"></label></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th></th><th>Vendor</th><th>Invoice</th><th>Due</th><th>Amount due</th><th>Pay now</th></tr></thead><tbody>${bills.map((b) => `<tr><td><input type="checkbox" data-payment-bill value="${escapeAttr(b.id)}" data-vendor="${escapeAttr(b.vendorId)}" onchange="syncAccountingPaymentSelection(this)"></td><td>${escapeHtml(b.vendorName)}</td><td>${escapeHtml(b.vendorInvoiceNumber || b.billNumber)}</td><td>${accountingDate(b.dueDate)}</td><td>${accountingMoney(b.amountDue)}</td><td><input data-payment-amount type="number" min="0.01" max="${(Number(b.amountDue) / 100).toFixed(2)}" step="0.01" value="${(Number(b.amountDue) / 100).toFixed(2)}" disabled></td></tr>`).join('')}</tbody></table></div><div class="acct-phase-form-foot"><strong id="accountingPaymentTotal">Total $0.00</strong><button class="acct-primary" data-payment-submit>Record online payment</button><span class="acct-form-status"></span></div></form>`;
+  holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingPayment(event)"><div class="acct-list-head"><div><span class="acct-kicker">Bill payment</span><h2>Select bills and how they were paid</h2><p>Online payments are recorded and posted immediately. Checks retain the print-then-post workflow.</p></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Payment method<select name="paymentMethod" required onchange="syncAccountingPaymentMethod(this.form)"><option value="external">Online bill pay</option><option value="ach">ACH / bank transfer</option><option value="wire">Wire transfer</option><option value="debit_card">Debit card</option><option value="credit_card">Credit card</option><option value="check">Printed check</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>Paid from<select name="bankAccountId" required onchange="syncAccountingPaymentMethod(this.form)">${banks.map((b) => `<option value="${escapeAttr(b.id)}">${escapeHtml(b.name)}${b.maskedLast4 ? ` · •••• ${escapeHtml(b.maskedLast4)}` : ''}</option>`).join('')}</select></label><label data-payment-reference>Confirmation / reference number<input name="referenceNumber" autocomplete="off" required placeholder="Receipt or confirmation number"></label><label data-payment-check hidden>Check number<input id="accountingCheckNumber" name="checkNumber" inputmode="numeric"></label><label>Payment date<input name="paymentDate" type="date" value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}" required></label><label>Memo<input name="memo" placeholder="Optional payment memo"></label></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th></th><th>Vendor</th><th>Invoice</th><th>Due</th><th>Amount due</th><th>Pay now</th></tr></thead><tbody>${bills.map((b) => `<tr><td><input type="checkbox" data-payment-bill value="${escapeAttr(b.id)}" data-vendor="${escapeAttr(b.vendorId)}" onchange="syncAccountingPaymentSelection(this)"></td><td>${escapeHtml(b.vendorName)}</td><td>${escapeHtml(b.vendorInvoiceNumber || b.billNumber)}</td><td>${accountingDate(b.dueDate)}</td><td>${accountingMoney(b.amountDue)}</td><td><input data-payment-amount type="number" min="0.01" max="${(Number(b.amountDue) / 100).toFixed(2)}" step="0.01" value="${(Number(b.amountDue) / 100).toFixed(2)}" disabled></td></tr>`).join('')}</tbody></table></div><div class="acct-phase-form-foot"><strong id="accountingPaymentTotal">Total $0.00</strong><button class="acct-primary" data-payment-submit>Record online payment</button><span class="acct-form-status"></span></div></form>`;
   syncAccountingPaymentMethod(holder.querySelector('form'));
 }
-
 function syncAccountingPaymentMethod(form) {
   if (!form) return;
   const isCheck = form.elements.paymentMethod.value === 'check',
@@ -389,7 +362,6 @@ function syncAccountingPaymentMethod(form) {
   submit.textContent = isCheck ? 'Create check' : 'Record payment';
   if (isCheck) loadNextAccountingCheckNumber(form.elements.bankAccountId.value);
 }
-
 async function loadNextAccountingCheckNumber(bankAccountId) {
   const res = await fetch(
       accountingApi(`/payables/check-settings?bankAccountId=${encodeURIComponent(bankAccountId)}`),
@@ -399,7 +371,6 @@ async function loadNextAccountingCheckNumber(bankAccountId) {
   if (res.ok && document.getElementById('accountingCheckNumber'))
     document.getElementById('accountingCheckNumber').value = payload.settings?.nextCheckNumber || '';
 }
-
 async function showAccountingCheckSettings() {
   const holder = phaseDForm(),
     banks = accountingData.payables.bankAccounts || [];
@@ -427,7 +398,6 @@ async function showAccountingCheckSettings() {
   const s = payload.settings;
   holder.innerHTML = `<form class="acct-phase-form" onsubmit="saveAccountingCheckSettings(event)"><input type="hidden" name="bankAccountId" value="${escapeAttr(bankId)}"><input type="hidden" name="expectedVersion" value="${Number(s.version)}"><div class="acct-list-head"><div><span class="acct-kicker">Check stock</span><h2>Printing settings</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Bank account<select name="bankAccountIdDisplay" disabled>${banks.map((b) => `<option ${b.id === bankId ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('')}</select></label><label>Next check number<input name="nextCheckNumber" type="number" min="1" step="1" value="${Number(s.nextCheckNumber)}" required></label><label>Check stock style<select name="checkStyle"><option value="top_check_two_stubs" ${s.checkStyle === 'top_check_two_stubs' ? 'selected' : ''}>Top check + two stubs</option><option value="bottom_check_two_stubs" ${s.checkStyle === 'bottom_check_two_stubs' ? 'selected' : ''}>Two stubs + bottom check</option><option value="check_only" ${s.checkStyle === 'check_only' ? 'selected' : ''}>Check only</option></select></label><label>Payer name<input name="payerName" value="${escapeAttr(s.payerName || '')}" required></label><label class="acct-wide">Payer address<textarea name="payerAddress" rows="3" required>${escapeHtml(s.payerAddress || '')}</textarea></label><label>Primary signature line<input name="signatureLine1" value="${escapeAttr(s.signatureLine1 || 'Authorized signature')}"></label><label>Secondary signature line<input name="signatureLine2" value="${escapeAttr(s.signatureLine2 || '')}"></label></div><div class="acct-phase-form-foot"><button class="acct-primary">Save check settings</button><span class="acct-form-status"></span></div></form>`;
 }
-
 async function saveAccountingCheckSettings(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -453,7 +423,6 @@ async function saveAccountingCheckSettings(event) {
     ? 'Check settings saved.'
     : payload.message || payload.error || 'Unable to save check settings.';
 }
-
 function syncAccountingPaymentSelection(box) {
   const form = box.form,
     selected = Array.from(form.querySelectorAll('[data-payment-bill]:checked')),
@@ -469,7 +438,6 @@ function syncAccountingPaymentSelection(box) {
   document.getElementById('accountingPaymentTotal').textContent =
     `Total ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}`;
 }
-
 async function createAccountingPayment(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -507,7 +475,6 @@ async function createAccountingPayment(event) {
   accountingPayablesView = 'payments';
   renderAccountingPane();
 }
-
 function showAccountingPaymentRunForm() {
   const holder = phaseDForm(),
     bills = (accountingData.payables.bills || []).filter(
@@ -522,10 +489,9 @@ function showAccountingPaymentRunForm() {
     );
     return;
   }
-  holder.innerHTML = `<form class="acct-phase-form acct-payment-run-builder" onsubmit="createAccountingPaymentRun(event)"><div class="acct-list-head"><div><span class="acct-kicker">Batch check run</span><h2>Select vendors and open bills</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Bank account<select name="bankAccountId" required onchange="syncAccountingPaymentRun(this.form)">${banks.map((bank) => `<option value="${escapeAttr(bank.id)}">${escapeHtml(bank.name)}</option>`).join('')}</select></label><label>Run date<input name="runDate" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label><label>Memo<input name="memo" placeholder="Month-end vendor checks"></label></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th></th><th>Vendor</th><th>Invoice</th><th>Due</th><th>Amount due</th><th>Pay now</th></tr></thead><tbody>${bills.map((bill) => `<tr><td><input type="checkbox" data-run-bill value="${escapeAttr(bill.id)}" data-vendor="${escapeAttr(bill.vendorId)}" onchange="syncAccountingPaymentRun(this.form)"></td><td><strong>${escapeHtml(bill.vendorName)}</strong></td><td>${escapeHtml(bill.vendorInvoiceNumber || bill.billNumber)}</td><td>${accountingDate(bill.dueDate)}</td><td>${accountingMoney(bill.amountDue)}</td><td><input data-run-amount type="number" min="0.01" max="${(Number(bill.amountDue) / 100).toFixed(2)}" step="0.01" value="${(Number(bill.amountDue) / 100).toFixed(2)}" disabled></td></tr>`).join('')}</tbody></table></div><section class="acct-run-review"><span class="acct-kicker">Review</span><strong data-run-range>Select bills to preview the reserved check range.</strong><small data-run-summary>No vendors selected.</small></section><div class="acct-phase-form-foot"><button class="acct-primary">Create reviewable draft</button><span class="acct-form-status"></span></div></form>`;
+  holder.innerHTML = `<form class="acct-phase-form acct-payment-run-builder" onsubmit="createAccountingPaymentRun(event)"><div class="acct-list-head"><div><span class="acct-kicker">Batch check run</span><h2>Select vendors and open bills</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Bank account<select name="bankAccountId" required onchange="syncAccountingPaymentRun(this.form)">${banks.map((bank) => `<option value="${escapeAttr(bank.id)}">${escapeHtml(bank.name)}</option>`).join('')}</select></label><label>Run date<input name="runDate" type="date" value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}" required></label><label>Memo<input name="memo" placeholder="Month-end vendor checks"></label></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th></th><th>Vendor</th><th>Invoice</th><th>Due</th><th>Amount due</th><th>Pay now</th></tr></thead><tbody>${bills.map((bill) => `<tr><td><input type="checkbox" data-run-bill value="${escapeAttr(bill.id)}" data-vendor="${escapeAttr(bill.vendorId)}" onchange="syncAccountingPaymentRun(this.form)"></td><td><strong>${escapeHtml(bill.vendorName)}</strong></td><td>${escapeHtml(bill.vendorInvoiceNumber || bill.billNumber)}</td><td>${accountingDate(bill.dueDate)}</td><td>${accountingMoney(bill.amountDue)}</td><td><input data-run-amount type="number" min="0.01" max="${(Number(bill.amountDue) / 100).toFixed(2)}" step="0.01" value="${(Number(bill.amountDue) / 100).toFixed(2)}" disabled></td></tr>`).join('')}</tbody></table></div><section class="acct-run-review"><span class="acct-kicker">Review</span><strong data-run-range>Select bills to preview the reserved check range.</strong><small data-run-summary>No vendors selected.</small></section><div class="acct-phase-form-foot"><button class="acct-primary">Create reviewable draft</button><span class="acct-form-status"></span></div></form>`;
   syncAccountingPaymentRun(holder.querySelector('form'));
 }
-
 async function syncAccountingPaymentRun(form) {
   if (!form) return;
   const selected = Array.from(form.querySelectorAll('[data-run-bill]:checked'));
@@ -558,7 +524,6 @@ async function syncAccountingPaymentRun(form) {
     end = start + vendors.size - 1;
   range.textContent = `Checks ${start}${end === start ? '' : `–${end}`} will be atomically reserved when this draft is created.`;
 }
-
 async function createAccountingPaymentRun(event) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -568,7 +533,7 @@ async function createAccountingPaymentRun(event) {
     form.querySelector('.acct-form-status').textContent = 'Select at least one bill.';
     return;
   }
-  const grouped = new Map();
+  const grouped = /* @__PURE__ */ new Map();
   for (const input of selected) {
     const vendorId = input.dataset.vendor,
       applications = grouped.get(vendorId) || [];
@@ -592,7 +557,6 @@ async function createAccountingPaymentRun(event) {
     renderAccountingPane();
   }
 }
-
 async function postAccountingPaymentRun(id, version) {
   const payload = await accountingPhaseDRequest(`/payables/payment-runs/${encodeURIComponent(id)}/post`, {
     expectedVersion: version,
@@ -607,7 +571,6 @@ async function postAccountingPaymentRun(id, version) {
   accountingData.payables = null;
   await loadAccountingPhaseD();
 }
-
 async function printAccountingPaymentRun(id) {
   const reason = prompt('Reprint reason (leave blank for an original run):') || '';
   const win = window.open('about:blank', '_blank');
@@ -627,10 +590,9 @@ async function printAccountingPaymentRun(id) {
   accountingData.payables = null;
   await loadAccountingPhaseD();
 }
-
 async function loadAccounting1099Review() {
   const input = document.getElementById('accounting1099Year'),
-    year = Number(input?.value || new Date().getUTCFullYear()),
+    year = Number(input?.value || /* @__PURE__ */ new Date().getUTCFullYear()),
     res = await fetch(accountingApi(`/payables/1099-summary?year=${encodeURIComponent(year)}`), {
       headers: authHeaders(),
     }),
@@ -642,12 +604,11 @@ async function loadAccounting1099Review() {
   accountingData.payables.tax1099 = payload.report;
   renderAccountingPane();
 }
-
 async function downloadAccounting1099Review() {
   const year =
       document.getElementById('accounting1099Year')?.value ||
       accountingData.payables.tax1099?.calendarYear ||
-      new Date().getUTCFullYear(),
+      /* @__PURE__ */ new Date().getUTCFullYear(),
     res = await fetch(accountingApi(`/payables/1099-summary.csv?year=${encodeURIComponent(year)}`), {
       headers: authHeaders(),
     });
@@ -665,7 +626,6 @@ async function downloadAccounting1099Review() {
   link.remove();
   URL.revokeObjectURL(url);
 }
-
 async function accountingPhaseDRequest(path, body) {
   const res = await fetch(accountingApi(path), {
       method: 'POST',
@@ -681,7 +641,6 @@ async function accountingPhaseDRequest(path, body) {
   }
   return payload;
 }
-
 async function printAccountingCheck(id, printCount) {
   const reason = printCount ? prompt('Reason for reprinting this check:') : '';
   if (printCount && !reason) return;
@@ -702,7 +661,6 @@ async function printAccountingCheck(id, printCount) {
   accountingData.payables = null;
   await loadAccountingPhaseD();
 }
-
 async function postAccountingPayment(id, version) {
   if (
     await accountingPhaseDRequest(`/payables/payments/${encodeURIComponent(id)}/post`, {
@@ -714,7 +672,6 @@ async function postAccountingPayment(id, version) {
     await loadAccountingPhaseD();
   }
 }
-
 async function voidAccountingPayment(id, version) {
   const reason = prompt('Reason for voiding this payment:');
   if (!reason) return;
@@ -728,19 +685,16 @@ async function voidAccountingPayment(id, version) {
     await loadAccountingPhaseD();
   }
 }
-
 async function accountingBillAction(id, action, version) {
   const body = { expectedVersion: version };
   if (action === 'post') body.idempotencyKey = `parish-ui-${id}-${version}`;
   await accountingPhaseDMutation(`/payables/bills/${encodeURIComponent(id)}/${action}`, body, `Bill ${action}ed.`);
 }
-
 function showAccountingBudgetForm() {
   const holder = phaseDForm();
   if (!holder) return;
   holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingBudget(event)"><div class="acct-list-head"><div><span class="acct-kicker">Budget builder</span><h2>Create a budget version</h2></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Budget name<input name="name" required placeholder="2027 Operating Budget"></label><label>Description<input name="description" placeholder="Parish council operating plan"></label></div><div class="acct-journal-lines-head"><span>Budget lines</span><span>Annual amounts are allocated evenly across twelve months.</span></div><div id="accountingBudgetDraftLines">${accountingBudgetLineTemplate()}</div><button type="button" class="acct-add-line" onclick="addAccountingBudgetLine()">+ Add budget line</button><div class="acct-phase-form-foot"><button class="acct-primary" type="submit">Create draft budget</button><span class="acct-form-status"></span></div></form>`;
 }
-
 function accountingBudgetLineTemplate() {
   const accounts = accountingData.accounts
     .filter((account) => ['revenue', 'expense'].includes(account.category))
@@ -756,18 +710,17 @@ function accountingBudgetLineTemplate() {
     .join('');
   return `<div class="acct-budget-line"><label>Account<select data-budget-account required><option value="">Choose account</option>${accounts}</select></label><label>Fund<select data-budget-fund required><option value="">Choose fund</option>${funds}</select></label><label>Annual amount<input data-budget-amount type="number" min="0" step="0.01" required></label><button type="button" class="acct-remove-line" onclick="this.closest('.acct-budget-line').remove()">×</button></div>`;
 }
-
 function addAccountingBudgetLine() {
   document
     .getElementById('accountingBudgetDraftLines')
     ?.insertAdjacentHTML('beforeend', accountingBudgetLineTemplate());
 }
-
 async function createAccountingBudget(event) {
   event.preventDefault();
   const form = event.currentTarget,
     raw = Object.fromEntries(new FormData(form));
-  const start = accountingData.setup?.currentFiscalYear?.startDate || `${new Date().getFullYear()}-01-01`;
+  const start =
+    accountingData.setup?.currentFiscalYear?.startDate || `${/* @__PURE__ */ new Date().getFullYear()}-01-01`;
   const lines = Array.from(form.querySelectorAll('.acct-budget-line')).map((row) => ({
     accountId: row.querySelector('[data-budget-account]').value,
     fundId: row.querySelector('[data-budget-fund]').value,
@@ -780,7 +733,6 @@ async function createAccountingBudget(event) {
     'Draft budget created.'
   );
 }
-
 async function accountingBudgetAction(id, action, version) {
   await accountingPhaseDMutation(
     `/budgets/${encodeURIComponent(id)}/${action}`,
@@ -788,7 +740,6 @@ async function accountingBudgetAction(id, action, version) {
     `Budget ${action}ed.`
   );
 }
-
 async function editAccountingBudgetLines(budgetId) {
   const [res, comparisonRes] = await Promise.all([
       fetch(accountingApi(`/budgets/${encodeURIComponent(budgetId)}`), { headers: authHeaders() }),
@@ -807,7 +758,6 @@ async function editAccountingBudgetLines(budgetId) {
   };
   renderAccountingPane();
 }
-
 async function updateAccountingBudgetLine(event, budgetId, lineId, expectedVersion) {
   event.preventDefault();
   const form = event.currentTarget,
@@ -827,7 +777,6 @@ async function updateAccountingBudgetLine(event, budgetId, lineId, expectedVersi
     : payload.message || payload.error || 'Unable to save budget line.';
   if (res.ok) await editAccountingBudgetLines(budgetId);
 }
-
 async function openAccountingBudgetVariance(id) {
   const res = await fetch(accountingApi(`/budgets/${encodeURIComponent(id)}/variance`), { headers: authHeaders() });
   const payload = await res.json().catch(() => ({}));
@@ -838,19 +787,16 @@ async function openAccountingBudgetVariance(id) {
   accountingBudgetReport = payload.report;
   renderAccountingPane();
 }
-
 function closeAccountingBudgetReport() {
   accountingBudgetReport = null;
   renderAccountingPane();
 }
-
 function downloadAccountingBudgetVariance(id) {
   downloadAccountingFile(
     accountingApi(`/budgets/${encodeURIComponent(id)}/variance.csv`),
     'agapay-budget-variance.csv'
   );
 }
-
 async function openAccountingCouncilPacket(id) {
   const win = window.open('about:blank', '_blank');
   if (!win) {
@@ -874,7 +820,6 @@ async function openAccountingCouncilPacket(id) {
   win.document.close();
   win.focus();
 }
-
 async function accountingPhaseDMutation(path, body, success) {
   const res = await fetch(accountingApi(path), {
     method: 'POST',

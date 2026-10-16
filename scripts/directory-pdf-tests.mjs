@@ -1,3 +1,4 @@
+import { readServerModuleSourceSync } from './lib/server-typescript.mjs';
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -112,13 +113,16 @@ assert.equal(pdf.getTitle(), 'St. Fiacre Orthodox Church Directory');
 for (const page of pdf.getPages()) assert.deepEqual(page.getSize(), { width: 612, height: 792 });
 
 const handler = readFileSync(new URL('../src/handlers/directory-admin.js', import.meta.url), 'utf8');
-const service = readFileSync(new URL('../src/directory/skills-service.js', import.meta.url), 'utf8');
+const service = readServerModuleSourceSync('src/directory/skills-service.js');
 const parishApp = readFileSync(new URL('../public/parish/features/directory.js', import.meta.url), 'utf8');
 assert.ok(includesJavaScriptFragment(handler, 'path === "/exports/directory.pdf"'));
 assert.ok(includesJavaScriptFragment(handler, 'new URL("/mark.png", request.url)'));
 assert.ok(handler.includes('registration.logoStorageKey'));
-assert.ok(service.includes("c.owner_type = 'person' AND c.owner_id = p.id"));
-assert.ok(!service.includes('a.line1'), 'the printable member directory must never select a street address');
+assert.ok(includesJavaScriptFragment(service, "c.owner_type = 'person' AND c.owner_id = p.id"));
+assert.ok(
+  !includesJavaScriptFragment(service, 'a.line1'),
+  'the printable member directory must never select a street address'
+);
 assert.ok(parishApp.includes("downloadDirectoryAdminExport('/exports/directory.pdf')"));
 assert.ok(
   !parishApp.includes(

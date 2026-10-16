@@ -19,9 +19,11 @@ const shopperAddedIcon = {
   specifics: { saint_or_feast: 'St. Fiacre icon' },
 };
 assert.equal(guestBookstoreItemError([shopperAddedIcon]), '', 'a shopper may add a described unlisted parish item');
-assert.match(
-  guestBookstoreItemError([{ source: 'shopper_added', itemCategory: 'other', specifics: {} }]),
-  /Describe every shopper-added item/,
+assert.ok(
+  includesJavaScriptFragment(
+    guestBookstoreItemError([{ source: 'shopper_added', itemCategory: 'other', specifics: {} }]),
+    'Describe every shopper-added item'
+  ),
   'shopper-added inventory requires a real description'
 );
 assert.equal(
@@ -250,11 +252,14 @@ assert.doesNotMatch(
   /class="hero-actions"/,
   'the hero stays visually quiet without duplicate bookstore actions'
 );
-assert.match(publicStore, /\.store-hero\{min-height:190px/, 'the desktop storefront hero stays compact');
-assert.match(publicStore, /id="addBookPanel" open/);
+assert.ok(
+  includesJavaScriptFragment(publicStore, '.store-hero{min-height:190px'),
+  'the desktop storefront hero stays compact'
+);
+assert.ok(includesJavaScriptFragment(publicStore, 'id="addBookPanel" open'));
 assert.match(publicStoreApp, /['"]scan_and_go['"]/);
-assert.match(publicStoreApp, /joins catalog after payment/);
-assert.match(publicStoreApp, /sold-out-badge/);
+assert.ok(includesJavaScriptFragment(publicStoreApp, 'joins catalog after payment'));
+assert.ok(includesJavaScriptFragment(publicStoreApp, 'sold-out-badge'));
 assert.ok(
   publicStore.includes(appAssetUrl('/bookstore/app.js')),
   'the public parish bookstore must load the photo-aware renderer with a fresh immutable URL'
@@ -274,32 +279,32 @@ assert.match(
   /\.product-art\.has-image\{[^}]*height:96px[^}]*overflow:hidden\}[\s\S]*?object-fit:contain/,
   'dedicated storefront photos must stay contained without obscuring item details'
 );
-assert.match(publicStore, /id="categoryFilters"/);
-assert.match(publicStore, /id="popularShelf"/);
-assert.match(publicStore, /Add an unlisted item/);
-assert.match(publicStore, /\.scan-row\[hidden\],#bookAuthorField\[hidden\]\{display:none\}/);
-assert.match(publicStoreApp, /activeCategory/);
-assert.match(publicStoreApp, /unitsSold/);
+assert.ok(includesJavaScriptFragment(publicStore, 'id="categoryFilters"'));
+assert.ok(includesJavaScriptFragment(publicStore, 'id="popularShelf"'));
+assert.ok(includesJavaScriptFragment(publicStore, 'Add an unlisted item'));
+assert.ok(includesJavaScriptFragment(publicStore, '.scan-row[hidden],#bookAuthorField[hidden]{display:none}'));
+assert.ok(includesJavaScriptFragment(publicStoreApp, 'activeCategory'));
+assert.ok(includesJavaScriptFragment(publicStoreApp, 'unitsSold'));
 assert.ok(
   includesJavaScriptFragment(publicStoreApp, 'source: category === "book" && isbn ? "scan_and_go" : "shopper_added"')
 );
-assert.match(myAgapayStore, /onclick="startBookstoreBookScan\(\)"/);
-assert.match(myAgapayStore, /bookstore-product-stock-out/);
-assert.match(myAgapayStore, /class="mobile-tabbar"/);
-assert.match(
-  donorApp,
-  /await donorApi\("\/api\/donor\/dashboard\?view=context"\)/,
+assert.ok(includesJavaScriptFragment(myAgapayStore, 'onclick="startBookstoreBookScan()"'));
+assert.ok(includesJavaScriptFragment(myAgapayStore, 'bookstore-product-stock-out'));
+assert.ok(includesJavaScriptFragment(myAgapayStore, 'class="mobile-tabbar"'));
+assert.ok(
+  includesJavaScriptFragment(donorApp, 'await donorApi("/api/donor/dashboard?view=context")'),
   'the bookstore refreshes the saved parish before loading'
 );
-assert.match(donorApp, /canonicalParish/, 'the bookstore canonicalizes a saved parish against the directory');
-assert.match(
-  myAgapayShell,
-  /item\.id === activeProduct\(\)/,
+assert.ok(
+  includesJavaScriptFragment(donorApp, 'canonicalParish'),
+  'the bookstore canonicalizes a saved parish against the directory'
+);
+assert.ok(
+  includesJavaScriptFragment(myAgapayShell, 'item.id === activeProduct()'),
   'the active bookstore stays in navigation during capability loading'
 );
-assert.match(
-  workerSource,
-  /\["\/myagapay\/bookstore", "\/myagapay\/bookstore\.html"\]/,
+assert.ok(
+  includesJavaScriptFragment(workerSource, '["/myagapay/bookstore", "/myagapay/bookstore.html"]'),
   'the authenticated bookstore route must resolve before the public parish storefront pattern'
 );
 

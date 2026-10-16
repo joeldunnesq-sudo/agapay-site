@@ -1,0 +1,305 @@
+// Development/preview fixtures only; no real user data.
+import { nowIso, learnHousehold, schoolYear, term } from './demo-data-1.js';
+import './demo-data-2.js';
+import { printTemplates } from './demo-data-3.js';
+
+export const academicRecords = [
+  {
+    id: 'record_elias_history',
+    householdId: learnHousehold.id,
+    childId: 'child_elias',
+    schoolYearId: schoolYear.id,
+    subject: 'History',
+    evaluationModel: 'narrative-only',
+    mark: 'Complete',
+    narrativeSummary: 'Narrated the early Church readings with steady attention and made clear connections to Acts.',
+  },
+  {
+    id: 'record_elias_math',
+    householdId: learnHousehold.id,
+    childId: 'child_elias',
+    schoolYearId: schoolYear.id,
+    subject: 'Math',
+    evaluationModel: 'percent',
+    mark: '82%',
+    narrativeSummary: 'Completed lessons 64-68 with improved mental arithmetic.',
+  },
+  {
+    id: 'record_maria_phonics',
+    householdId: learnHousehold.id,
+    childId: 'child_maria',
+    schoolYearId: schoolYear.id,
+    subject: 'Phonics',
+    evaluationModel: 'complete-incomplete',
+    mark: 'Complete',
+    narrativeSummary: 'Read Level 3 passages aloud with growing confidence.',
+  },
+  {
+    id: 'record_nicholas_nature',
+    householdId: learnHousehold.id,
+    childId: 'child_nicholas',
+    schoolYearId: schoolYear.id,
+    subject: 'Nature Study',
+    evaluationModel: 'narrative-only',
+    mark: 'Complete',
+    narrativeSummary: 'Observed spring trees and completed three picture narrations.',
+  },
+];
+
+export const reportCards = [
+  {
+    id: 'report_card_elias_pascha',
+    householdId: learnHousehold.id,
+    childId: 'child_elias',
+    schoolYearId: schoolYear.id,
+    termId: term.id,
+    status: 'ready',
+    generatedAt: nowIso,
+    summary: 'Elias is completing a strong Pascha term with faithful narrations and steady math work.',
+    records: academicRecords.filter((record) => record.childId === 'child_elias'),
+  },
+  {
+    id: 'report_card_maria_pascha',
+    householdId: learnHousehold.id,
+    childId: 'child_maria',
+    schoolYearId: schoolYear.id,
+    termId: term.id,
+    status: 'draft',
+    summary: "Maria's report card is ready for parent notes.",
+    records: academicRecords.filter((record) => record.childId === 'child_maria'),
+  },
+];
+
+export const transcripts = [
+  {
+    id: 'transcript_elias_lower',
+    householdId: learnHousehold.id,
+    childId: 'child_elias',
+    status: 'ready',
+    generatedAt: nowIso,
+    gradeSpan: 'Grades 1-4',
+    credits: 0,
+    records: academicRecords.filter((record) => record.childId === 'child_elias'),
+  },
+];
+
+export const reportExports = [
+  {
+    id: 'export_attendance_pdf',
+    householdId: learnHousehold.id,
+    exportType: 'attendance',
+    format: 'pdf',
+    status: 'ready',
+    generatedAt: nowIso,
+  },
+  {
+    id: 'export_lesson_log_csv',
+    householdId: learnHousehold.id,
+    exportType: 'lesson-log',
+    format: 'csv',
+    status: 'ready',
+    generatedAt: nowIso,
+  },
+  {
+    id: 'export_curriculum_pdf',
+    householdId: learnHousehold.id,
+    exportType: 'curriculum-list',
+    format: 'pdf',
+    status: 'ready',
+    generatedAt: nowIso,
+  },
+  {
+    id: 'export_narration_pdf',
+    householdId: learnHousehold.id,
+    exportType: 'narration-log',
+    format: 'pdf',
+    status: 'ready',
+    generatedAt: nowIso,
+  },
+];
+
+export const coOp = {
+  id: 'coop_st_catherine',
+  name: 'St. Catherine Homeschool Co-op',
+  city: 'Charlotte, North Carolina',
+  affiliation: 'Orthodox - Classical - Community',
+  learningCycleLabel: 'Cycle 2 - Week 3',
+  enabled: true,
+};
+
+export const coOpMembers = [
+  { id: 'coop_member_martin', coOpId: coOp.id, householdName: 'The Martin Family', childrenCount: 5, role: 'lead' },
+  {
+    id: 'coop_member_wingfeather',
+    coOpId: coOp.id,
+    householdName: 'The Wingfeather Family',
+    childrenCount: 3,
+    role: 'member',
+  },
+  {
+    id: 'coop_member_anderson',
+    coOpId: coOp.id,
+    householdName: 'The Anderson Family',
+    childrenCount: 4,
+    role: 'teacher',
+  },
+  {
+    id: 'coop_member_theodore',
+    coOpId: coOp.id,
+    householdName: 'The Theodore Family',
+    childrenCount: 6,
+    role: 'teacher',
+  },
+  { id: 'coop_member_stjohn', coOpId: coOp.id, householdName: 'The St. John Family', childrenCount: 3, role: 'member' },
+  {
+    id: 'coop_member_benjamin',
+    coOpId: coOp.id,
+    householdName: 'The Benjamin Family',
+    childrenCount: 2,
+    role: 'member',
+  },
+];
+
+export const coOpMeeting = {
+  id: 'coop_meeting_2025_05_14',
+  coOpId: coOp.id,
+  startsAt: '2025-05-14T09:00:00.000-04:00',
+  endsAt: '2025-05-14T12:30:00.000-04:00',
+  locationLabel: 'St. Catherine Parish Hall',
+};
+
+export const coOpScheduleBlocks = [
+  {
+    id: 'coop_block_morning',
+    meetingId: coOpMeeting.id,
+    title: 'Shared Morning Basket',
+    subtitle: 'Hymn - Poetry - Picture - Story - Prayer',
+    startsAt: '9:00 AM',
+    endsAt: '9:20 AM',
+    teacherHouseholdName: 'The Martin Family',
+  },
+  {
+    id: 'coop_block_nature',
+    meetingId: coOpMeeting.id,
+    title: 'Nature Study',
+    subtitle: 'Local flora and fauna observation',
+    startsAt: '9:20 AM',
+    endsAt: '10:00 AM',
+    teacherHouseholdName: 'The Wingfeather Family',
+  },
+  {
+    id: 'coop_block_handicrafts',
+    meetingId: coOpMeeting.id,
+    title: 'Handicrafts',
+    subtitle: 'Embroidery and simple stitches',
+    startsAt: '10:15 AM',
+    endsAt: '11:00 AM',
+    teacherHouseholdName: 'The Anderson Family',
+  },
+  {
+    id: 'coop_block_picture',
+    meetingId: coOpMeeting.id,
+    title: 'Picture Study',
+    subtitle: 'The Transfiguration - Raphael',
+    startsAt: '11:00 AM',
+    endsAt: '11:45 AM',
+    teacherHouseholdName: 'The Theodore Family',
+  },
+  {
+    id: 'coop_block_catechesis',
+    meetingId: coOpMeeting.id,
+    title: 'Catechesis',
+    subtitle: 'The Creed - Lesson 12',
+    startsAt: '11:45 AM',
+    endsAt: '12:15 PM',
+    teacherHouseholdName: 'The St. John Family',
+  },
+];
+
+export const coOpAnnouncements = [
+  {
+    id: 'coop_announce_potluck',
+    coOpId: coOp.id,
+    title: 'Feast Potluck',
+    body: 'Please join us for our spring feast potluck on May 21 after co-op.',
+    postedAt: '2025-05-08T10:00:00.000Z',
+    priority: 'important',
+  },
+  {
+    id: 'coop_announce_field_trip',
+    coOpId: coOp.id,
+    title: 'Field Trip Reminder',
+    body: 'Botanical Gardens field trip forms are due by May 16.',
+    postedAt: '2025-05-06T13:30:00.000Z',
+    priority: 'normal',
+  },
+  {
+    id: 'coop_announce_schedule',
+    coOpId: coOp.id,
+    title: 'Feast Day Schedule',
+    body: 'We will meet on Thursday, May 29 for the Ascension of our Lord.',
+    postedAt: '2025-05-05T09:00:00.000Z',
+    priority: 'normal',
+  },
+];
+
+export const onboarding = {
+  household: {
+    currentStep: 4,
+    totalSteps: 6,
+    completedSteps: ['Household', 'Children', 'Calendar'],
+    nextStep: 'Books & Streams',
+  },
+  steps: [
+    {
+      id: 'setup_household',
+      title: 'Household',
+      status: 'complete',
+      summary: 'Family profile, parish, and method selected.',
+    },
+    {
+      id: 'setup_children',
+      title: 'Children',
+      status: 'complete',
+      summary: 'Five children added with age and grade bands.',
+    },
+    {
+      id: 'setup_calendar',
+      title: 'Church Calendar',
+      status: 'complete',
+      summary: 'Julian calendar selected with Revised-Julian preview available.',
+    },
+    {
+      id: 'setup_books',
+      title: 'Books & Streams',
+      status: 'active',
+      summary: 'Choose read-alouds, morning basket, and family streams.',
+    },
+    {
+      id: 'setup_records',
+      title: 'Records',
+      status: 'upcoming',
+      summary: 'Set evaluation models and report export defaults.',
+    },
+    {
+      id: 'setup_coop',
+      title: 'Co-op',
+      status: 'upcoming',
+      summary: 'Optionally connect a feature-flagged community.',
+    },
+  ],
+  preferences: {
+    calendarType: 'julian',
+    evaluationModel: 'narrative-only',
+    graceModeDefault: 'light',
+    printPack: 'weekly household and child sheets',
+  },
+};
+
+export const placeholderRecords = {
+  printTemplates,
+  printJobs: [],
+  reportCards,
+  transcripts,
+  academicRecords,
+};

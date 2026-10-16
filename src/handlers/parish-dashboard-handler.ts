@@ -12,6 +12,10 @@ export interface SacramentPriestInput {
   customServices?: unknown;
 }
 export interface DashboardRegistration extends OnboardingRegistration, CatalogRegistration {
+  parishDashboardSessions?: import('../lib/core-operation-contracts.js').CoreSession[];
+  parishDashboardPasswordSalt?: string;
+  parishDashboardPasswordHash?: string;
+  parishDashboardToken?: string;
   campaigns?: (CatalogCampaign & OnboardingFund)[] | null;
   feastCampaigns?: (CatalogCampaign & OnboardingFund)[] | null;
   sacramentPriests?: SacramentPriestInput[] | null;

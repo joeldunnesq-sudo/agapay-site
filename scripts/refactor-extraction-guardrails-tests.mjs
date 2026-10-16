@@ -1,3 +1,5 @@
+import { javascriptCalls } from './lib/javascript-source-contract.mjs';
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -88,8 +90,8 @@ const scheduledBlock = workerSource.slice(
   workerSource.indexOf('  async scheduled'),
   workerSource.indexOf('  async fetch')
 );
-const actualScheduledTaskOrder = [...scheduledBlock.matchAll(/observeScheduledTask\("([^"]+)"/g)].map(
-  (match) => match[1]
+const actualScheduledTaskOrder = javascriptCalls(scheduledBlock, 'observeScheduledTask').map(
+  (call) => call.arguments[0].string
 );
 assert.deepEqual(actualScheduledTaskOrder, contracts.workerScheduledTaskOrder, 'Worker scheduled-task order changed');
 
@@ -114,7 +116,7 @@ for (const [file, artifact] of Object.entries(contracts.generatedArtifacts)) {
   const canonicalSource = source.replace(/\r\n?/g, '\n');
   const digest = createHash('sha256').update(canonicalSource, 'utf8').digest('hex');
   assert.equal(digest, artifact.sha256, `${file} changed without recovering or replacing its generator`);
-  assert.match(source.slice(0, 180), /GENERATED from dc-runtime\/src\/\*\.ts/);
+  assert.ok(includesJavaScriptFragment(source.slice(0, 180), 'GENERATED from dc-runtime/src/*.ts'));
 }
 
 const guardrailGuide = readFileSync(

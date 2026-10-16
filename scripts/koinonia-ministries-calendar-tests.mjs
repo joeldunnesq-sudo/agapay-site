@@ -212,72 +212,77 @@ const donorApp = readDonorAppSource();
 const donorCalendar = await readFile(new URL('../public/myagapay/giving/calendar.html', import.meta.url), 'utf8');
 const donorStyles = await readFile(new URL('../public/donor/style.css', import.meta.url), 'utf8');
 
-assert.match(dashboard, /data-koinonia-view="ministries"/);
-assert.match(app, /Invite a My AGAPAY parishioner/);
-assert.match(app, /ministry-people\?q=/);
-assert.match(app, /Search by name or email/);
+assert.ok(includesJavaScriptFragment(dashboard, 'data-koinonia-view="ministries"'));
+assert.ok(includesJavaScriptFragment(app, 'Invite a My AGAPAY parishioner'));
+assert.ok(includesJavaScriptFragment(app, 'ministry-people?q='));
+assert.ok(includesJavaScriptFragment(app, 'Search by name or email'));
 assert.doesNotMatch(dashboard, /Preview Koinonia/);
-assert.match(app, /\/ministries\/' \+ encodeURIComponent\(ministryId\) \+ '\/participants'/);
+assert.ok(includesJavaScriptFragment(app, "/ministries/' + encodeURIComponent(ministryId) + '/participants'"));
 assert.match(
   app,
   /participationType:\s*'member',\s*publish:\s*true/,
   'parish dashboard ministry assignments should publish the private Directory badge'
 );
-assert.match(app, /Directory badge shown/);
-assert.match(app, /setKoinoniaMinistryDirectoryBadge/);
-assert.match(app, /participants-publication/);
+assert.ok(includesJavaScriptFragment(app, 'Directory badge shown'));
+assert.ok(includesJavaScriptFragment(app, 'setKoinoniaMinistryDirectoryBadge'));
+assert.ok(includesJavaScriptFragment(app, 'participants-publication'));
 assert.match(app, /approvedPublication:\s*visible/);
-assert.match(app, /Their ministry badge is now visible in the private parish directory/);
-assert.match(app, /reviews\/ministry_interest/);
-assert.match(app, /toggleKoinoniaMinistryEditor/);
-assert.match(app, /updateKoinoniaMinistry\(event/);
+assert.ok(includesJavaScriptFragment(app, 'Their ministry badge is now visible in the private parish directory'));
+assert.ok(includesJavaScriptFragment(app, 'reviews/ministry_interest'));
+assert.ok(includesJavaScriptFragment(app, 'toggleKoinoniaMinistryEditor'));
+assert.ok(includesJavaScriptFragment(app, 'updateKoinoniaMinistry(event'));
 assert.match(app, /method:\s*'PATCH'[\s\S]*Unable to update this ministry/);
-assert.match(app, />Subtitle<textarea name="shortDescription"/);
-assert.match(app, />Full description<textarea name="detailedDescription"/);
-assert.match(app, />Group photo</);
-assert.match(parish, /normalizeKoinoniaCalendarUrl\(value/);
-assert.match(parish, /await fetchKoinoniaCalendarIcs\(normalizedKoinoniaCalendarUrl\)/);
+assert.ok(includesJavaScriptFragment(app, '>Subtitle<textarea name="shortDescription"'));
+assert.ok(includesJavaScriptFragment(app, '>Full description<textarea name="detailedDescription"'));
+assert.ok(includesJavaScriptFragment(app, '>Group photo<'));
+assert.ok(includesJavaScriptFragment(parish, 'normalizeKoinoniaCalendarUrl(value'));
+assert.ok(includesJavaScriptFragment(parish, 'await fetchKoinoniaCalendarIcs(normalizedKoinoniaCalendarUrl)'));
 assert.doesNotMatch(parish, /host !== "calendar\.google\.com"/);
-assert.match(dashboard, /Google Calendar, Squarespace, Wix, and most calendar platforms/);
-assert.match(dashboard, /Public calendar \(iCal\/ICS\) link/);
-assert.match(life, /\/api\/donor\/parish-calendar/);
-assert.match(life, /const calendarPromise = Promise\.all/);
-assert.match(life, /await Promise\.all\(\[liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise/);
+assert.ok(includesJavaScriptFragment(dashboard, 'Google Calendar, Squarespace, Wix, and most calendar platforms'));
+assert.ok(includesJavaScriptFragment(dashboard, 'Public calendar (iCal/ICS) link'));
+assert.ok(includesJavaScriptFragment(life, '/api/donor/parish-calendar'));
+assert.ok(includesJavaScriptFragment(life, 'const calendarPromise = Promise.all'));
+assert.ok(
+  includesJavaScriptFragment(
+    life,
+    'await Promise.all([liturgicalDayPromise, calendarPromise, feedPromise, groupsPromise'
+  )
+);
 assert.doesNotMatch(
   life,
   /const \[parishCalendar, sacramentRequests, signupCommitments\] = await Promise\.all/,
   'calendar sync must not block announcements, groups, or other Koinonia content'
 );
-assert.match(life, /request\.status === "scheduled"/);
-assert.match(life, /\/api\/donor\/sacraments/);
-assert.match(lifePage, /href="\/myagapay\/calendar">Full Calendar/);
+assert.ok(includesJavaScriptFragment(life, 'request.status === "scheduled"'));
+assert.ok(includesJavaScriptFragment(life, '/api/donor/sacraments'));
+assert.ok(includesJavaScriptFragment(lifePage, 'href="/myagapay/calendar">Full Calendar'));
 assert.match(
   lifePage,
-  />This Week in the Church<[\s\S]*data-calendar-default-view="week"/,
+  />This Week in the Church<[\s\S]*data-calendar-default-view=['"]week['"]/,
   'the Koinonia landing should own the week calendar'
 );
-assert.match(donorHandler, /normalizeKoinoniaCalendarUrl\(sourceUrl\)/);
-assert.match(donorHandler, /loadPublishedCommerceCalendarEvents/);
-assert.match(donorHandler, /\.\.\.parseKoinoniaCalendarIcs\(text\), \.\.\.commerceEvents/);
+assert.ok(includesJavaScriptFragment(donorHandler, 'normalizeKoinoniaCalendarUrl(sourceUrl)'));
+assert.ok(includesJavaScriptFragment(donorHandler, 'loadPublishedCommerceCalendarEvents'));
+assert.ok(includesJavaScriptFragment(donorHandler, '...parseKoinoniaCalendarIcs(text), ...commerceEvents'));
 assert.match(donorHandler, /connected:\s*false,\s*internal:\s*true,\s*events:\s*commerceEvents/);
 assert.match(
   donorHandler,
   /connected:\s*true,\s*internal:\s*true,\s*subscriptionUrl,\s*events:\s*commerceEvents,\s*unavailable:\s*true/
 );
-assert.match(donorHandler, /\.slice\(0, 180\)/);
-assert.match(donorApp, /function donorApprovedSacramentEvents/);
-assert.match(donorApp, /function renderDonorParishCalendar/);
-assert.match(donorApp, /calendarAvailable = connected \|\| events\.length > 0/);
+assert.ok(includesJavaScriptFragment(donorHandler, '.slice(0, 180)'));
+assert.ok(includesJavaScriptFragment(donorApp, 'function donorApprovedSacramentEvents'));
+assert.ok(includesJavaScriptFragment(donorApp, 'function renderDonorParishCalendar'));
+assert.ok(includesJavaScriptFragment(donorApp, 'calendarAvailable = connected || events.length > 0'));
 assert.match(donorApp, /event\.commerceKind === ['"]meal['"]/);
-assert.match(donorApp, /href="\$\{escapeHtml\(href\)\}"/);
+assert.ok(includesJavaScriptFragment(donorApp, 'href="${escapeHtml(href)}"'));
 assert.match(donorApp, /calendarDefaultView === ['"]month['"] \? ['"]month['"] : ['"]week['"]/);
 assert.match(
   donorApp,
   /hasSubscriptionControls[\s\S]*Events published by your parish for the selected week/,
   'the embedded week calendar should not advertise controls that only exist on the full page'
 );
-assert.match(donorApp, /function setDonorParishCalendarView/);
-assert.match(donorApp, /function changeDonorParishCalendarPeriod/);
+assert.ok(includesJavaScriptFragment(donorApp, 'function setDonorParishCalendarView'));
+assert.ok(includesJavaScriptFragment(donorApp, 'function changeDonorParishCalendarPeriod'));
 assert.match(donorApp, /function donorParishCalendarPlatform\(\)[\s\S]*?\/android\/i/);
 assert.ok(
   includesJavaScriptFragment(
@@ -290,40 +295,39 @@ assert.ok(
   includesJavaScriptFragment(donorApp, "subscribeButton.target = isAndroid ? '_blank' : ''"),
   'the Android flow should leave the installed app to complete calendar subscription'
 );
-assert.match(
-  donorApp,
-  /googleButton\.hidden = isAndroid \|\| !googleUrl/,
+assert.ok(
+  includesJavaScriptFragment(donorApp, 'googleButton.hidden = isAndroid || !googleUrl'),
   'Android should not show a duplicate Google Calendar action'
 );
-assert.match(donorApp, /\/api\/donor\/parish-calendar/);
-assert.match(donorCalendar, /Your Upcoming Services/);
-assert.match(donorCalendar, /id="parishCalendarSubscribeButton"/);
-assert.match(donorCalendar, /data-calendar-subscribe-label/);
-assert.match(donorCalendar, /id="parishCalendarGoogleButton"/);
-assert.match(donorCalendar, /id="parishCalendarCopyButton"/);
-assert.match(donorCalendar, /data-calendar-default-view="month"/, 'the full calendar should open in month view');
+assert.ok(includesJavaScriptFragment(donorApp, '/api/donor/parish-calendar'));
+assert.ok(includesJavaScriptFragment(donorCalendar, 'Your Upcoming Services'));
+assert.ok(includesJavaScriptFragment(donorCalendar, 'id="parishCalendarSubscribeButton"'));
+assert.ok(includesJavaScriptFragment(donorCalendar, 'data-calendar-subscribe-label'));
+assert.ok(includesJavaScriptFragment(donorCalendar, 'id="parishCalendarGoogleButton"'));
+assert.ok(includesJavaScriptFragment(donorCalendar, 'id="parishCalendarCopyButton"'));
+assert.ok(
+  includesJavaScriptFragment(donorCalendar, 'data-calendar-default-view="month"'),
+  'the full calendar should open in month view'
+);
 assert.doesNotMatch(
   donorCalendar,
   /id="parishCalendarWeekView"|id="parishCalendarMonthView"/,
   'the full calendar should remain month-only'
 );
-assert.match(
-  donorCalendar,
-  /id="calendarUpcomingFeast"/,
+assert.ok(
+  includesJavaScriptFragment(donorCalendar, 'id="calendarUpcomingFeast"'),
   'the full calendar should show the next feast before the annual timeline'
 );
-assert.match(
-  donorCalendar,
-  /<details class="cal-festal-year" id="calendarFestalYear">/,
+assert.ok(
+  includesJavaScriptFragment(donorCalendar, '<details class="cal-festal-year" id="calendarFestalYear">'),
   'the full festal year should be collapsed behind an accessible disclosure'
 );
 assert.ok(
   includesJavaScriptFragment(donorApp, 'const upcomingFeast = [...highlighted, ...highlightsForYear(year + 1)]'),
   'the upcoming feast should roll into the next civil year when necessary'
 );
-assert.match(
-  donorApp,
-  /View the full \$\{year\} festal year/,
+assert.ok(
+  includesJavaScriptFragment(donorApp, 'View the full ${year} festal year'),
   'the feast disclosure should identify the full festal year'
 );
 assert.doesNotMatch(
@@ -336,9 +340,8 @@ assert.match(
   /id="donorSaintModal"[\s\S]*?id="donorSaintModalBody"[\s\S]*?Orthocal\.info/,
   'the full calendar saint chip should open a complete saint-life dialog'
 );
-assert.match(
-  donorStyles,
-  /:is\(\.donor-parish-life-page, \.donor-calendar-page\) \.cal-saint-chip \{/,
+assert.ok(
+  includesJavaScriptFragment(donorStyles, ':is(.donor-parish-life-page, .donor-calendar-page) .cal-saint-chip {'),
   'the full calendar saint-life action should share the styled Koinonia pill'
 );
 assert.doesNotMatch(
@@ -346,14 +349,18 @@ assert.doesNotMatch(
   /class="cal-metrics"|id="nextFeastDate"|id="paschaDate"|id="calendarShortName"/,
   'the full calendar must not show the Next Feast, Pascha, or Calendar summary cards'
 );
-assert.match(
-  donorCalendar,
-  /class="cal-hero parish-life-liturgical-hero refined-liturgical-hero calendar-liturgical-hero"/
+assert.ok(
+  includesJavaScriptFragment(
+    donorCalendar,
+    'class="cal-hero parish-life-liturgical-hero refined-liturgical-hero calendar-liturgical-hero"'
+  )
 );
-assert.match(donorCalendar, /id="todayCivilDateEyebrow"/);
-assert.match(
-  donorStyles,
-  /\.donor-calendar-page \.calendar-liturgical-hero \.cal-today-row \{ display: block; \}/,
+assert.ok(includesJavaScriptFragment(donorCalendar, 'id="todayCivilDateEyebrow"'));
+assert.ok(
+  includesJavaScriptFragment(
+    donorStyles,
+    '.donor-calendar-page .calendar-liturgical-hero .cal-today-row { display: block; }'
+  ),
   'the full calendar hero should use the same single text column as Koinonia'
 );
 assert.match(
@@ -361,9 +368,11 @@ assert.match(
   /\.donor-calendar-page \.calendar-liturgical-hero \.cal-date-badge \{[\s\S]*?position: absolute;[\s\S]*?top: 0;[\s\S]*?right: 0;/,
   'the full calendar church date should use the compact top-right cutout'
 );
-assert.match(
-  donorStyles,
-  /\.donor-calendar-page \.calendar-liturgical-hero \.cal-today-title \{ font-size: 27px;/,
+assert.ok(
+  includesJavaScriptFragment(
+    donorStyles,
+    '.donor-calendar-page .calendar-liturgical-hero .cal-today-title { font-size: 27px;'
+  ),
   'the full calendar saint title should stay compact even on long commemorations'
 );
 
