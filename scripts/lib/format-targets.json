@@ -1169,7 +1169,19 @@
     "src/browser/parish/app-subscriptions-and-settlement.ts",
     "src/browser/parish/app-tax-exemption.ts",
     "src/browser/parish/app.ts",
-    "scripts/typecheck-browser/parish-app-contracts.ts"
+    "scripts/typecheck-browser/parish-app-contracts.ts",
+    "src/browser/admin/app-accounting-and-audit.ts",
+    "src/browser/admin/app-bulk-and-history.ts",
+    "src/browser/admin/app-contracts.d.ts",
+    "src/browser/admin/app-learn-and-support.ts",
+    "src/browser/admin/app-onboarding-and-review.ts",
+    "src/browser/admin/app-parish-tools-and-diagnostics.ts",
+    "src/browser/admin/app-registration-details.ts",
+    "src/browser/admin/app-registration-queue.ts",
+    "src/browser/admin/app-session-and-platform.ts",
+    "src/browser/admin/app-subscription-and-navigation.ts",
+    "src/browser/admin/app.ts",
+    "scripts/typecheck-browser/admin-app-contracts.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2372,6 +2384,18 @@
     "src/browser/parish/app-subscriptions-and-settlement.ts",
     "src/browser/parish/app-tax-exemption.ts",
     "src/browser/parish/app.ts",
-    "scripts/typecheck-browser/parish-app-contracts.ts"
+    "scripts/typecheck-browser/parish-app-contracts.ts",
+    "src/browser/admin/app-accounting-and-audit.ts",
+    "src/browser/admin/app-bulk-and-history.ts",
+    "src/browser/admin/app-contracts.d.ts",
+    "src/browser/admin/app-learn-and-support.ts",
+    "src/browser/admin/app-onboarding-and-review.ts",
+    "src/browser/admin/app-parish-tools-and-diagnostics.ts",
+    "src/browser/admin/app-registration-details.ts",
+    "src/browser/admin/app-registration-queue.ts",
+    "src/browser/admin/app-session-and-platform.ts",
+    "src/browser/admin/app-subscription-and-navigation.ts",
+    "src/browser/admin/app.ts",
+    "scripts/typecheck-browser/admin-app-contracts.ts"
   ]
 }

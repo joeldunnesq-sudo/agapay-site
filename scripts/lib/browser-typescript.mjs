@@ -11,6 +11,26 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/admin/app-accounting-and-audit.ts',
+    output: 'public/admin/app-accounting-and-audit.js',
+    declarationsOnly: true,
+  },
+  {
+    source: 'src/browser/admin/app.ts',
+    output: 'public/admin/app.js',
+    classicSupportSources: [
+      'src/browser/admin/app-session-and-platform.ts',
+      'src/browser/admin/app-learn-and-support.ts',
+      'src/browser/admin/app-parish-tools-and-diagnostics.ts',
+      'src/browser/admin/app-registration-queue.ts',
+      'src/browser/admin/app-registration-details.ts',
+      'src/browser/admin/app-onboarding-and-review.ts',
+      'src/browser/admin/app-subscription-and-navigation.ts',
+      'src/browser/admin/app-bulk-and-history.ts',
+    ],
+    runtimeSupportSources: ['src/browser/admin/app-accounting-and-audit.ts'],
+  },
+  {
     source: 'src/browser/parish/app-subscriptions-and-settlement.ts',
     output: 'public/parish/app-subscriptions-and-settlement.js',
     declarationsOnly: true,

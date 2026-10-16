@@ -2212,4 +2212,147 @@ export default [
       ],
     },
   },
+  // Explicit Admin inline handlers and classic live cross-source bindings.
+  {
+    files: ['src/browser/admin/app-accounting-and-audit.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(auditLogLoadedOnce|loadAdminAccountingTargets|activateAdminPreparedAccounting|runAdminIntegrityScan|changeAdminProtectiveState|verifyAdminRecoveryEvidence|calculateNonprofitProjection|runNonprofitPricingAlerts|populateAuditLogFilterOptions|setAuditLogQuickRange|resetAuditLogFilters)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-bulk-and-history.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(toggleSelectAll|bulkAction|renderEmailLog|renderNotesHistory)$' },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-learn-and-support.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(field|updateParishSupportTicket|acknowledgeLearnFeedback|moderateLearnCommunity|editLearnCuratedResource|createLearnCuratedResource|createLearnScholarship)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-onboarding-and-review.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(registrationAutosaveQueued|sendDashboardInvite|runOnboardingTestAction|copyRegistrationSummary|saveReview)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-parish-tools-and-diagnostics.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(seedDemoParish|runWeeklyCommemorationEmail|runWeeklyTreasurerEmail|grantStewardshipComp|grantStewardshipCompFromDetail|setSacramentsEnabled|setSacramentsEnabledFromDetail|loadPlatformSummary|err|loadDeploymentDiagnostics|runEmailDiagnostics)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-registration-details.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(loadRegistrationGivingSummary|renderAdminAuditLog|renderOnboardingManualChecks|renderOnboardingProgress|activateOnboardingPhase|renderOnboardingCommandHeader|renderOnboardingControls|readOnboardingChecks)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-registration-queue.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(sendDashboardInvite|lastDataLoadedAt|emptyDetailMarkup|bindRegistrationAutosave|upsertRegistrationCache|loadRegistrations|copyText)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-session-and-platform.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(restoreAdminSession|loginFromAdminPage|logoutAdmin|setPaymentStatus|changeAdminPassword|renderQueueNext|renderPlatformGrowth)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-subscription-and-navigation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(activeTab|generateDashboardToken|sendDashboardInvite|createSubscriptionCheckout|refreshStripeStatus|switchTab)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(saveAdminSession|adminActor|consumeAdminNotice|refreshDataAsOf|stopAutoRefresh|toggleAutoRefresh|loginFromAdminPage|logoutAdmin|setPaymentStatus|changeAdminPassword|nextAction|renderQueueNext|renderGrowthBars|renderPlatformGrowth|productCard|renderProductOverview|revenueProductRows|renderRevenueCards|renderLearnGrowthBars|renderLearnScholarships|renderLearnCommunityModeration|renderLearnFeedbackQueue|renderParishSupportTickets|loadParishSupportTickets|updateParishSupportTicket|renderLearnAdmin|acknowledgeLearnFeedback|moderateLearnCommunity|clearLearnCuratedResourceForm|editLearnCuratedResource|createLearnCuratedResource|loadLearnAdmin|copyLearnText|createLearnScholarship|seedDemoParish|weeklyCommemorationSummary|runWeeklyCommemorationEmail|moneyPlain|weeklyTreasurerSummary|runWeeklyTreasurerEmail|loadStewardshipCompStatus|submitStewardshipCompGrant|grantStewardshipComp|grantStewardshipCompFromDetail|submitSacramentsEnabled|setSacramentsEnabled|setSacramentsEnabledFromDetail|loadPlatformSummary|diagnosticsBadge|deploymentCheckOk|loadDeploymentDiagnostics|runEmailDiagnostics|emptyDetailMarkup|collapseRegistrationDetail|setRegistrationAutosaveState|scheduleRegistrationAutosave|runRegistrationAutosave|bindRegistrationAutosave|upsertRegistrationCache|loadRegistrations|renderMetrics|renderOverviewEmailLog|loadRecentActivity|renderRecentActivity|communityTypeOf|renderCommunitySnapshot|renderOnboardingHealth|parseDateMs|daysSince|currentWorkflowStep|workflowLastActivityAt|nextActionPriority|renderNextActionQueue|renderFilteredList|renderList|copyText|loadDetail|renderRegistrationGivingSummary|loadRegistrationGivingSummary|renderAdminAuditLog|onboardingStatusOptions|renderOnboardingManualChecks|renderOnboardingProgress|onboardingCurrentPhase|onboardingPhaseState|activateOnboardingPhase|onboardingActionTitle|renderOnboardingCommandHeader|renderOnboardingControls|readOnboardingChecks|runOnboardingTestAction|renderDetail|copyRegistrationSummary|dashboardInviteMessage|saveReview|generateDashboardToken|sendDashboardInvite|setSubscriptionStatus|createSubscriptionCheckout|refreshStripeStatus|toggleMobileMore|switchTab|populateAdminAccountingParishes|loadAdminAccountingTargets|selectedAdminAccountingTarget|adminAccountingParish|adminAccountingFetch|activateAdminPreparedAccounting|loadAdminAccountingOperations|renderAdminAccountingHealth|renderAdminIntegrityScans|renderAdminRecoveryVerifications|runAdminIntegrityScan|changeAdminProtectiveState|verifyAdminRecoveryEvidence|loadAdminNonprofitPricing|calculateNonprofitProjection|runNonprofitPricingAlerts|auditActionLabel|auditActorTypeLabel|auditTargetTypeLabel|populateAuditLogFilterOptions|refreshAuditLogOrgOptions|setAuditLogQuickRange|resetAuditLogFilters|auditActionBadgeClass|renderAuditLogTable|loadAuditLog|updateBulkBar|toggleSelectAll|clearSelection|renderBulkResults|bulkAction|renderEmailLog|renderNotesHistory|selectedReference|registrationsCache|adminActorKey|adminNoticeKey|autoRefreshKey|givingSummaryCache|autoRefreshTimer|isLoadingRegistrations|registrationAutosaveTimer|registrationAutosaveInFlight|registrationAutosaveQueued|registrationAutosavePromise|lastDataLoadedAt|latestPlatformSummary|latestLearnAdmin|adminAccountingHealth|adminAccountingTargets|adminAccountingTargetsLoaded|adminAccountingEnvironment|handleAuthFailure|authHeaders|onboardingManualFields|onboardingPhases|activeTab|auditLogLoadedOnce|auditLogCursor|auditLogOptionsPopulated|AUDIT_ACTION_CATALOG|AUDIT_ACTOR_TYPES|AUDIT_TARGET_TYPES|selectedRefs|formatClock|escapeHtml|escapeAttr|jsString|jsAttr|field|readableStripeRequirement|renderStripeRequirements|money|moneyShort|monthLabel|readable|shortDate|subscriptionTierLabel|transactionFeeLabel|jsonForTextarea|computeLocalPlatformSummary)$',
+        },
+      ],
+    },
+  },
+  // These exact globals span the Admin operations/navigation classic composition. Locals remain checked.
+  {
+    files: ['src/browser/admin/app-accounting-and-audit.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(registrationsCache|adminAccountingTargetsLoaded|adminAccountingTargets|escapeAttr|escapeHtml|authHeaders|handleAuthFailure|adminAccountingEnvironment|setStatus|adminAccountingHealth|shortDate|money|AUDIT_ACTION_CATALOG|AUDIT_ACTOR_TYPES|AUDIT_TARGET_TYPES|auditLogOptionsPopulated|auditLogLoadedOnce|auditLogCursor|populateAdminAccountingParishes|loadAdminAccountingTargets|selectedAdminAccountingTarget|adminAccountingParish|adminAccountingFetch|activateAdminPreparedAccounting|loadAdminAccountingOperations|renderAdminAccountingHealth|renderAdminIntegrityScans|renderAdminRecoveryVerifications|runAdminIntegrityScan|changeAdminProtectiveState|verifyAdminRecoveryEvidence|loadAdminNonprofitPricing|calculateNonprofitProjection|runNonprofitPricingAlerts|auditActionLabel|auditActorTypeLabel|auditTargetTypeLabel|populateAuditLogFilterOptions|refreshAuditLogOrgOptions|setAuditLogQuickRange|resetAuditLogFilters|auditActionBadgeClass|renderAuditLogTable|loadAuditLog|activeTab|loadLearnAdmin|loadParishSupportTickets|switchTab)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/admin/app-subscription-and-navigation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(setStatus|authHeaders|handleAuthFailure|loadDetail|loadRegistrations|renderQueueNext|setPaymentStatus|generateDashboardToken|sendDashboardInvite|setSubscriptionStatus|createSubscriptionCheckout|refreshStripeStatus|toggleMobileMore)$',
+        },
+      ],
+    },
+  },
 ];

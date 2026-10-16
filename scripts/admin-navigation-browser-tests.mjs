@@ -1,40 +1,74 @@
+import ts from 'typescript';
+import { readAdminAppSource } from './lib/admin-dashboard-source.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 const html = readFileSync('public/admin.html', 'utf8');
-const app = readFileSync('public/admin/app.js', 'utf8');
+const app = readAdminAppSource();
 // Exercise the real tab navigation without making authenticated API requests.
-const navigation = app.slice(app.indexOf('    function toggleMobileMore(force)'), app.indexOf('    function populateAdminAccountingParishes()'));
+const ast = ts.createSourceFile('admin-app.js', app, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+const navigationFunctions = ast.statements.filter(
+  (node) => ts.isFunctionDeclaration(node) && ['toggleMobileMore', 'switchTab'].includes(node.name?.text)
+);
+assert.deepEqual(navigationFunctions.map((node) => node.name.text).sort(), ['switchTab', 'toggleMobileMore']);
+const navigation = navigationFunctions.map((node) => node.getText(ast)).join('\n');
 const browser = await chromium.launch({ headless: true });
 try {
   for (const width of [1440, 390]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
-    await page.route('**/*', route => {
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.route('**/*', (route) => {
       const url = new URL(route.request().url());
       if (url.hostname !== 'admin.test') return route.abort();
       if (url.pathname === '/') return route.fulfill({ contentType: 'text/html', body: html });
-      if (url.pathname === '/admin/app.js') return route.fulfill({ contentType: 'text/javascript', body: `let activeTab = 'overview'; function loadParishSupportTickets() {} ${navigation}` });
-      if (url.pathname.endsWith('.js') && !['/admin/navigation.js', '/admin/metrics.js'].includes(url.pathname)) return route.fulfill({ contentType: 'text/javascript', body: '' });
+      if (url.pathname === '/admin/app.js')
+        return route.fulfill({
+          contentType: 'text/javascript',
+          body: `let activeTab = 'overview'; function loadParishSupportTickets() {} ${navigation}`,
+        });
+      if (url.pathname.endsWith('.js') && !['/admin/navigation.js', '/admin/metrics.js'].includes(url.pathname))
+        return route.fulfill({ contentType: 'text/javascript', body: '' });
       try {
-        return route.fulfill({ contentType: url.pathname.endsWith('.css') ? 'text/css' : url.pathname.endsWith('.js') ? 'text/javascript' : 'image/png', body: readFileSync(`public${url.pathname}`) });
-      } catch { return route.fulfill({ status: 404, body: '' }); }
+        return route.fulfill({
+          contentType: url.pathname.endsWith('.css')
+            ? 'text/css'
+            : url.pathname.endsWith('.js')
+              ? 'text/javascript'
+              : 'image/png',
+          body: readFileSync(`public${url.pathname}`),
+        });
+      } catch {
+        return route.fulfill({ status: 404, body: '' });
+      }
     });
     await page.goto('https://admin.test');
     assert.equal(await page.locator('#adminWorkspaceLinks').count(), 0);
-    assert.equal(await page.locator('.sidebar-toolbox').evaluate(el => el.open), false);
-    await page.evaluate(() => renderAdminOverviewMetrics({
-      complete: true, weekStart: '2026-09-28T00:00:00Z', generatedAt: '2026-09-30T12:00:00Z',
-      newRegistrations: 3, cancellations: 1, undatedCancellations: 0, unknownPriceSubscriptions: 0,
-      monthlyRecurringCents: 23800, annualRecurringCents: 285600, activePaidSubscriptions: 2,
-      totalRegistered: 4, tierBreakdown: [
-        { id: 'starter', label: 'Give', count: 0 }, { id: 'giving', label: 'Give +', count: 1 },
-        { id: 'parish', label: 'Parish', count: 2 }, { id: 'diocese', label: 'Cathedral / Diocese', count: 0 },
-        { id: 'monastery_free', label: 'Monastery / Skete', count: 0 }, { id: 'unassigned', label: 'Not assigned', count: 1 },
-      ],
-    }));
+    assert.equal(await page.locator('.sidebar-toolbox').evaluate((el) => el.open), false);
+    await page.evaluate(() =>
+      renderAdminOverviewMetrics({
+        complete: true,
+        weekStart: '2026-09-28T00:00:00Z',
+        generatedAt: '2026-09-30T12:00:00Z',
+        newRegistrations: 3,
+        cancellations: 1,
+        undatedCancellations: 0,
+        unknownPriceSubscriptions: 0,
+        monthlyRecurringCents: 23800,
+        annualRecurringCents: 285600,
+        activePaidSubscriptions: 2,
+        totalRegistered: 4,
+        tierBreakdown: [
+          { id: 'starter', label: 'Give', count: 0 },
+          { id: 'giving', label: 'Give +', count: 1 },
+          { id: 'parish', label: 'Parish', count: 2 },
+          { id: 'diocese', label: 'Cathedral / Diocese', count: 0 },
+          { id: 'monastery_free', label: 'Monastery / Skete', count: 0 },
+          { id: 'unassigned', label: 'Not assigned', count: 1 },
+        ],
+      })
+    );
     assert.equal(await page.locator('#weeklySignups').textContent(), '3');
     assert.equal(await page.locator('#monthlyRecurringRevenue').textContent(), '$238.00');
     assert.equal(await page.locator('#totalParishesSignedUp').textContent(), '4');
@@ -53,12 +87,12 @@ try {
     await page.locator('#adminToolSearch').fill('nothing-matches');
     assert.match(await page.locator('#adminFinderCount').textContent(), /No tools found/);
     await page.keyboard.press('Escape');
-    assert.equal(await page.locator('#adminToolFinder').evaluate(el => el.open), false);
+    assert.equal(await page.locator('#adminToolFinder').evaluate((el) => el.open), false);
     await trigger.click();
     await page.locator('#adminToolSearch').fill('contacts');
     await page.locator('#adminToolSearch').press('ArrowDown');
     await page.keyboard.press('Enter');
-    assert.equal(await page.locator('.admin-secondary-workspace').evaluate(el => el.open), true);
+    assert.equal(await page.locator('.admin-secondary-workspace').evaluate((el) => el.open), true);
     assert.equal(await page.evaluate(() => document.activeElement.id), 'contactLeadsCard');
     await trigger.click();
     await page.locator('#adminToolSearch').fill('support');
@@ -66,11 +100,17 @@ try {
     assert.equal(await page.locator('#tab-support').getAttribute('class'), 'tab-panel active');
     await trigger.click();
     await page.locator('#adminFinderClose').click();
-    assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+    assert.equal(await trigger.evaluate((el) => el === document.activeElement), true);
     await page.evaluate(() => switchTab('overview'));
-    await page.locator('.admin-secondary-workspace').evaluate(el => { el.open = false; });
+    await page.locator('.admin-secondary-workspace').evaluate((el) => {
+      el.open = false;
+    });
     await page.evaluate(() => window.scrollTo(0, 0));
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'page must fit the viewport');
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      true,
+      'page must fit the viewport'
+    );
     await page.screenshot({ path: `artifacts/admin-navigation-${width}.png`, fullPage: true, animations: 'disabled' });
     await page.evaluate(() => renderAdminOverviewMetrics(null));
     assert.equal(await page.locator('#weeklySignups').textContent(), '—');
@@ -78,13 +118,108 @@ try {
     assert.equal(await page.locator('#adminMetricsCard').getAttribute('aria-busy'), 'false');
     assert.equal(await page.locator('#totalParishesSignedUp').textContent(), '—');
     assert.equal(await page.locator('#adminTierLegend li').count(), 0, 'Failed refresh clears stale tier counts');
-    await page.evaluate(() => renderAdminTierBreakdown({ totalRegistered: 0, tierBreakdown: [{ id: 'starter', label: 'Give', count: 0 }] }));
+    await page.evaluate(() =>
+      renderAdminTierBreakdown({ totalRegistered: 0, tierBreakdown: [{ id: 'starter', label: 'Give', count: 0 }] })
+    );
     assert.equal(await page.locator('#totalParishesSignedUp').textContent(), '0');
     assert.match(await page.locator('#adminTierStatus').textContent(), /No parish registrations/);
     assert.equal(await page.locator('#adminTierChart circle').count(), 1, 'Zero registrations draw an empty track');
     assert.deepEqual(errors, []);
     await page.close();
   }
+  const fullContext = await browser.newContext({ viewport: { width: 390, height: 900 } });
+  await fullContext.addInitScript(() => {
+    if (!sessionStorage.getItem('adminFixtureInitialized')) {
+      sessionStorage.setItem('agapay_admin_token', 'browser-admin-fixture');
+      sessionStorage.setItem('adminFixtureInitialized', 'yes');
+    }
+  });
+  const fullPage = await fullContext.newPage();
+  const fullErrors = [],
+    apiRequests = [],
+    helperRequests = [];
+  let expired = false;
+  fullPage.on('pageerror', (error) => fullErrors.push(error.message));
+  await fullPage.route('**/*', async (route) => {
+    const request = route.request(),
+      url = new URL(request.url());
+    if (url.hostname !== 'admin.test') return route.abort();
+    if (url.pathname.startsWith('/api/')) {
+      apiRequests.push({
+        path: url.pathname,
+        method: request.method(),
+        authorization: request.headers().authorization,
+      });
+      if (expired && url.pathname === '/api/admin/registrations')
+        return route.fulfill({ status: 401, json: { error: 'Session expired' } });
+      if (url.pathname === '/api/admin/relationships')
+        return route.fulfill({ json: { parishes: [], baselineDay: '2026-10-01' } });
+      if (url.pathname === '/api/health') return route.fulfill({ json: { ok: true, version: 'fixture', checks: {} } });
+      return route.fulfill({
+        json: {
+          ok: true,
+          registrations: [],
+          targets: [],
+          events: [],
+          summary: { year: 2026, monthly: [], totalRegistered: 0, totalVerified: 0 },
+          claimed: 0,
+          remaining: 20,
+          limit: 20,
+        },
+      });
+    }
+    let file =
+      url.pathname === '/admin'
+        ? 'public/admin.html'
+        : url.pathname === '/admin/login'
+          ? 'public/admin/login.html'
+          : 'public' + url.pathname;
+    if (url.pathname === '/admin/app-accounting-and-audit.js') helperRequests.push(url.search);
+    try {
+      return route.fulfill({
+        contentType: file.endsWith('.js')
+          ? 'text/javascript'
+          : file.endsWith('.css')
+            ? 'text/css'
+            : file.endsWith('.html')
+              ? 'text/html'
+              : 'image/png',
+        body: readFileSync(file),
+      });
+    } catch {
+      return route.fulfill({ status: 404, body: '' });
+    }
+  });
+  await fullPage.goto('https://admin.test/admin');
+  await fullPage.waitForFunction(() => typeof lastDataLoadedAt !== 'undefined' && lastDataLoadedAt instanceof Date);
+  assert.equal(helperRequests.length, 1, 'The owned Admin helper loads once on the real dashboard');
+  assert.equal(
+    await fullPage.evaluate(() => typeof runAdminIntegrityScan),
+    'function',
+    'Accounting operations are defined before startup'
+  );
+  assert.ok(apiRequests.some((request) => request.path === '/api/admin/registrations'));
+  assert.ok(
+    apiRequests
+      .filter((request) => request.path.startsWith('/api/admin/'))
+      .every((request) => request.authorization === 'Bearer browser-admin-fixture')
+  );
+  assert.ok(
+    apiRequests.every((request) => request.method === 'GET'),
+    'The startup regression makes no administrative writes'
+  );
+  assert.deepEqual(fullErrors, []);
+  expired = true;
+  await fullPage.evaluate(() => loadRegistrations());
+  await fullPage.waitForURL('**/admin/login');
+  assert.equal(
+    await fullPage.evaluate(() => sessionStorage.getItem('agapay_admin_token')),
+    null,
+    'Expired sessions are cleared before the normal login redirect'
+  );
+  assert.deepEqual(fullErrors, []);
+  await fullContext.close();
+
   console.log('PASS - Admin finder, keyboard navigation, section shortcuts, focus, and responsive layout');
 } finally {
   await browser.close();
