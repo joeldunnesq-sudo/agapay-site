@@ -1,3 +1,4 @@
+import DOMPurify from '../../src/browser/vendor/dompurify.es.mjs?v=3.4.14';
 import type { LearnShellBindings } from '../../src/browser/learn/dashboard-shell.js';
 import type { LearnShellPayload, LearnShellNode } from '../../src/browser/learn/dashboard-shell-contracts.js';
 import { safeArray } from '../../src/browser/learn/dashboard-view-models-shared.js';
@@ -17,3 +18,16 @@ const badAccess: LearnShellPayload = { fullAccess: 'true' };
 // @ts-expect-error Selected week numbers are numeric.
 const badSchedule: LearnShellNode = { scheduledWeeks: ['1'] };
 void [badWeek, badUrl, badAccess, badSchedule];
+
+const safeXml = DOMPurify.sanitize('<opml/>', {
+  PARSER_MEDIA_TYPE: 'application/xhtml+xml',
+  ALLOWED_NAMESPACES: ['http://www.w3.org/1999/xhtml', 'null'],
+  ALLOWED_TAGS: ['opml'],
+  ALLOWED_ATTR: [],
+  ADD_URI_SAFE_ATTR: [],
+  RETURN_DOM: true,
+});
+const xmlResultIsChecked: IsAny<typeof safeXml> = false;
+// @ts-expect-error XML sanitization returns an inert element, not an HTML string.
+const xmlString: string = safeXml;
+void [safeXml, xmlResultIsChecked, xmlString];

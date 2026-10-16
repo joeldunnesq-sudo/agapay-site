@@ -1,3 +1,4 @@
+import DOMPurify from '../vendor/dompurify.es.mjs?v=3.4.14';
 export interface OpmlSubscription {
   title?: string;
   xmlUrl: string;
@@ -14,7 +15,22 @@ export interface OpmlSubscription {
  * Returns an array of { title, xmlUrl, htmlUrl, description }
  */
 export function importOpml(text: string) {
-  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  // OPML is data: allow only its metadata and outlines, never active markup or DTDs.
+  const xml = String(text ?? '');
+  if (/<!DOCTYPE\s|<!ENTITY\s/i.test(xml)) return [];
+  const source = xml.replace(/^\uFEFF?\s*<\?xml\s[^?]*\?>/i, '');
+  const attributes = ['version', 'type', 'text', 'title', 'xmlUrl', 'htmlUrl', 'description', 'imageUrl'];
+  const doc = DOMPurify.sanitize(source, {
+    PARSER_MEDIA_TYPE: 'application/xhtml+xml',
+    // DOMPurify's pinned namespace map uses the key 'null' for XML xmlns="".
+    ALLOWED_NAMESPACES: ['http://www.w3.org/1999/xhtml', 'null'],
+    ALLOWED_TAGS: ['opml', 'head', 'body', 'outline', 'title', 'dateCreated', 'dateModified', 'ownerName'],
+    ALLOWED_ATTR: attributes,
+    // These are inert OPML metadata, not HTML href/src attributes. URLs are checked below.
+    ADD_URI_SAFE_ATTR: attributes,
+    RETURN_DOM: true,
+  });
+  if (!doc) return [];
   const outlines = [...doc.querySelectorAll('outline[type="rss"], outline[xmlUrl]')];
   return outlines
     .map((el) => ({

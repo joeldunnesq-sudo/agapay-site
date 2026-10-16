@@ -107,6 +107,15 @@ try {
     const player = new AudioPlayer();
     player.setSpeed(1.25);
     const subscriptions = importOpml(exportOpml([{ title: 'Example', xmlUrl: 'https://example.test/feed' }]));
+    const safeOpml = importOpml(
+      '<?xml version="1.0"?><opml xmlns="" version="2.0"><body><outline text="Group"><outline type="rss" title="A &amp; B &lt;name&gt;" xmlUrl="https://example.test/feed?q=a&amp;b=2" htmlUrl="javascript:alert(1)" description="Episode: one &amp; two" onload="window.__opmlAttack=1"/><outline xmlUrl="javascript:alert(2)"/></outline><script>window.__opmlAttack=1</script></body></opml>'
+    );
+    const dtdOpml = importOpml(
+      '<!DOCTYPE opml [<!ENTITY payload "injected">]><opml><body><outline xmlUrl="https://example.test/" title="&payload;"/></body></opml>'
+    );
+    const malformedOpml = importOpml(
+      '<opml><body><outline xmlUrl="https://example.test/" title="unterminated></body></opml>'
+    );
     const table = parseDirectoryCsv('name,email\nExample,person@example.test');
     const rows = mapImportRows(table, { name: 0, email: 1 });
     const target = document.createElement('div');
@@ -119,6 +128,10 @@ try {
       removed,
       paused: player.paused,
       subscription: subscriptions[0].xmlUrl,
+      safeOpml,
+      dtdCount: dtdOpml.length,
+      malformedCount: malformedOpml.length,
+      opmlAttack: window.__opmlAttack || 0,
       email: rows[0].email,
       sanitized: target.innerHTML,
     };
@@ -130,6 +143,17 @@ try {
   assert.equal(native.removed, null);
   assert.equal(native.paused, true);
   assert.equal(native.subscription, 'https://example.test/feed');
+  assert.deepEqual(native.safeOpml, [
+    {
+      title: 'A & B name',
+      xmlUrl: 'https://example.test/feed?q=a&b=2',
+      htmlUrl: '',
+      description: 'Episode: one & two',
+    },
+  ]);
+  assert.equal(native.dtdCount, 0);
+  assert.equal(native.malformedCount, 0);
+  assert.equal(native.opmlAttack, 0);
   assert.equal(native.email, 'person@example.test');
   assert.doesNotMatch(native.sanitized, /<script|onerror=/i);
   assert.match(native.sanitized, /<b>Example<\/b>/);
@@ -372,7 +396,13 @@ try {
     );
     await groupsPage
       .locator('#groupPhotoInput')
-      .setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: png });
+      .setInputFiles({ name: '<img src=x onerror=window.__groupsAttack=1>&.png', mimeType: 'image/png', buffer: png });
+    assert.equal(
+      await groupsPage.locator('#groupAttachmentPreview strong').textContent(),
+      '<img src=x onerror=window.__groupsAttack=1>&.png'
+    );
+    assert.equal(await groupsPage.locator('#groupAttachmentPreview img[src="x"]').count(), 0);
+    assert.equal(await groupsPage.evaluate(() => window.__groupsAttack || 0), 0);
     await groupsPage.locator('#groupMessageBody').fill('Fixture caption');
     await groupsPage.locator('#groupMessageSubmit').click();
     await groupsPage.waitForFunction(() => document.querySelector('#groupAttachmentPreview')?.hidden);
@@ -659,6 +689,15 @@ try {
     (await page.evaluate(async (url) => (await fetch(url)).text(), teachingUrl)).replaceAll('\r\n', '\n'),
     teachingExpected,
     'warm Teaching support retains exact content bytes offline'
+  );
+  const vendorBytes = await readFile(resolve(publicRoot, 'vendor/dompurify.es.mjs'), 'utf8');
+  assert.equal(
+    (await page.evaluate(async () => (await fetch('/vendor/dompurify.es.mjs?v=3.4.14')).text())).replaceAll(
+      '\r\n',
+      '\n'
+    ),
+    vendorBytes.replaceAll('\r\n', '\n'),
+    'The OPML sanitizer remains available offline after a normal worker update'
   );
   const offlineListen = await context.newPage();
   const listenResponse = await offlineListen.goto(`${origin}/listen.html`);

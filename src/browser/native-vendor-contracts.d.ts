@@ -1,5 +1,18 @@
 declare module '*dompurify.es.mjs?v=3.4.14' {
-  const DOMPurify: { sanitize(markup: string): string };
+  const DOMPurify: {
+    sanitize(markup: string): string;
+    sanitize(
+      markup: string,
+      options: {
+        PARSER_MEDIA_TYPE: 'application/xhtml+xml';
+        ALLOWED_NAMESPACES: string[];
+        ALLOWED_TAGS: string[];
+        ALLOWED_ATTR: string[];
+        ADD_URI_SAFE_ATTR: string[];
+        RETURN_DOM: true;
+      }
+    ): Element | null;
+  };
   export default DOMPurify;
 }
 declare module '*pdf-lib-1.17.1.esm.min.js' {

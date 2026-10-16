@@ -78,6 +78,24 @@ try {
       'Helpers begin fetching together despite synthetic latency.'
     );
     assert.equal(requests.filter((r) => r.path === '/api/learn/dashboard').length, 1);
+    const safeRow = await page.evaluate(async () => {
+      const { subjectSetupRow } = await import('/learn/dashboard-shell-setup-calendar.js');
+      const input = document.createElement('input');
+      input.value = '"><img data-learn-boundary-payload src=x onerror=window.__learnAttack=1>&';
+      const target = document.createElement('div');
+      document.body.append(target);
+      target.insertAdjacentHTML('beforeend', subjectSetupRow({ title: input.value }, [], [], '', 'forms', input.value));
+      const result = {
+        title: target.querySelector('[name="title"]').value,
+        injected: target.querySelectorAll('[data-learn-boundary-payload]').length,
+        executed: window.__learnAttack || 0,
+      };
+      target.remove();
+      return result;
+    });
+    assert.equal(safeRow.title, '"><img data-learn-boundary-payload src=x onerror=window.__learnAttack=1>&');
+    assert.equal(safeRow.injected, 0);
+    assert.equal(safeRow.executed, 0);
     await context.close();
   }
   console.log(
