@@ -40,8 +40,9 @@ for (const entry of browserTypeScriptEntries) {
     runtimeOwners.add(source);
     const helper = browserTypeScriptEntries.find((candidate) => candidate.source === source);
     assert.ok(helper, source + ' must be registered as an emitted entry');
-    assert.equal(helper.module, true);
-    assert.equal(helper.delivery, 'native-module');
+    assert.equal(helper.module, entry.module);
+    assert.equal(helper.delivery, entry.module ? 'native-module' : undefined);
+    if (!entry.module) assert.equal(helper.declarationsOnly, true);
     assert.notEqual(source, entry.source);
   }
 }
@@ -140,6 +141,34 @@ for (const { output, externalEmbed, delivery, module: nativeModule } of browserT
     const tag = html.match(new RegExp(`<script\\b[^>]*src=["']${asset.replaceAll('.', '\\.')}[^"']*["'][^>]*>`));
     if (!tag) continue;
     consumers += 1;
+    if (!nativeModule) {
+      const current = browserTypeScriptEntries.find((candidate) => candidate.output === output);
+      for (const helperSource of current.runtimeSupportSources || []) {
+        const helper = browserTypeScriptEntries.find((candidate) => candidate.source === helperSource);
+        const helperUrl = appAssetUrl(helper.output.slice('public'.length));
+        assert.ok(
+          html.indexOf(helperUrl) >= 0 && html.indexOf(helperUrl) < html.indexOf(tag[0]),
+          'classic support must load before its owner'
+        );
+        const helperTag = html.slice(
+          html.lastIndexOf('<script', html.indexOf(helperUrl)),
+          html.indexOf('>', html.indexOf(helperUrl)) + 1
+        );
+        assert.equal(
+          /\bdefer\b/.test(helperTag),
+          /\bdefer\b/.test(tag[0]),
+          'classic owner and support retain matching execution order'
+        );
+      }
+      const owner = browserTypeScriptEntries.find((candidate) =>
+        candidate.runtimeSupportSources?.includes(current.source)
+      );
+      if (owner)
+        assert.ok(
+          html.includes(appAssetUrl(owner.output.slice('public'.length))),
+          'classic support cannot load without its page owner'
+        );
+    }
     if (page === 'public/terms.html') {
       assert.equal(
         html,
@@ -205,6 +234,15 @@ try {
   await writeFile(sourcePath, `${source}\nexport const accidentalModule = true;\n`);
   await assert.rejects(synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }), /export/);
   await writeFile(sourcePath, source);
+  const declarationEntry = browserTypeScriptEntries.find((entry) => entry.declarationsOnly);
+  const declarationPath = join(fixtureRoot, declarationEntry.source),
+    declarationSource = await readFile(declarationPath, 'utf8');
+  await writeFile(declarationPath, declarationSource + '\nconst unexpectedStartup=true;\n');
+  await assert.rejects(
+    synchronizeBrowserTypeScript({ root: fixtureRoot, check: false }),
+    /Classic runtime support must contain only function declarations/
+  );
+  await writeFile(declarationPath, declarationSource);
   const privateEntry = browserTypeScriptEntries.find((entry) => entry.supportSources?.length);
   assert.equal(
     new Set(privateEntry.supportSources).size,

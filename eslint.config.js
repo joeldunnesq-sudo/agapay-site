@@ -2025,4 +2025,33 @@ export default [
       ],
     },
   },
+  // Preserve explicitly named Groups inline handlers and composed classic cross-source bindings.
+  {
+    files: ['src/browser/myagapay/groups-contracts.d.ts'],
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^()$' }] },
+  },
+  {
+    files: ['src/browser/myagapay/groups-presentation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(renderGroupWorkspaceError|renderGroupMessageContent|renderDecodedWaveform|renderMinistrySchedule|renderMinistryMembers|renderMinistryResources|renderMinistryCommerce|renderGroupSignupManager|renderGroupCatchUp|downloadMinistryCommerceQr|copyMinistryCommerceLink|duplicateMinistryCommerceItem|createMinistryCommerceItemUI|toggleMinistryCommerceItemStatus|toggleMinistryCommerceCalendar)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/myagapay/groups.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(toggleGroupVoiceMessage|groupSignupCategoryOptions|groupSignupLocalDate|switchGroupWorkspace|acceptMinistryCoverage|delegatedHeadcountPanel|recordDelegatedHeadcount|createMinistryEvent|deleteMinistryEvent|recordMinistryAttendance|saveMinistryAvailability|createMinistryResource|deleteMinistryResource|ministryCommerceMoney|ministryCommerceQrSvgByVariant|ministryCommerceMarkDataUri|ministryCommerceQrUrl|closeGroupSignup|createGroupSignup|updateGroupSignup|setGroupSignupStatus|deleteGroupSignup|addGroupSignupSlot|updateGroupSignupSlot|deleteGroupSignupSlot|saveGroupSignupTemplate|createGroupSignupFromTemplate|showGroupSignupHistory|completeGroupSignupEntry|closeMinistryGroup|toggleGroupCatchUp|chooseGroupPhoto|selectGroupPhoto|toggleGroupVoiceRecording|postMinistryGroupMessage)$',
+        },
+      ],
+    },
+  },
 ];

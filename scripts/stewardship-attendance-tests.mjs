@@ -1,3 +1,5 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
@@ -174,7 +176,7 @@ try {
 
   const dashboard = readFileSync(new URL('../public/parish/dashboard.html', import.meta.url), 'utf8');
   const metrics = readFileSync(new URL('../public/parish/features/stewardship/metrics.js', import.meta.url), 'utf8');
-  const groups = readFileSync(new URL('../public/myagapay/groups.js', import.meta.url), 'utf8');
+  const groups = readBrowserContractSourceSync('public/myagapay/groups.js');
   assert.match(dashboard, /id="stewardshipAttendanceMount"/);
   assert.ok(
     dashboard.indexOf('stewardshipAttendanceMount') < dashboard.indexOf('Stewardship Reports'),
@@ -183,7 +185,9 @@ try {
   assert.match(metrics, /id="stewardshipAttendancePane"/);
   assert.match(metrics, /function swTrendChart\(points\)/);
   assert.match(metrics, /typeof point\.headcount === 'number'/);
-  assert.match(groups, /group\?\.headcountDelegated\|\|group\.role!==\'leader\'/);
+  assert.ok(
+    includesJavaScriptFragment(groups, "if (!group?.headcountDelegated || group.role !== 'leader') return '';")
+  );
 
   console.log('PASS - parish-owned attendance upserts, delegation, leader gate, gaps, trend summary, and UI wiring');
 } finally {

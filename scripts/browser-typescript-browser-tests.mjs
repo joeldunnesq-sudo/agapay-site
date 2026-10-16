@@ -215,6 +215,192 @@ try {
   } finally {
     await listenContext.close();
   }
+  // Exercise both deferred Groups scripts with real page markup and synthetic authenticated APIs.
+  const groupsUrl = appAssetUrl('/myagapay/groups-presentation.js');
+  assert.equal(requests.get(groupsUrl) || 0, 0, 'Groups support stays out of the existing login/shell boot');
+  const groupsContext = await browser.newContext({
+    viewport: { width: 393, height: 873 },
+    isMobile: true,
+    serviceWorkers: 'block',
+  });
+  try {
+    const groupsPage = await groupsContext.newPage(),
+      groupsErrors = [],
+      groupApi = [];
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZlWQAAAAASUVORK5CYII=',
+      'base64'
+    );
+    groupsPage.on('pageerror', (error) => groupsErrors.push(error.message));
+    await groupsPage.addInitScript(() => {
+      window.groupFixture = { unauthorized: 0, revoked: [] };
+      window.MyAgapayShell = {
+        authHeaders: (extra) => ({ ...extra, Authorization: 'Bearer groups-fixture' }),
+        handleUnauthorized: (response) => {
+          if (response.status !== 401) return false;
+          window.groupFixture.unauthorized++;
+          return true;
+        },
+      };
+      const revoke = URL.revokeObjectURL.bind(URL);
+      URL.revokeObjectURL = (url) => {
+        window.groupFixture.revoked.push(url);
+        revoke(url);
+      };
+      document.addEventListener('DOMContentLoaded', () =>
+        document.documentElement.setAttribute('data-myagapay-page-ready', 'true')
+      );
+    });
+    await groupsContext.route('**/*', async (route) => {
+      const request = route.request(),
+        url = new URL(request.url());
+      if (request.resourceType() === 'script') {
+        if (
+          ['/myagapay/groups.js', '/myagapay/groups-presentation.js', '/myagapay/ministry-home.js'].includes(
+            url.pathname
+          )
+        )
+          return route.continue();
+        return route.fulfill({ contentType: 'text/javascript', body: '' });
+      }
+      if (url.origin !== origin) return route.fulfill({ contentType: 'text/css', body: '' });
+      if (!url.pathname.startsWith('/api/')) return route.continue();
+      groupApi.push({
+        path: url.pathname,
+        method: request.method(),
+        headers: request.headers(),
+        bytes: request.postDataBuffer()?.length || 0,
+      });
+      const root = '/api/donor/groups/fixture-group';
+      let body;
+      if (url.pathname === '/api/donor/groups')
+        body = { groups: [{ id: 'fixture-group', name: '<Fixture Ministry>', role: 'leader', unreadCount: 2 }] };
+      else if (url.pathname === root + '/messages')
+        body = {
+          group: { id: 'fixture-group', name: '<Fixture Ministry>' },
+          messages: [
+            {
+              id: 'text',
+              messageType: 'text',
+              authorName: 'Fixture Adult',
+              body: '<img src=x onerror=alert(1)>',
+              createdAt: '2026-10-16',
+              read: false,
+            },
+            {
+              id: 'photo',
+              messageType: 'image',
+              authorName: 'Fixture Adult',
+              createdAt: '2026-10-16',
+              read: false,
+              attachmentUrl: root + '/private-photo',
+            },
+          ],
+        };
+      else if (url.pathname === root + '/private-photo') return route.fulfill({ contentType: 'image/png', body: png });
+      else if (url.pathname.endsWith('/read') || url.pathname === root + '/messages/attachment') body = { ok: true };
+      else if (url.pathname === root + '/overview') body = { myCommitments: [], coverageRequests: [] };
+      else if (url.pathname === root + '/members')
+        body = {
+          members: [
+            {
+              personId: 'adult',
+              name: 'Fixture Adult',
+              displayName: 'Fixture Adult',
+              role: 'leader',
+              accountLinked: true,
+              caughtUp: true,
+              mine: true,
+            },
+          ],
+        };
+      else if (url.pathname === root + '/caught-up')
+        body = {
+          latestMessage: { id: 'text', createdAt: '2026-10-16' },
+          members: [{ displayName: 'Fixture Adult', role: 'leader', accountLinked: true, caughtUp: true }],
+          caughtUpCount: 1,
+          memberCount: 1,
+        };
+      else if (url.pathname === '/api/donor/koinonia/signups')
+        body = {
+          sheets: [
+            {
+              id: 'fixture-sheet',
+              title: 'Fixture signup',
+              ministryId: 'fixture-group',
+              status: 'draft',
+              slotCount: 1,
+              openingCount: 1,
+            },
+          ],
+        };
+      else if (url.pathname === '/api/donor/koinonia/signups/templates/fixture-group') body = { templates: [] };
+      else if (url.pathname === '/api/donor/koinonia/signups/fixture-sheet')
+        body = {
+          sheet: { id: 'fixture-sheet', title: 'Fixture signup', status: 'draft', category: 'general' },
+          slots: [{ id: 'slot', label: 'Bring bread', filledCount: 0, neededCount: 1 }],
+        };
+      else if (url.pathname === root + '/commerce')
+        body = {
+          parishId: 'fixture-parish',
+          items: [
+            {
+              id: 'item',
+              variantId: 'variant',
+              name: 'Fixture dinner',
+              priceCents: 1800,
+              eventDate: '2026-10-16',
+              status: 'active',
+              showOnCalendar: true,
+            },
+          ],
+        };
+      else throw Error('Unexpected Groups fixture API ' + url.pathname);
+      return route.fulfill({ json: body });
+    });
+    await groupsPage.goto(origin + '/myagapay/groups.html');
+    await groupsPage.locator('.group-list-item').click();
+    await groupsPage.locator('[data-group-tab="messages"]').click();
+    await groupsPage.waitForFunction(() =>
+      document.querySelector('[data-group-photo]')?.getAttribute('src')?.startsWith('blob:')
+    );
+    assert.ok((await groupsPage.locator('.group-message-list').innerText()).includes('<img src=x onerror=alert(1)>'));
+    assert.equal(await groupsPage.locator('.group-message img[src="x"]').count(), 0);
+    await groupsPage.getByRole('button', { name: 'Who’s caught up' }).click();
+    await groupsPage.waitForFunction(() =>
+      document.querySelector('.group-catch-up')?.textContent.includes('Caught up')
+    );
+    await groupsPage
+      .locator('#groupPhotoInput')
+      .setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: png });
+    await groupsPage.locator('#groupMessageBody').fill('Fixture caption');
+    await groupsPage.locator('#groupMessageSubmit').click();
+    await groupsPage.waitForFunction(() => document.querySelector('#groupAttachmentPreview')?.hidden);
+    const upload = groupApi.find((r) => r.path === '/api/donor/groups/fixture-group/messages/attachment');
+    assert.ok(upload, 'private image upload is submitted through the existing attachment route');
+    assert.equal(upload.bytes, png.length);
+    assert.equal(upload.headers['x-agapay-attachment-bytes'], String(png.length));
+    await groupsPage.locator('[data-group-tab="signups"]').click();
+    await groupsPage.locator('.group-signup-row').click();
+    await groupsPage.locator('.group-signup-slot-editor form').first().waitFor({ state: 'attached' });
+    assert.equal(await groupsPage.locator('.group-signup-slot-editor form').count(), 1);
+    await groupsPage.locator('[data-group-tab="commerce"]').click();
+    await groupsPage.getByRole('button', { name: 'Duplicate for next year' }).click();
+    assert.equal(await groupsPage.locator('#ministryCommerceCreateForm [name="eventDate"]').inputValue(), '');
+    assert.equal(await groupsPage.locator('#ministryCommerceCreateForm [name="status"]').inputValue(), 'draft');
+    await groupsPage.locator('.group-thread-back').click();
+    assert.equal(new URL(groupsPage.url()).searchParams.has('group'), false);
+    assert.ok(await groupsPage.evaluate(() => window.groupFixture.revoked.length > 0));
+    assert.ok(groupApi.every((r) => r.headers.authorization === 'Bearer groups-fixture'));
+    assert.deepEqual(groupsErrors, []);
+    assert.equal(requests.get(groupsUrl), 1, 'one deferred support response is fetched on the Groups page');
+    console.log(
+      'PASS - mobile Groups message escaping, private photo fetch/upload, read status, signup detail, commerce duplicate defaults and cleanup'
+    );
+  } finally {
+    await groupsContext.close();
+  }
+
   await page.evaluate(
     async ({ cacheName, oldUrl }) => {
       window.AGAPAYDonorSession.saveSession({ token: 'migration-fixture', donor: { email: 'migration@example.test' } });
@@ -251,9 +437,20 @@ try {
     cacheName,
     url: bookstoreUrl,
   });
+  const groupsExpected = (await readFile(resolve(publicRoot, 'myagapay/groups-presentation.js'), 'utf8')).replaceAll(
+    '\r\n',
+    '\n'
+  );
+  await page.evaluate(async (url) => (await fetch(url)).text(), groupsUrl);
+  await page.waitForFunction(async (url) => Boolean(await caches.match(url)), groupsUrl);
   await context.setOffline(true);
   const offline = await page.evaluate(async (url) => (await fetch(url)).text(), bookstoreUrl);
   assert.equal(offline.replaceAll('\r\n', '\n'), expected);
+  assert.equal(
+    (await page.evaluate(async (url) => (await fetch(url)).text(), groupsUrl)).replaceAll('\r\n', '\n'),
+    groupsExpected,
+    'warm Groups support remains available offline by its exact content version'
+  );
   const offlineListen = await context.newPage();
   const listenResponse = await offlineListen.goto(`${origin}/listen.html`);
   assert.equal(listenResponse.status(), 200);

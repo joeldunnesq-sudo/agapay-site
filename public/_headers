@@ -175,3 +175,6 @@
 
 /myagapay/signups.js
   Cache-Control: public, max-age=31536000, immutable
+
+/myagapay/groups-presentation.js
+  Cache-Control: public, max-age=31536000, immutable

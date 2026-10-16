@@ -1,3 +1,5 @@
+import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
+import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import fs from 'node:fs';
@@ -7,7 +9,7 @@ const dashboard = fs.readFileSync(new URL('../public/parish/dashboard.html', imp
 const app = readParishDashboardSource();
 const css = fs.readFileSync(new URL('../public/styles/stewardship.css', import.meta.url), 'utf8');
 const parishCss = fs.readFileSync(new URL('../public/parish/style.css', import.meta.url), 'utf8');
-const groupsApp = fs.readFileSync(new URL('../public/myagapay/groups.js', import.meta.url), 'utf8');
+const groupsApp = readBrowserContractSourceSync('public/myagapay/groups.js');
 const eventsHandler = readServerContractSourceSync('src/handlers/parish-events.js');
 const parishHandler = readParishHandlerSource();
 
@@ -109,7 +111,7 @@ const checks = [
     groupsApp.includes('name="offeringKind" required') &&
       groupsApp.includes('<option value="event">Event</option>') &&
       groupsApp.includes('<option value="meal">Meal</option>') &&
-      groupsApp.includes("offeringKind: d.get('offeringKind')") &&
+      includesJavaScriptFragment(groupsApp, "offeringKind: d.get('offeringKind')") &&
       eventsHandler.includes('eventOfferingKindFromBody(body)'),
   ],
   [

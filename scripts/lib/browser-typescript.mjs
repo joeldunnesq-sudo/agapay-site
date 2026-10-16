@@ -11,6 +11,16 @@ import { repoRoot } from './server-typescript.mjs';
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
   {
+    source: 'src/browser/myagapay/groups-presentation.ts',
+    output: 'public/myagapay/groups-presentation.js',
+    declarationsOnly: true,
+  },
+  {
+    source: 'src/browser/myagapay/groups.ts',
+    output: 'public/myagapay/groups.js',
+    runtimeSupportSources: ['src/browser/myagapay/groups-presentation.ts'],
+  },
+  {
     source: 'src/browser/parish/features/sacraments.ts',
     output: 'public/parish/features/sacraments.js',
     classicSupportSources: ['src/browser/parish/sacrament-feature-presentation.ts'],
@@ -428,6 +438,11 @@ export async function synchronizeBrowserTypeScript({ check = true, root = repoRo
             legalComments: 'none',
           }
         );
+    if (entry.declarationsOnly) {
+      const ast = ts.createSourceFile(source, code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+      if (ast.statements.some((node) => !ts.isFunctionDeclaration(node)))
+        throw new Error('Classic runtime support must contain only function declarations: ' + source);
+    }
     // Fail before writing if a runtime import/export would turn a classic script into a module.
     if (!nativeModule) new Script(code, { filename: output });
     const generated = await format(`// Generated from ${source} by npm run build:browser. Do not edit.\n${code}`, {
@@ -458,7 +473,12 @@ export async function synchronizeBrowserTypeScript({ check = true, root = repoRo
 // Inspect authored browser logic without coupling source guards to emitted quote style.
 export function readBrowserContractSourceSync(runtimePath, root = repoRoot) {
   const entry = browserTypeScriptEntries.find((e) => e.output === runtimePath);
-  const code = [entry?.source || runtimePath, ...(entry?.supportSources || []), ...(entry?.classicSupportSources || [])]
+  const code = [
+    entry?.source || runtimePath,
+    ...(entry?.supportSources || []),
+    ...(entry?.classicSupportSources || []),
+    ...(!entry?.module ? entry?.runtimeSupportSources || [] : []),
+  ]
     .map((p) => readFileSync(resolve(root, p), 'utf8'))
     .join('\n');
   if (!entry) return code;
@@ -491,6 +511,6 @@ export function readBrowserContractSourceSync(runtimePath, root = repoRoot) {
   return (
     comments.join('\n') +
     '\n' +
-    transformSync(contractCode, { loader: 'ts', target: 'es2022', legalComments: 'inline' }).code
+    transformSync(contractCode, { loader: 'ts', target: 'es2022', legalComments: 'inline', charset: 'utf8' }).code
   );
 }

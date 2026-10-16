@@ -140,6 +140,7 @@ export const appAssets = Object.freeze([
   '/myagapay/app-header.css',
   '/myagapay/app-header.js',
   '/myagapay/groups.js',
+  '/myagapay/groups-presentation.js',
   '/myagapay/ministry-home.js',
   '/myagapay/ministry-home.css',
 ]);

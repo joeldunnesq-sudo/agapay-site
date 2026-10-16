@@ -1127,7 +1127,11 @@
     "src/browser/parish/features/sacraments.ts",
     "src/browser/parish/sacrament-feature-contracts.d.ts",
     "src/browser/parish/sacrament-feature-presentation.ts",
-    "scripts/typecheck-browser/parish-sacrament-feature.ts"
+    "scripts/typecheck-browser/parish-sacrament-feature.ts",
+    "src/browser/myagapay/groups-contracts.d.ts",
+    "src/browser/myagapay/groups-presentation.ts",
+    "src/browser/myagapay/groups.ts",
+    "scripts/typecheck-browser/myagapay-groups.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2288,6 +2292,10 @@
     "src/browser/parish/features/sacraments.ts",
     "src/browser/parish/sacrament-feature-contracts.d.ts",
     "src/browser/parish/sacrament-feature-presentation.ts",
-    "scripts/typecheck-browser/parish-sacrament-feature.ts"
+    "scripts/typecheck-browser/parish-sacrament-feature.ts",
+    "src/browser/myagapay/groups-contracts.d.ts",
+    "src/browser/myagapay/groups-presentation.ts",
+    "src/browser/myagapay/groups.ts",
+    "scripts/typecheck-browser/myagapay-groups.ts"
   ]
 }

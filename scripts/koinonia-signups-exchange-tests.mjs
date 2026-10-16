@@ -505,7 +505,7 @@ const sources = {
   signupsClient: read('public/myagapay/signups.js'),
   exchangePage: read('public/myagapay/exchange.html'),
   parishLife: read('public/myagapay/parish-life.js'),
-  groups: read('public/myagapay/groups.js'),
+  groups: readBrowserContractSourceSync('public/myagapay/groups.js'),
 };
 assert.match(sources.signups, /signupsEnabledFor\(found\.registration\)/);
 assert.match(sources.exchange, /exchangeEnabledFor\(found\.registration\)/);
@@ -547,12 +547,12 @@ assert.match(sources.signupsClient, /JSON\.stringify\(\{ comment \}\)/, 'claim d
 assert.doesNotMatch(sources.signupsClient, /window\.prompt/, 'coverage requests must not use a browser prompt');
 assert.match(sources.parishLife, /\/api\/donor\/koinonia\/signups\/upcoming/);
 assert.match(sources.parishLife, /Signup ·/);
-assert.match(sources.groups, /\["overview","Home"\]/);
-assert.match(sources.groups, /\["messages","Conversation"\]/);
-assert.match(sources.groups, /\["signups","Signups"\]/);
-assert.match(sources.groups, /\["schedule","Schedule"\]/);
-assert.match(sources.groups, /\["members","Members"\]/);
-assert.match(sources.groups, /\["resources","Resources"\]/);
+assert.ok(includesJavaScriptFragment(sources.groups, '["overview","Home"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["messages","Conversation"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["signups","Signups"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["schedule","Schedule"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["members","Members"]'));
+assert.ok(includesJavaScriptFragment(sources.groups, '["resources","Resources"]'));
 assert.match(sources.groups, /Create a signup form/);
 assert.match(sources.groups, /Delete form/);
 assert.match(
