@@ -2150,4 +2150,66 @@ export default [
       ],
     },
   },
+  // Explicit Parish inline handlers and classic cross-source bindings remain live globals.
+  {
+    files: ['src/browser/parish/app-session-and-navigation.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(givingCatalogSnapshot|accountingCatalogSnapshot|saveSession|logoutParish|setPaymentStatus|openParishSupportTicket|showParishFeatureRequestPopup|dismissParishFeatureRequest|submitParishSupportTicket|renderDirectoryAdminAccessError|renderDirectoryAdminGenericError|statusLabel|loginFromParishPage|showParishLogin|showParishPasswordReset|requestParishPasswordReset|confirmParishPasswordReset|initParishPasswordResetPage|fallbackFundsArray|fallbackCampaignsArray|dedicatedGivingUrl|dedicatedGivingEmbedUrl|downloadBlob|slugifyLocal|money|moneyFull|shortDate|fullDate|isoDateLabel|isParishTier|isParishPlusActive|isStarterTier|openParishPortability|acceptParishAccessInvitation|initParishAccessInvitationPage|hasFundManagementAccess|isGeneralDashboardFund|isCandleDashboardFund|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app-settings-and-nonprofit.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(uploadParishLogo|removeParishLogo|formatSacramentPriestsForSettings|parseSacramentPriestsFromSettings|saveDashboard|copyPayload|startStripeOnboarding|startSubscriptionCheckout|loadStripeVolume|copyNonprofitPricingStatement|saveNonprofitPricingAttestation|uploadNonprofitPricingDocument|markNonprofitPricingSubmitted|recordNonprofitPricingDecision|viewNonprofitPricingDocument)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app-subscriptions-and-settlement.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(updateStarterPaywalls|accountingStaffSession|updateStewardshipBadges|createSettlementProfile|renameSettlementProfile|toggleSettlementProfileActive|setDefaultGivingProfile|setDefaultCommerceProfile|assignSettlementModule|formatSacramentDateRange|syncSacramentsBlackoutEndDate|parishHouseholdPickerMarkup|syncParishHouseholdPricing|parishPricingUsageMarkup|tierOptionsMarkup|subscriptionAddOnPickerMarkup|syncSubscriptionAddOnVisibility|setupCheckMarkup|refreshStripeStatus|communityMarkIcon|renderSubscriptionPanel|updateTierScopedNavigation|changeDemoTier|openSubscriptionPortal|openSubscriptionCancellation)$',
+          argsIgnorePattern: '^options$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app-tax-exemption.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(submitParishTaxExemption|uploadParishTaxExemptionDocument|viewParishTaxExemptionDocument)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/app.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(saveSession|switchTab|money|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation|selectedSubscriptionAddOns|dashboardLoadPromise|activeParishFeatureRequest|parishFeatureRequests|identitySessionStorageKey|identityEmailStorageKey|escapeAttr|starterLockedFeatures|settlementProfilesState|SETTLEMENT_MODULE_LABELS|SETTLEMENT_TYPE_LABELS|taxExemptionJurisdictions|renderDashboard|payload)$',
+        },
+      ],
+    },
+  },
 ];

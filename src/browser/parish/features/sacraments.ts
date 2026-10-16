@@ -921,3 +921,5 @@ export type ParishSacBindings = {
   sacramentsRuleEditor: typeof sacramentsRuleEditor;
   sacramentsState: typeof sacramentsState;
 };
+
+export type ParishSacDefaultServices = typeof defaultSacramentServiceTypes;

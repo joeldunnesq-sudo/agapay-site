@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { scriptsReferencedByPages } from './browser-composed-source.mjs';
 
 const root = new URL('../../', import.meta.url);
 
@@ -14,7 +15,15 @@ export function parishDashboardFeaturePaths() {
 }
 
 export function readParishDashboardSource() {
-  return ['public/parish/app.js', 'public/parish/dashboard-runtime.js', ...parishDashboardFeaturePaths()]
+  return [
+    ...new Set([
+      ...scriptsReferencedByPages(['public/parish/dashboard.html'], (file) =>
+        /^public\/parish\/app(?:-[^/]+)?\.js$/.test(file)
+      ),
+      'public/parish/dashboard-runtime.js',
+      ...parishDashboardFeaturePaths(),
+    ]),
+  ]
     .map((file) => readFileSync(new URL(file, root), 'utf8'))
     .join('\n');
 }

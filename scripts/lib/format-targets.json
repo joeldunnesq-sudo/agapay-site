@@ -1162,7 +1162,14 @@
     "src/browser/donor/app-session-and-parish.ts",
     "src/browser/donor/app.ts",
     "scripts/donor-pledge-presentation-tests.mjs",
-    "scripts/typecheck-browser/donor-app-contracts.ts"
+    "scripts/typecheck-browser/donor-app-contracts.ts",
+    "src/browser/parish/app-contracts.d.ts",
+    "src/browser/parish/app-session-and-navigation.ts",
+    "src/browser/parish/app-settings-and-nonprofit.ts",
+    "src/browser/parish/app-subscriptions-and-settlement.ts",
+    "src/browser/parish/app-tax-exemption.ts",
+    "src/browser/parish/app.ts",
+    "scripts/typecheck-browser/parish-app-contracts.ts"
   ],
   "check": [
     ".prettierrc.json",
@@ -2358,6 +2365,13 @@
     "src/browser/donor/app-session-and-parish.ts",
     "src/browser/donor/app.ts",
     "scripts/donor-pledge-presentation-tests.mjs",
-    "scripts/typecheck-browser/donor-app-contracts.ts"
+    "scripts/typecheck-browser/donor-app-contracts.ts",
+    "src/browser/parish/app-contracts.d.ts",
+    "src/browser/parish/app-session-and-navigation.ts",
+    "src/browser/parish/app-settings-and-nonprofit.ts",
+    "src/browser/parish/app-subscriptions-and-settlement.ts",
+    "src/browser/parish/app-tax-exemption.ts",
+    "src/browser/parish/app.ts",
+    "scripts/typecheck-browser/parish-app-contracts.ts"
   ]
 }

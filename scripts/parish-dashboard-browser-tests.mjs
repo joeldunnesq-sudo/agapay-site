@@ -60,6 +60,11 @@ try {
     undefined,
     async (fixture) => {
       const { page } = fixture;
+      const subscriptionHelperRequests = [];
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname === '/parish/app-subscriptions-and-settlement.js')
+          subscriptionHelperRequests.push(request.url());
+      });
       const historyLoaded = page.waitForResponse((response) => response.url().endsWith('/giving-history'));
       await fixture.open();
       await ready(page);
@@ -73,6 +78,16 @@ try {
           loadGivingHistory(),
         ]);
       });
+      assert.equal(
+        subscriptionHelperRequests.length,
+        1,
+        'The declaration-only subscription helper loads once on the Parish dashboard'
+      );
+      assert.equal(
+        await page.evaluate(() => typeof window.parishTierDefinition),
+        'function',
+        'Classic subscription handlers must be ready at dashboard startup'
+      );
       assert.equal(await page.locator('#sidebarParishName').textContent(), parish.parishName);
       assert.equal(fixture.diagnostics.length, 0, 'healthy loading should produce no diagnostic errors');
       const pane = page.locator('#setupWizardPane');
