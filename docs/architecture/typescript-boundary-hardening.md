@@ -32,3 +32,7 @@ PR [#244](https://github.com/joeldunnesq-sudo/agapay-site/pull/244) merged sourc
 - Six spaced production health probes confirmed the same merged SHA and stamped deployment after the automatic Cloudflare build and protected deployment.
 
 Release evidence is retained locally under ignored tmp-release-hardening-1/, including local-validation.json, staging-acceptance.json, production-validation.json, authenticated artifacts, hosted-suite logs, the assertion inventory and stable-health.json. No MFA, billing, entitlement, release-permission or size-budget configuration was changed.
+
+## Subsequent checkpoint
+
+The accepted [second hardening checkpoint](typescript-boundary-hardening-2.md), PR [#245](https://github.com/joeldunnesq-sudo/agapay-site/pull/245), removes all 119 truthy-filter adapters and validates support-ticket/provider JSON boundaries. It reduces the remaining double assertions from 175 to 56 and deploys as 5687c23517f11a4cb1ba88905dda884b34245e56. The acceptance above remains the historical record for the first checkpoint.

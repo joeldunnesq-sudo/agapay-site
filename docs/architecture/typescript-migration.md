@@ -1488,3 +1488,7 @@ PR [#243](https://github.com/joeldunnesq-sudo/agapay-site/pull/243) deployed the
 ## Post-audit boundary hardening release
 
 PR [#244](https://github.com/joeldunnesq-sudo/agapay-site/pull/244) is accepted and deployed as 2f5a0adbfc5a65ad1e029b64c47f3aacc834ca83, stamped 2026-10-17T05:32:44Z. The [boundary hardening report](typescript-boundary-hardening.md) records 54 double-assertion removals (229 to 175), validated Learn resource/feedback readers and canonical fallback protection. All 322 platform commands, four prechecks, complete Quality, CodeQL, authenticated staging/production gates and hosted acceptance passed. The original migration inventory remains 495/495; additional assertion and JSON hardening is still documented as remaining scope.
+
+## Truthy-filter and JSON hardening release
+
+PR [#245](https://github.com/joeldunnesq-sudo/agapay-site/pull/245) is accepted and deployed as 5687c23517f11a4cb1ba88905dda884b34245e56, stamped 2026-10-17T14:41:59Z. The [second boundary hardening report](typescript-boundary-hardening-2.md) records all 119 truthy-adapter removals (175 to 56), implemented hoisted predicates, support-ticket JSON validation and checked email-provider metadata. All 324 platform commands, four prechecks, complete Quality, CodeQL, authenticated gates and hosted acceptance passed. Original migration ownership remains 495/495.
