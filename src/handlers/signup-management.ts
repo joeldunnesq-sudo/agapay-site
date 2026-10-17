@@ -100,7 +100,9 @@ export async function updateSheetStatus(
         sheetId,
         sheetTitle: current.title,
         ministryName: ministry?.display_name || '',
-      }).catch((error) => console.error('signup_published_push_failed', error?.message || String(error)))
+      }).catch((error: unknown) =>
+        console.error('signup_published_push_failed', (error as { message?: unknown } | null)?.message || String(error))
+      )
     );
   }
   return { ok: true, sheetId, status: body.status };

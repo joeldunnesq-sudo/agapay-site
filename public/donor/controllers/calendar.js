@@ -613,10 +613,12 @@ function donorApprovedSacramentEvents(payload = {}) {
   const labels = typeof sacramentTypeLabels === 'object' ? sacramentTypeLabels : {};
   const today = /* @__PURE__ */ new Date().toISOString().slice(0, 10);
   return (payload.requests || [])
-    .filter((request) => request.status === 'scheduled' && (request.confirmedDate || request.requestedDate) >= today)
+    .filter(
+      (request) => request.status === 'scheduled' && (request.confirmedDate || request.requestedDate || '') >= today
+    )
     .map((request) => ({
       ...request,
-      date: request.confirmedDate || request.requestedDate,
+      date: request.confirmedDate || request.requestedDate || '',
       time: request.confirmedTime || request.requestedTimeWindow || 'Time to be confirmed',
       title:
         request.otherTypeLabel ||

@@ -373,7 +373,7 @@ export function validateTeachingAudioMetadata(request: Request) {
 export function limitTeachingAudioStream(source: ReadableStream<Uint8Array>, maxBytes = TEACHING_AUDIO_MAX_BYTES) {
   let bytesRead = 0;
   const limiter = new TransformStream({
-    transform(chunk, controller) {
+    transform(chunk: Uint8Array, controller) {
       const bytes = chunk?.byteLength ?? chunk?.length ?? 0;
       bytesRead += bytes;
       if (bytesRead > maxBytes) throw new Error('TEACHING_AUDIO_TOO_LARGE');
@@ -563,7 +563,7 @@ export async function handleParishTeaching(
                 JSON.stringify({ parishId, teachingId: publishedTeaching.id, ...summary })
               )
             )
-            .catch((error) =>
+            .catch((error: unknown) =>
               console.error('teaching_push_delivery_failed', (error as Error | null)?.message || String(error))
             );
           ctx.waitUntil(delivery);

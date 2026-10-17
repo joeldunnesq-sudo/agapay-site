@@ -68,8 +68,8 @@ interface Window {
 declare function donorProfile(): (AppHeaderDonorProfile & { defaultParishId?: string }) | null;
 declare function donorSession(): { email?: string; token?: string };
 declare function readDonorCache<T = DonorPagePayload>(key: string): T | null;
-declare function writeDonorCache(key: string, value: unknown): void;
-declare function donorApi<T = DonorPagePayload>(path: string, options?: RequestInit): Promise<T>;
+declare const writeDonorCache: import('./app.js').DonorAppBindings['writeDonorCache'];
+declare const donorApi: import('./app.js').DonorAppBindings['donorApi'];
 declare function donorAuthHeaders(extra?: Record<string, string>): Record<string, string>;
 declare function setDonorProfile(profile: AppHeaderDonorProfile): void;
 declare function isDonorUnauthorized(error: unknown): boolean;

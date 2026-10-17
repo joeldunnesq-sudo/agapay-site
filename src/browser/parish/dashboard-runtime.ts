@@ -78,7 +78,7 @@ async function loadDashboardInner(btn: HTMLButtonElement | null | undefined) {
     if (!res.ok) throw Object.assign(new Error('Dashboard request failed'), { status: res.status });
     const data = (await res.json()) as {
       parish?: ParishWorkspaceIdentity;
-      featureRequests?: Record<string, unknown>[];
+      featureRequests?: import('./app-contracts.js').ParishAppFeatureRequest[];
     };
     if (!data.parish || typeof data.parish !== 'object' || Array.isArray(data.parish) || !data.parish.parishId) {
       throw new TypeError('Dashboard response is missing its parish');

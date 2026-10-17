@@ -271,7 +271,7 @@ export function requiredPersonalAccessAccepted(
       return false;
     if (!memberships) return true;
     return memberships.some(
-      (membership) =>
+      (membership: { id?: unknown; parishId?: unknown; status?: unknown } | null) =>
         membership?.id === accepted.membershipId &&
         membership?.parishId === registration.parishId &&
         membership?.status === 'active'
@@ -437,7 +437,7 @@ export function onboardingMaterialSnapshot(registration: OnboardingRegistration 
       detailsSubmitted: registration.stripeDetailsSubmitted === true,
       disabledReason: text(registration.stripeDisabledReason, 500),
       requirementsDue: (Array.isArray(registration.stripeRequirementsDue) ? registration.stripeRequirementsDue : [])
-        .map((item) => text(item, 160))
+        .map((item: unknown) => text(item, 160))
         .sort(),
       payoutBankName: text(registration.stripePayoutBankName, 160),
       payoutBankLast4: text(registration.stripePayoutBankLast4, 4),

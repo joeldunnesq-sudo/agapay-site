@@ -213,6 +213,7 @@ export {
   reverseJournalEntry,
   validateJournalEntryForPosting,
   validateLedgerFoundation,
+  voidJournalDraft,
 } from './ledger/service.js';
 export {
   getJournalEntry,
@@ -221,7 +222,6 @@ export {
   printableLedger,
   searchJournalEntries,
   updateJournalDraft,
-  voidJournalDraft,
 } from './ledger/workspace.js';
 
 export { ingestAccountingSourceEvent, processAccountingSourceEvent } from './integrations/service.js';

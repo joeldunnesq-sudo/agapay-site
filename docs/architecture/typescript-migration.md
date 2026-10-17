@@ -1476,3 +1476,7 @@ Validation and release acceptance:
 - Six stable production health probes confirmed the final release after the automatic build and protected deployment. Evidence is retained locally under ignored tmp-release-90/ (production-validation.json, authenticated acceptance artifact, hosted suite results and stable-health.json) and tmp-typescript-100/ (clean platform, strict/quality, focused browser, security, startup and packaging evidence). Credentials and evidence artifacts are not committed.
 
 This completes the frozen original-runtime migration. The percentage measures module ownership, not lines of code, runtime performance, complete static safety or runtime validation of external JSON. Vendor assets, intentional forwarding shims, inline scripts and tooling remain the documented exceptions; type assertions at external JSON boundaries still require runtime validation where applicable.
+
+## Post-completion audit
+
+The [TypeScript transition audit](typescript-transition-audit.md) records the subsequent review of declaration checking, owner-derived browser contracts, endpoint payloads, inferred callback types and generated runtime compatibility. It strengthens required type checks without increasing the frozen migration percentage. Audit validation and release status are recorded in that report separately from the accepted PR #242 production checkpoint above.

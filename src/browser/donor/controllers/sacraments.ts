@@ -2,6 +2,20 @@
 // Part of AGAPAY Parish + — automatically available to donors
 // whose home parish has active Parish + access. See
 // handleDonorSacraments in src/handlers/donor.js for the server-side gate.
+import type { DonorSacramentPresentation } from '../sacrament-presentation.js';
+
+declare const sacramentTypeLabel: DonorSacramentPresentation['sacramentTypeLabel'];
+declare const sacramentLocationHint: DonorSacramentPresentation['sacramentLocationHint'];
+declare const sacramentIcon: DonorSacramentPresentation['sacramentIcon'];
+declare const sacramentSummary: DonorSacramentPresentation['sacramentSummary'];
+declare const sacramentPreparationStatusLabel: DonorSacramentPresentation['sacramentPreparationStatusLabel'];
+declare const sacramentRequestRow: DonorSacramentPresentation['sacramentRequestRow'];
+
+export type DonorSacramentPresentationOwner = {
+  SACRAMENT_TYPE_LABELS: typeof SACRAMENT_TYPE_LABELS;
+  SACRAMENT_STATUS_LABELS: typeof SACRAMENT_STATUS_LABELS;
+  SACRAMENT_STATUS_TONE: typeof SACRAMENT_STATUS_TONE;
+};
 
 const SACRAMENT_TYPE_LABELS: Record<string, string> = {
   house_blessing: 'House Blessing',
@@ -842,8 +856,8 @@ async function loadDonorSacramentsPage() {
   try {
     const [sacramentsResult, dashboardResult, commemorationsResult] = await Promise.allSettled([
       donorApi<SacPayload>('/api/donor/sacraments', { headers: donorAuthHeaders({ 'X-AGAPAY-Parish-Id': parishId }) }),
-      donorApi<SacPayload>('/api/donor/dashboard'),
-      donorApi<SacPayload>('/api/donor/commemorations'),
+      donorApi<import('../app-contracts.js').DonorAppPayload>('/api/donor/dashboard'),
+      donorApi<import('../app-contracts.js').DonorAppPayload>('/api/donor/commemorations'),
     ]);
     if (sacramentsResult.status === 'rejected') throw sacramentsResult.reason;
     const data = sacramentsResult.value;

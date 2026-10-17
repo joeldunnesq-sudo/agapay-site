@@ -115,17 +115,19 @@ function donorSacramentOfferings(registration: DashboardRegistration = {}) {
     Array.isArray(registration.sacramentPriests) && registration.sacramentPriests.length
       ? registration.sacramentPriests
       : [{ serviceTypes: defaults, customServices: [] }];
-  const types = new Set();
-  const customById = new Map();
+  const types = new Set<string>();
+  const customById = new Map<string, { id: string; label: string; mode: string }>();
   for (const priest of priests) {
     const serviceTypes = Array.isArray(priest?.serviceTypes) ? priest.serviceTypes : defaults;
-    serviceTypes.forEach((type) => types.add(String(type || '')));
-    (Array.isArray(priest?.customServices) ? priest.customServices : []).forEach((service) => {
-      const id = String(service?.id || '').trim();
-      const label = String(service?.label || '').trim();
-      const mode = service?.mode === 'schedule' ? 'schedule' : 'request';
-      if (id && label) customById.set(id, { id, label, mode });
-    });
+    serviceTypes.forEach((type: unknown) => types.add(String(type || '')));
+    (Array.isArray(priest?.customServices) ? priest.customServices : []).forEach(
+      (service: { id?: unknown; label?: unknown; mode?: unknown } | null) => {
+        const id = String(service?.id || '').trim();
+        const label = String(service?.label || '').trim();
+        const mode = service?.mode === 'schedule' ? 'schedule' : 'request';
+        if (id && label) customById.set(id, { id, label, mode });
+      }
+    );
   }
   return { types: [...types], custom: [...customById.values()] };
 }

@@ -479,7 +479,7 @@ export function isCandleGivingFund(fund: ParishFund = {}) {
 
 export function starterFundCatalogError(funds: unknown = []) {
   const active = (Array.isArray(funds) ? funds : []).filter(
-    (fund) => fund && fund.enabled !== false && fund.active !== false
+    (fund: { enabled?: unknown; active?: unknown } | null) => fund && fund.enabled !== false && fund.active !== false
   );
   const generalCount = active.filter(isGeneralGivingFund).length;
   const candleCount = active.filter(isCandleGivingFund).length;
@@ -513,7 +513,9 @@ export async function findOrCreateDonorCustomer(
 
   if (!lookup.ok) return lookup;
 
-  const existing = Array.isArray(lookup.body.data) ? lookup.body.data.find((customer) => !customer.deleted) : null;
+  const existing = Array.isArray(lookup.body.data)
+    ? lookup.body.data.find((customer: { deleted?: boolean; id?: string }) => !customer.deleted)
+    : null;
   if (existing?.id) return { ok: true, body: existing };
 
   const customerForm = new URLSearchParams({

@@ -1,3 +1,4 @@
+import type { ResolvedFundAllocation } from '../lib/fund-allocation.js';
 import {
   reconciliationPeriod,
   listStripePayoutsForPeriod,
@@ -228,7 +229,17 @@ export async function prepareReconciliationReport(
   const payouts = payoutsResult.body.data || [];
   const lookupState: ReconciliationLookupState = { count: 0, limit: 80, cache: new Map() };
   const offeringCache = new Map();
-  const allocations = new Map();
+  const allocations = new Map<
+    string,
+    ResolvedFundAllocation & {
+      grossCents: number;
+      refundsCents: number;
+      chargedCents: number;
+      feeCents: number;
+      netCents: number;
+      transactionCount: number;
+    }
+  >();
   const resolveFund = createFundAllocationResolver(registration);
   const exceptions = [];
   const payoutRows = [];

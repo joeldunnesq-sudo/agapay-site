@@ -13,7 +13,7 @@ function bookstoreSavedKey(product: DonorBookstoreExperienceProduct) {
 function bookstoreSavedItems() {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem('agapayBookstoreSaved') || '[]');
-    return new Set(Array.isArray(saved) ? saved.filter((value) => typeof value === 'string') : []);
+    return new Set(Array.isArray(saved) ? saved.filter((value: unknown) => typeof value === 'string') : []);
   } catch {
     return new Set<string>();
   }

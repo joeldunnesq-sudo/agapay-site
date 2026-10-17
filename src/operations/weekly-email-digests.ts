@@ -106,7 +106,7 @@ import { htmlEscape } from '../lib/format.js';
 function formatCommemorationNames(entries: Commemoration[], field: string) {
   const names = entries.flatMap((entry) => (Array.isArray(entry[field]) ? entry[field] : []));
   if (!names.length) return '<p style="margin:0;color:#6F6A60;">No names submitted.</p>';
-  return `<ul style="margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;">${names.map((name) => `<li>${htmlEscape(name)}</li>`).join('')}</ul>`;
+  return `<ul style="margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;">${names.map((name: unknown) => `<li>${htmlEscape(name)}</li>`).join('')}</ul>`;
 }
 
 function formatUsd(cents: unknown) {
@@ -613,7 +613,7 @@ export async function sendWeeklySacramentDigestEmails(
        ORDER BY m.target_date ASC LIMIT 25`,
       registration.parishId,
       weekAheadIso
-    ).catch((error) => {
+    ).catch((error: unknown) => {
       if (/sacrament_memorial_|no such table/i.test(String((error as Error | null)?.message || error || ''))) return [];
       throw error;
     });

@@ -69,7 +69,7 @@ function accountingStatementDocument() {
       ['expense', 'Expenses'],
     ]) {
       section(label);
-      const groups = new Map();
+      const groups = new Map<unknown, { label: string; without: number; with: number }>();
       for (const item of (source.rows || []).filter((entry) => entry.category === category)) {
         const key = item.accountId || item.accountNumber || item.accountName;
         const grouped = groups.get(key) || { label: accountName(item), without: 0, with: 0 };
@@ -117,7 +117,7 @@ function accountingStatementDocument() {
       );
   } else if (id === 'expenses') {
     statement.columns = [{ label: 'Expense account' }, money('Amount', 'amount')];
-    const groups = new Map();
+    const groups = new Map<string, number>();
     for (const item of (source.rows || []).filter((entry) => entry.category === 'expense')) {
       const key = accountName(item);
       groups.set(key, (groups.get(key) || 0) + Number(item.amount || 0));

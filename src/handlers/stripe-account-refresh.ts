@@ -136,7 +136,7 @@ export async function retrieveConnectedAccountForRefresh(
     };
   }
 
-  const matches = [];
+  const matches: StripeWebhookObject[] = [];
   let startingAfter = '';
   for (let page = 0; page < 5; page += 1) {
     const query = new URLSearchParams({ limit: '100' });
@@ -145,7 +145,7 @@ export async function retrieveConnectedAccountForRefresh(
     if (!listed.ok) return listed;
     const accounts = Array.isArray(listed.body?.data) ? listed.body.data : [];
     matches.push(
-      ...accounts.filter((account) => {
+      ...accounts.filter((account: StripeWebhookObject) => {
         const metadata = account?.metadata || {};
         return (
           (reference && metadata.agapay_reference === reference) || (parishId && metadata.agapay_parish_id === parishId)

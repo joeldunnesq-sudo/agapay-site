@@ -149,7 +149,7 @@ export function normalizeSubscriptionAddOns(value: unknown = [], tierId: unknown
   const selected = [
     ...new Set(
       (Array.isArray(entries) ? entries : [])
-        .map((entry) =>
+        .map((entry: unknown) =>
           String(entry || '')
             .trim()
             .toLowerCase()

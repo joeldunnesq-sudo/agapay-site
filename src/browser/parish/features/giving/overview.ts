@@ -90,7 +90,7 @@ function pdxDrawSparkline(svg: Element | null, data: readonly number[] | null | 
     min = Math.min(...data);
   const range = max - min || 1;
   const step = (w - pad * 2) / (data.length - 1);
-  const points = data.map((v, i): [number, number] => {
+  const points = data.map((v: number, i): [number, number] => {
     const x = pad + i * step;
     const y = h - pad - ((v - min) / range) * (h - pad * 2 - 20);
     return [x, y];

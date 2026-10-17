@@ -153,7 +153,7 @@ function accountingTabularReport(id: string) {
     current = accountingReportLedgerRows(period.start, period.end);
   const moneyColumn = (key: string, label: string) => ({ key, label, money: true });
   if (id === 'incomeByFund') {
-    const groups = new Map();
+    const groups = new Map<string, { name: string; revenue: number; expenses: number }>();
     for (const row of current.filter((item) => ['revenue', 'expense'].includes(item.category))) {
       const item = groups.get(row.fund) || { name: row.fund, revenue: 0, expenses: 0 };
       item[row.category === 'revenue' ? 'revenue' : 'expenses'] += row.amount;
@@ -176,7 +176,7 @@ function accountingTabularReport(id: string) {
   }
   if (id === 'balanceByFund') {
     const all = accountingReportLedgerRows('0001-01-01', period.end),
-      groups = new Map();
+      groups = new Map<string, { name: string; assets: number; liabilities: number; netAssets: number }>();
     for (const row of all) {
       const item = groups.get(row.fund) || { name: row.fund, assets: 0, liabilities: 0, netAssets: 0 };
       if (row.category === 'asset') item.assets += row.amount;
@@ -199,7 +199,7 @@ function accountingTabularReport(id: string) {
     };
   }
   if (id === 'incomeByMonth') {
-    const groups = new Map();
+    const groups = new Map<string, { month: string; revenue: number; expenses: number }>();
     for (const row of current.filter((item) => ['revenue', 'expense'].includes(item.category))) {
       const key = row.date.slice(0, 7),
         item = groups.get(key) || { month: key, revenue: 0, expenses: 0 };
@@ -229,8 +229,8 @@ function accountingTabularReport(id: string) {
     leftLabel: string,
     rightLabel: string
   ) => {
-    const groups = new Map(),
-      add = (rows: ReturnType<typeof accountingReportLedgerRows>, key: string) =>
+    const groups = new Map<unknown, { account: string; category: string; left: number; right: number }>(),
+      add = (rows: ReturnType<typeof accountingReportLedgerRows>, key: 'left' | 'right') =>
         rows
           .filter((item) => ['revenue', 'expense'].includes(item.category))
           .forEach((row) => {
@@ -474,7 +474,10 @@ async function loadAccountingBudgetLibraryReport(id: string) {
     }
     const moneyColumn = (key: string, label: string) => ({ key, label, money: true });
     if (id === 'budgetByFund') {
-      const groups = new Map();
+      const groups = new Map<
+        string,
+        { name: string; category: string | undefined; budget: number; actual: number; variance: number }
+      >();
       for (const row of reports[0].rows || []) {
         const fund = accountingData.funds.find((item) => item.id === row.fundId),
           name = fund?.name || 'Unassigned',
@@ -762,7 +765,7 @@ function renderAccountingExpenses(
   report: AccountingReport,
   reportTabs: [string, string][]
 ) {
-  const grouped = new Map();
+  const grouped = new Map<unknown, AccountingReportRow & { amount: number }>();
   for (const row of (report.rows || []).filter((item) => item.category === 'expense' && Number(item.amount) !== 0)) {
     const key = row.accountId || row.accountNumber || row.accountName;
     const current = grouped.get(key) || { ...row, amount: 0 };

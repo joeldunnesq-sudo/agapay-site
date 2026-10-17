@@ -376,7 +376,7 @@ function sanitizeSacramentPriests(value: unknown, current: DashboardRegistration
 const GIVING_CATALOG_COMPUTED_FIELDS = new Set(['giftCount', 'raisedCents', 'supporters', 'visibility']);
 
 function comparableGivingCatalogValue(value: unknown, key = ''): unknown {
-  if (Array.isArray(value)) return value.map((item) => comparableGivingCatalogValue(item));
+  if (Array.isArray(value)) return value.map((item: unknown) => comparableGivingCatalogValue(item));
   if (!value || typeof value !== 'object') return value;
   const comparable: Record<string, unknown> = {};
   Object.keys(value)

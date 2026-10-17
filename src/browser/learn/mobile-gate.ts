@@ -21,7 +21,7 @@
       preload.href = href;
       document.head.appendChild(preload);
     });
-    import(SHELL).catch(function (err) {
+    import(SHELL).catch(function (err: unknown) {
       console.error('AGAPAY Learn failed to load', err);
       var root = document.getElementById('learnRoot');
       if (root) {

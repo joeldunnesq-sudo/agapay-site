@@ -892,7 +892,7 @@ export async function handleParishCommunications(
                 JSON.stringify({ parishId, announcementId: publishedAnnouncement.id, ...summary })
               )
             )
-            .catch((error) =>
+            .catch((error: unknown) =>
               console.error('announcement_push_delivery_failed', (error as Error | null)?.message || String(error))
             );
           ctx.waitUntil(delivery);

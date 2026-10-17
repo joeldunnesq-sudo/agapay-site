@@ -153,7 +153,9 @@ const PARISH_LIFE_SACRAMENT_LABELS = {
 function parishLifeApprovedServiceEvents(payload = {}) {
   const today = /* @__PURE__ */ new Date().toISOString().slice(0, 10);
   return (payload.requests || [])
-    .filter((request) => request.status === 'scheduled' && (request.confirmedDate || request.requestedDate) >= today)
+    .filter(
+      (request) => request.status === 'scheduled' && (request.confirmedDate || request.requestedDate || '') >= today
+    )
     .map((request) => {
       const date = request.confirmedDate || request.requestedDate;
       const time = request.confirmedTime || request.requestedTimeWindow || '';

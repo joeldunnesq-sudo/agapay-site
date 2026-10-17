@@ -95,7 +95,7 @@ function renderCommemorationParish(parish: DonorAppParish | null | undefined) {
 
 function commemorationNameCount(list: unknown) {
   return (Array.isArray(list) ? list : []).reduce(
-    (sum, entry) =>
+    (sum: number, entry: DonorOffering) =>
       sum +
       (Array.isArray(entry.living) ? entry.living.length : 0) +
       (Array.isArray(entry.departed) ? entry.departed.length : 0),

@@ -128,7 +128,7 @@ declare function saveSession(): void;
 declare function renderDashboard(): void;
 declare function switchTab(tab: 'sacraments' | 'stewardship' | 'accounting'): void;
 declare function setSacramentsDashboardTab(tab: 'calendar'): void;
-declare function showParishFeatureRequestPopup(items: Record<string, unknown>[]): void;
+declare const showParishFeatureRequestPopup: import('./app-session-and-navigation.js').ParishAppPart1['showParishFeatureRequestPopup'];
 declare function updateStewardshipBadges(included: boolean, options: { renderPanel: boolean }): void;
 declare function loadRegisteredParishFeature(id: string, force?: boolean): unknown;
 

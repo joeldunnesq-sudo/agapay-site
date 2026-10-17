@@ -163,7 +163,7 @@ const SECRET_FIELD =
   /password|secret|token|credential|(^|_)pin(_|$)|session|api.?key|salt|web.?authn|private.?key|recovery.?code|authorization|cookie|database_identifier|provider_id|binding_name|^p256dh$|^auth$/i;
 export function sanitizeValue(value: unknown, depth = 0): unknown {
   if (depth > 30) throw new PortabilityError('invalid_record', 'A record exceeds the supported nesting depth.');
-  if (Array.isArray(value)) return value.map((item) => sanitizeValue(item, depth + 1));
+  if (Array.isArray(value)) return value.map((item: unknown) => sanitizeValue(item, depth + 1));
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value)

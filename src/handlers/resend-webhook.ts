@@ -79,7 +79,7 @@ function recipientSummary(data: ResendEventData) {
   return (
     recipients
       .filter(Boolean)
-      .map((value) => String(value))
+      .map((value: unknown) => String(value))
       .join(', ') || 'Unknown recipient'
   );
 }

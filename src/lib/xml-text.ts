@@ -18,11 +18,14 @@ function decodedCodePoint(value: string, radix: number): string {
 }
 
 export function decodeXmlEntities(value: unknown = ''): string {
-  return String(value).replace(/&(?:#(\d+)|#x([\da-f]+)|([a-z]+));/gi, (entity, decimal, hexadecimal, named) => {
-    if (decimal) return decodedCodePoint(decimal, 10);
-    if (hexadecimal) return decodedCodePoint(hexadecimal, 16);
-    return NAMED_XML_ENTITIES[String(named || '').toLowerCase()] ?? entity;
-  });
+  return String(value).replace(
+    /&(?:#(\d+)|#x([\da-f]+)|([a-z]+));/gi,
+    (entity, decimal: string | undefined, hexadecimal: string | undefined, named: string | undefined) => {
+      if (decimal) return decodedCodePoint(decimal, 10);
+      if (hexadecimal) return decodedCodePoint(hexadecimal, 16);
+      return NAMED_XML_ENTITIES[String(named || '').toLowerCase()] ?? entity;
+    }
+  );
 }
 
 function markupToText(value: unknown, preserveLines: boolean): string {

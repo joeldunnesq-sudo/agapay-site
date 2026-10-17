@@ -41,10 +41,6 @@ export interface StripeWebhookObject extends DonationInvoice {
   details_submitted?: boolean;
   requirements?: { disabled_reason?: string; currently_due?: string[] };
   external_accounts?: { data?: { object?: string; bank_name?: string; last4?: string }[] };
-  requirements?: { disabled_reason?: string; currently_due?: string[] };
-  charges_enabled?: boolean;
-  payouts_enabled?: boolean;
-  details_submitted?: boolean;
 }
 export interface StripeWebhookEvent {
   id: string;
