@@ -144,14 +144,14 @@ function renderCommemorationInsights(entries: DonorAppCommemoration[], dashboard
   const thisYear = now.getFullYear();
   const inThisYear = (ts: string | undefined) => {
     const d = new Date(ts as string);
-    return !isNaN(d as unknown as number) && d.getFullYear() === thisYear;
+    return !isNaN(Number(d)) && d.getFullYear() === thisYear;
   };
   const namesThisYear = commemorationNameCount(
     entries.filter((e) => inThisYear(e.createdAt || e.submittedAt || e.date))
   );
   const allDates = [...offerings, ...entries]
     .map((x) => new Date((x.createdAt || x.submittedAt || x.date) as string))
-    .filter((d) => !isNaN(d as unknown as number));
+    .filter((d) => !isNaN(Number(d)));
   const sinceYear = allDates.length ? Math.min(...allDates.map((d) => d.getFullYear())) : thisYear;
   setText('commemMetricNames', String(totalNames));
   setText('commemMetricCandles', String(candleOfferings.length));
@@ -558,7 +558,7 @@ function renderPledgeTracker(
       }, 120);
       fill.classList.toggle('pledge-complete', pct >= 100);
     }
-    if (track) track.setAttribute('aria-valuenow', pct as unknown as string);
+    if (track) track.setAttribute('aria-valuenow', String(pct));
     const label = document.getElementById(labelId);
     if (label) label.textContent = periodTitle;
     const raised = document.getElementById(prefix + 'Raised');

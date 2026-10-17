@@ -119,12 +119,8 @@ function filterHistory(): void {
       const matchRange = !rangeStart || (!Number.isNaN(giftDate.getTime()) && giftDate >= rangeStart);
       return matchQ && matchType && matchFund && matchRange;
     })
-    // JavaScript Date subtraction uses numeric coercion; assertions preserve that expression.
-    .sort(
-      (a, b) =>
-        (new Date(b.date || b.createdAt || 0) as unknown as number) -
-        (new Date(a.date || a.createdAt || 0) as unknown as number)
-    );
+    // Explicit conversion retains the numeric coercion used by Date subtraction.
+    .sort((a, b) => Number(new Date(b.date || b.createdAt || 0)) - Number(new Date(a.date || a.createdAt || 0)));
   renderHistoryTable();
   renderGiversPanel();
 }
@@ -214,13 +210,13 @@ function renderHistoryTable(): void {
       .filter(Boolean)
   ).size;
   const feeCovered = filteredGifts.filter((g) => g.coverFees).length;
-  // DOM text setters coerce these counts to strings; retain existing assignments.
-  document.getElementById('histStatTotal')!.textContent = filteredGifts.length as unknown as string;
+  // Convert numeric counts explicitly before assigning DOM text.
+  document.getElementById('histStatTotal')!.textContent = String(filteredGifts.length);
   document.getElementById('histStatAmount')!.textContent = money(total);
   document.getElementById('histStatAvg')!.textContent = filteredGifts.length ? money(avg) : '—';
-  document.getElementById('histStatRecurring')!.textContent = recurring as unknown as string;
+  document.getElementById('histStatRecurring')!.textContent = String(recurring);
   const donorStat = document.getElementById('histStatDonors');
-  if (donorStat) donorStat.textContent = donors as unknown as string;
+  if (donorStat) donorStat.textContent = String(donors);
   const context = document.getElementById('historyHeroContext');
   if (context)
     context.textContent = `${recurring} recurring gift${recurring === 1 ? '' : 's'} · ${feeCovered} fee-covered · ${donors} distinct donor${donors === 1 ? '' : 's'}`;

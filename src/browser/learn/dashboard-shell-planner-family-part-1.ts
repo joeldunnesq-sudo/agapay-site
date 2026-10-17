@@ -335,7 +335,7 @@ function eventOccursOnDate(event: LearnShellNode = {}, date: string = '') {
   if (recurrence === 'none') return event.date === date;
   const start = new Date(`${event.date}T00:00:00.000Z`);
   const target = new Date(`${date}T00:00:00.000Z`);
-  const diffDays = Math.round(((target as unknown as number) - (start as unknown as number)) / 86400000);
+  const diffDays = Math.round((Number(target) - Number(start)) / 86400000);
   if (diffDays < 0) return false;
   if (recurrence === 'weekly') return diffDays % 7 === 0;
   if (recurrence === 'biweekly') return diffDays % 14 === 0;

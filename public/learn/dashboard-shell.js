@@ -5333,13 +5333,13 @@ function moveResourceRowToLane(resourceRow) {
 function reindexResourceList(list) {
   if (!list) return;
   list.querySelectorAll('[data-resource-row]').forEach((row, i) => {
-    row.dataset.resourceRow = i;
+    row.dataset.resourceRow = String(i);
     row.querySelectorAll('[data-resource-field]').forEach((field) => {
       const key = field.dataset.resourceField || '';
       if (key) field.name = resourceFieldName(i, key);
     });
     const weekPicker = row.querySelector('[data-resource-week-picker]');
-    if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
+    if (weekPicker) weekPicker.dataset.resourceWeekPicker = String(i);
     row.querySelectorAll('.learn-resource-card-summary small, .learn-resource-modal-card > small').forEach((label) => {
       label.textContent = i === 0 ? 'Book / source / resource' : `Resource ${i + 1}`;
     });

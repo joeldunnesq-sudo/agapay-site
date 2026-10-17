@@ -39,11 +39,8 @@ export async function stewardshipGivingSummary(
   const yearEnd = `${year}-12-31`;
 
   const today = new Date();
-  // Type-only assertions preserve JavaScript Date subtraction and its coercion.
-  const dayOfYear = Math.max(
-    1,
-    Math.ceil(((today as unknown as number) - (new Date(`${year}-01-01`) as unknown as number)) / 86400000)
-  );
+  // Explicit conversion retains the numeric coercion used by Date subtraction.
+  const dayOfYear = Math.max(1, Math.ceil((Number(today) - Number(new Date(`${year}-01-01`))) / 86400000));
   const daysInYear = year % 4 === 0 ? 366 : 365;
 
   const [pledgeRow, actualRow, priorRow, manualCurrentCents, manualPriorCents] = await Promise.all([

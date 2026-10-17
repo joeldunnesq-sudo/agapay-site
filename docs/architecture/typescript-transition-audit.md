@@ -83,3 +83,7 @@ The first protected attempt stopped on a 30-second PDF-download browser timeout.
 The routing harness initially lacked its local baseline fixture. The unchanged baseline was restored from the previous accepted release, with provenance verified against its successful routing result; all nine response/status/security-header comparisons then passed. The assertions and application code were unchanged.
 
 The migration remains 495/495 original modules. Release evidence is retained locally under ignored tmp-release-audit/, including staging-acceptance.json, production-validation.json, production-audit-quality.json, authenticated artifacts, hosted-suite logs and stable-health.json. Credentials and artifacts are not committed.
+
+## Subsequent boundary hardening
+
+The first post-audit [boundary hardening checkpoint](typescript-boundary-hardening.md) removes 54 of the catalogued double assertions (229 to 175) and validates Learn community-resource and feedback storage records, including canonical fallback handling. The original 495/495 migration inventory remains unchanged. Its release acceptance is recorded separately.

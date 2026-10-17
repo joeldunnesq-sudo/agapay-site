@@ -112,19 +112,19 @@ function pdxDrawSparkline(svg: Element | null, data: readonly number[] | null | 
   const areaPathEl = svg.querySelector<SVGPathElement>('path[fill^="url"]');
   if (linePathEl && linePathEl.getTotalLength) {
     const len = linePathEl.getTotalLength();
-    linePathEl.style.strokeDasharray = len as unknown as string;
-    linePathEl.style.strokeDashoffset = len as unknown as string;
+    linePathEl.style.strokeDasharray = String(len);
+    linePathEl.style.strokeDashoffset = String(len);
     linePathEl.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1)';
     requestAnimationFrame(() =>
       setTimeout(() => {
-        linePathEl.style.strokeDashoffset = 0 as unknown as string;
+        linePathEl.style.strokeDashoffset = String(0);
         if (areaPathEl) {
           areaPathEl.style.transition = 'opacity 0.8s ease 0.6s';
-          areaPathEl.style.opacity = 1 as unknown as string;
+          areaPathEl.style.opacity = String(1);
         }
         svg.querySelectorAll<SVGCircleElement>('circle').forEach((c, i) => {
           c.style.transition = `opacity 0.4s ease ${0.8 + i * 0.05}s`;
-          c.style.opacity = 1 as unknown as string;
+          c.style.opacity = String(1);
         });
       }, 300)
     );

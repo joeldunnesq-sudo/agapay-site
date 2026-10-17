@@ -1249,7 +1249,7 @@ function renderSacramentsPanel() {
   }
   const needsResponse = requests
     .filter((r) => r.status === 'requested')
-    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    .sort((a, b) => Number(new Date(a.createdAt || 0)) - Number(new Date(b.createdAt || 0)));
   const thisWeek = requests
     .filter((r) => isThisWeek(r))
     .sort((a, b) => (a.confirmedDate || '').localeCompare(b.confirmedDate || ''));

@@ -1209,7 +1209,10 @@
     "src/browser/learn/dashboard-shell-setup-calendar-part-2.ts",
     "src/browser/learn/dashboard-shell-setup-calendar.ts",
     "src/browser/learn/dashboard-shell.ts",
-    "scripts/typecheck-browser/learn-shell-contracts.ts"
+    "scripts/typecheck-browser/learn-shell-contracts.ts",
+    "src/learn/stored-record-validation.ts",
+    "src/learn/stored-record-validation.js",
+    "scripts/learn-stored-record-validation-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -2452,6 +2455,9 @@
     "src/browser/learn/dashboard-shell-setup-calendar-part-2.ts",
     "src/browser/learn/dashboard-shell-setup-calendar.ts",
     "src/browser/learn/dashboard-shell.ts",
-    "scripts/typecheck-browser/learn-shell-contracts.ts"
+    "scripts/typecheck-browser/learn-shell-contracts.ts",
+    "src/learn/stored-record-validation.ts",
+    "src/learn/stored-record-validation.js",
+    "scripts/learn-stored-record-validation-tests.mjs"
   ]
 }

@@ -72,7 +72,7 @@ function filterHistory() {
       const matchRange = !rangeStart || (!Number.isNaN(giftDate.getTime()) && giftDate >= rangeStart);
       return matchQ && matchType && matchFund && matchRange;
     })
-    .sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+    .sort((a, b) => Number(new Date(b.date || b.createdAt || 0)) - Number(new Date(a.date || a.createdAt || 0)));
   renderHistoryTable();
   renderGiversPanel();
 }
@@ -159,12 +159,12 @@ function renderHistoryTable() {
       .filter(Boolean)
   ).size;
   const feeCovered = filteredGifts.filter((g) => g.coverFees).length;
-  document.getElementById('histStatTotal').textContent = filteredGifts.length;
+  document.getElementById('histStatTotal').textContent = String(filteredGifts.length);
   document.getElementById('histStatAmount').textContent = money(total);
   document.getElementById('histStatAvg').textContent = filteredGifts.length ? money(avg) : '—';
-  document.getElementById('histStatRecurring').textContent = recurring;
+  document.getElementById('histStatRecurring').textContent = String(recurring);
   const donorStat = document.getElementById('histStatDonors');
-  if (donorStat) donorStat.textContent = donors;
+  if (donorStat) donorStat.textContent = String(donors);
   const context = document.getElementById('historyHeroContext');
   if (context)
     context.textContent = `${recurring} recurring gift${recurring === 1 ? '' : 's'} · ${feeCovered} fee-covered · ${donors} distinct donor${donors === 1 ? '' : 's'}`;

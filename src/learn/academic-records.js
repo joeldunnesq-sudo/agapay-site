@@ -314,7 +314,9 @@ async function saveAcademicRows(env, householdId, records, reportCards) {
 async function closeLearnTerm(env, setupSnapshot = {}, termId = '') {
   const householdId = setupSnapshot.identity?.householdId || setupSnapshot.household?.id || '';
   if (!householdId) return { ok: false, status: 400, error: 'Learn household setup is missing.' };
-  const terms = list(setupSnapshot.terms).length ? list(setupSnapshot.terms) : [setupSnapshot.term].filter(Boolean);
+  const terms = list(setupSnapshot.terms).length
+    ? list(setupSnapshot.terms)
+    : [setupSnapshot.term].filter((value) => Boolean(value));
   const term = terms.find((entry) => entry.id === termId);
   if (!term) return { ok: false, status: 404, error: 'That term is not part of this household setup.' };
   const academicRecords = recordsForTerm(setupSnapshot, term);

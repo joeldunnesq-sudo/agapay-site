@@ -267,7 +267,7 @@ async function refreshAllFeeds() {
       console.warn('Feed error:', sub.xmlUrl, e);
     }
   }
-  all.sort((a, b) => new Date(b.date) - new Date(a.date));
+  all.sort((a, b) => Number(new Date(b.date)) - Number(new Date(a.date)));
   const episodes = all.slice(0, 300);
   save('agp_eps', episodes);
   setState({ episodes });
@@ -282,7 +282,7 @@ async function addRssFeed(xmlUrl) {
     setState({ subs, rssSheet: false, rssUrl: '' });
     showToast(`"${sub.title}" added`);
     const allEps = [...state.episodes.filter((e) => e.xmlUrl !== sub.xmlUrl), ...items];
-    allEps.sort((a, b) => new Date(b.date) - new Date(a.date));
+    allEps.sort((a, b) => Number(new Date(b.date)) - Number(new Date(a.date)));
     const episodes = allEps.slice(0, 300);
     save('agp_eps', episodes);
     setState({ episodes });

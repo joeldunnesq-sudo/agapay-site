@@ -145,13 +145,13 @@ function renderRecurringHealth(health: ParishRecurringHealthView): void {
         lapsed.style.transition =
           'stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s';
         lapsed.style.strokeDasharray = `${C * lapsedShare} ${C}`;
-        lapsed.style.strokeDashoffset = (-C * activeShare) as unknown as string;
+        lapsed.style.strokeDashoffset = String(-C * activeShare);
       }
       if (failed) {
         failed.style.transition =
           'stroke-dasharray 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s';
         failed.style.strokeDasharray = `${C * failedShare} ${C}`;
-        failed.style.strokeDashoffset = (-C * (activeShare + lapsedShare)) as unknown as string;
+        failed.style.strokeDashoffset = String(-C * (activeShare + lapsedShare));
       }
     }, 100)
   );

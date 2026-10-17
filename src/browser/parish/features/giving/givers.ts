@@ -182,8 +182,8 @@ function renderGiversPanel(): void {
   if (donutSub) donutSub.textContent = `${recurring} of ${givers.length} household${givers.length === 1 ? '' : 's'}`;
   if (donut) {
     const C = 2 * Math.PI * 82; // ≈ 515
-    donut.setAttribute('stroke-dasharray', C as unknown as string);
-    donut.setAttribute('stroke-dashoffset', C as unknown as string);
+    donut.setAttribute('stroke-dasharray', String(C));
+    donut.setAttribute('stroke-dashoffset', String(C));
     requestAnimationFrame(() =>
       setTimeout(() => {
         donut.style.strokeDashoffset = String(C * (1 - ratio));
@@ -221,7 +221,7 @@ function renderGiversPanel(): void {
       .filter((g) => g.recurring && g.lastGiftAt)
       .map((g) => ({
         ...g,
-        daysQuiet: Math.floor(((now as unknown as number) - (new Date(g.lastGiftAt) as unknown as number)) / dayMs),
+        daysQuiet: Math.floor((Number(now) - Number(new Date(g.lastGiftAt))) / dayMs),
       }))
       .filter((g) => g.daysQuiet >= 30)
       .sort((a, b) => b.daysQuiet - a.daysQuiet)

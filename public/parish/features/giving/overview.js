@@ -81,19 +81,19 @@ function pdxDrawSparkline(svg, data) {
   const areaPathEl = svg.querySelector('path[fill^="url"]');
   if (linePathEl && linePathEl.getTotalLength) {
     const len = linePathEl.getTotalLength();
-    linePathEl.style.strokeDasharray = len;
-    linePathEl.style.strokeDashoffset = len;
+    linePathEl.style.strokeDasharray = String(len);
+    linePathEl.style.strokeDashoffset = String(len);
     linePathEl.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1)';
     requestAnimationFrame(() =>
       setTimeout(() => {
-        linePathEl.style.strokeDashoffset = 0;
+        linePathEl.style.strokeDashoffset = String(0);
         if (areaPathEl) {
           areaPathEl.style.transition = 'opacity 0.8s ease 0.6s';
-          areaPathEl.style.opacity = 1;
+          areaPathEl.style.opacity = String(1);
         }
         svg.querySelectorAll('circle').forEach((c, i) => {
           c.style.transition = `opacity 0.4s ease ${0.8 + i * 0.05}s`;
-          c.style.opacity = 1;
+          c.style.opacity = String(1);
         });
       }, 300)
     );

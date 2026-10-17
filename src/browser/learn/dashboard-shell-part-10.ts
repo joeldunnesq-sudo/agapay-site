@@ -126,13 +126,13 @@ function moveResourceRowToLane(resourceRow: HTMLElement | null) {
 function reindexResourceList(list: HTMLElement | null) {
   if (!list) return;
   list.querySelectorAll<HTMLElement>('[data-resource-row]').forEach((row, i) => {
-    row.dataset.resourceRow = i as unknown as string;
+    row.dataset.resourceRow = String(i);
     row.querySelectorAll<HTMLInputElement>('[data-resource-field]').forEach((field) => {
       const key = field.dataset.resourceField || '';
       if (key) (field as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).name = resourceFieldName(i, key);
     });
     const weekPicker = row.querySelector<HTMLElement>('[data-resource-week-picker]');
-    if (weekPicker) weekPicker.dataset.resourceWeekPicker = i as unknown as string;
+    if (weekPicker) weekPicker.dataset.resourceWeekPicker = String(i);
     row
       .querySelectorAll<HTMLElement>('.learn-resource-card-summary small, .learn-resource-modal-card > small')
       .forEach((label) => {
