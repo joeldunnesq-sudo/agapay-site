@@ -58,7 +58,7 @@ Validation passed:
 - Worker startup profiling and private Accounting provisioner dry-run packaging. The local startup profile window was 564.8 ms while other checks were running; this is a local diagnostic, not a production latency measurement.
 - Final generated-output checks passed after the callback/collection corrections, confirming those corrections erase without changing runtime output. The two explicit missing-date fallbacks remain the only changed generated JavaScript files.
 
-Local evidence is retained in ignored `tmp-release-90/audit-*.log`, `audit-runtime-diff.json`, `audit-validation.json` and `audit-type-surface.json`; these artifacts and credentials are not committed. These audit fixes are a local follow-up to the accepted PR #242 release; this audit does not push or deploy them.
+Local evidence is retained in ignored `tmp-release-90/audit-*.log`, `audit-runtime-diff.json`, `audit-validation.json` and `audit-type-surface.json`; these artifacts and credentials are not committed. The audit fixes are now accepted and deployed through PR #243 at main commit 697f1d9468f0082b20f10cd97820ff2b7630f54d. The acceptance record below supersedes their initial local-only status.
 
 ## Limits and remaining hardening
 
@@ -67,3 +67,19 @@ The 100% inventory measures authoritative TypeScript ownership of the original r
 The scan catalogued 229 `as unknown as` double assertions. These include truthy-array predicates, native DOM coercions, Date arithmetic, dynamic keys, database/proxy adapters and staged PDF state. Their presence is a type-hardening concern, not proof of a runtime defect. This audit corrects verified contract errors rather than blindly rewriting assertions and changing established behavior. Future changes at those boundaries should replace assertions with derived types, explicit coercions or runtime validation, backed by behavior tests. The detailed path/line inventory is retained locally in `audit-type-surface.json`.
 
 Systematic compiler, manifest, output and regression checks cover the migration as a whole; manual review focused on compiler-discovered inconsistencies and high-risk ownership, payload, browser-global and release boundaries. Passing these checks is not a proof that every application path is bug-free.
+
+## Protected production release acceptance
+
+PR [#243](https://github.com/joeldunnesq-sudo/agapay-site/pull/243) merged source 3c834c5d32ee9418d157bd18f63bb3a12458f7f6 as 697f1d9468f0082b20f10cd97820ff2b7630f54d; their trees are identical. Protected production [run 39002498975](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39002498975), attempt 2, passed Test, Quality, Deploy and authenticated Accounting smoke. Production was stamped at 2026-10-17T04:37:39Z. Main Worker version: fdeaf98a-ffc0-4724-8972-5419d37f9fc6; private Accounting provisioner version: 30ca13c8-9353-4cfb-9292-85a071a8f644.
+
+- Exact-source PR and protected staging test runs each passed 321 platform commands and four prechecks. Quality logs independently confirmed all 57 application Worker declarations, 17,078 parameter occurrences with zero inferred-any parameters, and 1,917 linted files. Aggregate PR CodeQL policy passed with no new alerts.
+- Five hosted staging suites, normal-MFA Giving/catalog acceptance with catalog restoration and upload deletion, and all seven private-document checks passed before merge. Both changed audit artifacts and their exact page content versions were checked.
+- Protected main passed a fresh 321-command test run, four prechecks and full Quality, including both new type-safety gates. Main CodeQL passed.
+- All six hosted production suites passed. Normal-MFA production acceptance passed 18 checks; the existing-bill attachment download was the sole allowed skip because the dedicated test parish has no existing bill.
+- Six spaced production health probes confirmed the same merged SHA and stamped deployment timestamp after the automatic Cloudflare build and protected deployment. No MFA, billing, entitlement, release-permission or size-budget configuration was changed.
+
+The first protected attempt stopped on a 30-second PDF-download browser timeout. The unchanged test passed all 16 downloads in a focused local recheck; the protected full-suite retry then passed without changing tests, timeouts or application code. An additional 16-report download check against the final deployed assets passed with synthetic financial fixtures.
+
+The routing harness initially lacked its local baseline fixture. The unchanged baseline was restored from the previous accepted release, with provenance verified against its successful routing result; all nine response/status/security-header comparisons then passed. The assertions and application code were unchanged.
+
+The migration remains 495/495 original modules. Release evidence is retained locally under ignored tmp-release-audit/, including staging-acceptance.json, production-validation.json, production-audit-quality.json, authenticated artifacts, hosted-suite logs and stable-health.json. Credentials and artifacts are not committed.
