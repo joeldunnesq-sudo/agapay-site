@@ -269,7 +269,7 @@ export async function handleParishPastoralFollowUp(
       });
       if (ctx?.waitUntil)
         ctx.waitUntil(
-          notifyPriestOfRepose(env, registration, result).catch((error) =>
+          notifyPriestOfRepose(env, registration, result).catch((error: unknown) =>
             console.error(
               JSON.stringify({
                 message: 'pastoral_repose_notification_failed',
@@ -330,7 +330,7 @@ export async function handleParishPastoralFollowUp(
       });
       if (ctx?.waitUntil) {
         ctx.waitUntil(
-          notifyPriestOfRepose(env, registration, result).catch((error) =>
+          notifyPriestOfRepose(env, registration, result).catch((error: unknown) =>
             console.error(
               JSON.stringify({
                 message: 'pastoral_repose_notification_failed',

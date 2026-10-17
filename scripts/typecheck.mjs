@@ -21,9 +21,11 @@ const commands = [
     'false',
   ],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.worker.json'],
+  ['scripts/check-owned-declarations.mjs'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.learn.json'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.browser.json'],
   ['node_modules/typescript/bin/tsc', '--project', 'tsconfig.browser-workers.json'],
+  ['scripts/check-runtime-type-safety.mjs'],
 ];
 
 for (const args of commands) {

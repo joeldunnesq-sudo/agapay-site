@@ -614,7 +614,19 @@ export async function accountsPayableAging(
       asOfDate,
       asOfDate
     ),
-    vendors = new Map();
+    vendors = new Map<
+      unknown,
+      {
+        vendorId: unknown;
+        vendor: unknown;
+        current: number;
+        days1to30: number;
+        days31to60: number;
+        days61to90: number;
+        over90: number;
+        totalDue: number;
+      }
+    >();
   for (const r of rows) {
     const v = vendors.get(r.vendor_id) || {
       vendorId: r.vendor_id,

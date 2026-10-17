@@ -692,7 +692,7 @@ function renderHome() {
     }
 
     <div class="no-scrollbar" style="display:flex;gap:8px;padding:0 20px 22px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">${categories
-      .map((cat) => {
+      .map((cat: string) => {
         const active = cat === state.activeCategory;
         return `<button class="category-chip tappable" data-category="${esc(cat)}" style="flex:none;padding:8px 16px;background:${active ? `linear-gradient(135deg,${GOLD},#A97C25)` : 'rgba(255,255,255,.04)'};border:${active ? '1px solid transparent' : '1px solid rgba(255,255,255,.07)'};border-radius:22px;font-size:.68rem;color:${active ? NIGHT : MUTED};font-weight:${active ? '800' : '600'}">${esc(cat)}</button>`;
       })

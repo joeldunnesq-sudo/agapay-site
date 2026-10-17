@@ -315,7 +315,7 @@ async function createListing(
         listingId: id,
         listingTitle: title,
         listingType,
-      }).catch((error) =>
+      }).catch((error: unknown) =>
         console.error('exchange_listing_push_failed', (error as Error | null)?.message || String(error))
       )
     );
@@ -552,7 +552,7 @@ async function sendMessage(
             JSON.stringify({ parishId: context.parishId, threadId, messageId: id, ...summary })
           )
         )
-        .catch((error) =>
+        .catch((error: unknown) =>
           console.error('exchange_push_delivery_failed', (error as Error | null)?.message || String(error))
         )
     );

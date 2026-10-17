@@ -116,7 +116,7 @@ export interface DonorAppOptions {
   maxAgeMs?: number;
 }
 export interface DonorGiftOptions extends Record<string, unknown> {
-  campaign?: string;
+  campaign?: string | null;
   fund?: string | null;
   amountCents?: number | string;
   kind?: string;

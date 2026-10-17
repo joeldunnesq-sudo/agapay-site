@@ -97,7 +97,7 @@ export function bindListenEvents({
       if ((e.target as Element).closest('.follow-btn') || (e.target as Element).closest('.unfollow-btn')) return;
       try {
         const episode = JSON.parse(decodeURIComponent(el.dataset.ep!));
-        playEpisode(episode).catch((error) => {
+        playEpisode(episode).catch((error: unknown) => {
           console.error('Episode playback failed:', error, episode);
           showToast('Unable to play this episode');
         });

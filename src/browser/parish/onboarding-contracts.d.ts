@@ -65,7 +65,7 @@ interface ParishWorkspaceIdentity {
   subscriptionStatus?: string;
 }
 declare function hasGivingPlusAccess(): boolean;
-declare function fallbackFundsArray(value: unknown): ParishGivingOption[];
+declare const fallbackFundsArray: import('./app-session-and-navigation.js').ParishAppPart1['fallbackFundsArray'];
 declare function isGeneralDashboardFund(fund: ParishGivingOption): boolean;
 declare function isCandleDashboardFund(fund: ParishGivingOption): boolean;
 declare function slugifyLocal(value: string): string;

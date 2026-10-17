@@ -110,7 +110,7 @@ export function observeScheduledTask<TResult>(
       console.log(name, JSON.stringify(results));
       return results;
     })
-    .catch(async (error) => {
+    .catch(async (error: unknown) => {
       const completedAtMs = Date.now();
       await recordScheduledHeartbeat(env, {
         ...heartbeat,

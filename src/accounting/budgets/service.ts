@@ -141,8 +141,8 @@ function allocate(annual: number, strategy: string = 'even_monthly', monthly: un
     if (
       !Array.isArray(monthly) ||
       monthly.length !== 12 ||
-      monthly.some((v) => !Number.isSafeInteger(Number(v)) || Number(v) < 0) ||
-      monthly.reduce((s, v) => s + Number(v), 0) !== annual
+      monthly.some((v: unknown) => !Number.isSafeInteger(Number(v)) || Number(v) < 0) ||
+      monthly.reduce((s: number, v: unknown) => s + Number(v), 0) !== annual
     )
       throw new ValidationError('Monthly allocations must equal the annual amount.');
     return monthly.map(Number);

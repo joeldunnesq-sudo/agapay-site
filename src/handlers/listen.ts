@@ -148,7 +148,7 @@ export async function handleListenAudio(
       }
       controller.enqueue(chunk.value);
     },
-    cancel(reason) {
+    cancel(reason: unknown) {
       return reader.cancel(reason);
     },
   });

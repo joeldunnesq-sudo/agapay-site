@@ -115,7 +115,7 @@ export function scheduleGroupMessagePush(
         JSON.stringify({ parishId: context.parishId, ministryId, messageId: message.id, ...summary })
       )
     )
-    .catch((error) =>
+    .catch((error: unknown) =>
       console.error('group_push_delivery_failed', (error as { message?: string } | undefined)?.message || String(error))
     );
   ctx.waitUntil(delivery);

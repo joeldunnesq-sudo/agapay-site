@@ -430,7 +430,7 @@ function deploymentCheckOk(check: AdminAppDeploymentCheck | string | boolean | u
     if (typeof check.ok === 'boolean') return check.ok;
     if (typeof check.configured === 'boolean') return check.configured;
     const values = Object.values(check);
-    return values.length > 0 && values.every((value) => value === true);
+    return values.length > 0 && values.every((value: unknown) => value === true);
   }
   return Boolean(legacyValue);
 }

@@ -389,7 +389,7 @@ export async function d1Batch(
 ) {
   if (!d1(env)) return null;
   if (!Array.isArray(statements) || !statements.length) return null;
-  const prepared = statements.map(({ sql, params = [] }) =>
+  const prepared = statements.map(({ sql, params = [] }: { sql: string; params?: readonly unknown[] }) =>
     d1(env)!
       .prepare(sql)
       .bind(...params)

@@ -203,7 +203,7 @@ export function normalizeFundTransferInstructions(value: unknown) {
   if (!Array.isArray(value)) return [];
   return value
     .slice(0, 100)
-    .map((item) => {
+    .map((item: Record<string, unknown>) => {
       const action = item?.action === 'transfer' ? 'transfer' : 'retain';
       return {
         key: String(item?.key || '')

@@ -608,9 +608,9 @@ async function consumeRecoveryCode(env: MfaEnvironment, transaction: MfaTransact
   const hashes = safeJson(profile?.recovery_code_hashes_json, []);
   if (!Array.isArray(hashes) || !hashes.length) return false;
   const submitted = await recoveryHash(transaction.principal_type, transaction.principal_id, code);
-  const index = hashes.findIndex((hash) => secureCompare(hash, submitted));
+  const index = hashes.findIndex((hash: string) => secureCompare(hash, submitted));
   if (index < 0) return false;
-  const next = hashes.filter((_, candidateIndex) => candidateIndex !== index);
+  const next = hashes.filter((_: unknown, candidateIndex) => candidateIndex !== index);
   const result = await d1(env)!
     .prepare(
       `UPDATE privileged_mfa_profiles SET recovery_code_hashes_json = ?3, updated_at = ?4

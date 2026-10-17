@@ -124,7 +124,12 @@ export async function claimSignupSlot(
             JSON.stringify({ parishId: context.parishId, slotId, entryId: id, ...summary })
           )
         )
-        .catch((error) => console.error('signup_push_delivery_failed', error?.message || String(error)))
+        .catch((error: unknown) =>
+          console.error(
+            'signup_push_delivery_failed',
+            (error as { message?: unknown } | null)?.message || String(error)
+          )
+        )
     );
   }
   return { ok: true, entryId: id };
@@ -192,7 +197,12 @@ export async function cancelEntry(
           slotDate: entry.slot_date,
           ministryName: entry.ministry_name,
           reminderLabel: 'A signup spot opened',
-        }).catch((error) => console.error('signup_waitlist_push_failed', error?.message || String(error)))
+        }).catch((error: unknown) =>
+          console.error(
+            'signup_waitlist_push_failed',
+            (error as { message?: unknown } | null)?.message || String(error)
+          )
+        )
       );
   }
   return { ok: true };
@@ -350,7 +360,12 @@ export async function requestSignupCoverage(
             reminderLabel: 'Coverage requested',
           })
         )
-      ).catch((error) => console.error('signup_coverage_request_push_failed', error?.message || String(error)))
+      ).catch((error: unknown) =>
+        console.error(
+          'signup_coverage_request_push_failed',
+          (error as { message?: unknown } | null)?.message || String(error)
+        )
+      )
     );
   }
   return { ok: true, coverageRequestId: id, recipientCount: recipients.length };
@@ -435,8 +450,8 @@ export async function acceptSignupCoverage(
       }),
     ];
     ctx.waitUntil(
-      Promise.all(notifications).catch((error) =>
-        console.error('signup_coverage_push_failed', error?.message || String(error))
+      Promise.all(notifications).catch((error: unknown) =>
+        console.error('signup_coverage_push_failed', (error as { message?: unknown } | null)?.message || String(error))
       )
     );
   }
@@ -487,7 +502,9 @@ export async function completeSignupEntry(
         slotDate: Number(e.slot_date) || null,
         ministryName: e.ministry_name,
         reminderLabel: 'Thank you for serving',
-      }).catch((error) => console.error('signup_thank_you_push_failed', error?.message || String(error)))
+      }).catch((error: unknown) =>
+        console.error('signup_thank_you_push_failed', (error as { message?: unknown } | null)?.message || String(error))
+      )
     );
   return { ok: true };
 }

@@ -140,7 +140,7 @@ export async function submitLearnCommunityResource(
     ageRange: clean(body.ageRange, 40) || 'Family',
     tags: Array.isArray(body.tags)
       ? body.tags
-          .map((tag) => clean(tag, 40))
+          .map((tag: unknown) => clean(tag, 40))
           .filter(Boolean)
           .slice(0, 10)
       : clean(body.tags, 240)
@@ -183,7 +183,7 @@ export async function createCuratedLearnCommunityResource(
     ageRange: clean(body.ageRange, 40) || 'Family',
     tags: Array.isArray(body.tags)
       ? body.tags
-          .map((tag) => clean(tag, 40))
+          .map((tag: unknown) => clean(tag, 40))
           .filter(Boolean)
           .slice(0, 10)
       : clean(body.tags, 240)
@@ -236,7 +236,7 @@ export async function updateCuratedLearnCommunityResource(
     ageRange: clean(body.ageRange, 40) || 'Family',
     tags: Array.isArray(body.tags)
       ? body.tags
-          .map((tag) => clean(tag, 40))
+          .map((tag: unknown) => clean(tag, 40))
           .filter(Boolean)
           .slice(0, 10)
       : clean(body.tags, 240)

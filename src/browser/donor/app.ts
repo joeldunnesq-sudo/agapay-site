@@ -92,7 +92,7 @@ function donorAuthHeaders(extra: Record<string, string> = {}) {
   return window.AGAPAYDonorSession.authHeaders({ 'Content-Type': 'application/json', ...extra });
 }
 
-async function donorApi(path: string, options: RequestInit = {}) {
+async function donorApi<T = DonorAppPayload>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(path, {
     ...options,
     headers: options.headers || donorAuthHeaders(),
@@ -114,7 +114,7 @@ async function donorApi(path: string, options: RequestInit = {}) {
     (err as DonorAppError).data = data;
     throw err;
   }
-  return data;
+  return data as T;
 }
 
 function readDonorCache<T = DonorAppPayload>(name: string, { maxAgeMs = 0 }: DonorAppOptions = {}) {
@@ -137,7 +137,7 @@ function readDonorCache<T = DonorAppPayload>(name: string, { maxAgeMs = 0 }: Don
   }
 }
 
-function writeDonorCache(name: string, data: DonorAppPayload | null | undefined) {
+function writeDonorCache(name: string, data: unknown) {
   const email = donorCacheEmail();
   if (!email || !data) return;
   try {

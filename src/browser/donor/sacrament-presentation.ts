@@ -1,9 +1,23 @@
 // Declaration-only composition preserves the original classic-script globals and startup order.
+import type { DonorSacramentPresentationOwner } from './controllers/sacraments.js';
 
-function sacramentTypeLabel(type: string, otherLabel: string | undefined) {
+declare const SACRAMENT_TYPE_LABELS: DonorSacramentPresentationOwner['SACRAMENT_TYPE_LABELS'];
+declare const SACRAMENT_STATUS_LABELS: DonorSacramentPresentationOwner['SACRAMENT_STATUS_LABELS'];
+declare const SACRAMENT_STATUS_TONE: DonorSacramentPresentationOwner['SACRAMENT_STATUS_TONE'];
+
+function sacramentTypeLabel(type: string, otherLabel?: string) {
   if (type === 'other' && otherLabel) return otherLabel;
   return SACRAMENT_TYPE_LABELS[type] || type;
 }
+
+export type DonorSacramentPresentation = {
+  sacramentTypeLabel: typeof sacramentTypeLabel;
+  sacramentLocationHint: typeof sacramentLocationHint;
+  sacramentIcon: typeof sacramentIcon;
+  sacramentSummary: typeof sacramentSummary;
+  sacramentPreparationStatusLabel: typeof sacramentPreparationStatusLabel;
+  sacramentRequestRow: typeof sacramentRequestRow;
+};
 
 function sacramentLocationHint(sacramentType: string | undefined) {
   return sacramentType === 'house_blessing' || sacramentType === 'home_visit';

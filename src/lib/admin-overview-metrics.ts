@@ -55,7 +55,11 @@ export function buildAdminOverviewMetrics(
       result.tierBreakdown.find((tier) => tier.id === 'other');
     bucket!.count++;
     if (inWeek(registration.receivedAt)) result.newRegistrations++;
-    const history = Array.isArray(registration.subscriptionStatusHistory) ? registration.subscriptionStatusHistory : [];
+    const history: NonNullable<MetricsRegistration['subscriptionStatusHistory']> = Array.isArray(
+      registration.subscriptionStatusHistory
+    )
+      ? registration.subscriptionStatusHistory
+      : [];
     const dates = history.filter((item) => canceled(item.status)).map((item) => item.at);
     if (registration.subscriptionCancelledAt) dates.push(registration.subscriptionCancelledAt);
     if (dates.some(inWeek)) result.cancellations++;

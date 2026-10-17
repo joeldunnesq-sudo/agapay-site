@@ -89,7 +89,7 @@ export function redactSensitiveValue(value: unknown, key: unknown = '') {
 }
 
 export function redactObject(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map((item) => redactObject(item));
+  if (Array.isArray(value)) return value.map((item: unknown) => redactObject(item));
   if (!value || typeof value !== 'object') return redactSensitiveValue(value);
   return Object.fromEntries(
     Object.entries(value).map(([key, child]) => [

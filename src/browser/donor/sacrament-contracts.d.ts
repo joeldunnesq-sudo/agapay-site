@@ -66,7 +66,7 @@ interface SacOfferings {
   types: string[];
   custom: { id: string; label: string; mode: string }[];
 }
-interface SacPayload extends DonorPagePayload {
+interface SacPayload extends Omit<DonorPagePayload, 'offerings'> {
   slots?: SacSlot[];
   requests?: SacRequest[];
   available?: boolean;
@@ -82,13 +82,13 @@ interface SacState {
   loadingSlots: Record<string, boolean>;
   selectedSlots: Record<string, SacSlotSelection | null>;
   offerings: SacOfferings;
-  dashboard: SacPayload | null;
-  commemorations: SacPayload | null;
+  dashboard: import('./app-contracts.js').DonorAppPayload | null;
+  commemorations: import('./app-contracts.js').DonorAppPayload | null;
 }
 type SacRequestError = Error & { data?: { slotTaken?: boolean } };
 declare function donorDefaultParish(): AppHeaderParish | null;
 declare function renderCommemorationParish(parish: AppHeaderParish | null): void;
-declare function renderCommemorationsPayload(payload: SacPayload, dashboard: SacPayload | null): SacPayload;
+declare const renderCommemorationsPayload: import('./app-commemorations-and-checkout.js').DonorAppPart4['renderCommemorationsPayload'];
 
 interface SacForm extends HTMLFormElement {
   elements: HTMLFormControlsCollection & Record<string, HTMLInputElement>;

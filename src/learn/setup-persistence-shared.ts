@@ -200,7 +200,9 @@ export function weeklyFrequencyValue(value: unknown, fallback: string = '1x') {
 }
 export function scheduledDaysValue(value: unknown, legacyFrequency: unknown = '') {
   const direct = Array.isArray(value) ? value : String(value || '').split(',');
-  const selected = direct.map((day) => text(day, '').toLowerCase()).filter((day) => WEEKDAY_KEYS.includes(day));
+  const selected = direct
+    .map((day: unknown) => text(day, '').toLowerCase())
+    .filter((day) => WEEKDAY_KEYS.includes(day));
   if (selected.length) return [...new Set(selected)];
   const frequency = weeklyFrequencyValue(legacyFrequency, 'daily');
   return frequency === 'daily'
@@ -221,11 +223,11 @@ export function frequencyFromDays(days: unknown = []) {
 }
 export function weeklyPlansValue(value: unknown) {
   const direct = Array.isArray(value) ? value : String(value || '').split('|');
-  return direct.slice(0, DEFAULT_TERM_WEEK_COUNT).map((entry) => text(entry, ''));
+  return direct.slice(0, DEFAULT_TERM_WEEK_COUNT).map((entry: unknown) => text(entry, ''));
 }
 export function labelsValue(value: unknown) {
   const direct = Array.isArray(value) ? value : String(value || '').split(',');
-  return [...new Set(direct.map((entry) => text(entry, '')).filter(Boolean as unknown as SetupTruthyFilter))];
+  return [...new Set(direct.map((entry: unknown) => text(entry, '')).filter(Boolean as unknown as SetupTruthyFilter))];
 }
 export function setupResourceValue(resource: string | SetupInputNode | null | undefined, subject: SetupInputNode = {}) {
   const raw: SetupInputNode = typeof resource === 'string' ? { title: resource } : resource || {};
@@ -251,7 +253,7 @@ export function setupResourceValue(resource: string | SetupInputNode | null | un
 }
 export function scheduledWeeksValue(value: unknown, totalWeeks: number = DEFAULT_TERM_WEEK_COUNT) {
   const direct = Array.isArray(value) ? value : String(value || '').split(',');
-  const selected = direct.map((week) => int(week, 0)).filter((week) => week >= 1 && week <= totalWeeks);
+  const selected = direct.map((week: unknown) => int(week, 0)).filter((week) => week >= 1 && week <= totalWeeks);
   return selected.length
     ? [...new Set(selected)].sort((a, b) => a - b)
     : Array.from({ length: totalWeeks }, (_, index) => index + 1);

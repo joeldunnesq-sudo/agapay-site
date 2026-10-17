@@ -95,7 +95,9 @@ function reminderDate(reposedOn: string, targetDate: string, leadDays: number) {
 
 function selectedMarkerTypes(value: unknown) {
   const requested = Array.isArray(value) ? value : [...MEMORIAL_MARKER_TYPES];
-  const selected = requested.map((item) => cleanText(item, 40)).filter((item) => MEMORIAL_MARKER_TYPES.has(item));
+  const selected = requested
+    .map((item: unknown) => cleanText(item, 40))
+    .filter((item) => MEMORIAL_MARKER_TYPES.has(item));
   if (!selected.length) throw new PastoralFollowUpError('Choose at least one memorial observance.');
   return [...new Set(selected)];
 }

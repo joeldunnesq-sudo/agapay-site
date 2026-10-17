@@ -28,7 +28,7 @@ export interface ParishAppAddOn {
   standardMonthlyCents?: number;
   monthlyCents?: number;
 }
-export interface ParishAppIdentity extends Omit<ParishWorkspaceIdentity, 'entitlements'> {
+export interface ParishAppIdentity extends Omit<ParishWorkspaceIdentity, 'entitlements' | 'sacramentPriests'> {
   parishId: string;
   parishName?: string;
   name?: string;

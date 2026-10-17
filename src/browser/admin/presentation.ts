@@ -115,7 +115,9 @@ interface Window extends AdminPresentationGlobals {}
         'Stripe is asking the parish to provide or correct information before payments or payouts can be fully enabled.';
     }
 
-    const items = requirements.map((item) => `<li>${escapeHtml(readableStripeRequirement(item))}</li>`).join('');
+    const items = requirements
+      .map((item: unknown) => `<li>${escapeHtml(readableStripeRequirement(item))}</li>`)
+      .join('');
     const disabled = disabledReason
       ? `<p class="requirements-panel-note"><strong>Stripe reason:</strong> ${escapeHtml(readableStripeRequirement(disabledReason))}</p>`
       : '';

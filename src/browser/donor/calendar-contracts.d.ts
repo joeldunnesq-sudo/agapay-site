@@ -28,8 +28,8 @@ interface DonorLiturgicalDay {
 }
 interface DonorSacramentRequest {
   status: string;
-  confirmedDate: string;
-  requestedDate: string;
+  confirmedDate?: string;
+  requestedDate?: string;
   confirmedTime?: string;
   requestedTimeWindow?: string;
   otherTypeLabel?: string;
@@ -90,18 +90,14 @@ interface AppHeaderParish {
 interface AppHeaderDonorProfile {
   liturgicalCalendar?: string;
 }
-declare function calendarLabel(calendar?: string): string;
+declare function calendarLabel(calendar: string): string;
 declare function nextFeastForCalendar(calendar?: string): ParishCalendarFeast | null;
-declare function donorGiftUrl(
-  type: string,
-  parish: AppHeaderParish | null | undefined,
-  options: Record<string, unknown>
-): string;
+declare const donorGiftUrl: import('./app.js').DonorAppBindings['donorGiftUrl'];
 declare function parishHasGivingPlus(parish: AppHeaderParish): boolean;
-declare function activeParishCampaigns(parish: AppHeaderParish): ParishGivingOption[];
-declare function campaignGoalCents(campaign: ParishGivingOption): number;
-declare function campaignRaisedCents(campaign: ParishGivingOption): number;
-declare function campaignLabel(campaign: ParishGivingOption): string;
+declare const activeParishCampaigns: import('./app.js').DonorAppBindings['activeParishCampaigns'];
+declare const campaignGoalCents: import('./app-giving-and-login.js').DonorAppPart2['campaignGoalCents'];
+declare const campaignRaisedCents: import('./app-giving-and-login.js').DonorAppPart2['campaignRaisedCents'];
+declare const campaignLabel: import('./app.js').DonorAppBindings['campaignLabel'];
 declare const sacramentTypeLabels: Record<string, string>;
 
 declare function setHtml(id: string, html: string): void;

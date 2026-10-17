@@ -245,7 +245,7 @@ export function isKnownCapability(capability: unknown) {
 // at the write path, not merely at the read/check path.
 export function sanitizeGrantableCapabilities(requested: unknown): string[] {
   if (!Array.isArray(requested)) return [];
-  return requested.filter((cap) => CAPABILITY_SET.has(cap) && !PLATFORM_ONLY_CAPABILITIES.has(cap)) as string[];
+  return requested.filter((cap: string) => CAPABILITY_SET.has(cap) && !PLATFORM_ONLY_CAPABILITIES.has(cap)) as string[];
 }
 
 // Role templates are a convenience default applied at invitation time --

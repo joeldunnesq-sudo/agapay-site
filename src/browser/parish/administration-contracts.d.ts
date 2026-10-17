@@ -20,7 +20,7 @@ declare let sacramentsState: {
   preparationTemplates: ParishPreparationTemplate[];
   preparationDocumentsConfigured?: boolean;
 };
-declare function sacramentTypeLabel(input: { sacramentType: string }): string;
+declare const sacramentTypeLabel: import('./features/sacraments.js').ParishSacBindings['sacramentTypeLabel'];
 declare function sacramentsApi(path: string): string;
 declare function renderSacramentsPanel(): void;
 declare function loadSacramentsPanel(force?: boolean): Promise<void>;
