@@ -15,6 +15,9 @@ import {
   calendarGridSection,
   baseDocument,
 } from './print-documents-shared.js';
+function truthyPrintBuilders(value) {
+  return Boolean(value);
+}
 function buildHouseholdWeekly(printCenter, template, generatedAt) {
   const doc = baseDocument(printCenter, template, generatedAt);
   const week = printCenter.week || {};
@@ -33,7 +36,7 @@ function buildHouseholdWeekly(printCenter, template, generatedAt) {
       { flex: [1.5, 1.5, 4] }
     ),
     liturgicalSection('Liturgical Notes', (week.liturgicalDays || []).slice(0, 7)),
-  ].filter(Boolean);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 function cleanDesignedAssignment(item = {}) {
@@ -43,7 +46,7 @@ function cleanDesignedAssignment(item = {}) {
     note: text(item.note || ''),
     color: text(item.color || ''),
     kind: text(item.kind || ''),
-    formLabels: Array.isArray(item.formLabels) ? item.formLabels.map(text).filter(Boolean) : [],
+    formLabels: Array.isArray(item.formLabels) ? item.formLabels.map(text).filter(truthyPrintBuilders) : [],
   };
 }
 function sortFormLabels(labels = []) {
@@ -123,7 +126,7 @@ function buildDesignedWeek(printCenter, designedWeek = {}, generatedAt) {
         )
       : null,
     liturgicalSection('Liturgical Notes', (printCenter.week?.liturgicalDays || []).slice(0, 7)),
-  ].filter(Boolean);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 function buildTermPlan(printCenter, template, generatedAt) {
@@ -164,7 +167,7 @@ function buildTermPlan(printCenter, template, generatedAt) {
       ]),
       { flex: [2, 1, 3] }
     ),
-  ].filter(Boolean);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 function buildMonthCalendar(printCenter, template, generatedAt) {
@@ -204,10 +207,10 @@ function buildMonthCalendar(printCenter, template, generatedAt) {
         .filter((d) => d?.inMonth && d?.isFastDay)
         .map((d) => ({
           label: `${d.civilDate} · ${d.fastingType || d.fastingRule || 'Fast'}`,
-          detail: [d.feastTitle, d.oldStyleDateLabel].filter(Boolean).join(' · '),
+          detail: [d.feastTitle, d.oldStyleDateLabel].filter(truthyPrintBuilders).join(' · '),
         }))
     ),
-  ].filter(Boolean);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 function buildChildWeekly(printCenter, template, generatedAt) {
@@ -230,11 +233,11 @@ function buildChildWeekly(printCenter, template, generatedAt) {
     {
       type: 'checkboxes',
       heading: 'Daily Checklist',
-      subjects: rows.map((row) => text(row.title)).filter(Boolean),
+      subjects: rows.map((row) => text(row.title)).filter(truthyPrintBuilders),
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     },
     listSection('Parent Notes', ['Narration:', 'Copywork:', 'Prayer and habit notes:']),
-  ].filter(Boolean);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 function buildChildTerm(printCenter, template, generatedAt) {

@@ -20,8 +20,11 @@ import {
   FEAST_BG,
 } from './print-documents-shared.js';
 import { fetchBytes, text } from './print-documents-shared.js';
+function truthyPrintLayout(value) {
+  return Boolean(value);
+}
 function wrapText(value, font, fontSize, maxWidth) {
-  const words = text(value).split(/\s+/).filter(Boolean);
+  const words = text(value).split(/\s+/).filter(truthyPrintLayout);
   const lines = [];
   let line = '';
   words.forEach((word) => {
@@ -216,7 +219,7 @@ function drawCards(state, section) {
 function drawList(state, section) {
   drawHeading(state, section.heading);
   section.items.forEach((item) => {
-    const combined = [item.label, item.detail].filter(Boolean).join(' · ');
+    const combined = [item.label, item.detail].filter(truthyPrintLayout).join(' · ');
     const lines = wrapText(combined, state.fonts.sans, 9, LETTER[0] - MARGIN * 2 - 22);
     fitPage(state, lines.length * 12 + 12);
     state.page.drawText('•', { x: MARGIN + 2, y: state.y, size: 6, font: state.fonts.sansBold, color: GOLD });
@@ -515,7 +518,7 @@ function drawDesignedWeek(state, section) {
       font: state.fonts.serifBold,
       color: NAVY,
     });
-    state.page.drawText(text([day.shortDate || day.date, day.feast].filter(Boolean).join(' · ')), {
+    state.page.drawText(text([day.shortDate || day.date, day.feast].filter(truthyPrintLayout).join(' · ')), {
       x: x + 150,
       y: y - 22,
       size: 8,

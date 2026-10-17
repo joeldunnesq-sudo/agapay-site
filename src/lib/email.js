@@ -41,6 +41,19 @@ function agapayEmailHtml(appUrl, title, bodyHtml) {
     </div>
   `;
 }
+function parseProviderBody(bodyText) {
+  try {
+    const parsed = JSON.parse(bodyText);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return {
+      id: 'id' in parsed && typeof parsed.id === 'string' ? parsed.id : '',
+      message: 'message' in parsed ? parsed.message : void 0,
+      error: 'error' in parsed ? parsed.error : void 0,
+    };
+  } catch {
+    return {};
+  }
+}
 async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 1e4 } = {}) {
   const apiKey = String(env.RESEND_API_KEY || '').trim();
   if (!apiKey) return { status: 'not_configured' };
@@ -60,12 +73,7 @@ async function sendEmail(env, message, { idempotencyKey = '', timeoutMs = 1e4 } 
       signal: controller.signal,
     });
     const bodyText = await response.text();
-    let body = {};
-    try {
-      body = bodyText ? JSON.parse(bodyText) : {};
-    } catch {
-      body = {};
-    }
+    const body = parseProviderBody(bodyText);
     if (!response.ok) {
       await logEvent(env, {
         eventType: 'email.delivery.failed',

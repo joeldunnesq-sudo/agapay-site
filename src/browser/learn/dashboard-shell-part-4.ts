@@ -1,11 +1,15 @@
 import type {
   LearnMonthFeast,
   LearnFamilyPlannerInput,
-  LearnTruthyFilter,
   LearnShellNode,
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn4<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const seedFamilyPrototypeState: LearnShellBindings['seedFamilyPrototypeState'];
 declare const plannerScopeFromQuery: LearnShellBindings['plannerScopeFromQuery'];
@@ -329,7 +333,7 @@ function renderPlannerDay(vm: LearnPlannerVm) {
         .join('');
   const appointments = day.events || eventsForDate(vm, day.date);
   const appointmentPanel = appointments.length
-    ? `<div style="display:grid;gap:9px;">${appointments.map((event) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px 12px;"><strong>${html(event.title || 'Appointment')}</strong><small style="display:block;color:var(--muted);">${html([timeLabel(event.startTime), event.location, event.notes].filter(Boolean as unknown as LearnTruthyFilter).join(' · '))}</small></div>`).join('')}</div>`
+    ? `<div style="display:grid;gap:9px;">${appointments.map((event) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px 12px;"><strong>${html(event.title || 'Appointment')}</strong><small style="display:block;color:var(--muted);">${html([timeLabel(event.startTime), event.location, event.notes].filter(truthyLearn4).join(' · '))}</small></div>`).join('')}</div>`
     : emptyState('No appointments are scheduled for this day.');
   return `
     <div style="display:flex;gap:8px;overflow:auto;padding-bottom:2px;">${dayLinks}</div>
@@ -627,9 +631,7 @@ function prototypeMonthSeed(vm: LearnPlannerVm) {
       dateLabel: day.dayNumber ? String(day.dayNumber) : day.fullDate || '',
       name: day.feast || 'Fast day',
       rank: day.isFastDay
-        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || '']
-            .filter(Boolean as unknown as LearnTruthyFilter)
-            .join(' · ')
+        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || ''].filter(truthyLearn4).join(' · ')
         : day.feastRank || 'Feast',
       plan: index === 0,
     }));
@@ -641,9 +643,7 @@ function prototypeMonthSeed(vm: LearnPlannerVm) {
       dateLabel: day.short || day.dayNumber || day.fullDate || '',
       name: day.feast || 'Feast',
       rank: day.isFastDay
-        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || '']
-            .filter(Boolean as unknown as LearnTruthyFilter)
-            .join(' · ')
+        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || ''].filter(truthyLearn4).join(' · ')
         : day.feastRank || 'Feast',
       fullDate: day.fullDate || '',
       plan: index === 0,
@@ -665,9 +665,7 @@ function prototypeMonthSeed(vm: LearnPlannerVm) {
       day: june24.dayNumber || '24',
       dateLabel: june24.dayNumber || '24',
       name: june24.feast,
-      rank: [june24.fasting || june24.fastingType || '', 'Feast']
-        .filter(Boolean as unknown as LearnTruthyFilter)
-        .join(' · '),
+      rank: [june24.fasting || june24.fastingType || '', 'Feast'].filter(truthyLearn4).join(' · '),
       plan: monthFeasts.length === 0,
     });
   }
@@ -682,9 +680,7 @@ function prototypeMonthSeed(vm: LearnPlannerVm) {
       day: june24.dayNumber || '24',
       dateLabel: june24.short || june24.dayNumber || 'Jun 24',
       name: 'Nativity of St. John the Forerunner',
-      rank: [june24.fasting || june24.fastingType || '', 'Feast']
-        .filter(Boolean as unknown as LearnTruthyFilter)
-        .join(' · '),
+      rank: [june24.fasting || june24.fastingType || '', 'Feast'].filter(truthyLearn4).join(' · '),
       fullDate: june24.fullDate || '',
       plan: weekFeasts.length === 0,
     });
@@ -702,7 +698,7 @@ function prototypeMonthSeed(vm: LearnPlannerVm) {
       monthDays
         .filter((day) => day.inMonth !== false && day.isFastDay)
         .map((day) => day.fasting || day.fastingType || 'Fast day')
-        .filter(Boolean as unknown as LearnTruthyFilter)
+        .filter(truthyLearn4)
     ),
   ];
   return {

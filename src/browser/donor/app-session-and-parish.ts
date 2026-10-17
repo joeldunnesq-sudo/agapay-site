@@ -7,9 +7,14 @@ import type {
   DonorAppOptions,
   DonorGiftOptions,
   DonorStatusElement,
-  DonorTruthyFilter,
 } from './app-contracts.js';
 import type { DonorAppBindings } from './app.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyDonor<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 declare const donorStore: DonorAppBindings['donorStore'];
 declare const DONOR_SHELL_VERSION: DonorAppBindings['DONOR_SHELL_VERSION'];
 declare const donorSession: DonorAppBindings['donorSession'];
@@ -147,10 +152,7 @@ function money(cents: unknown) {
 
 function donorInitials(donor: DonorAppProfile | null | undefined) {
   const source = donor?.householdName || donor?.donorName || donor?.email || 'Faithful Member';
-  const words = String(source)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean as unknown as DonorTruthyFilter);
+  const words = String(source).trim().split(/\s+/).filter(truthyDonor);
   if (!words.length) return 'FM';
   if (words.length === 1 && words[0].includes('@')) return words[0].slice(0, 2).toUpperCase();
   return words
@@ -331,9 +333,9 @@ async function fetchPublicParishes() {
 }
 
 function parishOptionLabel(parish: DonorAppParish) {
-  const place = [parish.city, parish.state].filter(Boolean as unknown as DonorTruthyFilter).join(', ');
+  const place = [parish.city, parish.state].filter(truthyDonor).join(', ');
   const type = parish.type ? `${parish.type.charAt(0).toUpperCase()}${parish.type.slice(1)}` : 'Church';
-  return [parish.name, place, type].filter(Boolean as unknown as DonorTruthyFilter).join(' - ');
+  return [parish.name, place, type].filter(truthyDonor).join(' - ');
 }
 
 function renderParishOptions(
@@ -354,7 +356,7 @@ function renderParishOptions(
       parish.jurisdictionLabel,
       parish.jurisdiction,
     ]
-      .filter(Boolean as unknown as DonorTruthyFilter)
+      .filter(truthyDonor)
       .join(' ')
       .toLowerCase();
     return !normalizedQuery || haystack.includes(normalizedQuery);
@@ -412,14 +414,14 @@ function parishHasGivingPlus(parish: DonorAppParish | null | undefined) {
 
 function isGeneralDonorFund(fund: DonorAppFund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean as unknown as DonorTruthyFilter)
+    .filter(truthyDonor)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
 }
 
 function isCandleDonorFund(fund: DonorAppFund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean as unknown as DonorTruthyFilter)
+    .filter(truthyDonor)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
 }
@@ -686,6 +688,7 @@ function activeParishFeastCampaigns(parish: DonorAppParish | null | undefined) {
   });
 }
 export type DonorAppPart1 = {
+  truthyDonor: typeof truthyDonor;
   refreshStaleDashboardShell: typeof refreshStaleDashboardShell;
   setDonorStatus: typeof setDonorStatus;
   setText: typeof setText;

@@ -2,11 +2,16 @@ import type {
   ParishAppIdentity,
   ParishAppFeatureRequest,
   ParishAppPayload,
-  ParishAppTruthyFilter,
   ParishAppError,
   ParishAppStewardshipFeature,
 } from './app-contracts.js';
 import type { ParishAppBindings } from './app.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyParishSession<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 declare let editableFunds: ParishAppBindings['editableFunds'];
 declare let editableCampaigns: ParishAppBindings['editableCampaigns'];
 declare let editableFeastCampaigns: ParishAppBindings['editableFeastCampaigns'];
@@ -713,14 +718,14 @@ function hasFundManagementAccess() {
 
 function isGeneralDashboardFund(fund: ParishGivingOption = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean as unknown as ParishAppTruthyFilter)
+    .filter(truthyParishSession)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
 }
 
 function isCandleDashboardFund(fund: ParishGivingOption = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean as unknown as ParishAppTruthyFilter)
+    .filter(truthyParishSession)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
 }

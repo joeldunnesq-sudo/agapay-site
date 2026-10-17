@@ -1,4 +1,7 @@
 // Generated from src/browser/learn/dashboard-shell.ts by npm run build:browser. Do not edit.
+function truthyLearn1(value) {
+  return Boolean(value);
+}
 function cloneLearnViewModel(vm) {
   try {
     return structuredClone(vm);
@@ -618,7 +621,7 @@ function prepareOdysseyViewModel(vm) {
   }
   if (next.page?.id === 'community') {
     next.resources = (next.resources || []).filter((item) => !itemIsFaithSpecific(item));
-    next.categories = ['All', ...new Set(next.resources.map((item) => item.category).filter(Boolean))];
+    next.categories = ['All', ...new Set(next.resources.map((item) => item.category).filter(truthyLearn1))];
     if (marketing || !next.resources.length) {
       next.comingSoon = false;
       next.title = 'Practical resources, thoughtfully curated.';
@@ -978,6 +981,9 @@ function downloadBlob(filename, blob) {
 function isLearnFamilyPlan() {
   return localStorage.getItem('agapay.learn.plan') === 'family';
 }
+function truthyLearn2(value) {
+  return Boolean(value);
+}
 function printCount() {
   return Number(localStorage.getItem('agapay.learn.printCount') || 0);
 }
@@ -1111,7 +1117,7 @@ function saintStoryDialogHtml(saints = [], unavailableMessage = '') {
       const paragraphs = String(saint.storyText || '')
         .split(/\n{2,}/)
         .map((part) => part.trim())
-        .filter(Boolean);
+        .filter(truthyLearn2);
       return `<article style="border-top:1px solid rgba(181,148,47,.28);padding:16px 0;display:grid;gap:8px;">
       <div style="display:flex;gap:12px;align-items:flex-start;">
         ${saint.iconUrl ? `<img src="${html(saint.iconUrl)}" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid rgba(181,148,47,.34);">` : `<span style="width:48px;height:48px;border-radius:50%;background:#14294a;color:#f3ead4;display:grid;place-items:center;flex:none;font-size:23px;">✥</span>`}
@@ -1287,7 +1293,7 @@ function sidebar(vm) {
     : vm.shell.gcalConfigured;
   const gcalConnected = learnGoogleCalendarStatus.loaded ? learnGoogleCalendarStatus.connected : vm.shell.gcalConnected;
   const navItems = experience.navOrder
-    ? experience.navOrder.map((id) => vm.shell.nav.find((item) => item.id === id)).filter(Boolean)
+    ? experience.navOrder.map((id) => vm.shell.nav.find((item) => item.id === id)).filter(truthyLearn2)
     : vm.shell.nav;
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>
@@ -1476,6 +1482,9 @@ function renderGraceModePanel(vm) {
     </section>
   `;
 }
+function truthyLearn3(value) {
+  return Boolean(value);
+}
 function renderTermProgressPanel(vm) {
   const term = vm.termProgress || {};
   const progress = Number(term.percent || 0);
@@ -1536,7 +1545,7 @@ function renderTodayLearnContext(vm) {
 function weekAssignmentStorageKey(vm, explicitWeekKey = '') {
   const itemIds = (vm.week?.weeklyAssignmentItems || []).map((item) => item.id).join(',');
   const weekKey =
-    explicitWeekKey || [vm.week?.days?.[0]?.date, vm.week?.days?.[6]?.date].filter(Boolean).join('_') || 'week';
+    explicitWeekKey || [vm.week?.days?.[0]?.date, vm.week?.days?.[6]?.date].filter(truthyLearn3).join('_') || 'week';
   return `agapay.learn.weekAssignments.${weekKey}.${itemIds}`;
 }
 function readWeekAssignmentState(vm, explicitWeekKey = '') {
@@ -1568,7 +1577,7 @@ function designedAssignmentsForDate(vm, date) {
           }
         : null;
     })
-    .filter(Boolean);
+    .filter(truthyLearn3);
 }
 function timeLabel(value = '') {
   return value ? value : 'All day';
@@ -1665,7 +1674,7 @@ function renderDashboardFamilyCards(vm) {
       </section>
       <section class="learn-dashboard-family-card">
         <div><small>CHORES</small><h3>Household Chores</h3></div>
-        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || 'Chore')}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.notes].filter(Boolean).join(' · '))}</small></span>`).join('')}</div>` : emptyState('Add chores in Planner > Chores.')}
+        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || 'Chore')}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.notes].filter(truthyLearn3).join(' · '))}</small></span>`).join('')}</div>` : emptyState('Add chores in Planner > Chores.')}
       </section>
     </div>
   `;
@@ -1965,6 +1974,9 @@ ${togetherAndWeekHtml}`;
   `;
   return shell(vm, body);
 }
+function truthyLearn4(value) {
+  return Boolean(value);
+}
 function renderPlanner(vm) {
   if (!marketingPreviewActive()) seedFamilyPrototypeState(vm);
   const query = new URLSearchParams(window.location.search);
@@ -2224,7 +2236,7 @@ function renderPlannerDay(vm) {
         .join('');
   const appointments = day.events || eventsForDate(vm, day.date);
   const appointmentPanel = appointments.length
-    ? `<div style="display:grid;gap:9px;">${appointments.map((event) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px 12px;"><strong>${html(event.title || 'Appointment')}</strong><small style="display:block;color:var(--muted);">${html([timeLabel(event.startTime), event.location, event.notes].filter(Boolean).join(' · '))}</small></div>`).join('')}</div>`
+    ? `<div style="display:grid;gap:9px;">${appointments.map((event) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px 12px;"><strong>${html(event.title || 'Appointment')}</strong><small style="display:block;color:var(--muted);">${html([timeLabel(event.startTime), event.location, event.notes].filter(truthyLearn4).join(' · '))}</small></div>`).join('')}</div>`
     : emptyState('No appointments are scheduled for this day.');
   return `
     <div style="display:flex;gap:8px;overflow:auto;padding-bottom:2px;">${dayLinks}</div>
@@ -2513,7 +2525,7 @@ function prototypeMonthSeed(vm) {
       dateLabel: day.dayNumber ? String(day.dayNumber) : day.fullDate || '',
       name: day.feast || 'Fast day',
       rank: day.isFastDay
-        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || ''].filter(Boolean).join(' · ')
+        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || ''].filter(truthyLearn4).join(' · ')
         : day.feastRank || 'Feast',
       plan: index === 0,
     }));
@@ -2525,7 +2537,7 @@ function prototypeMonthSeed(vm) {
       dateLabel: day.short || day.dayNumber || day.fullDate || '',
       name: day.feast || 'Feast',
       rank: day.isFastDay
-        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || ''].filter(Boolean).join(' · ')
+        ? [day.feastRank || 'Feast', day.fasting || day.fastingType || ''].filter(truthyLearn4).join(' · ')
         : day.feastRank || 'Feast',
       fullDate: day.fullDate || '',
       plan: index === 0,
@@ -2547,7 +2559,7 @@ function prototypeMonthSeed(vm) {
       day: june24.dayNumber || '24',
       dateLabel: june24.dayNumber || '24',
       name: june24.feast,
-      rank: [june24.fasting || june24.fastingType || '', 'Feast'].filter(Boolean).join(' · '),
+      rank: [june24.fasting || june24.fastingType || '', 'Feast'].filter(truthyLearn4).join(' · '),
       plan: monthFeasts.length === 0,
     });
   }
@@ -2562,7 +2574,7 @@ function prototypeMonthSeed(vm) {
       day: june24.dayNumber || '24',
       dateLabel: june24.short || june24.dayNumber || 'Jun 24',
       name: 'Nativity of St. John the Forerunner',
-      rank: [june24.fasting || june24.fastingType || '', 'Feast'].filter(Boolean).join(' · '),
+      rank: [june24.fasting || june24.fastingType || '', 'Feast'].filter(truthyLearn4).join(' · '),
       fullDate: june24.fullDate || '',
       plan: weekFeasts.length === 0,
     });
@@ -2580,7 +2592,7 @@ function prototypeMonthSeed(vm) {
       monthDays
         .filter((day) => day.inMonth !== false && day.isFastDay)
         .map((day) => day.fasting || day.fastingType || 'Fast day')
-        .filter(Boolean)
+        .filter(truthyLearn4)
     ),
   ];
   return {
@@ -2593,6 +2605,9 @@ function prototypeMonthSeed(vm) {
     weekRange: weekStart && weekEnd ? `${weekStart} - ${weekEnd}` : 'This week',
     fastingSummary: fastNames.length ? fastNames.slice(0, 2).join(' + ') : 'Church calendar',
   };
+}
+function truthyLearn5(value) {
+  return Boolean(value);
 }
 function prototypeSetupSeed(vm) {
   const grouping = (vm.familyPlanning?.children || []).some((child) => child.formLabel) ? 'Forms' : 'Grades';
@@ -2641,7 +2656,7 @@ function prototypeSetupSeed(vm) {
   return {
     calendar: storedLearnCalendar(vm.preferences?.calendarType || ''),
     grouping,
-    enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(Boolean),
+    enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(truthyLearn5),
     forms: forms.length
       ? forms
       : [
@@ -2662,7 +2677,7 @@ function prototypeKidsSeed(vm) {
     const childChores = chores
       .filter((chore) => !chore.assignee || chore.assignee === name)
       .map((chore) => chore.title)
-      .filter(Boolean);
+      .filter(truthyLearn5);
     return {
       name,
       color: child.color || ACCENTS[index % ACCENTS.length],
@@ -2704,7 +2719,7 @@ function backendRecipeToPrototype(recipe, index = 0) {
       ingredients: String(recipe.ingredients || '')
         .split(',')
         .map((item) => item.trim())
-        .filter(Boolean),
+        .filter(truthyLearn5),
       note: recipe.instructions || recipe.category || 'Saved from AGAPAY Learn.',
       custom: true,
     },
@@ -2761,7 +2776,7 @@ function seedFamilyPrototypeState(vm) {
   const pantry = (planning.groceryItems || [])
     .filter((item) => item.pantry || item.inPantry)
     .map((item) => item.name)
-    .filter(Boolean);
+    .filter(truthyLearn5);
   const manualGroceries = (planning.groceryItems || [])
     .filter((item) => !(item.pantry || item.inPantry))
     .map((item, index) => ({
@@ -3055,7 +3070,7 @@ function renderFormation(vm) {
           (hymn) => `
         <div style="padding:11px 0;border-top:1px solid var(--line);">
           <strong style="display:block;font-size:14px;">${html(hymn.title)}</strong>
-          <small style="color:var(--muted);font-size:12px;">${[hymn.tone, hymn.source].filter(Boolean).join(' · ')}</small>
+          <small style="color:var(--muted);font-size:12px;">${[hymn.tone, hymn.source].filter(truthyLearn5).join(' · ')}</small>
         </div>`
         )
         .join('')
@@ -3115,6 +3130,9 @@ function bookCover(book = {}, icon = '☰') {
     .slice(0, 3)
     .join(' ');
   return `<div style="width:58px;height:82px;flex:none;border-radius:7px;border:1.5px solid var(--goldsoft);background:linear-gradient(145deg,var(--navy),#1b2c4a 58%,#6e2f2a);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 8px 18px rgba(20,40,70,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f7e8bd;padding:7px;gap:5px;"><span style="font-size:17px;color:var(--gold2);">${icon}</span><small style="font-size:10px;line-height:1.05;">${html(title)}</small></div>`;
+}
+function truthyLearn6(value) {
+  return Boolean(value);
 }
 function renderBooks(vm) {
   const tefaActive = learnExperience().tefaActive;
@@ -3488,7 +3506,7 @@ function setupMultiChildPicker(children = [], selectedIds = []) {
     : String(selectedIds || '')
         .split(',')
         .map((v) => v.trim())
-        .filter(Boolean);
+        .filter(truthyLearn6);
   const summary = selected.length
     ? children
         .filter((child) => selected.includes(child.id))
@@ -4112,6 +4130,9 @@ function renderTefaCommunity(vm) {
   </section>`;
   return shell(vm, body);
 }
+function truthyLearn8(value) {
+  return Boolean(value);
+}
 function renderCommunity(vm) {
   if (learnExperience().tefaActive) return renderTefaCommunity(vm);
   const filterOptions = (values) =>
@@ -4125,7 +4146,7 @@ function renderCommunity(vm) {
          Facebook group opening soon
        </span>`;
   const typeLabel = (resource) => {
-    const parts = [resource.resourceType, resource.ageRange].filter(Boolean);
+    const parts = [resource.resourceType, resource.ageRange].filter(truthyLearn8);
     return parts.join(' · ');
   };
   const card = (resource) => `
@@ -4416,7 +4437,7 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
       color: colors[index % colors.length],
     }));
   const planningGroups = [
-    ...new Set(children.map((child) => (draft.useForms ? child.formLabel : child.gradeLabel)).filter(Boolean)),
+    ...new Set(children.map((child) => (draft.useForms ? child.formLabel : child.gradeLabel)).filter(truthyLearn8)),
   ];
   if (!planningGroups.length) planningGroups.push(draft.useForms ? 'Form I' : 'Household Grade');
   const existingHasPlan = Boolean(
@@ -4736,6 +4757,9 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
     if (event.target.closest('[data-wizard-next], [data-wizard-finish]')) return;
   });
 }
+function truthyLearn9(value) {
+  return Boolean(value);
+}
 function setupExperience(method = 'Unsure', groupingMode = 'forms') {
   const groupName = groupingMode === 'grades' ? 'Grade-Level' : 'Form';
   const profiles = {
@@ -4939,7 +4963,7 @@ function renderPrintCenter(vm) {
   const assignedIds = new Set(GROUPS.flatMap((g) => g.ids));
   const ungrouped = householdTemplates.filter((t) => !assignedIds.has(t.id));
   const groupSection = (group) => {
-    const members = group.ids.map((id) => tmplById.get(id)).filter(Boolean);
+    const members = group.ids.map((id) => tmplById.get(id)).filter(truthyLearn9);
     if (group.id === 'kitchen') members.push(...ungrouped.filter((t) => t.premium));
     else if (group.id === 'weekly') members.push(...ungrouped.filter((t) => !t.premium));
     if (!members.length) return '';
@@ -5248,6 +5272,9 @@ function setupChildRowsFromForm(form) {
     })
     .filter((child) => child.firstName || child.formLabel || child.gradeLabel);
 }
+function truthyLearn10(value) {
+  return Boolean(value);
+}
 function rowWeeklyPlans(row) {
   return Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => rowValue(row, `weeklyPlans.${index + 1}`));
 }
@@ -5282,12 +5309,12 @@ function rowResources(row) {
           formLabels: rowResourceValue(resourceRow, index, 'formLabels')
             .split(',')
             .map((value) => value.trim())
-            .filter(Boolean),
+            .filter(truthyLearn10),
           gradeLabel: rowResourceValue(resourceRow, index, 'gradeLabel'),
           childIds: rowResourceValue(resourceRow, index, 'childIds')
             .split(',')
             .map((value) => value.trim())
-            .filter(Boolean),
+            .filter(truthyLearn10),
         };
       })
       .filter((r) => r.title);
@@ -5303,7 +5330,7 @@ function resourceRowPrimaryGroupLabel(resourceRow, groupingMode = 'forms') {
       formLabels: rowResourceValue(resourceRow, index, 'formLabels')
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean),
+        .filter(truthyLearn10),
       gradeLabel: rowResourceValue(resourceRow, index, 'gradeLabel'),
     },
     groupingMode
@@ -5381,11 +5408,11 @@ function refreshResourceSummary(resourceRow) {
   const groups = (resourceRow.querySelector(`[name="${resourceFieldName(index, 'formLabels')}"]`)?.value || '')
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean);
+    .filter(truthyLearn10);
   const children = (resourceRow.querySelector(`[name="${resourceFieldName(index, 'childIds')}"]`)?.value || '')
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean);
+    .filter(truthyLearn10);
   const titleEl = resourceRow.querySelector('[data-resource-summary-title]');
   const detailEl = resourceRow.querySelector('[data-resource-summary-detail]');
   if (titleEl) titleEl.textContent = title || 'Untitled resource';
@@ -5395,7 +5422,7 @@ function refreshResourceSummary(resourceRow) {
       groups.length ? groups.join(', ') : '',
       children.length ? `${children.length} child-specific` : '',
     ]
-      .filter(Boolean)
+      .filter(truthyLearn10)
       .join(' · ');
 }
 function snapshotResourceModal(modal) {
@@ -5429,7 +5456,7 @@ function rowTileMinutes(row) {
 function collectRows(form, rowType, mapper) {
   return [...form.querySelectorAll(`[data-setup-row="${rowType}"]`)]
     .map((row, index) => mapper(row, index))
-    .filter(Boolean);
+    .filter(truthyLearn10);
 }
 async function openSaintOfDay(button) {
   const date = button.dataset.date || '';
@@ -5558,6 +5585,9 @@ function wireDashboard() {
       }
     });
   });
+}
+function truthyLearn11(value) {
+  return Boolean(value);
 }
 function setupPayloadFromForm(form) {
   const get = (name) => form.elements[name]?.value?.trim() || '';
@@ -5689,7 +5719,7 @@ function setupPayloadFromForm(form) {
         formLabels: (rowValue(row, 'formLabels') || (primaryResource.formLabels || []).join(','))
           .split(',')
           .map((v) => v.trim())
-          .filter(Boolean),
+          .filter(truthyLearn11),
         gradeLabel: rowValue(row, 'gradeLabel') || primaryResource.gradeLabel || '',
         resource: resources[0]?.title || rowValue(row, 'resource'),
         resources,
@@ -5699,7 +5729,7 @@ function setupPayloadFromForm(form) {
         childIds: (rowValue(row, 'childIds') || (primaryResource.childIds || []).join(','))
           .split(',')
           .map((v) => v.trim())
-          .filter(Boolean),
+          .filter(truthyLearn11),
         progressionType: rowValue(row, 'progressionType'),
         startNumber: rowValue(row, 'startNumber'),
         currentNumber: rowValue(row, 'currentNumber'),
@@ -5776,7 +5806,7 @@ function setupPayloadFromForm(form) {
           formLabels: rowValue(row, 'formLabels')
             .split(',')
             .map((value) => value.trim())
-            .filter(Boolean),
+            .filter(truthyLearn11),
           gradeLabel: rowValue(row, 'gradeLabel'),
           scheduledWeeks: scheduledTermWeeks(rowValue(row, 'scheduledWeeks')),
           weeklyFrequency: rowValue(row, 'weeklyFrequency'),
@@ -5828,13 +5858,13 @@ function setupPayloadFromForm(form) {
           formLabels: (rowValue(row, 'formLabels') || (primaryResource.formLabels || []).join(','))
             .split(',')
             .map((value) => value.trim())
-            .filter(Boolean),
+            .filter(truthyLearn11),
           gradeLabel: rowValue(row, 'gradeLabel') || primaryResource.gradeLabel || '',
           childId: rowValue(row, 'childId'),
           childIds: (rowValue(row, 'childIds') || (primaryResource.childIds || []).join(','))
             .split(',')
             .map((v) => v.trim())
-            .filter(Boolean),
+            .filter(truthyLearn11),
           startNumber: rowValue(row, 'startNumber'),
           currentNumber: rowValue(row, 'currentNumber'),
           endNumber: rowValue(row, 'endNumber'),
@@ -6561,6 +6591,9 @@ function wireSetupPage() {
     await saveSetupNow({ manual: true });
   });
 }
+function truthyLearn13(value) {
+  return Boolean(value);
+}
 function wireWeeklyAssignmentBoard(vm) {
   const board = root.querySelector('[data-week-assignment-board]');
   if (!board) return;
@@ -6569,7 +6602,7 @@ function wireWeeklyAssignmentBoard(vm) {
   const familyViewStorageKey = 'agapay.learn.weekPlanner.familyView';
   const zones = [...board.querySelectorAll('[data-week-assignment-zone]')];
   const formButtons = [...board.querySelectorAll('[data-week-form-filter]')];
-  const availableForms = formButtons.map((button) => button.dataset.weekFormFilter).filter(Boolean);
+  const availableForms = formButtons.map((button) => button.dataset.weekFormFilter).filter(truthyLearn13);
   const familyLane = board.querySelector('[data-family-lane]');
   const familyLaneZone = board.querySelector('[data-week-assignment-zone="pool-family"]');
   const familyToggle = board.querySelector('[data-family-view-toggle]');
@@ -6580,7 +6613,7 @@ function wireWeeklyAssignmentBoard(vm) {
     (card.dataset.weekFormLabels || '')
       .split('|')
       .map((label) => label.trim())
-      .filter(Boolean);
+      .filter(truthyLearn13);
   const isFamilyCard = (card) => {
     const labels = cardFormLabels(card);
     return !labels.length || labels.includes('__family') || labels.includes('Household Form');
@@ -6960,7 +6993,7 @@ function wireWeeklyAssignmentBoard(vm) {
         date: day.date,
         allDay: false,
         durationMinutes: 30,
-        description: [day.weekday, assignment.sub, assignment.note].filter(Boolean).join('\n'),
+        description: [day.weekday, assignment.sub, assignment.note].filter(truthyLearn13).join('\n'),
         startTime: `${String(9 + Math.min(index, 6)).padStart(2, '0')}:00`,
       }))
     );
@@ -7243,6 +7276,9 @@ function wireMoveUnfinishedWork(vm) {
     });
   });
 }
+function truthyLearn15(value) {
+  return Boolean(value);
+}
 function wirePlanner(vm) {
   if (vm.activeView) localStorage.setItem('agapay.learn.plannerView', vm.activeView);
   if (vm.month?.key) localStorage.setItem('agapay.learn.plannerMonth', vm.month.key);
@@ -7386,7 +7422,7 @@ function wirePlanner(vm) {
     batchList.hidden = false;
     batchList.insertAdjacentHTML(
       'beforeend',
-      `<span><strong>${html(entry.title)}</strong><small>${html([entry.assignee || 'Everyone', choreScheduleLabel(entry)].filter(Boolean).join(' · '))}</small></span>`
+      `<span><strong>${html(entry.title)}</strong><small>${html([entry.assignee || 'Everyone', choreScheduleLabel(entry)].filter(truthyLearn15).join(' · '))}</small></span>`
     );
   };
   let activeChore = null;

@@ -1,4 +1,7 @@
 // Generated from src/browser/parish/app.ts by npm run build:browser. Do not edit.
+function truthyParishSession(value) {
+  return Boolean(value);
+}
 function givingCatalogSnapshot() {
   return JSON.stringify({
     funds: editableFunds,
@@ -624,13 +627,13 @@ function hasFundManagementAccess() {
 }
 function isGeneralDashboardFund(fund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean)
+    .filter(truthyParishSession)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
 }
 function isCandleDashboardFund(fund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean)
+    .filter(truthyParishSession)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
 }
@@ -1033,6 +1036,9 @@ async function viewParishTaxExemptionDocument(button) {
     }
   }
 }
+function truthyParishSettings(value) {
+  return Boolean(value);
+}
 async function uploadParishLogo(btn) {
   const file = document.getElementById('parishLogoFile')?.files?.[0];
   if (!file) {
@@ -1091,7 +1097,7 @@ async function removeParishLogo(btn) {
 }
 function formatSacramentPriestsForSettings(priests) {
   const rows = Array.isArray(priests) ? priests : [];
-  return rows.map((priest) => [priest.name, priest.email].filter(Boolean).join(' | ')).join('\n');
+  return rows.map((priest) => [priest.name, priest.email].filter(truthyParishSettings).join(' | ')).join('\n');
 }
 function parseSacramentPriestsFromSettings() {
   const raw = document.getElementById('sacramentPriestsText')?.value || '';
@@ -1607,6 +1613,9 @@ async function viewNonprofitPricingDocument(documentId) {
     setStatus(err.message, 'error');
   }
 }
+function truthyParishApp(value) {
+  return Boolean(value);
+}
 window.AgapayMfa?.installFetchStepUp();
 let currentParish = null;
 let editableFunds = [];
@@ -1823,8 +1832,8 @@ function renderDashboard() {
     sidebarLogo.src = p.logoUrl || '';
     sidebarLogo.alt = p.logoUrl ? `${p.parishName || 'Parish'} logo` : '';
   }
-  const parishMeta = [p.communityType, p.jurisdiction, [p.city, p.state].filter(Boolean).join(', ')]
-    .filter(Boolean)
+  const parishMeta = [p.communityType, p.jurisdiction, [p.city, p.state].filter(truthyParishApp).join(', ')]
+    .filter(truthyParishApp)
     .join(' / ');
   document.getElementById('sidebarParishMeta').textContent = parishMeta;
   const chip = document.getElementById('sidebarStatusChip');

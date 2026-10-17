@@ -2,7 +2,6 @@ import type {
   SetupInputNode,
   LearnRuntimeSeed,
   LearnRuntimeBook,
-  SetupTruthyFilter,
   LearnSetupSnapshot,
 } from './setup-persistence-composition-contracts.js';
 
@@ -34,6 +33,11 @@ import {
   bookBelongsToHouseholdStream,
   resourceBookLike,
 } from './setup-persistence-shared.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthySetupSeed<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 export function applySetupSnapshotToSeed(
   seed: LearnRuntimeSeed = getLearnSeedSnapshot() as LearnRuntimeSeed,
@@ -80,7 +84,7 @@ export function applySetupSnapshotToSeed(
         sourceKind: 'enrichment',
       })
     )
-    .filter(Boolean as unknown as SetupTruthyFilter);
+    .filter(truthySetupSeed);
   const subjectBooks = currentSubjects
     .flatMap((subject, subjectIndex) => {
       if (subject.resourceType !== 'book') return [];
@@ -113,7 +117,7 @@ export function applySetupSnapshotToSeed(
         });
       });
     })
-    .filter(Boolean as unknown as SetupTruthyFilter);
+    .filter(truthySetupSeed);
   const materialBooks = currentFormationMaterials
     .map((material, index) =>
       resourceBookLike({
@@ -131,7 +135,7 @@ export function applySetupSnapshotToSeed(
         sourceKind: 'formation-material',
       })
     )
-    .filter(Boolean as unknown as SetupTruthyFilter);
+    .filter(truthySetupSeed);
   const currentBooks: LearnRuntimeBook[] = [...literatureBooks, ...enrichmentBooks, ...subjectBooks, ...materialBooks];
   next.household = { ...next.household, ...setupSnapshot.household };
   next.children = list(setupSnapshot.children);
@@ -329,7 +333,7 @@ export function applySetupSnapshotToSeed(
             sortOrder: subjectIndex * 10 + resourceIndex + 1,
           };
         })
-        .filter(Boolean as unknown as SetupTruthyFilter);
+        .filter(truthySetupSeed);
     }),
     ...formationMaterialsForPlanning.map((material, index) => ({
       id: material.id,

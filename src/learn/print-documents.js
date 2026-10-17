@@ -22,6 +22,9 @@ import {
   renderDesignedWeekFormsLandscape,
   drawSection,
 } from './print-pdf-layout.js';
+function truthyPrintDocuments(value) {
+  return Boolean(value);
+}
 import { buildAcademicReportCardPdf, buildAcademicTranscriptPdf } from './print-academic-pdf.js';
 function buildWeeklyHouseholdPrintDocument({ household, week, calendarToggle }) {
   return withMomNotes(
@@ -117,7 +120,7 @@ function buildLearnReportPrintDocument(
         ),
         { flex: [3, 1, 2] }
       ),
-    ].filter(Boolean);
+    ].filter(truthyPrintDocuments);
     return doc;
   }
   if (normalized.includes('report-card') || normalized.includes('report card')) {
@@ -140,7 +143,7 @@ function buildLearnReportPrintDocument(
         ),
         { flex: [2, 1, 4] }
       ),
-    ].filter(Boolean);
+    ].filter(truthyPrintDocuments);
     return doc;
   }
   doc.sections = [
@@ -160,7 +163,7 @@ function buildLearnReportPrintDocument(
     tableSection('Narration Log', ['Date', 'Student', 'Source', 'Type', 'Note'], narrationRows, {
       flex: [1.5, 1.5, 2, 1.5, 4],
     }),
-  ].filter(Boolean);
+  ].filter(truthyPrintDocuments);
   return doc;
 }
 function buildPrintJobRequest({ templateId, format = 'pdf', rangeLabel = '', requestedBy = 'household' }) {

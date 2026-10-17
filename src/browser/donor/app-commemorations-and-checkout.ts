@@ -4,9 +4,12 @@ import type {
   DonorAppCommemoration,
   DonorAppPayload,
   DonorAppError,
-  DonorTruthyFilter,
 } from './app-contracts.js';
 import type { DonorAppBindings } from './app.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+declare const truthyDonor: DonorAppBindings['truthyDonor'];
+
 declare const donorProfile: DonorAppBindings['donorProfile'];
 declare const escapeHtml: DonorAppBindings['escapeHtml'];
 declare const shortDate: DonorAppBindings['shortDate'];
@@ -85,9 +88,7 @@ function renderCommemorationParish(parish: DonorAppParish | null | undefined) {
   const hidden = document.getElementById('commemorationParishId');
   if (display) {
     display.textContent = parish
-      ? [parish.name, [parish.city, parish.state].filter(Boolean as unknown as DonorTruthyFilter).join(', ')]
-          .filter(Boolean as unknown as DonorTruthyFilter)
-          .join(' - ')
+      ? [parish.name, [parish.city, parish.state].filter(truthyDonor).join(', ')].filter(truthyDonor).join(' - ')
       : 'Choose your parish in Settings before submitting commemorations.';
   }
   if (hidden) (hidden as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = parish?.id || '';
@@ -245,7 +246,7 @@ function linesFromField(id: string) {
   return ((document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value || '')
     .split(/\n+/)
     .map((value) => value.trim())
-    .filter(Boolean as unknown as DonorTruthyFilter);
+    .filter(truthyDonor);
 }
 
 function toggleCommemorationGiftFields() {
@@ -299,9 +300,7 @@ async function submitCommemoration(event: Event) {
         document.getElementById('commemorationLiturgyDate') as
           HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
       )?.value || '';
-    const note = [liturgyDate ? `Requested Liturgy date: ${liturgyDate}` : '', rawNote]
-      .filter(Boolean as unknown as DonorTruthyFilter)
-      .join('\n');
+    const note = [liturgyDate ? `Requested Liturgy date: ${liturgyDate}` : '', rawNote].filter(truthyDonor).join('\n');
     if (!includeGift) {
       setDonorStatus('Submitting commemoration...');
       const data = await donorApi('/api/donor/commemorations', {
@@ -374,7 +373,7 @@ async function startDonorCheckout(event: Event) {
   }
   const selectedFund = parish?.funds?.find((fund) =>
     [fund.id, fund.name]
-      .filter(Boolean as unknown as DonorTruthyFilter)
+      .filter(truthyDonor)
       .map(String)
       .includes((document.getElementById('fund') as HTMLSelectElement | null)?.value as string)
   );
@@ -383,10 +382,7 @@ async function startDonorCheckout(event: Event) {
   const feastDestinationFund =
     normalizedGiftType === 'feast'
       ? (Array.isArray(parish?.funds) ? parish.funds : []).find((fund) =>
-          [fund?.id, fund?.code, fund?.name]
-            .filter(Boolean as unknown as DonorTruthyFilter)
-            .map(String)
-            .includes(String(feastDestinationId))
+          [fund?.id, fund?.code, fund?.name].filter(truthyDonor).map(String).includes(String(feastDestinationId))
         )
       : null;
   const livingNames =

@@ -46,10 +46,15 @@ import type {
   ParishAppIdentity,
   ParishAppFeatureRequest,
   ParishAppSettlementState,
-  ParishAppTruthyFilter,
   ParishAppGivingFeature,
   ParishAppSettingsPayload,
 } from './app-contracts.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyParishApp<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 // ── STATE ────────────────────────────────────────────────
 window.AgapayMfa?.installFetchStepUp();
 // eslint-disable-next-line prefer-const -- Mutable classic binding is assigned by the composed controller helpers.
@@ -286,12 +291,8 @@ function renderDashboard() {
     sidebarLogo.src = p.logoUrl || '';
     sidebarLogo.alt = p.logoUrl ? `${p.parishName || 'Parish'} logo` : '';
   }
-  const parishMeta = [
-    p.communityType,
-    p.jurisdiction,
-    [p.city, p.state].filter(Boolean as unknown as ParishAppTruthyFilter).join(', '),
-  ]
-    .filter(Boolean as unknown as ParishAppTruthyFilter)
+  const parishMeta = [p.communityType, p.jurisdiction, [p.city, p.state].filter(truthyParishApp).join(', ')]
+    .filter(truthyParishApp)
     .join(' / ');
   document.getElementById('sidebarParishMeta')!.textContent = parishMeta;
   const chip = document.getElementById('sidebarStatusChip');

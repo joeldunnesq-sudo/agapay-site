@@ -1,6 +1,5 @@
 import type {
   LearnFamilyPlannerInput,
-  LearnTruthyFilter,
   LearnPrototypeSeed,
   LearnShellViewModel,
   LearnShellNode,
@@ -9,6 +8,11 @@ import type {
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell-planner-family.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearnPlanner2<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const familyPlannerModel: LearnShellBindings['familyPlannerModel'];
 declare const renderPlannerDaySelector: LearnShellBindings['renderPlannerDaySelector'];
@@ -147,7 +151,7 @@ function renderFamilyMonthOverview(model: ReturnType<typeof familyPlannerModel>,
               : `<button type="button" data-chore-open data-cadence="monthly" data-day-of-month="${html(day.dayNumber || '')}" data-assigned-date="${html(day.date || '')}" data-assignee="Everyone">+ Monthly chore</button>`;
         return `<article class="${day.inMonth === false ? 'is-muted' : ''} ${day.isFastDay ? 'is-fast' : ''} ${day.isSunday ? 'is-feast' : ''}">
       <div><strong>${html(day.weekday || day.weekdayLong || '')}</strong><span>${html(day.dayNumber || day.shortDate || day.short)}</span></div>
-      <small>${html([fastingLabel, feastLabel].filter(Boolean as unknown as LearnTruthyFilter).join(' · ') || 'Household day')}</small>
+      <small>${html([fastingLabel, feastLabel].filter(truthyLearnPlanner2).join(' · ') || 'Household day')}</small>
       ${
         scope === 'meals'
           ? `<p>${html(scopeText || (day.isFastDay ? 'Fast-aware meal plan' : day.isSunday || feastLabel ? 'Feast-day meal plan' : 'Plan dinner'))}</p>${[
@@ -325,7 +329,7 @@ function renderEventsScope(model: ReturnType<typeof familyPlannerModel>, display
       <button type="button" class="learn-family-event-row" data-event-open data-event-id="${html(event.id || '')}" data-date="${html(event.date || day.date)}" data-title="${html(event.title || '')}" data-time="${html(event.startTime || '')}" data-location="${html(event.location || '')}" data-notes="${html(event.notes || '')}" data-type="${html(event.eventType || '')}" data-recurrence="${html(event.recurrence || 'none')}">
         <span>${html(event.startTime || '—')}</span>
         <strong>${html(event.title)}</strong>
-        <small>${html([event.location || event.eventType || 'Family event', recurs ? eventRecurrenceLabel(event.recurrence) : ''].filter(Boolean as unknown as LearnTruthyFilter).join(' · '))}</small>
+        <small>${html([event.location || event.eventType || 'Family event', recurs ? eventRecurrenceLabel(event.recurrence) : ''].filter(truthyLearnPlanner2).join(' · '))}</small>
       </button>
     </div>`;
   };
@@ -547,7 +551,7 @@ function uniqueMonthLessons(items: LearnShellNode[]) {
 
 function renderMonthLessonChip(item: LearnShellNode) {
   const color = item.color || 'var(--gold)';
-  return `<span title="${html([item.title, item.sub].filter(Boolean as unknown as LearnTruthyFilter).join(' - '))}" style="display:flex;align-items:center;gap:5px;min-width:0;border:1px solid rgba(181,148,47,.22);border-left:3px solid ${html(color)};border-radius:7px;background:${softColor(color, '16')};padding:3px 5px;color:#243047;font-size:10.5px;line-height:1.15;">
+  return `<span title="${html([item.title, item.sub].filter(truthyLearnPlanner2).join(' - '))}" style="display:flex;align-items:center;gap:5px;min-width:0;border:1px solid rgba(181,148,47,.22);border-left:3px solid ${html(color)};border-radius:7px;background:${softColor(color, '16')};padding:3px 5px;color:#243047;font-size:10.5px;line-height:1.15;">
     <span style="width:6px;height:6px;border-radius:999px;background:${html(color)};flex:0 0 auto;"></span>
     <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${html(item.title)}</span>
   </span>`;

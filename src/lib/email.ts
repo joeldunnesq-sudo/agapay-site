@@ -75,6 +75,20 @@ export function agapayEmailHtml(appUrl: unknown, title: unknown, bodyHtml: strin
   `;
 }
 
+function parseProviderBody(bodyText: string): ProviderBody {
+  try {
+    const parsed: unknown = JSON.parse(bodyText);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return {
+      id: 'id' in parsed && typeof parsed.id === 'string' ? parsed.id : '',
+      message: 'message' in parsed ? parsed.message : undefined,
+      error: 'error' in parsed ? parsed.error : undefined,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export async function sendEmail(
   env: EmailEnv,
   message: EmailMessage,
@@ -100,12 +114,8 @@ export async function sendEmail(
       signal: controller.signal,
     });
     const bodyText = await response.text();
-    let body: ProviderBody = {};
-    try {
-      body = bodyText ? (JSON.parse(bodyText) as ProviderBody) : {};
-    } catch {
-      body = {};
-    }
+    // Provider acceptance/rejection is determined by HTTP; optional JSON metadata is checked separately.
+    const body = parseProviderBody(bodyText);
     if (!response.ok) {
       await logEvent(env, {
         eventType: 'email.delivery.failed',

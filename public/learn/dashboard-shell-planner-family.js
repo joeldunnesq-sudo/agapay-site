@@ -1,4 +1,7 @@
 // Generated from src/browser/learn/dashboard-shell-planner-family.ts by npm run build:browser. Do not edit.
+function truthyLearnPlanner1(value) {
+  return Boolean(value);
+}
 function marketingPreviewActive() {
   return isOdysseyLearnContext() && new URLSearchParams(window.location.search).get('marketing') === '1';
 }
@@ -111,7 +114,7 @@ function renderWeeklyAssignmentBoard(vm) {
       graceActive && isDeferrable ? 'is-grace-deferred' : '',
       graceActive && isReducible ? 'is-grace-reduced' : '',
     ]
-      .filter(Boolean)
+      .filter(truthyLearnPlanner1)
       .join(' ');
     const familyChip = isFamilyItem
       ? `<span class="learn-family-card-chip" title="Family — Everyone subject">◈ Family</span>`
@@ -126,7 +129,7 @@ function renderWeeklyAssignmentBoard(vm) {
   const weekStartDate = vm.week.weekStartDate || vm.week.days?.[0]?.date || '';
   const weekEndDate = vm.week.weekEndDate || vm.week.days?.[6]?.date || '';
   return `
-    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week.days[0]?.date, vm.week.days[6]?.date].filter(Boolean).join('_'))}" data-week-start="${html(weekStartDate)}" data-week-end="${html(weekEndDate)}">
+    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week.days[0]?.date, vm.week.days[6]?.date].filter(truthyLearnPlanner1).join('_'))}" data-week-start="${html(weekStartDate)}" data-week-end="${html(weekEndDate)}">
       <div class="learn-week-assignment-head">
         <div>
           <div>WEEKLY PLANNER</div>
@@ -251,9 +254,9 @@ function choreAssigneeOptions(planning = {}) {
     'Everyone',
     household.motherName || 'Mom',
     household.fatherName || 'Dad',
-    ...(planning.children || []).map((child) => child.name || child.firstName).filter(Boolean),
+    ...(planning.children || []).map((child) => child.name || child.firstName).filter(truthyLearnPlanner1),
   ];
-  return [...new Set(names.filter(Boolean))];
+  return [...new Set(names.filter(truthyLearnPlanner1))];
 }
 function dayOfMonthOptions() {
   return [
@@ -305,7 +308,7 @@ function eventOccursOnDate(event = {}, date = '') {
 }
 function expandFamilyEvents(events = [], dates = []) {
   const byDate = /* @__PURE__ */ new Map();
-  dates.filter(Boolean).forEach((date) => {
+  dates.filter(truthyLearnPlanner1).forEach((date) => {
     const matches = events
       .filter((event) => eventOccursOnDate(event, date))
       .map((event) => ({ ...event, occurrenceDate: date }));
@@ -371,7 +374,7 @@ function familyPlannerModel(vm) {
     isFastDay: Boolean(day.isFastDay),
     meal: day.meal || mealByDate.get(day.date) || null,
   }));
-  const calendarDates = [...new Set([...dates, ...monthDays.map((day) => day.date)].filter(Boolean))];
+  const calendarDates = [...new Set([...dates, ...monthDays.map((day) => day.date)].filter(truthyLearnPlanner1))];
   const eventsByDate = expandFamilyEvents(planning.events || [], calendarDates);
   const weekDays = dates.map((date) => {
     const label = plannerDayLabel(date);
@@ -415,7 +418,7 @@ function renderFeastsPanel(model, mode = 'week') {
           <span style="min-width:34px;min-height:34px;width:34px;height:34px;border-radius:9px;font-size:12px;flex:none;">${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
           <p style="margin:0;min-width:0;">
             <strong style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(day.feast || day.feastTitle || 'Feast day')}</strong>
-            <small style="margin-top:2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(Boolean).join(' · '))}</small>
+            <small style="margin-top:2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(truthyLearnPlanner1).join(' · '))}</small>
           </p>
         </article>`
                 )
@@ -433,7 +436,7 @@ function renderFeastsPanel(model, mode = 'week') {
             .map(
               (day) => `<article class="${day.isFastDay ? 'is-fast' : ''}">
       <span>${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
-      <p><strong>${html(day.feast || day.feastTitle || 'Feast day')}</strong><small>${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(Boolean).join(' · '))}</small></p>
+      <p><strong>${html(day.feast || day.feastTitle || 'Feast day')}</strong><small>${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(truthyLearnPlanner1).join(' · '))}</small></p>
     </article>`
             )
             .join('')
@@ -456,7 +459,9 @@ function mealSlotLabel(slot) {
   return { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' }[slot] || slot;
 }
 function plannerHiddenData(model) {
-  const mealDates = [...new Set([...model.weekDays, ...model.monthDays].map((day) => day.date).filter(Boolean))];
+  const mealDates = [
+    ...new Set([...model.weekDays, ...model.monthDays].map((day) => day.date).filter(truthyLearnPlanner1)),
+  ];
   const meals = mealDates
     .map((date) => {
       const day = model.monthDays.find((item) => item.date === date) ||
@@ -492,6 +497,9 @@ function renderPlannerDaySelector(model, selectedDate) {
 function renderMealCard(day, meal, slot) {
   const value = meal?.[slot] || '';
   return `<button type="button" class="learn-family-meal-card" data-meal-open data-date="${html(day.date)}" data-slot="${html(slot)}"><span>${html(mealSlotLabel(slot))}</span><strong>${html(value || 'No dish yet')}</strong><small>${value ? 'change it' : 'add a dish'} →</small></button>`;
+}
+function truthyLearnPlanner2(value) {
+  return Boolean(value);
 }
 function renderMealsPlan(model, displayView, vm) {
   const selectedDate =
@@ -594,7 +602,7 @@ function renderFamilyMonthOverview(model, scope = 'meals') {
               : `<button type="button" data-chore-open data-cadence="monthly" data-day-of-month="${html(day.dayNumber || '')}" data-assigned-date="${html(day.date || '')}" data-assignee="Everyone">+ Monthly chore</button>`;
         return `<article class="${day.inMonth === false ? 'is-muted' : ''} ${day.isFastDay ? 'is-fast' : ''} ${day.isSunday ? 'is-feast' : ''}">
       <div><strong>${html(day.weekday || day.weekdayLong || '')}</strong><span>${html(day.dayNumber || day.shortDate || day.short)}</span></div>
-      <small>${html([fastingLabel, feastLabel].filter(Boolean).join(' · ') || 'Household day')}</small>
+      <small>${html([fastingLabel, feastLabel].filter(truthyLearnPlanner2).join(' · ') || 'Household day')}</small>
       ${
         scope === 'meals'
           ? `<p>${html(scopeText || (day.isFastDay ? 'Fast-aware meal plan' : day.isSunday || feastLabel ? 'Feast-day meal plan' : 'Plan dinner'))}</p>${[
@@ -750,7 +758,7 @@ function renderEventsScope(model, displayView) {
       <button type="button" class="learn-family-event-row" data-event-open data-event-id="${html(event.id || '')}" data-date="${html(event.date || day.date)}" data-title="${html(event.title || '')}" data-time="${html(event.startTime || '')}" data-location="${html(event.location || '')}" data-notes="${html(event.notes || '')}" data-type="${html(event.eventType || '')}" data-recurrence="${html(event.recurrence || 'none')}">
         <span>${html(event.startTime || '—')}</span>
         <strong>${html(event.title)}</strong>
-        <small>${html([event.location || event.eventType || 'Family event', recurs ? eventRecurrenceLabel(event.recurrence) : ''].filter(Boolean).join(' · '))}</small>
+        <small>${html([event.location || event.eventType || 'Family event', recurs ? eventRecurrenceLabel(event.recurrence) : ''].filter(truthyLearnPlanner2).join(' · '))}</small>
       </button>
     </div>`;
   };
@@ -954,7 +962,7 @@ function uniqueMonthLessons(items) {
 }
 function renderMonthLessonChip(item) {
   const color = item.color || 'var(--gold)';
-  return `<span title="${html([item.title, item.sub].filter(Boolean).join(' - '))}" style="display:flex;align-items:center;gap:5px;min-width:0;border:1px solid rgba(181,148,47,.22);border-left:3px solid ${html(color)};border-radius:7px;background:${softColor(color, '16')};padding:3px 5px;color:#243047;font-size:10.5px;line-height:1.15;">
+  return `<span title="${html([item.title, item.sub].filter(truthyLearnPlanner2).join(' - '))}" style="display:flex;align-items:center;gap:5px;min-width:0;border:1px solid rgba(181,148,47,.22);border-left:3px solid ${html(color)};border-radius:7px;background:${softColor(color, '16')};padding:3px 5px;color:#243047;font-size:10.5px;line-height:1.15;">
     <span style="width:6px;height:6px;border-radius:999px;background:${html(color)};flex:0 0 auto;"></span>
     <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${html(item.title)}</span>
   </span>`;

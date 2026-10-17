@@ -1,4 +1,7 @@
 // Generated from src/browser/donor/app.ts by npm run build:browser. Do not edit.
+function truthyDonor(value) {
+  return Boolean(value);
+}
 async function refreshStaleDashboardShell() {
   if (!('serviceWorker' in navigator) || !('caches' in window)) return;
   if (!location.pathname.startsWith('/myagapay') && !location.pathname.startsWith('/donor')) return;
@@ -98,7 +101,7 @@ function money(cents) {
 }
 function donorInitials(donor) {
   const source = donor?.householdName || donor?.donorName || donor?.email || 'Faithful Member';
-  const words = String(source).trim().split(/\s+/).filter(Boolean);
+  const words = String(source).trim().split(/\s+/).filter(truthyDonor);
   if (!words.length) return 'FM';
   if (words.length === 1 && words[0].includes('@')) return words[0].slice(0, 2).toUpperCase();
   return words
@@ -263,9 +266,9 @@ async function fetchPublicParishes() {
   return parishes;
 }
 function parishOptionLabel(parish) {
-  const place = [parish.city, parish.state].filter(Boolean).join(', ');
+  const place = [parish.city, parish.state].filter(truthyDonor).join(', ');
   const type = parish.type ? `${parish.type.charAt(0).toUpperCase()}${parish.type.slice(1)}` : 'Church';
-  return [parish.name, place, type].filter(Boolean).join(' - ');
+  return [parish.name, place, type].filter(truthyDonor).join(' - ');
 }
 function renderParishOptions(select, parishes, selectedValue = '', query = '') {
   const normalizedQuery = String(query || '')
@@ -280,7 +283,7 @@ function renderParishOptions(select, parishes, selectedValue = '', query = '') {
       parish.jurisdictionLabel,
       parish.jurisdiction,
     ]
-      .filter(Boolean)
+      .filter(truthyDonor)
       .join(' ')
       .toLowerCase();
     return !normalizedQuery || haystack.includes(normalizedQuery);
@@ -331,13 +334,13 @@ function parishHasGivingPlus(parish) {
 }
 function isGeneralDonorFund(fund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean)
+    .filter(truthyDonor)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['general', 'stewardship', 'general operating fund', 'general stewardship'].includes(value));
 }
 function isCandleDonorFund(fund = {}) {
   return [fund.id, fund.code, fund.reportCode, fund.name]
-    .filter(Boolean)
+    .filter(truthyDonor)
     .map((value) => String(value).trim().toLowerCase())
     .some((value) => ['candle', 'candles', 'candles / vigil lights', 'candle fund'].includes(value));
 }
@@ -610,7 +613,9 @@ function selectedCampaign() {
       : activeParishCampaigns(selectedPublicParish());
   return (
     campaigns.find((campaign) => {
-      const keys = [campaign.id, campaign.feastId, campaign.name, campaign.campaignName].filter(Boolean).map(String);
+      const keys = [campaign.id, campaign.feastId, campaign.name, campaign.campaignName]
+        .filter(truthyDonor)
+        .map(String);
       return keys.includes(selected);
     }) || null
   );
@@ -717,7 +722,7 @@ function renderActiveCampaigns(parish, { confirmed = false } = {}) {
   const targets = [
     document.getElementById('activeCampaigns'),
     document.getElementById('desktopActiveCampaigns'),
-  ].filter(Boolean);
+  ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
   if (!campaign) {
@@ -780,7 +785,7 @@ function fundLabel(fund) {
 }
 function renderActiveFunds(parish, { confirmed = false } = {}) {
   const targets = [document.getElementById('activeFunds'), document.getElementById('desktopActiveFunds')].filter(
-    Boolean
+    truthyDonor
   );
   if (!targets.length) return;
   if (parish && !parishHasGivingPlus(parish)) {
@@ -894,14 +899,14 @@ function renderHomeParishWidgetsLoading() {
   const campaignLoading =
     '<article class="campaign-card campaign-empty sw-tool-loading"><span class="campaign-pill">Campaigns</span><h3>Loading parish campaigns…</h3><p>Checking the giving opportunities available through your parish.</p></article>';
   [document.getElementById('activeCampaigns'), document.getElementById('desktopActiveCampaigns')]
-    .filter(Boolean)
+    .filter(truthyDonor)
     .forEach((target) => {
       target.innerHTML = campaignLoading;
     });
   const fundsLoading =
     '<article class="active-funds-card active-funds-empty sw-tool-loading"><span class="campaign-pill">Funds</span><h3>Loading parish funds…</h3><p>Checking the funds available through your parish.</p></article>';
   [document.getElementById('activeFunds'), document.getElementById('desktopActiveFunds')]
-    .filter(Boolean)
+    .filter(truthyDonor)
     .forEach((target) => {
       target.innerHTML = fundsLoading;
     });
@@ -1842,7 +1847,7 @@ function renderCommemorationParish(parish) {
   const hidden = document.getElementById('commemorationParishId');
   if (display) {
     display.textContent = parish
-      ? [parish.name, [parish.city, parish.state].filter(Boolean).join(', ')].filter(Boolean).join(' - ')
+      ? [parish.name, [parish.city, parish.state].filter(truthyDonor).join(', ')].filter(truthyDonor).join(' - ')
       : 'Choose your parish in Settings before submitting commemorations.';
   }
   if (hidden) hidden.value = parish?.id || '';
@@ -1984,7 +1989,7 @@ function linesFromField(id) {
   return (document.getElementById(id)?.value || '')
     .split(/\n+/)
     .map((value) => value.trim())
-    .filter(Boolean);
+    .filter(truthyDonor);
 }
 function toggleCommemorationGiftFields() {
   const includeGift = document.getElementById('commemorationIncludeGift')?.checked === true;
@@ -2026,7 +2031,7 @@ async function submitCommemoration(event) {
     const includeGift = document.getElementById('commemorationIncludeGift')?.checked === true;
     const rawNote = document.getElementById('commemorationIntentionNote')?.value || '';
     const liturgyDate = document.getElementById('commemorationLiturgyDate')?.value || '';
-    const note = [liturgyDate ? `Requested Liturgy date: ${liturgyDate}` : '', rawNote].filter(Boolean).join('\n');
+    const note = [liturgyDate ? `Requested Liturgy date: ${liturgyDate}` : '', rawNote].filter(truthyDonor).join('\n');
     if (!includeGift) {
       setDonorStatus('Submitting commemoration...');
       const data2 = await donorApi('/api/donor/commemorations', {
@@ -2094,14 +2099,14 @@ async function startDonorCheckout(event) {
     return;
   }
   const selectedFund = parish?.funds?.find((fund) =>
-    [fund.id, fund.name].filter(Boolean).map(String).includes(document.getElementById('fund')?.value)
+    [fund.id, fund.name].filter(truthyDonor).map(String).includes(document.getElementById('fund')?.value)
   );
   const campaign = selectedCampaign();
   const feastDestinationId = campaign?.destinationFundId || 'benevolence-fund';
   const feastDestinationFund =
     normalizedGiftType === 'feast'
       ? (Array.isArray(parish?.funds) ? parish.funds : []).find((fund) =>
-          [fund?.id, fund?.code, fund?.name].filter(Boolean).map(String).includes(String(feastDestinationId))
+          [fund?.id, fund?.code, fund?.name].filter(truthyDonor).map(String).includes(String(feastDestinationId))
         )
       : null;
   const livingNames =

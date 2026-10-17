@@ -5,6 +5,9 @@ import './academic-records.js';
 import './billing.js';
 import './demo-data.js';
 import './planner-overrides.js';
+function truthySetupPersistence(value) {
+  return Boolean(value);
+}
 const LEARN_SETUP_KV_PREFIX = '__agapay_learn_setup:';
 const devSetupSnapshots = /* @__PURE__ */ new Map();
 const HOMESCHOOL_METHODS = ['Charlotte Mason', 'Orthodox Classical', 'Traditional', 'Eclectic', 'Unsure'];
@@ -207,7 +210,7 @@ function weeklyPlansValue(value) {
 }
 function labelsValue(value) {
   const direct = Array.isArray(value) ? value : String(value || '').split(',');
-  return [...new Set(direct.map((entry) => text(entry, '')).filter(Boolean))];
+  return [...new Set(direct.map((entry) => text(entry, '')).filter(truthySetupPersistence))];
 }
 function setupResourceValue(resource, subject = {}) {
   const raw = typeof resource === 'string' ? { title: resource } : resource || {};
@@ -216,9 +219,9 @@ function setupResourceValue(resource, subject = {}) {
   const formLabels = labelsValue(raw.formLabels || raw.formLabel || subject.formLabels || subject.formLabel);
   const childIds =
     Array.isArray(raw.childIds) && raw.childIds.length
-      ? raw.childIds.filter(Boolean)
+      ? raw.childIds.filter(truthySetupPersistence)
       : Array.isArray(subject.childIds)
-        ? subject.childIds.filter(Boolean)
+        ? subject.childIds.filter(truthySetupPersistence)
         : [];
   return {
     title,

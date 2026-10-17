@@ -1,13 +1,17 @@
 import type {
   LearnChildSheetGroup,
   LearnFamilySetupContext,
-  LearnTruthyFilter,
   LearnShellNode,
   LearnShellPayload,
   LearnSetupVm,
   LearnPrintVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn9<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const collapsibleSetupPanel: LearnShellBindings['collapsibleSetupPanel'];
 declare const churchRhythmSetupPanel: LearnShellBindings['churchRhythmSetupPanel'];
@@ -253,7 +257,7 @@ function renderPrintCenter(vm: LearnPrintVm) {
   const ungrouped = householdTemplates.filter((t) => !assignedIds.has(t.id));
 
   const groupSection = (group: (typeof GROUPS)[number]) => {
-    const members = group.ids.map((id: string) => tmplById.get(id)).filter(Boolean as unknown as LearnTruthyFilter);
+    const members = group.ids.map((id: string) => tmplById.get(id)).filter(truthyLearn9);
     if (group.id === 'kitchen') members.push(...ungrouped.filter((t) => t.premium));
     else if (group.id === 'weekly') members.push(...ungrouped.filter((t) => !t.premium));
     if (!members.length) return '';

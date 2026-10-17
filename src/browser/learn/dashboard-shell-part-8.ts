@@ -1,6 +1,5 @@
 import type {
   LearnCommunityResource,
-  LearnTruthyFilter,
   LearnShellViewModel,
   LearnShellNode,
   LearnShellSimpleDraft,
@@ -9,6 +8,11 @@ import type {
   LearnSetupVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn8<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const renderTefaCommunity: LearnShellBindings['renderTefaCommunity'];
 declare const shell: LearnShellBindings['shell'];
@@ -47,7 +51,7 @@ function renderCommunity(vm: LearnCommunityVm) {
 
   // ── Resource cards — scannable, type-forward ───────────────────────────────────
   const typeLabel = (resource: LearnCommunityResource) => {
-    const parts = [resource.resourceType, resource.ageRange].filter(Boolean as unknown as LearnTruthyFilter);
+    const parts = [resource.resourceType, resource.ageRange].filter(truthyLearn8);
     return parts.join(' · ');
   };
 
@@ -391,11 +395,7 @@ function simpleSetupPayload(draft: LearnShellSimpleDraft, existingSnapshot: Lear
       color: colors[index % colors.length],
     }));
   const planningGroups = [
-    ...new Set(
-      children
-        .map((child) => (draft.useForms ? child.formLabel : child.gradeLabel))
-        .filter(Boolean as unknown as LearnTruthyFilter)
-    ),
+    ...new Set(children.map((child) => (draft.useForms ? child.formLabel : child.gradeLabel)).filter(truthyLearn8)),
   ];
   if (!planningGroups.length) planningGroups.push(draft.useForms ? 'Form I' : 'Household Grade');
   const existingHasPlan = Boolean(

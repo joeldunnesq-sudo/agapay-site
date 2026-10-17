@@ -1,5 +1,10 @@
-import type { LearnTruthyFilter, LearnSetupResourceRow, LearnShellNode } from './dashboard-shell-contracts.js';
+import type { LearnSetupResourceRow, LearnShellNode } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn11<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const collectRows: LearnShellBindings['collectRows'];
 declare const rowValue: LearnShellBindings['rowValue'];
@@ -185,7 +190,7 @@ function setupPayloadFromForm(form: HTMLFormElement) {
         formLabels: ((rowValue(row, 'formLabels') as string) || (primaryResource.formLabels || []).join(','))
           .split(',')
           .map((v: string) => v.trim())
-          .filter(Boolean as unknown as LearnTruthyFilter),
+          .filter(truthyLearn11),
         gradeLabel: (rowValue(row, 'gradeLabel') as string) || primaryResource.gradeLabel || '',
         resource: resources[0]?.title || (rowValue(row, 'resource') as string),
         resources,
@@ -195,7 +200,7 @@ function setupPayloadFromForm(form: HTMLFormElement) {
         childIds: ((rowValue(row, 'childIds') as string) || (primaryResource.childIds || []).join(','))
           .split(',')
           .map((v: string) => v.trim())
-          .filter(Boolean as unknown as LearnTruthyFilter),
+          .filter(truthyLearn11),
         progressionType: rowValue(row, 'progressionType') as string,
         startNumber: rowValue(row, 'startNumber') as string,
         currentNumber: rowValue(row, 'currentNumber') as string,
@@ -272,7 +277,7 @@ function setupPayloadFromForm(form: HTMLFormElement) {
           formLabels: (rowValue(row, 'formLabels') as string)
             .split(',')
             .map((value: string) => value.trim())
-            .filter(Boolean as unknown as LearnTruthyFilter),
+            .filter(truthyLearn11),
           gradeLabel: rowValue(row, 'gradeLabel') as string,
           scheduledWeeks: scheduledTermWeeks(rowValue(row, 'scheduledWeeks') as string),
           weeklyFrequency: rowValue(row, 'weeklyFrequency') as string,
@@ -328,13 +333,13 @@ function setupPayloadFromForm(form: HTMLFormElement) {
           formLabels: ((rowValue(row, 'formLabels') as string) || (primaryResource.formLabels || []).join(','))
             .split(',')
             .map((value: string) => value.trim())
-            .filter(Boolean as unknown as LearnTruthyFilter),
+            .filter(truthyLearn11),
           gradeLabel: (rowValue(row, 'gradeLabel') as string) || primaryResource.gradeLabel || '',
           childId: rowValue(row, 'childId') as string,
           childIds: ((rowValue(row, 'childIds') as string) || (primaryResource.childIds || []).join(','))
             .split(',')
             .map((v: string) => v.trim())
-            .filter(Boolean as unknown as LearnTruthyFilter),
+            .filter(truthyLearn11),
           startNumber: rowValue(row, 'startNumber') as string,
           currentNumber: rowValue(row, 'currentNumber') as string,
           endNumber: rowValue(row, 'endNumber') as string,

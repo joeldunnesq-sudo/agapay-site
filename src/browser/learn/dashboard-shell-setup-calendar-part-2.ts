@@ -1,5 +1,10 @@
-import type { LearnTruthyFilter, LearnShellNode } from './dashboard-shell-contracts.js';
+import type { LearnShellNode } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell-setup-calendar.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearnSetup2<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const DEFAULT_TERM_WEEK_COUNT: LearnShellBindings['DEFAULT_TERM_WEEK_COUNT'];
 declare const selectedTermWeeks: LearnShellBindings['selectedTermWeeks'];
@@ -63,9 +68,7 @@ function setupResourcePlanningModePicker(
   const selected = Array.isArray(item.formLabels)
     ? item.formLabels
     : String(item.formLabels || item.formLabel || '').split(',');
-  const selectedGroups = [
-    ...new Set(selected.map((value) => String(value || '').trim()).filter(Boolean as unknown as LearnTruthyFilter)),
-  ];
+  const selectedGroups = [...new Set(selected.map((value) => String(value || '').trim()).filter(truthyLearnSetup2))];
   const familyBased = (item.planningMode || 'forms') !== 'forms' || !selectedGroups.length;
   const summary = familyBased
     ? 'Family-Based'
@@ -83,7 +86,7 @@ function setupResourceChildPicker(
     : String(selectedIds || '')
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean as unknown as LearnTruthyFilter);
+        .filter(truthyLearnSetup2);
   const summary = selected.length
     ? children
         .filter((child) => selected.includes(child.id))
@@ -209,9 +212,7 @@ function setupPlanningModePicker(
   const selected = Array.isArray(item.formLabels)
     ? item.formLabels
     : String(item.formLabels || item.formLabel || '').split(',');
-  const selectedGroups = [
-    ...new Set(selected.map((value) => String(value || '').trim()).filter(Boolean as unknown as LearnTruthyFilter)),
-  ];
+  const selectedGroups = [...new Set(selected.map((value) => String(value || '').trim()).filter(truthyLearnSetup2))];
   const familyBased = (item.planningMode || 'family') !== 'forms' || !selectedGroups.length;
   const summary = familyBased
     ? 'Family-Based'

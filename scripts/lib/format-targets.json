@@ -1212,7 +1212,9 @@
     "scripts/typecheck-browser/learn-shell-contracts.ts",
     "src/learn/stored-record-validation.ts",
     "src/learn/stored-record-validation.js",
-    "scripts/learn-stored-record-validation-tests.mjs"
+    "scripts/learn-stored-record-validation-tests.mjs",
+    "scripts/truthy-filter-adapters-tests.mjs",
+    "scripts/support-json-boundaries-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -2458,6 +2460,8 @@
     "scripts/typecheck-browser/learn-shell-contracts.ts",
     "src/learn/stored-record-validation.ts",
     "src/learn/stored-record-validation.js",
-    "scripts/learn-stored-record-validation-tests.mjs"
+    "scripts/learn-stored-record-validation-tests.mjs",
+    "scripts/truthy-filter-adapters-tests.mjs",
+    "scripts/support-json-boundaries-tests.mjs"
   ]
 }

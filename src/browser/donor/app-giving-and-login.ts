@@ -4,9 +4,12 @@ import type {
   DonorAppCampaign,
   DonorAppError,
   DonorAppOptions,
-  DonorTruthyFilter,
 } from './app-contracts.js';
 import type { DonorAppBindings } from './app.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+declare const truthyDonor: DonorAppBindings['truthyDonor'];
+
 declare const normalizeDonorGiftType: DonorAppBindings['normalizeDonorGiftType'];
 declare const activeParishFeastCampaigns: DonorAppBindings['activeParishFeastCampaigns'];
 declare const activeParishCampaigns: DonorAppBindings['activeParishCampaigns'];
@@ -80,7 +83,7 @@ function selectedCampaign() {
   return (
     campaigns.find((campaign) => {
       const keys = [campaign.id, campaign.feastId, campaign.name, campaign.campaignName]
-        .filter(Boolean as unknown as DonorTruthyFilter)
+        .filter(truthyDonor)
         .map(String);
       return keys.includes(selected);
     }) || null
@@ -195,7 +198,7 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
   const targets = [
     document.getElementById('activeCampaigns'),
     document.getElementById('desktopActiveCampaigns'),
-  ].filter(Boolean as unknown as DonorTruthyFilter);
+  ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
   if (!campaign) {
@@ -268,7 +271,7 @@ function fundLabel(fund: DonorAppFund) {
 
 function renderActiveFunds(parish: DonorAppParish | null | undefined, { confirmed = false }: DonorAppOptions = {}) {
   const targets = [document.getElementById('activeFunds'), document.getElementById('desktopActiveFunds')].filter(
-    Boolean as unknown as DonorTruthyFilter
+    truthyDonor
   );
   if (!targets.length) return;
   if (parish && !parishHasGivingPlus(parish)) {
@@ -384,7 +387,7 @@ function renderHomeParishWidgetsLoading() {
   const campaignLoading =
     '<article class="campaign-card campaign-empty sw-tool-loading"><span class="campaign-pill">Campaigns</span><h3>Loading parish campaigns…</h3><p>Checking the giving opportunities available through your parish.</p></article>';
   [document.getElementById('activeCampaigns'), document.getElementById('desktopActiveCampaigns')]
-    .filter(Boolean as unknown as DonorTruthyFilter)
+    .filter(truthyDonor)
     .forEach((target) => {
       target.innerHTML = campaignLoading;
     });
@@ -392,7 +395,7 @@ function renderHomeParishWidgetsLoading() {
   const fundsLoading =
     '<article class="active-funds-card active-funds-empty sw-tool-loading"><span class="campaign-pill">Funds</span><h3>Loading parish funds…</h3><p>Checking the funds available through your parish.</p></article>';
   [document.getElementById('activeFunds'), document.getElementById('desktopActiveFunds')]
-    .filter(Boolean as unknown as DonorTruthyFilter)
+    .filter(truthyDonor)
     .forEach((target) => {
       target.innerHTML = fundsLoading;
     });
