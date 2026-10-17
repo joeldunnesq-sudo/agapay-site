@@ -4,7 +4,6 @@ import type {
   SetupBookInput,
   LearnRuntimeChild,
   LearnRuntimeBook,
-  SetupTruthyFilter,
   LearnSetupSnapshot,
 } from './setup-persistence-composition-contracts.js';
 
@@ -19,6 +18,11 @@ import './billing.js';
 import './demo-data.js';
 
 import './planner-overrides.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthySetupPersistence<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 export const LEARN_SETUP_KV_PREFIX = '__agapay_learn_setup:';
 export const devSetupSnapshots = new Map<string, LearnSetupSnapshot>();
@@ -227,7 +231,7 @@ export function weeklyPlansValue(value: unknown) {
 }
 export function labelsValue(value: unknown) {
   const direct = Array.isArray(value) ? value : String(value || '').split(',');
-  return [...new Set(direct.map((entry: unknown) => text(entry, '')).filter(Boolean as unknown as SetupTruthyFilter))];
+  return [...new Set(direct.map((entry: unknown) => text(entry, '')).filter(truthySetupPersistence))];
 }
 export function setupResourceValue(resource: string | SetupInputNode | null | undefined, subject: SetupInputNode = {}) {
   const raw: SetupInputNode = typeof resource === 'string' ? { title: resource } : resource || {};
@@ -236,9 +240,9 @@ export function setupResourceValue(resource: string | SetupInputNode | null | un
   const formLabels = labelsValue(raw.formLabels || raw.formLabel || subject.formLabels || subject.formLabel);
   const childIds =
     Array.isArray(raw.childIds) && raw.childIds.length
-      ? raw.childIds.filter(Boolean as unknown as SetupTruthyFilter)
+      ? raw.childIds.filter(truthySetupPersistence)
       : Array.isArray(subject.childIds)
-        ? subject.childIds.filter(Boolean as unknown as SetupTruthyFilter)
+        ? subject.childIds.filter(truthySetupPersistence)
         : [];
   return {
     title,

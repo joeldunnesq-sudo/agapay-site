@@ -2,11 +2,16 @@ import type {
   ParishAppPriest,
   ParishAppVolume,
   ParishAppPayload,
-  ParishAppTruthyFilter,
   ParishAppError,
   ParishAppAccountingFeature,
 } from './app-contracts.js';
 import type { ParishAppBindings } from './app.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyParishSettings<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 declare const setStatus: ParishAppBindings['setStatus'];
 declare let currentParish: ParishAppBindings['currentParish'];
 declare const authHeaders: ParishAppBindings['authHeaders'];
@@ -77,9 +82,7 @@ async function removeParishLogo(btn?: HTMLButtonElement | null) {
 
 function formatSacramentPriestsForSettings(priests: ParishAppPriest[]) {
   const rows = Array.isArray(priests) ? priests : [];
-  return rows
-    .map((priest) => [priest.name, priest.email].filter(Boolean as unknown as ParishAppTruthyFilter).join(' | '))
-    .join('\n');
+  return rows.map((priest) => [priest.name, priest.email].filter(truthyParishSettings).join(' | ')).join('\n');
 }
 
 function parseSacramentPriestsFromSettings() {

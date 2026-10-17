@@ -1,4 +1,7 @@
 // Generated from src/browser/learn/dashboard-shell-setup-calendar.ts by npm run build:browser. Do not edit.
+function truthyLearnSetup1(value) {
+  return Boolean(value);
+}
 function isOdysseyLearnContext() {
   return document.body.dataset.learnContext === 'odyssey';
 }
@@ -447,11 +450,11 @@ function activeSetupGroupLabels(children = [], groupingMode = 'forms', resources
 }
 function primaryResourceGroupLabel(resource = {}, groupingMode = 'forms') {
   const labels = Array.isArray(resource.formLabels)
-    ? resource.formLabels.map((value) => String(value || '').trim()).filter(Boolean)
+    ? resource.formLabels.map((value) => String(value || '').trim()).filter(truthyLearnSetup1)
     : String(resource.formLabels || resource.formLabel || '')
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean);
+        .filter(truthyLearnSetup1);
   if (labels.length) return labels[0];
   if (groupingMode === 'grades' && resource.gradeLabel) return String(resource.gradeLabel).trim();
   return '';
@@ -509,6 +512,9 @@ function setupTermWeekPicker(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
       ''
     )}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All weeks</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd weeks</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even weeks</button></div><input type="hidden" name="scheduledWeeks" value="${html(selected.join(','))}"></details>`;
 }
+function truthyLearnSetup2(value) {
+  return Boolean(value);
+}
 function resourceFieldName(index, field) {
   return `resources.${index}.${field}`;
 }
@@ -538,7 +544,7 @@ function setupResourcePlanningModePicker(index, item = {}, children = [], groupi
   const selected = Array.isArray(item.formLabels)
     ? item.formLabels
     : String(item.formLabels || item.formLabel || '').split(',');
-  const selectedGroups = [...new Set(selected.map((value) => String(value || '').trim()).filter(Boolean))];
+  const selectedGroups = [...new Set(selected.map((value) => String(value || '').trim()).filter(truthyLearnSetup2))];
   const familyBased = (item.planningMode || 'forms') !== 'forms' || !selectedGroups.length;
   const summary = familyBased
     ? 'Family-Based'
@@ -551,7 +557,7 @@ function setupResourceChildPicker(index, children = [], selectedIds = []) {
     : String(selectedIds || '')
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean);
+        .filter(truthyLearnSetup2);
   const summary = selected.length
     ? children
         .filter((child) => selected.includes(child.id))
@@ -651,7 +657,7 @@ function setupPlanningModePicker(item = {}, children = [], groupingMode = 'forms
   const selected = Array.isArray(item.formLabels)
     ? item.formLabels
     : String(item.formLabels || item.formLabel || '').split(',');
-  const selectedGroups = [...new Set(selected.map((value) => String(value || '').trim()).filter(Boolean))];
+  const selectedGroups = [...new Set(selected.map((value) => String(value || '').trim()).filter(truthyLearnSetup2))];
   const familyBased = (item.planningMode || 'family') !== 'forms' || !selectedGroups.length;
   const summary = familyBased
     ? 'Family-Based'

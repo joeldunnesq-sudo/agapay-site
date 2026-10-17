@@ -6,11 +6,16 @@ import type {
   ParishAppPayload,
   ParishAppOptions,
   ParishAppPicker,
-  ParishAppTruthyFilter,
   ParishAppError,
   ParishAppStewardshipFeature,
 } from './app-contracts.js';
 import type { ParishAppBindings } from './app.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyParishSubscriptions<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 declare const hasGivingPlusAccess: ParishAppBindings['hasGivingPlusAccess'];
 declare const syncDashboardPaywall: ParishAppBindings['syncDashboardPaywall'];
 declare const syncTierRequirementNavigation: ParishAppBindings['syncTierRequirementNavigation'];
@@ -201,7 +206,7 @@ function renderSettlementProfilesPanel() {
         p.isDefaultCommerce ? '<span class="sp-badge sp-badge--commerce">Bookstore default</span>' : '',
         !p.isActive ? '<span class="sp-badge sp-badge--inactive">Inactive</span>' : '',
       ]
-        .filter(Boolean as unknown as ParishAppTruthyFilter)
+        .filter(truthyParishSubscriptions)
         .join('');
       const moduleLabels = (p.modules || []).map((m) => SETTLEMENT_MODULE_LABELS[m] || m).join(', ');
       return `

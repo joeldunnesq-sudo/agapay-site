@@ -1,7 +1,6 @@
 import type {
   LearnFamilyPlannerInput,
   LearnAssignmentContext,
-  LearnTruthyFilter,
   LearnShellWeekAssignment,
   LearnShellAssignment,
   LearnFamilyPlannerModel,
@@ -9,6 +8,11 @@ import type {
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell-planner-family.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearnPlanner1<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const eventRecurrenceOptions: LearnShellBindings['eventRecurrenceOptions'];
 declare const nextSevenDates: LearnShellBindings['nextSevenDates'];
@@ -142,7 +146,7 @@ function renderWeeklyAssignmentBoard(vm: LearnPlannerVm) {
       graceActive && isDeferrable ? 'is-grace-deferred' : '',
       graceActive && isReducible ? 'is-grace-reduced' : '',
     ]
-      .filter(Boolean as unknown as LearnTruthyFilter)
+      .filter(truthyLearnPlanner1)
       .join(' ');
     // Chips row: family tag (if applicable) + minutes badge + grace chip
     const familyChip = isFamilyItem
@@ -159,7 +163,7 @@ function renderWeeklyAssignmentBoard(vm: LearnPlannerVm) {
   const weekStartDate = vm.week!.weekStartDate || vm.week!.days?.[0]?.date || '';
   const weekEndDate = vm.week!.weekEndDate || vm.week!.days?.[6]?.date || '';
   return `
-    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week!.days[0]?.date, vm.week!.days[6]?.date].filter(Boolean as unknown as LearnTruthyFilter).join('_'))}" data-week-start="${html(weekStartDate)}" data-week-end="${html(weekEndDate)}">
+    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week!.days[0]?.date, vm.week!.days[6]?.date].filter(truthyLearnPlanner1).join('_'))}" data-week-start="${html(weekStartDate)}" data-week-end="${html(weekEndDate)}">
       <div class="learn-week-assignment-head">
         <div>
           <div>WEEKLY PLANNER</div>
@@ -285,11 +289,9 @@ function choreAssigneeOptions(planning: LearnShellNode = {}) {
     'Everyone',
     household.motherName || 'Mom',
     household.fatherName || 'Dad',
-    ...(planning.children || [])
-      .map((child) => child.name || child.firstName)
-      .filter(Boolean as unknown as LearnTruthyFilter),
+    ...(planning.children || []).map((child) => child.name || child.firstName).filter(truthyLearnPlanner1),
   ];
-  return [...new Set(names.filter(Boolean as unknown as LearnTruthyFilter))];
+  return [...new Set(names.filter(truthyLearnPlanner1))];
 }
 
 function dayOfMonthOptions() {
@@ -350,7 +352,7 @@ function eventOccursOnDate(event: LearnShellNode = {}, date: string = '') {
 
 function expandFamilyEvents(events: LearnShellNode[] = [], dates: string[] = []) {
   const byDate = new Map<string, LearnShellNode[]>();
-  dates.filter(Boolean as unknown as LearnTruthyFilter).forEach((date) => {
+  dates.filter(truthyLearnPlanner1).forEach((date) => {
     const matches = events
       .filter((event) => eventOccursOnDate(event, date))
       .map((event) => ({ ...event, occurrenceDate: date }));
@@ -422,9 +424,7 @@ function familyPlannerModel(vm: LearnFamilyPlannerInput): LearnFamilyPlannerMode
     isFastDay: Boolean(day.isFastDay),
     meal: day.meal || mealByDate.get(day.date) || null,
   }));
-  const calendarDates = [
-    ...new Set([...dates, ...monthDays.map((day) => day.date)].filter(Boolean as unknown as LearnTruthyFilter)),
-  ];
+  const calendarDates = [...new Set([...dates, ...monthDays.map((day) => day.date)].filter(truthyLearnPlanner1))];
   const eventsByDate = expandFamilyEvents(planning.events || [], calendarDates);
   const weekDays = dates.map((date) => {
     const label = plannerDayLabel(date);
@@ -470,7 +470,7 @@ function renderFeastsPanel(model: ReturnType<typeof familyPlannerModel>, mode: s
           <span style="min-width:34px;min-height:34px;width:34px;height:34px;border-radius:9px;font-size:12px;flex:none;">${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
           <p style="margin:0;min-width:0;">
             <strong style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(day.feast || day.feastTitle || 'Feast day')}</strong>
-            <small style="margin-top:2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(Boolean as unknown as LearnTruthyFilter).join(' · '))}</small>
+            <small style="margin-top:2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(truthyLearnPlanner1).join(' · '))}</small>
           </p>
         </article>`
                 )
@@ -489,7 +489,7 @@ function renderFeastsPanel(model: ReturnType<typeof familyPlannerModel>, mode: s
             .map(
               (day) => `<article class="${day.isFastDay ? 'is-fast' : ''}">
       <span>${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
-      <p><strong>${html(day.feast || day.feastTitle || 'Feast day')}</strong><small>${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(Boolean as unknown as LearnTruthyFilter).join(' · '))}</small></p>
+      <p><strong>${html(day.feast || day.feastTitle || 'Feast day')}</strong><small>${html([day.feastRank || 'Feast', day.isFastDay ? day.fastingType || day.fasting || '' : ''].filter(truthyLearnPlanner1).join(' · '))}</small></p>
     </article>`
             )
             .join('')
@@ -516,9 +516,7 @@ function mealSlotLabel(slot: string) {
 
 function plannerHiddenData(model: ReturnType<typeof familyPlannerModel>) {
   const mealDates = [
-    ...new Set(
-      [...model.weekDays, ...model.monthDays].map((day) => day.date).filter(Boolean as unknown as LearnTruthyFilter)
-    ),
+    ...new Set([...model.weekDays, ...model.monthDays].map((day) => day.date).filter(truthyLearnPlanner1)),
   ];
   const meals = mealDates
     .map((date) => {

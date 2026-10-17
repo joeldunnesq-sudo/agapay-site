@@ -1,12 +1,16 @@
 import type {
   LearnChromeModel,
-  LearnTruthyFilter,
   LearnShellViewModel,
   LearnShellNode,
   LearnShellOptions,
   LearnShellError,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn2<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare let learnCheckoutOpening: LearnShellBindings['learnCheckoutOpening'];
 declare const apiPost: LearnShellBindings['apiPost'];
@@ -165,7 +169,7 @@ function saintStoryDialogHtml(saints: LearnShellNode[] = [], unavailableMessage:
       const paragraphs = String(saint.storyText || '')
         .split(/\n{2,}/)
         .map((part) => part.trim())
-        .filter(Boolean as unknown as LearnTruthyFilter);
+        .filter(truthyLearn2);
       return `<article style="border-top:1px solid rgba(181,148,47,.28);padding:16px 0;display:grid;gap:8px;">
       <div style="display:flex;gap:12px;align-items:flex-start;">
         ${saint.iconUrl ? `<img src="${html(saint.iconUrl)}" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid rgba(181,148,47,.34);">` : `<span style="width:48px;height:48px;border-radius:50%;background:#14294a;color:#f3ead4;display:grid;place-items:center;flex:none;font-size:23px;">✥</span>`}
@@ -352,9 +356,7 @@ function sidebar(vm: LearnChromeModel) {
     : vm.shell.gcalConfigured;
   const gcalConnected = learnGoogleCalendarStatus.loaded ? learnGoogleCalendarStatus.connected : vm.shell.gcalConnected;
   const navItems = experience.navOrder
-    ? experience.navOrder
-        .map((id) => vm.shell.nav.find((item) => item.id === id))
-        .filter(Boolean as unknown as LearnTruthyFilter)
+    ? experience.navOrder.map((id) => vm.shell.nav.find((item) => item.id === id)).filter(truthyLearn2)
     : vm.shell.nav;
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>

@@ -1,5 +1,5 @@
 // Generated from src/lib/parish-support-tickets.ts by npm run build:server. Do not edit.
-import { d1, d1All, d1GetSetting, d1SetSetting, generateSecret, listKvKeys } from './core.js';
+import { d1, d1All, d1First, d1SetSetting, generateSecret, listKvKeys } from './core.js';
 import { agapayEmailHtml, sendEmail } from './email.js';
 import { htmlEscape } from './format.js';
 const PREFIX = '__agapay_parish_support_ticket:';
@@ -9,10 +9,49 @@ const clean = (value, limit = 500) =>
     .trim()
     .slice(0, limit);
 const key = (id) => `${PREFIX}${id}`;
-const parse = (value) => {
+const TICKET_STRING_FIELDS = [
+  'status',
+  'type',
+  'source',
+  'subject',
+  'message',
+  'parishId',
+  'parishName',
+  'submittedBy',
+  'page',
+  'path',
+  'userAgent',
+  'createdAt',
+  'updatedAt',
+  'adminNote',
+  'updatedBy',
+];
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function isSupportTicket(value) {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    value.id.trim().length > 0 &&
+    TICKET_STRING_FIELDS.every((field) => typeof value[field] === 'string') &&
+    (value.email === null ||
+      (isRecord(value.email) && typeof value.email.status === 'string' && typeof value.email.sentAt === 'string'))
+  );
+}
+const parse = (value, expectedId) => {
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-    return parsed && typeof parsed === 'object' ? parsed : null;
+    if (!isRecord(parsed)) return null;
+    const candidate = { ...parsed };
+    for (const field of TICKET_STRING_FIELDS) {
+      if (candidate[field] === void 0) candidate[field] = field === 'status' ? 'new' : '';
+    }
+    if (candidate.email === void 0) candidate.email = null;
+    else if (isRecord(candidate.email) && candidate.email.sentAt === void 0) {
+      candidate.email = { ...candidate.email, sentAt: '' };
+    }
+    return isSupportTicket(candidate) && candidate.id === expectedId ? candidate : null;
   } catch {
     return null;
   }
@@ -27,35 +66,39 @@ async function getParishSupportTicket(env, id) {
   const ticketId = clean(id, 120);
   if (!ticketId) return null;
   if (d1(env)) {
-    const stored = parse(await d1GetSetting(env, key(ticketId)));
-    if (stored) return stored;
+    const row = await d1First(env, 'SELECT value FROM app_settings WHERE key = ?1', key(ticketId));
+    if (row) return parse(row.value, ticketId);
   }
-  return env.AGAPAY_REGISTRATIONS ? parse(await env.AGAPAY_REGISTRATIONS.get(key(ticketId))) : null;
+  return env.AGAPAY_REGISTRATIONS ? parse(await env.AGAPAY_REGISTRATIONS.get(key(ticketId)), ticketId) : null;
 }
 async function listParishSupportTickets(env, { limit = 200 } = {}) {
   const records = /* @__PURE__ */ new Map();
+  const canonicalIds = /* @__PURE__ */ new Set();
   const bounded = Math.max(1, Math.min(500, Number(limit || 200)));
   if (d1(env)) {
     const rows = await d1All(
       env,
-      'SELECT value FROM app_settings WHERE key LIKE ?1 ORDER BY updated_at DESC LIMIT ?2',
+      'SELECT key, value FROM app_settings WHERE key LIKE ?1 ORDER BY updated_at DESC LIMIT ?2',
       `${PREFIX}%`,
       bounded
     );
-    rows
-      .map((row) => parse(row.value))
-      .filter(Boolean)
-      .forEach((ticket) => records.set(ticket.id, ticket));
+    for (const row of rows) {
+      if (!row.key.startsWith(PREFIX)) continue;
+      const id = row.key.slice(PREFIX.length);
+      canonicalIds.add(id);
+      const ticket = parse(row.value, id);
+      if (ticket) records.set(id, ticket);
+    }
   }
   if (env.AGAPAY_REGISTRATIONS) {
     const keys = await listKvKeys(env, { prefix: PREFIX, limit: bounded });
     const values = await Promise.all(keys.map((item) => env.AGAPAY_REGISTRATIONS.get(item.name)));
-    values
-      .map(parse)
-      .filter(Boolean)
-      .forEach((ticket) => {
-        if (!records.has(ticket.id)) records.set(ticket.id, ticket);
-      });
+    values.forEach((value, index) => {
+      const id = keys[index].name.slice(PREFIX.length);
+      if (canonicalIds.has(id)) return;
+      const ticket = parse(value, id);
+      if (ticket) records.set(id, ticket);
+    });
   }
   return [...records.values()]
     .sort((a, b) => {

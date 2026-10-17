@@ -8,7 +8,6 @@ import type {
   PrintSection,
   PrintDocument,
   PdfState,
-  PrintTruthyFilter,
   DesignedForm,
   LandscapeRow,
 } from './print-documents-composition-contracts.js';
@@ -36,10 +35,13 @@ import {
 } from './print-documents-shared.js';
 import { fetchBytes, text } from './print-documents-shared.js';
 
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyPrintLayout<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 export function wrapText(value: unknown, font: PDFFont, fontSize: number, maxWidth: number) {
-  const words = text(value)
-    .split(/\s+/)
-    .filter(Boolean as unknown as PrintTruthyFilter);
+  const words = text(value).split(/\s+/).filter(truthyPrintLayout);
   const lines = [];
   let line = '';
   words.forEach((word) => {
@@ -269,7 +271,7 @@ export function drawCards(state: PdfState, section: PrintSection & { type: 'card
 export function drawList(state: PdfState, section: PrintSection & { type: 'list'; items: PrintCard[] }) {
   drawHeading(state, section.heading);
   section.items.forEach((item) => {
-    const combined = [item.label, item.detail].filter(Boolean as unknown as PrintTruthyFilter).join(' · ');
+    const combined = [item.label, item.detail].filter(truthyPrintLayout).join(' · ');
     const lines = wrapText(combined, state.fonts.sans, 9, LETTER[0] - MARGIN * 2 - 22);
     fitPage(state, lines.length * 12 + 12);
     // Gold bullet bullet
@@ -594,10 +596,13 @@ export function drawDesignedWeek(state: PdfState, section: Extract<PrintSection,
       font: state.fonts.serifBold,
       color: NAVY,
     });
-    state.page.drawText(
-      text([day.shortDate || day.date, day.feast].filter(Boolean as unknown as PrintTruthyFilter).join(' · ')),
-      { x: x + 150, y: y - 22, size: 8, font: state.fonts.sans, color: MUTED }
-    );
+    state.page.drawText(text([day.shortDate || day.date, day.feast].filter(truthyPrintLayout).join(' · ')), {
+      x: x + 150,
+      y: y - 22,
+      size: 8,
+      font: state.fonts.sans,
+      color: MUTED,
+    });
     let innerY = y - 45;
     if (!assignments.length) {
       state.page.drawText(

@@ -322,6 +322,7 @@ export type DonorAppWindowHandlers = {
 };
 
 export type DonorAppBindings = {
+  truthyDonor: DonorAppPart1['truthyDonor'];
   donorStore: typeof donorStore;
   DONOR_SHELL_VERSION: typeof DONOR_SHELL_VERSION;
   donorSession: typeof donorSession;

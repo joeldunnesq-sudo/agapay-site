@@ -5,7 +5,6 @@ import type {
   DesignedDay,
   DesignedWeek,
   PrintDocument,
-  PrintTruthyFilter,
   PrintWeek,
 } from './print-documents-composition-contracts.js';
 
@@ -27,6 +26,11 @@ import {
   baseDocument,
 } from './print-documents-shared.js';
 
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyPrintBuilders<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
+
 export function buildHouseholdWeekly(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
   const doc = baseDocument(printCenter, template, generatedAt);
   const week: PrintWeek = printCenter.week || {};
@@ -45,7 +49,7 @@ export function buildHouseholdWeekly(printCenter: PrintCenterInput, template: Pr
       { flex: [1.5, 1.5, 4] }
     ),
     liturgicalSection('Liturgical Notes', (week.liturgicalDays || []).slice(0, 7)),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 export function cleanDesignedAssignment(item: DesignedAssignment = {}) {
@@ -55,9 +59,7 @@ export function cleanDesignedAssignment(item: DesignedAssignment = {}) {
     note: text(item.note || ''),
     color: text(item.color || ''),
     kind: text(item.kind || ''),
-    formLabels: Array.isArray(item.formLabels)
-      ? item.formLabels.map(text).filter(Boolean as unknown as PrintTruthyFilter)
-      : [],
+    formLabels: Array.isArray(item.formLabels) ? item.formLabels.map(text).filter(truthyPrintBuilders) : [],
   };
 }
 export function sortFormLabels(labels: string[] = []) {
@@ -141,7 +143,7 @@ export function buildDesignedWeek(
         )
       : null,
     liturgicalSection('Liturgical Notes', (printCenter.week?.liturgicalDays || []).slice(0, 7)),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 export function buildTermPlan(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -182,7 +184,7 @@ export function buildTermPlan(printCenter: PrintCenterInput, template: PrintTemp
       ]),
       { flex: [2, 1, 3] }
     ),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 export function buildMonthCalendar(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -222,10 +224,10 @@ export function buildMonthCalendar(printCenter: PrintCenterInput, template: Prin
         .filter((d) => d?.inMonth && d?.isFastDay)
         .map((d) => ({
           label: `${d.civilDate} · ${d.fastingType || d.fastingRule || 'Fast'}`,
-          detail: [d.feastTitle, d.oldStyleDateLabel].filter(Boolean as unknown as PrintTruthyFilter).join(' · '),
+          detail: [d.feastTitle, d.oldStyleDateLabel].filter(truthyPrintBuilders).join(' · '),
         }))
     ),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 export function buildChildWeekly(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -248,11 +250,11 @@ export function buildChildWeekly(printCenter: PrintCenterInput, template: PrintT
     {
       type: 'checkboxes' as const,
       heading: 'Daily Checklist',
-      subjects: rows.map((row) => text(row.title)).filter(Boolean as unknown as PrintTruthyFilter),
+      subjects: rows.map((row) => text(row.title)).filter(truthyPrintBuilders),
       days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     },
     listSection('Parent Notes', ['Narration:', 'Copywork:', 'Prayer and habit notes:']),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintBuilders);
   return doc;
 }
 export function buildChildTerm(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {

@@ -28,6 +28,9 @@ import {
   normalizeCompletion,
   normalizePlannerOverrides,
 } from './setup-persistence-shared.js';
+function truthySetupNormalization(value) {
+  return Boolean(value);
+}
 function normalizeSetupPayload(payload = {}, identity) {
   const seed = getLearnSeedSnapshot();
   const household = payload.household || {};
@@ -38,7 +41,7 @@ function normalizeSetupPayload(payload = {}, identity) {
   const primaryMethod = normalizeHomeschoolMethod(household.primaryMethod || seed.household.primaryMethod);
   const parentNames = list(household.parentNames)
     .map((name) => text(name, ''))
-    .filter(Boolean);
+    .filter(truthySetupNormalization);
   if (!parentNames.length && text(household.parentName, '')) parentNames.push(text(household.parentName, ''));
   const historyCycle = payload.historyCycle ? normalizeHistoryCycle(payload.historyCycle, primaryMethod) : null;
   const normalizedHousehold = {
@@ -84,7 +87,7 @@ function normalizeSetupPayload(payload = {}, identity) {
         accentToken: text(child.accentToken, seed.children[index % seed.children.length]?.accentToken || 'navy'),
       };
     })
-    .filter(Boolean);
+    .filter(truthySetupNormalization);
   normalizedHousehold.childrenCount = children.length;
   const schoolYearId = text(schoolYear.id, 'school_year_current');
   const normalizedTerms = (list(payload.terms).length ? list(payload.terms) : [term])
@@ -199,9 +202,11 @@ function normalizeSetupPayload(payload = {}, identity) {
         ),
         resources:
           Array.isArray(subject.resources) && subject.resources.length
-            ? subject.resources.map((resource) => setupResourceValue(resource, subject)).filter(Boolean)
+            ? subject.resources
+                .map((resource) => setupResourceValue(resource, subject))
+                .filter(truthySetupNormalization)
             : subject.resource
-              ? [setupResourceValue({ title: subject.resource }, subject)].filter(Boolean)
+              ? [setupResourceValue({ title: subject.resource }, subject)].filter(truthySetupNormalization)
               : [],
         resourceType: resourceTypeValue(
           subject.resourceType || subject.sourceType,
@@ -210,7 +215,7 @@ function normalizeSetupPayload(payload = {}, identity) {
         cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, 'Weekly'),
         minutes: int(subject.minutes, 20),
         childId: text(subject.childId, ''),
-        childIds: Array.isArray(subject.childIds) ? subject.childIds.filter(Boolean) : [],
+        childIds: Array.isArray(subject.childIds) ? subject.childIds.filter(truthySetupNormalization) : [],
         startNumber: int(subject.startNumber, 1),
         currentNumber: int(
           subject.currentNumber || subject.completedThroughNumber || subject.startNumber,
@@ -321,7 +326,7 @@ function normalizeSetupPayload(payload = {}, identity) {
         const blockResources = hasResourcesField
           ? list(block.resources)
               .map((resource) => setupResourceValue(resource, block))
-              .filter(Boolean)
+              .filter(truthySetupNormalization)
           : block.resource || block.source
             ? [
                 setupResourceValue(
@@ -332,7 +337,7 @@ function normalizeSetupPayload(payload = {}, identity) {
                   },
                   block
                 ),
-              ].filter(Boolean)
+              ].filter(truthySetupNormalization)
             : [];
         const primaryResource = blockResources[0] || {};
         return {
@@ -373,7 +378,7 @@ function normalizeSetupPayload(payload = {}, identity) {
           formLabel: text(block.formLabel, labelsValue(block.formLabels || block.formLabel)[0] || ''),
           gradeLabel: text(block.gradeLabel, ''),
           childId: text(block.childId, ''),
-          childIds: Array.isArray(block.childIds) ? block.childIds.filter(Boolean) : [],
+          childIds: Array.isArray(block.childIds) ? block.childIds.filter(truthySetupNormalization) : [],
           startNumber: text(block.startNumber, ''),
           currentNumber: text(block.currentNumber || block.completedThroughNumber, ''),
           endNumber: text(block.endNumber, ''),
@@ -437,7 +442,7 @@ function normalizeSetupPayload(payload = {}, identity) {
             }
           : null
       ),
-    ].filter(Boolean),
+    ].filter(truthySetupNormalization),
     events: list(rawFamilyPlanning.events)
       .slice(0, 250)
       .map((event, index) => {

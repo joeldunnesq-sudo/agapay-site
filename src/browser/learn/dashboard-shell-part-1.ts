@@ -1,12 +1,16 @@
 import type {
   LearnFaithTextFields,
   LearnChromeModel,
-  LearnTruthyFilter,
   LearnShellViewModel,
   LearnShellNode,
   LearnPrintVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn1<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const ODYSSEY_FAITH_SPECIFIC: LearnShellBindings['ODYSSEY_FAITH_SPECIFIC'];
 declare const MARKETING_LEARNERS: LearnShellBindings['MARKETING_LEARNERS'];
@@ -652,10 +656,7 @@ function prepareOdysseyViewModel(vm: LearnShellViewModel) {
 
   if (next.page?.id === 'community') {
     next.resources = (next.resources || []).filter((item) => !itemIsFaithSpecific(item));
-    next.categories = [
-      'All',
-      ...new Set(next.resources.map((item) => item.category).filter(Boolean as unknown as LearnTruthyFilter)),
-    ];
+    next.categories = ['All', ...new Set(next.resources.map((item) => item.category).filter(truthyLearn1))];
     if (marketing || !next.resources.length) {
       next.comingSoon = false;
       next.title = 'Practical resources, thoughtfully curated.';

@@ -12,6 +12,9 @@ import {
   baseDocument,
 } from './print-documents-shared.js';
 import { buildTermPlan, buildMonthCalendar, buildChildWeekly, buildChildTerm } from './print-document-builders.js';
+function truthyPrintFamily(value) {
+  return Boolean(value);
+}
 function choresByAssignee(chores = [], children = []) {
   const people = [
     { name: 'Everyone', color: '#102a4c' },
@@ -64,10 +67,10 @@ function buildChorePlanWeek(printCenter, template, generatedAt) {
       {
         type: 'checkboxes',
         heading: 'Weekly Checkoff',
-        subjects: myChores.map((c) => text(c.title)).filter(Boolean),
+        subjects: myChores.map((c) => text(c.title)).filter(truthyPrintFamily),
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       },
-    ].filter(Boolean);
+    ].filter(truthyPrintFamily);
     return doc;
   }
   const assigneeGroups = choresByAssignee(chores, children);
@@ -80,7 +83,7 @@ function buildChorePlanWeek(printCenter, template, generatedAt) {
         dayChores.map((c) => c.title).join('; ') || '—',
         dayChores
           .map((c) => c.timeOfDay || '')
-          .filter(Boolean)
+          .filter(truthyPrintFamily)
           .join('; '),
       ];
     }).filter((row) => row[2] !== '—')
@@ -98,7 +101,7 @@ function buildChorePlanWeek(printCenter, template, generatedAt) {
     rows.length
       ? tableSection('Weekly Chore Rotation', ['Person', 'Day', 'Chores', 'Time'], rows, { flex: [2, 1.5, 4, 1.5] })
       : listSection('Chores', ['No chores have been set up yet. Add chores in the Family Planner.']),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildChorePlanDay(printCenter, template, generatedAt) {
@@ -125,10 +128,10 @@ function buildChorePlanDay(printCenter, template, generatedAt) {
     {
       type: 'checkboxes',
       heading: 'Checkoff',
-      subjects: todayChores.map((c) => `${text(c.title)} (${c.assignee || 'Everyone'})`).filter(Boolean),
+      subjects: todayChores.map((c) => `${text(c.title)} (${c.assignee || 'Everyone'})`).filter(truthyPrintFamily),
       days: ['Done'],
     },
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildChorePlanMonth(printCenter, template, generatedAt) {
@@ -163,7 +166,7 @@ function buildChorePlanMonth(printCenter, template, generatedAt) {
           flex: [1.5, 3, 2, 1.5, 2],
         })
       : listSection('Chores', ['No chores have been set up yet. Add chores in the Family Planner.']),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildMealPlanWeek(printCenter, template, generatedAt) {
@@ -197,7 +200,7 @@ function buildMealPlanWeek(printCenter, template, generatedAt) {
     tableSection('Weekly Meals', ['Day', 'Feast/Fast', 'Fasting Rule', 'Lunch', 'Dinner'], rows, {
       flex: [1.5, 2.5, 2, 2.5, 2.5],
     }),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildMealPlanMonth(printCenter, template, generatedAt) {
@@ -230,7 +233,7 @@ function buildMealPlanMonth(printCenter, template, generatedAt) {
     tableSection('Monthly Meals', ['Date', 'Feast', 'Fasting', 'Lunch/Breakfast', 'Dinner'], rows, {
       flex: [0.8, 2.5, 2, 2.5, 2.5],
     }),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildEventsPlanMonth(printCenter, template, generatedAt) {
@@ -271,7 +274,7 @@ function buildEventsPlanMonth(printCenter, template, generatedAt) {
           flex: [0.8, 1.2, 2.5, 2, 4],
         })
       : listSection('Events', ['No events have been added yet. Add events in the Family Planner.']),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildRecipeCollection(printCenter, template, generatedAt) {
@@ -294,7 +297,7 @@ function buildRecipeCollection(printCenter, template, generatedAt) {
       recipes.map((r) => [r.title, r.fastingType || 'Any day', r.category || '', r.sourceUrl || '']),
       { flex: [4, 2, 2, 3] }
     ),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildGroceryListWeek(printCenter, template, generatedAt) {
@@ -324,7 +327,7 @@ function buildGroceryListWeek(printCenter, template, generatedAt) {
     rows.length
       ? tableSection('Grocery List', ['Category', 'Item', 'Qty', 'Notes'], rows, { flex: [2, 4, 1, 3] })
       : listSection('Items', ['No grocery items yet. Add items in the Family Planner.']),
-  ].filter(Boolean);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 function buildPlannerLessonWeekForm(printCenter, template, generatedAt) {

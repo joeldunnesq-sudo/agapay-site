@@ -1,5 +1,4 @@
 import type {
-  LearnTruthyFilter,
   LearnPrototypeForm,
   LearnShellNode,
   LearnShellPrototypeState,
@@ -8,6 +7,11 @@ import type {
   LearnFormationVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn5<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const storedLearnCalendar: LearnShellBindings['storedLearnCalendar'];
 declare const prototypeRecipeType: LearnShellBindings['prototypeRecipeType'];
@@ -74,7 +78,7 @@ function prototypeSetupSeed(vm: LearnPlannerVm) {
   return {
     calendar: storedLearnCalendar(vm.preferences?.calendarType || ''),
     grouping,
-    enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(Boolean as unknown as LearnTruthyFilter),
+    enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(truthyLearn5),
     forms: forms.length
       ? forms
       : [
@@ -96,7 +100,7 @@ function prototypeKidsSeed(vm: LearnPlannerVm) {
     const childChores = chores
       .filter((chore) => !chore.assignee || chore.assignee === name)
       .map((chore) => chore.title)
-      .filter(Boolean as unknown as LearnTruthyFilter);
+      .filter(truthyLearn5);
     return {
       name,
       color: child.color || ACCENTS[index % ACCENTS.length],
@@ -139,7 +143,7 @@ function backendRecipeToPrototype(recipe: LearnShellNode, index: number = 0) {
       ingredients: String(recipe.ingredients || '')
         .split(',')
         .map((item) => item.trim())
-        .filter(Boolean as unknown as LearnTruthyFilter),
+        .filter(truthyLearn5),
       note: recipe.instructions || recipe.category || 'Saved from AGAPAY Learn.',
       custom: true,
     },
@@ -197,7 +201,7 @@ function seedFamilyPrototypeState(vm: LearnPlannerVm) {
   const pantry = (planning.groceryItems || [])
     .filter((item) => item.pantry || item.inPantry)
     .map((item) => item.name)
-    .filter(Boolean as unknown as LearnTruthyFilter);
+    .filter(truthyLearn5);
   const manualGroceries = (planning.groceryItems || [])
     .filter((item) => !(item.pantry || item.inPantry))
     .map((item, index) => ({
@@ -513,7 +517,7 @@ function renderFormation(vm: LearnFormationVm) {
           (hymn) => `
         <div style="padding:11px 0;border-top:1px solid var(--line);">
           <strong style="display:block;font-size:14px;">${html(hymn.title)}</strong>
-          <small style="color:var(--muted);font-size:12px;">${[hymn.tone, hymn.source].filter(Boolean as unknown as LearnTruthyFilter).join(' · ')}</small>
+          <small style="color:var(--muted);font-size:12px;">${[hymn.tone, hymn.source].filter(truthyLearn5).join(' · ')}</small>
         </div>`
         )
         .join('')

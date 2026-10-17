@@ -2,7 +2,6 @@ import type {
   LearnSetupSnapshot,
   PrintCenterInput,
   PrintTemplate,
-  PrintTruthyFilter,
   PrintFamilyDay,
   PrintChild,
   PrintChore,
@@ -24,6 +23,11 @@ import {
   baseDocument,
 } from './print-documents-shared.js';
 import { buildTermPlan, buildMonthCalendar, buildChildWeekly, buildChildTerm } from './print-document-builders.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyPrintFamily<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 export function choresByAssignee(chores: PrintChore[] = [], children: PrintChild[] = []) {
   const people = [
@@ -79,10 +83,10 @@ export function buildChorePlanWeek(printCenter: PrintCenterInput, template: Prin
       {
         type: 'checkboxes' as const,
         heading: 'Weekly Checkoff',
-        subjects: myChores.map((c) => text(c.title)).filter(Boolean as unknown as PrintTruthyFilter),
+        subjects: myChores.map((c) => text(c.title)).filter(truthyPrintFamily),
         days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       },
-    ].filter(Boolean as unknown as PrintTruthyFilter);
+    ].filter(truthyPrintFamily);
     return doc;
   }
 
@@ -97,7 +101,7 @@ export function buildChorePlanWeek(printCenter: PrintCenterInput, template: Prin
         dayChores.map((c) => c.title).join('; ') || '—',
         dayChores
           .map((c) => c.timeOfDay || '')
-          .filter(Boolean as unknown as PrintTruthyFilter)
+          .filter(truthyPrintFamily)
           .join('; '),
       ];
     }).filter((row) => row[2] !== '—')
@@ -116,7 +120,7 @@ export function buildChorePlanWeek(printCenter: PrintCenterInput, template: Prin
     rows.length
       ? tableSection('Weekly Chore Rotation', ['Person', 'Day', 'Chores', 'Time'], rows, { flex: [2, 1.5, 4, 1.5] })
       : listSection('Chores', ['No chores have been set up yet. Add chores in the Family Planner.']),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildChorePlanDay(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -143,12 +147,10 @@ export function buildChorePlanDay(printCenter: PrintCenterInput, template: Print
     {
       type: 'checkboxes' as const,
       heading: 'Checkoff',
-      subjects: todayChores
-        .map((c) => `${text(c.title)} (${c.assignee || 'Everyone'})`)
-        .filter(Boolean as unknown as PrintTruthyFilter),
+      subjects: todayChores.map((c) => `${text(c.title)} (${c.assignee || 'Everyone'})`).filter(truthyPrintFamily),
       days: ['Done'],
     },
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildChorePlanMonth(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -183,7 +185,7 @@ export function buildChorePlanMonth(printCenter: PrintCenterInput, template: Pri
           flex: [1.5, 3, 2, 1.5, 2],
         })
       : listSection('Chores', ['No chores have been set up yet. Add chores in the Family Planner.']),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildMealPlanWeek(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -219,7 +221,7 @@ export function buildMealPlanWeek(printCenter: PrintCenterInput, template: Print
     tableSection('Weekly Meals', ['Day', 'Feast/Fast', 'Fasting Rule', 'Lunch', 'Dinner'], rows, {
       flex: [1.5, 2.5, 2, 2.5, 2.5],
     }),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildMealPlanMonth(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -253,7 +255,7 @@ export function buildMealPlanMonth(printCenter: PrintCenterInput, template: Prin
     tableSection('Monthly Meals', ['Date', 'Feast', 'Fasting', 'Lunch/Breakfast', 'Dinner'], rows, {
       flex: [0.8, 2.5, 2, 2.5, 2.5],
     }),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildEventsPlanMonth(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -295,7 +297,7 @@ export function buildEventsPlanMonth(printCenter: PrintCenterInput, template: Pr
           flex: [0.8, 1.2, 2.5, 2, 4],
         })
       : listSection('Events', ['No events have been added yet. Add events in the Family Planner.']),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildRecipeCollection(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -318,7 +320,7 @@ export function buildRecipeCollection(printCenter: PrintCenterInput, template: P
       recipes.map((r) => [r.title, r.fastingType || 'Any day', r.category || '', r.sourceUrl || '']),
       { flex: [4, 2, 2, 3] }
     ),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildGroceryListWeek(printCenter: PrintCenterInput, template: PrintTemplate, generatedAt: string) {
@@ -348,7 +350,7 @@ export function buildGroceryListWeek(printCenter: PrintCenterInput, template: Pr
     rows.length
       ? tableSection('Grocery List', ['Category', 'Item', 'Qty', 'Notes'], rows, { flex: [2, 4, 1, 3] })
       : listSection('Items', ['No grocery items yet. Add items in the Family Planner.']),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintFamily);
   return doc;
 }
 export function buildPlannerLessonWeekForm(

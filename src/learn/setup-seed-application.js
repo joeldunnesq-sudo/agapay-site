@@ -21,6 +21,9 @@ import {
   bookBelongsToHouseholdStream,
   resourceBookLike,
 } from './setup-persistence-shared.js';
+function truthySetupSeed(value) {
+  return Boolean(value);
+}
 function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot = null, { weekDate = '' } = {}) {
   if (!setupSnapshot) return seed;
   const next = clone(seed);
@@ -60,7 +63,7 @@ function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot =
         sourceKind: 'enrichment',
       })
     )
-    .filter(Boolean);
+    .filter(truthySetupSeed);
   const subjectBooks = currentSubjects
     .flatMap((subject, subjectIndex) => {
       if (subject.resourceType !== 'book') return [];
@@ -92,7 +95,7 @@ function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot =
         });
       });
     })
-    .filter(Boolean);
+    .filter(truthySetupSeed);
   const materialBooks = currentFormationMaterials
     .map((material, index) =>
       resourceBookLike({
@@ -110,7 +113,7 @@ function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot =
         sourceKind: 'formation-material',
       })
     )
-    .filter(Boolean);
+    .filter(truthySetupSeed);
   const currentBooks = [...literatureBooks, ...enrichmentBooks, ...subjectBooks, ...materialBooks];
   next.household = { ...next.household, ...setupSnapshot.household };
   next.children = list(setupSnapshot.children);
@@ -306,7 +309,7 @@ function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot =
             sortOrder: subjectIndex * 10 + resourceIndex + 1,
           };
         })
-        .filter(Boolean);
+        .filter(truthySetupSeed);
     }),
     ...formationMaterialsForPlanning.map((material, index) => ({
       id: material.id,

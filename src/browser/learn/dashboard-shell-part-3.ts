@@ -1,13 +1,17 @@
 import type {
   LearnAssignmentContext,
   LearnFamilyContext,
-  LearnTruthyFilter,
   LearnShellWeekAssignment,
   LearnShellViewModel,
   LearnShellNode,
   LearnDashboardVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn3<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const bar: LearnShellBindings['bar'];
 declare const saintCardTitle: LearnShellBindings['saintCardTitle'];
@@ -91,9 +95,7 @@ function renderTodayLearnContext(vm: LearnShellViewModel) {
 function weekAssignmentStorageKey(vm: LearnAssignmentContext, explicitWeekKey: string = '') {
   const itemIds = (vm.week?.weeklyAssignmentItems || []).map((item) => item.id).join(',');
   const weekKey =
-    explicitWeekKey ||
-    [vm.week?.days?.[0]?.date, vm.week?.days?.[6]?.date].filter(Boolean as unknown as LearnTruthyFilter).join('_') ||
-    'week';
+    explicitWeekKey || [vm.week?.days?.[0]?.date, vm.week?.days?.[6]?.date].filter(truthyLearn3).join('_') || 'week';
   return `agapay.learn.weekAssignments.${weekKey}.${itemIds}`;
 }
 
@@ -130,7 +132,7 @@ function designedAssignmentsForDate(vm: LearnAssignmentContext, date: string) {
           }
         : null;
     })
-    .filter(Boolean as unknown as LearnTruthyFilter);
+    .filter(truthyLearn3);
 }
 
 function timeLabel(value: unknown = '') {
@@ -234,7 +236,7 @@ function renderDashboardFamilyCards(vm: LearnDashboardVm) {
       </section>
       <section class="learn-dashboard-family-card">
         <div><small>CHORES</small><h3>Household Chores</h3></div>
-        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || 'Chore')}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.notes].filter(Boolean as unknown as LearnTruthyFilter).join(' · '))}</small></span>`).join('')}</div>` : emptyState('Add chores in Planner > Chores.')}
+        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || 'Chore')}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.notes].filter(truthyLearn3).join(' · '))}</small></span>`).join('')}</div>` : emptyState('Add chores in Planner > Chores.')}
       </section>
     </div>
   `;

@@ -6,7 +6,6 @@ import type {
   PrintDocument,
   WeeklyDocumentInput,
   PdfState,
-  PrintTruthyFilter,
 } from './print-documents-composition-contracts.js';
 
 import { PDFDocument } from 'pdf-lib';
@@ -34,6 +33,11 @@ import {
   renderDesignedWeekFormsLandscape,
   drawSection,
 } from './print-pdf-layout.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyPrintDocuments<T>(value: T | null | undefined | false): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 export { buildAcademicReportCardPdf, buildAcademicTranscriptPdf } from './print-academic-pdf.js';
 
@@ -139,7 +143,7 @@ export function buildLearnReportPrintDocument(
         ),
         { flex: [3, 1, 2] }
       ),
-    ].filter(Boolean as unknown as PrintTruthyFilter);
+    ].filter(truthyPrintDocuments);
     return doc;
   }
 
@@ -163,7 +167,7 @@ export function buildLearnReportPrintDocument(
         ),
         { flex: [2, 1, 4] }
       ),
-    ].filter(Boolean as unknown as PrintTruthyFilter);
+    ].filter(truthyPrintDocuments);
     return doc;
   }
 
@@ -184,7 +188,7 @@ export function buildLearnReportPrintDocument(
     tableSection('Narration Log', ['Date', 'Student', 'Source', 'Type', 'Note'], narrationRows, {
       flex: [1.5, 1.5, 2, 1.5, 4],
     }),
-  ].filter(Boolean as unknown as PrintTruthyFilter);
+  ].filter(truthyPrintDocuments);
   return doc;
 }
 

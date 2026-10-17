@@ -1,4 +1,7 @@
 // Generated from src/browser/parish/app-subscriptions-and-settlement.ts by npm run build:browser. Do not edit.
+function truthyParishSubscriptions(value) {
+  return Boolean(value);
+}
 function updateStarterPaywalls() {
   const givingPlusLocked = !hasGivingPlusAccess();
   const givingPlusTargets = {
@@ -150,7 +153,7 @@ function renderSettlementProfilesPanel() {
         p.isDefaultCommerce ? '<span class="sp-badge sp-badge--commerce">Bookstore default</span>' : '',
         !p.isActive ? '<span class="sp-badge sp-badge--inactive">Inactive</span>' : '',
       ]
-        .filter(Boolean)
+        .filter(truthyParishSubscriptions)
         .join('');
       const moduleLabels = (p.modules || []).map((m) => SETTLEMENT_MODULE_LABELS[m] || m).join(', ');
       return `

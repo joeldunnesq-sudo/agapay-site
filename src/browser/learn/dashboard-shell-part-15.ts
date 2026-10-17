@@ -1,5 +1,4 @@
 import type {
-  LearnTruthyFilter,
   LearnShellNode,
   LearnShellPrototypeState,
   LearnShellPayload,
@@ -7,6 +6,11 @@ import type {
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn15<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const wireWeeklyAssignmentBoard: LearnShellBindings['wireWeeklyAssignmentBoard'];
 declare const wireMoveUnfinishedWork: LearnShellBindings['wireMoveUnfinishedWork'];
@@ -199,7 +203,7 @@ function wirePlanner(vm: LearnPlannerVm) {
     batchList.hidden = false;
     batchList.insertAdjacentHTML(
       'beforeend',
-      `<span><strong>${html(entry.title)}</strong><small>${html([entry.assignee || 'Everyone', choreScheduleLabel(entry)].filter(Boolean as unknown as LearnTruthyFilter).join(' · '))}</small></span>`
+      `<span><strong>${html(entry.title)}</strong><small>${html([entry.assignee || 'Everyone', choreScheduleLabel(entry)].filter(truthyLearn15).join(' · '))}</small></span>`
     );
   };
   let activeChore: LearnShellNode | null = null;

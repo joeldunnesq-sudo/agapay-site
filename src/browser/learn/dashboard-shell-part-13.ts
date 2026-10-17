@@ -1,5 +1,4 @@
 import type {
-  LearnTruthyFilter,
   LearnShellWeekAssignment,
   LearnShellNode,
   LearnShellPayload,
@@ -7,6 +6,11 @@ import type {
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn13<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const root: LearnShellBindings['root'];
 declare const weekAssignmentStorageKey: LearnShellBindings['weekAssignmentStorageKey'];
@@ -32,9 +36,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
   const familyViewStorageKey = 'agapay.learn.weekPlanner.familyView'; // household-wide preference, not per-week
   const zones = [...board.querySelectorAll<HTMLElement>('[data-week-assignment-zone]')];
   const formButtons = [...board.querySelectorAll<HTMLButtonElement>('[data-week-form-filter]')];
-  const availableForms = formButtons
-    .map((button) => button.dataset.weekFormFilter)
-    .filter(Boolean as unknown as LearnTruthyFilter);
+  const availableForms = formButtons.map((button) => button.dataset.weekFormFilter).filter(truthyLearn13);
   const familyLane = board.querySelector<HTMLElement>('[data-family-lane]');
   const familyLaneZone = board.querySelector<HTMLElement>('[data-week-assignment-zone="pool-family"]');
   const familyToggle = board.querySelector<HTMLInputElement>('[data-family-view-toggle]');
@@ -45,7 +47,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
     (card.dataset.weekFormLabels || '')
       .split('|')
       .map((label: string) => label.trim())
-      .filter(Boolean as unknown as LearnTruthyFilter);
+      .filter(truthyLearn13);
   const isFamilyCard = (card: HTMLElement) => {
     const labels = cardFormLabels(card);
     return !labels.length || labels.includes('__family') || labels.includes('Household Form');
@@ -490,9 +492,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
         date: day.date,
         allDay: false,
         durationMinutes: 30,
-        description: [day.weekday, assignment.sub, assignment.note]
-          .filter(Boolean as unknown as LearnTruthyFilter)
-          .join('\n'),
+        description: [day.weekday, assignment.sub, assignment.note].filter(truthyLearn13).join('\n'),
         startTime: `${String(9 + Math.min(index, 6)).padStart(2, '0')}:00`,
       }))
     );

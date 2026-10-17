@@ -1,6 +1,5 @@
 import type {
   LearnSetupTileValues,
-  LearnTruthyFilter,
   LearnGradeRecord,
   LearnGradeCourse,
   LearnReportsVm,
@@ -12,6 +11,11 @@ import type {
   LearnSetupVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn6<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const bookCover: LearnShellBindings['bookCover'];
 declare const bar: LearnShellBindings['bar'];
@@ -429,7 +433,7 @@ function setupMultiChildPicker(children: LearnShellNode[] = [], selectedIds: (st
     : String(selectedIds || '')
         .split(',')
         .map((v) => v.trim())
-        .filter(Boolean as unknown as LearnTruthyFilter);
+        .filter(truthyLearn6);
   const summary = selected.length
     ? children
         .filter((child) => selected.includes(child.id))

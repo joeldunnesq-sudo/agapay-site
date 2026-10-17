@@ -1,11 +1,10 @@
-import type {
-  LearnTruthyFilter,
-  LearnShellNode,
-  LearnShellOptions,
-  LearnPlannerVm,
-  LearnGradesVm,
-} from './dashboard-shell-contracts.js';
+import type { LearnShellNode, LearnShellOptions, LearnPlannerVm, LearnGradesVm } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell-setup-calendar.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearnSetup1<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const US_FEDERAL_HOLIDAY_CACHE: LearnShellBindings['US_FEDERAL_HOLIDAY_CACHE'];
 declare const graceModeOptions: LearnShellBindings['graceModeOptions'];
@@ -520,11 +519,11 @@ function activeSetupGroupLabels(
 
 function primaryResourceGroupLabel(resource: LearnShellNode = {}, groupingMode: string = 'forms') {
   const labels = Array.isArray(resource.formLabels)
-    ? resource.formLabels.map((value) => String(value || '').trim()).filter(Boolean as unknown as LearnTruthyFilter)
+    ? resource.formLabels.map((value) => String(value || '').trim()).filter(truthyLearnSetup1)
     : String(resource.formLabels || resource.formLabel || '')
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean as unknown as LearnTruthyFilter);
+        .filter(truthyLearnSetup1);
   if (labels.length) return labels[0];
   if (groupingMode === 'grades' && resource.gradeLabel) return String(resource.gradeLabel).trim();
   return '';

@@ -1,10 +1,14 @@
 import type {
-  LearnTruthyFilter,
   LearnSetupResourceRow,
   LearnResourceFieldSnapshot,
   LearnShellError,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+
+// Match Boolean filtering while exposing its non-null result to TypeScript.
+function truthyLearn10<T>(value: T): value is NonNullable<T> {
+  return Boolean(value);
+}
 
 declare const rowValue: LearnShellBindings['rowValue'];
 declare const storedLearnCalendar: LearnShellBindings['storedLearnCalendar'];
@@ -68,12 +72,12 @@ function rowResources(row: HTMLElement): LearnSetupResourceRow[] {
           formLabels: rowResourceValue(resourceRow, index, 'formLabels')
             .split(',')
             .map((value) => value.trim())
-            .filter(Boolean as unknown as LearnTruthyFilter),
+            .filter(truthyLearn10),
           gradeLabel: rowResourceValue(resourceRow, index, 'gradeLabel'),
           childIds: rowResourceValue(resourceRow, index, 'childIds')
             .split(',')
             .map((value) => value.trim())
-            .filter(Boolean as unknown as LearnTruthyFilter),
+            .filter(truthyLearn10),
         };
       })
       .filter((r) => r.title);
@@ -91,7 +95,7 @@ function resourceRowPrimaryGroupLabel(resourceRow: HTMLElement, groupingMode: st
       formLabels: rowResourceValue(resourceRow, index, 'formLabels')
         .split(',')
         .map((value) => value.trim())
-        .filter(Boolean as unknown as LearnTruthyFilter),
+        .filter(truthyLearn10),
       gradeLabel: rowResourceValue(resourceRow, index, 'gradeLabel'),
     },
     groupingMode
@@ -191,7 +195,7 @@ function refreshResourceSummary(resourceRow: HTMLElement | null) {
   )
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean as unknown as LearnTruthyFilter);
+    .filter(truthyLearn10);
   const children = (
     (
       resourceRow.querySelector<HTMLElement>(`[name="${resourceFieldName(index, 'childIds')}"]`) as
@@ -200,7 +204,7 @@ function refreshResourceSummary(resourceRow: HTMLElement | null) {
   )
     .split(',')
     .map((value) => value.trim())
-    .filter(Boolean as unknown as LearnTruthyFilter);
+    .filter(truthyLearn10);
   const titleEl = resourceRow.querySelector<HTMLElement>('[data-resource-summary-title]');
   const detailEl = resourceRow.querySelector<HTMLElement>('[data-resource-summary-detail]');
   if (titleEl) titleEl.textContent = title || 'Untitled resource';
@@ -210,7 +214,7 @@ function refreshResourceSummary(resourceRow: HTMLElement | null) {
       groups.length ? groups.join(', ') : '',
       children.length ? `${children.length} child-specific` : '',
     ]
-      .filter(Boolean as unknown as LearnTruthyFilter)
+      .filter(truthyLearn10)
       .join(' · ');
 }
 
@@ -255,7 +259,7 @@ function rowTileMinutes(row: HTMLElement) {
 function collectRows<T>(form: HTMLFormElement, rowType: string, mapper: (row: HTMLElement, index: number) => T) {
   return [...form.querySelectorAll<HTMLElement>(`[data-setup-row="${rowType}"]`)]
     .map((row, index) => mapper(row, index))
-    .filter(Boolean as unknown as LearnTruthyFilter);
+    .filter(truthyLearn10);
 }
 
 async function openSaintOfDay(button: HTMLButtonElement) {
