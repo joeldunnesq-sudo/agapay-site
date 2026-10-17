@@ -105,7 +105,7 @@ function renderCandleGiving() {
     const dateStr = gift.createdAt || gift.date || gift.paidAt;
     if (!dateStr) return;
     const d = new Date(dateStr);
-    if (isNaN(d)) return;
+    if (isNaN(Number(d))) return;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const cents = Number(gift.parishNetCents || gift.amountCents || 0);
     if (key in monthTotals) monthTotals[key] += cents;

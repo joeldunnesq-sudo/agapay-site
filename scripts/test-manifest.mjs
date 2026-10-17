@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/learn-stored-record-validation-tests.mjs',
   'scripts/owned-declaration-check-tests.mjs',
   'scripts/donor-navigation-context-tests.mjs',
   'scripts/myagapay-performance-browser-tests.mjs',

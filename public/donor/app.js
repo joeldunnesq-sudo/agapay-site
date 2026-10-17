@@ -1896,14 +1896,14 @@ function renderCommemorationInsights(entries, dashboard) {
   const thisYear = now.getFullYear();
   const inThisYear = (ts) => {
     const d = new Date(ts);
-    return !isNaN(d) && d.getFullYear() === thisYear;
+    return !isNaN(Number(d)) && d.getFullYear() === thisYear;
   };
   const namesThisYear = commemorationNameCount(
     entries.filter((e) => inThisYear(e.createdAt || e.submittedAt || e.date))
   );
   const allDates = [...offerings, ...entries]
     .map((x) => new Date(x.createdAt || x.submittedAt || x.date))
-    .filter((d) => !isNaN(d));
+    .filter((d) => !isNaN(Number(d)));
   const sinceYear = allDates.length ? Math.min(...allDates.map((d) => d.getFullYear())) : thisYear;
   setText('commemMetricNames', String(totalNames));
   setText('commemMetricCandles', String(candleOfferings.length));
@@ -2250,7 +2250,7 @@ function renderPledgeTracker(donor, summary, parish) {
       }, 120);
       fill.classList.toggle('pledge-complete', pct >= 100);
     }
-    if (track) track.setAttribute('aria-valuenow', pct);
+    if (track) track.setAttribute('aria-valuenow', String(pct));
     const label = document.getElementById(labelId);
     if (label) label.textContent = periodTitle;
     const raised = document.getElementById(prefix + 'Raised');

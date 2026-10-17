@@ -14,7 +14,7 @@ The seven-stage plan now has implementation coverage for all 495 frozen original
 6. Broader backend adoption: complete through the frozen authentication, payments, webhook, accounting, storage and scheduled-job boundaries, with their regression gates retained.
 7. Cleanup and enforcement: complete for this migration scope. The inventory has no remaining original modules, every source has an output owner, the old migrated facades are retired, and regression checks prevent loss of a TypeScript owner. Generated JavaScript, intentional forwarding shims, vendor assets, inline scripts and tooling remain documented scope exceptions.
 
-Production is the accepted PR #242 release: **495 / 495 original runtime modules (100%)**, at commit de63df5db057dcf50489161c9d6c193d29b70c34. Type assertions over external JSON do not provide runtime validation, and the frozen module count does not measure complete static safety or performance. The Android PWA performance fix is retained.
+Production includes the accepted PR #243 audit follow-up: **495 / 495 original runtime modules (100%)**, at commit 697f1d9468f0082b20f10cd97820ff2b7630f54d. Type assertions over external JSON do not provide runtime validation, and the frozen module count does not measure complete static safety or performance. The Android PWA performance fix is retained.
 
 ### Completion checkpoint (batch 90, accepted production release)
 
@@ -1480,3 +1480,7 @@ This completes the frozen original-runtime migration. The percentage measures mo
 ## Post-completion audit
 
 The [TypeScript transition audit](typescript-transition-audit.md) records the subsequent review of declaration checking, owner-derived browser contracts, endpoint payloads, inferred callback types and generated runtime compatibility. It strengthens required type checks without increasing the frozen migration percentage. Audit validation and release status are recorded in that report separately from the accepted PR #242 production checkpoint above.
+
+### Accepted audit follow-up release
+
+PR [#243](https://github.com/joeldunnesq-sudo/agapay-site/pull/243) deployed the declaration, owner-contract and inferred-callback audit fixes at 697f1d9468f0082b20f10cd97820ff2b7630f54d, stamped 2026-10-17T04:37:39Z. Protected production run 39002498975 passed all 321 platform commands, four prechecks, complete Quality with the new declaration and parameter gates, and normal-MFA Accounting acceptance. Source and main CodeQL, five hosted staging suites, authenticated catalog cleanup, seven private-document checks, six hosted production suites and six stable-version probes passed. The [audit report](typescript-transition-audit.md) records deployment identifiers, evidence and the single allowed no-existing-bill attachment-download skip. The frozen migration count remains 495/495; no original modules remain.

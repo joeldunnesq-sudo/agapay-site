@@ -285,16 +285,10 @@ export function progressFromTerm(
   // if weeksCount was never stored (e.g. very old records).
   const totalWeeks = term.weeksCount
     ? Math.max(1, Math.min(24, Number(term.weeksCount)))
-    : Math.max(
-        1,
-        Math.ceil(((end as unknown as number) - (start as unknown as number) + 1) / (7 * 24 * 60 * 60 * 1000))
-      );
+    : Math.max(1, Math.ceil((Number(end) - Number(start) + 1) / (7 * 24 * 60 * 60 * 1000)));
   const currentWeek = Math.max(
     1,
-    Math.min(
-      totalWeeks,
-      Math.floor(((current as unknown as number) - (start as unknown as number)) / (7 * 24 * 60 * 60 * 1000)) + 1
-    )
+    Math.min(totalWeeks, Math.floor((Number(current) - Number(start)) / (7 * 24 * 60 * 60 * 1000)) + 1)
   );
   return {
     label: term.label || 'Current Term',
@@ -489,7 +483,7 @@ export function eventOccursOnDate(
   if (recurrence === 'none') return event.date === civilDate;
   const start = new Date(`${event.date}T00:00:00.000Z`);
   const target = new Date(`${civilDate}T00:00:00.000Z`);
-  const diffDays = Math.round(((target as unknown as number) - (start as unknown as number)) / 86400000);
+  const diffDays = Math.round((Number(target) - Number(start)) / 86400000);
   if (diffDays < 0) return false;
   if (recurrence === 'weekly') return diffDays % 7 === 0;
   if (recurrence === 'biweekly') return diffDays % 14 === 0;

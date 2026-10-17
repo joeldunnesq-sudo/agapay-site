@@ -5,9 +5,11 @@ import type {
   LearnFeedback,
   FeedbackNotification,
 } from './community-store-contracts.js';
-import { d1, d1All, d1GetSetting, d1SetSetting, generateSecret, listKvKeys } from '../lib/core.js';
+import { d1, d1All, d1First, d1SetSetting, generateSecret, listKvKeys } from '../lib/core.js';
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
+
+import { isJsonRecord, isLearnFeedback } from './stored-record-validation.js';
 
 const LEARN_FEEDBACK_PREFIX = '__agapay_learn_feedback:';
 const ALLOWED_FEEDBACK_STATUSES = new Set(['new', 'seen-considered', 'archived']);
@@ -16,11 +18,12 @@ function feedbackKey(id: string) {
   return `${LEARN_FEEDBACK_PREFIX}${id}`;
 }
 
-function parse(value: unknown): LearnFeedback | null {
-  if (!value) return null;
+function parse(value: unknown, expectedId: string): LearnFeedback | null {
   try {
-    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-    return parsed && typeof parsed === 'object' ? (parsed as LearnFeedback) : null;
+    const parsed: unknown = typeof value === 'string' ? JSON.parse(value) : value;
+    // Older feedback records omitted status; their established default is new.
+    const candidate = isJsonRecord(parsed) && parsed.status === undefined ? { ...parsed, status: 'new' } : parsed;
+    return isLearnFeedback(candidate) && candidate.id === expectedId ? candidate : null;
   } catch {
     return null;
   }
@@ -43,25 +46,35 @@ export async function getLearnFeedback(env: LearnStoreEnvironment, id: unknown) 
   const feedbackId = clean(id, 120);
   if (!feedbackId) return null;
   if (d1(env)) {
-    const stored = parse(await d1GetSetting(env, feedbackKey(feedbackId)));
-    if (stored) return stored;
+    const row = await d1First<{ value: string }>(
+      env,
+      'SELECT value FROM app_settings WHERE key = ?1',
+      feedbackKey(feedbackId)
+    );
+    if (row) return parse(row.value, feedbackId);
   }
-  return env.AGAPAY_REGISTRATIONS ? parse(await env.AGAPAY_REGISTRATIONS.get(feedbackKey(feedbackId))) : null;
+  const raw = env.AGAPAY_REGISTRATIONS ? await env.AGAPAY_REGISTRATIONS.get(feedbackKey(feedbackId)) : null;
+  return parse(raw, feedbackId);
 }
 
 export async function listLearnFeedback(env: LearnStoreEnvironment, { limit = 200 }: { limit?: number } = {}) {
   const records = new Map<string, LearnFeedback>();
+  const canonicalIds = new Set<string>();
   if (d1(env)) {
-    const rows = await d1All<{ value: string }>(
+    const rows = await d1All<{ key: string; value: string }>(
       env,
-      'SELECT value FROM app_settings WHERE key LIKE ?1 ORDER BY updated_at DESC LIMIT ?2',
+      'SELECT key, value FROM app_settings WHERE key LIKE ?1 ORDER BY updated_at DESC LIMIT ?2',
       `${LEARN_FEEDBACK_PREFIX}%`,
       Math.max(1, Math.min(1000, Number(limit || 200)))
     );
-    rows
-      .map((row) => parse(row.value))
-      .filter(Boolean as unknown as (value: LearnFeedback | null) => value is LearnFeedback)
-      .forEach((record) => records.set(record.id, record));
+    for (const row of rows) {
+      if (!row.key.startsWith(LEARN_FEEDBACK_PREFIX)) continue;
+      const id = row.key.slice(LEARN_FEEDBACK_PREFIX.length);
+      canonicalIds.add(id);
+      const record = parse(row.value, id);
+      if (record) records.set(id, record);
+      else records.delete(id);
+    }
   }
   if (env.AGAPAY_REGISTRATIONS) {
     const keys = await listKvKeys(env, {
@@ -69,12 +82,13 @@ export async function listLearnFeedback(env: LearnStoreEnvironment, { limit = 20
       limit: Math.max(1, Math.min(1000, Number(limit || 200))),
     });
     const values = await Promise.all(keys.map((item) => env.AGAPAY_REGISTRATIONS!.get(item.name)));
-    values
-      .map(parse)
-      .filter(Boolean as unknown as (value: LearnFeedback | null) => value is LearnFeedback)
-      .forEach((record) => {
-        if (!records.has(record.id)) records.set(record.id, record);
-      });
+    values.forEach((value, index) => {
+      const id = keys[index]!.name.slice(LEARN_FEEDBACK_PREFIX.length);
+      if (canonicalIds.has(id)) return;
+      const record = parse(value, id);
+      if (record) records.set(id, record);
+      else records.delete(id);
+    });
   }
   return [...records.values()]
     .sort((a, b) => {

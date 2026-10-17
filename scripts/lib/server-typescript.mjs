@@ -247,6 +247,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/learn/test-scores.ts',
   'src/operations/rate-limiter.ts',
   'src/learn/feedback-store.ts',
+  'src/learn/stored-record-validation.ts',
   'src/learn/community-store.ts',
   'src/operations/parish-milestones.ts',
   'src/directory/duplicates.ts',

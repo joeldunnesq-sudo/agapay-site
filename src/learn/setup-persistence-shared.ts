@@ -267,7 +267,7 @@ export function activeTermWeek(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return 1;
   const start = new Date(`${startDate}T00:00:00.000Z`);
   const current = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()));
-  const elapsedDays = Math.floor(((current as unknown as number) - (start as unknown as number)) / 86400000);
+  const elapsedDays = Math.floor((Number(current) - Number(start)) / 86400000);
   return Math.max(1, Math.min(totalWeeks, Math.floor(elapsedDays / 7) + 1));
 }
 export function scheduledThisTermWeek(item: SetupInputNode = {}, weekNumber: number = 1) {

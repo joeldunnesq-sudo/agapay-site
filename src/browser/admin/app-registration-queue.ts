@@ -205,15 +205,17 @@ function renderMetrics(registrations: AdminAppRegistration[]) {
     const action = nextActionPriority(item);
     return action && action.priority < 99;
   }).length;
-  document.getElementById('metricTotal')!.textContent = registrations.length as unknown as string;
-  document.getElementById('metricPending')!.textContent = registrations.filter((item) =>
-    ['pending', 'needs_more_info'].includes(item.status || 'pending')
-  ).length as unknown as string;
-  document.getElementById('metricVerified')!.textContent = registrations.filter((item) => item.status === 'verified')
-    .length as unknown as string;
-  document.getElementById('metricStripeReady')!.textContent = registrations.filter((item) =>
-    ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus as string)
-  ).length as unknown as string;
+  document.getElementById('metricTotal')!.textContent = String(registrations.length);
+  document.getElementById('metricPending')!.textContent = String(
+    registrations.filter((item) => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length
+  );
+  document.getElementById('metricVerified')!.textContent = String(
+    registrations.filter((item) => item.status === 'verified').length
+  );
+  document.getElementById('metricStripeReady')!.textContent = String(
+    registrations.filter((item) => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus as string))
+      .length
+  );
   const navCount = document.getElementById('navOnboardingCount');
   if (navCount) {
     navCount.textContent = String(attentionCount);
@@ -365,10 +367,10 @@ function renderCommunitySnapshot(registrations: AdminAppRegistration[]) {
     { mission: 0, church: 0, cathedral: 0, monastery: 0 }
   );
 
-  document.getElementById('snapshotMissions')!.textContent = counts.mission as unknown as string;
-  document.getElementById('snapshotChurches')!.textContent = counts.church as unknown as string;
-  document.getElementById('snapshotCathedrals')!.textContent = counts.cathedral as unknown as string;
-  document.getElementById('snapshotMonasteries')!.textContent = counts.monastery as unknown as string;
+  document.getElementById('snapshotMissions')!.textContent = String(counts.mission);
+  document.getElementById('snapshotChurches')!.textContent = String(counts.church);
+  document.getElementById('snapshotCathedrals')!.textContent = String(counts.cathedral);
+  document.getElementById('snapshotMonasteries')!.textContent = String(counts.monastery);
   const directoryVerified = document.getElementById('directoryVerifiedCount');
   const directoryChurch = document.getElementById('directoryChurchCount');
   const directoryMonastery = document.getElementById('directoryMonasteryCount');

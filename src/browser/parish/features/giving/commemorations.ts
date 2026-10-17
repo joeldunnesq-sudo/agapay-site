@@ -136,7 +136,7 @@ function renderCandleGiving(): void {
     if (!dateStr) return;
     const d = new Date(dateStr);
     // Preserve global isNaN Date coercion.
-    if (isNaN(d as unknown as number)) return;
+    if (isNaN(Number(d))) return;
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const cents = Number(gift.parishNetCents || gift.amountCents || 0);
     if (key in monthTotals) monthTotals[key] += cents;

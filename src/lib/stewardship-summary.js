@@ -4,7 +4,7 @@ async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCe
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
   const today = /* @__PURE__ */ new Date();
-  const dayOfYear = Math.max(1, Math.ceil((today - /* @__PURE__ */ new Date(`${year}-01-01`)) / 864e5));
+  const dayOfYear = Math.max(1, Math.ceil((Number(today) - Number(/* @__PURE__ */ new Date(`${year}-01-01`))) / 864e5));
   const daysInYear = year % 4 === 0 ? 366 : 365;
   const [pledgeRow, actualRow, priorRow, manualCurrentCents, manualPriorCents] = await Promise.all([
     env.AGAPAY_DB.prepare(

@@ -17,7 +17,7 @@ export function fmtTime(s: number | string | undefined) {
 }
 export function timeAgo(str: string | number | undefined) {
   if (!str) return '';
-  const diff = (Date.now() - (new Date(str) as unknown as number)) / 1000;
+  const diff = (Date.now() - Number(new Date(str))) / 1000;
   if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
   if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
   if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
