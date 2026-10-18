@@ -120,7 +120,7 @@ function wirePlanner(vm: LearnPlannerVm) {
       );
     } finally {
       (button as HTMLButtonElement | HTMLInputElement | HTMLSelectElement).disabled = false;
-      (button as HTMLElement).textContent = originalText as unknown as string;
+      (button as HTMLElement).textContent = originalText;
     }
   });
   const familyForm = root!.querySelector<HTMLFormElement>('[data-family-planning-form]');
@@ -177,8 +177,7 @@ function wirePlanner(vm: LearnPlannerVm) {
       });
       return;
     }
-    (fields[0] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = (value ||
-      '') as unknown as string;
+    (fields[0] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = String(value || '');
   };
   const getModalValue = (name: string) => {
     const fields = familyForm?.querySelectorAll<HTMLElement>(`[name="${CSS.escape(name)}"]`) || [];
@@ -262,8 +261,7 @@ function wirePlanner(vm: LearnPlannerVm) {
       row = familyForm?.querySelector<HTMLElement>(`[data-setup-row="meals"][data-date="${CSS.escape(date)}"]`);
     }
     const input = row?.querySelector<HTMLElement>(`[name="${CSS.escape(slot)}"]`);
-    if (input)
-      (input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = (value || '') as unknown as string;
+    if (input) (input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = String(value || '');
     root!
       .querySelectorAll<HTMLElement>(
         `[data-meal-open][data-date="${CSS.escape(date)}"][data-slot="${CSS.escape(slot)}"]`

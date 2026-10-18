@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/feature-request-boundary-tests.mjs',
   'scripts/truthy-filter-adapters-tests.mjs',
   'scripts/support-json-boundaries-tests.mjs',
   'scripts/learn-stored-record-validation-tests.mjs',

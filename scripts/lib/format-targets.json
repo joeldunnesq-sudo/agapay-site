@@ -1214,7 +1214,8 @@
     "src/learn/stored-record-validation.js",
     "scripts/learn-stored-record-validation-tests.mjs",
     "scripts/truthy-filter-adapters-tests.mjs",
-    "scripts/support-json-boundaries-tests.mjs"
+    "scripts/support-json-boundaries-tests.mjs",
+    "scripts/feature-request-boundary-tests.mjs"
   ],
   "check": [
     ".prettierrc.json",
@@ -2462,6 +2463,7 @@
     "src/learn/stored-record-validation.js",
     "scripts/learn-stored-record-validation-tests.mjs",
     "scripts/truthy-filter-adapters-tests.mjs",
-    "scripts/support-json-boundaries-tests.mjs"
+    "scripts/support-json-boundaries-tests.mjs",
+    "scripts/feature-request-boundary-tests.mjs"
   ]
 }

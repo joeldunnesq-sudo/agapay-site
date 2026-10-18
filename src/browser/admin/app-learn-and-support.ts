@@ -203,7 +203,7 @@ function renderLearnAdmin(data: AdminAppPayload = {}) {
   const learnHeaderSubs = document.getElementById('learnHeaderSubs');
   const learnHeaderMrr = document.getElementById('learnHeaderMrr');
   const learnActive = Number(counts.active || 0) + Number(counts.trialing || 0) + Number(counts.freeForever || 0);
-  if (learnHeaderSubs) learnHeaderSubs.textContent = (learnActive || '0') as unknown as string;
+  if (learnHeaderSubs) learnHeaderSubs.textContent = String(learnActive || '0');
   const newFeedbackCount = Number(data.feedback?.counts?.new || 0);
   if (learnHeaderMrr)
     learnHeaderMrr.textContent = `${moneyShort(subscriptions.monthlyRecurringCents || 0)}/mo · ${counts.cancelled || 0} cancelled · ${newFeedbackCount} new suggestion${newFeedbackCount === 1 ? '' : 's'}`;

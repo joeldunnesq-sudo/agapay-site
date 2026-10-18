@@ -7062,7 +7062,7 @@ function wireWeeklyAssignmentBoard(vm) {
   const apptField = (name) => apptModal?.querySelector(`[name="${CSS.escape(name)}"]`) || null;
   const setApptField = (name, value) => {
     const el = apptField(name);
-    if (el) el.value = value || '';
+    if (el) el.value = String(value || '');
   };
   const getApptField = (name) => apptField(name)?.value?.trim() || '';
   const openApptModal = (entry) => {
@@ -7397,7 +7397,7 @@ function wirePlanner(vm) {
       });
       return;
     }
-    fields[0].value = value || '';
+    fields[0].value = String(value || '');
   };
   const getModalValue = (name) => {
     const fields = familyForm?.querySelectorAll(`[name="${CSS.escape(name)}"]`) || [];
@@ -7477,7 +7477,7 @@ function wirePlanner(vm) {
       row = familyForm?.querySelector(`[data-setup-row="meals"][data-date="${CSS.escape(date)}"]`);
     }
     const input = row?.querySelector(`[name="${CSS.escape(slot)}"]`);
-    if (input) input.value = value || '';
+    if (input) input.value = String(value || '');
     root
       .querySelectorAll(`[data-meal-open][data-date="${CSS.escape(date)}"][data-slot="${CSS.escape(slot)}"]`)
       .forEach((button) => {
@@ -8170,7 +8170,7 @@ function wireReports(vm) {
     } finally {
       if (button) {
         button.disabled = false;
-        button.textContent = originalText;
+        button.textContent = originalText ?? null;
       }
     }
   };

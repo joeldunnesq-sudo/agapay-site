@@ -81,7 +81,7 @@ function diocesanStatisticsApi(year: number) {
     '/api/parish/dashboard/' +
     encodeURIComponent(currentParish?.parishId || '') +
     '/reports/diocesan-statistics?year=' +
-    encodeURIComponent(year as unknown as string)
+    encodeURIComponent(year)
   );
 }
 

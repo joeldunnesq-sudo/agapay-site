@@ -350,8 +350,8 @@ function duplicateMinistryCommerceItem(productId: string) {
   form.elements.eventStartTime.value = source.eventStartTime || '';
   form.elements.eventEndTime.value = source.eventEndTime || '';
   form.elements.eventLocation.value = source.eventLocation || '';
-  form.elements.stockQuantity.value = (source.stockQuantity || '') as unknown as string;
-  form.elements.maxQuantityPerOrder.value = (source.maxQuantityPerOrder || '') as unknown as string;
+  form.elements.stockQuantity.value = String(source.stockQuantity || '');
+  form.elements.maxQuantityPerOrder.value = String(source.maxQuantityPerOrder || '');
   form.elements.description.value = source.description || '';
   form.elements.status.value = 'draft';
   form.elements.showOnCalendar.checked = source.showOnCalendar !== false;

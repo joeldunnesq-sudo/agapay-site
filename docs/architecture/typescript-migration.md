@@ -1492,3 +1492,7 @@ PR [#244](https://github.com/joeldunnesq-sudo/agapay-site/pull/244) is accepted 
 ## Truthy-filter and JSON hardening release
 
 PR [#245](https://github.com/joeldunnesq-sudo/agapay-site/pull/245) is accepted and deployed as 5687c23517f11a4cb1ba88905dda884b34245e56, stamped 2026-10-17T14:41:59Z. The [second boundary hardening report](typescript-boundary-hardening-2.md) records all 119 truthy-adapter removals (175 to 56), implemented hoisted predicates, support-ticket JSON validation and checked email-provider metadata. All 324 platform commands, four prechecks, complete Quality, CodeQL, authenticated gates and hosted acceptance passed. Original migration ownership remains 495/495.
+
+## Boundary hardening: third checkpoint (release candidate)
+
+The follow-up to PR #245 removes 20 double assertions (56 to 36): 14 browser string adapters and six portability proxy adapters. Stored feature-request JSON now has checked shapes, read-only projection of valid entries and write refusal for malformed records, preserving raw data and unknown metadata. Existing proxy receivers, SQL batch unwrapping and operation limits remain intact. The frozen TypeScript migration remains 495/495; JSON hardening remains an ongoing domain-by-domain task. Scope, regressions and release evidence are documented in [the third hardening report](typescript-boundary-hardening-3.md).

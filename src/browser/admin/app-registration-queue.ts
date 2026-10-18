@@ -76,7 +76,7 @@ function collapseRegistrationDetail() {
 function setRegistrationAutosaveState(message: string | undefined, state = '') {
   const indicator = document.getElementById('registrationAutosaveState');
   if (!indicator) return;
-  indicator.textContent = message as unknown as string;
+  indicator.textContent = message ?? '';
   indicator.dataset.state = state;
 }
 

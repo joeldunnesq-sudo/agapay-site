@@ -183,7 +183,7 @@ function wirePrintCenter(vm: LearnPrintVm) {
         );
       } finally {
         (button as HTMLButtonElement | HTMLInputElement | HTMLSelectElement).disabled = false;
-        button.textContent = originalText as unknown as string;
+        button.textContent = originalText;
       }
     });
   });
@@ -250,7 +250,7 @@ function wirePrintCenter(vm: LearnPrintVm) {
         );
       } finally {
         (button as HTMLButtonElement | HTMLInputElement | HTMLSelectElement).disabled = false;
-        button.textContent = originalText as unknown as string;
+        button.textContent = originalText;
       }
     });
   });
