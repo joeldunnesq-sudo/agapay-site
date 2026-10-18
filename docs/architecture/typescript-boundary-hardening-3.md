@@ -41,3 +41,7 @@ PR [#246](https://github.com/joeldunnesq-sudo/agapay-site/pull/246) merged sourc
 - Six spaced health probes retained the merged SHA and protected stamp after the automatic Cloudflare build.
 
 Evidence is retained locally under ignored tmp-release-hardening-3/: local-validation.json, staging-acceptance.json, staging-deployment-proof.json, production-validation.json, authenticated artifacts, hosted logs, initial failure evidence, assertion inventory and stable-health.json. No MFA, billing, entitlement, release-permission, dependency version or size-budget configuration was changed.
+
+## Subsequent checkpoint
+
+The accepted [fourth hardening checkpoint](typescript-boundary-hardening-4.md), PR [#247](https://github.com/joeldunnesq-sudo/agapay-site/pull/247), removes 19 further double assertions (36 to 17), checks native Learn form controls and validates weekly-assignment local-storage JSON without overwriting malformed plans. It deploys as 8eaec2442b3cc03e872d79d7c8127cd8b3258988. The acceptance above remains the historical record for the third checkpoint.

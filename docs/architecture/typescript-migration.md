@@ -1501,6 +1501,10 @@ The follow-up to PR #245 removes 20 double assertions (56 to 36): 14 browser str
 
 PR [#246](https://github.com/joeldunnesq-sudo/agapay-site/pull/246) is accepted and deployed as b0f73443298f6ab2ca5021db616102de422e04f1, stamped 2026-10-18T04:08:49Z. The [third hardening report](typescript-boundary-hardening-3.md) records 20 assertion removals (56 to 36), checked portability dispatch and feature-request JSON validation with preservation of malformed data. All 325 platform commands, four prechecks, full Quality, CodeQL, authenticated gates, deployed PDFs and hosted acceptance passed. Original migration ownership remains 495/495.
 
-## Boundary hardening: fourth checkpoint (release candidate)
+## Boundary hardening: fourth checkpoint (accepted)
 
 The follow-up to PR #246 removes 19 double assertions (36 to 17) in Learn form controls, meal fields and typed dictionaries. Shared weekly-assignment JSON validation preserves malformed raw storage, gives save errors without stuck print controls, and keeps valid saves and debounced calendar synchronization functional. Original migration ownership remains 495/495. The [fourth hardening report](typescript-boundary-hardening-4.md) records scope, validation and remaining work.
+
+## Fourth boundary-hardening release acceptance
+
+PR [#247](https://github.com/joeldunnesq-sudo/agapay-site/pull/247) is accepted and deployed as 8eaec2442b3cc03e872d79d7c8127cd8b3258988, stamped 2026-10-18T05:02:27Z. The [fourth hardening report](typescript-boundary-hardening-4.md) records 19 assertion removals (36 to 17), native Learn controls, checked meal access and shared weekly-assignment JSON validation with lossless rejected saves. All 326 platform commands, four prechecks, full Quality, CodeQL, authenticated gates, deployed PDFs and hosted acceptance passed. Original migration ownership remains 495/495.
