@@ -168,7 +168,7 @@ function seedFamilyPrototypeState(vm: LearnPlannerVm) {
     const dayKey = dateToKey[meal.date as string];
     if (!dayKey) return;
     ['breakfast', 'lunch', 'dinner'].forEach((slot: string) => {
-      const title = (meal as unknown as Record<string, string | undefined>)[slot];
+      const title = learnMealSlotValue(meal, slot);
       if (!title) return;
       let recipeId = recipeIdsByTitle.get(String(title).toLowerCase());
       if (!recipeId) {
@@ -220,7 +220,7 @@ function seedFamilyPrototypeState(vm: LearnPlannerVm) {
     const dayKey = dayKeyByLabel[String(chore.day || '').toLowerCase()] || '';
     if (dayKey && chore.title) {
       const key = `${assignee}::${dayKey}`;
-      (chores as unknown as Record<string, (typeof chores)[keyof typeof chores] | undefined>)[key] = chore.title;
+      chores[key] = chore.title;
       choreDetails[key] = {
         id: chore.id || '',
         title: chore.title || '',
@@ -594,3 +594,8 @@ export type LearnShell2Part4 = {
   renderFormation: typeof renderFormation;
   bookCover: typeof bookCover;
 };
+
+function learnMealSlotValue(meal: LearnShellNode, slot: string) {
+  if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return meal?.[slot];
+  return undefined;
+}

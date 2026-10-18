@@ -99,14 +99,41 @@ function weekAssignmentStorageKey(vm: LearnAssignmentContext, explicitWeekKey: s
   return `agapay.learn.weekAssignments.${weekKey}.${itemIds}`;
 }
 
+function isLearnWeekAssignment(value: unknown): value is LearnShellWeekAssignment {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  for (const field of ['zone', 'sourceId', 'note', 'status']) {
+    if (field in value && typeof Reflect.get(value, field) !== 'string') return false;
+  }
+  for (const field of ['completed', 'autoPlaced']) {
+    if (field in value && typeof Reflect.get(value, field) !== 'boolean') return false;
+  }
+  return true;
+}
+
+function parseLearnWeekAssignments(raw: string | null) {
+  const state: Record<string, LearnShellWeekAssignment> = {};
+  Object.setPrototypeOf(state, null);
+  if (raw === null) return { state, valid: true };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { state, valid: false };
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return { state, valid: false };
+  let valid = true;
+  for (const [key, value] of Object.entries(parsed)) {
+    if (isLearnWeekAssignment(value)) state[key] = value;
+    else valid = false;
+  }
+  return { state, valid };
+}
+
 function readWeekAssignmentState(vm: LearnAssignmentContext, explicitWeekKey: string = '') {
   try {
-    return JSON.parse(localStorage.getItem(weekAssignmentStorageKey(vm, explicitWeekKey)) || '{}') as Record<
-      string,
-      LearnShellWeekAssignment
-    >;
+    return parseLearnWeekAssignments(localStorage.getItem(weekAssignmentStorageKey(vm, explicitWeekKey))).state;
   } catch {
-    return {};
+    return parseLearnWeekAssignments(null).state;
   }
 }
 
@@ -558,6 +585,7 @@ function renderDashboard(vm: LearnDashboardVm) {
   return shell(vm, body);
 }
 export type LearnShell2Part2 = {
+  parseLearnWeekAssignments: typeof parseLearnWeekAssignments;
   renderTermProgressPanel: typeof renderTermProgressPanel;
   renderTodayLearnContext: typeof renderTodayLearnContext;
   weekAssignmentStorageKey: typeof weekAssignmentStorageKey;

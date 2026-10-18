@@ -495,8 +495,12 @@ function renderPlannerDaySelector(model, selectedDate) {
   return `<div class="learn-family-day-selector">${model.weekDays.map((day) => `<a href="${plannerHref({ view: 'day', date: day.date })}" class="${day.date === selectedDate ? 'is-active' : ''}"><span>${day.isSunday ? '☩' : day.isFastDay ? '✥' : '·'}</span><strong>${html(day.weekday || day.weekdayLong || day.long)}</strong><small>${html(day.shortDate || day.short || day.date)}</small></a>`).join('')}</div>`;
 }
 function renderMealCard(day, meal, slot) {
-  const value = meal?.[slot] || '';
+  const value = plannerMealSlotValue(meal, slot) || '';
   return `<button type="button" class="learn-family-meal-card" data-meal-open data-date="${html(day.date)}" data-slot="${html(slot)}"><span>${html(mealSlotLabel(slot))}</span><strong>${html(value || 'No dish yet')}</strong><small>${value ? 'change it' : 'add a dish'} →</small></button>`;
+}
+function plannerMealSlotValue(meal, slot) {
+  if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return meal?.[slot];
+  return void 0;
 }
 function truthyLearnPlanner2(value) {
   return Boolean(value);
@@ -610,8 +614,8 @@ function renderFamilyMonthOverview(model, scope = 'meals') {
               'lunch',
               'dinner',
             ]
-              .filter((slot) => meal[slot])
-              .map((slot) => `<em>${html(mealSlotLabel(slot))}: ${html(meal[slot])}</em>`)
+              .filter((slot) => plannerMealSlotValue(meal, slot))
+              .map((slot) => `<em>${html(mealSlotLabel(slot))}: ${html(plannerMealSlotValue(meal, slot))}</em>`)
               .join('')}`
           : scope === 'chores'
             ? monthlyChores.length
@@ -975,10 +979,11 @@ function renderPlannerMonth(vm) {
       const muted = !day.inMonth;
       const fastBg = day.isFastDay ? 'rgba(110,47,42,.12)' : day.isSunday ? 'rgba(181,148,47,.14)' : 'var(--paper2)';
       const border = day.isToday ? 'var(--gold)' : day.isFastDay ? 'rgba(110,47,42,.38)' : 'var(--line)';
+      const dinner = plannerMealDinner(day.meal);
       const familyItems = [
         ...(day.nameDays || []).map((entry) => ({ title: `Name day · ${entry.personName}` })),
         ...(day.events || []).map((entry) => ({ title: entry.title })),
-        ...(day.meal?.dinner ? [{ title: `Dinner · ${day.meal.dinner}` }] : []),
+        ...(dinner ? [{ title: `Dinner · ${dinner}` }] : []),
       ];
       const lessons = uniqueMonthLessons(
         [...(designedByDate.get(day.date) || []), ...(day.householdPlan || []), ...(day.formPlan || [])].filter(
@@ -1063,6 +1068,11 @@ function renderPlannerMonth(vm) {
 
     </div>
   `;
+}
+function plannerMealDinner(value) {
+  return value !== null && typeof value === 'object' && 'dinner' in value && typeof value.dinner === 'string'
+    ? value.dinner
+    : void 0;
 }
 function familyEventSetupRow(event = {}) {
   return `<div data-setup-row="familyEvents" data-id="${html(event.id || '')}" class="learn-family-row learn-event-row">${setupInput('Event', 'title', event.title || '')}${setupSelect(

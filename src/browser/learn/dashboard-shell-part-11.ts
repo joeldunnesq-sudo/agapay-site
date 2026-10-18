@@ -30,25 +30,21 @@ declare const choreSetupRow: LearnShellBindings['choreSetupRow'];
 declare const recipeSetupRow: LearnShellBindings['recipeSetupRow'];
 declare const grocerySetupRow: LearnShellBindings['grocerySetupRow'];
 
+function learnNamedField(form: HTMLFormElement, name: string) {
+  const field = form.elements.namedItem(name);
+  return {
+    value: field && 'value' in field && typeof field.value === 'string' ? field.value : undefined,
+    checked: field && 'checked' in field && typeof field.checked === 'boolean' ? field.checked : undefined,
+    type: field && 'type' in field && typeof field.type === 'string' ? field.type : undefined,
+  };
+}
+
 function setupPayloadFromForm(form: HTMLFormElement) {
-  const get = (name: string) =>
-    (
-      (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[name] as
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    )?.value?.trim() || '';
+  const get = (name: string) => learnNamedField(form, name)?.value?.trim() || '';
   const isChecked = (name: string) =>
-    (
-      (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[name] as
-        HTMLInputElement | HTMLButtonElement
-    )?.type === 'hidden'
+    learnNamedField(form, name)?.type === 'hidden'
       ? get(name) === 'true'
-      : Boolean(
-          (
-            (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[
-              name
-            ] as HTMLInputElement
-          )?.checked
-        );
+      : Boolean(learnNamedField(form, name)?.checked);
   const terms = collectRows(form, 'terms', (row, index) => {
     const label = rowValue(row, 'label') as string;
     if (!label) return null;
@@ -450,11 +446,7 @@ function currentSetupChildren(form: HTMLFormElement) {
 }
 
 function familyPlanningPayloadFromForm(form: HTMLFormElement) {
-  const get = (name: string) =>
-    (
-      (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[name] as
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    )?.value?.trim() || '';
+  const get = (name: string) => learnNamedField(form, name)?.value?.trim() || '';
   return {
     household: {
       motherName: get('household.motherName'),
@@ -570,28 +562,12 @@ function syncSetupChildLimit(form: HTMLFormElement) {
 
 function setupBlankRow(type: string, form: HTMLFormElement, preset: LearnShellNode = {}) {
   const terms = currentSetupTerms(form);
-  const currentTermId =
-    (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[
-      'schoolYear.currentTermId'
-    ]?.value ||
-    terms[0]?.id ||
-    'term_1';
-  const groupingMode =
-    (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[
-      'preferences.groupingMode'
-    ]?.value === 'grades'
-      ? 'grades'
-      : 'forms';
+  const currentTermId = learnNamedField(form, 'schoolYear.currentTermId')?.value || terms[0]?.id || 'term_1';
+  const groupingMode = learnNamedField(form, 'preferences.groupingMode')?.value === 'grades' ? 'grades' : 'forms';
   const familyPlanningFromForm = () => ({
     household: {
-      motherName:
-        (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[
-          'household.motherName'
-        ]?.value || '',
-      fatherName:
-        (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[
-          'household.fatherName'
-        ]?.value || '',
+      motherName: learnNamedField(form, 'household.motherName')?.value || '',
+      fatherName: learnNamedField(form, 'household.fatherName')?.value || '',
     },
     children: [...form.querySelectorAll<HTMLElement>('[data-family-child-id]')]
       .map((row) => ({ name: row.dataset.familyChildName || '' }))
@@ -664,6 +640,7 @@ function syncSetupTermSelects(form: HTMLFormElement) {
     });
 }
 export type LearnShell2Part10 = {
+  learnNamedField: typeof learnNamedField;
   setupPayloadFromForm: typeof setupPayloadFromForm;
   currentSetupChildren: typeof currentSetupChildren;
   familyPlanningPayloadFromForm: typeof familyPlanningPayloadFromForm;

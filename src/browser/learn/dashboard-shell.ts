@@ -690,6 +690,7 @@ export type LearnShellBindings = {
   scheduledTermWeeks: typeof scheduledTermWeeks;
   bookSetupRow: typeof bookSetupRow;
   formationSetupRow: typeof formationSetupRow;
+  learnNamedField: LearnShell2Part10['learnNamedField'];
   setupPayloadFromForm: typeof setupPayloadFromForm;
   syncSetupTermSelects: typeof syncSetupTermSelects;
   syncSetupChildLimit: typeof syncSetupChildLimit;
@@ -705,6 +706,7 @@ export type LearnShellBindings = {
   moveResourceRowToSubject: typeof moveResourceRowToSubject;
   termWeekSummary: typeof termWeekSummary;
   setupResourceRow: typeof setupResourceRow;
+  parseLearnWeekAssignments: LearnShell2Part2['parseLearnWeekAssignments'];
   weekAssignmentStorageKey: typeof weekAssignmentStorageKey;
   syncLearnGoogleCalendar: typeof syncLearnGoogleCalendar;
   waitForLearnSignIn: typeof waitForLearnSignIn;
