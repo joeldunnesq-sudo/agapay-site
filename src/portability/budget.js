@@ -31,7 +31,7 @@ function portabilityBudget(env) {
             charge(items.length);
             return target.query(name, items);
           };
-        const value = target[key];
+        const value = Reflect.get(target, key);
         return typeof value === 'function' ? value.bind(target) : value;
       },
     });
@@ -50,9 +50,11 @@ function portabilityBudget(env) {
         if (['all', 'first', 'run', 'raw'].includes(key))
           return (...args) => {
             charge();
-            return object[key](...args);
+            const method = Reflect.get(object, key);
+            if (typeof method !== 'function') throw new TypeError('Storage operation is not callable');
+            return Reflect.apply(method, object, args);
           };
-        const value = object[key];
+        const value = Reflect.get(object, key);
         return typeof value === 'function' ? value.bind(object) : value;
       },
     });
@@ -80,7 +82,7 @@ function portabilityBudget(env) {
                   'Unbounded SQL execution is not allowed in a portability phase.'
                 );
               };
-            const value = object[key];
+            const value = Reflect.get(object, key);
             return typeof value === 'function' ? value.bind(object) : value;
           },
         })
@@ -105,9 +107,11 @@ function portabilityBudget(env) {
             if (['get', 'head', 'put', 'delete', 'list'].includes(key))
               return (...args) => {
                 charge();
-                return object[key](...args);
+                const method = Reflect.get(object, key);
+                if (typeof method !== 'function') throw new TypeError('Storage operation is not callable');
+                return Reflect.apply(method, object, args);
               };
-            const value = object[key];
+            const value = Reflect.get(object, key);
             return typeof value === 'function' ? value.bind(object) : value;
           },
         })

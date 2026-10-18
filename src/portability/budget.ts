@@ -8,7 +8,6 @@ interface ProviderRpc {
   resolve(name: string): Promise<unknown>;
   query(name: string, items: { sql: string; params?: unknown[] }[]): Promise<unknown>;
 }
-type DynamicMethods = Record<PropertyKey, (...args: unknown[]) => unknown>;
 import { PortabilityError } from './catalog.js';
 import { rawStorageEnv, FILE_BINDINGS } from './storage.js';
 
@@ -48,7 +47,7 @@ export function portabilityBudget(env: BudgetEnvironment) {
               charge(items.length);
               return target.query(name, items);
             };
-          const value = (target as unknown as Record<PropertyKey, unknown>)[key];
+          const value: unknown = Reflect.get(target, key);
           return typeof value === 'function' ? value.bind(target) : value;
         },
       }
@@ -68,9 +67,11 @@ export function portabilityBudget(env: BudgetEnvironment) {
         if (['all', 'first', 'run', 'raw'].includes(key as string))
           return (...args: unknown[]) => {
             charge();
-            return (object as unknown as DynamicMethods)[key](...args);
+            const method: unknown = Reflect.get(object, key);
+            if (typeof method !== 'function') throw new TypeError('Storage operation is not callable');
+            return Reflect.apply(method, object, args);
           };
-        const value = (object as unknown as Record<PropertyKey, unknown>)[key];
+        const value: unknown = Reflect.get(object, key);
         return typeof value === 'function' ? value.bind(object) : value;
       },
     });
@@ -98,7 +99,7 @@ export function portabilityBudget(env: BudgetEnvironment) {
                   'Unbounded SQL execution is not allowed in a portability phase.'
                 );
               };
-            const value = (object as unknown as Record<PropertyKey, unknown>)[key];
+            const value: unknown = Reflect.get(object, key);
             return typeof value === 'function' ? value.bind(object) : value;
           },
         })
@@ -123,9 +124,11 @@ export function portabilityBudget(env: BudgetEnvironment) {
             if (['get', 'head', 'put', 'delete', 'list'].includes(key as string))
               return (...args: unknown[]) => {
                 charge();
-                return (object as unknown as DynamicMethods)[key](...args);
+                const method: unknown = Reflect.get(object, key);
+                if (typeof method !== 'function') throw new TypeError('Storage operation is not callable');
+                return Reflect.apply(method, object, args);
               };
-            const value = (object as unknown as Record<PropertyKey, unknown>)[key];
+            const value: unknown = Reflect.get(object, key);
             return typeof value === 'function' ? value.bind(object) : value;
           },
         })

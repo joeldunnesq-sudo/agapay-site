@@ -216,7 +216,7 @@ assert.equal(
   true
 );
 
-// Corrupt/missing KV records recover, hashes deduplicate, and dismissal only clears on new interest.
+// Corrupt KV records are preserved; missing stores initialize, hashes deduplicate, and only new interest reopens.
 const values = new Map([['parish-feature-requests:a', '{invalid']]);
 const kvEnv = {
   AGAPAY_REGISTRATIONS: {
@@ -228,17 +228,22 @@ const kvEnv = {
     },
   },
 };
-const request = { parishId: 'a', featureId: 'feature', donorEmail: 'ONE@example.test' };
+const corruptRequest = { parishId: 'a', featureId: 'feature', donorEmail: 'ONE@example.test' };
+await assert.rejects(recordParishFeatureRequest(kvEnv, corruptRequest), /requires review/);
+await assert.rejects(dismissParishFeatureRequest(kvEnv, 'a', 'feature'), /requires review/);
+assert.deepEqual(await loadPendingParishFeatureRequests(kvEnv, 'a'), []);
+assert.equal(values.get('parish-feature-requests:a'), '{invalid', 'rejected updates preserve corrupt records');
+const request = { ...corruptRequest, parishId: 'healthy' };
 assert.equal((await recordParishFeatureRequest(kvEnv, request)).request.count, 1);
-assert.equal(await dismissParishFeatureRequest(kvEnv, 'a', 'feature'), true);
+assert.equal(await dismissParishFeatureRequest(kvEnv, 'healthy', 'feature'), true);
 assert.equal(
   (await recordParishFeatureRequest(kvEnv, { ...request, donorEmail: ' one@example.test ' })).duplicate,
   true
 );
-assert.deepEqual(await loadPendingParishFeatureRequests(kvEnv, 'a'), []);
+assert.deepEqual(await loadPendingParishFeatureRequests(kvEnv, 'healthy'), []);
 await recordParishFeatureRequest(kvEnv, { ...request, donorEmail: 'two@example.test' });
-assert.equal((await loadPendingParishFeatureRequests(kvEnv, 'a'))[0].count, 2);
+assert.equal((await loadPendingParishFeatureRequests(kvEnv, 'healthy'))[0].count, 2);
 assert.deepEqual(await loadPendingParishFeatureRequests(kvEnv, 'b'), []);
 assert.equal(await dismissParishFeatureRequest(kvEnv, 'b', 'feature'), false);
-assert.doesNotMatch(values.get('parish-feature-requests:a'), /one@example|two@example/i);
+assert.doesNotMatch(values.get('parish-feature-requests:healthy'), /one@example|two@example/i);
 console.log('Dashboard foundation TypeScript regressions passed.');

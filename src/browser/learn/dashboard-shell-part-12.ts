@@ -392,7 +392,7 @@ function wireSetupPage() {
             status.textContent = (error as LearnShellError).message;
           }
           (closeButton as HTMLButtonElement | HTMLInputElement | HTMLSelectElement).disabled = false;
-          closeButton.textContent = originalText as unknown as string;
+          closeButton.textContent = originalText;
         }
       })();
       return;

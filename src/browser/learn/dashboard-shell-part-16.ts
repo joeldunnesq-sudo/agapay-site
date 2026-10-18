@@ -312,7 +312,7 @@ function wireReports(vm: LearnReportsVm) {
     } finally {
       if (button) {
         button.disabled = false;
-        button.textContent = originalText as unknown as string;
+        button.textContent = originalText ?? null;
       }
     }
   };

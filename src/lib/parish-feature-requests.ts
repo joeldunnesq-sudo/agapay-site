@@ -35,18 +35,53 @@ function featureRequestKey(parishId: string) {
     .toLowerCase()}`;
 }
 
-async function readFeatureRequestStore(env: FeatureRequestEnv, parishId: string): Promise<FeatureRequestStore> {
+function isFeatureRequestRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isFeatureRequestEntry(value: unknown): value is FeatureRequestEntry {
+  if (!isFeatureRequestRecord(value)) return false;
+  for (const field of ['firstRequestedAt', 'lastRequestedAt', 'dismissedAt']) {
+    if (value[field] !== undefined && value[field] !== null && typeof value[field] !== 'string') return false;
+  }
+  // Preserve legacy numeric strings and omitted counts, but never coerce objects or non-finite values.
+  if (value.count !== undefined && value.count !== null) {
+    if (typeof value.count !== 'number' && typeof value.count !== 'string') return false;
+    if (!Number.isFinite(Number(value.count))) return false;
+  }
+  return (
+    value.requestors === undefined ||
+    value.requestors === null ||
+    (Array.isArray(value.requestors) && value.requestors.every((requestor: unknown) => typeof requestor === 'string'))
+  );
+}
+
+async function readFeatureRequestStore(
+  env: FeatureRequestEnv,
+  parishId: string,
+  forWrite = false
+): Promise<FeatureRequestStore> {
   const key = featureRequestKey(parishId);
   const raw = d1(env) ? await d1GetSetting(env, key) : await env.AGAPAY_REGISTRATIONS?.get(key);
-  if (!raw) return { version: 1, features: {} };
+  if (raw === null || raw === undefined) return { version: 1, features: {} };
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(raw) as { features?: FeatureRequestStore['features'] } | null;
-    return parsed && typeof parsed === 'object'
-      ? { version: 1, features: parsed.features && typeof parsed.features === 'object' ? parsed.features : {} }
-      : { version: 1, features: {} };
+    parsed = JSON.parse(raw);
   } catch {
-    return { version: 1, features: {} };
+    parsed = null;
   }
+  const record = isFeatureRequestRecord(parsed) ? parsed : null;
+  const features = record?.features === undefined ? {} : record.features;
+  const validContainer = record !== null && isFeatureRequestRecord(features);
+  const entries = isFeatureRequestRecord(features) ? Object.entries(features) : [];
+  const validEntries = entries.filter((entry): entry is [string, FeatureRequestEntry] =>
+    isFeatureRequestEntry(entry[1])
+  );
+  // A projected read may omit a malformed entry. Never persist that projection and lose its raw data.
+  if (forWrite && (!validContainer || validEntries.length !== entries.length)) {
+    throw new Error('Feature request data requires review before updating');
+  }
+  return { ...record, version: 1, features: Object.fromEntries(validEntries) };
 }
 
 async function writeFeatureRequestStore(env: FeatureRequestEnv, parishId: string, store: FeatureRequestStore) {
@@ -113,26 +148,34 @@ export async function recordParishFeatureRequest(
     };
   }
 
-  const store = await readFeatureRequestStore(env, parishId);
-  const current = store.features[featureId] || {};
+  const store = await readFeatureRequestStore(env, parishId, true);
+  const current = Object.hasOwn(store.features, featureId) ? store.features[featureId] : {};
   const requestors = Array.isArray(current.requestors) ? current.requestors : [];
   const duplicate = requestors.includes(donorHash);
 
   if (!duplicate) {
-    store.features[featureId] = {
-      ...current,
-      count: Math.max(0, Number(current.count || 0)) + 1,
-      requestors: [...requestors, donorHash].slice(-500),
-      firstRequestedAt: current.firstRequestedAt || now,
-      lastRequestedAt: now,
-      dismissedAt: '',
-    };
+    Object.defineProperty(store.features, featureId, {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: {
+        ...current,
+        count: Math.max(0, Number(current.count || 0)) + 1,
+        requestors: [...requestors, donorHash].slice(-500),
+        firstRequestedAt: current.firstRequestedAt || now,
+        lastRequestedAt: now,
+        dismissedAt: '',
+      },
+    });
     await writeFeatureRequestStore(env, parishId, store);
   }
 
   return {
     duplicate,
-    request: publicFeatureRequest(featureId, store.features[featureId] || current),
+    request: publicFeatureRequest(
+      featureId,
+      Object.hasOwn(store.features, featureId) ? store.features[featureId] : current
+    ),
   };
 }
 
@@ -184,8 +227,8 @@ export async function dismissParishFeatureRequest(env: FeatureRequestEnv, parish
     );
     return true;
   }
-  const store = await readFeatureRequestStore(env, parishId);
-  const current = store.features[featureId];
+  const store = await readFeatureRequestStore(env, parishId, true);
+  const current = Object.hasOwn(store.features, featureId) ? store.features[featureId] : undefined;
   if (!current) return false;
   store.features[featureId] = { ...current, dismissedAt: new Date().toISOString() };
   await writeFeatureRequestStore(env, parishId, store);

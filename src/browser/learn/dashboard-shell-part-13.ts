@@ -559,7 +559,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
       );
     } finally {
       (button as HTMLButtonElement | HTMLInputElement | HTMLSelectElement).disabled = false;
-      (button as HTMLElement).textContent = originalText as unknown as string;
+      (button as HTMLElement).textContent = originalText;
     }
   });
 
@@ -572,8 +572,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
   const apptField = (name: string) => apptModal?.querySelector<HTMLElement>(`[name="${CSS.escape(name)}"]`) || null;
   const setApptField = (name: string, value: unknown) => {
     const el = apptField(name);
-    if (el)
-      (el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = (value || '') as unknown as string;
+    if (el) (el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = String(value || '');
   };
   const getApptField = (name: string) =>
     (apptField(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value?.trim() || '';

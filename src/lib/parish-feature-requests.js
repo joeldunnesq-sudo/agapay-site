@@ -6,18 +6,43 @@ function featureRequestKey(parishId) {
     .trim()
     .toLowerCase()}`;
 }
-async function readFeatureRequestStore(env, parishId) {
+function isFeatureRequestRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function isFeatureRequestEntry(value) {
+  if (!isFeatureRequestRecord(value)) return false;
+  for (const field of ['firstRequestedAt', 'lastRequestedAt', 'dismissedAt']) {
+    if (value[field] !== void 0 && value[field] !== null && typeof value[field] !== 'string') return false;
+  }
+  if (value.count !== void 0 && value.count !== null) {
+    if (typeof value.count !== 'number' && typeof value.count !== 'string') return false;
+    if (!Number.isFinite(Number(value.count))) return false;
+  }
+  return (
+    value.requestors === void 0 ||
+    value.requestors === null ||
+    (Array.isArray(value.requestors) && value.requestors.every((requestor) => typeof requestor === 'string'))
+  );
+}
+async function readFeatureRequestStore(env, parishId, forWrite = false) {
   const key = featureRequestKey(parishId);
   const raw = d1(env) ? await d1GetSetting(env, key) : await env.AGAPAY_REGISTRATIONS?.get(key);
-  if (!raw) return { version: 1, features: {} };
+  if (raw === null || raw === void 0) return { version: 1, features: {} };
+  let parsed;
   try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object'
-      ? { version: 1, features: parsed.features && typeof parsed.features === 'object' ? parsed.features : {} }
-      : { version: 1, features: {} };
+    parsed = JSON.parse(raw);
   } catch {
-    return { version: 1, features: {} };
+    parsed = null;
   }
+  const record = isFeatureRequestRecord(parsed) ? parsed : null;
+  const features = record?.features === void 0 ? {} : record.features;
+  const validContainer = record !== null && isFeatureRequestRecord(features);
+  const entries = isFeatureRequestRecord(features) ? Object.entries(features) : [];
+  const validEntries = entries.filter((entry) => isFeatureRequestEntry(entry[1]));
+  if (forWrite && (!validContainer || validEntries.length !== entries.length)) {
+    throw new Error('Feature request data requires review before updating');
+  }
+  return { ...record, version: 1, features: Object.fromEntries(validEntries) };
 }
 async function writeFeatureRequestStore(env, parishId, store) {
   const key = featureRequestKey(parishId);
@@ -76,24 +101,32 @@ async function recordParishFeatureRequest(env, { parishId, featureId, donorEmail
       }),
     };
   }
-  const store = await readFeatureRequestStore(env, parishId);
-  const current = store.features[featureId] || {};
+  const store = await readFeatureRequestStore(env, parishId, true);
+  const current = Object.hasOwn(store.features, featureId) ? store.features[featureId] : {};
   const requestors = Array.isArray(current.requestors) ? current.requestors : [];
   const duplicate = requestors.includes(donorHash);
   if (!duplicate) {
-    store.features[featureId] = {
-      ...current,
-      count: Math.max(0, Number(current.count || 0)) + 1,
-      requestors: [...requestors, donorHash].slice(-500),
-      firstRequestedAt: current.firstRequestedAt || now,
-      lastRequestedAt: now,
-      dismissedAt: '',
-    };
+    Object.defineProperty(store.features, featureId, {
+      enumerable: true,
+      configurable: true,
+      writable: true,
+      value: {
+        ...current,
+        count: Math.max(0, Number(current.count || 0)) + 1,
+        requestors: [...requestors, donorHash].slice(-500),
+        firstRequestedAt: current.firstRequestedAt || now,
+        lastRequestedAt: now,
+        dismissedAt: '',
+      },
+    });
     await writeFeatureRequestStore(env, parishId, store);
   }
   return {
     duplicate,
-    request: publicFeatureRequest(featureId, store.features[featureId] || current),
+    request: publicFeatureRequest(
+      featureId,
+      Object.hasOwn(store.features, featureId) ? store.features[featureId] : current
+    ),
   };
 }
 async function loadPendingParishFeatureRequests(env, parishId) {
@@ -143,8 +176,8 @@ async function dismissParishFeatureRequest(env, parishId, featureId) {
     );
     return true;
   }
-  const store = await readFeatureRequestStore(env, parishId);
-  const current = store.features[featureId];
+  const store = await readFeatureRequestStore(env, parishId, true);
+  const current = Object.hasOwn(store.features, featureId) ? store.features[featureId] : void 0;
   if (!current) return false;
   store.features[featureId] = { ...current, dismissedAt: /* @__PURE__ */ new Date().toISOString() };
   await writeFeatureRequestStore(env, parishId, store);
