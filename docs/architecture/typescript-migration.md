@@ -1508,3 +1508,7 @@ The follow-up to PR #246 removes 19 double assertions (36 to 17) in Learn form c
 ## Fourth boundary-hardening release acceptance
 
 PR [#247](https://github.com/joeldunnesq-sudo/agapay-site/pull/247) is accepted and deployed as 8eaec2442b3cc03e872d79d7c8127cd8b3258988, stamped 2026-10-18T05:02:27Z. The [fourth hardening report](typescript-boundary-hardening-4.md) records 19 assertion removals (36 to 17), native Learn controls, checked meal access and shared weekly-assignment JSON validation with lossless rejected saves. All 326 platform commands, four prechecks, full Quality, CodeQL, authenticated gates, deployed PDFs and hosted acceptance passed. Original migration ownership remains 495/495.
+
+## Boundary hardening: fifth checkpoint (release candidate)
+
+The [fifth boundary-hardening report](typescript-boundary-hardening-5.md) removes the final 17 double assertions and checks directory profile JSON names. Protected staging and production acceptance are pending.

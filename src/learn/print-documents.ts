@@ -1,11 +1,9 @@
 import type {
-  PDFPage,
   PrintCenterInput,
   PrintReportsInput,
   PrintOptions,
   PrintDocument,
   WeeklyDocumentInput,
-  PdfState,
 } from './print-documents-composition-contracts.js';
 
 import { PDFDocument } from 'pdf-lib';
@@ -14,6 +12,7 @@ import './gpa.js';
 import { LETTER, MARGIN, NAVY, GOLD_SOFT, MUTED, LINE } from './print-documents-shared.js';
 import {
   embedFonts,
+  newPdfState,
   text,
   childFormLabel,
   findTemplate,
@@ -218,7 +217,8 @@ export function printDocumentFilename(document: PrintDocument) {
 export async function renderPrintDocumentPdf(document: PrintDocument) {
   const pdf = await PDFDocument.create();
   const fonts = await embedFonts(pdf);
-  const state: PdfState = { pdf, fonts, pages: [], page: null as unknown as PDFPage, y: 0, currentSectionHeading: '' };
+  const state = newPdfState(pdf, fonts);
+  state.currentSectionHeading = '';
 
   if (document.layout === 'designed-week-forms-landscape') {
     return renderDesignedWeekFormsLandscape(document, state);

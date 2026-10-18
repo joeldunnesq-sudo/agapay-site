@@ -68,10 +68,7 @@ function setupExperience(method: string = 'Unsure', groupingMode: string = 'form
       note: 'A balanced starting point keeps the essentials visible now and leaves room to refine your method later.',
     },
   };
-  return (
-    (profiles as unknown as Record<string, (typeof profiles)[keyof typeof profiles] | undefined>)[method] ||
-    profiles.Unsure
-  );
+  return learnOwnValue9(profiles, method) || profiles.Unsure;
 }
 
 function mealSetupRow(meal: LearnShellNode = {}, date: string = '') {
@@ -160,7 +157,7 @@ function renderSetup(vm: LearnSetupVm) {
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${collapsibleSetupPanel('children', groupingTitle, childrenContent, { icon: '◎', summary: `${vm.children.length || 0} ${vm.children.length === 1 ? 'child' : 'children'} configured`, defaultCollapsed: collapseDefault })}
       ${collapsibleSetupPanel('terms', 'Terms', termsContent, { icon: '◷', summary: `${vm.terms?.length || 1} term${(vm.terms?.length || 1) === 1 ? '' : 's'} in this school year`, defaultCollapsed: collapseDefault })}
-      ${experience.order.map((key: string) => (adaptivePanels as unknown as Record<string, (typeof adaptivePanels)[keyof typeof adaptivePanels] | undefined>)[key]).join('')}
+      ${experience.order.map((key: string) => learnOwnValue9(adaptivePanels, key)).join('')}
       <div class="learn-setup-savebar">
         <span data-setup-status class="learn-muted">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
@@ -626,3 +623,11 @@ export type LearnShell2Part8 = {
   rowValue: typeof rowValue;
   setupChildRowsFromForm: typeof setupChildRowsFromForm;
 };
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue9<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return undefined;
+}

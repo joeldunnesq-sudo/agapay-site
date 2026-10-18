@@ -488,7 +488,7 @@ export async function expireStaleDirectoryInvitations(
         now
       );
 
-  const list = Array.isArray(rows) ? rows : (rows as unknown as { results?: DirectoryInvitationRow[] })?.results || [];
+  const list = rows;
   let expiredCount = 0;
   for (const row of list) {
     const updateStatement = {
@@ -644,7 +644,7 @@ export async function listParishDirectoryInvitations(
         'SELECT * FROM directory_invitations WHERE parish_id = ?1 ORDER BY created_at DESC',
         parishId
       );
-  const list = Array.isArray(rows) ? rows : (rows as unknown as { results?: DirectoryInvitationRow[] })?.results || [];
+  const list = rows;
   return list.map(invitationRowToDto);
 }
 

@@ -16,6 +16,8 @@ const smoke = [
 
 const core = [
   'scripts/learn-boundary-controls-tests.mjs',
+  'scripts/directory-profile-json-tests.mjs',
+  'scripts/learn-final-boundaries-tests.mjs',
   'scripts/feature-request-boundary-tests.mjs',
   'scripts/truthy-filter-adapters-tests.mjs',
   'scripts/support-json-boundaries-tests.mjs',

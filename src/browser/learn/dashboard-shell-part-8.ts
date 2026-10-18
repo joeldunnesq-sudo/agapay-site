@@ -422,10 +422,7 @@ function simpleSetupPayload(draft: LearnShellSimpleDraft, existingSnapshot: Lear
           planningMode: draft.useForms ? 'forms' : 'grades',
           ...starterAssignment(groupLabel),
           termId: 'term_1',
-          daysOfWeek:
-            (subjectDays as unknown as Record<string, (typeof subjectDays)[keyof typeof subjectDays] | undefined>)[
-              subject.weeklyFrequency
-            ] || subjectDays['1x'],
+          daysOfWeek: learnOwnValue8(subjectDays, subject.weeklyFrequency) || subjectDays['1x'],
           resource: '',
           resourceType: 'none',
           color: colors[(groupIndex + subjectIndex) % colors.length],
@@ -737,3 +734,11 @@ export type LearnShell2Part7 = {
   applySimpleDraftToSetupVm: typeof applySimpleDraftToSetupVm;
   wireSimpleSetupWizard: typeof wireSimpleSetupWizard;
 };
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue8<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return undefined;
+}

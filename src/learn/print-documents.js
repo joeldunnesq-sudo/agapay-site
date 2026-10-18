@@ -4,6 +4,7 @@ import './gpa.js';
 import { LETTER, MARGIN, NAVY, GOLD_SOFT, MUTED, LINE } from './print-documents-shared.js';
 import {
   embedFonts,
+  newPdfState,
   text,
   childFormLabel,
   findTemplate,
@@ -187,7 +188,8 @@ function printDocumentFilename(document) {
 async function renderPrintDocumentPdf(document) {
   const pdf = await PDFDocument.create();
   const fonts = await embedFonts(pdf);
-  const state = { pdf, fonts, pages: [], page: null, y: 0, currentSectionHeading: '' };
+  const state = newPdfState(pdf, fonts);
+  state.currentSectionHeading = '';
   if (document.layout === 'designed-week-forms-landscape') {
     return renderDesignedWeekFormsLandscape(document, state);
   }

@@ -849,7 +849,7 @@ function pageIntroIcon(id: string) {
     onboarding:
       '<path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.7 1.7 0 0 1-2.6 1.5 2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7A1.7 1.7 0 0 1 5 12a1.7 1.7 0 0 1-1 1.6 2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7A1.7 1.7 0 0 1 9 18.9a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.7 1.7 0 0 1 2.6-1.5 2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7A1.7 1.7 0 0 1 19 12a1.7 1.7 0 0 1 1-1.6 2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7A1.7 1.7 0 0 1 14.2 4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8c.25 2.3.72 2.78 3 3-2.28.25-2.75.72-3 3-.25-2.28-.72-2.75-3-3 2.28-.22 2.75-.7 3-3z" fill="currentColor" stroke="none"/><g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${(icons as unknown as Record<string, (typeof icons)[keyof typeof icons] | undefined>)[id] || icons.dashboard}</g></svg>`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8c.25 2.3.72 2.78 3 3-2.28.25-2.75.72-3 3-.25-2.28-.72-2.75-3-3 2.28-.22 2.75-.7 3-3z" fill="currentColor" stroke="none"/><g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${learnOwnValue1(icons, id) || icons.dashboard}</g></svg>`;
 }
 
 function pageIntroMeta(id: string) {
@@ -924,7 +924,7 @@ function pageIntroMeta(id: string) {
       ref: 'Galatians 6:9',
     },
   };
-  return (meta as unknown as Record<string, (typeof meta)[keyof typeof meta] | undefined>)[id] || meta.dashboard;
+  return learnOwnValue1(meta, id) || meta.dashboard;
 }
 
 function pageIntro(vm: LearnChromeModel) {
@@ -981,11 +981,10 @@ function pageIntro(vm: LearnChromeModel) {
     },
   };
   const activeMeta =
-    experience.tefaActive &&
-    (tefaMeta as unknown as Record<string, (typeof tefaMeta)[keyof typeof tefaMeta] | undefined>)[vm.page.id]
+    experience.tefaActive && learnOwnValue1(tefaMeta, vm.page.id)
       ? {
           ...meta,
-          ...(tefaMeta as unknown as Record<string, (typeof tefaMeta)[keyof typeof tefaMeta] | undefined>)[vm.page.id],
+          ...learnOwnValue1(tefaMeta, vm.page.id),
         }
       : meta;
   const kicker = experience.odyssey && vm.page.id === 'dashboard' ? experience.dashboardKicker : activeMeta.kicker;
@@ -1053,3 +1052,11 @@ export type LearnShell2Part0 = {
   downloadBlob: typeof downloadBlob;
   isLearnFamilyPlan: typeof isLearnFamilyPlan;
 };
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue1<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return undefined;
+}

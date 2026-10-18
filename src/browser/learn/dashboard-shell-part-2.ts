@@ -378,7 +378,7 @@ function sidebar(vm: LearnChromeModel) {
             (item) => `
           <a class="${item!.id === active ? 'is-active' : ''}" href="${item!.href}" ${item!.id === active ? 'aria-current="page"' : ''}>
             <span class="learn-product-nav-icon">${item!.icon}</span>
-            <span>${html((experience.navLabels as unknown as Record<string, string | undefined>)[item!.id] || item!.label)}</span>
+            <span>${html(learnOwnValue2(experience.navLabels, item!.id) || item!.label)}</span>
             ${item!.comingSoon ? '<small class="learn-nav-soon">Soon</small>' : ''}
           </a>
           ${item!.id === 'planner' ? plannerSidebarSubnav(active) : ''}
@@ -577,3 +577,11 @@ export type LearnShell2Part1 = {
   shell: typeof shell;
   renderGraceModePanel: typeof renderGraceModePanel;
 };
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue2<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return undefined;
+}

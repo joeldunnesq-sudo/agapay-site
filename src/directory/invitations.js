@@ -347,7 +347,7 @@ async function expireStaleDirectoryInvitations(env, { parishId = null, correlati
         "SELECT id, parish_id, intended_household_id FROM directory_invitations WHERE status IN ('pending','sent','opened') AND expires_at <= ?1",
         now
       );
-  const list = Array.isArray(rows) ? rows : rows?.results || [];
+  const list = rows;
   let expiredCount = 0;
   for (const row of list) {
     const updateStatement = {
@@ -428,7 +428,7 @@ async function listParishDirectoryInvitations(env, { actor: actorInput, parishId
         status
       )
     : await d1All(env, 'SELECT * FROM directory_invitations WHERE parish_id = ?1 ORDER BY created_at DESC', parishId);
-  const list = Array.isArray(rows) ? rows : rows?.results || [];
+  const list = rows;
   return list.map(invitationRowToDto);
 }
 async function getDirectoryInvitationById(env, { actor: actorInput, parishId: parishIdInput, invitationId }) {
