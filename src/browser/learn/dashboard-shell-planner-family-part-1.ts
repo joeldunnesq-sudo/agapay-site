@@ -554,10 +554,11 @@ function renderPlannerDaySelector(model: ReturnType<typeof familyPlannerModel>, 
 }
 
 function renderMealCard(day: LearnShellNode, meal: LearnShellNode, slot: string) {
-  const value = (meal as unknown as Record<string, unknown>)?.[slot] || '';
+  const value = plannerMealSlotValue(meal, slot) || '';
   return `<button type="button" class="learn-family-meal-card" data-meal-open data-date="${html(day.date)}" data-slot="${html(slot)}"><span>${html(mealSlotLabel(slot))}</span><strong>${html(value || 'No dish yet')}</strong><small>${value ? 'change it' : 'add a dish'} →</small></button>`;
 }
 export type LearnShell1Part0 = {
+  plannerMealSlotValue: typeof plannerMealSlotValue;
   marketingPreviewActive: typeof marketingPreviewActive;
   learnSectionHref: typeof learnSectionHref;
   plannerHref: typeof plannerHref;
@@ -586,3 +587,8 @@ export type LearnShell1Part0 = {
   renderPlannerDaySelector: typeof renderPlannerDaySelector;
   renderMealCard: typeof renderMealCard;
 };
+
+function plannerMealSlotValue(meal: LearnShellNode, slot: string) {
+  if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return meal?.[slot];
+  return undefined;
+}

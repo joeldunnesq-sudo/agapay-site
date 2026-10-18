@@ -8,6 +8,7 @@ import type {
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell-planner-family.js';
+declare const plannerMealSlotValue: LearnShellBindings['plannerMealSlotValue'];
 
 // Match Boolean filtering while exposing its non-null result to TypeScript.
 function truthyLearnPlanner2<T>(value: T): value is NonNullable<T> {
@@ -159,11 +160,8 @@ function renderFamilyMonthOverview(model: ReturnType<typeof familyPlannerModel>,
               'lunch',
               'dinner',
             ]
-              .filter((slot: string) => (meal as unknown as Record<string, string | undefined>)[slot])
-              .map(
-                (slot: string) =>
-                  `<em>${html(mealSlotLabel(slot))}: ${html((meal as unknown as Record<string, string | undefined>)[slot])}</em>`
-              )
+              .filter((slot: string) => plannerMealSlotValue(meal, slot))
+              .map((slot: string) => `<em>${html(mealSlotLabel(slot))}: ${html(plannerMealSlotValue(meal, slot))}</em>`)
               .join('')}`
           : scope === 'chores'
             ? monthlyChores.length
@@ -565,12 +563,11 @@ function renderPlannerMonth(vm: LearnPlannerVm) {
       const muted = !day.inMonth;
       const fastBg = day.isFastDay ? 'rgba(110,47,42,.12)' : day.isSunday ? 'rgba(181,148,47,.14)' : 'var(--paper2)';
       const border = day.isToday ? 'var(--gold)' : day.isFastDay ? 'rgba(110,47,42,.38)' : 'var(--line)';
+      const dinner = plannerMealDinner(day.meal);
       const familyItems = [
         ...(day.nameDays || []).map((entry: LearnShellNode) => ({ title: `Name day · ${entry.personName}` })),
         ...(day.events || []).map((entry: LearnShellNode) => ({ title: entry.title })),
-        ...((day.meal as unknown as LearnShellNode)?.dinner
-          ? [{ title: `Dinner · ${(day.meal as unknown as LearnShellNode).dinner}` }]
-          : []),
+        ...(dinner ? [{ title: `Dinner · ${dinner}` }] : []),
       ];
       const lessons = uniqueMonthLessons(
         [...(designedByDate.get(day.date) || []), ...(day.householdPlan || []), ...(day.formPlan || [])].filter(
@@ -681,3 +678,9 @@ export type LearnShell1Part1 = {
   renderMonthLessonChip: typeof renderMonthLessonChip;
   renderPlannerMonth: typeof renderPlannerMonth;
 };
+
+function plannerMealDinner(value: unknown) {
+  return value !== null && typeof value === 'object' && 'dinner' in value && typeof value.dinner === 'string'
+    ? value.dinner
+    : undefined;
+}

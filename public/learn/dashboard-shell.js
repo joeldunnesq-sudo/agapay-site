@@ -1548,11 +1548,39 @@ function weekAssignmentStorageKey(vm, explicitWeekKey = '') {
     explicitWeekKey || [vm.week?.days?.[0]?.date, vm.week?.days?.[6]?.date].filter(truthyLearn3).join('_') || 'week';
   return `agapay.learn.weekAssignments.${weekKey}.${itemIds}`;
 }
+function isLearnWeekAssignment(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  for (const field of ['zone', 'sourceId', 'note', 'status']) {
+    if (field in value && typeof Reflect.get(value, field) !== 'string') return false;
+  }
+  for (const field of ['completed', 'autoPlaced']) {
+    if (field in value && typeof Reflect.get(value, field) !== 'boolean') return false;
+  }
+  return true;
+}
+function parseLearnWeekAssignments(raw) {
+  const state = {};
+  Object.setPrototypeOf(state, null);
+  if (raw === null) return { state, valid: true };
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { state, valid: false };
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return { state, valid: false };
+  let valid = true;
+  for (const [key, value] of Object.entries(parsed)) {
+    if (isLearnWeekAssignment(value)) state[key] = value;
+    else valid = false;
+  }
+  return { state, valid };
+}
 function readWeekAssignmentState(vm, explicitWeekKey = '') {
   try {
-    return JSON.parse(localStorage.getItem(weekAssignmentStorageKey(vm, explicitWeekKey)) || '{}');
+    return parseLearnWeekAssignments(localStorage.getItem(weekAssignmentStorageKey(vm, explicitWeekKey))).state;
   } catch {
-    return {};
+    return parseLearnWeekAssignments(null).state;
   }
 }
 function designedAssignmentsForDate(vm, date) {
@@ -2743,7 +2771,7 @@ function seedFamilyPrototypeState(vm) {
     const dayKey = dateToKey[meal.date];
     if (!dayKey) return;
     ['breakfast', 'lunch', 'dinner'].forEach((slot) => {
-      const title = meal[slot];
+      const title = learnMealSlotValue(meal, slot);
       if (!title) return;
       let recipeId = recipeIdsByTitle.get(String(title).toLowerCase());
       if (!recipeId) {
@@ -3130,6 +3158,10 @@ function bookCover(book = {}, icon = '☰') {
     .slice(0, 3)
     .join(' ');
   return `<div style="width:58px;height:82px;flex:none;border-radius:7px;border:1.5px solid var(--goldsoft);background:linear-gradient(145deg,var(--navy),#1b2c4a 58%,#6e2f2a);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 8px 18px rgba(20,40,70,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f7e8bd;padding:7px;gap:5px;"><span style="font-size:17px;color:var(--gold2);">${icon}</span><small style="font-size:10px;line-height:1.05;">${html(title)}</small></div>`;
+}
+function learnMealSlotValue(meal, slot) {
+  if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return meal?.[slot];
+  return void 0;
 }
 function truthyLearn6(value) {
   return Boolean(value);
@@ -4357,7 +4389,7 @@ function renderReportsComingSoon(vm) {
   );
 }
 function captureSimpleSetupStep(form, draft) {
-  const value = (name) => form.elements[name]?.value?.trim() || '';
+  const value = (name) => learnNamedField(form, name)?.value?.trim() || '';
   if (draft.step === 0) {
     draft.householdName = value('wizard.householdName');
     draft.parentName = value('wizard.parentName');
@@ -4365,7 +4397,7 @@ function captureSimpleSetupStep(form, draft) {
   } else if (draft.step === 1) {
     draft.method = form.querySelector('[name="wizard.method"]:checked')?.value || 'Unsure';
   } else if (draft.step === 2) {
-    draft.useForms = Boolean(form.elements['wizard.useForms']?.checked);
+    draft.useForms = Boolean(learnNamedField(form, 'wizard.useForms')?.checked);
     if (!draft.useForms)
       draft.children.forEach((child) => {
         child.formLabel = '';
@@ -4386,7 +4418,7 @@ function captureSimpleSetupStep(form, draft) {
         : '',
     }));
   } else if (draft.step === SIMPLE_SETUP_STEPS.length - 1) {
-    draft.starterWeek = Boolean(form.elements['wizard.starterWeek']?.checked);
+    draft.starterWeek = Boolean(learnNamedField(form, 'wizard.starterWeek')?.checked);
   }
   saveSimpleSetupDraft(draft);
 }
@@ -5589,10 +5621,20 @@ function wireDashboard() {
 function truthyLearn11(value) {
   return Boolean(value);
 }
+function learnNamedField(form, name) {
+  const field = form.elements.namedItem(name);
+  return {
+    value: field && 'value' in field && typeof field.value === 'string' ? field.value : void 0,
+    checked: field && 'checked' in field && typeof field.checked === 'boolean' ? field.checked : void 0,
+    type: field && 'type' in field && typeof field.type === 'string' ? field.type : void 0,
+  };
+}
 function setupPayloadFromForm(form) {
-  const get = (name) => form.elements[name]?.value?.trim() || '';
+  const get = (name) => learnNamedField(form, name)?.value?.trim() || '';
   const isChecked = (name) =>
-    form.elements[name]?.type === 'hidden' ? get(name) === 'true' : Boolean(form.elements[name]?.checked);
+    learnNamedField(form, name)?.type === 'hidden'
+      ? get(name) === 'true'
+      : Boolean(learnNamedField(form, name)?.checked);
   const terms = collectRows(form, 'terms', (row, index) => {
     const label = rowValue(row, 'label');
     if (!label) return null;
@@ -5973,7 +6015,7 @@ function currentSetupChildren(form) {
   }));
 }
 function familyPlanningPayloadFromForm(form) {
-  const get = (name) => form.elements[name]?.value?.trim() || '';
+  const get = (name) => learnNamedField(form, name)?.value?.trim() || '';
   return {
     household: {
       motherName: get('household.motherName'),
@@ -6081,12 +6123,12 @@ function syncSetupChildLimit(form) {
 }
 function setupBlankRow(type, form, preset = {}) {
   const terms = currentSetupTerms(form);
-  const currentTermId = form.elements['schoolYear.currentTermId']?.value || terms[0]?.id || 'term_1';
-  const groupingMode = form.elements['preferences.groupingMode']?.value === 'grades' ? 'grades' : 'forms';
+  const currentTermId = learnNamedField(form, 'schoolYear.currentTermId')?.value || terms[0]?.id || 'term_1';
+  const groupingMode = learnNamedField(form, 'preferences.groupingMode')?.value === 'grades' ? 'grades' : 'forms';
   const familyPlanningFromForm = () => ({
     household: {
-      motherName: form.elements['household.motherName']?.value || '',
-      fatherName: form.elements['household.fatherName']?.value || '',
+      motherName: learnNamedField(form, 'household.motherName')?.value || '',
+      fatherName: learnNamedField(form, 'household.fatherName')?.value || '',
     },
     children: [...form.querySelectorAll('[data-family-child-id]')]
       .map((row) => ({ name: row.dataset.familyChildName || '' }))
@@ -6703,13 +6745,31 @@ function wireWeeklyAssignmentBoard(vm) {
   };
   const readState = () => {
     try {
-      return JSON.parse(localStorage.getItem(storageKey) || '{}');
+      return parseLearnWeekAssignments(localStorage.getItem(storageKey)).state;
     } catch {
       return {};
     }
   };
   const writeState = () => {
+    try {
+      if (!parseLearnWeekAssignments(localStorage.getItem(storageKey)).valid) {
+        showLearnDialog(
+          'Could Not Save This Week',
+          'Your saved weekly plan contains unreadable data and has been kept intact. Please contact support before changing this week.',
+          []
+        );
+        return false;
+      }
+    } catch {
+      showLearnDialog(
+        'Could Not Save This Week',
+        'Your browser could not read the saved plan. Keep this page open and try again.',
+        []
+      );
+      return false;
+    }
     const state = {};
+    Object.setPrototypeOf(state, null);
     board.querySelectorAll('[data-week-assignment-card]').forEach((card) => {
       const zone = card.closest('[data-week-assignment-zone]');
       const zoneKey = zone?.dataset.weekAssignmentZone || 'pool';
@@ -6725,8 +6785,18 @@ function wireWeeklyAssignmentBoard(vm) {
         state[itemId] = { zone: zoneKey, note };
       }
     });
-    localStorage.setItem(storageKey, JSON.stringify(state));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      showLearnDialog(
+        'Could Not Save This Week',
+        'Your browser could not save the plan. Keep this page open and try again.',
+        []
+      );
+      return false;
+    }
     scheduleDesignedWeekCalendarSync();
+    return true;
   };
   const wireCard = (card) => {
     card.addEventListener('dragstart', (event) => {
@@ -6880,8 +6950,7 @@ function wireWeeklyAssignmentBoard(vm) {
       const noteEl = card.querySelector('[data-week-assignment-note]');
       if (noteEl) noteEl.value = noteVal;
       card.dataset.gracePriority = graceVal;
-      writeState();
-      closeModal();
+      if (writeState()) closeModal();
     });
   }
   board.addEventListener('click', (e) => {
@@ -6899,7 +6968,7 @@ function wireWeeklyAssignmentBoard(vm) {
       ),
     ].filter((card) => !card.dataset.autoPlaced && cardVisibleForForm(card, activeFormLabel));
     const placements = poolCards.reduce((total, card) => total + autoPlaceCard(card, state), 0);
-    writeState();
+    if (!writeState()) return;
     applyFormFilter(activeFormLabel);
     const original = autoFillButton.textContent;
     autoFillButton.textContent = placements ? `Placed ${placements} lessons` : 'Nothing new to place';
@@ -6927,7 +6996,7 @@ function wireWeeklyAssignmentBoard(vm) {
         .filter(matchesActiveGroup)
         .forEach((card) => mainPool.appendChild(card));
     });
-    writeState();
+    if (!writeState()) return;
     applyFormFilter(activeFormLabel);
   });
   formButtons.forEach((button) => {
@@ -7018,17 +7087,17 @@ function wireWeeklyAssignmentBoard(vm) {
       const card = id ? board.querySelector(`[data-week-assignment-card][data-item-id="${CSS.escape(id)}"]`) : null;
       if (card) {
         zone.appendChild(card);
-        writeState();
+        if (!writeState()) return;
         applyFormFilter(activeFormLabel);
       }
     });
   });
   board.querySelector('[data-week-designed-print]')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
+    if (!writeState()) return;
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = 'Generating...';
-    writeState();
     try {
       const calendar = storedLearnCalendar('');
       const response = await fetch(learnApiUrl('/api/learn/print/print_mom_weekly', { calendar }), {

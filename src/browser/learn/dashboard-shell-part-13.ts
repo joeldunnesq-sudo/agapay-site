@@ -6,6 +6,7 @@ import type {
   LearnPlannerVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+declare const parseLearnWeekAssignments: LearnShellBindings['parseLearnWeekAssignments'];
 
 // Match Boolean filtering while exposing its non-null result to TypeScript.
 function truthyLearn13<T>(value: T): value is NonNullable<T> {
@@ -157,13 +158,31 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
   };
   const readState = () => {
     try {
-      return JSON.parse(localStorage.getItem(storageKey) || '{}') as Record<string, LearnShellWeekAssignment>;
+      return parseLearnWeekAssignments(localStorage.getItem(storageKey)).state;
     } catch {
       return {};
     }
   };
   const writeState = () => {
+    try {
+      if (!parseLearnWeekAssignments(localStorage.getItem(storageKey)).valid) {
+        showLearnDialog(
+          'Could Not Save This Week',
+          'Your saved weekly plan contains unreadable data and has been kept intact. Please contact support before changing this week.',
+          []
+        );
+        return false;
+      }
+    } catch {
+      showLearnDialog(
+        'Could Not Save This Week',
+        'Your browser could not read the saved plan. Keep this page open and try again.',
+        []
+      );
+      return false;
+    }
     const state: Record<string, LearnShellWeekAssignment> = {};
+    Object.setPrototypeOf(state, null);
     board.querySelectorAll<HTMLElement>('[data-week-assignment-card]').forEach((card: HTMLElement) => {
       const zone = card.closest<HTMLElement>('[data-week-assignment-zone]');
       const zoneKey = zone?.dataset.weekAssignmentZone || 'pool';
@@ -178,17 +197,25 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
         state[itemId as string] = { zone: 'auto', autoPlaced: true };
       } else if (card.dataset.autoPlaced) {
         // Auto-placed clones: key by sourceId__zone so each day slot is independent
-        (state as unknown as Record<string, (typeof state)[keyof typeof state] | undefined>)[
-          `${sourceId}__auto__${zoneKey}`
-        ] = { zone: zoneKey, note, autoPlaced: true, sourceId };
+        state[`${sourceId}__auto__${zoneKey}`] = { zone: zoneKey, note, autoPlaced: true, sourceId };
         // Also mark the source item as auto-distributed so restore knows
         if (!state[sourceId as string]) state[sourceId as string] = { zone: 'auto', autoPlaced: true };
       } else {
         state[itemId as string] = { zone: zoneKey, note };
       }
     });
-    localStorage.setItem(storageKey, JSON.stringify(state));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      showLearnDialog(
+        'Could Not Save This Week',
+        'Your browser could not save the plan. Keep this page open and try again.',
+        []
+      );
+      return false;
+    }
     scheduleDesignedWeekCalendarSync();
+    return true;
   };
   const wireCard = (card: HTMLElement) => {
     card.addEventListener('dragstart', (event: DragEvent) => {
@@ -366,8 +393,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
       // Update grace priority data attr so filter still works
       card.dataset.gracePriority = graceVal;
       // Trigger writeState so the designed-week payload stays in sync
-      writeState();
-      closeModal();
+      if (writeState()) closeModal();
     });
   }
 
@@ -388,7 +414,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
       ),
     ].filter((card: HTMLElement) => !card.dataset.autoPlaced && cardVisibleForForm(card, activeFormLabel));
     const placements = poolCards.reduce((total, card: HTMLElement) => total + autoPlaceCard(card, state), 0);
-    writeState();
+    if (!writeState()) return;
     applyFormFilter(activeFormLabel);
     const original = autoFillButton.textContent;
     autoFillButton.textContent = placements ? `Placed ${placements} lessons` : 'Nothing new to place';
@@ -417,7 +443,7 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
         .filter(matchesActiveGroup)
         .forEach((card: HTMLElement) => mainPool.appendChild(card));
     });
-    writeState();
+    if (!writeState()) return;
     applyFormFilter(activeFormLabel);
   });
 
@@ -519,17 +545,17 @@ function wireWeeklyAssignmentBoard(vm: LearnPlannerVm) {
         : null;
       if (card) {
         zone.appendChild(card);
-        writeState();
+        if (!writeState()) return;
         applyFormFilter(activeFormLabel);
       }
     });
   });
   board.querySelector<HTMLButtonElement>('[data-week-designed-print]')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
+    if (!writeState()) return;
     const originalText = (button as HTMLElement).textContent;
     (button as HTMLButtonElement | HTMLInputElement | HTMLSelectElement).disabled = true;
     (button as HTMLElement).textContent = 'Generating...';
-    writeState();
     try {
       const calendar = storedLearnCalendar('');
       const response = await fetch(learnApiUrl('/api/learn/print/print_mom_weekly', { calendar }), {

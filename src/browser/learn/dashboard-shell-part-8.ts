@@ -8,6 +8,7 @@ import type {
   LearnSetupVm,
 } from './dashboard-shell-contracts.js';
 import type { LearnShellBindings } from './dashboard-shell.js';
+declare const learnNamedField: LearnShellBindings['learnNamedField'];
 
 // Match Boolean filtering while exposing its non-null result to TypeScript.
 function truthyLearn8<T>(value: T): value is NonNullable<T> {
@@ -273,11 +274,7 @@ function renderReportsComingSoon(vm: LearnShellViewModel) {
 }
 
 function captureSimpleSetupStep(form: HTMLFormElement, draft: LearnShellSimpleDraft) {
-  const value = (name: string) =>
-    (
-      (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[name] as
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    )?.value?.trim() || '';
+  const value = (name: string) => learnNamedField(form, name)?.value?.trim() || '';
   if (draft.step === 0) {
     draft.householdName = value('wizard.householdName');
     draft.parentName = value('wizard.parentName');
@@ -289,10 +286,7 @@ function captureSimpleSetupStep(form: HTMLFormElement, draft: LearnShellSimpleDr
           HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
       )?.value || 'Unsure';
   } else if (draft.step === 2) {
-    draft.useForms = Boolean(
-      (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)['wizard.useForms']
-        ?.checked
-    );
+    draft.useForms = Boolean(learnNamedField(form, 'wizard.useForms')?.checked);
     if (!draft.useForms)
       draft.children.forEach((child) => {
         child.formLabel = '';
@@ -336,11 +330,7 @@ function captureSimpleSetupStep(form: HTMLFormElement, draft: LearnShellSimpleDr
         : '',
     }));
   } else if (draft.step === SIMPLE_SETUP_STEPS.length - 1) {
-    draft.starterWeek = Boolean(
-      (form.elements as unknown as Record<string, { value?: string; checked?: boolean } | undefined>)[
-        'wizard.starterWeek'
-      ]?.checked
-    );
+    draft.starterWeek = Boolean(learnNamedField(form, 'wizard.starterWeek')?.checked);
   }
   saveSimpleSetupDraft(draft);
 }

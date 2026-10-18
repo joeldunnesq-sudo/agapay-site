@@ -104,6 +104,7 @@ const PROTOTYPE_RECIPE_TITLES: Record<string, string> = {
   s4: 'Walnut Baklava',
 };
 export type LearnShellBindings = {
+  plannerMealSlotValue: LearnShell1Part0['plannerMealSlotValue'];
   eventRecurrenceOptions: typeof eventRecurrenceOptions;
   nextSevenDates: typeof nextSevenDates;
   choreTimeOptions: typeof choreTimeOptions;
