@@ -1,5 +1,5 @@
 {
-  "status": "implementation-reconciled-validation-pending",
+  "status": "accepted",
   "originalGitHead": "669fd9f676c08be3bea6fee4bc05346335ebfbe1",
   "canonicalSourceBase": "ef67399552ff72ba7129211e65c918c45982df48",
   "preservedFiles": 227,
@@ -1369,5 +1369,11 @@
       "originalSha256": "f9f9e4a4a156b3abf2437df262c6698b440202d0543feacc69c956a4f244eaa6",
       "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
     }
-  ]
+  ],
+  "archiveCommit": "bef2c199024ff5f92f60a2fadd239bc607df461d",
+  "archiveRef": "codex/preserved-typescript-original-2026-10-18",
+  "sourceSha": "907a9b86c103be377727f463daec17e5acf49dd8",
+  "productionSha": "058437466c08ec18ced86e5680e3fd9f915faedb",
+  "deployedAt": "2026-10-19T01:14:20Z",
+  "productionRun": 39183684058
 }

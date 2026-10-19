@@ -1,6 +1,6 @@
 # TypeScript parallel-work reconciliation
 
-Release candidate; protected staging and production acceptance are pending.
+Accepted through PR #248. Production serves 058437466c08ec18ced86e5680e3fd9f915faedb, stamped 2026-10-19T01:14:20Z.
 
 The user authorized coordination with the parallel migration chat, preservation of both checkouts, reconciliation, and push/deployment after all release checks pass. That chat handed off its work and paused further deployment activity. The original checkout remains untouched.
 
@@ -22,6 +22,23 @@ Malformed JSON roots are rejected before login/invitation actions. Malformed inv
 
 ## Validation and release requirements
 
-Seven added commands cover storage/session contracts, identity and invitations, real organization providers, reconciliation boundaries and the Bookstore preview at desktop and phone sizes. The full platform manifest now contains 335 commands plus four prechecks. All four strict projects, 57 owned Worker declarations, formatting, source budgets, immutable accounting ledger, generated outputs and assets remain mandatory. Source scanning found 772 TypeScript files with zero explicit any, suppression directives or double assertions; broader external JSON validation remains ongoing domain work. Zero assertions does not establish complete runtime schema coverage.
+Seven added commands cover storage/session contracts, identity and invitations, real organization providers, reconciliation boundaries and the Bookstore preview at desktop and phone sizes. The full platform manifest now contains 335 commands plus four prechecks. All four strict projects, 57 owned Worker declarations, formatting, source budgets, immutable accounting ledger, generated outputs and assets remain mandatory. Source scanning found 772 TypeScript files with zero explicit any, suppression directives or double assertions; broader external JSON validation remains ongoing domain work. Eliminating double assertions does not establish complete runtime schema coverage.
 
-Local full-suite results and protected release evidence will be recorded after completion. The combined release requires fresh exact-head CI and staging deployment, CodeQL policy acceptance, five hosted staging suites, normal-MFA Giving/catalog and private document gates run serially with fixture cleanup, and normal protected merge. Production acceptance requires exact merged revision/stamp, protected authenticated accounting, hosted checks, deployed PDFs and stability after automatic Cloudflare builds. The prior parallel public-only checks do not substitute for these authenticated gates.
+Completed local and protected release evidence follows below. The combined release requires fresh exact-head CI and staging deployment, CodeQL policy acceptance, five hosted staging suites, normal-MFA Giving/catalog and private document gates run serially with fixture cleanup, and normal protected merge. Production acceptance requires exact merged revision/stamp, protected authenticated accounting, hosted checks, deployed PDFs and stability after automatic Cloudflare builds. The prior parallel public-only checks do not substitute for these authenticated gates.
+
+## Accepted combined release
+
+PR [#248](https://github.com/joeldunnesq-sudo/agapay-site/pull/248) merged source 907a9b86c103be377727f463daec17e5acf49dd8 as 058437466c08ec18ced86e5680e3fd9f915faedb; their trees match exactly. Protected production [run 39183684058](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39183684058), attempt 1, passed Quality, Test, Deploy and normal-MFA Accounting acceptance. The final stamp is 2026-10-19T01:14:20Z; main Worker b27858d8-cdc9-41d3-ab2f-1214bd995a5c; private provisioner 4ba0fbcb-e109-46ee-a4c8-b782686d08e7.
+
+The original workspace is preserved in [archival commit bef2c199](https://github.com/joeldunnesq-sudo/agapay-site/commit/bef2c199024ff5f92f60a2fadd239bc607df461d) on codex/preserved-typescript-original-2026-10-18, pushed alongside the reconciled branch. Its 227 raw file hashes and original HEAD were reverified unchanged.
+
+- Local, PR CI, protected staging and main passed all 335 platform commands and four prechecks. Fresh Quality proofs confirm four strict projects, 57 owned Worker declarations, 17,293 runtime parameters without inferred any, 1,994 linted files with zero errors and six unchanged warnings, formatting, generated outputs/assets, seven unchanged budgets and the immutable accounting ledger. Source scanning covers 772 TypeScript files with zero explicit any, suppressions or double assertions; 633 generated outputs remain registered.
+- Local Worker startup profiling and private provisioner dry-run packaging passed. The profile is a local diagnostic, not a production latency claim. Runtime export comparison found no missing compatibility exports. The source-reading integration issue was corrected through explicit owner registration, preserving the original handler-path assertion.
+- Exact-source CodeQL policy and main CodeQL passed. Five hosted staging suites verified exact deployed browser bytes. The staging workflow does not populate health build-SHA/stamp variables; exact-head deployment and exact asset bytes establish its revision.
+- Normal-MFA Giving/catalog and private document gates ran serially to protect their shared test account. Catalog restoration, upload deletion, financial/weekly-fund reports and all seven private-document checks passed.
+- Six hosted production suites, all 16 deployed-asset financial PDF downloads and nine-domain routing parity passed. Normal-MFA production acceptance passed 18 checks with 1 permitted existing-bill attachment skip (no_existing_bill).
+- Six spaced production health probes retained the merged SHA and protected stamp after the automatic Cloudflare build completed.
+
+The fifth boundary-hardening checkpoint is included: 17 double assertions removed, leaving zero. This is not a claim that every external JSON domain has complete runtime schema validation. Remaining validation should continue in bounded domain batches, preserving stored data and capability/MFA behavior.
+
+Local evidence remains in ignored tmp-reconciliation-1/: preservation manifests/patch, per-file comparison, runtime-export parity, local-validation.json, staging-acceptance.json, staging-deployment-proof.json, production-validation.json, protected artifacts, hosted/PDF logs and stable-health.json. The original checkout and embedded worktrees were not reset, cleaned, moved or committed.
