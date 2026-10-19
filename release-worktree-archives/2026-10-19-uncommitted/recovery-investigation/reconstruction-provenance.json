@@ -1,0 +1,25 @@
+[
+  {
+    "file": "bookstore-pr.md",
+    "source": "C:\\Users\\joeld\\.codex\\sessions\\2026\\09\\14\\rollout-2026-09-14T08-10-38-01a0a00a-8178-7d82-950f-6325bbd80707.jsonl.zst",
+    "line": 587,
+    "recovery": "Original here-string body recovered; Windows line endings reconstructed"
+  },
+  {
+    "file": "screenshot-pr.md",
+    "source": "C:\\Users\\joeld\\.codex\\sessions\\2026\\09\\14\\rollout-2026-09-14T08-10-38-01a0a00a-8178-7d82-950f-6325bbd80707.jsonl.zst",
+    "line": 906,
+    "recovery": "Original here-string body recovered; Windows line endings reconstructed"
+  },
+  {
+    "file": "hero-reconstructed/scripts/.tmp-hero-visual.mjs",
+    "source": "call_iN3RYBDjTdtGZzSd7CJeqCnm",
+    "amendment": "call_hPfKZZypn4csXrzdRglmJ0iX",
+    "recovery": "Reconstructed from original base test and logged insertion/amendment"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/style.css",
+    "source": "call_inWtkehWGvzwLHETBIvay9gU",
+    "recovery": "Reconstructed final reset and CSS transformation from frozen Git blobs"
+  }
+]

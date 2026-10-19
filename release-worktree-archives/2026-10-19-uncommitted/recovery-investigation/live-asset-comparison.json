@@ -1,0 +1,63 @@
+[
+  {
+    "asset": "/donor/style.css",
+    "matchesReleasedBytes": false,
+    "liveLength": 387684,
+    "sourceLength": 397987,
+    "matchesNormalized": true,
+    "firstDifference": {
+      "position": 387684,
+      "live": "",
+      "source": ""
+    }
+  },
+  {
+    "asset": "/myagapay/koinonia-experience.css",
+    "matchesReleasedBytes": false,
+    "liveLength": 11348,
+    "sourceLength": 11461,
+    "matchesNormalized": true,
+    "firstDifference": {
+      "position": 11348,
+      "live": "",
+      "source": ""
+    }
+  },
+  {
+    "asset": "/myagapay/koinonia-experience.js",
+    "matchesReleasedBytes": false,
+    "liveLength": 3087,
+    "sourceLength": 3145,
+    "matchesNormalized": true,
+    "firstDifference": {
+      "position": 3087,
+      "live": "",
+      "source": ""
+    }
+  },
+  {
+    "asset": "/myagapay/parish-life.html",
+    "matchesReleasedBytes": false,
+    "liveLength": 10791,
+    "sourceLength": 9294,
+    "matchesNormalized": false,
+    "firstDifference": {
+      "position": 2171,
+      "live": "<a href=\"https://agapay.app/cdn-cgi/content?id=QhI1P0E_TltolPxsmdSGzJtzNI5YcPX2xLTUlC1kEqg-1792388167.9835262-1.2.1.1-VD",
+      "source": "\n  <div class=\"app\">\n    <aside class=\"sidebar\">\n      <div class=\"sidebar-scroll\">\n        <div class=\"brand\"><div clas"
+    },
+    "matchesIgnoringIdentifiedCloudflareInjection": true
+  },
+  {
+    "asset": "/donor/bookstore-experience.js",
+    "matchesReleasedBytes": false,
+    "liveLength": 6764,
+    "sourceLength": 6908,
+    "matchesNormalized": true,
+    "firstDifference": {
+      "position": 6764,
+      "live": "",
+      "source": ""
+    }
+  }
+]

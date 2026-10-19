@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "version": "058437466c08ec18ced86e5680e3fd9f915faedb",
+  "deployedAt": "2026-10-19T01:14:20Z",
+  "checkedAt": "2026-10-19T05:36:04.558Z",
+  "checks": {
+    "worker": {
+      "ok": true
+    },
+    "mfa": {
+      "required": true,
+      "ok": true
+    },
+    "d1": {
+      "ok": true
+    },
+    "kv": {
+      "ok": true
+    },
+    "stripe": {
+      "configured": true
+    },
+    "email": {
+      "configured": true
+    },
+    "turnstile": {
+      "configured": true
+    },
+    "r2": {
+      "campaignAssets": true,
+      "taxExemptionDocs": true,
+      "nonprofitPricingDocs": true,
+      "givingStatements": true,
+      "accountingBackups": true,
+      "sacramentDocuments": true
+    }
+  }
+}

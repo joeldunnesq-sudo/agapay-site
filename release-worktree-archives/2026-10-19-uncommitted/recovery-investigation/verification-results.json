@@ -1,0 +1,11 @@
+{
+  "releasedCommit": "058437466c08ec18ced86e5680e3fd9f915faedb",
+  "releasedCalendarBrowserSuite": "passed",
+  "releasedKoinoniaRefreshBrowserSuite": "passed",
+  "releasedBookstoreBoutiqueBrowserSuite": "passed",
+  "reconstructedHistoricalCalendarBrowserSuite": "passed",
+  "reconstructedExperimentalVisualTest": "fails obsolete identical-badge assertion after subsequent recorded inset-badge changes",
+  "worktreesDeletedDuringRecovery": 0,
+  "originalCheckoutReferenceFilesUnchanged": 31,
+  "scope": "Focused recovery and relevant functionality checks; not a new exhaustive platform audit"
+}

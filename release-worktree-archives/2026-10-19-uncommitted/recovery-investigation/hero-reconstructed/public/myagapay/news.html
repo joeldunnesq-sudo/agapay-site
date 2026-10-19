@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" data-myagapay-hydrate>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css?v=137cc696769b1670" />
+  <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260817bookstoreprayer1" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/donor/session.js?v=efeba05c646552d3"></script>
+  <script src="/myagapay-shell.js?v=e7d32adcee9b9b92"></script>
+  <script src="/myagapay/news.js?v=20260801news2" defer></script>
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+</head>
+<body class="donor-mobile-page donor-news-page koinonia-inner-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">My AGAPAY Account</div><div class="profile-meta" id="newsParishName">Your Orthodox news feeds</div></div>
+        <nav class="nav unified-product-nav"></nav>
+        <div class="sidebar-card"><h3>Your news</h3><div class="mini-item"><strong>Parish first</strong><span>Your priest’s blog appears when your parish connects it.</span></div><div class="mini-item"><strong>Your choice</strong><span>Follow any available source—or add your own RSS feed—at any time.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life">← Back to Koinonia</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay/parish-life" aria-label="Open Koinonia"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Koinonia</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
+      <div class="topbar"><div class="topbar-title">News</div></div>
+      <div class="page news-page-shell koinonia-inner-shell">
+        <header class="koinonia-page-heading" aria-labelledby="newsHeading"><a class="koinonia-page-back" href="/myagapay/parish-life" data-parish-life-back><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Koinonia</a><div class="koinonia-page-title-row"><div><h1 id="newsHeading">News Feeds</h1><p>Parish writing and Orthodox news, gathered in one place</p></div></div></header>
+        <section class="news-source-section" aria-labelledby="newsSourcesHeading">
+          <div class="news-source-heading"><div><span class="eyebrow">Your choice</span><h2 id="newsSourcesHeading">Choose your sources</h2></div><p>Nothing appears until you follow a source. You can change these choices at any time.</p></div>
+          <div class="news-source-grid" id="newsSourcePreferences"><p class="sw-tool-loading">Loading available sources…</p></div>
+          <form class="news-custom-feed-form" onsubmit="addCustomNewsSource(event)">
+            <div><label for="customNewsFeedUrl">Follow another RSS feed</label><small>Paste a public HTTPS website, RSS, or Atom URL. Only you will see articles from this source.</small></div>
+            <span><input id="customNewsFeedUrl" type="url" inputmode="url" required placeholder="https://example.org/feed.xml" /><button class="btn btn-gold" type="submit">Add feed</button></span>
+          </form>
+        </section>
+        <nav class="content-filter-chips" id="newsSourceFilters" aria-label="Filter news by source"></nav>
+        <div class="notice" id="newsStatus">Loading news feeds…</div>
+        <section class="news-article-list" id="newsArticleList" aria-live="polite"></section>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+</body>
+</html>

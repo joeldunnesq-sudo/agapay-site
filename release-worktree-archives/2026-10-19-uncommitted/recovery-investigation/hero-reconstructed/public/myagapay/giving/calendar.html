@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-myagapay-hydrate>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Church Calendar | My AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/donor/style.css?v=137cc696769b1670" />
+  <script src="/liturgical-calendar.js"></script>
+  <script src="/pwa-register.js" defer></script>
+  <script src="/donor/session.js?v=efeba05c646552d3"></script>
+  <script src="/myagapay-shell.js?v=e7d32adcee9b9b92"></script>
+  <script src="/donor/controllers/calendar.js?v=3cc7cbbf322da435" defer></script>
+  <script src="/donor/controllers/history.js?v=12a7beb0a97aa89d" defer></script>
+  <script src="/donor/app.js?v=7b5588620e35a9e6" defer></script>
+  <link rel="stylesheet" href="/styles/numbers.css" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body class="donor-mobile-page donor-calendar-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">Liturgical Calendar</div><div class="profile-meta">Feast highlights and giving prompts</div></div>
+        <nav class="nav unified-product-nav" hx-boost="false"></nav>
+        <div class="sidebar-card"><h3>Calendar Mode</h3><div class="mini-item"><strong>Parish preference</strong><span>Will follow the parish calendar selected during registration.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/parish-life"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg> Back</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <div class="topbar"><div class="topbar-title">Liturgical Calendar</div><div class="topbar-actions"><span class="status-pill" id="calendarModePill">Parish calendar</span><a class="btn btn-gold btn-sm" href="/myagapay/giving/give">Feast offering</a></div></div>
+      <div class="page cal-page">
+        <div class="layout-main">
+          <div>
+            <!-- TODAY HERO -->
+            <section class="cal-hero calendar-liturgical-hero" aria-label="Today in the Church">
+              <div class="cal-hero-inner">
+                <div class="cal-hero-eyebrow" id="todayCivilDateEyebrow">Today’s civil date</div>
+                <div class="cal-today-row">
+                  <div class="cal-date-badge">
+                    <div class="cal-date-weekday" id="todayWeekday">Today</div>
+                    <div class="cal-date-day" id="todayMonthDay">--</div>
+                    <div class="cal-date-my" id="todayYear">--</div>
+                  </div>
+                  <div class="cal-today-main">
+                    <div class="cal-today-kicker" id="todayCalendarLabel">Church calendar</div>
+                    <h1 class="cal-today-title" id="todayFeastTitle">Loading today in the Church…</h1>
+                    <p class="cal-today-note" id="todayFeastNote">AGAPAY is preparing today's feast and fasting context.</p>
+                    <div class="cal-chip-row" id="todayChips"></div>
+                    <div class="cal-hero-actions">
+                      <a class="cal-btn cal-btn-gold" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="cal-card cal-personal-services" id="personalUpcomingServicesCard" hidden>
+              <div class="cal-card-head"><div class="cal-card-title"><div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="m9 12 2 2 4-4"/></svg></div>Your Upcoming Services</div><a href="/myagapay/services">View requests</a></div>
+              <div class="cal-personal-event-list" id="personalUpcomingServices"></div>
+            </section>
+
+            <section class="cal-card cal-parish-calendar" id="parishCalendarCard" aria-labelledby="parishCalendarTitle">
+              <div class="cal-card-head">
+                <div class="cal-card-title">
+                  <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                  <span id="parishCalendarTitle">Your Church Calendar</span>
+                </div>
+                <span class="cal-parish-calendar-status" id="parishCalendarStatus">Checking connection…</span>
+              </div>
+              <p class="cal-parish-calendar-intro" id="parishCalendarIntro">Loading the calendar connected by your parish.</p>
+              <div class="cal-parish-subscribe" id="parishCalendarSubscribe" hidden>
+                <a class="cal-btn cal-btn-gold" id="parishCalendarSubscribeButton" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M12 14v5M9.5 16.5h5"/></svg><span data-calendar-subscribe-label>Add to phone calendar</span></a>
+                <a class="cal-btn cal-btn-outline" id="parishCalendarGoogleButton" href="#" target="_blank" rel="noopener" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Add to Google Calendar</a>
+                <button class="cal-btn cal-btn-outline" id="parishCalendarCopyButton" type="button" onclick="copyDonorParishCalendarUrl(this)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy subscription link</button>
+              </div>
+              <div class="cal-parish-month" id="parishCalendarMonth" data-calendar-default-view="month" hidden>
+                <div class="cal-parish-month-head">
+                  <button type="button" id="parishCalendarPreviousMonth" onclick="changeDonorParishCalendarPeriod(-1)" aria-label="Show previous period">‹</button>
+                  <strong id="parishCalendarMonthLabel">This month</strong>
+                  <button type="button" id="parishCalendarNextMonth" onclick="changeDonorParishCalendarPeriod(1)" aria-label="Show next period">›</button>
+                </div>
+                <div class="cal-parish-weekdays" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                <div class="cal-parish-month-grid" id="parishCalendarMonthGrid" role="grid" aria-labelledby="parishCalendarMonthLabel"></div>
+                <div class="cal-parish-month-key"><span><i class="gold"></i>Service</span><span><i class="blue"></i>Parish life</span><span><i class="plum"></i>Other event</span><span><i class="celebration"></i>Celebrations</span></div>
+              </div>
+              <div class="cal-parish-event-list" id="parishCalendarEventList" aria-live="polite"></div>
+              <details class="cal-parish-subscribe-help" id="parishCalendarSubscribeHelp" hidden>
+                <summary>How calendar subscription works</summary>
+                <p><strong>iPhone or iPad:</strong> Tap “Add to phone calendar,” then confirm the subscription.</p>
+                <p><strong>Android:</strong> Tap “Add to Google Calendar.” AGAPAY opens Google Calendar outside the app so you can confirm the subscription.</p>
+                <p><strong>Other calendar providers:</strong> Copy the subscription link and add it using your calendar provider’s “From URL” option.</p>
+                <p>Subscribed events stay updated when your parish changes its calendar.</p>
+              </details>
+            </section>
+
+            <!-- FEAST HIGHLIGHTS TIMELINE -->
+            <section class="cal-card cal-feast-highlights" aria-labelledby="feastHighlightsTitle">
+              <div class="cal-card-head">
+                <div class="cal-card-title" id="feastHighlightsTitle">
+                  <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                  Feast Highlights
+                </div>
+              </div>
+              <div class="cal-feast-upcoming" id="calendarUpcomingFeast" aria-live="polite">
+                <div class="cal-timeline-empty">Finding the next feast&hellip;</div>
+              </div>
+              <details class="cal-festal-year" id="calendarFestalYear">
+                <summary><span id="calendarFestalYearLabel">View the whole festal year</span><i aria-hidden="true"></i></summary>
+                <div class="cal-festal-year-body">
+                  <div class="cal-legend">
+                    <span class="great">Great Feast</span>
+                    <span class="major">Major</span>
+                    <span class="fast">Fast</span>
+                    <span class="bright">Bright Week</span>
+                    <span class="patronal">Patronal</span>
+                  </div>
+                  <div class="cal-timeline" id="calendarGrid"></div>
+                </div>
+              </details>
+            </section>
+          </div>
+          <aside>
+            <section class="cal-card">
+              <div class="cal-card-head">
+                <div class="cal-card-title">
+                  <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></div>
+                  Giving Prompts
+                </div>
+              </div>
+              <div class="cal-prompt-list" id="suggestedGivingPrompts">
+                <div class="notice">Loading parish campaigns and funds…</div>
+              </div>
+            </section>
+            <section class="cal-card section-gap">
+              <div class="cal-card-head">
+                <div class="cal-card-title">
+                  <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></div>
+                  Calendar Notes
+                </div>
+              </div>
+              <div class="cal-note-box">Fixed feasts follow your parish's calendar setting. Pascha, Holy Week, Ascension, Pentecost, and other moveable feasts use the shared Orthodox paschalion — so those dates stay in step across every parish.</div>
+            </section>
+          </aside>
+        </div>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+  <div class="donor-saint-modal" id="donorSaintModal" hidden>
+    <div class="donor-saint-modal-card" role="dialog" aria-modal="true" aria-labelledby="donorSaintModalTitle">
+      <div class="donor-saint-modal-head">
+        <div>
+          <span class="calendar-panel-kicker" id="donorSaintModalKicker">Saint of the Day</span>
+          <h2 id="donorSaintModalTitle">Saint of the Day</h2>
+          <p id="donorSaintModalSubtitle">Today's commemoration</p>
+        </div>
+        <button type="button" class="donor-saint-close" onclick="closeDonorSaintModal()" aria-label="Close saint life">×</button>
+      </div>
+      <div class="donor-saint-modal-body" id="donorSaintModalBody"></div>
+      <div class="donor-saint-modal-foot">
+        <span>Lives of the Saints courtesy of Orthocal.info</span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeDonorSaintModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof loadDonorCalendarPage === "function") loadDonorCalendarPage();
+    });
+  </script>
+</body>
+</html>

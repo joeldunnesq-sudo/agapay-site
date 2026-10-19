@@ -1,0 +1,18 @@
+{
+  "recoveredDrafts": 2,
+  "recoveredHeroFiles": 31,
+  "recoveredPreviewScript": true,
+  "recordedDiff": {
+    "files": 31,
+    "insertions": 113,
+    "deletions": 63
+  },
+  "reconstructionDiffMatchesRecordedSummary": true,
+  "publishedDraftTextMatches": true,
+  "liveRelease": "058437466c08ec18ced86e5680e3fd9f915faedb",
+  "liveHealthy": true,
+  "liveStaticAssetsMatchAfterLineEndingNormalization": 4,
+  "liveHtmlMatchesAfterRemovingCloudflareInjection": true,
+  "preDeletionByteHashesAvailable": false,
+  "worktreesDeletedThisTurn": 0
+}

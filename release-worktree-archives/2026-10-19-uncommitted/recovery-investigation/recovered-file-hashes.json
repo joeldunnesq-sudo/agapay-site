@@ -1,0 +1,138 @@
+[
+  {
+    "file": "bookstore-pr.md",
+    "sha256": "38f22321a38efe2553988120c28a0997ab5a69e13d54efa050ed26e988b35bc9"
+  },
+  {
+    "file": "screenshot-pr.md",
+    "sha256": "45b15020fab5d68914f240e894c894d2091c13169c5009bb162ab35861e00377"
+  },
+  {
+    "file": "hero-reconstructed/scripts/.tmp-hero-visual.mjs",
+    "sha256": "2774f2ce8e473d3507d7ec1fc371a03a27623638c0d030bfe5b06b69e34b5fe6"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/bookstore.html",
+    "sha256": "f570f9275fdfd10390dd35b02e433c7f221775dceae8cda571a5f9e07d40b9c3"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/calendar.html",
+    "sha256": "4b762284dc0549d6cfca8b7405e0a22f0ff0300bdee19629508e734d2d77c166"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/give.html",
+    "sha256": "f6af083a7cd0bc2b93024202c5ccd8605a78917c58fb57e924b0cc1a8d57666f"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/index.html",
+    "sha256": "470d88a03cd09150202a3be90123a4ecc9337227f53931ea65290921dcb6d47d"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/login.html",
+    "sha256": "b87a5326b90becf19f8f74ee8d716049e35c252c30b59901db9959a159783e99"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/offerings.html",
+    "sha256": "79c501daa29f35e4b36e87f7ed73c755850aba319240729ee5e6ab2f8b82c290"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/settings.html",
+    "sha256": "64f91a640692a2956c8048daa897b00b455d114d35631739a1a9355dc079fc61"
+  },
+  {
+    "file": "hero-reconstructed/public/donor/style.css",
+    "sha256": "137cc696769b16709d7c43b89a9827e177d7873b06e0c5278c54b99003343020"
+  },
+  {
+    "file": "hero-reconstructed/public/learn/odyssey/dashboard/activate.html",
+    "sha256": "09f85f775976a3752cca9587000fc57771c4e256e424e9469a2043b8ca5959ac"
+  },
+  {
+    "file": "hero-reconstructed/public/learn/odyssey/dashboard/login.html",
+    "sha256": "280ece1b3e8874d6e80b5a19fcbbc06d88d7117c5eafffeb7ce33fe41bc8b4f3"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/account.html",
+    "sha256": "abb3a0130d818e9fd45401f1fa64b88b4d19d9959123c85e39258f2d26c40ca0"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/bookstore.html",
+    "sha256": "703986af82bd8a4921d78aac40b6d8e6636499db2ff6d913557cde174a5fa629"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/directory.html",
+    "sha256": "697e053caa454f24640eb7960817d4ce1d6ed5228cfeab2ce2a66d964b302830"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/events.html",
+    "sha256": "a2d847fe2ab968b804b6683365d6afd25ea9b91a78b8385a31efbaef15fff912"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/exchange.html",
+    "sha256": "0e281ee38f72db21ef18a9caf84fdb4448eaf5b64120ec38a6796e6d9e8134db"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/feed.html",
+    "sha256": "50084c92390dccca4f0a68f967046eaa4ac966d78b645347f88dc1e7a9d32a05"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/giving/calendar.html",
+    "sha256": "7d3b62328cef467c9a1c5c3560f4e9f441a3c76c33fe6ddacfc39c2393f7d190"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/giving/give.html",
+    "sha256": "12e9f494287d71d15e927cef7a095c3ea21b30ec97096f249141c9f44b073dc4"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/giving/history.html",
+    "sha256": "d5ec71749423b329c37152f51945d2bff28b877f916db3dc3f62885c1782c90e"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/groups.html",
+    "sha256": "49a1c89352fa41af522f4fbf440beec054d6354674c99394399cddd9f7c05df1"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/index.html",
+    "sha256": "b651cf9803cb8d59defdc3ce4170d3e036ca5feab670db3453c76799e2bdadef"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/library.html",
+    "sha256": "accb0f76f53b15f35ba2c5bd53f8b2b79493d8994f3ffa34ec940ad8e7579794"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/login.html",
+    "sha256": "ac13ef3e7d2106f641c83572b7f4db75d2b957edf8d8fd1964cc6103f68b4744"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/media.html",
+    "sha256": "a864d6bcc3100a77e2413db4427a93a7c2772c57d8432f08bdd38007e744d994"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/news.html",
+    "sha256": "11994567319faf55f856f46a959fc6a9159cfec869d549f3ec04640bd2f8bb83"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/parish-life.html",
+    "sha256": "8e5b7cd168fde7f18d05b66d48b9cfb51d23a64019ccc583c8faae448958f1d1"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/prayer-requests.html",
+    "sha256": "f489e7e603eb1beae23ab57eec59fda2c6e204f0155d4392888ae48bfaf812ed"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/sacraments.html",
+    "sha256": "d8f2ea79e24da806e89f4048c4c370abb3b04c160c4950f2dca272a24fa74d69"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/signups.html",
+    "sha256": "455b5de360329ae7dbe2e2ecb3c8d16a9a27464858286912cec8ae4d29b516d4"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/teaching.html",
+    "sha256": "da275ec38252c564e5526f4cd3909c67fc02d8a4e36f56fd3e1d766a68cfa406"
+  },
+  {
+    "file": "hero-reconstructed/public/myagapay/watch.html",
+    "sha256": "425104bd8469a5af51de66f8a98e233f13bb1eaf53455179fc2a83ea659356f7"
+  }
+]

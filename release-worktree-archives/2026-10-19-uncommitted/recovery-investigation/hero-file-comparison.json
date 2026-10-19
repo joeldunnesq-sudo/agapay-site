@@ -1,0 +1,312 @@
+[
+  {
+    "file": "public/donor/bookstore.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "f570f9275fdfd10390dd35b02e433c7f221775dceae8cda571a5f9e07d40b9c3"
+  },
+  {
+    "file": "public/donor/calendar.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "4b762284dc0549d6cfca8b7405e0a22f0ff0300bdee19629508e734d2d77c166"
+  },
+  {
+    "file": "public/donor/give.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "f6af083a7cd0bc2b93024202c5ccd8605a78917c58fb57e924b0cc1a8d57666f"
+  },
+  {
+    "file": "public/donor/index.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "470d88a03cd09150202a3be90123a4ecc9337227f53931ea65290921dcb6d47d"
+  },
+  {
+    "file": "public/donor/login.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "b87a5326b90becf19f8f74ee8d716049e35c252c30b59901db9959a159783e99"
+  },
+  {
+    "file": "public/donor/offerings.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "79c501daa29f35e4b36e87f7ed73c755850aba319240729ee5e6ab2f8b82c290"
+  },
+  {
+    "file": "public/donor/settings.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "64f91a640692a2956c8048daa897b00b455d114d35631739a1a9355dc079fc61"
+  },
+  {
+    "file": "public/donor/style.css",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "137cc696769b16709d7c43b89a9827e177d7873b06e0c5278c54b99003343020"
+  },
+  {
+    "file": "public/learn/odyssey/dashboard/activate.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": true,
+    "releasedIgnoringAssetVersions": true,
+    "recoveredSha256": "09f85f775976a3752cca9587000fc57771c4e256e424e9469a2043b8ca5959ac"
+  },
+  {
+    "file": "public/learn/odyssey/dashboard/login.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": true,
+    "releasedIgnoringAssetVersions": true,
+    "recoveredSha256": "280ece1b3e8874d6e80b5a19fcbbc06d88d7117c5eafffeb7ce33fe41bc8b4f3"
+  },
+  {
+    "file": "public/myagapay/account.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "abb3a0130d818e9fd45401f1fa64b88b4d19d9959123c85e39258f2d26c40ca0"
+  },
+  {
+    "file": "public/myagapay/bookstore.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "703986af82bd8a4921d78aac40b6d8e6636499db2ff6d913557cde174a5fa629"
+  },
+  {
+    "file": "public/myagapay/directory.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": true,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "697e053caa454f24640eb7960817d4ce1d6ed5228cfeab2ce2a66d964b302830"
+  },
+  {
+    "file": "public/myagapay/events.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "a2d847fe2ab968b804b6683365d6afd25ea9b91a78b8385a31efbaef15fff912"
+  },
+  {
+    "file": "public/myagapay/exchange.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "0e281ee38f72db21ef18a9caf84fdb4448eaf5b64120ec38a6796e6d9e8134db"
+  },
+  {
+    "file": "public/myagapay/feed.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "50084c92390dccca4f0a68f967046eaa4ac966d78b645347f88dc1e7a9d32a05"
+  },
+  {
+    "file": "public/myagapay/giving/calendar.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "7d3b62328cef467c9a1c5c3560f4e9f441a3c76c33fe6ddacfc39c2393f7d190"
+  },
+  {
+    "file": "public/myagapay/giving/give.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "12e9f494287d71d15e927cef7a095c3ea21b30ec97096f249141c9f44b073dc4"
+  },
+  {
+    "file": "public/myagapay/giving/history.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "d5ec71749423b329c37152f51945d2bff28b877f916db3dc3f62885c1782c90e"
+  },
+  {
+    "file": "public/myagapay/groups.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "49a1c89352fa41af522f4fbf440beec054d6354674c99394399cddd9f7c05df1"
+  },
+  {
+    "file": "public/myagapay/index.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "b651cf9803cb8d59defdc3ce4170d3e036ca5feab670db3453c76799e2bdadef"
+  },
+  {
+    "file": "public/myagapay/library.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": true,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "accb0f76f53b15f35ba2c5bd53f8b2b79493d8994f3ffa34ec940ad8e7579794"
+  },
+  {
+    "file": "public/myagapay/login.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "ac13ef3e7d2106f641c83572b7f4db75d2b957edf8d8fd1964cc6103f68b4744"
+  },
+  {
+    "file": "public/myagapay/media.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "a864d6bcc3100a77e2413db4427a93a7c2772c57d8432f08bdd38007e744d994"
+  },
+  {
+    "file": "public/myagapay/news.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "11994567319faf55f856f46a959fc6a9159cfec869d549f3ec04640bd2f8bb83"
+  },
+  {
+    "file": "public/myagapay/parish-life.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "8e5b7cd168fde7f18d05b66d48b9cfb51d23a64019ccc583c8faae448958f1d1"
+  },
+  {
+    "file": "public/myagapay/prayer-requests.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "f489e7e603eb1beae23ab57eec59fda2c6e204f0155d4392888ae48bfaf812ed"
+  },
+  {
+    "file": "public/myagapay/sacraments.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "d8f2ea79e24da806e89f4048c4c370abb3b04c160c4950f2dca272a24fa74d69"
+  },
+  {
+    "file": "public/myagapay/signups.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "455b5de360329ae7dbe2e2ecb3c8d16a9a27464858286912cec8ae4d29b516d4"
+  },
+  {
+    "file": "public/myagapay/teaching.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": false,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "da275ec38252c564e5526f4cd3909c67fc02d8a4e36f56fd3e1d766a68cfa406"
+  },
+  {
+    "file": "public/myagapay/watch.html",
+    "originalExact": false,
+    "originalNormalized": false,
+    "archivedNormalized": false,
+    "releasedNormalized": false,
+    "originalIgnoringAssetVersions": true,
+    "releasedIgnoringAssetVersions": false,
+    "recoveredSha256": "425104bd8469a5af51de66f8a98e233f13bb1eaf53455179fc2a83ea659356f7"
+  }
+]
