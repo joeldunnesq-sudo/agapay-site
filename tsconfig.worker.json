@@ -9,7 +9,8 @@
     ".wrangler/types/worker.d.ts",
     ".wrangler/types/accounting-provisioner.d.ts",
     "src/**/*.ts",
-    "scripts/typecheck/**/*.ts"
+    "scripts/typecheck/**/*.ts",
+    "scripts/typecheck-legacy/**/*.ts"
   ],
   "exclude": ["src/learn/domain.ts", "src/learn/future-records.ts", "src/browser/**"]
 }

@@ -1,4 +1,5 @@
 // Generated from src/handlers/parish-authentication.ts by npm run build:server. Do not edit.
+import { resolveDonorSession } from '../lib/donor-sessions.js';
 import '../portability/closure.js';
 import { saveCommemorationEntry } from './parish-commemorations.js';
 import {
@@ -10,7 +11,6 @@ import {
   getAdminToken,
   getBearerToken,
   hasProductionStore,
-  hashSessionToken,
   issueParishDashboardSession,
   json,
   listKvKeys,
@@ -110,13 +110,7 @@ async function requireDonor(request, env) {
   const email = normalizeEmail(request.headers.get('X-AGAPAY-Donor-Email'));
   const token = getBearerToken(request);
   if (!email || !token) return null;
-  const donor = await loadDonor(env, email);
-  if (!donor?.emailVerifiedAt) return null;
-  if (!donor || !donor.sessionTokenHash || !donor.sessionSalt) return null;
-  if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
-  const submittedHash = await hashSessionToken(token, donor.sessionSalt);
-  if (!secureCompare(submittedHash, donor.sessionTokenHash)) return null;
-  return donor;
+  return resolveDonorSession(await loadDonor(env, email), token);
 }
 async function requireAdminContext(request, env) {
   const submitted = getAdminToken(request);

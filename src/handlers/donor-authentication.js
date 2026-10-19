@@ -1,4 +1,6 @@
 // Generated from src/handlers/donor-authentication.ts by npm run build:server. Do not edit.
+import { issueDonorSession } from '../lib/donor-sessions.js';
+import { issueDonorSession as issueDonorSession2 } from '../lib/donor-sessions.js';
 import './donor-parish-context.js';
 import '../payments/donation-receipts.js';
 import { subscriptionSetupUpdates } from '../payments/donation-events.js';
@@ -12,9 +14,7 @@ import {
 } from '../lib/legal-acceptance.js';
 import {
   applyDonorPassword,
-  DONOR_SESSION_TTL_MS,
   generateSecret,
-  hashSessionToken,
   hasProductionStore,
   json,
   loadDonor,
@@ -160,20 +160,6 @@ async function handleDonorClaimCheckout(request, env) {
 async function handleDonorSession(request, env) {
   return handleDonorLogin(request, env);
 }
-async function issueDonorSession(env, donor) {
-  const token = generateSecret('agp_donor');
-  const sessionSalt = generateSecret('session');
-  const updated = {
-    ...donor,
-    sessionSalt,
-    sessionTokenHash: await hashSessionToken(token, sessionSalt),
-    sessionExpiresAt: new Date(Date.now() + DONOR_SESSION_TTL_MS).toISOString(),
-    lastLoginAt: /* @__PURE__ */ new Date().toISOString(),
-    updatedAt: /* @__PURE__ */ new Date().toISOString(),
-  };
-  await saveDonor(env, updated);
-  return { token, donor: updated };
-}
 async function handleDonorSignup(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
@@ -308,4 +294,10 @@ async function handleDonorLogin(request, env) {
   const session = await issueDonorSession(env, migrated);
   return json({ ok: true, token: session.token, donor: publicDonor(session.donor) });
 }
-export { handleDonorClaimCheckout, handleDonorLogin, handleDonorSession, handleDonorSignup, issueDonorSession };
+export {
+  handleDonorClaimCheckout,
+  handleDonorLogin,
+  handleDonorSession,
+  handleDonorSignup,
+  issueDonorSession2 as issueDonorSession,
+};

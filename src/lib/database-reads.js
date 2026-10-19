@@ -3,15 +3,17 @@ function d1(env) {
   return env.AGAPAY_DB || null;
 }
 async function d1First(env, sql, ...params) {
-  if (!d1(env)) return null;
-  return d1(env)
+  const db = d1(env);
+  if (!db) return null;
+  return db
     .prepare(sql)
     .bind(...params)
     .first();
 }
 async function d1All(env, sql, ...params) {
-  if (!d1(env)) return [];
-  const result = await d1(env)
+  const db = d1(env);
+  if (!db) return [];
+  const result = await db
     .prepare(sql)
     .bind(...params)
     .all();

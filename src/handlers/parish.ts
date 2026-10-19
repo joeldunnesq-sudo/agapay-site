@@ -242,7 +242,10 @@ export function normalizeBookstoreBody(
   };
 }
 
-export async function verifyParishDashboardBearer(registration: CatalogRegistration, token: string) {
+export async function verifyParishDashboardBearer(
+  registration: import('../organizations/types.js').RegistrationRecord | null | undefined,
+  token: string
+) {
   return Boolean(await resolveParishDashboardSession(registration, token));
 }
 

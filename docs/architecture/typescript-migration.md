@@ -1512,3 +1512,7 @@ PR [#247](https://github.com/joeldunnesq-sudo/agapay-site/pull/247) is accepted 
 ## Boundary hardening: fifth checkpoint (release candidate)
 
 The [fifth boundary-hardening report](typescript-boundary-hardening-5.md) removes the final 17 double assertions and checks directory profile JSON names. Protected staging and production acceptance are pending.
+
+## Parallel migration reconciliation (release candidate)
+
+The [reconciliation report](typescript-reconciliation.md) and [per-file ledger](typescript-reconciliation-ledger.json) preserve the parallel checkout and integrate its typed session, identity and organization modules with the final assertion-removal checkpoint. The original 495-module completion baseline remains unchanged. Protected combined-release acceptance is pending.

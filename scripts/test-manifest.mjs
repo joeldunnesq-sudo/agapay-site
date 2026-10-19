@@ -15,6 +15,13 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/storage-session-contract-tests.mjs',
+  'scripts/admin-donor-session-tests.mjs',
+  'scripts/identity-contract-tests.mjs',
+  'scripts/login-invitation-contract-tests.mjs',
+  'scripts/organization-action-provider-tests.mjs',
+  'scripts/typescript-reconciliation-tests.mjs',
+  'scripts/bookstore-concept-browser-tests.mjs',
   'scripts/learn-boundary-controls-tests.mjs',
   'scripts/directory-profile-json-tests.mjs',
   'scripts/learn-final-boundaries-tests.mjs',

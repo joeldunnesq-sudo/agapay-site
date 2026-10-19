@@ -34,7 +34,7 @@ async function routeOrganizationRequest({ request, env, url, actions }) {
   }
   const resolved = await resolveOrganizationContext(env, route.organizationId, actions.findRegistrationByParishId);
   const access = evaluateOrganizationApiAccess(resolved?.organization);
-  if (!access.allowed) return notFound(actions);
+  if (!resolved || !access.allowed) return notFound(actions);
   const authorized = await actions.verifyParishDashboardBearer(resolved.registration, actions.getBearerToken(request));
   if (!authorized) return actions.unauthorized();
   return actions.json(organizationApiDescriptor(access.organization), {

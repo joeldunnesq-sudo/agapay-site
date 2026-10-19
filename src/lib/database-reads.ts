@@ -13,8 +13,9 @@ export async function d1First<Row = Record<string, unknown>>(
   sql: string,
   ...params: unknown[]
 ): Promise<Row | null> {
-  if (!d1(env)) return null;
-  return d1(env)!
+  const db = d1(env);
+  if (!db) return null;
+  return db
     .prepare(sql)
     .bind(...params)
     .first<Row>();
@@ -25,8 +26,9 @@ export async function d1All<Row = Record<string, unknown>>(
   sql: string,
   ...params: unknown[]
 ): Promise<Row[]> {
-  if (!d1(env)) return [];
-  const result = await d1(env)!
+  const db = d1(env);
+  if (!db) return [];
+  const result = await db
     .prepare(sql)
     .bind(...params)
     .all<Row>();

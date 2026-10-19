@@ -1,17 +1,6 @@
-// JSON parsing preserves existing behavior; returned data has not been validated.
+import { parseJsonRow as parseStoredRow, safeParseJsonRow as safeParseStoredRow } from './storage.js';
 export interface JsonStorageRow {
   readonly data?: string | null;
 }
-
-export function parseJsonRow(row: JsonStorageRow | null | undefined): unknown {
-  if (!row?.data) return null;
-  return JSON.parse(row.data);
-}
-
-export function safeParseJsonRow(row: JsonStorageRow | null | undefined): unknown {
-  try {
-    return parseJsonRow(row);
-  } catch {
-    return null;
-  }
-}
+export const parseJsonRow: (row: JsonStorageRow | null | undefined) => unknown = parseStoredRow;
+export const safeParseJsonRow: (row: JsonStorageRow | null | undefined) => unknown = safeParseStoredRow;

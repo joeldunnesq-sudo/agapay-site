@@ -1,35 +1,40 @@
-import type { PlatformUserRow } from './identity-contracts.js';
-// AGAPAY Accounting Package 0.75C -- Platform Identity.
-//
-// One platform_users row per real human, platform-wide (not parish-scoped).
-// The authentication *mechanism* here is deliberately the same shape as the
-// existing donor pattern (src/handlers/parish.js requireDonor / donor.js
-// session issuance): verified email, salted hashed session token, expiry,
-// constant-time comparison -- generalized, not copy-pasted onto the donor
-// table, per docs/accounting/02d-identity-and-capability-model.md.
-//
-// This module knows nothing about parishes, roles, or capabilities -- that
-// is src/lib/memberships.js and src/lib/authorization.js. This module only
-// answers "who is this person" and "is their session valid."
-//
-// This is purely additive: it does not modify requireDonor, requireAdmin,
-// or verifyParishDashboardBearer, and the legacy shared parish-bearer
-// pathway continues to work unchanged for every existing route.
-
-import {
-  d1,
-  d1First,
-  d1Run,
-  generateSecret,
-  hashSessionToken,
-  secureCompare,
-  normalizeEmail,
-  createPasswordRecord,
-  verifyPasswordRecord,
-  getBearerToken,
-  loadDonor,
-  privilegedMfaRequired,
-} from './core.js';
+import { d1, d1First, d1Run, type StorageEnvironment } from './storage.js';
+import { generateSecret, hashSessionToken, secureCompare } from './session-crypto.js';
+import { normalizeEmail } from './normalize-email.js';
+import { createPasswordRecord, verifyPasswordRecord } from './password-records.js';
+import { getBearerToken } from './api-responses.js';
+import { loadDonor } from './donor-repository.js';
+import { privilegedMfaRequired } from './authentication-policy.js';
+import { storedField } from './stored-values.js';
+import { resolveDonorSession } from './donor-sessions.js';
+export type IdentityEnvironment = StorageEnvironment & Partial<Pick<Env, 'PRIVILEGED_MFA_REQUIRED'>>;
+export interface PlatformUserRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  email_verified_at: string | null;
+  status: string;
+  password_record: string | null;
+  session_token_hash: string | null;
+  session_salt: string | null;
+  session_expires_at: string | null;
+  session_mfa_verified_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+export interface PublicPlatformUser {
+  id: string;
+  email: string;
+  displayName: string;
+  emailVerifiedAt: string;
+  status: string;
+  hasPassword: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface AuthenticatedPlatformUser extends PublicPlatformUser {
+  mfaVerifiedAt?: string;
+}
 
 const PLATFORM_SESSION_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours -- shorter than the donor default, appropriate for a staff/back-office identity
 const PLATFORM_USER_EMAIL_HEADER = 'X-AGAPAY-User-Email';
@@ -41,7 +46,9 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function rowToPlatformUser(row: PlatformUserRow | null | undefined) {
+function rowToPlatformUser(row: PlatformUserRow): PublicPlatformUser;
+function rowToPlatformUser(row: PlatformUserRow | null): PublicPlatformUser | null;
+function rowToPlatformUser(row: PlatformUserRow | null): PublicPlatformUser | null {
   if (!row) return null;
   return {
     id: row.id,
@@ -55,14 +62,14 @@ function rowToPlatformUser(row: PlatformUserRow | null | undefined) {
   };
 }
 
-export async function findPlatformUserByEmail(env: Partial<Env>, email: unknown) {
+export async function findPlatformUserByEmail(env: IdentityEnvironment, email: unknown) {
   if (!d1(env)) return null;
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
   return d1First<PlatformUserRow>(env, 'SELECT * FROM platform_users WHERE email = ?1', normalized);
 }
 
-export async function findPlatformUserById(env: Partial<Env>, userId: string) {
+export async function findPlatformUserById(env: IdentityEnvironment, userId: string) {
   if (!d1(env) || !userId) return null;
   return d1First<PlatformUserRow>(env, 'SELECT * FROM platform_users WHERE id = ?1', userId);
 }
@@ -72,7 +79,7 @@ export async function findPlatformUserById(env: Partial<Env>, userId: string) {
 // Never sets a password or verifies the email itself -- that happens
 // through whatever accepted the invitation or a future explicit login setup.
 export async function ensurePlatformUser(
-  env: Partial<Env>,
+  env: IdentityEnvironment,
   { email, displayName = '' }: { email?: unknown; displayName?: unknown } = {}
 ) {
   if (!d1(env)) return null;
@@ -101,7 +108,7 @@ export async function ensurePlatformUser(
 // Sets (or replaces) a platform user's password and marks their email
 // verified -- the action that happens when accepting an invitation for the
 // first time. Never called for an unverified, unauthenticated request.
-export async function setPlatformUserPassword(env: Partial<Env>, userId: string, password: string) {
+export async function setPlatformUserPassword(env: IdentityEnvironment, userId: string, password: string) {
   if (!d1(env) || !userId || !password) return false;
   const record = JSON.stringify(await createPasswordRecord(password));
   const timestamp = nowIso();
@@ -117,7 +124,7 @@ export async function setPlatformUserPassword(env: Partial<Env>, userId: string,
   return true;
 }
 
-export async function verifyPlatformUserPassword(env: Partial<Env>, email: unknown, password: string) {
+export async function verifyPlatformUserPassword(env: IdentityEnvironment, email: unknown, password: string) {
   const row = await findPlatformUserByEmail(env, email);
   if (!row || !row.password_record || row.status !== 'active') return null;
   const ok = await verifyPasswordRecord(password, row.password_record);
@@ -128,7 +135,7 @@ export async function verifyPlatformUserPassword(env: Partial<Env>, email: unkno
 // session (single active session per user, deliberately simple for this
 // foundational package -- multi-session support is not required here).
 export async function issuePlatformUserSession(
-  env: Partial<Env>,
+  env: IdentityEnvironment,
   userId: string,
   { mfaVerifiedAt = '' }: { mfaVerifiedAt?: string } = {}
 ) {
@@ -154,7 +161,7 @@ export async function issuePlatformUserSession(
   } catch (error) {
     if (
       privilegedMfaRequired(env) ||
-      !String((error as { message?: unknown } | null)?.message || error).includes('session_mfa_verified_at')
+      !String(storedField(error, 'message') || error).includes('session_mfa_verified_at')
     )
       throw error;
     // Backward-compatible only while MFA is disabled, so pre-0106 local/test
@@ -175,12 +182,13 @@ export async function issuePlatformUserSession(
 }
 
 export async function markPlatformUserSessionMfaVerified(
-  env: Partial<Env>,
+  env: IdentityEnvironment,
   userId: string,
-  verifiedAt: string = nowIso()
+  verifiedAt = nowIso()
 ) {
-  if (!d1(env) || !userId) return false;
-  const result = await d1(env)!
+  const db = d1(env);
+  if (!db || !userId) return false;
+  const result = await db
     .prepare(
       `UPDATE platform_users SET session_mfa_verified_at = ?2, updated_at = ?2
      WHERE id = ?1 AND session_token_hash IS NOT NULL`
@@ -190,7 +198,7 @@ export async function markPlatformUserSessionMfaVerified(
   return Number(result?.meta?.changes || 0) === 1;
 }
 
-export async function revokePlatformUserSession(env: Partial<Env>, userId: string) {
+export async function revokePlatformUserSession(env: IdentityEnvironment, userId: string) {
   if (!d1(env) || !userId) return;
   try {
     await d1Run(
@@ -203,8 +211,7 @@ export async function revokePlatformUserSession(env: Partial<Env>, userId: strin
       nowIso()
     );
   } catch (error) {
-    if (!String((error as { message?: unknown } | null)?.message || error).includes('session_mfa_verified_at'))
-      throw error;
+    if (!String(storedField(error, 'message') || error).includes('session_mfa_verified_at')) throw error;
     await d1Run(
       env,
       `UPDATE platform_users
@@ -219,7 +226,10 @@ export async function revokePlatformUserSession(env: Partial<Env>, userId: strin
 // The platform-user analog of requireDonor. Resolves a request's bearer
 // token + email header to a specific, currently-valid platform user row --
 // never trusts a client-asserted user id, only what a valid session proves.
-export async function requirePlatformUser(request: Request, env: Partial<Env>) {
+export async function requirePlatformUser(
+  request: Request,
+  env: IdentityEnvironment
+): Promise<AuthenticatedPlatformUser | null> {
   if (!d1(env)) return null;
   const email = normalizeEmail(request.headers.get(PLATFORM_USER_EMAIL_HEADER));
   const token = getBearerToken(request);
@@ -243,11 +253,8 @@ export async function requirePlatformUser(request: Request, env: Partial<Env>) {
 
   const donorEmail = normalizeEmail(request.headers.get(DONOR_EMAIL_HEADER));
   if (!donorEmail) return null;
-  const donor = await loadDonor(env, donorEmail);
-  if (!donor?.emailVerifiedAt || !donor.sessionTokenHash || !donor.sessionSalt) return null;
-  if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
-  const submittedDonorHash = await hashSessionToken(token, donor.sessionSalt);
-  if (!secureCompare(submittedDonorHash, donor.sessionTokenHash)) return null;
+  const donor = await resolveDonorSession(await loadDonor(env, donorEmail), token);
+  if (!donor) return null;
   // My AGAPAY account creation predates the platform_users identity layer.
   // Provision the matching platform identity only after the verified donor
   // session has been authenticated so first-time directory users can reach
@@ -263,6 +270,6 @@ export async function requirePlatformUser(request: Request, env: Partial<Env>) {
   return rowToPlatformUser(row);
 }
 
-export function publicPlatformUser(row: PlatformUserRow | null | undefined) {
+export function publicPlatformUser(row: PlatformUserRow | null): PublicPlatformUser | null {
   return rowToPlatformUser(row);
 }

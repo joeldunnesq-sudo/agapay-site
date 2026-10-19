@@ -141,7 +141,7 @@ async function handleParishPortability(request, env, parishId, suffix = '') {
       )
         .bind(continuation[1], parishId, actorHash)
         .first());
-    const verified = Date.parse(session.mfaVerifiedAt || '');
+    const verified = Date.parse(`${session.mfaVerifiedAt || ''}`);
     if (!continuingOwner && (!Number.isFinite(verified) || verified > Date.now() || Date.now() - verified > 15 * 6e4))
       return reply(
         {
