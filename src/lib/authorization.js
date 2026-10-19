@@ -1,7 +1,14 @@
 // Generated from src/lib/authorization.ts by npm run build:server. Do not edit.
-import { d1, d1First, d1All } from './core.js';
+import { requireCapability, requireActiveMembership } from './identity-authorization-providers.js';
+import { resolveAuthorizationContext } from './authorization-context.js';
+import { resolveAuthorizationContext as resolveAuthorizationContext2 } from './authorization-context.js';
+import {
+  requireCapability as requireCapability2,
+  requireActiveMembership as requireActiveMembership2,
+} from './identity-authorization-providers.js';
+import './core.js';
 import { requirePlatformUser } from './identity.js';
-import { recordAuditEvent } from './audit-log.js';
+import './audit-log.js';
 const CAPABILITY_CATALOG = Object.freeze([
   // Platform
   'platform.admin',
@@ -388,33 +395,6 @@ function expandRoleTemplate(roleTemplate) {
   const template = ROLE_TEMPLATES[roleTemplate];
   return template ? sanitizeGrantableCapabilities(template) : [];
 }
-async function resolveAuthorizationContext(env, { userId, parishId }) {
-  if (!d1(env) || !userId || !parishId) return { membership: null, capabilities: [] };
-  const membership = await d1First(
-    env,
-    'SELECT * FROM parish_memberships WHERE user_id = ?1 AND parish_id = ?2',
-    userId,
-    parishId
-  );
-  if (!membership || membership.status !== 'active') {
-    return { membership: null, capabilities: [] };
-  }
-  const rows = await d1All(
-    env,
-    'SELECT capability FROM membership_capabilities WHERE membership_id = ?1',
-    membership.id
-  );
-  return {
-    membership: {
-      id: membership.id,
-      userId: membership.user_id,
-      parishId: membership.parish_id,
-      roleTemplate: membership.role_template || '',
-      status: membership.status,
-    },
-    capabilities: rows.map((row) => row.capability),
-  };
-}
 async function hasCapability(env, { userId, parishId, capability }) {
   if (!capability) return false;
   const { capabilities } = await resolveAuthorizationContext(env, { userId, parishId });
@@ -424,46 +404,6 @@ async function hasPlatformCapability(_env, { userId: _userId, capability } = {})
   void _userId;
   if (!PLATFORM_ONLY_CAPABILITIES.has(capability)) return false;
   return false;
-}
-function correlationIdFor(request) {
-  return request?.headers?.get?.('X-Request-Id') || '';
-}
-async function requireCapability(request, env, parishId, capability) {
-  const user = await requirePlatformUser(request, env);
-  if (!user) return null;
-  const { membership, capabilities } = await resolveAuthorizationContext(env, {
-    userId: user.id,
-    parishId,
-  });
-  if (!membership) return null;
-  if (!capabilities.includes(capability)) {
-    await recordAuditEvent(env, request, {
-      action: 'authorization.capability_denied',
-      actorUserId: user.id,
-      actorType: 'platform_user',
-      targetType: 'parish_membership',
-      targetId: membership.id,
-      organizationId: parishId,
-      requestId: correlationIdFor(request),
-      metadata: {
-        capabilityRequested: capability,
-        resource: request?.url || '',
-        decision: 'denied',
-      },
-    });
-    return null;
-  }
-  return { user, membership, capabilities };
-}
-async function requireActiveMembership(request, env, parishId) {
-  const user = await requirePlatformUser(request, env);
-  if (!user) return null;
-  const { membership, capabilities } = await resolveAuthorizationContext(env, {
-    userId: user.id,
-    parishId,
-  });
-  if (!membership) return null;
-  return { user, membership, capabilities };
 }
 const currentUser = requirePlatformUser;
 const currentMembership = requireActiveMembership;
@@ -480,8 +420,8 @@ export {
   hasCapability,
   hasPlatformCapability,
   isKnownCapability,
-  requireActiveMembership,
-  requireCapability,
-  resolveAuthorizationContext,
+  requireActiveMembership2 as requireActiveMembership,
+  requireCapability2 as requireCapability,
+  resolveAuthorizationContext2 as resolveAuthorizationContext,
   sanitizeGrantableCapabilities,
 };

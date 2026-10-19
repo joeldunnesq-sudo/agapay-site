@@ -1,0 +1,1373 @@
+{
+  "status": "implementation-reconciled-validation-pending",
+  "originalGitHead": "669fd9f676c08be3bea6fee4bc05346335ebfbe1",
+  "canonicalSourceBase": "ef67399552ff72ba7129211e65c918c45982df48",
+  "preservedFiles": 227,
+  "originalReleaseBuild": "typescript-8e417bf61d50d3b8",
+  "originalRuntimeManifestDigest": "8e417bf61d50d3b8493ee2341e701b912545a5bca8134d307196bd5e6c7b90d9",
+  "preservation": "Original checkout untouched; verified raw snapshot and patch remain locally in tmp-reconciliation-1; embedded worktrees were not read, moved or altered.",
+  "entries": [
+    {
+      "path": ".github/workflows/production-d1-backup.yml",
+      "comparison": "already-identical",
+      "originalSha256": "97be30a085d115c6e1ffd42a69be4ed1e57221130a19648876179803ee355d9d",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "config/source-size-budgets.json",
+      "comparison": "text-auto-merge",
+      "originalSha256": "d2f46b156b547474416503bf48bb38d7893cf5d1a812eacd190a17f668e60f77",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "docs/architecture/legacy-module-refactor-guardrails.md",
+      "comparison": "text-auto-merge",
+      "originalSha256": "991846da8f43cedc345ee71d0279182849e4776e4ff2753812158cb6b3a702ad",
+      "decision": "Preserved historical documentation or incorporated the current equivalent and reconciliation history."
+    },
+    {
+      "path": "eslint.config.js",
+      "comparison": "text-conflict",
+      "originalSha256": "e6de1eb4bdbcb9bc06d762bbf9d5e06158e0285ab9d29dbfe2aec0564f9c34cc",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "package-lock.json",
+      "comparison": "text-conflict",
+      "originalSha256": "eb828169ef34e834cb79fe5662dcb7cf0d83e1dd993f4301dfc21a3e45b8bf82",
+      "decision": "Retained current dependency/security versions and release commands; no downgrade to the older workspace versions."
+    },
+    {
+      "path": "package.json",
+      "comparison": "text-conflict",
+      "originalSha256": "041ee3c9b67db5d6795aecc80ee15aad080ff4f95f3ef948b9bad0d7280d5d4b",
+      "decision": "Retained current dependency/security versions and release commands; no downgrade to the older workspace versions."
+    },
+    {
+      "path": "public/_headers",
+      "comparison": "text-conflict",
+      "originalSha256": "ed4e20f2a8bbaa0e7c44bc71ac8263d0b494573303a6ffc59e9110629ef8cc6e",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/admin.html",
+      "comparison": "text-conflict",
+      "originalSha256": "6d47b67d52ee0342f50109fe068ace3760d62d7cf9a2c3b38946daa3988ec8c7",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/admin/login.html",
+      "comparison": "text-conflict",
+      "originalSha256": "c273a77b786613e0bdcee66ba5502e315eaf684023f964bb894a08656238d1df",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/admin/presentation.js",
+      "comparison": "already-identical",
+      "originalSha256": "3fab636db05161dd44741594dc3968f44a532381cc73c9d8dddda7dbe3ce69ab",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/donor/app.js",
+      "comparison": "text-conflict",
+      "originalSha256": "2038638f74b199f5f6042ebce5f6f317ead004170621becc0be56516fe20f62f",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/bookstore-presentation.js",
+      "comparison": "already-identical",
+      "originalSha256": "d76ce3754db2ef2b23b3428461b214a82a1aa0e2c05f5169addb93f94beaebed",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/donor/bookstore.html",
+      "comparison": "text-conflict",
+      "originalSha256": "427a37822cae150bd0701f19e7e1705c284f8c29df575ecd1c6f67ac99b7437a",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/calendar.html",
+      "comparison": "text-conflict",
+      "originalSha256": "7efee867089345f000bb61b722ab2dc72ce94e43cf4d68a73a286f46cebd15d3",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/controllers/bookstore.js",
+      "comparison": "text-conflict",
+      "originalSha256": "4ef9f64cb2085e12dfd012c627c45fdf165ff15edc7e3a3c6de8e1064f7798d7",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/give.html",
+      "comparison": "text-conflict",
+      "originalSha256": "50e244e8f192a08b8c5c281f9a70e4f376dfafb8ff0a8d399c658334609af4b8",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/index.html",
+      "comparison": "text-conflict",
+      "originalSha256": "032da283f2e194422043c15d58a5c157395ab90a2a00dcd7633739df2308a966",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/login.html",
+      "comparison": "text-conflict",
+      "originalSha256": "3a73a2d59b71472abd9b9ef410f7c3826469daa35828f48e469c1205a30ac41a",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/offerings.html",
+      "comparison": "text-conflict",
+      "originalSha256": "830930d19dd508763994e6e339164e2328c24396e8c5fc13a52cbd189322cfa8",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/settings.html",
+      "comparison": "text-conflict",
+      "originalSha256": "f2706349847b6e89d3d8133e6735b42b4858c01cf4376cddbfb23487fdad586f",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/signup.html",
+      "comparison": "text-conflict",
+      "originalSha256": "bab78d3e0c7fc070b9aeae00be48fda34039aa279f4cbe1708a452754e84d07c",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/style.css",
+      "comparison": "already-identical",
+      "originalSha256": "e8e7b982617d1e4d154a6adade418646bcbb988b562f8bfc3bf446bb644aae46",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/give/embed.css",
+      "comparison": "already-identical",
+      "originalSha256": "841947db6c451b05387beaacfad34d69f45c26d20bcb5b659381de618a60ec2a",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/give/embed.html",
+      "comparison": "text-conflict",
+      "originalSha256": "3f8afa1410d412e3a9f518fc188ff9e809faee267cd5858e5b325e2804fbbd88",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/give/embed.js",
+      "comparison": "text-conflict",
+      "originalSha256": "bfb1fcb1eecb05e8898246f956144765792085e6ece59105d907a7fad01aee0e",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/give/index.html",
+      "comparison": "text-auto-merge",
+      "originalSha256": "28e80f400c37b4f4c18c64be7dc49f1c3b597d1b5f2079d506227786d42c2ed5",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/giving-box.js",
+      "comparison": "text-conflict",
+      "originalSha256": "0bb5ac909d1a68ef3d946f592dbbf9113e6507ae6665a3544edc47c76b1c0331",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/images/app/screenshots/give-feature-parish-bookstore.jpg",
+      "comparison": "already-identical",
+      "originalSha256": "6e64e98eb164ba0025afad3d97fd1748aa5b332700286b946c0402f428431e2d",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/images/app/screenshots/parish-bookstore.jpg",
+      "comparison": "already-identical",
+      "originalSha256": "6e64e98eb164ba0025afad3d97fd1748aa5b332700286b946c0402f428431e2d",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/index.html",
+      "comparison": "text-auto-merge",
+      "originalSha256": "ffaee58d1f31a5d8abf960f39e598fae6b82ff253df10f9eb3b0b1ca6df359bb",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/learn/odyssey/dashboard/activate.html",
+      "comparison": "already-identical",
+      "originalSha256": "02caea5367b0f14934596503abba7aa7ee4e314f86c9c7118f69a21913c1aeb8",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/learn/odyssey/dashboard/login.html",
+      "comparison": "already-identical",
+      "originalSha256": "006543015f1faacccb605622de09f1ea670078db3e2d304d179f6cbc38c70d7e",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/myagapay/account.html",
+      "comparison": "text-conflict",
+      "originalSha256": "db6a19172e3c9c446502cb5688f97ea998315363692a909e95b72202ff2a3a45",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/bookstore.html",
+      "comparison": "text-conflict",
+      "originalSha256": "51a21995f252f926a15a0ac4f50bfcb41ba7bf737a63427a09c2863b971be067",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/directory.html",
+      "comparison": "text-conflict",
+      "originalSha256": "b28b221f806cf7cda17a97ecb2a53d18f57e127cdfebd97ce644a059755dddef",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/events.html",
+      "comparison": "text-conflict",
+      "originalSha256": "2f14302425c242bf7dceabf51b572b59437e5e408f40c3a2e86ece8e87308b30",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/exchange.html",
+      "comparison": "text-conflict",
+      "originalSha256": "441a4a6806dc8ad4197554f9596b001bd9df11af9cf2b1c0840d8fa2570b9382",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/feed.html",
+      "comparison": "text-conflict",
+      "originalSha256": "d3fba99e4829eb3e56f3b7bdb7f29980f27be7e21bd3752ae68c5ec93dbb7bc7",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/giving/calendar.html",
+      "comparison": "text-conflict",
+      "originalSha256": "bd7dbe2db9dc45bb5e02146ea99716dc7e4cbd543bf6e310dc4ee27d2fd01383",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/giving/give.html",
+      "comparison": "text-conflict",
+      "originalSha256": "f790c42919a78ce7c631006d88650223b2561d8293056423f1af03526c2d5e9f",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/giving/history.html",
+      "comparison": "text-conflict",
+      "originalSha256": "d861bdf4618488b0b239809d9f233ff165f57ed1a5ac7d73fe266ea9faafd4a4",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/groups.html",
+      "comparison": "text-conflict",
+      "originalSha256": "775adc727228b03397a9352923468795339b0efbce7f39a8d36d1478d5080578",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/index.html",
+      "comparison": "text-conflict",
+      "originalSha256": "330876512cea4af7e10e90a0ff948e21032c7b4cb42a310864ee917fd1b13be8",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/koinonia-inner.css",
+      "comparison": "already-identical",
+      "originalSha256": "bf7a5ea2ab2c7ebda93e95f3f488c42b1daa0bb8219f4146397c8d1c9fdbe0bc",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/myagapay/library.html",
+      "comparison": "text-conflict",
+      "originalSha256": "184b8e19cb2db408f32b2e96d121ef2054d48c0a7226bf687e84533336e0146a",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/login.html",
+      "comparison": "text-conflict",
+      "originalSha256": "2d65ab60b5f036fa2cff7b2ffd4f3053e2cc556bafeb39754cf19abd5656d443",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/manifest.webmanifest",
+      "comparison": "already-identical",
+      "originalSha256": "2b6c9351b455ce2344f37759baad4fef4f2b531609edda83471334c3d7179fc4",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/myagapay/media.html",
+      "comparison": "text-conflict",
+      "originalSha256": "a43808526781e8271c88ef71a2960c644f0cec445813a00188326cf969c23485",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/news.html",
+      "comparison": "text-conflict",
+      "originalSha256": "654a8af131a1d072000f6e209520e95710822e45783424d13fd96da41f0d42c4",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/parish-life.html",
+      "comparison": "text-conflict",
+      "originalSha256": "5fafa5f44ea109747732af90d1d75e2063ad139a05fe6b02452e7bfed9f61253",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/prayer-requests.html",
+      "comparison": "text-conflict",
+      "originalSha256": "4d560814cfd2b4fb9825e6d5b39b44a238ce23b0972f13d23748203846ee5412",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/sacraments.html",
+      "comparison": "text-conflict",
+      "originalSha256": "8d157ea05002ca308828cc700ce4aac2c413bb161809ee794b2f9a4fd6cc951f",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/signup.html",
+      "comparison": "text-conflict",
+      "originalSha256": "21a1402787c527d2b51e0359abfa1d3af07e19b3c6a097c88fa51c42f77a0b8e",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/signups.html",
+      "comparison": "text-conflict",
+      "originalSha256": "1e334ffc51c08e90e5deb8cbed2f605125c7b7552337f8a9e823f8c8e48be2b6",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/teaching.html",
+      "comparison": "text-conflict",
+      "originalSha256": "8f34bf4ec330fb7deb81b07db8d45ee905e7080bbbcfd614ab433e71bee6b150",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/myagapay/watch.html",
+      "comparison": "text-conflict",
+      "originalSha256": "270dd22adbef164023c640d0d144a9868cd8ca0b1b6c2e154e102e6a9598e2ec",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/parish/app.js",
+      "comparison": "text-conflict",
+      "originalSha256": "83f85863794dd1a548a9723bd2867e258bf55cf727058df3a1c9fa418d52ad14",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/parish/dashboard.html",
+      "comparison": "text-conflict",
+      "originalSha256": "c507728d8f62e64077c875a26f3fa8c45ca785fa71d9a6d2876ffd8b68c8d202",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/parish/login.html",
+      "comparison": "text-conflict",
+      "originalSha256": "9e4b1d0a0f287aea51151698f0c69e434c4df2bda58d2332e80411e0ae43933d",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/parish/portability.css",
+      "comparison": "already-identical",
+      "originalSha256": "fdd40d99908464dbd881ee9f7546d41345fbe4aad9638021f10ec4c5a8202d59",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/service-worker.js",
+      "comparison": "text-conflict",
+      "originalSha256": "b39a0c2e2164c29e996dd11083f6418c7b04a26ed0ce5ec74b29aa37ece99828",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/site-chrome.css",
+      "comparison": "already-identical",
+      "originalSha256": "a6294bcc81a72eacaa71e7c2a7bb63a3e924fbf64c09acc812b19c6e1b6c6137",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/site-chrome.js",
+      "comparison": "text-conflict",
+      "originalSha256": "b60453b743d0caa216f630cde167d4fc6199fffd31e0a939a5006d7b779d6ceb",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "scripts/admin-presentation-extraction-tests.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "e94713d5a16f361337525adc38eb42e20149bfd1ea61219663a84e6b486f1e90",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/architecture-boundaries-tests.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "606077fcb6a11ec3854a6f90b5a8c6d9c29962d1111e2857169e3290c33ec603",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/bookstore-inventory-phase2-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "d35444bf6789cf9b6c0c19bdf66e4a2dd00935559955b164844a626303143331",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/check.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "4921d89d88a920b8609b7f43562e7fc4635863b17c9f522cde5de0932c9208ca",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/classic-browser-controller-extraction-tests.mjs",
+      "comparison": "text-auto-merge",
+      "originalSha256": "9b314f318c2bf16e6708e948c155af38bc166b7d667b1cf24bfea848d73ad67b",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/content-reads-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "b8a02e441ef3e4befc913143eeb23f7af66b4686a7da52b18a42f9eb500e2bb0",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/lib/app-asset-versions.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "d102e2215bcb69e8bac3d0a921258c1209eb78b4d1da8a3c6d1eb4725c973396",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lib/donor-handler-source.mjs",
+      "comparison": "text-auto-merge",
+      "originalSha256": "fab25ad45454863a0efdd0135c43aa7ef6385adfa80ba875ac4a118b2794d0f2",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lib/parish-browser-fixture.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "43baccb213b6ac7931d7431cac43019f73bf7e3803cee3214b679619583cae95",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lib/parish-handler-source.mjs",
+      "comparison": "text-auto-merge",
+      "originalSha256": "9b2602765997d421dca31db34d7bb0af0020a30b64849906781590a8cc13d7e1",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lint-warning-baseline-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "14033905dee5ebc2eb6d108490d14f1df5d7a6fdf5c32360320ed1ca20b85df1",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/meta-referral-tracking-tests.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "67e62dc3ed9ba981b9fd569dfcb05624d5a5cb2248fcb8b2f04d32803d25543f",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/myagapay-calendar-browser-tests.mjs",
+      "comparison": "text-auto-merge",
+      "originalSha256": "b111752c3904427076c624f5b7728e24b91c702595c1a14c14966fd8b21f58c5",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/myagapay-inner-page-ui-tests.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "e0109a8f2ce21ce0b00303ee018df2faa48977b5a703130d108208d1ffe5a852",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/organization-api-route-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "66062bd56e4a18ff507b6c2d9658a771eaf8925f317352dafdf2fb375313dd33",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/organization-readiness-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "6aac9d1457e84e94855ea4a159245b545b578ef65f0506d4b44f03754f53a47c",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/parish-library-tests.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "6618fef1b4be6bf8c6a7a0646e6edd36bfda8d03b9603b3e1ee5ee2c2a93d8bb",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/platform-preview-tests.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "c0b8320b723dec16afebe73e636528ffe8c12c99036748ec6df4e3c8461dd23e",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/route-registry-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "312f2ec8474b723938e302f37d73f5d42999c64cd687e679e0801de62a568142",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/sacrament-preparation-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "3b80a14e04def770e7b57b3401304e54bf70194661b51aa275c6b04862459551",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/server-domain-handler-extraction-tests.mjs",
+      "comparison": "text-auto-merge",
+      "originalSha256": "a251477f347b5eb44e4fe89a4c8c2d071cfeebef41b0fada1683b77c6d3900b7",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/source-size-budget-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "91dac4283e61bc0f017eb5674b8c3efc61f23f2380735a259361a7fd7f82dd8b",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/test-manifest.mjs",
+      "comparison": "text-conflict",
+      "originalSha256": "e44f3d843d7d681ad555c159a3d4fd57d2e17c81afc8a640841e10a4c914a04d",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/version-app-assets.mjs",
+      "comparison": "text-auto-merge",
+      "originalSha256": "90d0d527c7664f43534c1f48274d0455e3455a2e98406cfc7b74cb343fe48e31",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "src/handlers/donor.js",
+      "comparison": "text-conflict",
+      "originalSha256": "5e3edc0817fc703df0ebb75d55d93888e5c59bf9d6a6eab83a1e38b145d2f68d",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity.js",
+      "comparison": "text-conflict",
+      "originalSha256": "7c81f59965256c5355e00195ff221921e403cb3f5fca1303a2478736a9a08afa",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/parish-portability.js",
+      "comparison": "text-conflict",
+      "originalSha256": "0937e69ff27ec867c88966084dfbd255c4b388d00bf450e86c4fe51e7ef75220",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/parish.js",
+      "comparison": "text-conflict",
+      "originalSha256": "51e243e2750b476233e56a84cb0e0144f63e20ecc4a2a1df094b711d17201cd9",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/authorization.js",
+      "comparison": "text-conflict",
+      "originalSha256": "6c76798854268801c776447fbbc460743e8320ff2c156a1d88aedf6fd50aec70",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/content-reads.js",
+      "comparison": "already-identical",
+      "originalSha256": "711bd1a7123332a9edb60d268440881f2829b416d2be2d4cc2e4df4e2d4f5512",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/lib/core.js",
+      "comparison": "text-conflict",
+      "originalSha256": "c226ee4d0a187744f030113e2a9857d8d85f80977e6b541a74785a4bd2a26c9d",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/format.js",
+      "comparison": "text-conflict",
+      "originalSha256": "d57497aaa54febc85c0c6240d4df9f25051f594e396cfded0edf156e0d6e973d",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/identity.js",
+      "comparison": "text-conflict",
+      "originalSha256": "f09a20e8de71e1ad4d38d8dbdbefe341fe776e3a4b1ac8d4722379a8ab92a570",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/memberships.js",
+      "comparison": "text-conflict",
+      "originalSha256": "fa0487fc2da595cb95e1feec51bce9393f7f6edb7eb4deb6cf440e1f48f602f9",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/xml-text.js",
+      "comparison": "already-identical",
+      "originalSha256": "0ce1b9b96a69a5c60d84256772943aea6b0cd01dbbeeeb1de31ea22195835c0a",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/api-policy.js",
+      "comparison": "already-identical",
+      "originalSha256": "991d3bd0e1a70698403cbcfa6f3b01066a9633969efd1c8a743bca7ecf8a6a9a",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/context.js",
+      "comparison": "already-identical",
+      "originalSha256": "9254474cad7bd26bf0d86d8ccf6575687f90dd6d3e4d3d69f07ce4da7955f603",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/module-access.js",
+      "comparison": "already-identical",
+      "originalSha256": "6f81de9e50109e790d3563f65d8a8fc4ef5588f84e8c3b7c5c575a69a2ebee17",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/module-profiles.js",
+      "comparison": "already-identical",
+      "originalSha256": "7d8beff4f1f083a23f7953a330b5d824b6c80fcaf5d84b2837f1227e8d8f996b",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/terminology.js",
+      "comparison": "already-identical",
+      "originalSha256": "6c81343de1db115b75ba42ef0b722803d78ce3348b73f28089a06dfb5c258597",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/types.js",
+      "comparison": "already-identical",
+      "originalSha256": "f4b6e3308b4807013b17238f250fdf0f6cbf73d935b1d63a64cfd2412f3841b8",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/verification-policies.js",
+      "comparison": "already-identical",
+      "originalSha256": "6109ba98a5661fc01b465b771667124c5706524f2812c38f3336aed5b64fcb66",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/routes/organization.js",
+      "comparison": "text-conflict",
+      "originalSha256": "7a80dd21b6a28f371b7424c1150fb30b80715dc3ea5fb75e34983b0921afe0cc",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/routes/registry.js",
+      "comparison": "already-identical",
+      "originalSha256": "ef31f604668fe074d79c6e434138fc3c322b4377459b0a641478a9e33095ef07",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/worker.js",
+      "comparison": "text-conflict",
+      "originalSha256": "98fc6449801bb00a89ee2719b8e6129aa0d91f6b02a0cd6265e614c9bc64f3a1",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "tsconfig.learn.json",
+      "comparison": "text-conflict",
+      "originalSha256": "2e5d3013dbf3bda74dfc71da3f443ddc265a5b0612ee6faf8d8afde8fd9536b8",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "wrangler.accounting-provisioner.json",
+      "comparison": "text-auto-merge",
+      "originalSha256": "7110961b1b2d2d05bbdff1bf6778e8a76edb8bd7f1d8e02ac16d7c8b0351f6f3",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "wrangler.toml",
+      "comparison": "text-auto-merge",
+      "originalSha256": "6d381c33b65ad9c1a600587590502e02ada0f4e98afb2e169003c7939a1d97eb",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "docs/accounting/demo-presenter-guide.md",
+      "comparison": "already-identical",
+      "originalSha256": "9ee4649a72c9d2342a475f8357a18c91d81d0d80561d7f1d0d4fdc14305606f9",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "docs/accounting/demo-readiness-2026-09-16.md",
+      "comparison": "original-only-change",
+      "originalSha256": "f59c83575a692c67f949b5bca849c15a1ecb5f402ca2495f714e81ffe979c8bb",
+      "decision": "Preserved historical documentation or incorporated the current equivalent and reconciliation history."
+    },
+    {
+      "path": "docs/agapay-executive-zoom-demo-script.md",
+      "comparison": "original-only-change",
+      "originalSha256": "7619caa95a51540ba73cb9be6c318c044e8434399e3d84ec4e5b9af9f99ea419",
+      "decision": "Preserved historical documentation or incorporated the current equivalent and reconciliation history."
+    },
+    {
+      "path": "docs/architecture/typescript-migration.md",
+      "comparison": "both-added",
+      "originalSha256": "87e680f2c37af1c552be8c47cf6c2e8e08039a7ab5557bc5de55830d830daa99",
+      "decision": "Preserved as typescript-parallel-migration-history.md; combined progress and acceptance remain in the current migration guide."
+    },
+    {
+      "path": "docs/giving-embed-styling.md",
+      "comparison": "already-identical",
+      "originalSha256": "dbdce005ed09b2b197fe7952293facffe734392f7c19c8c8f8075f2c7ddba9d3",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "docs/parish-backups.md",
+      "comparison": "already-identical",
+      "originalSha256": "61e61e97d6bde182dd538c744e314c90f080b7d27ddbd8fa5177bc27670896f1",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/admin/navigation.css",
+      "comparison": "both-added",
+      "originalSha256": "cc09da1370470ddb49e7802dd1dcae784295873be11bf58d08db3b6fd5171b97",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/admin/navigation.js",
+      "comparison": "both-added",
+      "originalSha256": "a7f8d9fce3042709d7e133ce93788be75e09943bb061c77a3ffaede98353f79b",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/bookstore-experience.css",
+      "comparison": "both-added",
+      "originalSha256": "db7302a73bd47d688eee764fa2973e9ca111ab4fcefca182c8da18cf9474e703",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/bookstore-experience.js",
+      "comparison": "both-added",
+      "originalSha256": "ba10cb26d0af9f3adfd44da0dd626987ab9891cae23547ad6f2dfa6ac3e2d1bb",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/donor/controllers/sacraments.js",
+      "comparison": "both-added",
+      "originalSha256": "a70f198649e067b5a70a1e8c19063b71e3a6f3b6f0642aa7d0dbc04d0efdb215",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/images/app/bookstore-still-life.png",
+      "comparison": "already-identical",
+      "originalSha256": "4a39beb6651ed47279acc6888427b65aba115d4ab80c43415819051089706429",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "public/myagapay/bookstore-concept/app.js",
+      "comparison": "original-only-change",
+      "originalSha256": "b7817f7d17e126d00ad75530a321af73fa1e8fd8d45874f5d75cfc7e3b33e0c0",
+      "decision": "Preserved design preview; its script has a registered TypeScript owner and desktop/mobile behavioral coverage."
+    },
+    {
+      "path": "public/myagapay/bookstore-concept/index.html",
+      "comparison": "original-only-change",
+      "originalSha256": "eae039ce169396dee5fafe93f083f6963f680a80e6246ae89cea6f4067b56ea1",
+      "decision": "Preserved design preview; its script has a registered TypeScript owner and desktop/mobile behavioral coverage."
+    },
+    {
+      "path": "public/myagapay/bookstore-concept/products.png",
+      "comparison": "original-only-change",
+      "originalSha256": "f28cbe308756d693ff9b36c0ce7ef6335a10c6646d856fca2b10c2371df5686a",
+      "decision": "Preserved design preview; its script has a registered TypeScript owner and desktop/mobile behavioral coverage."
+    },
+    {
+      "path": "public/myagapay/bookstore-concept/still-life.png",
+      "comparison": "original-only-change",
+      "originalSha256": "4a39beb6651ed47279acc6888427b65aba115d4ab80c43415819051089706429",
+      "decision": "Preserved design preview; its script has a registered TypeScript owner and desktop/mobile behavioral coverage."
+    },
+    {
+      "path": "public/myagapay/bookstore-concept/style.css",
+      "comparison": "original-only-change",
+      "originalSha256": "8f98ba03ba7401013077b721163bf928b2e71d6c7cfb83e76ff2339f2b04fa00",
+      "decision": "Preserved design preview; its script has a registered TypeScript owner and desktop/mobile behavioral coverage."
+    },
+    {
+      "path": "public/parish/backup.js",
+      "comparison": "both-added",
+      "originalSha256": "1afa6bf98058e7b81686bc47a185f2bc951d80aae4f02d0fd551901eae48b262",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "public/parish/features/giving/embed-theme.js",
+      "comparison": "both-added",
+      "originalSha256": "5d095bc97e2bfd8db5ee81b2249cf43d44a44a618ab55183b27e174df603228d",
+      "decision": "Retained the later committed UI/PWA implementation and asset delivery; preserved the original variant in the snapshot."
+    },
+    {
+      "path": "scripts/admin-donor-session-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "1420481ff72ff741acab15beee4d35e1b629737f7e8fc16f1c2fb2142b51a29c",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/admin-navigation-browser-tests.mjs",
+      "comparison": "both-added",
+      "originalSha256": "304095d1d1dcdf5f44d15d27462f72611bd9d78f1bf707a84bdad3f9d4a6f70b",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/bookstore-boutique-browser-tests.mjs",
+      "comparison": "both-added",
+      "originalSha256": "da3653c63dbc1d31e3ddab97d0d4d56ea965f6693de0324d6fd341b7793484f4",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/browser-typescript-browser-tests.mjs",
+      "comparison": "both-added",
+      "originalSha256": "f9b9d070b29ca0e1afb67b2b51eff69c8b0e6106b5d962815367595b159b52b3",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/browser-typescript-tests.mjs",
+      "comparison": "both-added",
+      "originalSha256": "4902621946e2e0f52ca10999f6db6a739ca0d94855654506e980ebf4a0d6dc1a",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/build-browser-typescript.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "74b14d1c797f7c799ce0484bbd543d49b45292a9b5b2521489455dd4535f8d77",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/build-server-typescript.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "f3da02f5f80e8f3c8da1c2571cc571d54b592bbb659f7de97152f480d532f8d9",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/giving-embed-theme-browser-tests.mjs",
+      "comparison": "both-added",
+      "originalSha256": "5221d5633a7d01181b3ef720e1662d6aba06ffa16b57c27ad230e7c7bfc66c9e",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/identity-contract-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "c96f8bdea0e1d1c037b3481faa6e28480a2a7ef3ea64bab055fedae5172b9460",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lib/browser-typescript.mjs",
+      "comparison": "both-added",
+      "originalSha256": "bb789d074a8a4f5cc359194c458ae56135cc34cae9d845d00ef14b35374800d1",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lib/core-source.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "58678ced50d9ffdbf22358c558f773b7e26ea580acc01b0b0a3d35628a9d3705",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/lib/server-typescript.mjs",
+      "comparison": "both-added",
+      "originalSha256": "aad8dcbacbb733351e2686ac3a89ff1e626e05b9774c0e00abb11567f2970abf",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/login-invitation-contract-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "51069548bae817320bc698b55db715774807000f12e5d4c7267bccb24bd5d98c",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/myagapay-sacraments-browser-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "b55e8d00c52d9565b618160376d80ffea6f4ddc4543760ec1ed72afda13a7264",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/organization-action-provider-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "7044c2b08c0fb8fb0d3cb202becd08c66f954c97eebf39186277fb7a45fc9d03",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/parish-backup-browser-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "2c662052f7c487f8bbcd330a6c5161a24a1940cb5596f50d805580417931b11b",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/parish-backup-tests.mjs",
+      "comparison": "already-identical",
+      "originalSha256": "8bffb59a629de02bf4053163ae218cbfc0a1ded211341eab55817508fa3eaa87",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/server-typescript-tests.mjs",
+      "comparison": "both-added",
+      "originalSha256": "311d530d8bf70884b6ccff4da7d4e1b462d06f411e5982a25699cecffb6e1d68",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/storage-session-contract-tests.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "8ac124358e2add82c54849fae3e6acbb80a54b95e4a57040b77ca3fed3e2706f",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck-browser/presentation.ts",
+      "comparison": "already-identical",
+      "originalSha256": "8df43559be4298fe490df06d790c19e48fb458d29fa77013116beb1dbf2f5de8",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/typecheck-legacy/identity-callers.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "0a05679bbbe5c76bf005841203968b31e90f0136f10614ae78024c5cc9392c31",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck-legacy/login-invitations.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "deaa8bee55da0c27356a279c77180e0cce0e999be8863d3d8e61cb8f9b2cd401",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck-legacy/organization-actions.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "041932d695d7f3a7d509102904fd1b3c9f582dce064b87ee9d55a63b88e3fb16",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck.mjs",
+      "comparison": "both-added",
+      "originalSha256": "a36f3c0090628e028511750fcaf7b00a17f141836268ecb3a177d1f82599d46c",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck/admin-donor-sessions.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "d49500719d8b00839afdb8fba53427a423e41e0b62a6161487f8aa71c2b1445c",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck/identity.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "9ac18547c1317a9eee8bae6e5e0690ef2fa5de1170296d632546a8f9f5ed35c9",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck/login-invitations.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "4512bf97f9e0da7d6cc9a36f46c55e81ea67b1051fc5c0417d4ed765e4a877de",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck/organization-route.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "d3cd92ce98e5f02b180bf7c393a892ba15c89fa515f7a5ef665b4034b6ec00a5",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "scripts/typecheck/pilot.ts",
+      "comparison": "already-identical",
+      "originalSha256": "8d7fdc73092bd7ab58c9fb9b326d4dba3999e5d37ec0d76fb8155f744744c359",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/typecheck/services.ts",
+      "comparison": "already-identical",
+      "originalSha256": "79b046441714d487882aa3a5bbaa841ad827f063c2c4a99156d5eb7405a97a70",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "scripts/typecheck/storage-sessions.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "5337d05877b5e1a3f2861d1eb3a2bebf8ee5c7ad13afd8df7295e56d5bc98760",
+      "decision": "Preserved existing tests/tooling and integrated original added assertions, checked callers and focused suites into canonical ownership."
+    },
+    {
+      "path": "src/browser/admin/presentation.ts",
+      "comparison": "both-added",
+      "originalSha256": "714910a9806044dda07a1c74b7729479aac1029a22a57beccba5b4ef98f33d2e",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/browser/donor/bookstore-presentation.ts",
+      "comparison": "already-identical",
+      "originalSha256": "2fe6ff71dfd34f91ed2e9436caa00ced2186d534d81ad609846edb3253cf3688",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/handlers/identity-access-handlers.js",
+      "comparison": "original-only-change",
+      "originalSha256": "efbf15a69925ac1564add4050775a41e3d9b2d5d293993b4bcf87d4ae79892bb",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-access-handlers.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "2ca64e11b5299f7152433daa272984f697ed1c0743363a09d56952f9917a4efb",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-access-providers.js",
+      "comparison": "original-only-change",
+      "originalSha256": "3eceba79d14c6c59261502cad07792ba87a4ae73d9cc26a2a6000029c36594b7",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-invitation-contracts.js",
+      "comparison": "original-only-change",
+      "originalSha256": "4f40a6ec079db6ad28fb598a95b588a6bdbedb046e25dde64112347d1238e695",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-invitation-contracts.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "3969f772bbf86259c58b866bd32a4ca73a1a848bf712d96586302b8d0dbb3a81",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-session-handlers.js",
+      "comparison": "original-only-change",
+      "originalSha256": "dedf5703cc9cfd584d3ee69f7799277b5c79750496ac163ad5750b0589070622",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-session-handlers.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "5f91e34e4a8ec8aecbd43fee0bcff10acf7c97ec9dc5e0ca9506320648f1c82a",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/identity-session-providers.js",
+      "comparison": "original-only-change",
+      "originalSha256": "91d00c8b8b9e9a5e537de2713efa54b50e63b51e42ed5452a8eb8ab5c5fdc8e7",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/handlers/parish-organization-providers.js",
+      "comparison": "original-only-change",
+      "originalSha256": "9eebb1ea7889f88d11be5dc7f2c0540bb88e97c7f6e854b4a6faad3995d3a1c0",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/admin-sessions.js",
+      "comparison": "original-only-change",
+      "originalSha256": "5c30ed8abee203be754cda5def3ebb69048713d7d30f0d54ac14867c64682270",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/admin-sessions.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "60c39ae80e6c87289e949f4ee8995053a3f1f1d402af23a1690fb72c1a128081",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/api-responses.js",
+      "comparison": "original-only-change",
+      "originalSha256": "43d5f15bbf3de9c8a45d06472908a1e19629da367edbc8783e50f57be54361eb",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/api-responses.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "0f659e4a8dba60f976f8a2c0035e2e7253bba8a8ee2a7d4c0369be4591fdf426",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/authentication-policy.js",
+      "comparison": "original-only-change",
+      "originalSha256": "a4e7736897003652ce4419ac0c4f32b450e4a16dea3eb95784c82be20597faf0",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/authentication-policy.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "05dbf7e0eca41533815dbc5e83458188d5c7be25f0e64379da6273c029e09eae",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/authorization-context.js",
+      "comparison": "original-only-change",
+      "originalSha256": "ad5f853c154ff72c320885901ae4a01ca9065605bf86ece941a9306f44c6fa07",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/authorization-context.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "2555696abd9e63fd8fc7ffbf928b028a75b86402dfd7cc1dfed06b25bbf857b7",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/content-reads.ts",
+      "comparison": "already-identical",
+      "originalSha256": "a5f79136d8940578ee24b00637f654890e86867d45205a0ddbe120797a9d3e9b",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/lib/donor-repository.js",
+      "comparison": "original-only-change",
+      "originalSha256": "8cebe53aff78b2bff022fd46f8fc24f413520d9744e457361d41dd078edb7fc8",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/donor-repository.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "677e8eed2852533e1bac60773e515a122ed9cdbe5269d83b627e6ee70bd32ddc",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/donor-sessions.js",
+      "comparison": "original-only-change",
+      "originalSha256": "bae211431bf5e9d1a87ea3bd0268539a77e14c09c8adbdc75ba6c6c0ba38424d",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/donor-sessions.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "e0315684ee4cfb3e0566f5af1557aaf8543bf532b8368f07960bc66581a5b821",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/format.ts",
+      "comparison": "both-added",
+      "originalSha256": "850b13b4482f4bab6a135579628c52002ad07493500ee7d6af54ecd8f3414899",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/identity-authorization-providers.js",
+      "comparison": "original-only-change",
+      "originalSha256": "e6d6a6eced81f64d4fe1206dba17f7a87df085217c8962badd8c0b49a03682e9",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/identity-authorization.js",
+      "comparison": "original-only-change",
+      "originalSha256": "4e48f8c7476a7cbe5e81869107af5d509045e41574a96655a53b8549986c4c54",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/identity-authorization.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "685e5d7819b47b2115c23f84fa06f0b61d2d7651c0647d570958cb16e1656f03",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/identity.ts",
+      "comparison": "both-added",
+      "originalSha256": "8c66570158cfa1d272fedb02997721af7a9b0b4ab9231374548f13aeb11e4284",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/parish-dashboard-bearer.js",
+      "comparison": "original-only-change",
+      "originalSha256": "cc68505dc9ce4125f9029e1352ded1cf9b52adc216aaba693a99a16c1b487858",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/parish-dashboard-bearer.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "fa7ff7cd8f8d27aee7eb10af4cd6bd9bbdcc259beced0b5d0192901f788fc8b0",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/parish-registration-lookup.js",
+      "comparison": "original-only-change",
+      "originalSha256": "de26ac62fea6c85faba8f7ec1ba4da7e58df9fc80a9a1d9829750a69f5100e33",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/parish-registration-lookup.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "e61dfcf376658a4ed369067e1b9a482eedeb2efe06068ca61d1e8ae944b265c8",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/parish-sessions.js",
+      "comparison": "original-only-change",
+      "originalSha256": "20377629b5b3a1255c25a3d09dfa6b95ef3b2453a2add03bb239db3fee408a3b",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/parish-sessions.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "84d896cd2daabf2a7e18b299f9b92d207e56999d19cf45a51e75a0591bbc3b08",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/password-records.js",
+      "comparison": "original-only-change",
+      "originalSha256": "acf703c74c95e311c700252cc7279029d159a2fdb610e788c559c48d484ff467",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/password-records.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "0633add7cd4e28bd6641e5a04f33d7079eda28857c218621fa01de8faea15a79",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/session-crypto.js",
+      "comparison": "original-only-change",
+      "originalSha256": "c7ee88088d2530d2b3165f58d92d3ab7a62aa282496e2cc473bf9c168d0e3595",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/session-crypto.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "a29ed9431ae4ab8608be3e547227745dab1175e5323f90fcb4cb172967d6e973",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/storage-keys.js",
+      "comparison": "original-only-change",
+      "originalSha256": "b7ada8a2b1fee165336da24376d14c81cccbc341511b86bada85542ab72a8c23",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/storage-keys.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "fed2b83fd7ec06eb19d7bb13042dbfcf7ed6b92736340b946b738e1dd614abe6",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/storage-policy.js",
+      "comparison": "original-only-change",
+      "originalSha256": "c9df8e9a002e6b249472356a6d7b6f5d06ed6e71e550d80c1764ab2001e2bbba",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/storage-policy.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "9a71db2b2faf345e458c856704bd82a37a906c36d7e1dcfdefb28278ff15a0c2",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/storage.js",
+      "comparison": "original-only-change",
+      "originalSha256": "ea7901c944e531c6e08b4fa6ff5d746bbcb521524ac6fe6d61dc1baa618c8292",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/storage.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "323db46a5646c64e90697549b23fc5c822eb9c516eb907fc63dc9205729fb499",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/stored-values.js",
+      "comparison": "original-only-change",
+      "originalSha256": "43f1b0fdcd8f21a58cb902575333a1967f5b03048371e056d0df93d4da1a63cd",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/stored-values.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "933787e157fa19fed3109877e9253c2f0a6dc49add3d3ce73ece1f9b094f7bd2",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/lib/xml-text.ts",
+      "comparison": "both-added",
+      "originalSha256": "1773dfc1a883cd3a7cd0725c1f591f6ed0d9b753e5e86f361323b699eb0f6bec",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/organizations/api-policy.ts",
+      "comparison": "already-identical",
+      "originalSha256": "085f43b52d74f95c56f7cd05ccd7a87d03ec1abce51c3d536bc9e33544b206a0",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/context.ts",
+      "comparison": "already-identical",
+      "originalSha256": "fc4047b581477ee62d5be2ef9037af63a42a3ecf6b627066bcc0f30313dc6c05",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/module-access.ts",
+      "comparison": "already-identical",
+      "originalSha256": "7745bb59c90deeef2d47411e3dfb753fb03a03259e8a55e784b6bda44191a43b",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/module-profiles.ts",
+      "comparison": "already-identical",
+      "originalSha256": "1adb95b28a1088b9c5b8ae24a4cc725b6aabf1d993808ddd17d5f6166afdc5ee",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/terminology.ts",
+      "comparison": "already-identical",
+      "originalSha256": "39c96e911d06619730d0a00e11e943e55077f8b1f22e7907b1f1cccad997f51b",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/types.ts",
+      "comparison": "already-identical",
+      "originalSha256": "d6909a92ce1d4928a5549aabebced764d76cc9b88396affb16a4728e02e01c4f",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/organizations/verification-policies.ts",
+      "comparison": "already-identical",
+      "originalSha256": "8aee6661b5cb40550aa1c81edba3a05e3b9bedb03360e46bdfccd95ae607eb3a",
+      "decision": "Already present; normalized bytes match the preserved original."
+    },
+    {
+      "path": "src/portability/cloud-backup.js",
+      "comparison": "both-added",
+      "originalSha256": "34118e1c88402c50be79d24fe630f467ab0f832239fec95bc3eb0b8d95f6385a",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/routes/organization-action-contracts.js",
+      "comparison": "original-only-change",
+      "originalSha256": "a3d7081ced29a6e3da722542af0573df297677b0a469a9a04e157d5c7ec1d5cc",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/routes/organization-action-contracts.ts",
+      "comparison": "original-only-change",
+      "originalSha256": "e7fbff893d7f2805ff68ca3270a0376cb96ffd36552f4402bef1b15a5e22488a",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/routes/organization-entry.js",
+      "comparison": "original-only-change",
+      "originalSha256": "2fa49dabe1c62376380af696099060ab5a8785998451a571e32f398fb9704b41",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/routes/organization.ts",
+      "comparison": "both-added",
+      "originalSha256": "9b555a9d36be5792088e75480f1e6635ae6eeb8783b938be11e637fcd75f740a",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "src/routes/registry.ts",
+      "comparison": "both-added",
+      "originalSha256": "9d905e734be3c698ce3cf03518cb20cf971c300e8b40a0c846d6abcb8bab47bf",
+      "decision": "Reconciled into authoritative TypeScript implementations or compatible views of the existing canonical owners; original focused and checked-caller regressions are retained."
+    },
+    {
+      "path": "tmp-typescript-stage4-edit.mjs",
+      "comparison": "original-only-change",
+      "originalSha256": "e29aeade93661b01ac11f70c847735ea0f3b63665042b0ebd628bbe827140dc5",
+      "decision": "Preserved as an historical conversion tool in the snapshot; not executed or deployed."
+    },
+    {
+      "path": "tsconfig.base.json",
+      "comparison": "both-added",
+      "originalSha256": "da7d279522490cde322d85328646129cec27abdeedaeff5ad59140ca1422c9e5",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "tsconfig.browser.json",
+      "comparison": "both-added",
+      "originalSha256": "b34a1db764996dab158943d855170aed3510ce0a51d8d9f869558451556ba9aa",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    },
+    {
+      "path": "tsconfig.legacy-actions.json",
+      "comparison": "original-only-change",
+      "originalSha256": "aafbb11d1aeac5eaf60b8c0fc684e7f050e31ecd1a0b47a8bb17dbb85c8eee47",
+      "decision": "Its checked callers and provider contracts are included in the existing strict Worker project; all provider runtime files are TypeScript, without allowJs/checkJs exceptions."
+    },
+    {
+      "path": "tsconfig.worker.json",
+      "comparison": "both-added",
+      "originalSha256": "f9f9e4a4a156b3abf2437df262c6698b440202d0543feacc69c956a4f244eaa6",
+      "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
+    }
+  ]
+}

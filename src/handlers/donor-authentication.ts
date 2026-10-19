@@ -1,3 +1,5 @@
+import { issueDonorSession } from '../lib/donor-sessions.js';
+export { issueDonorSession } from '../lib/donor-sessions.js';
 import type {
   DonorEnvironment,
   DonorRequestBody,
@@ -25,9 +27,7 @@ import {
 
 import {
   applyDonorPassword,
-  DONOR_SESSION_TTL_MS,
   generateSecret,
-  hashSessionToken,
   hasProductionStore,
   json,
   loadDonor,
@@ -200,21 +200,6 @@ export async function handleDonorClaimCheckout(request: Request, env: DonorEnvir
 
 export async function handleDonorSession(request: Request, env: DonorEnvironment) {
   return handleDonorLogin(request, env);
-}
-
-export async function issueDonorSession(env: DonorEnvironment, donor: DonorRecord) {
-  const token = generateSecret('agp_donor');
-  const sessionSalt = generateSecret('session');
-  const updated: DonorRecord = {
-    ...donor,
-    sessionSalt,
-    sessionTokenHash: await hashSessionToken(token, sessionSalt),
-    sessionExpiresAt: new Date(Date.now() + DONOR_SESSION_TTL_MS).toISOString(),
-    lastLoginAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  await saveDonor(env, updated);
-  return { token, donor: updated };
 }
 
 export async function handleDonorSignup(request: Request, env: DonorEnvironment) {

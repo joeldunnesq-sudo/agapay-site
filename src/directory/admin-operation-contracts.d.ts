@@ -161,7 +161,7 @@ export interface DirectoryReviewContext extends DirectoryActorContext {
   authenticationType?: string;
   actorId?: string;
   actorLabel?: unknown;
-  parishSessionId?: string;
-  authenticatedAt?: string;
+  parishSessionId?: unknown;
+  authenticatedAt?: unknown;
 }
 export type DirectoryReviewUser = { id: string; email?: unknown; displayName?: unknown };

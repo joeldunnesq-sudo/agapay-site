@@ -1,3 +1,4 @@
+export { normalizeEmail } from './normalize-email.js';
 export function absoluteWebsiteUrl(value: unknown): string {
   const website = String(value || '').trim();
   if (!website) return '';

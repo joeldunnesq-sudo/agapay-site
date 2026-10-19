@@ -1,4 +1,5 @@
 // Generated from src/lib/format.ts by npm run build:server. Do not edit.
+import { normalizeEmail } from './normalize-email.js';
 function absoluteWebsiteUrl(value) {
   const website = String(value || '').trim();
   if (!website) return '';
@@ -33,4 +34,4 @@ function parishSlug(parishName, city = '') {
   if (!citySlug || nameSlug === citySlug || nameSlug.endsWith(`-${citySlug}`)) return nameSlug;
   return `${nameSlug}-${citySlug}`.slice(0, 80).replace(/-+$/g, '');
 }
-export { absoluteWebsiteUrl, htmlEscape, monthLabel, parishSlug, slugify };
+export { absoluteWebsiteUrl, htmlEscape, monthLabel, normalizeEmail, parishSlug, slugify };

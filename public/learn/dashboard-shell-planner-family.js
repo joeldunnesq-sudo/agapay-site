@@ -29,7 +29,7 @@ function learnSectionHref(section = 'dashboard', query = '') {
     onboarding: '/learn/odyssey/dashboard/setup',
   };
   const base =
-    (isOdysseyLearnContext() ? odyssey : regular)[section] ||
+    learnOwnValue1Family(isOdysseyLearnContext() ? odyssey : regular, section) ||
     (isOdysseyLearnContext() ? odyssey.dashboard : regular.dashboard);
   const params = new URLSearchParams(query);
   if (marketingPreviewActive()) params.set('marketing', '1');
@@ -500,6 +500,12 @@ function renderMealCard(day, meal, slot) {
 }
 function plannerMealSlotValue(meal, slot) {
   if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return meal?.[slot];
+  return void 0;
+}
+function learnOwnValue1Family(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
   return void 0;
 }
 function truthyLearnPlanner2(value) {

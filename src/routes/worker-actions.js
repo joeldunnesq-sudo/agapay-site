@@ -1,4 +1,5 @@
 // Generated from src/routes/worker-actions.ts by npm run build:server. Do not edit.
+import { findRegistrationByParishId } from '../handlers/parish-organization-providers.js';
 import { handleAdminRelationships } from '../handlers/admin-relationships.js';
 import { handleContact, handleAdminContactLeads } from '../handlers/contact.js';
 import { getBearerToken, handleSecurityConfig, json, unauthorized, corsJson } from '../lib/core.js';
@@ -14,7 +15,6 @@ import { handleOperationsCanary, handleOperationsMonitorAlert } from '../operati
 import { handleAdminDailyPastoralCareDigest } from '../sacraments/pastoral-digest.js';
 import {
   verifyParishDashboardBearer,
-  findRegistrationByParishId,
   handleParishStripeRefresh,
   handleDashboardInvite,
   handleParishStripeOnboarding,

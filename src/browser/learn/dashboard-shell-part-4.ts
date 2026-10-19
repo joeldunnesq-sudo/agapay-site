@@ -157,12 +157,7 @@ function renderPlanner(vm: LearnPlannerVm) {
 function plannerStatusMeta(status: string) {
   const normalized = String(status || 'planned').toLowerCase();
   return (
-    (
-      PLANNER_STATUS_META as unknown as Record<
-        string,
-        (typeof PLANNER_STATUS_META)[keyof typeof PLANNER_STATUS_META] | undefined
-      >
-    )[normalized] || {
+    learnOwnValue4(PLANNER_STATUS_META, normalized) || {
       label: normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : 'Planned',
       note: '',
     }
@@ -432,8 +427,7 @@ function renderFamilyPlannerIntro(vm: LearnPlannerVm, scope: string) {
       '☖',
     ],
   };
-  const [kicker, title, desc, icon] =
-    (intros as unknown as Record<string, (typeof intros)[keyof typeof intros] | undefined>)[scope] || intros.lessons;
+  const [kicker, title, desc, icon] = learnOwnValue4(intros, scope) || intros.lessons;
   return `
     <section class="learn-family-intro">
       <span class="learn-family-intro-watermark">${html(icon)}</span>
@@ -466,9 +460,7 @@ function renderFamilyPlannerScopeLegacy(vm: LearnPlannerVm, scope: string) {
     recipes: ['Recipes', 'A fast-aware household recipe box connected to your weekly meal plan.', '☰'],
     groceries: ['Grocery List', 'A simple shopping list that can grow from meals and recipes.', '▤'],
   };
-  const [title, intro, icon] =
-    (titleMap as unknown as Record<string, (typeof titleMap)[keyof typeof titleMap] | undefined>)[scope] ||
-    titleMap.meals;
+  const [title, intro, icon] = learnOwnValue4(titleMap, scope) || titleMap.meals;
   const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to this household's Learn planner.</span><button type="submit">Save ${html(title)}</button></div>`;
   const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || 'guidance')}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || '')}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || '')}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || '')}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || '')}"><input type="hidden" name="household.parishPatronalFeastName" value="${html(planning.household?.parishPatronalFeastName || '')}"><input type="hidden" name="household.parishPatronalFeastDate" value="${html(planning.household?.parishPatronalFeastDate || '')}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" data-family-child-name="${html(child.name || '')}" hidden><input name="childNameDay" value="${html(child.nameDay || '')}"></span>`).join('')}`;
   let content = '';
@@ -730,3 +722,11 @@ export type LearnShell2Part3 = {
   prototypeDaySeeds: typeof prototypeDaySeeds;
   prototypeMonthSeed: typeof prototypeMonthSeed;
 };
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue4<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return undefined;
+}

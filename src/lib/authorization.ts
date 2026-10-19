@@ -1,19 +1,10 @@
-interface AuthorizationMembership extends Record<string, unknown> {
-  id: string;
-  userId: string;
-  parishId: string;
-  roleTemplate: string;
-  status: string;
-}
+import { requireCapability, requireActiveMembership } from './identity-authorization-providers.js';
+import { resolveAuthorizationContext } from './authorization-context.js';
+export { resolveAuthorizationContext } from './authorization-context.js';
+export { requireCapability, requireActiveMembership } from './identity-authorization-providers.js';
+
 type AuthEnv = Partial<Env>;
-interface MembershipRow {
-  id: string;
-  user_id: string;
-  parish_id: string;
-  role_template: string;
-  status: string;
-}
-type AuthUser = NonNullable<Awaited<ReturnType<typeof requirePlatformUser>>> & { id: string };
+
 // AGAPAY Accounting Package 0.75C/0.75D -- Centralized Authorization.
 //
 // This module is the SINGLE entry point for turning "who is making this
@@ -48,9 +39,9 @@ type AuthUser = NonNullable<Awaited<ReturnType<typeof requirePlatformUser>>> & {
 // `return null` / `return false`, not a distinguishable "special case"
 // that a future edit could accidentally loosen.
 
-import { d1, d1First, d1All } from './core.js';
+import './core.js';
 import { requirePlatformUser } from './identity.js';
-import { recordAuditEvent } from './audit-log.js';
+import './audit-log.js';
 
 // ── Capability catalog (docs/accounting/08-capability-model.md) ────────
 // Platform-wide, comprehensive, and deliberately broader than accounting
@@ -492,52 +483,6 @@ export function expandRoleTemplate(roleTemplate: string) {
   return template ? sanitizeGrantableCapabilities(template) : [];
 }
 
-// Resolves a user's authorization context for one parish: their active
-// membership (or null) and their full, current capability set (explicit
-// grants only -- role templates are expanded once, at invitation/grant
-// time, into explicit membership_capabilities rows; this function does not
-// re-expand a stored role_template label, so a later edit to ROLE_TEMPLATES
-// never silently changes an already-granted membership's capabilities).
-//
-// Deny-by-default: any missing input, missing membership row, or membership
-// status other than the literal string 'active' returns the same empty
-// result -- 'invited', 'suspended', 'revoked', and "no row at all" are
-// indistinguishable to every caller of this function, on purpose.
-export async function resolveAuthorizationContext(
-  env: AuthEnv,
-  { userId, parishId }: { userId?: string; parishId?: string }
-): Promise<{ membership: AuthorizationMembership | null; capabilities: string[] }> {
-  if (!d1(env) || !userId || !parishId) return { membership: null, capabilities: [] };
-
-  const membership = await d1First<MembershipRow>(
-    env,
-    'SELECT * FROM parish_memberships WHERE user_id = ?1 AND parish_id = ?2',
-    userId,
-    parishId
-  );
-
-  if (!membership || membership.status !== 'active') {
-    return { membership: null, capabilities: [] };
-  }
-
-  const rows = await d1All<{ capability: string }>(
-    env,
-    'SELECT capability FROM membership_capabilities WHERE membership_id = ?1',
-    membership.id
-  );
-
-  return {
-    membership: {
-      id: membership.id,
-      userId: membership.user_id,
-      parishId: membership.parish_id,
-      roleTemplate: membership.role_template || '',
-      status: membership.status,
-    },
-    capabilities: rows.map((row) => row.capability),
-  };
-}
-
 export async function hasCapability(
   env: AuthEnv,
   { userId, parishId, capability }: { userId?: string; parishId?: string; capability?: string }
@@ -562,80 +507,6 @@ export async function hasPlatformCapability(
   void _userId;
   if (!PLATFORM_ONLY_CAPABILITIES.has(capability)) return false;
   return false;
-}
-
-function correlationIdFor(request: Request | null) {
-  return request?.headers?.get?.('X-Request-Id') || '';
-}
-
-// The primary authorization entry point for a request. Resolves the
-// platform-user session (never the legacy parish bearer token -- see
-// module header), resolves their membership + capabilities for parishId,
-// and returns null unless the specific capability is present on an active
-// membership. Mirrors the return-null-on-failure shape of requireDonor/
-// requireAdminContext so future route handlers can use the same
-// `if (!ctx) return unauthorized()` pattern already idiomatic in this
-// codebase.
-//
-// Package 0.75D: a denial that reaches an authenticated user with a real,
-// active membership (i.e. the specific capability was simply absent, not
-// "no session"/"no membership at all") is recorded as a central audit
-// event -- this is the security-relevant signal (an authenticated actor
-// attempted something outside their granted permissions), distinct from
-// anonymous/no-session traffic, which is left to the existing rate-limiting
-// layer rather than filling the audit log with unauthenticated noise.
-export async function requireCapability(
-  request: Request,
-  env: AuthEnv,
-  parishId: string | undefined,
-  capability: string | undefined
-) {
-  const user = await requirePlatformUser(request, env);
-  if (!user) return null;
-
-  const { membership, capabilities } = await resolveAuthorizationContext(env, {
-    userId: user.id,
-    parishId,
-  });
-
-  if (!membership) return null;
-
-  if (!capabilities.includes(capability as string)) {
-    await recordAuditEvent(env, request, {
-      action: 'authorization.capability_denied',
-      actorUserId: user.id,
-      actorType: 'platform_user',
-      targetType: 'parish_membership',
-      targetId: membership.id,
-      organizationId: parishId,
-      requestId: correlationIdFor(request),
-      metadata: {
-        capabilityRequested: capability,
-        resource: request?.url || '',
-        decision: 'denied',
-      },
-    });
-    return null;
-  }
-
-  return { user: user as AuthUser, membership, capabilities };
-}
-
-// Resolves just the authenticated platform user + their active membership
-// for a parish, without requiring a specific capability -- useful for
-// routes that need "any active member of this parish" (e.g. listing one's
-// own memberships) rather than a specific capability gate.
-export async function requireActiveMembership(request: Request, env: AuthEnv, parishId: string) {
-  const user = await requirePlatformUser(request, env);
-  if (!user) return null;
-
-  const { membership, capabilities } = await resolveAuthorizationContext(env, {
-    userId: user.id,
-    parishId,
-  });
-  if (!membership) return null;
-
-  return { user: user as AuthUser, membership, capabilities };
 }
 
 // ── Developer API (Package 0.75D) ───────────────────────────────────────

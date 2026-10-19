@@ -1,18 +1,13 @@
 // Generated from src/lib/identity.ts by npm run build:server. Do not edit.
-import {
-  d1,
-  d1First,
-  d1Run,
-  generateSecret,
-  hashSessionToken,
-  secureCompare,
-  normalizeEmail,
-  createPasswordRecord,
-  verifyPasswordRecord,
-  getBearerToken,
-  loadDonor,
-  privilegedMfaRequired,
-} from './core.js';
+import { d1, d1First, d1Run } from './storage.js';
+import { generateSecret, hashSessionToken, secureCompare } from './session-crypto.js';
+import { normalizeEmail } from './normalize-email.js';
+import { createPasswordRecord, verifyPasswordRecord } from './password-records.js';
+import { getBearerToken } from './api-responses.js';
+import { loadDonor } from './donor-repository.js';
+import { privilegedMfaRequired } from './authentication-policy.js';
+import { storedField } from './stored-values.js';
+import { resolveDonorSession } from './donor-sessions.js';
 const PLATFORM_SESSION_TTL_MS = 1e3 * 60 * 60 * 12;
 const PLATFORM_USER_EMAIL_HEADER = 'X-AGAPAY-User-Email';
 const DONOR_EMAIL_HEADER = 'X-AGAPAY-Donor-Email';
@@ -105,7 +100,11 @@ async function issuePlatformUserSession(env, userId, { mfaVerifiedAt = '' } = {}
       nowIso()
     );
   } catch (error) {
-    if (privilegedMfaRequired(env) || !String(error?.message || error).includes('session_mfa_verified_at')) throw error;
+    if (
+      privilegedMfaRequired(env) ||
+      !String(storedField(error, 'message') || error).includes('session_mfa_verified_at')
+    )
+      throw error;
     await d1Run(
       env,
       `UPDATE platform_users
@@ -121,8 +120,9 @@ async function issuePlatformUserSession(env, userId, { mfaVerifiedAt = '' } = {}
   return { token, expiresAt, mfaVerifiedAt: mfaVerifiedAt || '' };
 }
 async function markPlatformUserSessionMfaVerified(env, userId, verifiedAt = nowIso()) {
-  if (!d1(env) || !userId) return false;
-  const result = await d1(env)
+  const db = d1(env);
+  if (!db || !userId) return false;
+  const result = await db
     .prepare(
       `UPDATE platform_users SET session_mfa_verified_at = ?2, updated_at = ?2
      WHERE id = ?1 AND session_token_hash IS NOT NULL`
@@ -144,7 +144,7 @@ async function revokePlatformUserSession(env, userId) {
       nowIso()
     );
   } catch (error) {
-    if (!String(error?.message || error).includes('session_mfa_verified_at')) throw error;
+    if (!String(storedField(error, 'message') || error).includes('session_mfa_verified_at')) throw error;
     await d1Run(
       env,
       `UPDATE platform_users
@@ -177,11 +177,8 @@ async function requirePlatformUser(request, env) {
   }
   const donorEmail = normalizeEmail(request.headers.get(DONOR_EMAIL_HEADER));
   if (!donorEmail) return null;
-  const donor = await loadDonor(env, donorEmail);
-  if (!donor?.emailVerifiedAt || !donor.sessionTokenHash || !donor.sessionSalt) return null;
-  if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
-  const submittedDonorHash = await hashSessionToken(token, donor.sessionSalt);
-  if (!secureCompare(submittedDonorHash, donor.sessionTokenHash)) return null;
+  const donor = await resolveDonorSession(await loadDonor(env, donorEmail), token);
+  if (!donor) return null;
   const row =
     (await findPlatformUserByEmail(env, donorEmail)) ||
     (await ensurePlatformUser(env, {

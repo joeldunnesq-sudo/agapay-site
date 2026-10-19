@@ -58,7 +58,7 @@ function learnSectionHref(section: string = 'dashboard', query: string = '') {
     onboarding: '/learn/odyssey/dashboard/setup',
   };
   const base =
-    ((isOdysseyLearnContext() ? odyssey : regular) as unknown as Record<string, string | undefined>)[section] ||
+    learnOwnValue1Family(isOdysseyLearnContext() ? odyssey : regular, section) ||
     (isOdysseyLearnContext() ? odyssey.dashboard : regular.dashboard);
   const params = new URLSearchParams(query);
   if (marketingPreviewActive()) params.set('marketing', '1');
@@ -590,5 +590,13 @@ export type LearnShell1Part0 = {
 
 function plannerMealSlotValue(meal: LearnShellNode, slot: string) {
   if (slot === 'breakfast' || slot === 'lunch' || slot === 'dinner') return meal?.[slot];
+  return undefined;
+}
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue1Family<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
   return undefined;
 }

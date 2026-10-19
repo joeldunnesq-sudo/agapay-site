@@ -1,4 +1,10 @@
 // Generated from src/lib/core.ts by npm run build:server. Do not edit.
+import { saveDonor as saveDonorValue } from './donor-repository.js';
+import './session-crypto.js';
+import { generateSecret } from './session-crypto.js';
+import { pbkdf2Hex } from './password-records.js';
+import { privilegedMfaRequired } from './authentication-policy.js';
+import './stored-values.js';
 import { d1, d1First } from './database-reads.js';
 import { json } from './http-responses.js';
 import { DONOR_OFFERING_KEY_PREFIX } from './kv-reads.js';
@@ -17,7 +23,6 @@ import {
   STRIPE_ACCOUNT_INDEX_PREFIX,
   STRIPE_SUBSCRIPTION_INDEX_PREFIX,
   STRIPE_PAYMENT_INTENT_INDEX_PREFIX,
-  PASSWORD_HASH_ITERATIONS,
   STRIPE_EVENT_PROCESSING_RETRY_MS,
   marketplaceBrowseCategories,
   marketplaceFeaturedFilters,
@@ -25,7 +30,7 @@ import {
   marketplaceProducts,
   STEWARDSHIP_ACTIVE_STATES,
 } from './core-shared.js';
-import { rateLimitCounter, toHex } from './core-shared.js';
+import { rateLimitCounter } from './core-shared.js';
 import { sha256Hex } from './core-authentication.js';
 import './core-sessions.js';
 import { d1 as d12, d1First as d1First2, d1All } from './database-reads.js';
@@ -47,7 +52,7 @@ import {
   STRIPE_SUBSCRIPTION_INDEX_PREFIX as STRIPE_SUBSCRIPTION_INDEX_PREFIX2,
   STRIPE_PAYMENT_INTENT_INDEX_PREFIX as STRIPE_PAYMENT_INTENT_INDEX_PREFIX2,
   PASSWORD_HASH_VERSION,
-  PASSWORD_HASH_ITERATIONS as PASSWORD_HASH_ITERATIONS2,
+  PASSWORD_HASH_ITERATIONS,
   DONOR_SESSION_TTL_MS,
   ADMIN_SESSION_TTL_MS,
   ADMIN_SESSION_MAX,
@@ -83,13 +88,6 @@ import {
   resolveParishDashboardSession,
   markParishDashboardSessionMfaVerified,
 } from './core-sessions.js';
-function privilegedMfaRequired(env) {
-  return (
-    String(env?.PRIVILEGED_MFA_REQUIRED || '')
-      .trim()
-      .toLowerCase() === 'true'
-  );
-}
 function marketplaceSearchText(entry = {}) {
   return [
     entry.name,
@@ -303,21 +301,19 @@ function decodeListCursor(cursor) {
   }
 }
 async function d1Run(env, sql, ...params) {
-  if (!d1(env)) return null;
-  return d1(env)
+  const db = d1(env);
+  if (!db) return null;
+  return db
     .prepare(sql)
     .bind(...params)
     .run();
 }
 async function d1Batch(env, statements) {
-  if (!d1(env)) return null;
+  const db = d1(env);
+  if (!db) return null;
   if (!Array.isArray(statements) || !statements.length) return null;
-  const prepared = statements.map(({ sql, params = [] }) =>
-    d1(env)
-      .prepare(sql)
-      .bind(...params)
-  );
-  return d1(env).batch(prepared);
+  const prepared = statements.map(({ sql, params = [] }) => db.prepare(sql).bind(...params));
+  return db.batch(prepared);
 }
 async function d1GetSetting(env, key) {
   const row = await d1First(env, 'SELECT value FROM app_settings WHERE key = ?1', key);
@@ -493,31 +489,6 @@ async function recordStripeEvent(env, eventId) {
     );
   }
 }
-function generateSecret(prefix = 'agp') {
-  const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
-  return `${prefix}_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
-}
-async function pbkdf2Hex(password, salt, iterations = PASSWORD_HASH_ITERATIONS) {
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(String(password || '')),
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  );
-  const derived = await crypto.subtle.deriveBits(
-    {
-      name: 'PBKDF2',
-      hash: 'SHA-256',
-      salt: new TextEncoder().encode(String(salt || '')),
-      iterations,
-    },
-    keyMaterial,
-    256
-  );
-  return toHex(derived);
-}
 function publicDonor(donor) {
   return {
     email: donor.email || '',
@@ -555,33 +526,6 @@ async function loadDonor(env, email) {
   if (d1(env)) await saveDonor(env, donor);
   return donor;
 }
-async function saveDonor(env, donor) {
-  const email = normalizeEmail(donor.email);
-  const record = { ...donor, email };
-  const data = JSON.stringify(record);
-  if (d1(env)) {
-    await d1Run(
-      env,
-      `INSERT INTO donors (email, default_parish_id, email_verified_at, created_at, updated_at, data)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-       ON CONFLICT(email) DO UPDATE SET
-         default_parish_id = excluded.default_parish_id,
-         email_verified_at = excluded.email_verified_at,
-         created_at = excluded.created_at,
-         updated_at = excluded.updated_at,
-         data = excluded.data`,
-      email,
-      record.defaultParishId || '',
-      record.emailVerifiedAt || '',
-      record.createdAt || '',
-      record.updatedAt || /* @__PURE__ */ new Date().toISOString(),
-      data
-    );
-  } else if (env.AGAPAY_REGISTRATIONS) {
-    await env.AGAPAY_REGISTRATIONS.put(donorKey(email), data);
-  }
-  return donor;
-}
 async function deleteDonor(env, email) {
   const normalized = normalizeEmail(email);
   if (!normalized) return;
@@ -602,6 +546,7 @@ function hasStewardshipAccess(registration) {
   if (hasActiveStewardshipComp(registration)) return true;
   return STEWARDSHIP_ACTIVE_STATES.has(stewardshipStatus(registration));
 }
+const saveDonor = saveDonorValue;
 export {
   ADMIN_PASSWORD_KV_KEY2 as ADMIN_PASSWORD_KV_KEY,
   ADMIN_SESSION_MAX,
@@ -615,7 +560,7 @@ export {
   PARISH_ID_INDEX_PREFIX2 as PARISH_ID_INDEX_PREFIX,
   PARISH_SESSION_MAX,
   PARISH_SESSION_TTL_MS,
-  PASSWORD_HASH_ITERATIONS2 as PASSWORD_HASH_ITERATIONS,
+  PASSWORD_HASH_ITERATIONS,
   PASSWORD_HASH_VERSION,
   RATE_LIMIT_PREFIX2 as RATE_LIMIT_PREFIX,
   SECURITY_HEADERS,

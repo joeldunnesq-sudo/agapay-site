@@ -18,8 +18,8 @@ export interface IdempotencyContextOptions {
   request?: AccountingRequest | null;
 }
 export interface AccountingAuthorization {
-  user?: { id?: unknown; [key: string]: unknown } | null;
-  membership?: { id?: unknown; [key: string]: unknown } | null;
+  user?: { id?: unknown } | null;
+  membership?: { id?: unknown } | null;
   capabilities?: Iterable<string> | null;
 }
 export interface AccountingContextOptions extends IdempotencyContextOptions {

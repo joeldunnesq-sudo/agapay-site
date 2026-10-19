@@ -166,3 +166,7 @@ Each extraction change must:
 4. Lower the legacy physical source budget and remove the exact lint-warning baseline entry when its file falls below the thresholds.
 5. Run the focused tagged suite, `npm run quality`, and `npm run check`.
 6. Run Worker dry-run/startup validation when Worker code, imports, routing, or scheduled composition changes.
+
+## Parallel migration ownership
+
+The [reconciliation report](typescript-reconciliation.md) records strict TypeScript providers for session, identity and organization contracts. New support modules require explicit existing-entry owners and generated-output registration; they receive no additional frozen migration completion credit. Preserve the canonical registration cache, compatibility function bindings, negative caller checks and normal-MFA release gates.

@@ -166,16 +166,22 @@ export async function searchMinistryParticipantCandidates(
   for (const row of profiles) {
     const email = normalizeEmail(row.email);
     if (!email || existingEmails.has(email) || candidates.length >= cappedLimit) continue;
-    let profile: { donorName?: string; householdName?: string } = {};
+    let profileName = '';
     try {
-      profile = JSON.parse(row.data || '{}');
+      const profile: unknown = JSON.parse(row.data || '{}');
+      if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
+        const donorName = 'donorName' in profile && typeof profile.donorName === 'string' ? profile.donorName : '';
+        const householdName =
+          'householdName' in profile && typeof profile.householdName === 'string' ? profile.householdName : '';
+        profileName = donorName || householdName;
+      }
     } catch {
-      profile = {};
+      // Invalid profile JSON has no usable display name; retain the email fallback.
     }
     candidates.push({
       candidateId: parishProfileCandidateId(email),
       personId: '',
-      displayName: String(profile.donorName || profile.householdName || email.split('@')[0]).trim() || 'Parishioner',
+      displayName: String(profileName || email.split('@')[0]).trim() || 'Parishioner',
       email,
       source: 'parish_profile',
     });

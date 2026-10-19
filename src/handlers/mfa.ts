@@ -203,7 +203,7 @@ export async function handleMfaStepUp(request: Request, env: Partial<Env>) {
   const principalType = String(body.principalType || '');
   const principalId = String(body.principalId || '');
   const context = await rawStepUpContext(request, env, principalType, principalId);
-  if (!context) return unauthorized();
+  if (!context || typeof context.sessionId !== 'string') return unauthorized();
   try {
     const flow = await beginMfaAuthentication(env, request, {
       principalType,
@@ -235,7 +235,7 @@ export async function handleParishAuthenticatorSetup(request: Request, env: Part
   const parishId = String(body?.parishId || '');
   const found = parishId && (await findRegistrationByParishId(env, parishId));
   const session = found && (await resolveParishDashboardSession(found.registration, getBearerToken(request)));
-  if (!session || session.accessType !== 'primary_parish') return unauthorized();
+  if (!session || session.accessType !== 'primary_parish' || typeof session.id !== 'string') return unauthorized();
   if (!freshMfaAt(session.mfaVerifiedAt)) return stepUpRequired('parish_admin', parishId);
   try {
     const status = await mfaStatus(env, 'parish_admin', parishId);

@@ -1,3 +1,4 @@
+import { resolveDonorSession } from '../lib/donor-sessions.js';
 import type { ParishRegistration } from './parish-composition-contracts.js';
 
 // src/handlers/parish.js
@@ -16,7 +17,6 @@ import {
   getAdminToken,
   getBearerToken,
   hasProductionStore,
-  hashSessionToken,
   issueParishDashboardSession,
   json,
   listKvKeys,
@@ -143,13 +143,7 @@ export async function requireDonor(request: Request, env: Partial<Env>) {
   const email = normalizeEmail(request.headers.get('X-AGAPAY-Donor-Email'));
   const token = getBearerToken(request);
   if (!email || !token) return null;
-  const donor = await loadDonor(env, email);
-  if (!donor?.emailVerifiedAt) return null;
-  if (!donor || !donor.sessionTokenHash || !donor.sessionSalt) return null;
-  if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
-  const submittedHash = await hashSessionToken(token, donor.sessionSalt);
-  if (!secureCompare(submittedHash, donor.sessionTokenHash)) return null;
-  return donor;
+  return resolveDonorSession(await loadDonor(env, email), token);
 }
 
 export async function requireAdminContext(request: Request, env: Partial<Env>) {

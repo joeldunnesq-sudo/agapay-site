@@ -1,5 +1,8 @@
 import type {
   PrintCenterInput,
+  PdfState,
+  PdfFonts,
+  PDFPage,
   PrintTemplate,
   PrintOptions,
   PrintCard,
@@ -286,4 +289,22 @@ export function resolveLearnPrintDocument(
 
   // ── Default ───────────────────────────────────────────────────────────────
   return buildHouseholdWeekly(printCenter, template, generatedAt);
+}
+
+// A renderer must create its first page explicitly, preserving cover and form pagination.
+export function newPdfState(pdf: PDFDocument, fonts: PdfFonts): PdfState {
+  let currentPage: PDFPage | undefined;
+  return {
+    pdf,
+    fonts,
+    pages: [],
+    y: 0,
+    get page(): PDFPage {
+      if (!currentPage) throw new Error('Create a PDF page before drawing.');
+      return currentPage;
+    },
+    set page(page: PDFPage) {
+      currentPage = page;
+    },
+  };
 }

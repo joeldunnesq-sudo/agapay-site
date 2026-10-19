@@ -17,7 +17,7 @@ import {
   GRADE_LEVEL_NAMES,
   GRADE_PERCENT_RANGES,
 } from './print-documents-shared.js';
-import { fetchBytes, embedFonts, text } from './print-documents-shared.js';
+import { fetchBytes, embedFonts, text, newPdfState } from './print-documents-shared.js';
 import { wrapText, drawTextLines, resolveColWidths } from './print-pdf-layout.js';
 function nextGradeLabel(gradeLevel) {
   const level = Number(gradeLevel) || 9;
@@ -41,7 +41,9 @@ async function embedMarkLogo(pdf) {
   }
 }
 function newFormState(pdf, fonts, markImage) {
-  return { pdf, fonts, markImage, page: null, pages: [], y: 0 };
+  const state = newPdfState(pdf, fonts);
+  state.markImage = markImage;
+  return state;
 }
 function drawFormMasthead(state, { eyebrow = 'Print Shop', title, subtitle }) {
   const page = state.page;

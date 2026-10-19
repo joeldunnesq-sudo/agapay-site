@@ -1216,7 +1216,25 @@
     "scripts/truthy-filter-adapters-tests.mjs",
     "scripts/support-json-boundaries-tests.mjs",
     "scripts/feature-request-boundary-tests.mjs",
-    "scripts/learn-boundary-controls-tests.mjs"
+    "scripts/learn-boundary-controls-tests.mjs",
+    "scripts/directory-profile-json-tests.mjs",
+    "scripts/learn-final-boundaries-tests.mjs",
+    "scripts/storage-session-contract-tests.mjs",
+    "scripts/admin-donor-session-tests.mjs",
+    "scripts/identity-contract-tests.mjs",
+    "scripts/login-invitation-contract-tests.mjs",
+    "scripts/organization-action-provider-tests.mjs",
+    "scripts/typescript-reconciliation-tests.mjs",
+    "scripts/bookstore-concept-browser-tests.mjs",
+    "scripts/lib/core-source.mjs",
+    "scripts/typecheck-legacy",
+    "public/myagapay/bookstore-concept/index.html",
+    "public/myagapay/bookstore-concept/style.css",
+    "docs/architecture/typescript-reconciliation.md",
+    "docs/architecture/typescript-reconciliation-ledger.json",
+    "docs/architecture/typescript-parallel-migration-history.md",
+    "docs/accounting/demo-readiness-2026-09-16.md",
+    "docs/agapay-executive-zoom-demo-script.md"
   ],
   "check": [
     ".prettierrc.json",
@@ -2466,6 +2484,19 @@
     "scripts/truthy-filter-adapters-tests.mjs",
     "scripts/support-json-boundaries-tests.mjs",
     "scripts/feature-request-boundary-tests.mjs",
-    "scripts/learn-boundary-controls-tests.mjs"
+    "scripts/learn-boundary-controls-tests.mjs",
+    "scripts/directory-profile-json-tests.mjs",
+    "scripts/learn-final-boundaries-tests.mjs",
+    "scripts/storage-session-contract-tests.mjs",
+    "scripts/admin-donor-session-tests.mjs",
+    "scripts/identity-contract-tests.mjs",
+    "scripts/login-invitation-contract-tests.mjs",
+    "scripts/organization-action-provider-tests.mjs",
+    "scripts/typescript-reconciliation-tests.mjs",
+    "scripts/bookstore-concept-browser-tests.mjs",
+    "scripts/lib/core-source.mjs",
+    "scripts/typecheck-legacy",
+    "public/myagapay/bookstore-concept/index.html",
+    "public/myagapay/bookstore-concept/style.css"
   ]
 }

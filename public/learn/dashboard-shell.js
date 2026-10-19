@@ -803,7 +803,7 @@ function pageIntroIcon(id) {
     onboarding:
       '<path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.7 1.7 0 0 1-2.6 1.5 2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7A1.7 1.7 0 0 1 5 12a1.7 1.7 0 0 1-1 1.6 2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7A1.7 1.7 0 0 1 9 18.9a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.7 1.7 0 0 1 2.6-1.5 2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7A1.7 1.7 0 0 1 19 12a1.7 1.7 0 0 1 1-1.6 2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7A1.7 1.7 0 0 1 14.2 4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8c.25 2.3.72 2.78 3 3-2.28.25-2.75.72-3 3-.25-2.28-.72-2.75-3-3 2.28-.22 2.75-.7 3-3z" fill="currentColor" stroke="none"/><g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${icons[id] || icons.dashboard}</g></svg>`;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8c.25 2.3.72 2.78 3 3-2.28.25-2.75.72-3 3-.25-2.28-.72-2.75-3-3 2.28-.22 2.75-.7 3-3z" fill="currentColor" stroke="none"/><g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${learnOwnValue1(icons, id) || icons.dashboard}</g></svg>`;
 }
 function pageIntroMeta(id) {
   const meta = {
@@ -877,7 +877,7 @@ function pageIntroMeta(id) {
       ref: 'Galatians 6:9',
     },
   };
-  return meta[id] || meta.dashboard;
+  return learnOwnValue1(meta, id) || meta.dashboard;
 }
 function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
@@ -933,10 +933,10 @@ function pageIntro(vm) {
     },
   };
   const activeMeta =
-    experience.tefaActive && tefaMeta[vm.page.id]
+    experience.tefaActive && learnOwnValue1(tefaMeta, vm.page.id)
       ? {
           ...meta,
-          ...tefaMeta[vm.page.id],
+          ...learnOwnValue1(tefaMeta, vm.page.id),
         }
       : meta;
   const kicker = experience.odyssey && vm.page.id === 'dashboard' ? experience.dashboardKicker : activeMeta.kicker;
@@ -980,6 +980,12 @@ function downloadBlob(filename, blob) {
 }
 function isLearnFamilyPlan() {
   return localStorage.getItem('agapay.learn.plan') === 'family';
+}
+function learnOwnValue1(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return void 0;
 }
 function truthyLearn2(value) {
   return Boolean(value);
@@ -1315,7 +1321,7 @@ function sidebar(vm) {
             (item) => `
           <a class="${item.id === active ? 'is-active' : ''}" href="${item.href}" ${item.id === active ? 'aria-current="page"' : ''}>
             <span class="learn-product-nav-icon">${item.icon}</span>
-            <span>${html(experience.navLabels[item.id] || item.label)}</span>
+            <span>${html(learnOwnValue2(experience.navLabels, item.id) || item.label)}</span>
             ${item.comingSoon ? '<small class="learn-nav-soon">Soon</small>' : ''}
           </a>
           ${item.id === 'planner' ? plannerSidebarSubnav(active) : ''}
@@ -1481,6 +1487,12 @@ function renderGraceModePanel(vm) {
       </div>
     </section>
   `;
+}
+function learnOwnValue2(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return void 0;
 }
 function truthyLearn3(value) {
   return Boolean(value);
@@ -2110,7 +2122,7 @@ function renderPlanner(vm) {
 function plannerStatusMeta(status) {
   const normalized = String(status || 'planned').toLowerCase();
   return (
-    PLANNER_STATUS_META[normalized] || {
+    learnOwnValue4(PLANNER_STATUS_META, normalized) || {
       label: normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : 'Planned',
       note: '',
     }
@@ -2361,7 +2373,7 @@ function renderFamilyPlannerIntro(vm, scope) {
       '☖',
     ],
   };
-  const [kicker, title, desc, icon] = intros[scope] || intros.lessons;
+  const [kicker, title, desc, icon] = learnOwnValue4(intros, scope) || intros.lessons;
   return `
     <section class="learn-family-intro">
       <span class="learn-family-intro-watermark">${html(icon)}</span>
@@ -2393,7 +2405,7 @@ function renderFamilyPlannerScopeLegacy(vm, scope) {
     recipes: ['Recipes', 'A fast-aware household recipe box connected to your weekly meal plan.', '☰'],
     groceries: ['Grocery List', 'A simple shopping list that can grow from meals and recipes.', '▤'],
   };
-  const [title, intro, icon] = titleMap[scope] || titleMap.meals;
+  const [title, intro, icon] = learnOwnValue4(titleMap, scope) || titleMap.meals;
   const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to this household's Learn planner.</span><button type="submit">Save ${html(title)}</button></div>`;
   const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || 'guidance')}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || '')}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || '')}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || '')}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || '')}"><input type="hidden" name="household.parishPatronalFeastName" value="${html(planning.household?.parishPatronalFeastName || '')}"><input type="hidden" name="household.parishPatronalFeastDate" value="${html(planning.household?.parishPatronalFeastDate || '')}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" data-family-child-name="${html(child.name || '')}" hidden><input name="childNameDay" value="${html(child.nameDay || '')}"></span>`).join('')}`;
   let content = '';
@@ -2633,6 +2645,12 @@ function prototypeMonthSeed(vm) {
     weekRange: weekStart && weekEnd ? `${weekStart} - ${weekEnd}` : 'This week',
     fastingSummary: fastNames.length ? fastNames.slice(0, 2).join(' + ') : 'Church calendar',
   };
+}
+function learnOwnValue4(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return void 0;
 }
 function truthyLearn5(value) {
   return Boolean(value);
@@ -3509,7 +3527,7 @@ function scheduledDays(value, legacyFrequency = '') {
     '1x': ['wed'],
     'as-needed': [],
   };
-  return presets[String(legacyFrequency || '').toLowerCase()] || ['mon', 'tue', 'wed', 'thu', 'fri'];
+  return learnOwnValue6(presets, String(legacyFrequency || '').toLowerCase()) || ['mon', 'tue', 'wed', 'thu', 'fri'];
 }
 function setupDayPicker(value, legacyFrequency = '') {
   const selected = scheduledDays(value, legacyFrequency);
@@ -3710,6 +3728,12 @@ function formationSetupPanel(vm) {
       <div class="learn-setup-section-grid">${sections.map((section) => setupSectionCard({ group: 'formation', ...section, count: section.rowKind === 'recitation' ? section.rows.length : countByType(section.type) })).join('')}</div>
       ${sections.map((section) => setupSectionPanel({ group: 'formation', panel: section.panel, title: section.title, detail: section.detail, minutes: section.minutes, content: sectionContent(section) })).join('')}
     </div>`;
+}
+function learnOwnValue6(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return void 0;
 }
 function formSubjectsSetupPanel(vm, currentTermId) {
   const subjects = vm.subjects || [];
@@ -4505,7 +4529,7 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
           planningMode: draft.useForms ? 'forms' : 'grades',
           ...starterAssignment(groupLabel),
           termId: 'term_1',
-          daysOfWeek: subjectDays[subject.weeklyFrequency] || subjectDays['1x'],
+          daysOfWeek: learnOwnValue8(subjectDays, subject.weeklyFrequency) || subjectDays['1x'],
           resource: '',
           resourceType: 'none',
           color: colors[(groupIndex + subjectIndex) % colors.length],
@@ -4789,6 +4813,12 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
     if (event.target.closest('[data-wizard-next], [data-wizard-finish]')) return;
   });
 }
+function learnOwnValue8(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return void 0;
+}
 function truthyLearn9(value) {
   return Boolean(value);
 }
@@ -4821,7 +4851,7 @@ function setupExperience(method = 'Unsure', groupingMode = 'forms') {
       note: 'A balanced starting point keeps the essentials visible now and leaves room to refine your method later.',
     },
   };
-  return profiles[method] || profiles.Unsure;
+  return learnOwnValue9(profiles, method) || profiles.Unsure;
 }
 function mealSetupRow(meal = {}, date = '') {
   const resolvedDate = meal.date || date;
@@ -4907,7 +4937,7 @@ function renderSetup(vm) {
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${collapsibleSetupPanel('children', groupingTitle, childrenContent, { icon: '◎', summary: `${vm.children.length || 0} ${vm.children.length === 1 ? 'child' : 'children'} configured`, defaultCollapsed: collapseDefault })}
       ${collapsibleSetupPanel('terms', 'Terms', termsContent, { icon: '◷', summary: `${vm.terms?.length || 1} term${(vm.terms?.length || 1) === 1 ? '' : 's'} in this school year`, defaultCollapsed: collapseDefault })}
-      ${experience.order.map((key) => adaptivePanels[key]).join('')}
+      ${experience.order.map((key) => learnOwnValue9(adaptivePanels, key)).join('')}
       <div class="learn-setup-savebar">
         <span data-setup-status class="learn-muted">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
@@ -5303,6 +5333,12 @@ function setupChildRowsFromForm(form) {
       };
     })
     .filter((child) => child.firstName || child.formLabel || child.gradeLabel);
+}
+function learnOwnValue9(table, key) {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return void 0;
 }
 function truthyLearn10(value) {
   return Boolean(value);

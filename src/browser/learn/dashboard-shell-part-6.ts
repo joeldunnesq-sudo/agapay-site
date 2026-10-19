@@ -395,11 +395,7 @@ function scheduledDays(value: unknown, legacyFrequency: unknown = '') {
     '1x': ['wed'],
     'as-needed': [],
   };
-  return (
-    (presets as unknown as Record<string, (typeof presets)[keyof typeof presets] | undefined>)[
-      String(legacyFrequency || '').toLowerCase()
-    ] || ['mon', 'tue', 'wed', 'thu', 'fri']
-  );
+  return learnOwnValue6(presets, String(legacyFrequency || '').toLowerCase()) || ['mon', 'tue', 'wed', 'thu', 'fri'];
 }
 
 function setupDayPicker(value: unknown, legacyFrequency: unknown = '') {
@@ -640,3 +636,11 @@ export type LearnShell2Part5 = {
   setupSectionPanel: typeof setupSectionPanel;
   formationSetupPanel: typeof formationSetupPanel;
 };
+
+// Read only owned table entries; unknown and prototype keys use the caller's fallback.
+function learnOwnValue6<T extends object>(table: T, key: string): T[keyof T] | undefined {
+  for (const name in table) {
+    if (name === key && Object.hasOwn(table, name)) return table[name];
+  }
+  return undefined;
+}

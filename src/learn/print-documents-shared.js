@@ -244,6 +244,22 @@ function resolveLearnPrintDocument(printCenter, template, generatedAt) {
   if (type === 'planner-lesson-term-child') return buildPlannerLessonTermChild(printCenter, template, generatedAt);
   return buildHouseholdWeekly(printCenter, template, generatedAt);
 }
+function newPdfState(pdf, fonts) {
+  let currentPage;
+  return {
+    pdf,
+    fonts,
+    pages: [],
+    y: 0,
+    get page() {
+      if (!currentPage) throw new Error('Create a PDF page before drawing.');
+      return currentPage;
+    },
+    set page(page) {
+      currentPage = page;
+    },
+  };
+}
 export {
   BURGUNDY,
   CORE_SUBJECT_CATEGORIES,
@@ -280,6 +296,7 @@ export {
   listSection,
   liturgicalSection,
   momNotesSection,
+  newPdfState,
   resolveLearnPrintDocument,
   sumMinutes,
   tableSection,

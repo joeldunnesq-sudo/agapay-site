@@ -1,4 +1,4 @@
-export type RouteRegistry<TContext, TResult> = (
+export type RouteRegistry<TContext, TResult = Response> = (
   context: TContext
 ) => TResult | null | undefined | Promise<TResult | null | undefined>;
 
