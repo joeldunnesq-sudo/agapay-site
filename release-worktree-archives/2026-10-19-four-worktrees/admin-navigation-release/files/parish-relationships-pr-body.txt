@@ -1,0 +1,8 @@
+Parish retention and milestone care now sit on the admin home: a blue retention section and a warm, responsive parish-relationships panel with actionable setup/billing needs and upcoming occasions.
+
+Adds daily subscription snapshots, 30/90/365-day endpoint retention, net revenue retention, and onboarding counts. Adds branded annual giving reports and patronal feast greetings, with per-parish previews, recipients, time zones, enable/disable controls, and delivery history. Annual messages start in preview mode; enabled messages run during the 9 a.m. local hour with atomic duplicate protection. Historical retention is not fabricated before tracking starts.
+
+Migration: 0129_parish_relationships.sql. Reuses Resend; no new secrets. Adds hourly cron. No customer emails were sent during development.
+
+Validation: npm run quality; relationship SQLite/integration tests (auth, dates, currencies, donor calculations, settings, concurrent and ambiguous delivery); desktop/mobile browser tests; existing navigation and overview metrics tests; route registry tests; production Wrangler dry-run. New suites are in required CI.
+

@@ -1,0 +1,9 @@
+Requests previously lacked a common error boundary and a consistent support reference, and ordinary outbound emails had no default deadline.
+
+Wrap Worker fetch dispatch with a request-scoped diagnostic context. Responses expose a server-generated X-Request-ID; uncaught failures return safe JSON with that reference. Structured failures include route family, method, release SHA, elapsed time, and an allowlisted classification. Contact/demo errors display the reference. Response streams and existing status, cookie, and CORS headers are preserved.
+
+Email fetch and body reads now have a 10-second default deadline, with positive overrides capped at 30 seconds. Timeout, network, and provider rejection classifications preserve existing status contracts. The helper does not blindly retry ambiguous sends, and existing caller idempotency keys are preserved.
+
+Required CI now includes request-boundary and email-deadline coverage alongside the previously added contact recovery, attribution/admin browser, concurrent rate-limit, and redaction suites. Browser coverage checks visible failure references and stable retry keys. Adjust existing test guards for the error block and safe provider messages, and handle Windows line endings in the attribution fixture.
+
+Validation: isolated checkout ran all 193 test commands; three outdated fixture assumptions were corrected and passed on recheck. Quality checks and Wrangler production dry run passed. No real lead or email was submitted. No new migration or secret is needed.

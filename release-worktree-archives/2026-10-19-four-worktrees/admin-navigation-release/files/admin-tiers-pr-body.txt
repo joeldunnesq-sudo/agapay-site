@@ -1,0 +1,5 @@
+Add total parish registrations and a donut chart of recorded subscription tiers to the existing metrics card. Use a soft blue background and darker accent border to distinguish metrics from action cards.
+
+The chart includes all registered parishes, shows counts and percentages in a text legend, normalizes the legacy mission tier, and exposes unassigned/unknown tiers without guessing. Empty and failed refresh states clear stale counts.
+
+Validated metric totals, tier mappings, authenticated API output, zero/error states, desktop/mobile rendering, navigation, lint, asset versions, and source-size budgets.

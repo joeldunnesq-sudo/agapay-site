@@ -1,0 +1,3 @@
+Admin tools were difficult to discover under collapsed navigation and secondary sections. Add a keyboard-accessible tool finder, grouped workspace shortcuts, visible product/system navigation, and direct links into secondary sections.
+
+Validated desktop and mobile navigation, search, keyboard/focus behavior, admin usability, presentation contracts, asset versions, and source-size budgets. Register the new browser test in CI.

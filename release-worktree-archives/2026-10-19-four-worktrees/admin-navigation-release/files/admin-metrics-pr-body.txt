@@ -1,0 +1,5 @@
+Remove the repetitive workspace directory, collapse secondary navigation, and keep the tool finder. Replace the prominent onboarding totals with one parish metrics card: registrations and cancellations since Monday (UTC), estimated monthly recurring revenue, and annual run rate.
+
+Metrics use the authenticated platform summary, exclude trials/free/past-due subscriptions from revenue, include stored prices and add-ons, flag undated cancellations and missing custom prices, and withhold totals if the registration scan is incomplete. Preserve Stripe cancellation timestamps for future weekly reporting. Move onboarding totals into the existing secondary disclosure.
+
+Validated desktop/mobile navigation, keyboard/focus behavior, weekly boundaries, pricing exclusions, authenticated API responses, webhook replay, worker hardening, lint and architecture checks. Register metrics coverage in CI.

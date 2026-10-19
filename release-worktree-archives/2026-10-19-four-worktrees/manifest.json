@@ -1,0 +1,180 @@
+{
+  "createdAt": "2026-10-19T21:25:12.4648751Z",
+  "previousRecoveryArchive": "afc8554b7c566570d8c9e87edb6ebfb1d581250e",
+  "worktrees": [
+    {
+      "originalPath": "C:\\Users\\joeld\\Documents\\agapay-site\\.tmp-koinonia-release",
+      "relativePath": ".tmp-koinonia-release",
+      "label": ".tmp-koinonia-release",
+      "head": "0611afeebc39456d173a938ccb12836d6f95e541",
+      "branch": "refs/heads/codex/koinonia-refresh",
+      "status": [
+        "?? public/myagapay/koinonia-experience.css",
+        "?? public/myagapay/koinonia-experience.js"
+      ],
+      "indexPath": "C:/Users/joeld/Documents/agapay-site/.git/worktrees/-tmp-koinonia-release/index",
+      "indexSha256": "483CDC40ADD567E02824C5F9A3A0E87A151A352B255FD427C0980B1B7056C8CC",
+      "stagedChanges": false,
+      "trackedChanges": false,
+      "files": [
+        {
+          "path": "public/myagapay/koinonia-experience.css",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-koinonia-release/files/public/myagapay/koinonia-experience.css",
+          "sha256": "1140337deb6721128426e6b1823b46624da091f96daa5c7fb016263e8863f06e",
+          "bytes": 10436
+        },
+        {
+          "path": "public/myagapay/koinonia-experience.js",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-koinonia-release/files/public/myagapay/koinonia-experience.js",
+          "sha256": "e64fe2197e50ddff5b7690ef8f4bb75e9d2140a0d223bb1dbdca438609e4925c",
+          "bytes": 3851
+        }
+      ]
+    },
+    {
+      "originalPath": "C:\\Users\\joeld\\Documents\\agapay-site\\.tmp-marker-release",
+      "relativePath": ".tmp-marker-release",
+      "label": ".tmp-marker-release",
+      "head": "e68df85c81074efda738ba26f089c6be99614ecf",
+      "branch": "refs/heads/codex/uniform-app-headers",
+      "status": [
+        "?? scripts/.tmp-approved-marker.mjs",
+        "?? scripts/.tmp-corner-marker.mjs",
+        "?? scripts/.tmp-inverted-preview.mjs",
+        "?? scripts/.tmp-library-alignment.mjs",
+        "?? scripts/.tmp-refined-preview.mjs",
+        "?? scripts/.tmp-shared-hero.mjs"
+      ],
+      "indexPath": "C:/Users/joeld/Documents/agapay-site/.git/worktrees/-tmp-marker-release/index",
+      "indexSha256": "0FE685F750F3F4949468B97D1A5ED66FAB9251BF10A497D4E6B19A6C3A144620",
+      "stagedChanges": false,
+      "trackedChanges": false,
+      "files": [
+        {
+          "path": "scripts/.tmp-approved-marker.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-marker-release/files/scripts/.tmp-approved-marker.mjs",
+          "sha256": "b77df24f37b0fff042ae558b8ba1c43133880f44f268cf3a84ae5cf0456438a0",
+          "bytes": 6708
+        },
+        {
+          "path": "scripts/.tmp-corner-marker.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-marker-release/files/scripts/.tmp-corner-marker.mjs",
+          "sha256": "1d2a9fa92e9d5df6f86d164af3d3b68a57f9cd55814f8421d691450dbcb79a66",
+          "bytes": 7508
+        },
+        {
+          "path": "scripts/.tmp-inverted-preview.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-marker-release/files/scripts/.tmp-inverted-preview.mjs",
+          "sha256": "7fd2e3c6a801de469b867f3cde7315c330d7d56acb42c9748eec4f7bfdc92ce2",
+          "bytes": 7406
+        },
+        {
+          "path": "scripts/.tmp-library-alignment.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-marker-release/files/scripts/.tmp-library-alignment.mjs",
+          "sha256": "f12555dd3b24939850604b270a43980ba75dcf4070b4c7a4844e66b1af159772",
+          "bytes": 9139
+        },
+        {
+          "path": "scripts/.tmp-refined-preview.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-marker-release/files/scripts/.tmp-refined-preview.mjs",
+          "sha256": "cc8abb4f400eea265f3f2ea69162fa50505a1d769c1aae704a340da3c45a902e",
+          "bytes": 7952
+        },
+        {
+          "path": "scripts/.tmp-shared-hero.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/.tmp-marker-release/files/scripts/.tmp-shared-hero.mjs",
+          "sha256": "bf37d55c6fc1a1a3ffcf670ef02242781e828b9029695840fd8e8cb7f83e58c4",
+          "bytes": 7911
+        }
+      ]
+    },
+    {
+      "originalPath": "C:\\Users\\joeld\\Documents\\agapay-site\\.worktrees\\admin-navigation-release",
+      "relativePath": ".worktrees/admin-navigation-release",
+      "label": "admin-navigation-release",
+      "head": "f4952e48ae76be9316dac63aea2bdf0cec0a28ef",
+      "branch": "refs/heads/codex/parish-relationships",
+      "status": [
+        "?? admin-metrics-pr-body.txt",
+        "?? admin-navigation.patch",
+        "?? admin-pr-body.txt",
+        "?? admin-tiers-pr-body.txt",
+        "?? parish-relationships-pr-body.txt"
+      ],
+      "indexPath": "C:/Users/joeld/Documents/agapay-site/.git/worktrees/admin-navigation-release/index",
+      "indexSha256": "A92DC41576C16F7D781266967A8421CFA29DFECB9CC0406C7F58E721187A3296",
+      "stagedChanges": false,
+      "trackedChanges": false,
+      "files": [
+        {
+          "path": "admin-metrics-pr-body.txt",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/admin-navigation-release/files/admin-metrics-pr-body.txt",
+          "sha256": "6c7d961a98c1ef0f1566077e6a8cb5b69fe224c088af2fe139cce4ccde5d8525",
+          "bytes": 896
+        },
+        {
+          "path": "admin-navigation.patch",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/admin-navigation-release/files/admin-navigation.patch",
+          "sha256": "a6fbbe9e25682d68cbf3852fbc839b5dea301a020c8713bcfd0924c3e4701264",
+          "bytes": 5614
+        },
+        {
+          "path": "admin-pr-body.txt",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/admin-navigation-release/files/admin-pr-body.txt",
+          "sha256": "3d943811e997827cd5011194c8e2042f000ebda6bcba0acc42365d00b22a950a",
+          "bytes": 430
+        },
+        {
+          "path": "admin-tiers-pr-body.txt",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/admin-navigation-release/files/admin-tiers-pr-body.txt",
+          "sha256": "bd4cbed49da8d12b1295d1085c626ce511ce67d28acb9251992f95d7732445d6",
+          "bytes": 611
+        },
+        {
+          "path": "parish-relationships-pr-body.txt",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/admin-navigation-release/files/parish-relationships-pr-body.txt",
+          "sha256": "fcd20ada58525f8adc97fdc283fbf27775e2000e994580b5d0887bdbc4c3b54a",
+          "bytes": 1126
+        }
+      ]
+    },
+    {
+      "originalPath": "C:\\Users\\joeld\\Documents\\agapay-site\\tmp\\request-release-check",
+      "relativePath": "tmp/request-release-check",
+      "label": "request-release-check",
+      "head": "247901d3d80be86af3d58d935d0e801a9556fc73",
+      "branch": "refs/heads/codex/request-diagnostics-timeouts",
+      "status": [
+        "?? failed-tests.json",
+        "?? request-pr-body.txt",
+        "?? run-remaining.mjs"
+      ],
+      "indexPath": "C:/Users/joeld/Documents/agapay-site/.git/worktrees/request-release-check/index",
+      "indexSha256": "C06BAA078CBC94157C1EF93257A15E0F337CA8EBC9BD2048F01934D0802A5BCF",
+      "stagedChanges": false,
+      "trackedChanges": false,
+      "files": [
+        {
+          "path": "failed-tests.json",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/request-release-check/files/failed-tests.json",
+          "sha256": "02e927415a492038bc7adb8ac92edaef479636e45f00de46a5aa87df09fd587d",
+          "bytes": 86
+        },
+        {
+          "path": "request-pr-body.txt",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/request-release-check/files/request-pr-body.txt",
+          "sha256": "81069a33f6823c62e076ed1821f5d319824690ad9254cb989880c5151c716382",
+          "bytes": 1523
+        },
+        {
+          "path": "run-remaining.mjs",
+          "archivePath": "release-worktree-archives/2026-10-19-four-worktrees/request-release-check/files/run-remaining.mjs",
+          "sha256": "640dbab24afce2c26e948b74b5bf227eae5847dc6ddfb013fd5202d585e8532e",
+          "bytes": 754
+        }
+      ]
+    }
+  ],
+  "uncommittedFiles": 16,
+  "scope": "All nonignored uncommitted source/work files; ignored generated evidence and dependencies retained locally"
+}
