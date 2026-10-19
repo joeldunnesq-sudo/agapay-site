@@ -5,7 +5,7 @@ import { routeAccountingRequest } from "./routes/accounting.js";
 import { routeDirectoryRequest } from "./routes/directory.js";
 import { routeDonorRequest } from "./routes/donor.js";
 import { routeLearnRequest } from "./routes/learn.js";
-import { routeOrganizationRequest } from "./routes/organization.js";
+import { routeOrganizationRequest } from "./routes/organization-entry.js";
 import { routeParishRequest } from "./routes/parish.js";
 import { routePublicRequest } from "./routes/public.js";
 import { dispatchRouteRegistries } from "./routes/registry.js";

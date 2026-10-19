@@ -282,6 +282,10 @@ export async function setMembershipStatus(env, { membershipId, status, actorUser
 // "do not build the UI" scope. An invitation targets an email address, not
 // a platform_user row, since the invited person may not have one yet.
 
+/**
+ * @param {import('./identity.js').IdentityEnvironment} env
+ * @param {{parishId?:unknown,email?:unknown,roleTemplate?:unknown,capabilities?:unknown[],invitedByUserId?:string|null,invitedByLegacyBearer?:boolean,request?:Request|null}} [options]
+ */
 export async function createInvitation(env, {
   parishId,
   email,
@@ -430,6 +434,10 @@ async function findValidInvitationByToken(env, token) {
 // what activates the membership -- never automatic, per docs/accounting/02d's
 // explicit requirement that a membership must not activate before the
 // invited person confirms their own identity.
+/**
+ * @param {import('./identity.js').IdentityEnvironment} env
+ * @param {{token?:string,password?:string,displayName?:string,request?:Request|null}} [options]
+ */
 export async function acceptInvitation(env, { token, password, displayName = "", request = null } = {}) {
   if (!d1(env) || !token || !password) return { ok: false, error: "Missing token or password." };
 
@@ -483,6 +491,10 @@ export async function acceptInvitation(env, { token, password, displayName = "",
   };
 }
 
+/**
+ * @param {import('./identity.js').IdentityEnvironment} env
+ * @param {{invitationId?:unknown,actorUserId?:string|null,request?:Request|null}} [options]
+ */
 export async function revokeInvitation(env, { invitationId, actorUserId = null, request = null } = {}) {
   if (!d1(env) || !invitationId) return false;
   await d1Run(env, `UPDATE membership_invitations SET status = 'revoked', updated_at = ?2 WHERE id = ?1`, invitationId, nowIso());

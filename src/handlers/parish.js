@@ -1,7 +1,10 @@
+import { requireDonor } from '../lib/donor-sessions.js';
+export { requireDonor };
 // src/handlers/parish.js
 // Parish handlers and shared helpers (Stripe, donor, admin extracted to own files).
 
-import { parishClosureState } from '../portability/closure.js';
+import { findRegistrationByParishId, loadIndexedRegistration, verifyParishDashboardBearer } from './parish-organization-providers.js';
+export { findRegistrationByParishId, loadIndexedRegistration, verifyParishDashboardBearer };
 import { saveCommemorationEntry } from './parish-commemorations.js';
 import {
   COMMEMORATION_KEY_PREFIX,
@@ -34,7 +37,6 @@ import {
   rateLimit,
   rateLimitByKey,
   resolveAdminSession,
-  resolveParishDashboardSession,
   safeParseJsonRow,
   secureCompare,
   sha256Hex,
@@ -242,9 +244,7 @@ export function normalizeBookstoreBody(body = {}) {
   };
 }
 
-export async function verifyParishDashboardBearer(registration, token) {
-  return Boolean(await resolveParishDashboardSession(registration, token));
-}
+
 
 export async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
   const oldNormalized = normalizeEmail(oldEmail);
@@ -315,19 +315,7 @@ export async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
   }
 }
 
-export async function requireDonor(request, env) {
-  if (!hasProductionStore(env)) return null;
-  const email = normalizeEmail(request.headers.get('X-AGAPAY-Donor-Email'));
-  const token = getBearerToken(request);
-  if (!email || !token) return null;
-  const donor = await loadDonor(env, email);
-  if (!donor?.emailVerifiedAt) return null;
-  if (!donor || !donor.sessionTokenHash || !donor.sessionSalt) return null;
-  if (donor.sessionExpiresAt && new Date(donor.sessionExpiresAt).getTime() < Date.now()) return null;
-  const submittedHash = await hashSessionToken(token, donor.sessionSalt);
-  if (!secureCompare(submittedHash, donor.sessionTokenHash)) return null;
-  return donor;
-}
+
 
 export async function requireAdminContext(request, env) {
   const submitted = getAdminToken(request);
@@ -568,6 +556,7 @@ export function normalizeCommunityType(value) {
   return 'parish';
 }
 
+/** @param {unknown} [previous] */
 export async function saveRegistrationRecord(env, reference, registration, previous = null) {
   if (!reference) return registration;
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
@@ -637,18 +626,7 @@ export async function saveRegistrationRecord(env, reference, registration, previ
   return registration;
 }
 
-export async function loadIndexedRegistration(env, indexKey) {
-  if (!env.AGAPAY_REGISTRATIONS || !indexKey) return null;
-  const reference = await env.AGAPAY_REGISTRATIONS.get(indexKey);
-  if (!reference) return null;
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return null;
-  try {
-    return { key: reference, registration: JSON.parse(raw) };
-  } catch {
-    return null;
-  }
-}
+
 
 export async function loadRegistrationByReference(env, reference) {
   if (!reference) return null;
@@ -753,45 +731,7 @@ export async function verifiedRegistrationParishes(env, options = {}) {
   return page.parishes;
 }
 
-export async function findRegistrationByParishId(env, parishId) {
-  if (await parishClosureState(env, parishId)) return null;
-  if (d1(env)) {
-    const row = await d1First(
-      env,
-      `SELECT reference, data FROM registrations
-       WHERE parish_id = ?1
-       ORDER BY COALESCE(json_extract(data, '$.updatedAt'), updated_at, received_at) DESC, updated_at DESC, reference DESC
-       LIMIT 1`,
-      parishId
-    );
-    const registration = parseJsonRow(row);
-    if (registration) return { key: row.reference, registration };
-  }
 
-  if (!env.AGAPAY_REGISTRATIONS) return null;
-  const indexed = await loadIndexedRegistration(env, parishIdIndexKey(parishId));
-  if (indexed) return indexed;
-
-  const keys = await listKvKeys(env, { limit: 1000 });
-
-  for (const key of keys) {
-    if (isSystemKvKey(key.name)) continue;
-    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
-    if (!raw) continue;
-    try {
-      const registration = JSON.parse(raw);
-      const currentParishId = registration.parishId || parishSlug(registration.parishName, registration.city);
-      if (currentParishId === parishId) {
-        await env.AGAPAY_REGISTRATIONS.put(parishIdIndexKey(parishId), key.name);
-        return { key: key.name, registration };
-      }
-    } catch {
-      // Ignore malformed records while searching.
-    }
-  }
-
-  return null;
-}
 
 export async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
   if (!subscriptionId) return null;

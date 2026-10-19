@@ -4,6 +4,7 @@
   "main": "src/accounting/provisioning/worker.js",
   "compatibility_date": "2026-05-25",
   "compatibility_flags": ["nodejs_compat"],
+  "build": { "command": "node scripts/build-server-typescript.mjs --check" },
   "workers_dev": false,
   "preview_urls": false,
   "observability": { "enabled": true },

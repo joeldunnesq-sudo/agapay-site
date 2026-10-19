@@ -1,3 +1,5 @@
+import { issueDonorSession } from '../lib/donor-sessions.js';
+export { issueDonorSession };
 import { deliverDonationReceipt, sendDonationReceiptMessage } from '../payments/donation-receipts.js';
 import { subscriptionSetupUpdates } from '../payments/donation-events.js';
 import { addOutsideDonorPledgeSummary } from "../lib/outside-pledges.js";
@@ -194,20 +196,7 @@ export async function handleDonorSession(request, env) {
   return handleDonorLogin(request, env);
 }
 
-export async function issueDonorSession(env, donor) {
-  const token = generateSecret("agp_donor");
-  const sessionSalt = generateSecret("session");
-  const updated = {
-    ...donor,
-    sessionSalt,
-    sessionTokenHash: await hashSessionToken(token, sessionSalt),
-    sessionExpiresAt: new Date(Date.now() + DONOR_SESSION_TTL_MS).toISOString(),
-    lastLoginAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  await saveDonor(env, updated);
-  return { token, donor: updated };
-}
+
 
 export async function sendDonorVerificationEmail(env, donor, verificationUrl) {
   const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";

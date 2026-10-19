@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": [".wrangler/types/worker.d.ts", "src/**/*.ts", "scripts/typecheck/**/*.ts"],
+  "exclude": ["src/learn/**", "src/browser/**"]
+}

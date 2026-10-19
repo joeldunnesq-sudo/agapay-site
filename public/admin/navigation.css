@@ -1,0 +1,28 @@
+.admin-find-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.admin-find-button kbd { font: inherit; font-size: 11px; padding: 2px 5px; border: 1px solid #d8d2c6; border-radius: 4px; }
+.admin-workspace-directory { margin-bottom: 1rem; padding: 1.25rem; background: #fffdf9; border: 1px solid #e2ded5; border-radius: 18px; }
+.admin-directory-heading, .admin-finder-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.admin-directory-heading h2, .admin-finder-heading h2 { margin: .25rem 0; color: var(--deep); font: 600 28px/1.2 var(--serif); }
+.admin-workspace-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 1.5rem; margin-top: 1rem; }
+.admin-workspace-links h3 { margin: 0 0 .5rem; color: #716044; font-size: 12px; }
+.admin-tool-link { display: flex; flex-direction: column; gap: .3rem; width: 100%; padding: .8rem; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #152b3b; text-align: left; box-shadow: none; letter-spacing: normal; text-transform: none; }
+.admin-tool-link strong { font-size: 13px; line-height: 1.4; }
+.admin-tool-link span { color: #62666b; font-size: 12px; font-weight: 400; line-height: 1.5; }
+.admin-tool-link:hover { background: #f6f1e7; border-color: #dfd5c3; color: #152b3b; transform: none; box-shadow: none; }
+.admin-tool-link:focus-visible, [data-open-admin-finder]:focus-visible, #adminFinderClose:focus-visible { outline: 3px solid #a47a23; outline-offset: 2px; }
+.admin-tool-finder { position: fixed; inset: 0; width: min(600px, calc(100vw - 2rem)); max-height: calc(100dvh - 3rem); margin: auto; padding: 1.5rem; border: 1px solid #d8d2c6; border-radius: 18px; background: #fffdf9; color: #152b3b; box-shadow: 0 24px 80px #06152240; overflow-y: auto; }
+.admin-tool-finder::backdrop { background: #06152299; }
+.admin-tool-finder p { font-size: 13px; line-height: 1.6; color: #62666b; }
+.admin-tool-finder label { display: block; font-size: 12px; margin: 1rem 0 .4rem; }
+.admin-tool-finder input { width: 100%; box-sizing: border-box; padding: .85rem; background: white; color: #152b3b; border: 1px solid #9e9687; border-radius: 8px; font-size: 16px; }
+.admin-finder-results { display: grid; gap: .25rem; }
+.admin-finder-results .admin-tool-link { border-color: #e8e3d9; }
+@media (max-width: 1100px) { .admin-workspace-links { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .admin-find-button { grid-column: 1 / -1; }
+  .admin-workspace-links { grid-template-columns: minmax(0, 1fr); }
+  .admin-directory-heading { align-items: flex-start; }
+  .admin-directory-heading h2 { font-size: 24px; }
+  .admin-workspace-directory { padding: 1rem; }
+  .admin-tool-finder { padding: 1rem; }
+}

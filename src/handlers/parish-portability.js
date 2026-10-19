@@ -4,6 +4,7 @@ import { stripeGetRequest } from '../lib/stripe-connect.js';
 import { POLICY_VERSION, PortabilityError } from '../portability/catalog.js';
 import { closureReadiness } from '../portability/closure.js';
 import { retentionDisclosure } from '../portability/policy.js';
+import { cloudBackupStatus } from '../portability/cloud-backup.js';
 import { actorFingerprint, cancelExport, confirmClosure, downloadExport, getJob, jobReceipt, publicJob, requirePortability, retryExport, startExport, JOB_SELECTION } from '../portability/service.js';
 
 const headers = { 'Cache-Control': 'private, no-store', Vary: 'Authorization', 'X-Robots-Tag': 'noindex, nofollow', 'X-Content-Type-Options': 'nosniff' };
@@ -74,6 +75,11 @@ export async function handleParishPortability(request, env, parishId, suffix = '
         error: 'Sign out, then use the parish’s primary login to access data portability or close the account.',
         code: 'primary_parish_login_required'
       }, 403);
+    }
+    // Status has no parish records and must not trigger MFA dialogs on a timer.
+    // Downloads and export creation still require recent step-up below.
+    if (request.method === 'GET' && suffix === '/backup-status') {
+      return reply({ ok: true, enabled: env.PARISH_PORTABILITY_ENABLED === 'true' && !!env.PARISH_EXPORTS, cloud: await cloudBackupStatus(env) });
     }
     const verified = Date.parse(session.mfaVerifiedAt || '');
     if (!Number.isFinite(verified) || verified > Date.now() || Date.now() - verified > 15 * 60000) return reply({ error: 'Confirm your identity before accessing parish data.', code: 'mfa_step_up_required', principalType: 'parish_admin', principalId: parishId }, 428);

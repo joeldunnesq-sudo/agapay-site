@@ -1,3 +1,7 @@
+import {resolveAuthorizationContext} from './authorization-context.js';
+export {resolveAuthorizationContext};
+import {requireCapability,requireActiveMembership} from './identity-authorization-providers.js';
+export {requireCapability,requireActiveMembership};
 // AGAPAY Accounting Package 0.75C/0.75D -- Centralized Authorization.
 //
 // This module is the SINGLE entry point for turning "who is making this
@@ -336,37 +340,7 @@ export function expandRoleTemplate(roleTemplate) {
 // status other than the literal string 'active' returns the same empty
 // result -- 'invited', 'suspended', 'revoked', and "no row at all" are
 // indistinguishable to every caller of this function, on purpose.
-export async function resolveAuthorizationContext(env, { userId, parishId }) {
-  if (!d1(env) || !userId || !parishId) return { membership: null, capabilities: [] };
 
-  const membership = await d1First(
-    env,
-    "SELECT * FROM parish_memberships WHERE user_id = ?1 AND parish_id = ?2",
-    userId,
-    parishId
-  );
-
-  if (!membership || membership.status !== "active") {
-    return { membership: null, capabilities: [] };
-  }
-
-  const rows = await d1All(
-    env,
-    "SELECT capability FROM membership_capabilities WHERE membership_id = ?1",
-    membership.id
-  );
-
-  return {
-    membership: {
-      id: membership.id,
-      userId: membership.user_id,
-      parishId: membership.parish_id,
-      roleTemplate: membership.role_template || "",
-      status: membership.status
-    },
-    capabilities: rows.map((row) => row.capability)
-  };
-}
 
 export async function hasCapability(env, { userId, parishId, capability }) {
   if (!capability) return false;
@@ -388,9 +362,7 @@ export async function hasPlatformCapability(_env, { userId: _userId, capability 
   return false;
 }
 
-function correlationIdFor(request) {
-  return request?.headers?.get?.("X-Request-Id") || "";
-}
+
 
 // The primary authorization entry point for a request. Resolves the
 // platform-user session (never the legacy parish bearer token -- see
@@ -408,54 +380,13 @@ function correlationIdFor(request) {
 // attempted something outside their granted permissions), distinct from
 // anonymous/no-session traffic, which is left to the existing rate-limiting
 // layer rather than filling the audit log with unauthenticated noise.
-export async function requireCapability(request, env, parishId, capability) {
-  const user = await requirePlatformUser(request, env);
-  if (!user) return null;
 
-  const { membership, capabilities } = await resolveAuthorizationContext(env, {
-    userId: user.id,
-    parishId
-  });
-
-  if (!membership) return null;
-
-  if (!capabilities.includes(capability)) {
-    await recordAuditEvent(env, request, {
-      action: "authorization.capability_denied",
-      actorUserId: user.id,
-      actorType: "platform_user",
-      targetType: "parish_membership",
-      targetId: membership.id,
-      organizationId: parishId,
-      requestId: correlationIdFor(request),
-      metadata: {
-        capabilityRequested: capability,
-        resource: request?.url || "",
-        decision: "denied"
-      }
-    });
-    return null;
-  }
-
-  return { user, membership, capabilities };
-}
 
 // Resolves just the authenticated platform user + their active membership
 // for a parish, without requiring a specific capability -- useful for
 // routes that need "any active member of this parish" (e.g. listing one's
 // own memberships) rather than a specific capability gate.
-export async function requireActiveMembership(request, env, parishId) {
-  const user = await requirePlatformUser(request, env);
-  if (!user) return null;
 
-  const { membership, capabilities } = await resolveAuthorizationContext(env, {
-    userId: user.id,
-    parishId
-  });
-  if (!membership) return null;
-
-  return { user, membership, capabilities };
-}
 
 // ── Developer API (Package 0.75D) ───────────────────────────────────────
 // The only names a future module should ever need. Every one of these is a

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile, stat } from 'node:fs/promises';
+import { readServerModuleSource } from './lib/server-typescript.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
@@ -81,7 +82,7 @@ for (const routeName of routeNames) {
   const routeIndex = worker.indexOf(importName, worker.indexOf('const API_ROUTE_REGISTRIES'));
   assert.ok(routeIndex > previousIndex, `${routeName} router must be present in explicit precedence order`);
   previousIndex = routeIndex;
-  const routeSource = await read(`src/routes/${routeName}.js`);
+  const routeSource = await readServerModuleSource(`src/routes/${routeName}.js`);
   assert.match(routeSource, new RegExp(`export async function ${importName}`));
   assert.ok(routeSource.split(/\r?\n/).length < 1_200, `${routeName} router exceeded 1,200 lines`);
 }

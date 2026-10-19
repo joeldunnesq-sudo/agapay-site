@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readDonorAppSource } from './lib/donor-app-source.mjs';
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
@@ -136,7 +137,7 @@ assert.equal(sanitizeSacramentDocumentFilename("../../bad\r\nname.pdf"), ".._.._
 const worker = readWorkerCompositionSource(root);
 const parishApp = readFileSync(path.join(root, "public", "parish", "features", "sacraments.js"), "utf8");
 const parishPreparation = readFileSync(path.join(root, "public", "parish", "features", "sacraments", "preparation.js"), "utf8");
-const donorApp = readFileSync(path.join(root, "public", "donor", "app.js"), "utf8");
+const donorApp = readDonorAppSource();
 const dashboard = readFileSync(path.join(root, "public", "parish", "dashboard.html"), "utf8");
 const wrangler = readFileSync(path.join(root, "wrangler.toml"), "utf8");
 assert.match(worker, /handleDonorSacramentPreparation/);

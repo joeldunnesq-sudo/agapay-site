@@ -61,3 +61,39 @@
   .koinonia-page-title-row h1 { font-size:32px; }
   .koinonia-page-action { min-height:38px; padding:0 12px; }
 }
+
+/* Shared spacing for Koinonia subpage titles and descriptions. */
+.page :is(.koinonia-page-heading,.prayer-page-heading) {
+  padding: 20px;
+}
+.page :is(.koinonia-page-title-row,.prayer-page-title-row) {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.page :is(.koinonia-page-title-row,.prayer-page-title-row) > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.page :is(.koinonia-page-title-row,.prayer-page-title-row) h1 {
+  margin: 0 0 8px;
+  line-height: 1.1;
+}
+.page :is(.koinonia-page-title-row,.prayer-page-title-row) p {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.page :is(.koinonia-page-heading,.prayer-page-heading) [data-parish-life-back] {
+  margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+  .koinonia-inner-page .koinonia-inner-shell > :not(.koinonia-page-heading) {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  .prayer-requests-page :is(.prayer-filter-bar,.prayer-request-list) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}

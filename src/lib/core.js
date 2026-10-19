@@ -1,31 +1,40 @@
+import { PASSWORD_HASH_VERSION, PASSWORD_HASH_ITERATIONS, pbkdf2Hex, createPasswordRecord, parsePasswordRecord, verifyPasswordRecord } from './password-records.js';
+export { PASSWORD_HASH_VERSION, PASSWORD_HASH_ITERATIONS, pbkdf2Hex, createPasswordRecord, parsePasswordRecord, verifyPasswordRecord };
+import { privilegedMfaRequired } from './authentication-policy.js';
+export { privilegedMfaRequired };
+import { hasProductionStore, missingProductionStoreResponse, d1GetSetting, d1SetSetting } from './storage-policy.js';
+export { hasProductionStore, missingProductionStoreResponse, d1GetSetting, d1SetSetting };
+import { parseAdminSessionStore, loadAdminSessionStore, saveAdminSessionStore, normalizeAdminActor, pruneAdminSessions, issueAdminSession, markAdminSessionMfaVerified, resolveAdminSession } from './admin-sessions.js';
+export { parseAdminSessionStore, loadAdminSessionStore, saveAdminSessionStore, normalizeAdminActor, pruneAdminSessions, issueAdminSession, markAdminSessionMfaVerified, resolveAdminSession };
+import { loadDonor, saveDonor, deleteDonor } from './donor-repository.js';
+export { loadDonor, saveDonor, deleteDonor };
+import { normalizeEmail } from './format.js';
+export { normalizeEmail };
+import { donorKey } from './storage-keys.js';
+export { donorKey };
+import { ADMIN_SESSION_TTL_MS, ADMIN_SESSION_MAX } from './admin-sessions.js';
+export { ADMIN_SESSION_TTL_MS, ADMIN_SESSION_MAX };
+export { DONOR_SESSION_TTL_MS } from './donor-sessions.js';
+import { ADMIN_PASSWORD_KV_KEY, ADMIN_SESSION_STORE_KEY, COMMEMORATION_KEY_PREFIX, DONOR_KEY_PREFIX, DONOR_OFFERING_KEY_PREFIX, DONOR_CHECKOUT_INDEX_PREFIX, RATE_LIMIT_PREFIX, STRIPE_EVENT_PREFIX, PARISH_ID_INDEX_PREFIX, STRIPE_ACCOUNT_INDEX_PREFIX, STRIPE_SUBSCRIPTION_INDEX_PREFIX, STRIPE_PAYMENT_INTENT_INDEX_PREFIX, isSystemKvKey, parishIdIndexKey } from './storage-keys.js';
+export { ADMIN_PASSWORD_KV_KEY, ADMIN_SESSION_STORE_KEY, COMMEMORATION_KEY_PREFIX, DONOR_KEY_PREFIX, DONOR_OFFERING_KEY_PREFIX, DONOR_CHECKOUT_INDEX_PREFIX, RATE_LIMIT_PREFIX, STRIPE_EVENT_PREFIX, PARISH_ID_INDEX_PREFIX, STRIPE_ACCOUNT_INDEX_PREFIX, STRIPE_SUBSCRIPTION_INDEX_PREFIX, STRIPE_PAYMENT_INTENT_INDEX_PREFIX, isSystemKvKey, parishIdIndexKey };
+import { generateSecret, secureCompare, sha256Hex, hashSessionToken, randomHex } from './session-crypto.js';
+export { generateSecret, secureCompare, sha256Hex, hashSessionToken, randomHex };
+import { listKvKeys, d1, parseJsonRow, safeParseJsonRow, d1First, d1All, d1Run, d1Batch } from './storage.js';
+export { listKvKeys, d1, parseJsonRow, safeParseJsonRow, d1First, d1All, d1Run, d1Batch };
+import { PARISH_SESSION_TTL_MS, PARISH_SESSION_MAX, pruneParishDashboardSessions, issueParishDashboardSession, resolveParishDashboardSession, markParishDashboardSessionMfaVerified } from './parish-sessions.js';
+export { PARISH_SESSION_TTL_MS, PARISH_SESSION_MAX, pruneParishDashboardSessions, issueParishDashboardSession, resolveParishDashboardSession, markParishDashboardSessionMfaVerified };
+
+import { SECURITY_HEADERS, json, unauthorized, getBearerToken } from './api-responses.js';
+export { SECURITY_HEADERS, json, unauthorized, getBearerToken };
 // src/lib/core.js
 // Shared constants and utility functions extracted from src/worker.js.
 
 
-export const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
-export const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
-export const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
-export const DONOR_KEY_PREFIX = "__agapay_donor__";
-export const DONOR_OFFERING_KEY_PREFIX = "__agapay_donor_offering__";
-export const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
-export const RATE_LIMIT_PREFIX = "__agapay_rate_limit__";
-export const STRIPE_EVENT_PREFIX = "__agapay_stripe_event__";
-export const PARISH_ID_INDEX_PREFIX = "__agapay_index_parish_id__";
-export const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_index_stripe_account__";
-export const STRIPE_SUBSCRIPTION_INDEX_PREFIX = "__agapay_index_stripe_subscription__";
-export const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
-export const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
-export const PASSWORD_HASH_ITERATIONS = 100000;
-export const DONOR_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
-export const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
-export const ADMIN_SESSION_MAX = 32;
-export const PARISH_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
-export const PARISH_SESSION_MAX = 16;
+
+
 export const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
-export function privilegedMfaRequired(env) {
-  return String(env?.PRIVILEGED_MFA_REQUIRED || "").trim().toLowerCase() === "true";
-}
+
 
 const marketplaceBrowseCategories = [
   { id: "all", label: "All Categories", icon: "grid" },
@@ -276,25 +285,7 @@ export function handleMarketplaceCatalog(request) {
 // has zero behavior risk -- browsers only log violations to the console,
 // never block -- while still surfacing anything loading from an
 // unexpected origin (the actual threat CSP defends against here).
-export const SECURITY_HEADERS = {
-  "X-Content-Type-Options": "nosniff",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "X-Frame-Options": "SAMEORIGIN",
-  "Strict-Transport-Security": "max-age=2592000; includeSubDomains",
-  "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self), fullscreen=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\")",
-  "Content-Security-Policy-Report-Only":
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com https://connect.facebook.net; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com data:; " +
-    "img-src 'self' data: https:; " +
-    "connect-src 'self' https://challenges.cloudflare.com https://*.cloudflarestream.com https://www.facebook.com; " +
-    "media-src 'self' https://*.cloudflarestream.com; " +
-    "frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com; " +
-    "object-src 'none'; " +
-    "base-uri 'self'; " +
-    "form-action 'self'"
-};
+
 
 export function applyGivingEmbedHeaders(request, response) {
   const pathname = new URL(request.url).pathname;
@@ -307,16 +298,7 @@ export function applyGivingEmbedHeaders(request, response) {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
-export function json(body, init = {}) {
-  return Response.json(body, {
-    ...init,
-    headers: {
-      "Cache-Control": "no-store",
-      ...SECURITY_HEADERS,
-      ...(init.headers || {})
-    }
-  });
-}
+
 
 // CORS headers for public-facing API endpoints that may be called cross-origin.
 // Production must opt into a specific origin; a missing production binding
@@ -354,25 +336,9 @@ export function corsPreflightResponse(env) {
   });
 }
 
-export function unauthorized() {
-  return json({ error: "Unauthorized" }, { status: 401 });
-}
 
-export function isSystemKvKey(keyName) {
-  const key = String(keyName || "");
-  return key === ADMIN_PASSWORD_KV_KEY
-    || key === ADMIN_SESSION_STORE_KEY
-    || key.startsWith(COMMEMORATION_KEY_PREFIX)
-    || key.startsWith(DONOR_KEY_PREFIX)
-    || key.startsWith(DONOR_OFFERING_KEY_PREFIX)
-    || key.startsWith(DONOR_CHECKOUT_INDEX_PREFIX)
-    || key.startsWith(RATE_LIMIT_PREFIX)
-    || key.startsWith(STRIPE_EVENT_PREFIX)
-    || key.startsWith(PARISH_ID_INDEX_PREFIX)
-    || key.startsWith(STRIPE_ACCOUNT_INDEX_PREFIX)
-    || key.startsWith(STRIPE_SUBSCRIPTION_INDEX_PREFIX)
-    || key.startsWith(STRIPE_PAYMENT_INTENT_INDEX_PREFIX);
-}
+
+
 
 export function getAdminToken(request) {
   const auth = request.headers.get("Authorization") || "";
@@ -380,11 +346,7 @@ export function getAdminToken(request) {
   return request.headers.get("X-AGAPAY-Admin-Token") || "";
 }
 
-export function getBearerToken(request) {
-  const auth = request.headers.get("Authorization") || "";
-  if (auth.startsWith("Bearer ")) return auth.slice("Bearer ".length).trim();
-  return "";
-}
+
 
 export function clientIp(request) {
   return request.headers.get("CF-Connecting-IP")
@@ -460,13 +422,9 @@ export function handleSecurityConfig(env) {
   });
 }
 
-export function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
-}
 
-export function donorKey(email) {
-  return `${DONOR_KEY_PREFIX}${normalizeEmail(email)}`;
-}
+
+
 
 export function donorOfferingKey(email, id) {
   return `${DONOR_OFFERING_KEY_PREFIX}${normalizeEmail(email)}:${id}`;
@@ -476,9 +434,7 @@ export function donorCheckoutIndexKey(checkoutSessionId) {
   return `${DONOR_CHECKOUT_INDEX_PREFIX}${checkoutSessionId}`;
 }
 
-export function parishIdIndexKey(parishId) {
-  return `${PARISH_ID_INDEX_PREFIX}${parishId}`;
-}
+
 
 export function stripeAccountIndexKey(stripeAccountId) {
   return `${STRIPE_ACCOUNT_INDEX_PREFIX}${stripeAccountId}`;
@@ -496,57 +452,21 @@ export function stripeEventKey(eventId) {
   return `${STRIPE_EVENT_PREFIX}${eventId}`;
 }
 
-export async function listKvKeys(env, { prefix = "", limit = 1000, pageSize = 100 } = {}) {
-  if (!env.AGAPAY_REGISTRATIONS) return [];
-  const keys = [];
-  let cursor;
-  do {
-    const page = await env.AGAPAY_REGISTRATIONS.list({
-      prefix,
-      limit: Math.min(pageSize, Math.max(1, limit - keys.length)),
-      cursor
-    });
-    keys.push(...page.keys);
-    cursor = page.list_complete || keys.length >= limit ? undefined : page.cursor;
-  } while (cursor && keys.length < limit);
-  return keys;
-}
 
-export function hasProductionStore(env) {
-  return Boolean(env.AGAPAY_DB || env.AGAPAY_REGISTRATIONS);
-}
 
-export function missingProductionStoreResponse() {
-  return json({ error: "AGAPAY production data store is not configured" }, { status: 500 });
-}
 
-export function d1(env) {
-  return env.AGAPAY_DB || null;
-}
 
-export function parseJsonRow(row) {
-  if (!row?.data) return null;
-  return JSON.parse(row.data);
-}
 
-export function safeParseJsonRow(row) {
-  try {
-    return parseJsonRow(row);
-  } catch {
-    return null;
-  }
-}
 
-export async function d1First(env, sql, ...params) {
-  if (!d1(env)) return null;
-  return d1(env).prepare(sql).bind(...params).first();
-}
 
-export async function d1All(env, sql, ...params) {
-  if (!d1(env)) return [];
-  const result = await d1(env).prepare(sql).bind(...params).all();
-  return result.results || [];
-}
+
+
+
+
+
+
+
+
 
 export function clampListLimit(value, defaultLimit = 50, maxLimit = 250) {
   const parsed = Number(value);
@@ -576,40 +496,14 @@ export function decodeListCursor(cursor) {
   }
 }
 
-export async function d1Run(env, sql, ...params) {
-  if (!d1(env)) return null;
-  return d1(env).prepare(sql).bind(...params).run();
-}
 
-// Runs multiple statements as a single atomic D1 batch (Cloudflare's D1Database#batch),
-// so related local finalization writes (status flip, cache-column update, audit insert,
-// etc.) either all commit or none do. Statements are { sql, params: [...] } objects, in
-// the order they should execute. Stripe calls cannot participate in this — this is for
-// D1-only atomicity, always performed either entirely before or entirely after any
-// Stripe API call, never interleaved with one.
-export async function d1Batch(env, statements) {
-  if (!d1(env)) return null;
-  if (!Array.isArray(statements) || !statements.length) return null;
-  const prepared = statements.map(({ sql, params = [] }) => d1(env).prepare(sql).bind(...params));
-  return d1(env).batch(prepared);
-}
 
-export async function d1GetSetting(env, key) {
-  const row = await d1First(env, "SELECT value FROM app_settings WHERE key = ?1", key);
-  return row?.value || "";
-}
 
-export async function d1SetSetting(env, key, value) {
-  await d1Run(
-    env,
-    `INSERT INTO app_settings (key, value, updated_at)
-     VALUES (?1, ?2, ?3)
-     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
-    key,
-    value,
-    new Date().toISOString()
-  );
-}
+
+
+
+
+
 
 export function parseStoredStripeEvent(raw) {
   if (!raw) return null;
@@ -760,203 +654,45 @@ export async function recordStripeEvent(env, eventId) {
   }
 }
 
-export function generateSecret(prefix = "agp") {
-  const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
-  return `${prefix}_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
-}
 
-function toHex(buffer) {
-  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
-export function secureCompare(a, b) {
-  const left = String(a || "");
-  const right = String(b || "");
-  if (left.length !== right.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < left.length; i += 1) {
-    mismatch |= left.charCodeAt(i) ^ right.charCodeAt(i);
-  }
-  return mismatch === 0;
-}
 
-export async function sha256Hex(value) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value || "")));
-  return toHex(digest);
-}
 
-export function randomHex(byteLength = 16) {
-  const bytes = new Uint8Array(byteLength);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
-export async function pbkdf2Hex(password, salt, iterations = PASSWORD_HASH_ITERATIONS) {
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(String(password || "")),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const derived = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      hash: "SHA-256",
-      salt: new TextEncoder().encode(String(salt || "")),
-      iterations
-    },
-    keyMaterial,
-    256
-  );
-  return toHex(derived);
-}
 
-export async function createPasswordRecord(password) {
-  const salt = randomHex(16);
-  return {
-    version: PASSWORD_HASH_VERSION,
-    iterations: PASSWORD_HASH_ITERATIONS,
-    salt,
-    hash: await pbkdf2Hex(password, salt, PASSWORD_HASH_ITERATIONS)
-  };
-}
 
-export function parsePasswordRecord(value) {
-  if (!value) return null;
-  if (typeof value === "object") return value;
-  if (typeof value !== "string") return null;
-  try {
-    const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" ? parsed : null;
-  } catch {
-    return null;
-  }
-}
 
-export async function verifyPasswordRecord(password, record) {
-  const parsed = parsePasswordRecord(record);
-  if (!parsed || parsed.version !== PASSWORD_HASH_VERSION || !parsed.salt || !parsed.hash) return false;
-  const submitted = await pbkdf2Hex(password, parsed.salt, Number(parsed.iterations || PASSWORD_HASH_ITERATIONS));
-  return secureCompare(submitted, parsed.hash);
-}
+
+
+
+
+
+
+
+
+
 
 export async function hashPassword(password, salt) {
   return sha256Hex(`${salt}:${password}`);
 }
 
-export async function hashSessionToken(token, salt) {
-  return sha256Hex(`session:${salt}:${token}`);
-}
 
-export function parseAdminSessionStore(value) {
-  if (!value) return { version: 1, sessions: [] };
-  try {
-    const parsed = typeof value === "string" ? JSON.parse(value) : value;
-    const sessions = Array.isArray(parsed?.sessions) ? parsed.sessions : [];
-    return { version: 1, sessions };
-  } catch {
-    return { version: 1, sessions: [] };
-  }
-}
 
-export async function loadAdminSessionStore(env) {
-  if (d1(env)) {
-    return parseAdminSessionStore(await d1GetSetting(env, ADMIN_SESSION_STORE_KEY));
-  }
-  if (env.AGAPAY_REGISTRATIONS) {
-    return parseAdminSessionStore(await env.AGAPAY_REGISTRATIONS.get(ADMIN_SESSION_STORE_KEY));
-  }
-  return { version: 1, sessions: [] };
-}
 
-export async function saveAdminSessionStore(env, store) {
-  const payload = JSON.stringify({
-    version: 1,
-    sessions: Array.isArray(store?.sessions) ? store.sessions : []
-  });
-  if (d1(env)) {
-    await d1SetSetting(env, ADMIN_SESSION_STORE_KEY, payload);
-    return;
-  }
-  if (env.AGAPAY_REGISTRATIONS) {
-    await env.AGAPAY_REGISTRATIONS.put(ADMIN_SESSION_STORE_KEY, payload);
-  }
-}
 
-export function normalizeAdminActor(actor) {
-  const cleaned = String(actor || "").trim();
-  if (!cleaned) return "Admin";
-  return cleaned.slice(0, 80);
-}
 
-export function pruneAdminSessions(sessions, nowMs = Date.now()) {
-  return sessions.filter((entry) => {
-    const expiresAtMs = Date.parse(entry?.expiresAt || "");
-    return Number.isFinite(expiresAtMs) && expiresAtMs > nowMs;
-  });
-}
 
-export async function issueAdminSession(env, actor = "Admin", { mfaVerifiedAt = "" } = {}) {
-  const nowMs = Date.now();
-  const token = generateSecret("agp_admin");
-  const sessionSalt = generateSecret("admin_salt");
-  const tokenHash = await hashSessionToken(token, sessionSalt);
-  const createdAt = new Date(nowMs).toISOString();
-  const expiresAt = new Date(nowMs + ADMIN_SESSION_TTL_MS).toISOString();
-  const store = await loadAdminSessionStore(env);
-  const sessions = pruneAdminSessions(store.sessions, nowMs);
-  sessions.push({
-    id: generateSecret("adminsess"),
-    actor: normalizeAdminActor(actor),
-    tokenHash,
-    sessionSalt,
-    createdAt,
-    expiresAt,
-    mfaVerifiedAt: mfaVerifiedAt || ""
-  });
-  sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
-  while (sessions.length > ADMIN_SESSION_MAX) sessions.shift();
-  await saveAdminSessionStore(env, { version: 1, sessions });
-  return { token, actor: normalizeAdminActor(actor), createdAt, expiresAt, mfaVerifiedAt: mfaVerifiedAt || "" };
-}
 
-export async function markAdminSessionMfaVerified(env, sessionId, verifiedAt = new Date().toISOString()) {
-  if (!sessionId) return false;
-  const store = await loadAdminSessionStore(env);
-  let changed = false;
-  const sessions = store.sessions.map((entry) => {
-    if (entry?.id !== sessionId) return entry;
-    changed = true;
-    return { ...entry, mfaVerifiedAt: verifiedAt };
-  });
-  if (changed) await saveAdminSessionStore(env, { version: 1, sessions });
-  return changed;
-}
 
-export async function resolveAdminSession(env, token) {
-  if (!token) return null;
-  const nowMs = Date.now();
-  const store = await loadAdminSessionStore(env);
-  const active = pruneAdminSessions(store.sessions, nowMs);
-  if (active.length !== store.sessions.length) {
-    await saveAdminSessionStore(env, { version: 1, sessions: active });
-  }
 
-  for (const session of active) {
-    const submitted = await hashSessionToken(token, session.sessionSalt || "");
-    if (secureCompare(submitted, session.tokenHash || "")) {
-      return {
-        id: session.id || "",
-        actor: normalizeAdminActor(session.actor || "Admin"),
-        expiresAt: session.expiresAt,
-        mfaVerifiedAt: session.mfaVerifiedAt || ""
-      };
-    }
-  }
-  return null;
-}
+
+
+
+
+
+
+
+
 
 export function publicDonor(donor) {
   return {
@@ -981,60 +717,11 @@ export function publicDonor(donor) {
   };
 }
 
-export async function loadDonor(env, email) {
-  const normalized = normalizeEmail(email);
-  if (!normalized) return null;
 
-  if (d1(env)) {
-    const row = await d1First(env, "SELECT data FROM donors WHERE email = ?1", normalized);
-    const donor = parseJsonRow(row);
-    if (donor) return donor;
-  }
 
-  if (!env.AGAPAY_REGISTRATIONS) return null;
-  const raw = await env.AGAPAY_REGISTRATIONS.get(donorKey(normalized));
-  if (!raw) return null;
-  const donor = JSON.parse(raw);
-  if (d1(env)) await saveDonor(env, donor);
-  return donor;
-}
 
-export async function saveDonor(env, donor) {
-  const email = normalizeEmail(donor.email);
-  const record = { ...donor, email };
-  const data = JSON.stringify(record);
 
-  if (d1(env)) {
-    await d1Run(
-      env,
-      `INSERT INTO donors (email, default_parish_id, email_verified_at, created_at, updated_at, data)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-       ON CONFLICT(email) DO UPDATE SET
-         default_parish_id = excluded.default_parish_id,
-         email_verified_at = excluded.email_verified_at,
-         created_at = excluded.created_at,
-         updated_at = excluded.updated_at,
-         data = excluded.data`,
-      email,
-      record.defaultParishId || "",
-      record.emailVerifiedAt || "",
-      record.createdAt || "",
-      record.updatedAt || new Date().toISOString(),
-      data
-    );
-  } else if (env.AGAPAY_REGISTRATIONS) {
-    await env.AGAPAY_REGISTRATIONS.put(donorKey(email), data);
-  }
 
-  return donor;
-}
-
-export async function deleteDonor(env, email) {
-  const normalized = normalizeEmail(email);
-  if (!normalized) return;
-  if (d1(env)) await d1Run(env, "DELETE FROM donors WHERE email = ?1", normalized);
-  if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.delete(donorKey(normalized));
-}
 
 export async function verifyDonorPassword(donor, password) {
   if (donor?.passwordRecord && await verifyPasswordRecord(password, donor.passwordRecord)) return true;
@@ -1071,76 +758,13 @@ export async function applyParishDashboardPassword(registration, password, { tem
   };
 }
 
-export function pruneParishDashboardSessions(sessions, nowMs = Date.now()) {
-  return (Array.isArray(sessions) ? sessions : []).filter((entry) => {
-    const expiresAtMs = Date.parse(entry?.expiresAt || "");
-    return Number.isFinite(expiresAtMs) && expiresAtMs > nowMs;
-  });
-}
 
-export async function issueParishDashboardSession(
-  registration,
-  { mfaVerifiedAt = "", accessType = "primary_parish" } = {}
-) {
-  const nowMs = Date.now();
-  const token = generateSecret("agp_parish");
-  const sessionSalt = generateSecret("parish_salt");
-  const tokenHash = await hashSessionToken(token, sessionSalt);
-  const createdAt = new Date(nowMs).toISOString();
-  const expiresAt = new Date(nowMs + PARISH_SESSION_TTL_MS).toISOString();
-  const sessions = pruneParishDashboardSessions(registration?.parishDashboardSessions, nowMs);
-  sessions.push({
-    id: generateSecret("parishsess"),
-    tokenHash,
-    sessionSalt,
-    createdAt,
-    expiresAt,
-    mfaVerifiedAt: mfaVerifiedAt || "",
-    accessType: accessType === "staff" ? "staff" : "primary_parish"
-  });
-  sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
-  while (sessions.length > PARISH_SESSION_MAX) sessions.shift();
 
-  return {
-    token,
-    createdAt,
-    expiresAt,
-    mfaVerifiedAt: mfaVerifiedAt || "",
-    accessType: accessType === "staff" ? "staff" : "primary_parish",
-    registration: {
-      ...registration,
-      parishDashboardSessions: sessions
-    }
-  };
-}
 
-export async function resolveParishDashboardSession(registration, token) {
-  if (!registration || !token) return null;
-  const active = pruneParishDashboardSessions(registration.parishDashboardSessions);
-  for (const session of active) {
-    const submitted = await hashSessionToken(token, session.sessionSalt || "");
-    if (secureCompare(submitted, session.tokenHash || "")) {
-      return {
-        id: session.id || "",
-        expiresAt: session.expiresAt || "",
-        mfaVerifiedAt: session.mfaVerifiedAt || "",
-        accessType: session.accessType || ""
-      };
-    }
-  }
-  return null;
-}
 
-export function markParishDashboardSessionMfaVerified(registration, sessionId, verifiedAt = new Date().toISOString()) {
-  if (!registration || !sessionId) return { registration, changed: false };
-  let changed = false;
-  const sessions = (Array.isArray(registration.parishDashboardSessions) ? registration.parishDashboardSessions : []).map((entry) => {
-    if (entry?.id !== sessionId) return entry;
-    changed = true;
-    return { ...entry, mfaVerifiedAt: verifiedAt };
-  });
-  return { registration: changed ? { ...registration, parishDashboardSessions: sessions } : registration, changed };
-}
+
+
+
 
 // ─── AGAPAY Parish + access ─────────────────────────────────────────────────
 // Moved here (rather than living only in handlers/stewardship.js) so that

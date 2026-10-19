@@ -4,6 +4,7 @@ import { readDonorAppSource } from './lib/donor-app-source.mjs';
 import { readDonorHandlerSource } from './lib/donor-handler-source.mjs';
 import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
 import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
+import { readCoreSource } from './lib/core-source.mjs';
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
@@ -12,7 +13,7 @@ import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs
 const worker = readWorkerCompositionSource();
 const hasWorkerRoute = (pathname) => worker.includes(`"${pathname}"`) || worker.includes(`'${pathname}'`);
 const localServerSource = await readFile("server.mjs", "utf8");
-const core = await readFile("src/lib/core.js", "utf8");
+const core = readCoreSource();
 const stripeConnect = await readFile("src/lib/stripe-connect.js", "utf8");
 const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = readDonorHandlerSource();
@@ -236,7 +237,7 @@ assert.ok(adminApp.includes('requestedTab') && adminApp.includes('queue-mobile-s
 assert.ok(adminHtml.includes("weeklyCommemorationParishId") && adminApp.includes("runWeeklyCommemorationEmail") && adminApp.includes("/api/admin/commemorations/send-weekly"), "admin dashboard should expose a weekly commemoration email preview/send control");
 assert.ok(adminHtml.includes("weeklyTreasurerParishId") && adminApp.includes("runWeeklyTreasurerEmail") && adminApp.includes("/api/admin/commerce/send-weekly-treasurer"), "admin dashboard should expose a weekly treasurer commerce email preview/send control");
 assert.ok(adminCss.includes('admin-mobile-command') && adminCss.includes('mobile-review-bar') && adminCss.includes('product-admin-hero-giving { display: none; }'), "admin dashboard should include dedicated mobile verification layout styles");
-assert.ok(serviceWorker.includes('agapay-static-v37'), "service worker cache version should advance when PWA shell caching behavior changes");
+assert.ok(serviceWorker.includes('agapay-static-v38'), "service worker cache version should advance when PWA shell caching behavior changes");
 assert.ok(
   serviceWorker.includes('url.pathname === "/styles/platform-preview.css"')
     && serviceWorker.includes('url.pathname === "/styles/koinonia-preview.css"'),
@@ -661,10 +662,10 @@ assert.ok(
   "the giving box should remain organization-neutral without duplicating host-site identity or ownership claims"
 );
 assert.ok(
-  giveEmbedCss.includes("--navy: #071a2a")
-    && giveEmbedCss.includes("--gold: #c8a24a")
+  giveEmbedCss.includes("--navy: var(--agapay-giving-primary, #071a2a)")
+    && giveEmbedCss.includes("--gold: var(--agapay-giving-accent, #c8a24a)")
     && giveEmbedHtml.includes("Powered by <strong>AGAPAY</strong>"),
-  "the giving box should retain AGAPAY navy, gold, and a visible but restrained platform brand"
+  "the giving box should retain AGAPAY navy and gold defaults while allowing parish CSS themes and preserving platform branding"
 );
 assert.ok(worker.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && worker.includes('const staticGivePages = new Set(["request-demo", "embed"])'), "the Worker should serve clean /give/embed/:parish URLs");
 assert.ok(localServerSource.includes('/^\\/give\\/embed\\/[^/]+\\/?$/') && localServerSource.includes('pathname = "/give/embed.html"'), "the local server should preview clean giving-box URLs");
@@ -800,7 +801,7 @@ const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.includes('rel="canonical" href="https://agapay.app/"') && platformHome.includes('property="og:url" content="https://agapay.app/"'), "platform homepage should publish the site root as its canonical and social URL");
 assert.ok(platformHome.includes("One platform for all of") && platformHome.includes("Orthodox parish life.") && platformHome.includes("One parish. One connected system."), "homepage should lead with the complete AGAPAY Orthodox parish platform and explain its shared system");
 assert.ok(platformHome.includes("Orthodox Tithing App") && platformHome.includes("custom-built Orthodox church management software platform"), "homepage SEO should position AGAPAY as the Orthodox tithing app and custom-built parish platform");
-assert.ok(platformHome.includes("giving-dashboard.jpg?v=afdbcab9659a") && platformHome.includes("data-src=\"/images/app/screenshots/parish-bookstore.jpg?v=7a0005fdc4b5\"") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
+assert.ok(platformHome.includes("giving-dashboard.jpg?v=afdbcab9659a") && platformHome.includes("data-src=\"/images/app/screenshots/parish-bookstore.jpg?v=6e64e98eb164\"") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
 assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
 assert.ok(platformHome.includes('src="/site-chrome.js"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>"), "the consolidated Give page should publish one canonical URL and the approved Orthodox giving headline");

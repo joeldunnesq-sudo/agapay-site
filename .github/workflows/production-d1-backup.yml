@@ -88,6 +88,7 @@ jobs:
             --backup artifacts/production-d1-backup/readback.sql \
             --checksum artifacts/production-d1-backup/readback.sha256 \
             --max-age-hours 2
+          npx wrangler r2 object put "agapay-accounting-backups/platform-d1/verified.json" --remote --force --content-type application/json --file "$MANIFEST_FILE"
 
       - name: Record backup result
         run: echo "Private D1 backup was locally restored, uploaded under platform-d1/, downloaded again, and SHA-256 verified. RPO target 24h; RTO target 8h." >> "$GITHUB_STEP_SUMMARY"

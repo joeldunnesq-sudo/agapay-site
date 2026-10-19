@@ -4,6 +4,7 @@ import { repoRoot } from './browser-composed-source.mjs';
 
 export const donorHandlerPaths = Object.freeze([
   'src/handlers/donor.js',
+  'src/lib/donor-sessions.ts',
   'src/handlers/donor-bookstore.js',
   'src/handlers/donor-parish-calendar.js',
   'src/handlers/donor-sacraments.js',

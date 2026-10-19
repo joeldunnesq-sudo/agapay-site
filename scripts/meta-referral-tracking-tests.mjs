@@ -1,3 +1,4 @@
+import { readCoreSource } from './lib/core-source.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
@@ -7,7 +8,7 @@ const [givePage, requestDemoPage, pixel, privacy, headers, core] = await Promise
   readFile("public/meta-pixel.js", "utf8"),
   readFile("public/privacy.html", "utf8"),
   readFile("public/_headers", "utf8"),
-  readFile("src/lib/core.js", "utf8"),
+  readCoreSource(),
 ]);
 
 const pixelId = "1065546639329281";

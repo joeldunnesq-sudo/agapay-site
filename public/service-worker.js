@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v37";
+const AGAPAY_CACHE = "agapay-static-v38";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -8,7 +8,10 @@ const STATIC_ASSETS = [
   "/donor/session.js",
   "/donor/controllers/calendar.js",
   "/donor/controllers/history.js",
+  "/donor/controllers/sacraments.js",
   "/donor/bookstore-presentation.js",
+  "/donor/bookstore-experience.js",
+  "/donor/bookstore-experience.css",
   "/donor/controllers/bookstore.js",
   "/donor/pwa-install.js",
   "/scripts/consumer-passkeys.js",
@@ -36,7 +39,7 @@ const STATIC_ASSETS = [
   "/images/app/shortcuts/directory-v2.png",
   "/images/app/shortcuts/bookstore-v2.png",
   "/images/app/listen-icon-192.png",
-  "/listen.html",
+  "/listen/index.html",
   "/listen/app.js",
   "/listen/player.js",
   "/listen/db.js",
@@ -103,7 +106,10 @@ function isVersionedStaticAsset(request, url) {
     || url.pathname === "/donor/session.js"
     || url.pathname === "/donor/controllers/calendar.js"
     || url.pathname === "/donor/controllers/history.js"
+    || url.pathname === "/donor/controllers/sacraments.js"
     || url.pathname === "/donor/bookstore-presentation.js"
+    || url.pathname === "/donor/bookstore-experience.js"
+    || url.pathname === "/donor/bookstore-experience.css"
     || url.pathname === "/donor/controllers/bookstore.js"
     || url.pathname === "/scripts/consumer-passkeys.js"
     || url.pathname === "/myagapay-shell.js"
@@ -138,7 +144,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(AGAPAY_CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || (url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html") : caches.match("/donor/login.html"))))
+        .catch(() => caches.match(request).then((cached) => cached || (url.pathname.startsWith("/myagapay/teaching") ? caches.match("/myagapay/teaching.html") : url.pathname.startsWith("/listen") ? caches.match("/listen/index.html") : caches.match("/donor/login.html"))))
     );
     return;
   }

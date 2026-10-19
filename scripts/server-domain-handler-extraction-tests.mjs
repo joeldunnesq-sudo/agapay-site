@@ -258,6 +258,7 @@ assert.ok(
 );
 assert.deepEqual(donorHandlerPaths, [
   'src/handlers/donor.js',
+  'src/lib/donor-sessions.ts',
   'src/handlers/donor-bookstore.js',
   'src/handlers/donor-parish-calendar.js',
   'src/handlers/donor-sacraments.js',

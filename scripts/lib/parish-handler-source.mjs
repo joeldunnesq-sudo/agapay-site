@@ -4,6 +4,10 @@ import { repoRoot } from './browser-composed-source.mjs';
 
 export const parishHandlerPaths = Object.freeze([
   'src/handlers/parish.js',
+  'src/handlers/parish-organization-providers.js',
+  'src/lib/parish-registration-lookup.ts',
+  'src/lib/parish-dashboard-bearer.ts',
+  'src/lib/donor-sessions.ts',
   'src/handlers/parish-donor-offerings.js',
   'src/handlers/parish-giving-read-models.js',
   'src/handlers/parish-checkout.js',

@@ -11,6 +11,18 @@
   const loaderOrigin = new URL(loaderScript?.src || 'https://agapay.app/giving-box.js', window.location.href).origin;
   const mountedFrames = new Map();
   const selector = '[data-agapay-giving]';
+  const themeKeys = ['primary', 'primary-text', 'accent', 'accent-text', 'background', 'surface', 'text', 'muted', 'border', 'success', 'danger', 'font', 'heading-font'];
+
+  function readTheme(container) {
+    const styles = getComputedStyle(container);
+    return Object.fromEntries(themeKeys.map((key) => [key, styles.getPropertyValue(`--agapay-giving-${key}`).trim().slice(0, 200)]));
+  }
+
+  function refreshTheme() {
+    for (const [frame, record] of mountedFrames) {
+      frame.contentWindow?.postMessage({ type: 'agapay:giving-box-theme', theme: readTheme(record.container) }, record.origin);
+    }
+  }
 
   function clean(value) {
     return String(value || '').trim();
@@ -26,6 +38,9 @@
     const organizationId = clean(container.dataset.agapayGiving || container.dataset.organization);
     if (!organizationId) return null;
     const url = new URL(`/give/embed/${encodeURIComponent(organizationId)}`, loaderOrigin);
+    for (const [key, value] of Object.entries(readTheme(container))) {
+      if (value) url.searchParams.set(`theme.${key}`, value);
+    }
     const amount = boundedNumber(container.dataset.amount, 0, 0, 50000);
     const frequency = clean(container.dataset.frequency).toLowerCase();
     const preview = clean(container.dataset.preview);
@@ -69,6 +84,7 @@
     container.style.marginInline = align === 'left' ? '0 auto' : align === 'right' ? 'auto 0' : 'auto';
     container.replaceChildren(frame);
     mountedFrames.set(frame, { container, origin: url.origin });
+    frame.addEventListener('load', refreshTheme);
     container.dispatchEvent(new CustomEvent('agapay:mounted', { detail: { frame, organizationId: container.dataset.agapayGiving } }));
     return frame;
   }
@@ -90,7 +106,7 @@
     }
   });
 
-  const api = Object.freeze({ version: '1.3.0', mount, scan });
+  const api = Object.freeze({ version: '1.4.0', mount, scan, refreshTheme });
   window.AGAPAYGivingBox = api;
 
   if (document.readyState === 'loading') {

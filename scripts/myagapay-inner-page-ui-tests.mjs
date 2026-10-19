@@ -8,7 +8,7 @@ const sharedShell = await read("public/myagapay-shell.js");
 const donorCss = await read("public/donor/style.css");
 const koinoniaPages = ["feed", "news", "groups", "teaching", "media", "signups", "exchange"];
 const productPages = ["bookstore", "directory", "sacraments"];
-const navVersion = "20260817bookstoreprayer1";
+const navVersion = "20260915spacing1";
 const shellVersion = appAssetUrl('/myagapay-shell.js').split('?v=')[1];
 
 for (const pageName of [...koinoniaPages, ...productPages]) {

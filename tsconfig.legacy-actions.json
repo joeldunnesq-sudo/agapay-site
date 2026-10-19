@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": [
+    ".wrangler/types/worker.d.ts",
+    "scripts/typecheck-legacy/**/*.ts",
+    "src/handlers/parish-organization-providers.js",
+    "src/routes/organization-entry.js",
+    "src/handlers/identity-session-providers.js",
+    "src/lib/identity-authorization-providers.js",
+    "src/handlers/identity-access-providers.js"
+  ]
+}

@@ -18,6 +18,31 @@
     { href: "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard", label: "AGAPAY Learn" }
   ];
 
+  // Official AGAPAY profiles shared by the public-site footer.
+  const SOCIAL_ACCOUNTS = [
+    { platform: "facebook", href: "https://www.facebook.com/profile.php?id=61590403694587" },
+    { platform: "instagram", href: "https://www.instagram.com/agapayapp/" },
+    { platform: "youtube", href: "https://www.youtube.com/@agapayapp" },
+    { platform: "x", href: "https://x.com/AGAPAYapp" }
+  ];
+  const SOCIAL_PLATFORMS = {
+    facebook: { label: "Facebook", icon: '<path d="M14 21v-8h3l.5-4H14V7c0-1 .3-2 2-2h2V1.5A25 25 0 0 0 15 1c-3 0-5 1.8-5 5v3H7v4h3v8z" />' },
+    instagram: { label: "Instagram", icon: '<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2"/>' },
+    linkedin: { label: "LinkedIn", icon: '<path d="M4 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM2 9h4v12H2zm7 0h4v1.7c.6-1 1.7-2 3.7-2 4 0 4.3 2.6 4.3 6V21h-4v-5.6c0-1.6 0-3.4-2-3.4s-2 1.7-2 3.3V21H9z"/>' },
+    youtube: { label: "YouTube", icon: '<path fill-rule="evenodd" d="M21.6 6.2C21.3 5 20.4 4.2 19.2 4 17.5 3.7 12 3.7 12 3.7S6.5 3.7 4.8 4C3.6 4.2 2.7 5 2.4 6.2 2 8 2 12 2 12s0 4 .4 5.8c.3 1.2 1.2 2 2.4 2.2 1.7.3 7.2.3 7.2.3s5.5 0 7.2-.3c1.2-.2 2.1-1 2.4-2.2C22 16 22 12 22 12s0-4-.4-5.8zM10 8.5l6 3.5-6 3.5z"/>' },
+    x: { label: "X", icon: '<path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.5 22H2.3l8.2-9.5L.8 2h6.5l4.5 6.7zM17.9 20h1.7L6.3 4H4.5z"/>' }
+  };
+
+  function buildSocialLinks() {
+    const links = SOCIAL_ACCOUNTS.map(({ platform, href }) => {
+      const account = SOCIAL_PLATFORMS[platform];
+      if (!account || !href || !href.startsWith("https://")) return "";
+      const safeHref = href.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" aria-label="AGAPAY on ${account.label} (opens in a new tab)" title="AGAPAY on ${account.label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${account.icon}</svg></a>`;
+    }).join("");
+    return links ? `<nav class="footer-social" aria-label="Follow AGAPAY">${links}</nav>` : "";
+  }
+
   function activeKeyFromPath() {
     if (path === "/" || path === "/index.html") return "";
     if (path === "/give" || path === "/give/") {
@@ -131,6 +156,7 @@
                   <strong>AGAPAY</strong>
                 </span>
               </div>
+              ${buildSocialLinks()}
             </div>
             <nav class="footer-col" aria-label="Platform">
               <h4>Platform</h4>

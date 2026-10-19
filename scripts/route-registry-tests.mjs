@@ -45,6 +45,48 @@ const orderedResponse = await dispatchRouteRegistries(
 assert.deepEqual(order, ['first', 'second']);
 assert.equal(await orderedResponse.text(), 'matched');
 
+assert.equal(await dispatchRouteRegistries(Object.freeze([]), {}), null);
+const dispatchContext = { tenant: 'demo' };
+const dispatchResponse = new Response('handled');
+assert.equal(
+  await dispatchRouteRegistries(
+    Object.freeze([
+      (context) => {
+        assert.equal(context, dispatchContext);
+        return undefined;
+      },
+      async (context) => {
+        assert.equal(context, dispatchContext);
+        return null;
+      },
+      () => dispatchResponse,
+      () => {
+        throw new Error('must stop at the first response');
+      },
+    ]),
+    dispatchContext
+  ),
+  dispatchResponse
+);
+const routeFailure = new Error('router unavailable');
+let fallbackCalled = false;
+await assert.rejects(
+  dispatchRouteRegistries(
+    [
+      async () => {
+        throw routeFailure;
+      },
+      () => {
+        fallbackCalled = true;
+        return dispatchResponse;
+      },
+    ],
+    dispatchContext
+  ),
+  (error) => error === routeFailure
+);
+assert.equal(fallbackCalled, false, 'Router errors must propagate without falling through');
+
 const organization = requestContext('/api/v1/organizations/demo', 'GET', {
   findRegistrationByParishId: async () => null,
   json: (body, init) => Response.json(body, init),

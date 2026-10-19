@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#061522">
+  <title>The Parish Bookstore · My AGAPAY · Design concept</title>
+  <link rel="icon" href="/favicons/favicon-32x32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css"><script src="./app.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip">Skip to bookstore</a>
+  <header class="appbar"><a class="brand" href="/myagapay/"><img src="/mark.png" alt=""><span>my <b>AGAPAY</b></span></a><span class="app-context">Your faith. Your community. Your everyday.</span><span class="concept-label">DESIGN PREVIEW</span><span class="avatar" aria-label="Sample profile">S</span></header>
+  <div class="shell">
+    <aside class="sidebar"><a href="/myagapay/" class="back"><span data-icon="arrow-left"></span> Back to My AGAPAY</a><div class="sidebar-label">YOUR PARISH LIFE</div><nav aria-label="My AGAPAY"><a href="/myagapay/"><span data-icon="home"></span> Today</a><a href="/myagapay/give.html"><span data-icon="heart"></span> Giving</a><a href="/myagapay/calendar.html"><span data-icon="calendar"></span> Parish calendar</a><a href="/myagapay/prayer-requests.html"><span data-icon="sun"></span> Prayer requests</a><a class="selected" href="./index.html" aria-current="page"><span data-icon="book"></span> Bookstore <span class="nav-dot"></span></a></nav><div class="sidebar-bottom"><span class="little-cross">☦</span><p>A little closer to faith.<br>A little closer to each other.</p><span>MY AGAPAY</span></div></aside>
+    <main id="main">
+      <div class="breadcrumbs">My AGAPAY <span>/</span> Parish bookstore</div>
+      <div class="store-heading"><div><p class="eyebrow">ROOTED IN FAITH. CHOSEN WITH CARE.</p><h1>The Parish Bookstore<span>.</span></h1></div><div class="store-actions"><button class="icon-button" id="saved-button" aria-label="Show saved items" aria-pressed="false"><span data-icon="heart"></span></button><button class="bag-button" id="bag-button"><span data-icon="bag"></span> <span>My bag</span><b id="bag-count">0</b></button></div></div>
+      <div class="store-tools"><label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Find something meaningful…" aria-label="Search the bookstore"><kbd>/</kbd></label><div class="pickup"><span data-icon="pin"></span><span>From your parish <b>Pickup after Liturgy</b></span></div></div>
+      <section class="hero" aria-labelledby="hero-title"><div class="hero-copy"><p class="eyebrow">THE EVERYDAY FAITH COLLECTION</p><h2 id="hero-title">Small things.<br><em>Sacred moments.</em></h2><p>Books to grow with. Icons to pray before.<br>Meaningful things for a life rooted in faith.</p><button class="primary" id="explore">Explore the collection <span data-icon="arrow-right"></span></button><span class="hero-footnote">Thoughtfully selected for your home & heart</span></div><div class="hero-photo" role="img" aria-label="Prayer books, a Byzantine icon, a prayer rope and candle in warm afternoon light"></div><span class="hero-caption">FAITH FOR EVERYDAY LIFE — VOL. 01</span></section>
+      <div class="assurances"><span><i data-icon="church"></i> Every purchase supports your parish</span><span><i data-icon="bag"></i> Simple, convenient parish pickup</span><span><i data-icon="gift"></i> Gifts with a deeper meaning</span></div>
+      <section class="catalog" id="collection" aria-labelledby="shelf-title"><div class="section-heading"><div><p class="eyebrow">A FEW THINGS TO FALL IN LOVE WITH</p><h2 id="shelf-title">The parish favorites</h2></div><label class="sort-label">Sort by <select id="sort" aria-label="Sort products"><option value="featured">Featured</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="name">Name: A–Z</option></select></label></div><div class="filter-row"><div id="filters" class="filters" aria-label="Product categories"></div><span id="result-count"></span></div><div class="products" id="products"></div><div class="empty" id="empty" hidden><h3>A little more exploring?</h3><p>No items match this selection.</p><button class="secondary" id="reset">Show all items</button></div></section>
+      <section class="editorial"><div class="editorial-art"><span>☦</span></div><div><p class="eyebrow">MAKE ROOM FOR THE SACRED</p><h2>Your prayer corner starts here.</h2><p>An icon, a candle, a quiet moment. Discover simple pieces<br class="desktop-break"> to bring the rhythm of prayer into your home.</p><button id="prayer-edit" class="text-button">Shop prayer essentials <span data-icon="arrow-right"></span></button></div><span class="editorial-number">01 /<br><em>The home edit</em></span></section>
+      <footer><span class="footer-brand">Faith, beautifully woven into everyday life.</span><p>Visual concept · Sample products, imagery and prices · No orders or payments</p><span>WITH LOVE, MY AGAPAY</span></footer>
+    </main>
+  </div>
+  <dialog id="product-dialog" aria-labelledby="detail-title"><button class="close icon-button" data-close aria-label="Close product details"><span data-icon="close"></span></button><div id="product-detail"></div></dialog>
+  <dialog id="bag-dialog" class="bag-dialog" aria-labelledby="bag-title"><div class="bag-header"><div><p class="eyebrow">SOMETHING MEANINGFUL</p><h2 id="bag-title">Your shopping bag</h2></div><button class="icon-button" data-close aria-label="Close shopping bag"><span data-icon="close"></span></button></div><div id="bag-items"></div><div id="bag-summary"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
+

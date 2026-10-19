@@ -14,7 +14,7 @@ function sourceFiles(directory) {
     const relativePath = normalize(path);
     if (relativePath.startsWith('public/vendor/')) continue;
     if (statSync(path).isDirectory()) files.push(...sourceFiles(path));
-    else if (/\.(?:js|mjs)$/.test(entry)) files.push(path);
+    else if (/\.(?:js|mjs|ts)$/.test(entry)) files.push(path);
   }
   return files;
 }

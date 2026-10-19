@@ -52,6 +52,8 @@ let bookstoreCart = [];
 let bookstoreCatalogQuery = "";
 let bookstoreCatalogCategory = "all";
 let bookstoreParishes = [];
+let bookstoreLoadRevision = 0;
+let bookstoreSwitchPending = false;
 
 async function loadBookstoreItemFieldsSchema() {
   if (bookstoreItemFieldsSchema) return bookstoreItemFieldsSchema;
@@ -118,6 +120,7 @@ function setBookstoreCatalogCategory(category = "all") {
 
 function bookstoreCategoryIcon(category = "other") {
   const icons = {
+    prayer_rope: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4C5 4 4 21 12 23m8 0c8-2 7-19-4-19" stroke-dasharray="1 3" stroke-width="4"/><path d="M16 21v10m-4-6h8M14 29l-2 2m6-2 2 2"/></svg>',
     sale: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 7v8.5L16.5 27 27 16.5 15.5 5H7a2 2 0 0 0-2 2Z"/><circle cx="11" cy="11" r="2"/><path d="m12 21 8-8M13 14h.01M20 21h.01"/></svg>',
     book: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 5.5h14.5A3.5 3.5 0 0 1 25 9v17H10.5A3.5 3.5 0 0 1 7 22.5v-17Z"/><path d="M10.5 19H25M12 10h8M12 14h6"/></svg>',
     icon: '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="2"/><circle cx="16" cy="12" r="4"/><path d="M10.5 23c1.2-4 3-6 5.5-6s4.3 2 5.5 6M16 8V5.5M13.5 6.5h5"/></svg>',
@@ -138,6 +141,10 @@ function bookstoreProductCard(product, { popular = false } = {}) {
   const cartIndex = bookstoreCart.findIndex(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
   const cartItem = cartIndex >= 0 ? bookstoreCart[cartIndex] : null;
   const available = product.trackInventory === false || Number(product.stockQuantity || 0) > 0;
+  const experience = typeof bookstoreExperienceEnabled === "function" && bookstoreExperienceEnabled();
+  const productIndex = bookstoreProducts.indexOf(product);
+  const savedAction = experience ? `<button type="button" class="bookstore-product-save" data-bookstore-save="${productIndex}" onclick="toggleBookstoreSaved(${productIndex})" aria-label="Save ${escapeHtml(product.name)}" aria-pressed="${bookstoreIsSaved(product)}">${bookstoreIsSaved(product) ? "♥" : "♡"}</button>` : "";
+  const detailsAction = experience ? `<button type="button" class="bookstore-product-details" onclick="openBookstoreDetail(${productIndex})" aria-label="View details for ${escapeHtml(product.name)}">View details</button>` : "";
   const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)} in cart</span>` : "";
   const description = String(product.description || "").trim();
   const productMedia = product.imageUrl
@@ -159,7 +166,7 @@ function bookstoreProductCard(product, { popular = false } = {}) {
     : `<button type="button" class="bookstore-product-add" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')" ${available ? "" : "disabled"}>${available ? "+ Add" : "Unavailable"}</button>`;
   return `
     <article class="bookstore-product-card${popular ? " bookstore-popular-card" : ""}${product.onSale ? " bookstore-product-on-sale" : ""}${available ? "" : " is-unavailable"}">
-      ${qtyBadge}
+      ${qtyBadge}${savedAction}
       ${available ? "" : '<span class="bookstore-product-stock-out">Out of stock</span>'}
       ${saleBadge}
       ${productMedia}
@@ -169,7 +176,7 @@ function bookstoreProductCard(product, { popular = false } = {}) {
         <strong>${escapeHtml(product.name)}</strong>
         ${description ? `<small>${escapeHtml(description)}</small>` : ""}
       </div>
-      <span class="bookstore-product-meta">${price}${action}</span>
+      ${detailsAction}<span class="bookstore-product-meta">${price}${action}</span>
     </article>`;
 }
 
@@ -180,7 +187,7 @@ function renderBookstorePopularItems(products = []) {
   const popular = [...products]
     .sort((a, b) => Number(b.unitsSold || 0) - Number(a.unitsSold || 0) || String(a.name || "").localeCompare(String(b.name || "")))
     .slice(0, 4);
-  section.hidden = popular.length === 0 || Boolean(bookstoreCatalogQuery) || bookstoreCatalogCategory !== "all";
+  section.hidden = popular.length === 0 || Boolean(bookstoreCatalogQuery) || bookstoreCatalogCategory !== "all" || (typeof bookstoreSavedOnly !== "undefined" && bookstoreSavedOnly);
   grid.innerHTML = popular.map(product => bookstoreProductCard(product, { popular: true })).join("");
 }
 
@@ -222,18 +229,19 @@ function renderBookstoreProducts(products = []) {
   renderBookstorePopularItems(products);
   renderBookstoreCategoryFilters(products);
 
-  const visibleProducts = products.filter(product => {
+  let visibleProducts = products.filter(product => {
     const matchesQuery = !bookstoreCatalogQuery || [product.name, product.description, product.categoryLabel]
       .some(value => String(value || "").toLowerCase().includes(bookstoreCatalogQuery));
     const matchesCategory = bookstoreCatalogCategory === "all"
       || (bookstoreCatalogCategory === "sale" ? product.onSale : product.category === bookstoreCatalogCategory);
     return matchesQuery && matchesCategory;
   });
-  if (count) count.textContent = bookstoreCatalogQuery || bookstoreCatalogCategory !== "all"
+  if (typeof bookstoreExperienceProducts === "function") visibleProducts = bookstoreExperienceProducts(visibleProducts);
+  if (count) count.textContent = bookstoreCatalogQuery || bookstoreCatalogCategory !== "all" || (typeof bookstoreSavedOnly !== "undefined" && bookstoreSavedOnly)
     ? `${visibleProducts.length} of ${products.length} items`
     : `${products.length} item${products.length === 1 ? "" : "s"} available`;
   if (!visibleProducts.length) {
-    container.innerHTML = '<div class="notice">No items match that search. Try a title, author, or category.</div>';
+    container.innerHTML = '<div class="notice">No items match your selection. Try another category, clear your search, or turn off Saved items.</div>';
     return;
   }
 
@@ -250,6 +258,8 @@ function renderBookstoreCart() {
   const itemCount = bookstoreCart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
   if (total) total.textContent = formatCentsAsDollars(subtotal);
   if (count) count.textContent = String(itemCount);
+  const bagCount = document.getElementById("bookstoreBagCount");
+  if (bagCount) bagCount.textContent = String(itemCount);
   if (mobileTotal) mobileTotal.textContent = formatCentsAsDollars(subtotal);
   if (mobileCount) mobileCount.textContent = String(itemCount);
   const mobileCartBar = document.getElementById("bookstoreMobileCartBar");
@@ -604,7 +614,7 @@ function renderBookstoreParishContext(parish = null) {
   if (display) display.textContent = parishName ? [parishName, place].filter(Boolean).join(" · ") : "Choose a church";
   if (parishInput) parishInput.value = parishId;
   const bookstoreLabel = parishName ? `the ${parishName}` : "your parish";
-  setText("bookstoreHeroTitle", `Shop the shelves at ${bookstoreLabel} bookstore.`);
+  setText("bookstoreHeroTitle", document.body.classList.contains("bookstore-boutique") ? "The Parish Bookstore." : `Shop the shelves at ${bookstoreLabel} bookstore.`);
   setText("bookstoreHeroDescription", parishName
     ? "Browse books and parish goods, add what you need, and check out securely from your phone."
     : "Choose a church below to browse its bookstore without leaving this page.");
@@ -662,6 +672,7 @@ function toggleBookstoreParishMenu(event) {
 }
 
 async function selectBookstoreParish(parishId) {
+  if (bookstoreSwitchPending) return;
   const parish = bookstoreParishes.find(entry => entry.id === parishId);
   if (!parish) return;
   const currentParishId = document.getElementById("bookstoreParishId")?.value || "";
@@ -670,6 +681,8 @@ async function selectBookstoreParish(parishId) {
     return;
   }
   closeBookstoreParishMenu();
+  bookstoreSwitchPending = true;
+  const revision = ++bookstoreLoadRevision;
   setDonorStatus(`Opening ${parish.name || "the parish"} bookstore…`, "info");
   try {
     const data = await donorApi("/api/donor/dashboard", {
@@ -678,19 +691,28 @@ async function selectBookstoreParish(parishId) {
     });
     setDonorProfile({ ...(donorProfile() || {}), ...(data.donor || {}), defaultParish: parish });
     bookstoreCart = [];
+    bookstoreProducts = [];
+    bookstoreCatalogCategory = "all";
+    document.getElementById("bookstoreDetail")?.close();
     bookstoreCatalogQuery = "";
     const search = document.getElementById("bookstoreProductSearch");
     if (search) search.value = "";
     renderBookstoreParishContext(parish);
+    renderBookstoreProducts([]);
     renderBookstoreCart();
+    const orderList = document.getElementById("bookstoreOrderList");
+    if (orderList) orderList.innerHTML = '<div class="notice">Loading this parish’s orders…</div>';
     const payload = await donorApi("/api/donor/bookstore", {
       headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
     });
-    writeDonorCache("bookstore", payload);
+    if (revision !== bookstoreLoadRevision) return;
+    writeDonorCache(`bookstore:${parishId}`, payload);
     renderBookstorePayload(payload);
     setDonorStatus(`You’re now shopping at ${parish.name || "this parish"}.`, "success");
   } catch (err) {
     setDonorStatus(err.message || "That bookstore could not be opened.", "error");
+  } finally {
+    bookstoreSwitchPending = false;
   }
 }
 
@@ -703,6 +725,7 @@ document.addEventListener("keydown", event => {
 });
 
 async function loadDonorBookstorePage() {
+  const revision = ++bookstoreLoadRevision;
   const session = donorSession();
   const list = document.getElementById("bookstoreOrderList");
   primeCommemorationParishDisplay();
@@ -744,6 +767,7 @@ async function loadDonorBookstorePage() {
       // Keep the configured parish id if the public directory is unavailable.
     }
   }
+  if (revision !== bookstoreLoadRevision) return;
   const selectedParish = dashboardParish || bookstoreParishes.find(parish => parish.id === parishId) || { id: parishId, name: parishName };
   renderBookstoreParishContext(selectedParish);
 
@@ -755,14 +779,15 @@ async function loadDonorBookstorePage() {
 
   handleBookstoreCheckoutReturn();
 
-  const cached = readDonorCache("bookstore");
+  const cached = readDonorCache(`bookstore:${parishId}`);
   if (cached) renderBookstorePayload(cached);
 
   try {
     const data = await donorApi("/api/donor/bookstore", {
       headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
     });
-    writeDonorCache("bookstore", data);
+    if (revision !== bookstoreLoadRevision) return;
+    writeDonorCache(`bookstore:${parishId}`, data);
     renderBookstorePayload(data);
   } catch (err) {
     if (isDonorUnauthorized(err)) {

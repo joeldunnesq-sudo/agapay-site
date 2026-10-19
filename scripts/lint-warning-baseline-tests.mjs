@@ -45,6 +45,17 @@ assert.equal(checkLintBaseline([error], baseline, cwd).errorCount, 1, 'matching 
 const [fatal] = await eslint.lintText('const = ;', { filePath: file });
 assert.ok(checkLintBaseline([fatal], {}, cwd).errorCount > 0, 'parse errors must fail lint too');
 
+const typescriptLint = new ESLint({ cwd });
+const [typedError] = await typescriptLint.lintText('export const unsafe: any = 1;\n', {
+  filePath: 'src/organizations/lint-probe.ts',
+});
+assert.ok(typedError.messages.some((message) => message.ruleId === '@typescript-eslint/no-explicit-any'));
+assert.equal(checkLintBaseline([typedError], {}, cwd).errorCount, 1);
+const [typedValid] = await typescriptLint.lintText('export const safe: string = "typed";\n', {
+  filePath: 'src/organizations/lint-probe.ts',
+});
+assert.equal(typedValid.errorCount, 0);
+
 for (const invalid of [
   null,
   [],
@@ -76,6 +87,9 @@ try {
   );
   assert.ok(results.every((result) => result.errorCount === 1 && result.messages[0].ruleId === 'no-unreachable'));
   assert.equal(checkLintBaseline(results, {}, fixtureRoot).errorCount, files.length);
+  await writeFile(join(fixtureRoot, 'src/probe.ts'), 'export const unsafe: any = 1;\n');
+  const typedResults = await fixtureLint.lintFiles(lintTargets);
+  assert.ok(typedResults.some((result) => result.filePath.endsWith('probe.ts') && result.errorCount > 0));
 } finally {
   const resolvedRoot = resolve(fixtureRoot);
   assert.equal(dirname(resolvedRoot), resolve(tmpdir()), 'cleanup must stay inside the temporary directory');

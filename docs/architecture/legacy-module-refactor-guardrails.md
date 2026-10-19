@@ -12,6 +12,25 @@ Learn is already an ES-module application. Its source helper follows the relativ
 
 ## Worker contracts
 
+The organization API's legacy providers now live behind typed factories in
+`src/lib/parish-registration-lookup.ts` and `src/lib/parish-dashboard-bearer.ts`.
+`src/handlers/parish.js` preserves its three lookup/verifier exports through the
+checked `parish-organization-providers.js` bridge. Storage JSON remains unknown;
+`src/routes/organization-entry.js` applies the typed organization-only adapter
+before calling the versioned route. Shared JSON responses, security headers, and
+bearer extraction live in `src/lib/api-responses.ts`, with the same exports in
+`core.js`. Source-policy checks use the composed core/parish helpers, while runtime
+and export-contract tests continue to inspect the emitted JavaScript.
+
+The shared storage, key, crypto, and parish session implementations now live in
+`src/lib/storage.ts`, `storage-keys.ts`, `session-crypto.ts`, and
+`parish-sessions.ts`; the small formatting module uses `format.ts`. Preserve
+existing KV pagination, D1 binding selection, SQL parameter order, persisted hash
+format, expiry boundaries, session limits, and MFA update behavior. Legacy session
+entries and parsed JSON remain unknown until their consumers establish stronger
+contracts. `core.js` keeps the established export surface; its byte-to-hex helper
+remains private even though its typed implementation is shared internally.
+
 `config/refactor-contracts.json` records the current ordered API route registry and the public export surface of the Worker and oversized server modules. Extraction PRs must preserve route precedence and public exports. A compatibility facade may re-export a function from its new domain module while consumers migrate incrementally.
 
 The Worker route-action surface and scheduled-task order are pinned as well. Phase 5 extractions may change where an implementation lives, but they must not silently add, remove, rename, or reorder the actions and scheduled jobs composed by the Worker shell.
@@ -85,6 +104,19 @@ Neither the checkout nor available Git history contains `dc-runtime` sources or
 a source map. The frozen checksum remains unchanged pending source recovery or
 the dedicated replacement decision described above.
 
+## Sacraments and Services controller
+
+`public/donor/controllers/sacraments.js` owns service cards, modal state, available
+slots, booking and request forms, preparation-document controls, and request
+cancellation. The 943-line implementation is moved unchanged from the Donor app;
+the remaining app's physical budget is reduced to 2,553 lines. All Donor entry
+pages load the classic controller before the app, preserving existing global
+handlers. Its content version and offline caching follow the shared asset registry.
+The mobile browser test covers parish-enabled cards, required slot selection,
+booking payloads, booked state, modal dismissal, and reloads. Preparation tests
+inspect the composed Donor source, and controller tests protect script order,
+global functions, and the new module's size ceiling.
+
 ## Giving history controller
 
 `public/donor/controllers/history.js` owns receipt rendering, activity filters,
@@ -131,6 +163,8 @@ Server source assertions use `scripts/lib/donor-handler-source.mjs`, which compo
 The extraction retains direct D1 binding access, awaited Stripe and D1 calls, request-local state, bounded Open Library JSON responses, existing rate limits, and existing error payloads. It does not introduce Worker-to-Worker HTTP calls, mutable module state, new secrets, route changes, or payment-policy changes. `scripts/server-domain-handler-extraction-tests.mjs` protects the compatibility exports, implementation ownership, source composition, size ceiling, and representative Bookstore rules.
 
 ## Per-extraction release gate
+
+Admin and Donor session orchestration now lives in the typed `admin-sessions.ts` and `donor-sessions.ts` modules. The Donor handler and Parish facade retain their exports, and identity fallback reuses the shared Donor resolver. Storage policies and donor persistence also have typed owners. Keep these sources in the composed core/handler helpers when adding source-policy assertions; the native expiry coercions and different Admin/Donor cutoff rules are compatibility contracts protected by session tests.
 
 Each extraction change must:
 

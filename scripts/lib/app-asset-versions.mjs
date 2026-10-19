@@ -5,6 +5,9 @@ import { repoRoot } from './browser-composed-source.mjs';
 
 // Shared My AGAPAY assets. Add extracted shared scripts here with their page
 // references so one content version is used by every consumer.
+// Admin assets use content versions too, while retaining their network-only SW policy.
+export const pageAssets = Object.freeze(['/admin/presentation.js']);
+
 export const appAssets = Object.freeze([
   '/donor/app.js',
   '/donor/style.css',
@@ -13,8 +16,11 @@ export const appAssets = Object.freeze([
   '/scripts/consumer-passkeys.js',
   '/donor/controllers/calendar.js',
   '/donor/controllers/history.js',
+  '/donor/controllers/sacraments.js',
   '/donor/bookstore-presentation.js',
   '/donor/controllers/bookstore.js',
+  '/donor/bookstore-experience.js',
+  '/donor/bookstore-experience.css',
 ]);
 
 export function contentVersion(source) {
@@ -23,7 +29,7 @@ export function contentVersion(source) {
 }
 
 export function appAssetUrl(asset, root = repoRoot) {
-  if (!appAssets.includes(asset)) throw new Error(`Unknown versioned app asset: ${asset}`);
+  if (![...appAssets, ...pageAssets].includes(asset)) throw new Error(`Unknown versioned app asset: ${asset}`);
   return `${asset}?v=${contentVersion(readFileSync(path.join(root, 'public', asset.slice(1)), 'utf8'))}`;
 }
 

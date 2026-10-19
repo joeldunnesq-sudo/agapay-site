@@ -109,6 +109,37 @@ assert.equal(mismatch.calls.authorizations, 0);
 
 const missing = routeContext('/api/v1/organizations/missing');
 assert.equal((await routeOrganizationRequest(missing)).status, 404);
+assert.equal(missing.calls.authorizations, 0);
+
+// A valid lookup must preserve the exact stored record for the verifier, including
+// fields outside the public descriptor; an async denial must be awaited.
+const deniedRecord = { ...churchRegistration, sessionHash: null };
+const asyncDenied = routeContext('/api/v1/organizations/st%20fiacre', { registration: deniedRecord });
+let denialResolved = false;
+asyncDenied.actions.verifyParishDashboardBearer = async (record, token) => {
+  await Promise.resolve();
+  assert.equal(record, deniedRecord);
+  assert.equal(record.sessionHash, null);
+  assert.equal(token, 'church-session');
+  denialResolved = true;
+  return false;
+};
+const deniedJson = asyncDenied.actions.json;
+asyncDenied.actions.json = (body, init) => {
+  assert.ok(!body?.apiVersion, 'Denied requests must not serialize the public descriptor');
+  return deniedJson(body, init);
+};
+assert.equal((await routeOrganizationRequest(asyncDenied)).status, 401);
+assert.equal(denialResolved, true);
+
+for (const dependency of ['findRegistrationByParishId', 'verifyParishDashboardBearer']) {
+  const failing = routeContext('/api/v1/organizations/st%20fiacre', { registration: churchRegistration });
+  const failure = new Error(`${dependency} unavailable`);
+  failing.actions[dependency] = async () => {
+    throw failure;
+  };
+  await assert.rejects(routeOrganizationRequest(failing), (error) => error === failure);
+}
 
 const method = routeContext('/api/v1/organizations/st%20fiacre', {
   method: 'PATCH',
