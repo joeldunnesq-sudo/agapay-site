@@ -313,7 +313,7 @@
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Registration</div>
-      <h1>Join the AGAPAY<br><em>ecosystem.</em></h1>
+      <h1>Join the AGAPAY<br><em>platform.</em></h1>
       <p class="hero-sub">Start with a free 30-day AGAPAY demo for your canonical Orthodox mission, parish, or cathedral. No card is required. We personally review each community before activation.</p>
     </div>
   </header>
@@ -625,8 +625,9 @@
 
         <div class="form-group">
           <label for="treasurerEmail" id="financeEmailLabel">Finance contact email <span class="required">*</span></label>
-          <input type="email" id="treasurerEmail" placeholder="treasurer@saintseraphim.org" />
+          <input type="email" id="treasurerEmail" placeholder="treasurer@saintseraphim.org" aria-describedby="financeEmailHint treasurerVerificationHint" />
           <span class="form-hint" id="financeEmailHint">Billing, payout, and financial setup notices will be sent here.</span>
+          <p class="form-hint" id="treasurerVerificationHint">We’ll confirm your treasurer’s name and email with your priest or parish leader. Your treasurer does not need to be publicly listed.</p>
         </div>
 
         <hr class="form-divider" />
@@ -658,6 +659,7 @@
         <div class="review-section">
           <div class="review-section-label">Contact &amp; staff</div>
           <div class="review-rows" id="reviewContact"></div>
+          <p class="form-hint" id="reviewTreasurerVerification">We’ll confirm your treasurer’s name and email with your priest or parish leader. Your treasurer does not need to be publicly listed.</p>
         </div>
 
         <div class="form-group">
