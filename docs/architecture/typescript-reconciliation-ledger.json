@@ -1,11 +1,11 @@
 {
-  "status": "implementation-reconciled-validation-pending",
+  "status": "accepted",
   "originalGitHead": "669fd9f676c08be3bea6fee4bc05346335ebfbe1",
   "canonicalSourceBase": "ef67399552ff72ba7129211e65c918c45982df48",
   "preservedFiles": 227,
   "originalReleaseBuild": "typescript-8e417bf61d50d3b8",
   "originalRuntimeManifestDigest": "8e417bf61d50d3b8493ee2341e701b912545a5bca8134d307196bd5e6c7b90d9",
-  "preservation": "Original checkout untouched; verified raw snapshot and patch remain locally in tmp-reconciliation-1; embedded worktrees were not read, moved or altered.",
+  "preservation": "At reconciliation acceptance, the original checkout and embedded worktrees were left untouched. The 227-file snapshot is pushed at archiveCommit/archiveRef. Subsequent cleanup and recovery are documented in docs/architecture/typescript-reconciliation.md and the linked recovery archive; remaining dirty worktrees were archived without modification.",
   "entries": [
     {
       "path": ".github/workflows/production-d1-backup.yml",
@@ -1369,5 +1369,11 @@
       "originalSha256": "f9f9e4a4a156b3abf2437df262c6698b440202d0543feacc69c956a4f244eaa6",
       "decision": "Preserved the current protected build/release configuration and integrated the private Worker stale-output build guard."
     }
-  ]
+  ],
+  "archiveCommit": "bef2c199024ff5f92f60a2fadd239bc607df461d",
+  "archiveRef": "codex/preserved-typescript-original-2026-10-18",
+  "sourceSha": "907a9b86c103be377727f463daec17e5acf49dd8",
+  "productionSha": "058437466c08ec18ced86e5680e3fd9f915faedb",
+  "deployedAt": "2026-10-19T01:14:20Z",
+  "productionRun": 39183684058
 }
