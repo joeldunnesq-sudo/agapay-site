@@ -87,3 +87,7 @@ The migration remains 495/495 original modules. Release evidence is retained loc
 ## Subsequent boundary hardening
 
 The first post-audit [boundary hardening checkpoint](typescript-boundary-hardening.md) removes 54 of the catalogued double assertions (229 to 175) and validates Learn community-resource and feedback storage records, including canonical fallback handling. The original 495/495 migration inventory remains unchanged. Its release acceptance is recorded separately.
+
+## Current completion and release status
+
+The original migration remains complete at 495/495 modules. The audit and all five boundary-hardening checkpoints are included in accepted production release `058437466c08ec18ced86e5680e3fd9f915faedb` through PR #248. The final checkpoint removes the remaining double assertions; broader runtime validation of external JSON remains separate work. See the [current migration status](typescript-migration.md#current-status--october-19-2026) and [accepted reconciliation release](typescript-reconciliation.md#accepted-combined-release) for the current evidence. Earlier release identifiers and assertion counts in this audit are historical checkpoints.

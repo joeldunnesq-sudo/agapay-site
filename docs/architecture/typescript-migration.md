@@ -1,5 +1,11 @@
 # Staged TypeScript migration
 
+## Current status — October 19, 2026
+
+The original runtime migration is complete: **495/495 frozen original modules have TypeScript owners**. The combined reconciliation and fifth boundary-hardening checkpoint are accepted and live through [PR #248](https://github.com/joeldunnesq-sudo/agapay-site/pull/248), production commit `058437466c08ec18ced86e5680e3fd9f915faedb`, deployed at `2026-10-19T01:14:20Z` (October 18 at 8:14 p.m. Central). Production health was rechecked on October 19 and returned that revision with `ok: true`. The [reconciliation report](typescript-reconciliation.md#accepted-combined-release) records release acceptance and its limits.
+
+The dated batches and checkpoint notes below are historical. Their remaining-module counts and pending-release statements describe those earlier checkpoints, not the current release. Generated JavaScript remains the shipped runtime; vendor assets, forwarding shims, inline scripts and tooling remain documented exceptions. Further runtime validation of external JSON is targeted domain hardening, not unfinished conversion of the original inventory.
+
 The migration adds checked contracts while preserving the platform's runtime behavior. Each stage is independently reviewable and releasable. Existing route, export, browser-global, script-order, storage, and payment contracts remain in force; see [legacy module refactor guardrails](legacy-module-refactor-guardrails.md).
 
 ## Roadmap and completion criteria
@@ -1509,10 +1515,14 @@ The follow-up to PR #246 removes 19 double assertions (36 to 17) in Learn form c
 
 PR [#247](https://github.com/joeldunnesq-sudo/agapay-site/pull/247) is accepted and deployed as 8eaec2442b3cc03e872d79d7c8127cd8b3258988, stamped 2026-10-18T05:02:27Z. The [fourth hardening report](typescript-boundary-hardening-4.md) records 19 assertion removals (36 to 17), native Learn controls, checked meal access and shared weekly-assignment JSON validation with lossless rejected saves. All 326 platform commands, four prechecks, full Quality, CodeQL, authenticated gates, deployed PDFs and hosted acceptance passed. Original migration ownership remains 495/495.
 
-## Boundary hardening: fifth checkpoint (release candidate)
+## Boundary hardening: fifth checkpoint (accepted)
 
-The [fifth boundary-hardening report](typescript-boundary-hardening-5.md) removes the final 17 double assertions and checks directory profile JSON names. Protected staging and production acceptance are pending.
+The [fifth boundary-hardening report](typescript-boundary-hardening-5.md) removes the final 17 double assertions and checks directory profile JSON names. Protected staging and production acceptance passed within the combined reconciliation release.
 
-## Parallel migration reconciliation (release candidate)
+## Parallel migration reconciliation (accepted)
 
-The [reconciliation report](typescript-reconciliation.md) and [per-file ledger](typescript-reconciliation-ledger.json) preserve the parallel checkout and integrate its typed session, identity and organization modules with the final assertion-removal checkpoint. The original 495-module completion baseline remains unchanged. Protected combined-release acceptance is pending.
+The [reconciliation report](typescript-reconciliation.md) and [per-file ledger](typescript-reconciliation-ledger.json) preserve the parallel checkout and integrate its typed session, identity and organization modules with the final assertion-removal checkpoint. The original 495-module completion baseline remains unchanged. Protected combined-release acceptance passed; complete evidence is recorded below.
+
+## Accepted parallel reconciliation and fifth hardening release
+
+PR [#248](https://github.com/joeldunnesq-sudo/agapay-site/pull/248) is accepted and deployed as 058437466c08ec18ced86e5680e3fd9f915faedb, stamped 2026-10-19T01:14:20Z. The [reconciliation report](typescript-reconciliation.md) and [ledger](typescript-reconciliation-ledger.json) document preservation of both efforts, typed identity/session/organization providers, the Bookstore preview, and the final 17 assertion removals. All 335 platform commands, four prechecks, full Quality, CodeQL, normal-MFA staging/production gates, hosted checks, deployed PDFs and post-build stability passed. The original migration remains 495/495; explicit any, suppressions and double assertions remain zero. Broader external JSON validation continues as separate domain hardening.
