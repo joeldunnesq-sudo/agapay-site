@@ -9,7 +9,13 @@ first.
 Full original spec (all 13 phases) is preserved in
 `docs/SOFT_LAUNCH_READINESS_SPEC.md`.
 
-## Current controlled-onboarding decision — 2026-08-16
+## Current signup review — October 19, 2026
+
+Use the [current signup and treasurer verification checklist](launch-signup-checklist-2026-10-19.md) for each real church. It maps the released `05843746` behavior to the operator evidence needed for one priest/leader confirmation of the treasurer, without requiring a public treasurer listing or a separate personal account before initial publication. Shared dashboard access records an attestation, not independently authenticated personal signer identity. The review clarifies existing policy and does not establish new completed live registrations.
+
+Production run 39183684058, monitor 39313700070 and D1 backup 39272491763 provide current software/operational evidence. Older planning rows below remain historical; unchecked controls require evidence-based reconciliation rather than automatic completion. The controlled-onboarding scope remains unchanged.
+
+## Historical controlled-onboarding decision — 2026-08-16
 
 AGAPAY is approved for controlled onboarding of the first real parish. The product owner completed the remaining production admin and parish walkthroughs with the dedicated Test Lubbock organization on 2026-08-16, closing the three manual rows previously left in `docs/critical-flow-qa-matrix.md`. The earlier donor and Stripe lifecycle exercise was owner-confirmed on 2026-08-01. Production email rendering and controlled-bounce monitoring were owner-validated on 2026-08-16.
 
