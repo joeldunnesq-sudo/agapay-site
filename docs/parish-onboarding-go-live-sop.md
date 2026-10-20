@@ -3,12 +3,14 @@
 
 Document owner: AGAPAY Operations
 
-Version: 1.1
+Version: 1.2 — documentation clarification, October 19, 2026
 
 Effective date: 2026-08-12
 
 Review cycle: Quarterly and after any material change to registration, parish authentication, Stripe Connect, subscriptions, giving configuration, receipts, or accounting
 Required control: P1-3 Treasurer Go-Live Signoff
+
+Current operator checklist: [Signup and treasurer verification](launch-signup-checklist-2026-10-19.md). It emphasizes one confirmation through a verified priest/leader, no public treasurer listing and no separate personal account before initial Go Live. The shared-session policy is unchanged.
 
 ## 1. Purpose
 
@@ -98,7 +100,7 @@ The onboarding record must be in exactly one primary state.
 | `IDENTITY_REVIEW` | Canonical parish and representative checks are in progress | `VERIFIED_HIDDEN`, `NEEDS_MORE_INFO`, `REJECTED`, `ON_HOLD` |
 | `NEEDS_MORE_INFO` | Required identity or authority evidence is missing | `IDENTITY_REVIEW`, `REJECTED`, `CANCELLED` |
 | `VERIFIED_HIDDEN` | Canonical verification passed; giving remains nonpublic | `INVITED`, `ON_HOLD` |
-| `INVITED` | Personal access invitations were successfully delivered | `CREDENTIAL_SECURED`, `ON_HOLD` |
+| `INVITED` | Initial getting-started/shared-access message or applicable personal invitation was delivered | `CREDENTIAL_SECURED`, `ON_HOLD` |
 | `CREDENTIAL_SECURED` | Parish dashboard invitation accepted and temporary credential replaced | `STRIPE_PENDING`, `ON_HOLD` |
 | `STRIPE_PENDING` | Stripe onboarding started but financial readiness is incomplete | `STRIPE_READY`, `ON_HOLD` |
 | `STRIPE_READY` | Charges and payouts are enabled and requirements are clear | `CONFIGURING`, `ON_HOLD` |
@@ -204,9 +206,9 @@ Actions:
 3. Ask that verified leader to confirm the named treasurer's name and email and that the treasurer may review Stripe, payout, plan, fund configuration, and the P1-3 Go-Live signoff.
 4. If the treasurer submitted the registration, obtain the same approval from the verified priest/leader. Do not treat the registration itself as the approval.
 5. Record the authoritative priest source, confirmation channel, verifier, date, and result.
-6. Send dashboard access only after the confirmation is recorded.
+6. Send the post-review getting-started message or resend access only after the confirmation is recorded. The initial registration welcome email may already contain the temporary parish credential; it is not approval of the parish or treasurer.
 
-The treasurer is not required to appear on a diocesan or parish website. Public-source verification establishes the parish and approving priest/leader. That verified leader's direct confirmation establishes the treasurer's authority, and invitation acceptance confirms control of the treasurer email address.
+The treasurer is not required to appear on a diocesan or parish website. Public-source verification establishes the parish and approving priest/leader. That verified leader's direct confirmation establishes the treasurer's authority. Confirm the intended recipient received access; the initial shared parish credential does not individually authenticate the named treasurer. A separate accepted personal invitation can establish control of its recipient email, but is not a prerequisite for initial Go Live.
 
 Evidence:
 
@@ -226,6 +228,8 @@ Block when:
 - The parish or approving priest/leader cannot be matched to an authoritative source.
 - The priest/rector disclaims knowledge of the onboarding or will not confirm the treasurer.
 - There is a dispute over who controls financial configuration.
+
+For a routine application, one direct confirmation through that independently verified contact route is sufficient. Do not require a public treasurer listing, church-domain email, identity-document upload or an additional treasurer account solely for initial launch. Record the confirmation once in Admin's authorizedRepresentative note/evidence fields and reuse it during setup. The workflow tests the passed status; evaluating the evidence remains the operator's responsibility. See the [short checklist and sample confirmation](launch-signup-checklist-2026-10-19.md#one-confirmation-recorded-once).
 
 ### Step 4 — Verify the organization in AGAPAY Admin without publishing it
 
@@ -267,11 +271,11 @@ Current product safeguard: the Admin save path forces a newly verified parish to
 
 ### Step 5 — Send the parish dashboard invitation
 
-Send the supported parish invitation to verified contacts after canonical and representative verification. Confirm delivery; correct and resend failed or expired invitations. Never send passwords by email or forward access to an unverified alternate address.
+Send the supported getting-started message to verified contacts after canonical and representative verification. Confirm delivery; correct and resend failed or expired invitations through the supported workflow. The initial welcome email already sends the Parish ID and temporary credential to the submitted priest/treasurer contacts; receipt of that email is not verification approval. Do not manually email an established password, put credentials in notes, or forward access to an unverified alternate address. Paid-account invitations use their separate personal-access flow.
 
 ### Step 6 — Secure shared parish dashboard access
 
-The parish follows the invitation and creates its dashboard password. Confirm delivery is recorded, the password record exists, and the temporary credential has been replaced. This secured shared dashboard session authorizes initial Go Live, including during the 30-day free trial. No separate personal treasurer login or accounting PIN is required to approve initial publication.
+For initial shared access, the parish uses the Parish ID and temporary password from the welcome email, then creates its secured dashboard password. Confirm delivery is recorded, the password record exists, and the temporary credential has been replaced. This secured shared dashboard session authorizes initial Go Live, including during the 30-day free trial. No separate personal treasurer login or accounting PIN is required to approve initial publication.
 
 The signer still enters their treasurer name/title, confirms authority, and checks all eight launch affirmations. Store the authentication method as parish_dashboard_session and the treasurer email on file; do not describe that email as proof of an individually authenticated signer.
 
@@ -742,7 +746,7 @@ Required attestation text:
 
 > I am authorized to act as treasurer for this parish. I reviewed the Stripe account and payout destination in Stripe and reviewed the organization, fund, recurring-giving, receipt, and AGAPAY plan details shown here. They are correct for this parish, and I authorize AGAPAY to publish this parish's giving page.
 
-The treasurer must enter or confirm their name and title and then click **Go Live**. Authentication plus the click constitutes the electronic signoff; do not ask the treasurer to email a substitute “looks good” message.
+The treasurer must enter or confirm their name and title and then click **Go Live**. The secured shared parish session plus the click records the launch attestation; it does not establish personal authentication of the named treasurer. Keep the verified leader's authority confirmation as the separate human evidence; do not ask the treasurer to email a substitute “looks good” message.
 
 ### 7.4 Signoff evidence
 
@@ -765,7 +769,7 @@ Do not record a full bank or routing number.
 Return the onboarding to `CONFIGURING` and require a new signoff if any of these change after the signoff snapshot is created:
 
 - Connected Stripe account or payout destination.
-- Public or legal organization name.
+- Legal/receipt organization name. A public display-name-only change follows the nonmaterial exception below.
 - General Operating Fund.
 - Any enabled designated fund or campaign, its restriction, or destination.
 - Recurring-giving setting.

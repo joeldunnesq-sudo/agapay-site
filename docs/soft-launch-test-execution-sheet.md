@@ -12,6 +12,8 @@ Commit SHA: ____________________
 Deploy time: ____________________  
 Environment: `production` / `staging` / `local`
 
+Use the [current signup and treasurer checklist](launch-signup-checklist-2026-10-19.md) for the expected operator path. Record a new result for each run; historical test success does not verify the treasurer of a real parish.
+
 ## Quick links
 
 - App: `https://agapay.app`
@@ -25,7 +27,7 @@ Environment: `production` / `staging` / `local`
 - [ ] Latest deploy is live
 - [ ] `npm run check` passed
 - [ ] `npm run prelaunch` passed
-- [ ] Stripe test mode is enabled for this run
+- [ ] Synthetic payments use an isolated Stripe test-mode environment/account; do not switch production keys to rehearse. Any real production gift requires explicit donor authorization
 - [ ] Test inbox is accessible
 - [ ] Admin credentials available
 
@@ -34,7 +36,7 @@ Environment: `production` / `staging` / `local`
 - Parish/org name: ________________________________________
 - Parish email: ________________________________________
 - Donor email: ________________________________________
-- Donor password: ________________________________________
+- Donor credential: stored only in the approved private credential store; never write it in this worksheet
 - Stripe success card: `4242 4242 4242 4242`
 - Stripe decline card: `4000 0000 0000 9995`
 - Stripe 3DS card: `4000 0027 6000 3184`
@@ -45,11 +47,15 @@ Environment: `production` / `staging` / `local`
 |---|---|---|---|---|
 | Organization registration submitted | ____ | PASS / FAIL | screenshot / email / none | ____ |
 | Admin sees registration in queue | ____ | PASS / FAIL | screenshot / none | ____ |
-| Admin verifies registration | ____ | PASS / FAIL | screenshot / none | ____ |
+| Official parish/priest contact independently confirmed | ____ | PASS / FAIL | private source reference | ____ |
+| Verified priest confirms treasurer name/email/authority | ____ | PASS / FAIL | private confirmation reference | ____ |
+| Admin records representative check and verifies registration | ____ | PASS / FAIL | redacted review record | ____ |
 | Parish invite email arrives | ____ | PASS / FAIL | screenshot / email | ____ |
 | Parish login works | ____ | PASS / FAIL | screenshot / none | ____ |
 | Billing step completes | ____ | PASS / FAIL | screenshot / Stripe session | ____ |
 | Stripe onboarding completes | ____ | PASS / FAIL | screenshot / Stripe account | ____ |
+| Treasurer reviews eight affirmations and launches from shared parish session | ____ | PASS / FAIL | snapshot/audit reference; not proof of personal login | ____ |
+| Missing representative approval or stale snapshot blocks Go Live | ____ | PASS / FAIL | isolated negative test | ____ |
 | Setup state persists after refresh | ____ | PASS / FAIL | screenshot / none | ____ |
 | Donor signup works | ____ | PASS / FAIL | screenshot / email | ____ |
 | Donor verification email works | ____ | PASS / FAIL | screenshot / email | ____ |
@@ -64,7 +70,9 @@ Environment: `production` / `staging` / `local`
 
 ## Evidence checklist
 
-- [ ] Admin verification screenshot
+- [ ] Private priest-to-treasurer authority confirmation reference; no public treasurer listing required
+- [ ] Initial shared access and later personal-account access recorded separately
+- [ ] Admin verification screenshot (redact credentials and personal/financial data)
 - [ ] Parish setup completion screenshot
 - [ ] Donor donation success screenshot
 - [ ] Donor donation decline screenshot

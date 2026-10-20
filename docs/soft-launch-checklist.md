@@ -1,6 +1,8 @@
 # AGAPAY Soft Launch Checklist
 
-This is the launch gate for the first production soft launch.
+This records platform-level evidence for controlled onboarding. For the current per-church signup sequence, use the [October 19 signup and treasurer checklist](launch-signup-checklist-2026-10-19.md). Treasurer authority requires one confirmation from an independently verified priest/leader; a public treasurer listing and separate personal account are not required before initial Go Live.
+
+Status reviewed October 19 against production `05843746`. Historical completed walkthroughs remain dated evidence. Older unchecked rows below are open verification records, not proof that a feature is missing; do not mark them complete from a healthy endpoint alone. None of these platform checkmarks approves a real church's treasurer.
 
 Companion execution guide:
 
@@ -15,9 +17,9 @@ Current decision: **approved for controlled onboarding of the first real parish*
 - [x] Run `npm run check`
 - [x] Run `npm run prelaunch`
 - [x] Production smoke: `AGAPAY_BASE_URL=https://agapay.app npm run prelaunch`
-- [x] Confirm `main` branch is clean after checks
+- [x] Accepted deployment identified by exact source/release revision (local dirty worktrees are separately preserved and do not certify the deployed revision)
 
-Latest confirmation: GitHub Actions run `31978438201` passed the complete check, Cloudflare deployment, production route/health smoke, and authenticated accounting smoke on 2026-08-16 for production commit `b079b9efaba86361325f240fc864b01cf53887b0`.
+Current release evidence: [production run 39183684058](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39183684058) passed Quality, Test, Deploy and authenticated Accounting acceptance for `05843746`. The accepted release records 335 platform commands and four prechecks. The [October 19 monitor](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39313700070) passed on the same release. Historical August prelaunch and owner walkthrough evidence remains below; those manual journeys were not newly performed during this documentation review.
 
 ## 2) Critical journey QA (must pass)
 
@@ -49,7 +51,7 @@ Owner-confirmed completed with Stripe test-mode keys on August 1, 2026. Detailed
 
 ## 5) Data durability
 
-- [ ] D1 database backup/export scheduled
+- [x] Scheduled production D1 backup: [October 19 run 39272491763](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39272491763) passed. This is not a fresh restore-drill result
 - [ ] KV fallback behavior verified for any legacy records
 - [ ] Index rebuild endpoint works with admin auth
 - [ ] Runbook for rollback documented and accessible
@@ -71,7 +73,20 @@ See `docs/MONITORING_CHECKLIST.md` and `docs/reports/email-monitoring-evidence-2
 - [ ] Keyboard navigation and focus states verified on major forms
 - [ ] Footer/nav links all resolve as expected
 
-## 8) Soft launch readiness decision
+## 8) Per-church signup and treasurer approval
+
+Use a fresh private onboarding record for each church. Do not copy completed platform checkmarks into it.
+
+- [ ] Independently sourced parish/priest contact confirmed.
+- [ ] That leader confirmed the treasurer name, exact email and launch authority; confirmation recorded once in Admin.
+- [ ] Intended recipient received setup instructions; shared dashboard password secured.
+- [ ] Plan, Stripe readiness, giving setup and applicable Accounting mapping reviewed.
+- [ ] The authorized treasurer completed the eight affirmations and Go Live from the parish dashboard.
+- [ ] Signed-out page/QR and 24h/72h follow-up assigned.
+
+Initial Go Live uses a shared parish session and the treasurer email on file. It does not independently authenticate the named treasurer. A passed manual representative check records the operator's confirmation, not an automated identity check. Follow the [short checklist](launch-signup-checklist-2026-10-19.md) for the normal low-friction route and narrowly scoped exceptions.
+
+## 9) Soft launch readiness decision
 
 Soft launch is approved only when:
 

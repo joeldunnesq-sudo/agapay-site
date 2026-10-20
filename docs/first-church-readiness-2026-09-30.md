@@ -1,5 +1,13 @@
 # First three churches: onboarding readiness
 
+## October 19 update
+
+This document retains the September 30 review as history. The current per-church process is the [signup and treasurer checklist](launch-signup-checklist-2026-10-19.md), reviewed against released `05843746`: one independently verified priest/leader confirms the treasurer's name/email/authority; initial launch uses secured shared parish access. Do not require a public treasurer listing or a separate personal account for initial publication.
+
+The September 30 authenticated-smoke gap below was superseded by successful protected production acceptance in [run 39183684058](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39183684058). The [October 19 monitor](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39313700070) and [D1 backup](https://github.com/joeldunnesq-sudo/agapay-site/actions/runs/39272491763) also passed. Statements below about unfinished local features and older restore-drill evidence are historical, not a current feature inventory or a newly verified restore result. No new church's mailbox, Stripe account or treasurer was verified by this documentation review.
+
+## Historical September 30 review
+
 Reviewed September 30, 2026 against main `566c3ac8`, with the fixes in
 `codex/first-church-readiness`. These fixes were merged to main as `60b55bf8`
 and deployed successfully on September 30.
