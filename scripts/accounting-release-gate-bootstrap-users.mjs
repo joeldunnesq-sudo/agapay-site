@@ -1,23 +1,24 @@
-import assert from "node:assert/strict";
-import { baseUrlFrom, requiredEnvironment } from "./lib/accounting-release-gates.mjs";
+import assert from 'node:assert/strict';
+import { baseUrlFrom, requiredEnvironment } from './lib/accounting-release-gates.mjs';
+import { completeGateMfa, gateMfaSecretName } from './lib/release-gate-mfa.mjs';
 
 const baseUrl = baseUrlFrom();
 const target = new URL(baseUrl);
-const isLocal = ["localhost", "127.0.0.1", "::1"].includes(target.hostname);
+const isLocal = ['localhost', '127.0.0.1', '::1'].includes(target.hostname);
 assert.ok(
-  isLocal || target.hostname.toLowerCase().includes("staging"),
-  "Release-gate user bootstrap is restricted to localhost or a hostname containing staging."
+  isLocal || target.hostname.toLowerCase().includes('staging'),
+  'Release-gate user bootstrap is restricted to localhost or a hostname containing staging.'
 );
 
 const credentials = requiredEnvironment([
-  "ACCOUNTING_GATE_PARISH_A_ID",
-  "ACCOUNTING_GATE_PARISH_B_ID",
-  "ACCOUNTING_GATE_USER_A_EMAIL",
-  "ACCOUNTING_GATE_USER_A_PASSWORD",
-  "ACCOUNTING_GATE_USER_B_EMAIL",
-  "ACCOUNTING_GATE_USER_B_PASSWORD",
-  "ACCOUNTING_GATE_PARISH_A_PASSWORD",
-  "ACCOUNTING_GATE_PARISH_B_PASSWORD"
+  'ACCOUNTING_GATE_PARISH_A_ID',
+  'ACCOUNTING_GATE_PARISH_B_ID',
+  'ACCOUNTING_GATE_USER_A_EMAIL',
+  'ACCOUNTING_GATE_USER_A_PASSWORD',
+  'ACCOUNTING_GATE_USER_B_EMAIL',
+  'ACCOUNTING_GATE_USER_B_PASSWORD',
+  'ACCOUNTING_GATE_PARISH_A_PASSWORD',
+  'ACCOUNTING_GATE_PARISH_B_PASSWORD',
 ]);
 
 assert.notEqual(credentials.ACCOUNTING_GATE_PARISH_A_ID, credentials.ACCOUNTING_GATE_PARISH_B_ID);
@@ -26,42 +27,50 @@ assert.notEqual(
   credentials.ACCOUNTING_GATE_USER_B_EMAIL.toLowerCase()
 );
 
-async function requestJson(path, { method = "GET", token = "", userEmail = "", body } = {}) {
+async function requestJson(path, { method = 'GET', token = '', userEmail = '', body } = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {
-      accept: "application/json",
-      ...(body === undefined ? {} : { "content-type": "application/json" }),
+      accept: 'application/json',
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(userEmail ? { "X-AGAPAY-User-Email": userEmail } : {})
+      ...(userEmail ? { 'X-AGAPAY-User-Email': userEmail } : {}),
     },
-    body: body === undefined ? undefined : JSON.stringify(body)
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   let payload = {};
-  try { payload = await response.json(); } catch {}
+  try {
+    payload = await response.json();
+  } catch {}
   return { response, payload };
 }
 
 async function identitySession(email, password) {
-  const login = await requestJson("/api/identity/login", {
-    method: "POST",
-    body: { email, password }
+  const login = await requestJson('/api/identity/login', {
+    method: 'POST',
+    body: { email, password },
   });
   if (login.response.status === 401) return null;
   assert.equal(login.response.status, 200, `Platform-user login returned HTTP ${login.response.status}.`);
-  assert.ok(login.payload.token, "Platform-user login did not return a token.");
+  login.payload = await completeGateMfa({
+    baseUrl,
+    payload: login.payload,
+    secretName: gateMfaSecretName('USER', email),
+  });
+  assert.ok(login.payload.token, 'Platform-user login did not return a token.');
 
-  const session = await requestJson("/api/identity/session", {
+  const session = await requestJson('/api/identity/session', {
     token: login.payload.token,
-    userEmail: email
+    userEmail: email,
   });
   assert.equal(session.response.status, 200, `Platform-user session returned HTTP ${session.response.status}.`);
   return session.payload;
 }
 
 function hasActiveMembership(session, parishId) {
-  return Array.isArray(session?.memberships) && session.memberships.some(
-    (membership) => membership.parishId === parishId && membership.status === "active"
+  return (
+    Array.isArray(session?.memberships) &&
+    session.memberships.some((membership) => membership.parishId === parishId && membership.status === 'active')
   );
 }
 
@@ -72,19 +81,24 @@ async function provisionPrincipal(label, { parishId, parishPassword, email, pass
     return;
   }
 
-  const parishLogin = await requestJson(
-    `/api/parish/dashboard/${encodeURIComponent(parishId)}/session`,
-    { method: "POST", body: { password: parishPassword } }
-  );
+  const parishLogin = await requestJson(`/api/parish/dashboard/${encodeURIComponent(parishId)}/session`, {
+    method: 'POST',
+    body: { password: parishPassword },
+  });
   assert.equal(parishLogin.response.status, 200, `${label} parish login returned HTTP ${parishLogin.response.status}.`);
+  parishLogin.payload = await completeGateMfa({
+    baseUrl,
+    payload: parishLogin.payload,
+    secretName: gateMfaSecretName('PARISH', parishId),
+  });
   assert.ok(parishLogin.payload.token, `${label} parish login did not return a token.`);
 
   const invitation = await requestJson(
     `/api/parish/dashboard/${encodeURIComponent(parishId)}/memberships/invitations`,
     {
-      method: "POST",
+      method: 'POST',
       token: parishLogin.payload.token,
-      body: { email, roleTemplate: "treasurer" }
+      body: { email, roleTemplate: 'treasurer' },
     }
   );
   assert.equal(
@@ -97,8 +111,8 @@ async function provisionPrincipal(label, { parishId, parishPassword, email, pass
   const accepted = await requestJson(
     `/api/identity/invitations/${encodeURIComponent(invitation.payload.token)}/accept`,
     {
-      method: "POST",
-      body: { password, displayName: `Accounting Gate ${label}` }
+      method: 'POST',
+      body: { password, displayName: `Accounting Gate ${label}` },
     }
   );
   assert.equal(
@@ -112,15 +126,32 @@ async function provisionPrincipal(label, { parishId, parishPassword, email, pass
   console.log(`PASS - ${label} dedicated staging platform user and membership are ready`);
 }
 
-await provisionPrincipal("A", {
+await provisionPrincipal('A', {
   parishId: credentials.ACCOUNTING_GATE_PARISH_A_ID,
   parishPassword: credentials.ACCOUNTING_GATE_PARISH_A_PASSWORD,
   email: credentials.ACCOUNTING_GATE_USER_A_EMAIL,
-  password: credentials.ACCOUNTING_GATE_USER_A_PASSWORD
+  password: credentials.ACCOUNTING_GATE_USER_A_PASSWORD,
 });
-await provisionPrincipal("B", {
+await provisionPrincipal('B', {
   parishId: credentials.ACCOUNTING_GATE_PARISH_B_ID,
   parishPassword: credentials.ACCOUNTING_GATE_PARISH_B_PASSWORD,
   email: credentials.ACCOUNTING_GATE_USER_B_EMAIL,
-  password: credentials.ACCOUNTING_GATE_USER_B_PASSWORD
+  password: credentials.ACCOUNTING_GATE_USER_B_PASSWORD,
 });
+
+// Enroll/verify shared dashboard principals separately from named users. Their
+// subsequent browser logins still complete MFA and require an accounting PIN.
+for (const side of process.env.ACCOUNTING_GATE_USE_NAMED_STAFF === 'true' ? [] : ['A', 'B']) {
+  const parishId = credentials[`ACCOUNTING_GATE_PARISH_${side}_ID`];
+  const login = await requestJson(`/api/parish/dashboard/${encodeURIComponent(parishId)}/session`, {
+    method: 'POST',
+    body: { password: credentials[`ACCOUNTING_GATE_PARISH_${side}_PASSWORD`] },
+  });
+  assert.equal(login.response.status, 200, `Parish ${side} login returned HTTP ${login.response.status}.`);
+  const session = await completeGateMfa({
+    baseUrl,
+    payload: login.payload,
+    secretName: gateMfaSecretName('PARISH', parishId),
+  });
+  assert.ok(session.token, `Parish ${side} did not complete authentication.`);
+}
