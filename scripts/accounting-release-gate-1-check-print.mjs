@@ -87,6 +87,19 @@ try {
   if (currentPeriod.status === 'future') {
     await page.locator('[data-accounting-experience="accountant"]').click();
     await page.locator('[data-accounting-view="settings"]').click();
+    if (await page.getByRole('button', { name: 'Complete Accounting setup', exact: true }).count()) {
+      const initialization = page.waitForResponse(
+        (response) => response.url().endsWith('/setup/initialize') && response.request().method() === 'POST'
+      );
+      await page.getByRole('button', { name: 'Complete Accounting setup', exact: true }).click();
+      assert.equal(
+        (await initialization).status(),
+        201,
+        'Existing books must support authorized configuration completion.'
+      );
+      await page.locator('#accountingPeriodToOpen').waitFor();
+      evidence.setupCompleted = true;
+    }
     const settingsState = await page.evaluate(() => ({
       view: accountingView,
       settingsLoaded: Boolean(accountingData.setup?.settings),

@@ -284,10 +284,12 @@ function renderAccountingPane() {
   if (accountingView === 'settings') {
     const settings = accountingData.setup?.settings;
     if (!settings) {
-      pane.innerHTML = accountingEmpty(
-        'Accounting settings are not loaded',
-        'Refresh to load the parish accounting configuration.'
-      );
+      pane.innerHTML =
+        accountingEmpty(
+          'Accounting settings are not loaded',
+          'Complete the parish accounting configuration to manage fiscal periods and settings.'
+        ) +
+        '<button type="button" class="acct-primary" onclick="initializeAccounting()">Complete Accounting setup</button>';
       return;
     }
     const staff = accountingStaffSession()?.profile;

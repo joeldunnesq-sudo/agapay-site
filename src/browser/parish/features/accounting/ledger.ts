@@ -359,7 +359,7 @@ async function voidAccountingJournal(id: string) {
 }
 
 async function initializeAccounting() {
-  const res = await fetch(accountingApi('/ledger/initialize'), {
+  const res = await fetch(accountingApi('/setup/initialize'), {
     method: 'POST',
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: '{}',
