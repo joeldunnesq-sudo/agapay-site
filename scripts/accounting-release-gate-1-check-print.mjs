@@ -218,6 +218,7 @@ try {
   await page.getByRole('button', { name: 'Payments & Checks', exact: true }).click();
   await page.getByRole('button', { name: 'Pay bills', exact: true }).click();
   const paymentForm = page.locator('#accountingPhaseDForm form');
+  await paymentForm.locator('select[name="paymentMethod"]').selectOption('check');
   const payableBillRow = paymentForm.locator('tbody tr').filter({ hasText: invoiceNumber });
   await payableBillRow.locator('[data-payment-bill]').check();
   await page.waitForFunction(() => Boolean(document.getElementById('accountingCheckNumber')?.value));
