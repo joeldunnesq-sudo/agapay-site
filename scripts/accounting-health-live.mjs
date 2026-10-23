@@ -22,6 +22,7 @@ export async function runAccountingHealth({
   fetchImpl = fetch,
   now = new Date(),
   allowRecovery = false,
+  requireAttachments = true,
 } = {}) {
   const suppliedSession = String(env.TEST_LUBBOCK_PARISH_SESSION || '').trim();
   const required = suppliedSession ? secretNames : ['TEST_LUBBOCK_PARISH_PASSWORD', ...secretNames];
@@ -217,18 +218,57 @@ export async function runAccountingHealth({
         (p) => p?.ok === true && Array.isArray(p.bills)
       );
       if (!bills) continue;
-      const bill = bills.bills.find((item) => typeof item.id === 'string' && item.id.trim());
+      const bill =
+        bills.bills.find((item) => item.vendorInvoiceNumber === 'AGAPAY-ATTACHMENT-SMOKE-V1') ||
+        bills.bills.find((item) => typeof item.id === 'string' && item.id.trim());
       if (!bill) {
         evidence.checks.push({
           name: 'accounting-attachments',
-          passed: null,
-          skipped: true,
+          passed: requireAttachments ? false : null,
+          ...(requireAttachments ? {} : { skipped: true }),
           reason: 'no_existing_bill',
         });
         continue;
       }
       attachmentPath = `${root}/accounting/attachments?entityType=bill&entityId=${encodeURIComponent(bill.id)}`;
-      await check('accounting-attachments', attachmentPath, (p) => p?.ok === true && Array.isArray(p.attachments));
+      const listed = await check(
+        'accounting-attachments',
+        attachmentPath,
+        (p) => p?.ok === true && Array.isArray(p.attachments)
+      );
+      const attachment =
+        listed?.attachments?.find((item) => item.displayName === 'agapay-attachment-smoke-v1.png') ||
+        listed?.attachments?.find((item) => item.storageStatus === 'stored');
+      if (!attachment) {
+        evidence.checks.push({ name: 'accounting-attachment-download', passed: false, reason: 'no_stored_attachment' });
+        continue;
+      }
+      const downloadPath = root + '/accounting/attachments/' + encodeURIComponent(attachment.id) + '/download';
+      try {
+        const response = await fetchImpl(baseUrl + downloadPath, {
+          method: 'GET',
+          redirect: 'error',
+          signal: AbortSignal.timeout(60000),
+          headers: { authorization: 'Bearer ' + token, ...staffHeaders },
+        });
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const digest = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        evidence.checks.push({
+          name: 'accounting-attachment-download',
+          status: response.status,
+          passed:
+            response.status === 200 &&
+            bytes.length === attachment.sizeBytes &&
+            digest === attachment.sha256Hex &&
+            response.headers.get('content-type') === attachment.mimeType &&
+            /attachment;/.test(response.headers.get('content-disposition') || '') &&
+            /no-store/.test(response.headers.get('cache-control') || ''),
+        });
+      } catch {
+        evidence.checks.push({ name: 'accounting-attachment-download', status: 0, passed: false });
+      }
       continue;
     }
     const payload = await check(

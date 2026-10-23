@@ -1,5 +1,14 @@
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+const attachmentBytes = Buffer.from('synthetic attachment');
+const attachmentMetadata = {
+  id: 'existing-attachment',
+  storageStatus: 'stored',
+  sizeBytes: attachmentBytes.length,
+  sha256Hex: createHash('sha256').update(attachmentBytes).digest('hex'),
+  mimeType: 'image/png',
+};
 import { runAccountingHealth } from './accounting-health-live.mjs';
 import { ACCOUNTING_READ_SMOKE_PATHS } from './lib/accounting-release-gates.mjs';
 import { readFile } from 'node:fs/promises';
@@ -13,12 +22,18 @@ const env = {
 };
 const now = new Date('2026-08-31T12:00:00Z');
 
-async function run({ credentials = env, override = () => undefined, allowRecovery = false } = {}) {
+async function run({
+  credentials = env,
+  override = () => undefined,
+  allowRecovery = false,
+  requireAttachments = false,
+} = {}) {
   const requests = [];
   const evidence = await runAccountingHealth({
     env: credentials,
     now,
     allowRecovery,
+    requireAttachments,
     fetchImpl: async (url, options) => {
       const parsed = new URL(url);
       assert.equal(parsed.origin, 'https://agapay.app');
@@ -103,9 +118,17 @@ assert.ok(includesJavaScriptFragment(reportsSource, `path === "${reportPath}"`))
 const attached = await run({
   override: (path, options) => {
     if (path.endsWith('/payables/bills')) return Response.json({ ok: true, bills: [{ id: 'existing-bill' }] });
+    if (path.endsWith('/download'))
+      return new Response(attachmentBytes, {
+        headers: {
+          'content-type': 'image/png',
+          'content-disposition': 'attachment; filename=fixture.png',
+          'cache-control': 'private, no-store',
+        },
+      });
     if (path.endsWith('/attachments')) {
       assert.equal(options.method, 'GET');
-      return Response.json({ ok: true, attachments: [] });
+      return Response.json({ ok: true, attachments: [attachmentMetadata] });
     }
   },
 });
@@ -251,3 +274,30 @@ assert.equal(mismatch.evidence.status, 'failed');
 console.log(
   'PASS - read-only production request boundary, secret redaction, missing credentials, MFA, PIN failure, Stripe failures, parish identity, and protective states'
 );
+
+assert.equal(
+  (await run({ requireAttachments: true })).evidence.status,
+  'failed',
+  'Production must fail if no bill is available for attachment coverage.'
+);
+for (const defect of ['empty', 'corrupt', 'missing', 'public-cache']) {
+  const result = await run({
+    override: (path) => {
+      if (path.endsWith('/payables/bills')) return Response.json({ ok: true, bills: [{ id: 'existing-bill' }] });
+      if (path.endsWith('/attachments'))
+        return Response.json({ ok: true, attachments: defect === 'empty' ? [] : [attachmentMetadata] });
+      if (path.endsWith('/download'))
+        return new Response(defect === 'corrupt' ? 'corrupt' : attachmentBytes, {
+          status: defect === 'missing' ? 404 : 200,
+          headers: {
+            'content-type': 'image/png',
+            'content-disposition': 'attachment; filename=fixture.png',
+            'cache-control': defect === 'public-cache' ? 'public' : 'private, no-store',
+          },
+        });
+    },
+  });
+  assert.equal(result.evidence.status, 'failed', defect + ' must not pass attachment content smoke');
+}
+assert.equal(attached.evidence.checks.find((c) => c.name === 'accounting-attachment-download').passed, true);
+console.log('PASS - attachment content, metadata hash, download failure, private cache headers, and required coverage');
