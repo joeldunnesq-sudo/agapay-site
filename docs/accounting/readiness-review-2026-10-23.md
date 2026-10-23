@@ -8,19 +8,19 @@ The fixes below are implemented and covered by regression tests. Local automated
 
 ## Findings corrected
 
-| Finding | Impact | Correction |
-| --- | --- | --- |
-| Journal header/lines/event were written separately, with line validation during writes | Invalid input or a failed write could leave a partial draft | Validate the complete draft first; commit header, lines and creation event in one atomic batch |
-| Draft updates/deletes and posting checked versions before the transaction | Another request could win between validation and writes | Enforce a version/state comparison inside the write batch; failed comparisons abort the batch |
-| Posting checked period availability before the transaction | A newly closed or locked period could be posted into | Recheck the fiscal-year/period and lock barriers inside the atomic write batch |
-| Date validation accepted strings such as February 30 | Impossible dates could enter journals or payable records | Validate actual ISO calendar dates for journal create/edit, bills and payment selection |
-| Whole-cent line values did not imply safe aggregate arithmetic | Products and totals could exceed JavaScript's exact integer range | Reject unsafe journal, bill and payment totals; reject zero bill quantities |
-| A posting key could return another journal if its caller-supplied hash matched | A request could receive a success result for the wrong journal | Bind idempotency replay to both request hash and journal ID |
-| Bill/payment headers and children were written separately | A failed child insert could leave an incomplete payable record | Create each bill/payment and its children in one batch; reject repeated bill applications before writes |
-| Ledger posting and AP finalization were separate operations | A failure could post the ledger without updating the bill/payment or its balances | Include AP state changes, balances and links in the same ledger-posting transaction; reuse unfinished source drafts on retry |
-| Reversal, original-entry state and payment-void changes were separate writes | Failure could strand a reversal or leave AP balances inconsistent | Commit reversal/link/original state/payment void/bill balance changes together; preserve an unfinished void's reversal date on retry |
-| Submitted objects could overwrite server-owned actor, tier or URL-selected IDs | Audit attribution and operation scope could be changed by submitted JSON | Give authenticated context and URL IDs precedence; explicitly select posting fields so internal transaction statements cannot come from JSON |
-| The database facade fell back to sequential execution when batching was unavailable | An adapter could silently discard transaction guarantees | Refuse batch writes unless the provider implements atomic batching |
+| Finding                                                                                | Impact                                                                            | Correction                                                                                                                                   |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Journal header/lines/event were written separately, with line validation during writes | Invalid input or a failed write could leave a partial draft                       | Validate the complete draft first; commit header, lines and creation event in one atomic batch                                               |
+| Draft updates/deletes and posting checked versions before the transaction              | Another request could win between validation and writes                           | Enforce a version/state comparison inside the write batch; failed comparisons abort the batch                                                |
+| Posting checked period availability before the transaction                             | A newly closed or locked period could be posted into                              | Recheck the fiscal-year/period and lock barriers inside the atomic write batch                                                               |
+| Date validation accepted strings such as February 30                                   | Impossible dates could enter journals or payable records                          | Validate actual ISO calendar dates for journal create/edit, bills and payment selection                                                      |
+| Whole-cent line values did not imply safe aggregate arithmetic                         | Products and totals could exceed JavaScript's exact integer range                 | Reject unsafe journal, bill and payment totals; reject zero bill quantities                                                                  |
+| A posting key could return another journal if its caller-supplied hash matched         | A request could receive a success result for the wrong journal                    | Bind idempotency replay to both request hash and journal ID                                                                                  |
+| Bill/payment headers and children were written separately                              | A failed child insert could leave an incomplete payable record                    | Create each bill/payment and its children in one batch; reject repeated bill applications before writes                                      |
+| Ledger posting and AP finalization were separate operations                            | A failure could post the ledger without updating the bill/payment or its balances | Include AP state changes, balances and links in the same ledger-posting transaction; reuse unfinished source drafts on retry                 |
+| Reversal, original-entry state and payment-void changes were separate writes           | Failure could strand a reversal or leave AP balances inconsistent                 | Commit reversal/link/original state/payment void/bill balance changes together; preserve an unfinished void's reversal date on retry         |
+| Submitted objects could overwrite server-owned actor, tier or URL-selected IDs         | Audit attribution and operation scope could be changed by submitted JSON          | Give authenticated context and URL IDs precedence; explicitly select posting fields so internal transaction statements cannot come from JSON |
+| The database facade fell back to sequential execution when batching was unavailable    | An adapter could silently discard transaction guarantees                          | Refuse batch writes unless the provider implements atomic batching                                                                           |
 
 The guard statements intentionally use the existing NOT NULL version constraint to abort the transaction on a stale comparison. Merely checking an UPDATE's affected-row count after a committed batch would not protect its other writes.
 
@@ -47,3 +47,7 @@ Payment validation and payment DTOs were moved into focused modules to keep the 
 3. Complete the existing physical check-stock verification rows for the actual printer and stock styles before describing printing as physically validated.
 
 This review did not change production data, deploy code, or mark physical verification complete. The local tests establish the specific behavior they exercise; they are not a claim that every accounting screen was manually inspected or that every production workflow was freshly rehearsed.
+
+## Staging follow-up
+
+The subsequent staging deployment and protected acceptance work is recorded in [the staging release record](staging-release-2026-10-23.md). The remaining-evidence list above describes the state at the original local review, before that follow-up.
