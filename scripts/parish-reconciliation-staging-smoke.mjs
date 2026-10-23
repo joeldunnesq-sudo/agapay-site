@@ -48,7 +48,8 @@ const diagnostics = await requestJson(`/api/parish/dashboard/${encodeURIComponen
 });
 assert.equal(diagnostics.response.status, 200, `Payout diagnostics returned HTTP ${diagnostics.response.status}.`);
 assert.ok(diagnostics.payload.payouts?.length > 0, 'Payout diagnostics should return a real test payout.');
-const latestPayout = diagnostics.payload.payouts[0];
+const latestPayout =
+  diagnostics.payload.payouts.find((payout) => payout.status === 'paid') || diagnostics.payload.payouts[0];
 const payoutTimestamp = Number(latestPayout.arrivalDate || latestPayout.created || 0) * 1000;
 assert.ok(payoutTimestamp > 0, 'Latest test payout should include an arrival or creation date.');
 const month = new Date(payoutTimestamp).toISOString().slice(0, 7);
@@ -67,62 +68,121 @@ const full = await requestJson(`${reconciliationPath}?month=${encodeURIComponent
 assert.equal(full.response.status, 200, `Full reconciliation returned HTTP ${full.response.status}.`);
 assert.equal(full.payload.available, true, 'Full reconciliation should be available.');
 assert.ok(Array.isArray(full.payload.transactions), 'Full reconciliation should return transactions.');
-assert.ok(full.payload.transactions.length > 0, 'Full reconciliation should return real payout transactions.');
-
-const expectedDepositCents = Number(full.payload.summary?.depositedCents || 0);
-const bankStatementCents = expectedDepositCents + 1;
-const missingNote = await requestJson(`${reconciliationPath}/close`, {
-  method: 'POST',
-  token: login.payload.token,
-  body: { month, bankStatementCents, closed: true, notes: '' },
-});
-assert.equal(missingNote.response.status, 400, 'Closing a difference without a note should be rejected.');
-assert.match(
-  String(missingNote.payload.error || ''),
-  /note explaining the bank difference/i,
-  'Missing-note rejection should explain the required treasurer note.'
-);
-
-const notes = 'Staging extraction smoke: intentional one-cent difference.';
-const closed = await requestJson(`${reconciliationPath}/close`, {
-  method: 'POST',
-  token: login.payload.token,
-  body: { month, bankStatementCents, closed: true, notes },
-});
-assert.equal(closed.response.status, 200, `Reconciliation close returned HTTP ${closed.response.status}.`);
-assert.equal(closed.payload.record?.status, 'closed');
-assert.equal(closed.payload.record?.differenceCents, 1);
-assert.equal(closed.payload.record?.notes, notes);
-
-const stored = await requestJson(`${reconciliationPath}?month=${encodeURIComponent(month)}`, {
-  token: login.payload.token,
-});
-assert.equal(stored.response.status, 200, `Stored reconciliation reload returned HTTP ${stored.response.status}.`);
-assert.equal(stored.payload.closeRecord?.status, 'closed');
-assert.equal(stored.payload.closeRecord?.differenceCents, 1);
-assert.equal(stored.payload.closeRecord?.notes, notes);
-
+const proof = full.payload;
 const evidence = {
   target: baseUrl,
   parishId,
   month,
-  fast: {
-    payoutCount: fast.payload.summary.payoutCount,
-    paidPayoutCount: fast.payload.summary.paidPayoutCount,
-    depositedCents: fast.payload.summary.depositedCents,
-  },
+  fast: { payoutCount: fast.payload.summary.payoutCount, depositedCents: fast.payload.summary.depositedCents },
   full: {
-    payoutCount: full.payload.summary.payoutCount,
-    transactionCount: full.payload.transactions.length,
-    exceptionCount: full.payload.summary.exceptionCount,
+    payoutCount: proof.summary?.payoutCount,
+    transactionCount: proof.transactions.length,
+    complete: proof.complete,
+    state: proof.state,
+    readyForReview: proof.summary?.readyForReview,
+    exceptions: (proof.exceptions || []).map((item) => ({ code: item.code, severity: item.severity })),
   },
-  missingNoteStatus: missingNote.response.status,
-  closeRecord: closed.payload.record,
+  closeCoverage: 'not_run',
   verifiedAt: new Date().toISOString(),
 };
 await writeArtifact('artifacts/parish-reconciliation-staging-smoke.json', evidence);
+assert.ok(proof.summary?.payoutCount > 0, 'The full report must retain the real test payouts.');
+if (!proof.transactions.length) {
+  assert.equal(proof.complete, false, 'Unsupported payout breakdowns must never be presented as complete.');
+  assert.equal(proof.summary.readyForReview, false);
+  assert.notEqual(proof.state, 'reconciled');
+  const blocking = (proof.exceptions || []).filter((item) => item.severity !== 'info');
+  assert.ok(
+    blocking.length > 0 && blocking.every((item) => item.code === 'unsupported_or_large_payout'),
+    'Empty transaction coverage requires an explicit unsupported-payout boundary; provider or matching failures must still fail acceptance.'
+  );
+  evidence.transactionCoverage = 'unsupported_payouts_explicitly_blocked';
+} else evidence.transactionCoverage = 'real_payout_transactions';
 
+const expectedDepositCents = Number(proof.summary?.depositedCents || 0);
+assert.ok(Number.isSafeInteger(expectedDepositCents) && expectedDepositCents >= 0);
+const reviewVersion = proof.closeRecord?.reviewId || proof.closeRecord?.updatedAt || null;
+const baseClose = {
+  month,
+  bankStatementCents: expectedDepositCents,
+  bankConfirmed: true,
+  closed: true,
+  fingerprint: proof.fingerprint,
+  expectedReviewVersion: reviewVersion,
+};
+const unconfirmed = await requestJson(reconciliationPath + '/close', {
+  method: 'POST',
+  token: login.payload.token,
+  body: { ...baseClose, bankConfirmed: false },
+});
+assert.equal(unconfirmed.response.status, 400, 'Bank totals require explicit confirmation.');
+const mismatched = await requestJson(reconciliationPath + '/close', {
+  method: 'POST',
+  token: login.payload.token,
+  body: {
+    ...baseClose,
+    bankStatementCents: expectedDepositCents + 1,
+    notes: 'Release gate: a note must never waive a bank difference.',
+  },
+});
+assert.equal(mismatched.response.status, 409, 'A noted bank difference must not finalize a report.');
+const unchanged = await requestJson(reconciliationPath + '?month=' + encodeURIComponent(month), {
+  token: login.payload.token,
+});
+assert.equal(unchanged.response.status, 200);
+assert.deepEqual(
+  unchanged.payload.closeRecord,
+  proof.closeRecord,
+  'Rejected close attempts must preserve the saved review.'
+);
+evidence.unconfirmedStatus = unconfirmed.response.status;
+evidence.mismatchedStatus = mismatched.response.status;
+
+if (proof.complete && proof.summary.readyForReview && proof.transactions.length) {
+  let expectedReviewVersion = reviewVersion;
+  if (proof.closeRecord?.status === 'closed') {
+    const reopened = await requestJson(reconciliationPath + '/close', {
+      method: 'POST',
+      token: login.payload.token,
+      body: {
+        month,
+        closed: false,
+        expectedReviewVersion: reviewVersion,
+        notes: 'Release gate: verify the current report revision and exact bank match.',
+      },
+    });
+    assert.equal(reopened.response.status, 200);
+    expectedReviewVersion = reopened.payload.record.reviewId;
+  }
+  const closed = await requestJson(reconciliationPath + '/close', {
+    method: 'POST',
+    token: login.payload.token,
+    body: {
+      ...baseClose,
+      expectedReviewVersion,
+      notes: 'Release gate: exact provider deposit total confirmed in the staging fixture.',
+    },
+  });
+  assert.equal(closed.response.status, 200, 'Only complete matching with an exact confirmed bank total may close.');
+  assert.equal(closed.payload.record.differenceCents, 0);
+  assert.equal(closed.payload.record.fingerprint, proof.fingerprint);
+  const stored = await requestJson(reconciliationPath + '?month=' + encodeURIComponent(month), {
+    token: login.payload.token,
+  });
+  assert.equal(stored.payload.closeRecord.reviewId, closed.payload.record.reviewId);
+  evidence.closeCoverage = 'exact_confirmed_match_saved';
+} else {
+  const blocked = await requestJson(reconciliationPath + '/close', {
+    method: 'POST',
+    token: login.payload.token,
+    body: baseClose,
+  });
+  assert.equal(blocked.response.status, 409, 'Incomplete matching must remain blocked even for an exact bank total.');
+  evidence.closeCoverage = 'incomplete_report_or_existing_review_blocked';
+}
+await writeArtifact('artifacts/parish-reconciliation-staging-smoke.json', evidence);
 console.log(
-  `PASS - ${month} fast/full reconciliation, missing-note validation, and stored close record ` +
-    `(${evidence.fast.payoutCount} payout(s), ${evidence.full.transactionCount} transaction(s))`
+  'PASS - real payout reporting, mandatory bank confirmation, noted-difference rejection, and safe close boundary (' +
+    evidence.closeCoverage +
+    ')'
 );
