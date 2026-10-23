@@ -352,6 +352,7 @@ const releaseGates = [
   'scripts/accounting-release-gate-2-sw-lifecycle.mjs --static-only',
   'scripts/accounting-release-gates-tests.mjs',
   'scripts/accounting-health-live-tests.mjs',
+  'scripts/accounting-attachment-fixture-tests.mjs',
 ];
 
 const critical = [
