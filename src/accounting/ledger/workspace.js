@@ -1,4 +1,5 @@
 // Generated from src/accounting/ledger/workspace.ts by npm run build:server. Do not edit.
+import { validateJournalDraftInput } from '../validation.js';
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { createJournalDraft } from './service.js';
 function capability(actor, name) {
@@ -89,16 +90,16 @@ async function updateJournalDraft(
   if (!current || current.status !== 'draft') throw new ValidationError('Only a draft can be edited.');
   if (Number(current.version) !== Number(expectedVersion))
     throw new AccountingDatabaseError('Draft changed. Reload and try again.', { details: { conflict: true } });
-  if (!description || !Array.isArray(lines) || lines.length < 2)
-    throw new ValidationError('A description and at least two lines are required.');
-  for (const l of lines) {
-    const d = Number(l.debitAmount || 0),
-      c = Number(l.creditAmount || 0);
-    if (!Number.isSafeInteger(d) || !Number.isSafeInteger(c) || d < 0 || c < 0 || d > 0 === c > 0)
-      throw new ValidationError('Each line requires one positive integer debit or credit.');
-  }
+  validateJournalDraftInput({ entryDate, description, lines });
   const revisionId = `revision_${crypto.randomUUID()}`;
   await db.batch([
+    // A failed comparison must abort the entire batch before lines are replaced.
+    // version is NOT NULL, so a concurrent edit cannot silently pass this guard.
+    db
+      .prepare(
+        "UPDATE accounting_journal_entries SET version=CASE WHEN status='draft' AND version=? THEN version ELSE NULL END WHERE id=?"
+      )
+      .bind(Number(expectedVersion), journalEntryId),
     db
       .prepare(
         'INSERT INTO accounting_draft_revisions(id,journal_entry_id,version,description,memo,entry_date,lines_json,actor_type,actor_id) VALUES(?,?,?,?,?,?,?,?,?)'
@@ -178,6 +179,11 @@ async function deleteJournalDraft(db, { actor, journalEntryId, expectedVersion }
   );
   if (!current) throw new ValidationError('Draft was not found or changed.');
   await db.batch([
+    db
+      .prepare(
+        "UPDATE accounting_journal_entries SET version=CASE WHEN status='draft' AND version=? THEN version ELSE NULL END WHERE id=?"
+      )
+      .bind(Number(expectedVersion), journalEntryId),
     db.prepare('DELETE FROM accounting_ledger_events WHERE journal_entry_id=?').bind(journalEntryId),
     db.prepare('DELETE FROM accounting_draft_revisions WHERE journal_entry_id=?').bind(journalEntryId),
     db.prepare('DELETE FROM accounting_journal_lines WHERE journal_entry_id=?').bind(journalEntryId),

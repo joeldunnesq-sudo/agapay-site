@@ -4,6 +4,8 @@ This directory is the accounting engineering audit trail. Numbered documents rec
 
 ## Start here
 
+- [October 23 readiness review](readiness-review-2026-10-23.md) records transaction-safety and request-boundary fixes and release evidence.
+
 - [Version 1 readiness report](130-phase-3e-version-1-readiness-report.md) summarizes the implemented accounting architecture and distinguishes code readiness from deployment evidence.
 - [Phase G completion report](133-phase-g-completion-report.md) preserves the July 21 production-gate evidence and limitations from that run.
 - [Accounting release-gate sign-off](accounting-release-gates-signoff.md) is the current release decision and operational checklist for automated, physical check-stock, credential, and production sign-off.

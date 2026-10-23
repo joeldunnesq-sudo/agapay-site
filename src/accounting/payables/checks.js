@@ -179,39 +179,53 @@ async function voidPayment(db, { actor, entitlementTier, paymentId, expectedVers
     !['approved', 'posted'].includes(payment.status)
   )
     throw new AccountingDatabaseError('Payment changed or cannot be voided.', { details: { conflict: true } });
+  const additionalStatements = [
+    db
+      .prepare(
+        'UPDATE accounting_payments SET version=CASE WHEN status=? AND version=? THEN version ELSE NULL END WHERE id=?'
+      )
+      .bind(payment.status, Number(expectedVersion), payment.id),
+    db
+      .prepare(
+        "UPDATE accounting_payments SET status='voided',voided_at=?,memo=trim(COALESCE(memo,'')||' · VOID: '||?),version=version+1,updated_at=datetime('now') WHERE id=? AND version=?"
+      )
+      .bind(now(), text(reason), payment.id, Number(expectedVersion)),
+  ];
   if (payment.status === 'posted') {
-    const elevated = {
-      ...actor,
-      capabilities: [.../* @__PURE__ */ new Set([...(actor.capabilities || []), 'accounting.journals.reverse'])],
-    };
+    const apps = await all(db, 'SELECT * FROM accounting_payment_applications WHERE payment_id=?', payment.id);
+    const pendingReversal = await first(
+      db,
+      "SELECT entry_date FROM accounting_journal_entries WHERE source_type='reversal' AND source_id=? AND status='draft'",
+      payment.posted_journal_entry_id
+    );
+    additionalStatements.push(
+      ...apps.map((app) =>
+        db
+          .prepare(
+            `UPDATE accounting_bills SET amount_paid=amount_paid-?,amount_due=amount_due+?,payment_status=CASE WHEN amount_paid-?=0 THEN 'unpaid' ELSE 'partially_paid' END,status=CASE WHEN amount_paid-?=0 THEN 'posted' ELSE 'partially_paid' END,version=version+1,updated_at=datetime('now') WHERE id=?`
+          )
+          .bind(
+            Number(app.amount_applied),
+            Number(app.amount_applied),
+            Number(app.amount_applied),
+            Number(app.amount_applied),
+            app.bill_id
+          )
+      )
+    );
     await reverseJournalEntry(db, {
-      actor: elevated,
+      actor: {
+        ...actor,
+        capabilities: [.../* @__PURE__ */ new Set([...(actor.capabilities || []), 'accounting.journals.reverse'])],
+      },
       journalEntryId: payment.posted_journal_entry_id,
-      entryDate: /* @__PURE__ */ new Date().toISOString().slice(0, 10),
+      entryDate: pendingReversal?.entry_date || /* @__PURE__ */ new Date().toISOString().slice(0, 10),
       reason: text(reason),
       idempotencyKey: `ap:void:${payment.id}`,
       requestHash: await hash({ paymentId, reason: text(reason) }),
+      additionalStatements,
     });
-    const apps = await all(db, 'SELECT * FROM accounting_payment_applications WHERE payment_id=?', payment.id);
-    for (const app of apps)
-      await run(
-        db,
-        `UPDATE accounting_bills SET amount_paid=MAX(0,amount_paid-?),amount_due=amount_due+?,payment_status=CASE WHEN amount_paid-?<=0 THEN 'unpaid' ELSE 'partially_paid' END,status=CASE WHEN amount_paid-?<=0 THEN 'posted' ELSE 'partially_paid' END,version=version+1,updated_at=datetime('now') WHERE id=?`,
-        Number(app.amount_applied),
-        Number(app.amount_applied),
-        Number(app.amount_applied),
-        Number(app.amount_applied),
-        app.bill_id
-      );
-  }
-  await run(
-    db,
-    "UPDATE accounting_payments SET status='voided',voided_at=?,memo=trim(COALESCE(memo,'')||' · VOID: '||?),version=version+1,updated_at=datetime('now') WHERE id=? AND version=?",
-    now(),
-    text(reason),
-    payment.id,
-    Number(expectedVersion)
-  );
+  } else await db.batch(additionalStatements);
   return paymentDto(await first(db, 'SELECT * FROM accounting_payments WHERE id=?', payment.id));
 }
 export {

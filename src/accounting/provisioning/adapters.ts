@@ -172,9 +172,7 @@ export function createD1DatabaseFacade(adapter: Adapter, providerId: string) {
           providerId,
           (statements as FacadeStatement[]).map((s) => ({ sql: s.sql, params: s.params }))
         );
-      const out = [];
-      for (const s of statements) out.push(await s.run());
-      return out;
+      throw new AccountingConfigurationError('Accounting writes require an atomic database batch provider.');
     },
   });
 }

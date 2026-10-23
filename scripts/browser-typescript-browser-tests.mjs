@@ -692,7 +692,7 @@ try {
   );
   const vendorBytes = await readFile(resolve(publicRoot, 'vendor/dompurify.es.mjs'), 'utf8');
   assert.equal(
-    (await page.evaluate(async () => (await fetch('/vendor/dompurify.es.mjs?v=3.4.14')).text())).replaceAll(
+    (await page.evaluate(async () => (await fetch('/vendor/dompurify.es.mjs?v=3.4.17')).text())).replaceAll(
       '\r\n',
       '\n'
     ),

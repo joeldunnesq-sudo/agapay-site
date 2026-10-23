@@ -225,6 +225,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/accounting/integrity/scheduler.ts',
   'src/accounting/integrity/service.ts',
   'src/accounting/setup/service.ts',
+  'src/accounting/setup/periods.ts',
   'src/accounting/ledger/service.ts',
   'src/accounting/provisioning/orchestrator.ts',
   'src/accounting/provisioning/activation.ts',

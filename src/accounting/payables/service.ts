@@ -1,3 +1,4 @@
+import { validateAccountingDate } from '../validation.js';
 import type { PortabilityDatabase, JournalLineInput, PayablesOptions } from './service-composition-contracts.js';
 import {
   DATE,
@@ -230,8 +231,10 @@ export async function createBillDraft(
   parish(entitlementTier);
   const vendor = await first(db, "SELECT * FROM accounting_vendors WHERE id=? AND status='active'", input?.vendorId);
   if (!vendor) throw new ValidationError('An active vendor is required.');
-  if (!DATE.test(input.billDate!) || !Array.isArray(input.lines) || !input.lines.length)
+  if (!DATE.test(input.billDate || '') || !Array.isArray(input.lines) || !input.lines.length)
     throw new ValidationError('Bill date and lines are required.');
+  validateAccountingDate(input.billDate);
+  if (input.receivedDate) validateAccountingDate(input.receivedDate);
   const terms = await first(
       db,
       'SELECT due_days FROM accounting_payment_terms WHERE id=? AND is_active=1',
@@ -242,6 +245,7 @@ export async function createBillDraft(
       new Date(Date.parse(`${input.billDate}T00:00:00Z`) + Number(terms?.due_days || 0) * 86400000)
         .toISOString()
         .slice(0, 10);
+  validateAccountingDate(due);
   let subtotal = 0,
     tax = 0;
   for (const line of input.lines) {
@@ -250,7 +254,7 @@ export async function createBillDraft(
       !(await first(db, 'SELECT id FROM accounting_funds WHERE id=? AND is_active=1', line.fundId))
     )
       throw new ValidationError('Every bill line requires an active expense/asset account and fund.');
-    const quantity = Number(line.quantity || 1),
+    const quantity = Number(line.quantity ?? 1),
       unit = Number(line.unitAmount),
       lineTax = Number(line.taxAmount || 0);
     if (
@@ -264,49 +268,60 @@ export async function createBillDraft(
       throw new ValidationError('Bill line amounts must use integer minor units.');
     subtotal += quantity * unit;
     tax += lineTax;
+    if (!Number.isSafeInteger(subtotal) || !Number.isSafeInteger(tax) || !Number.isSafeInteger(subtotal + tax))
+      throw new ValidationError('Bill totals exceed the supported whole-cent range.');
   }
   const billId = id('bill'),
     number = input.billNumber || `B-${billId.slice(-8).toUpperCase()}`;
-  await run(
-    db,
-    `INSERT INTO accounting_bills(id,bill_number,vendor_id,vendor_invoice_number,bill_date,received_date,due_date,description,memo,currency,subtotal_amount,tax_amount,total_amount,amount_due,accounts_payable_account_id,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    billId,
-    number,
-    vendor.id,
-    text(input.vendorInvoiceNumber) || null,
-    input.billDate,
-    input.receivedDate || null,
-    due,
-    text(input.description) || `Bill from ${vendor.display_name}`,
-    text(input.memo) || null,
-    text(input.currency || 'USD').toUpperCase(),
-    subtotal,
-    tax,
-    subtotal + tax,
-    subtotal + tax,
-    input.accountsPayableAccountId || 'acct_2000',
-    actor.type || 'platform_user',
-    actor.id,
-    input.correlationId || null
-  );
+  const statements = [
+    db
+      .prepare(
+        `INSERT INTO accounting_bills(id,bill_number,vendor_id,vendor_invoice_number,bill_date,received_date,due_date,description,memo,currency,subtotal_amount,tax_amount,total_amount,amount_due,accounts_payable_account_id,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      )
+      .bind(
+        billId,
+        number,
+        vendor.id,
+        text(input.vendorInvoiceNumber) || null,
+        input.billDate,
+        input.receivedDate || null,
+        due,
+        text(input.description) || `Bill from ${vendor.display_name}`,
+        text(input.memo) || null,
+        text(input.currency || 'USD').toUpperCase(),
+        subtotal,
+        tax,
+        subtotal + tax,
+        subtotal + tax,
+        input.accountsPayableAccountId || 'acct_2000',
+        actor.type || 'platform_user',
+        actor.id,
+        input.correlationId || null
+      ),
+  ];
   for (let i = 0; i < input.lines.length; i++) {
     const l = input.lines[i],
       amount = Number(l.quantity || 1) * Number(l.unitAmount);
-    await run(
-      db,
-      `INSERT INTO accounting_bill_lines(id,bill_id,line_number,description,account_id,fund_id,quantity,unit_amount,line_amount,tax_amount) VALUES(?,?,?,?,?,?,?,?,?,?)`,
-      id('billline'),
-      billId,
-      i + 1,
-      text(l.description),
-      l.accountId,
-      l.fundId,
-      Number(l.quantity || 1),
-      Number(l.unitAmount),
-      amount,
-      Number(l.taxAmount || 0)
+    statements.push(
+      db
+        .prepare(
+          `INSERT INTO accounting_bill_lines(id,bill_id,line_number,description,account_id,fund_id,quantity,unit_amount,line_amount,tax_amount) VALUES(?,?,?,?,?,?,?,?,?,?)`
+        )
+        .bind(
+          id('billline'),
+          billId,
+          i + 1,
+          text(l.description),
+          l.accountId,
+          l.fundId,
+          Number(l.quantity || 1),
+          Number(l.unitAmount),
+          amount,
+          Number(l.taxAmount || 0)
+        )
     );
   }
+  await db.batch(statements);
   return billDto((await first(db, 'SELECT * FROM accounting_bills WHERE id=?', billId))!)!;
 }
 
@@ -423,40 +438,47 @@ export async function postBill(
       ...actor,
       capabilities: [...new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post'])],
     },
-    draft = await createJournalDraft(db, {
-      actor: elevated,
-      entryDate: bill.bill_date,
-      description: bill.description,
-      sourceType: 'accounts_payable_bill',
-      sourceId: bill.id,
-      lines: journalLines,
-      correlationId: bill.correlation_id || '',
-    }),
-    posted = (await postJournalEntry(db, {
-      actor: elevated,
-      journalEntryId: draft.id,
-      idempotencyKey: `ap:bill:${bill.id}:${idempotencyKey}`,
-      requestHash: await hash({ billId, total: bill.total_amount, lines: journalLines }),
-      expectedVersion: 1,
-      correlationId: bill.correlation_id || '',
-    }))!;
-  await run(
-    db,
-    'INSERT OR IGNORE INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?,?,?,?)',
-    id('link'),
-    posted.id,
-    'bill',
-    bill.id,
-    'accounts_payable'
-  );
-  await run(
-    db,
-    "UPDATE accounting_bills SET status='posted',posting_date=bill_date,posted_journal_entry_id=?,posted_at=?,version=version+1,updated_at=? WHERE id=? AND status='approved'",
-    posted.id,
-    now(),
-    now(),
-    bill.id
-  );
+    draft =
+      (await first(
+        db,
+        "SELECT * FROM accounting_journal_entries WHERE source_type='accounts_payable_bill' AND source_id=? AND status='draft'",
+        bill.id
+      )) ||
+      (await createJournalDraft(db, {
+        actor: elevated,
+        entryDate: bill.bill_date,
+        description: bill.description,
+        sourceType: 'accounts_payable_bill',
+        sourceId: bill.id,
+        lines: journalLines,
+        correlationId: bill.correlation_id || '',
+      }));
+  const additionalStatements = [
+    db
+      .prepare(
+        "UPDATE accounting_bills SET version=CASE WHEN status='approved' AND version=? THEN version ELSE NULL END WHERE id=?"
+      )
+      .bind(Number(expectedVersion), bill.id),
+    db
+      .prepare(
+        'INSERT OR IGNORE INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?,?,?,?)'
+      )
+      .bind(id('link'), draft.id, 'bill', bill.id, 'accounts_payable'),
+    db
+      .prepare(
+        "UPDATE accounting_bills SET status='posted',posting_date=bill_date,posted_journal_entry_id=?,posted_at=?,version=version+1,updated_at=? WHERE id=? AND status='approved'"
+      )
+      .bind(draft.id, now(), now(), bill.id),
+  ];
+  await postJournalEntry(db, {
+    actor: elevated,
+    journalEntryId: draft.id,
+    additionalStatements,
+    idempotencyKey: `ap:bill:${bill.id}:${idempotencyKey}`,
+    requestHash: await hash({ billId, total: bill.total_amount, lines: journalLines }),
+    expectedVersion: 1,
+    correlationId: bill.correlation_id || '',
+  });
   return billDto((await first(db, 'SELECT * FROM accounting_bills WHERE id=?', bill.id))!)!;
 }
 
@@ -469,33 +491,35 @@ export async function createPayment(
   const { vendor, bank, total, paymentMethod } = await validatePaymentSelection(db, input);
   const paymentId = id('payment'),
     number = input.paymentNumber || `P-${paymentId.slice(-8).toUpperCase()}`;
-  await run(
-    db,
-    `INSERT INTO accounting_payments(id,payment_number,vendor_id,payment_date,payment_method,bank_account_id,status,currency,total_amount,reference_number,check_number,memo,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,?,?,?,'approved',?,?,?,?,?,?,?,?)`,
-    paymentId,
-    number,
-    vendor.id,
-    input.paymentDate,
-    paymentMethod,
-    bank.id,
-    text(input.currency || bank.currency).toUpperCase(),
-    total,
-    text(input.referenceNumber) || null,
-    paymentMethod === 'check' ? text(input.checkNumber) || null : null,
-    text(input.memo) || null,
-    actor.type || 'platform_user',
-    actor.id,
-    input.correlationId || null
-  );
+  const statements = [
+    db
+      .prepare(
+        `INSERT INTO accounting_payments(id,payment_number,vendor_id,payment_date,payment_method,bank_account_id,status,currency,total_amount,reference_number,check_number,memo,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,?,?,?,'approved',?,?,?,?,?,?,?,?)`
+      )
+      .bind(
+        paymentId,
+        number,
+        vendor.id,
+        input.paymentDate,
+        paymentMethod,
+        bank.id,
+        text(input.currency || bank.currency).toUpperCase(),
+        total,
+        text(input.referenceNumber) || null,
+        paymentMethod === 'check' ? text(input.checkNumber) || null : null,
+        text(input.memo) || null,
+        actor.type || 'platform_user',
+        actor.id,
+        input.correlationId || null
+      ),
+  ];
   for (const app of input.applications!)
-    await run(
-      db,
-      'INSERT INTO accounting_payment_applications(id,payment_id,bill_id,amount_applied) VALUES(?,?,?,?)',
-      id('application'),
-      paymentId,
-      app.billId,
-      Number(app.amountApplied)
+    statements.push(
+      db
+        .prepare('INSERT INTO accounting_payment_applications(id,payment_id,bill_id,amount_applied) VALUES(?,?,?,?)')
+        .bind(id('application'), paymentId, app.billId, Number(app.amountApplied))
     );
+  await db.batch(statements);
   return paymentDto((await first(db, 'SELECT * FROM accounting_payments WHERE id=?', paymentId))!)!;
 }
 
@@ -523,7 +547,11 @@ export async function postPayment(
     'SELECT a.*,b.accounts_payable_account_id,b.vendor_id,b.amount_due FROM accounting_payment_applications a JOIN accounting_bills b ON b.id=a.bill_id WHERE a.payment_id=?',
     payment.id
   );
-  if (apps.some((a) => a.vendor_id !== payment.vendor_id || Number(a.amount_applied) > Number(a.amount_due)))
+  if (
+    !apps.length ||
+    apps.some((a) => a.vendor_id !== payment.vendor_id || Number(a.amount_applied) > Number(a.amount_due)) ||
+    apps.reduce((sum, a) => sum + Number(a.amount_applied), 0) !== Number(payment.total_amount)
+  )
     throw new ValidationError('Payment applications are no longer valid.');
   const fund = (await first(
       db,
@@ -550,54 +578,68 @@ export async function postPayment(
       ...actor,
       capabilities: [...new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post'])],
     },
-    draft = await createJournalDraft(db, {
-      actor: elevated,
-      entryDate: payment.payment_date,
-      description: `Payment ${payment.payment_number}`,
-      sourceType: 'accounts_payable_payment',
-      sourceId: payment.id,
-      lines,
-      correlationId: payment.correlation_id || '',
+    draft =
+      (await first(
+        db,
+        "SELECT * FROM accounting_journal_entries WHERE source_type='accounts_payable_payment' AND source_id=? AND status='draft'",
+        payment.id
+      )) ||
+      (await createJournalDraft(db, {
+        actor: elevated,
+        entryDate: payment.payment_date,
+        description: `Payment ${payment.payment_number}`,
+        sourceType: 'accounts_payable_payment',
+        sourceId: payment.id,
+        lines,
+        correlationId: payment.correlation_id || '',
+      }));
+  const additionalStatements = apps.map((app) =>
+    db
+      .prepare(
+        `UPDATE accounting_bills SET amount_paid=amount_paid+?,amount_due=amount_due-?,payment_status=CASE WHEN amount_due-?=0 THEN 'paid' ELSE 'partially_paid' END,status=CASE WHEN amount_due-?=0 THEN 'paid' ELSE 'partially_paid' END,version=CASE WHEN status IN ('posted','partially_paid') THEN version+1 ELSE NULL END,updated_at=datetime('now') WHERE id=?`
+      )
+      .bind(
+        Number(app.amount_applied),
+        Number(app.amount_applied),
+        Number(app.amount_applied),
+        Number(app.amount_applied),
+        app.bill_id
+      )
+  );
+  additionalStatements.unshift(
+    db
+      .prepare(
+        "UPDATE accounting_payments SET version=CASE WHEN status='approved' AND version=? THEN version ELSE NULL END WHERE id=?"
+      )
+      .bind(Number(expectedVersion), payment.id)
+  );
+  additionalStatements.push(
+    db
+      .prepare(
+        "UPDATE accounting_payments SET status='posted',posted_journal_entry_id=?,processed_at=?,version=version+1,updated_at=? WHERE id=?"
+      )
+      .bind(draft.id, now(), now(), payment.id)
+  );
+  additionalStatements.push(
+    db
+      .prepare(
+        'INSERT OR IGNORE INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?,?,?,?)'
+      )
+      .bind(id('link'), draft.id, 'payment', payment.id, 'accounts_payable')
+  );
+  await postJournalEntry(db, {
+    actor: elevated,
+    journalEntryId: draft.id,
+    additionalStatements,
+    idempotencyKey: `ap:payment:${payment.id}:${idempotencyKey}`,
+    requestHash: await hash({
+      paymentId,
+      total: payment.total_amount,
+      apps: apps.map((a) => [a.bill_id, a.amount_applied]),
     }),
-    posted = (await postJournalEntry(db, {
-      actor: elevated,
-      journalEntryId: draft.id,
-      idempotencyKey: `ap:payment:${payment.id}:${idempotencyKey}`,
-      requestHash: await hash({
-        paymentId,
-        total: payment.total_amount,
-        apps: apps.map((a) => [a.bill_id, a.amount_applied]),
-      }),
-      expectedVersion: 1,
-      correlationId: payment.correlation_id || '',
-    }))!;
-  for (const app of apps)
-    await run(
-      db,
-      `UPDATE accounting_bills SET amount_paid=amount_paid+?,amount_due=amount_due-?,payment_status=CASE WHEN amount_due-?=0 THEN 'paid' ELSE 'partially_paid' END,status=CASE WHEN amount_due-?=0 THEN 'paid' ELSE 'partially_paid' END,version=version+1,updated_at=datetime('now') WHERE id=?`,
-      Number(app.amount_applied),
-      Number(app.amount_applied),
-      Number(app.amount_applied),
-      Number(app.amount_applied),
-      app.bill_id
-    );
-  await run(
-    db,
-    "UPDATE accounting_payments SET status='posted',posted_journal_entry_id=?,processed_at=?,version=version+1,updated_at=? WHERE id=?",
-    posted.id,
-    now(),
-    now(),
-    payment.id
-  );
-  await run(
-    db,
-    'INSERT OR IGNORE INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?,?,?,?)',
-    id('link'),
-    posted.id,
-    'payment',
-    payment.id,
-    'accounts_payable'
-  );
+    expectedVersion: 1,
+    correlationId: payment.correlation_id || '',
+  });
   return paymentDto((await first(db, 'SELECT * FROM accounting_payments WHERE id=?', payment.id))!)!;
 }
 

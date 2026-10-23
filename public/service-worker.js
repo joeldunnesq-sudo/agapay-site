@@ -1,7 +1,7 @@
 // Generated from src/browser/service-worker.ts by npm run build:browser. Do not edit.
-const AGAPAY_CACHE = 'agapay-static-v38';
+const AGAPAY_CACHE = 'agapay-static-v39';
 const STATIC_ASSETS = [
-  '/vendor/dompurify.es.mjs?v=3.4.14',
+  '/vendor/dompurify.es.mjs?v=3.4.17',
   '/learn/legacy-planner.js',
   '/myagapay/login',
   '/donor/login.html',

@@ -1,61 +1,69 @@
-import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
-import { chromium } from "playwright";
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { chromium } from 'playwright';
 import {
   baseUrlFrom,
   loginParishAccounting,
   loginPlatformUser,
   requiredEnvironment,
-  writeArtifact
-} from "./lib/accounting-release-gates.mjs";
+  writeArtifact,
+} from './lib/accounting-release-gates.mjs';
 
 const baseUrl = baseUrlFrom();
 const credentials = requiredEnvironment([
-  "ACCOUNTING_GATE_PARISH_B_ID",
-  "ACCOUNTING_GATE_PARISH_B_PASSWORD",
-  "ACCOUNTING_GATE_STAFF_B_PROFILE_ID",
-  "ACCOUNTING_GATE_STAFF_B_PIN",
-  "ACCOUNTING_GATE_USER_B_EMAIL",
-  "ACCOUNTING_GATE_USER_B_PASSWORD"
+  'ACCOUNTING_GATE_PARISH_B_ID',
+  'ACCOUNTING_GATE_PARISH_B_PASSWORD',
+  'ACCOUNTING_GATE_STAFF_B_PROFILE_ID',
+  'ACCOUNTING_GATE_STAFF_B_PIN',
+  'ACCOUNTING_GATE_USER_B_EMAIL',
+  'ACCOUNTING_GATE_USER_B_PASSWORD',
 ]);
-const artifactRoot = "artifacts/check-print";
-await mkdir(artifactRoot, { recursive:true });
+const artifactRoot = 'artifacts/check-print';
+await mkdir(artifactRoot, { recursive: true });
 
-const browser = await chromium.launch({ headless:true });
-const context = await browser.newContext({ acceptDownloads:true });
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ acceptDownloads: true });
 const page = await context.newPage();
-const runId = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
+const runId = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
 const vendorName = `Release Gate Printer ${runId}`;
 const invoiceNumber = `RG-${runId}`;
-const evidence = { generatedAt:new Date().toISOString(), baseUrl, parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID, vendorName, invoiceNumber, layouts:[] };
+const evidence = {
+  generatedAt: new Date().toISOString(),
+  baseUrl,
+  parishId: credentials.ACCOUNTING_GATE_PARISH_B_ID,
+  vendorName,
+  invoiceNumber,
+  layouts: [],
+};
 
 async function paymentRow() {
-  const row = page.locator("#accountingPane tbody tr")
-    .filter({ hasText:vendorName })
-    .filter({ has:page.locator('button[onclick^="printAccountingCheck"]') })
+  const row = page
+    .locator('#accountingPane tbody tr')
+    .filter({ hasText: vendorName })
+    .filter({ has: page.locator('button[onclick^="printAccountingCheck"]') })
     .first();
   await row.waitFor();
   return row;
 }
 
 async function setCheckStyle(style) {
-  await page.getByRole("button", { name:"Check settings", exact:true }).click();
+  await page.getByRole('button', { name: 'Check settings', exact: true }).click();
   const form = page.locator('#accountingPhaseDForm form');
   await form.locator('select[name="checkStyle"]').selectOption(style);
-  await form.getByRole("button", { name:"Save check settings", exact:true }).click();
-  await form.locator(".acct-form-status").filter({ hasText:"saved" }).waitFor();
+  await form.getByRole('button', { name: 'Save check settings', exact: true }).click();
+  await form.locator('.acct-form-status').filter({ hasText: 'saved' }).waitFor();
 }
 
-async function capturePrint(name, { reprintReason = "" } = {}) {
+async function capturePrint(name, { reprintReason = '' } = {}) {
   const row = await paymentRow();
-  if (reprintReason) page.once("dialog", (dialog) => dialog.accept(reprintReason));
-  const popupPromise = page.waitForEvent("popup");
-  await row.getByRole("button", { name:/^(Print|Reprint)$/ }).click();
+  if (reprintReason) page.once('dialog', (dialog) => dialog.accept(reprintReason));
+  const popupPromise = page.waitForEvent('popup');
+  await row.getByRole('button', { name: /^(Print|Reprint)$/ }).click();
   const popup = await popupPromise;
   await popup.waitForFunction((expected) => document.body.innerText.includes(expected), vendorName);
-  const text = await popup.locator("body").innerText();
-  await popup.pdf({ path:`${artifactRoot}/${name}.pdf`, printBackground:true, preferCSSPageSize:true });
-  await popup.screenshot({ path:`${artifactRoot}/${name}.png`, fullPage:true });
+  const text = await popup.locator('body').innerText();
+  await popup.pdf({ path: `${artifactRoot}/${name}.pdf`, printBackground: true, preferCSSPageSize: true });
+  await popup.screenshot({ path: `${artifactRoot}/${name}.png`, fullPage: true });
   await popup.close();
   return text;
 }
@@ -63,35 +71,79 @@ async function capturePrint(name, { reprintReason = "" } = {}) {
 try {
   const staffHeaders = await loginParishAccounting(page, {
     baseUrl,
-    parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID,
-    parishPassword:credentials.ACCOUNTING_GATE_PARISH_B_PASSWORD,
-    profileId:credentials.ACCOUNTING_GATE_STAFF_B_PROFILE_ID,
-    pin:credentials.ACCOUNTING_GATE_STAFF_B_PIN
+    parishId: credentials.ACCOUNTING_GATE_PARISH_B_ID,
+    parishPassword: credentials.ACCOUNTING_GATE_PARISH_B_PASSWORD,
+    profileId: credentials.ACCOUNTING_GATE_STAFF_B_PROFILE_ID,
+    pin: credentials.ACCOUNTING_GATE_STAFF_B_PIN,
   });
 
   const accountingBase = `${baseUrl}/api/parish/dashboard/${encodeURIComponent(credentials.ACCOUNTING_GATE_PARISH_B_ID)}/accounting`;
-  const bankResponse = await page.request.get(`${accountingBase}/bank/accounts`, { headers:staffHeaders });
+  const setupResponse = await page.request.get(accountingBase + '/setup', { headers: staffHeaders });
+  assert.equal(setupResponse.status(), 200);
+  const periods = (await setupResponse.json()).overview?.periods || [];
+  const today = new Date().toISOString().slice(0, 10);
+  const currentPeriod = periods.find((period) => period.startDate <= today && period.endDate >= today);
+  assert.ok(currentPeriod, 'A fiscal period for today is required.');
+  if (currentPeriod.status === 'future') {
+    await page.locator('[data-accounting-experience="accountant"]').click();
+    await page.locator('[data-accounting-view="settings"]').click();
+    if (await page.getByRole('button', { name: 'Complete Accounting setup', exact: true }).count()) {
+      const initialization = page.waitForResponse(
+        (response) => response.url().endsWith('/setup/initialize') && response.request().method() === 'POST'
+      );
+      await page.getByRole('button', { name: 'Complete Accounting setup', exact: true }).click();
+      assert.equal(
+        (await initialization).status(),
+        201,
+        'Existing books must support authorized configuration completion.'
+      );
+      await page.locator('#accountingPeriodToOpen').waitFor();
+      evidence.setupCompleted = true;
+    }
+    const settingsState = await page.evaluate(() => ({
+      view: accountingView,
+      settingsLoaded: Boolean(accountingData.setup?.settings),
+      periods: accountingData.setup?.periods || [],
+      paneText: document.getElementById('accountingPane')?.innerText.slice(0, 1200),
+      controlPresent: Boolean(document.getElementById('accountingPeriodToOpen')),
+    }));
+    await writeArtifact(artifactRoot + '/period-settings-state.json', settingsState);
+    await page.screenshot({ path: artifactRoot + '/period-settings.png', fullPage: true });
+    assert.ok(settingsState.controlPresent, 'The period-opening control is missing: ' + JSON.stringify(settingsState));
+    await page.locator('#accountingPeriodToOpen').selectOption(currentPeriod.id);
+    page.once('dialog', (dialog) => dialog.accept());
+    const opening = page.waitForResponse(
+      (response) => response.url().endsWith('/periods/open') && response.request().method() === 'POST'
+    );
+    await page.getByRole('button', { name: 'Open period', exact: true }).click();
+    assert.equal((await opening).status(), 200, 'The authorized UI must open the unused current period.');
+    await page.locator('#accountingPane[data-loaded="true"]').waitFor();
+    evidence.periodOpened = currentPeriod.id;
+  } else assert.equal(currentPeriod.status, 'open', 'Closed books must be reopened through the close workflow.');
+  const bankResponse = await page.request.get(`${accountingBase}/bank/accounts`, { headers: staffHeaders });
   assert.equal(bankResponse.status(), 200, `Bank-account readiness returned HTTP ${bankResponse.status()}.`);
   const banks = (await bankResponse.json()).accounts || [];
-  if (!banks.some((bank) => bank.status === "active" && bank.isActive !== false)) {
-    const referenceResponse = await page.request.get(`${accountingBase}/workspace-reference`, { headers:staffHeaders });
+  if (!banks.some((bank) => bank.status === 'active' && bank.isActive !== false)) {
+    const referenceResponse = await page.request.get(`${accountingBase}/workspace-reference`, {
+      headers: staffHeaders,
+    });
     assert.equal(referenceResponse.status(), 200, `Workspace reference returned HTTP ${referenceResponse.status()}.`);
     const reference = await referenceResponse.json();
     const assetAccount = (reference.accounts || []).find(
-      (account) => account.category === "asset" && Number(account.isActive) !== 0
+      (account) => account.category === 'asset' && Number(account.isActive) !== 0
     );
-    assert.ok(assetAccount?.id, "An active asset posting account is required for the staging bank fixture.");
+    assert.ok(assetAccount?.id, 'An active asset posting account is required for the staging bank fixture.');
     const createdBank = await page.request.post(`${accountingBase}/bank/accounts`, {
-      headers:staffHeaders,
-      data:{
-        name:"AGAPAY Release Gate Checking",
-        ledgerAccountId:assetAccount.id,
-        accountType:"checking",
-        institutionName:"Staging fixture",
-        maskedLast4:"0000",
-        currency:"USD",
-        isDefault:true
-      }
+      headers: staffHeaders,
+      data: {
+        name: 'AGAPAY Release Gate Checking',
+        ledgerAccountId: assetAccount.id,
+        accountType: 'checking',
+        institutionName: 'Staging fixture',
+        maskedLast4: '0000',
+        currency: 'USD',
+        isDefault: true,
+      },
     });
     assert.equal(createdBank.status(), 201, `Staging bank-account fixture returned HTTP ${createdBank.status()}.`);
     evidence.bankFixtureCreated = true;
@@ -100,41 +152,41 @@ try {
   }
 
   await page.locator('[data-accounting-view="payables"]').click();
-  await page.getByRole("button", { name:"Vendors", exact:true }).click();
-  await page.getByRole("button", { name:"New vendor", exact:true }).click();
-  const vendorForm = page.locator("#accountingPhaseDForm form");
+  await page.getByRole('button', { name: 'Vendors', exact: true }).click();
+  await page.getByRole('button', { name: 'New vendor', exact: true }).click();
+  const vendorForm = page.locator('#accountingPhaseDForm form');
   await vendorForm.locator('input[name="displayName"]').fill(vendorName);
   await vendorForm.locator('input[name="email"]').fill(`release-gate-${runId}@example.invalid`);
-  await vendorForm.getByRole("button", { name:"Save vendor", exact:true }).click();
-  await page.getByText(vendorName, { exact:true }).waitFor();
+  await vendorForm.getByRole('button', { name: 'Save vendor', exact: true }).click();
+  await page.getByText(vendorName, { exact: true }).waitFor();
 
-  await page.getByRole("button", { name:"Bills", exact:true }).click();
-  await page.getByRole("button", { name:"Enter bill", exact:true }).click();
-  const billForm = page.locator("#accountingPhaseDForm form");
-  await billForm.locator('select[name="vendorId"]').selectOption({ label:vendorName });
+  await page.getByRole('button', { name: 'Bills', exact: true }).click();
+  await page.getByRole('button', { name: 'Enter bill', exact: true }).click();
+  const billForm = page.locator('#accountingPhaseDForm form');
+  await billForm.locator('select[name="vendorId"]').selectOption({ label: vendorName });
   await billForm.locator('input[name="vendorInvoiceNumber"]').fill(invoiceNumber);
-  await billForm.locator('input[name="description"]').fill("Release-gate check alignment proof");
-  await billForm.locator('select[name="accountId"]').selectOption({ index:1 });
-  await billForm.locator('select[name="fundId"]').selectOption({ index:1 });
-  await billForm.locator('input[name="amount"]').fill("12.34");
-  await billForm.getByRole("button", { name:"Save draft bill", exact:true }).click();
+  await billForm.locator('input[name="description"]').fill('Release-gate check alignment proof');
+  await billForm.locator('select[name="accountId"]').selectOption({ index: 1 });
+  await billForm.locator('select[name="fundId"]').selectOption({ index: 1 });
+  await billForm.locator('input[name="amount"]').fill('12.34');
+  await billForm.getByRole('button', { name: 'Save draft bill', exact: true }).click();
 
-  let billRow = page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first();
-  await billRow.getByRole("button", { name:"Submit", exact:true }).click();
-  const approveButton = billRow.getByRole("button", { name:"Approve", exact:true });
+  let billRow = page.locator('#accountingPane tbody tr').filter({ hasText: invoiceNumber }).first();
+  await billRow.getByRole('button', { name: 'Submit', exact: true }).click();
+  const approveButton = billRow.getByRole('button', { name: 'Approve', exact: true });
   await approveButton.waitFor();
-  const approveHandler = await approveButton.getAttribute("onclick");
+  const approveHandler = await approveButton.getAttribute('onclick');
   const approveMatch = approveHandler?.match(/accountingBillAction\('([^']+)','approve',(\d+)\)/);
-  assert.ok(approveMatch, "The submitted bill ID and version must be recoverable from the UI action.");
+  assert.ok(approveMatch, 'The submitted bill ID and version must be recoverable from the UI action.');
 
   const platformHeaders = await loginPlatformUser(page, {
     baseUrl,
-    email:credentials.ACCOUNTING_GATE_USER_B_EMAIL,
-    password:credentials.ACCOUNTING_GATE_USER_B_PASSWORD
+    email: credentials.ACCOUNTING_GATE_USER_B_EMAIL,
+    password: credentials.ACCOUNTING_GATE_USER_B_PASSWORD,
   });
   const approval = await page.request.post(
     `${baseUrl}/api/parish/dashboard/${encodeURIComponent(credentials.ACCOUNTING_GATE_PARISH_B_ID)}/accounting/payables/bills/${encodeURIComponent(approveMatch[1])}/approve`,
-    { headers:platformHeaders, data:{ expectedVersion:Number(approveMatch[2]) } }
+    { headers: platformHeaders, data: { expectedVersion: Number(approveMatch[2]) } }
   );
   assert.equal(approval.status(), 200, `Independent platform-treasurer approval returned HTTP ${approval.status()}.`);
 
@@ -142,55 +194,80 @@ try {
     accountingData.payables = null;
     await loadAccountingPhaseD();
   });
-  billRow = page.locator("#accountingPane tbody tr").filter({ hasText:invoiceNumber }).first();
-  await billRow.getByRole("button", { name:"Post", exact:true }).click();
-  await page.locator("#accountingPane tbody tr")
-    .filter({ hasText:invoiceNumber })
-    .filter({ hasText:/posted/i })
+  billRow = page.locator('#accountingPane tbody tr').filter({ hasText: invoiceNumber }).first();
+  const posting = page.waitForResponse(
+    (response) =>
+      response.url().includes('/payables/bills/') &&
+      response.url().endsWith('/post') &&
+      response.request().method() === 'POST'
+  );
+  await billRow.getByRole('button', { name: 'Post', exact: true }).click();
+  const postedResponse = await posting;
+  const postedPayload = await postedResponse.json();
+  assert.equal(
+    postedResponse.status(),
+    200,
+    'Posting through the bill UI failed: ' + String(postedPayload.message || postedPayload.error || '')
+  );
+  await page
+    .locator('#accountingPane tbody tr')
+    .filter({ hasText: invoiceNumber })
+    .filter({ hasText: /posted/i })
     .waitFor();
 
-  await page.getByRole("button", { name:"Payments & Checks", exact:true }).click();
-  await page.getByRole("button", { name:"Pay bills", exact:true }).click();
-  const paymentForm = page.locator("#accountingPhaseDForm form");
-  const payableBillRow = paymentForm.locator("tbody tr").filter({ hasText:invoiceNumber });
-  await payableBillRow.locator("[data-payment-bill]").check();
-  await page.waitForFunction(() => Boolean(document.getElementById("accountingCheckNumber")?.value));
-  await paymentForm.getByRole("button", { name:"Create check", exact:true }).click();
+  await page.getByRole('button', { name: 'Payments & Checks', exact: true }).click();
+  await page.getByRole('button', { name: 'Pay bills', exact: true }).click();
+  const paymentForm = page.locator('#accountingPhaseDForm form');
+  await paymentForm.locator('select[name="paymentMethod"]').selectOption('check');
+  const payableBillRow = paymentForm.locator('tbody tr').filter({ hasText: invoiceNumber });
+  await payableBillRow.locator('[data-payment-bill]').check();
+  await page.waitForFunction(() => Boolean(document.getElementById('accountingCheckNumber')?.value));
+  await paymentForm.getByRole('button', { name: 'Create check', exact: true }).click();
   const createdRow = await paymentRow();
-  const printHandler = await createdRow.getByRole("button", { name:"Print", exact:true }).getAttribute("onclick");
+  const printHandler = await createdRow.getByRole('button', { name: 'Print', exact: true }).getAttribute('onclick');
   const paymentId = printHandler?.match(/printAccountingCheck\('([^']+)'/)?.[1];
-  assert.ok(paymentId, "The created payment ID must be recoverable from the UI action.");
+  assert.ok(paymentId, 'The created payment ID must be recoverable from the UI action.');
 
-  const styles = ["top_check_two_stubs", "bottom_check_two_stubs", "check_only"];
+  const styles = ['top_check_two_stubs', 'bottom_check_two_stubs', 'check_only'];
   for (const [index, style] of styles.entries()) {
     await setCheckStyle(style);
-    const text = await capturePrint(style, { reprintReason:index ? `Release-gate layout ${style}` : "" });
+    const text = await capturePrint(style, { reprintReason: index ? `Release-gate layout ${style}` : '' });
     assert.match(text, new RegExp(vendorName));
-    evidence.layouts.push({ style, pdf:`${style}.pdf`, screenshot:`${style}.png`, reprint:index > 0 });
+    evidence.layouts.push({ style, pdf: `${style}.pdf`, screenshot: `${style}.png`, reprint: index > 0 });
   }
 
-  const reprintText = await capturePrint("reprint-banner", { reprintReason:"Release-gate banner verification" });
+  const reprintText = await capturePrint('reprint-banner', { reprintReason: 'Release-gate banner verification' });
   assert.match(reprintText, /REPRINT\s*·\s*ORIGINAL CHECK/i);
-  evidence.reprintBanner = { present:true, pdf:"reprint-banner.pdf", screenshot:"reprint-banner.png" };
+  evidence.reprintBanner = { present: true, pdf: 'reprint-banner.pdf', screenshot: 'reprint-banner.png' };
 
   const voidRow = await paymentRow();
-  page.once("dialog", (dialog) => dialog.accept("Release-gate void verification"));
-  await voidRow.getByRole("button", { name:"Void", exact:true }).click();
-  await page.locator("#accountingPane tbody tr").filter({ hasText:vendorName }).filter({ hasText:"Voided" }).waitFor();
-  const rejection = await page.evaluate(async ({ parishId, paymentId }) => {
-    const response = await fetch(`/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting/payables/payments/${encodeURIComponent(paymentId)}/print`, {
-      method:"POST",
-      headers:{ ...authHeaders(), "Content-Type":"application/json" },
-      body:JSON.stringify({ reason:"must reject after void" })
-    });
-    return { status:response.status, body:await response.text() };
-  }, { parishId:credentials.ACCOUNTING_GATE_PARISH_B_ID, paymentId });
+  page.once('dialog', (dialog) => dialog.accept('Release-gate void verification'));
+  await voidRow.getByRole('button', { name: 'Void', exact: true }).click();
+  await page
+    .locator('#accountingPane tbody tr')
+    .filter({ hasText: vendorName })
+    .filter({ hasText: 'Voided' })
+    .waitFor();
+  const rejection = await page.evaluate(
+    async ({ parishId, paymentId }) => {
+      const response = await fetch(
+        `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting/payables/payments/${encodeURIComponent(paymentId)}/print`,
+        {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'must reject after void' }),
+        }
+      );
+      return { status: response.status, body: await response.text() };
+    },
+    { parishId: credentials.ACCOUNTING_GATE_PARISH_B_ID, paymentId }
+  );
   assert.ok(rejection.status >= 400);
   evidence.voidPrintRejection = rejection;
-  await page.screenshot({ path:`${artifactRoot}/void-print-rejection.png`, fullPage:true });
+  await page.screenshot({ path: `${artifactRoot}/void-print-rejection.png`, fullPage: true });
   await writeArtifact(`${artifactRoot}/evidence.json`, evidence);
-  console.log("PASS - three check-stock layouts captured as PDF and screenshot evidence");
-  console.log("PASS - reprint banner captured");
+  console.log('PASS - three check-stock layouts captured as PDF and screenshot evidence');
+  console.log('PASS - reprint banner captured');
   console.log(`PASS - voided payment print rejected with HTTP ${rejection.status}`);
 } finally {
   await browser.close();

@@ -1,4 +1,4 @@
-declare module '*dompurify.es.mjs?v=3.4.14' {
+declare module '*dompurify.es.mjs?v=3.4.17' {
   const DOMPurify: {
     sanitize(markup: string): string;
     sanitize(

@@ -1,4 +1,4 @@
-import DOMPurify from '../vendor/dompurify.es.mjs?v=3.4.14';
+import DOMPurify from '../vendor/dompurify.es.mjs?v=3.4.17';
 export interface OpmlSubscription {
   title?: string;
   xmlUrl: string;

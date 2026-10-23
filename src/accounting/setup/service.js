@@ -1,4 +1,5 @@
 // Generated from src/accounting/setup/service.ts by npm run build:server. Do not edit.
+import { listAccountingPeriods } from './periods.js';
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { initializeLedger, ledgerInitializationStatus, validateLedgerFoundation } from '../ledger/service.js';
 function requireCapability(actor, capability) {
@@ -207,7 +208,8 @@ async function getAccountingSetupOverview(
   );
   const period = await first(
     db,
-    "SELECT id,name,start_date,end_date,status FROM accounting_periods WHERE status='open' ORDER BY start_date LIMIT 1"
+    "SELECT id,name,start_date,end_date,status FROM accounting_periods WHERE status='open' ORDER BY CASE WHEN ? BETWEEN start_date AND end_date THEN 0 ELSE 1 END,start_date LIMIT 1",
+    /* @__PURE__ */ new Date().toISOString().slice(0, 10)
   );
   const counts = await first(
     db,
@@ -252,6 +254,7 @@ async function getAccountingSetupOverview(
     database: Object.freeze({ status: databaseStatus, health: databaseHealth }),
     initialization,
     settings,
+    periods: await listAccountingPeriods(db),
     currentFiscalYear: fiscalYear
       ? Object.freeze({
           name: fiscalYear.name,

@@ -1,4 +1,5 @@
 // Generated from src/accounting/ledger/service.ts by npm run build:server. Do not edit.
+import { validateJournalDraftInput } from '../validation.js';
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { fiscalCalendar } from '../provisioning/fiscal-calendar.js';
 const REQUIRED_TYPES = Object.freeze([
@@ -205,57 +206,52 @@ async function createJournalDraft(
   { actor, entryDate, description, sourceType = 'manual', sourceId = null, lines, correlationId = '' }
 ) {
   requireCapability(actor, 'accounting.journals.create');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate || '')) throw new ValidationError('A valid entry date is required.');
-  if (!description || !Array.isArray(lines) || lines.length < 2)
-    throw new ValidationError('A description and at least two lines are required.');
+  validateJournalDraftInput({ entryDate, description, lines });
   const entryId = id('entry');
-  await run(
-    db,
-    `INSERT INTO accounting_journal_entries(id,entry_date,description,status,source_type,source_id,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,'draft',?,?,?,?,?)`,
-    entryId,
-    entryDate,
-    description,
-    sourceType,
-    sourceId,
-    actor.type || 'platform_user',
-    actor.id,
-    correlationId || null
-  );
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index],
-      debit = Number(line.debitAmount || 0),
-      credit = Number(line.creditAmount || 0);
-    if (
-      !Number.isSafeInteger(debit) ||
-      !Number.isSafeInteger(credit) ||
-      debit < 0 ||
-      credit < 0 ||
-      debit > 0 === credit > 0
-    )
-      throw new ValidationError('Each line must contain one positive integer debit or credit amount.');
-    await run(
-      db,
-      `INSERT INTO accounting_journal_lines(id,journal_entry_id,line_number,account_id,fund_id,description,debit_amount,credit_amount) VALUES(?,?,?,?,?,?,?,?)`,
-      id('line'),
-      entryId,
-      index + 1,
-      line.accountId,
-      line.fundId,
-      line.description || null,
-      debit,
-      credit
-    );
-  }
-  await run(
-    db,
-    `INSERT INTO accounting_ledger_events(id,event_type,journal_entry_id,actor_type,actor_id,correlation_id) VALUES(?,?,?,?,?,?)`,
-    id('event'),
-    'journal_entry.created',
-    entryId,
-    actor.type || 'platform_user',
-    actor.id,
-    correlationId || null
-  );
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO accounting_journal_entries(id,entry_date,description,status,source_type,source_id,created_by_actor_type,created_by_actor_id,correlation_id) VALUES(?,?,?,'draft',?,?,?,?,?)`
+      )
+      .bind(
+        entryId,
+        entryDate,
+        description,
+        sourceType,
+        sourceId,
+        actor.type || 'platform_user',
+        actor.id,
+        correlationId || null
+      ),
+    ...lines.map((line, index) =>
+      db
+        .prepare(
+          `INSERT INTO accounting_journal_lines(id,journal_entry_id,line_number,account_id,fund_id,description,debit_amount,credit_amount) VALUES(?,?,?,?,?,?,?,?)`
+        )
+        .bind(
+          id('line'),
+          entryId,
+          index + 1,
+          line.accountId,
+          line.fundId,
+          line.description || null,
+          Number(line.debitAmount ?? 0),
+          Number(line.creditAmount ?? 0)
+        )
+    ),
+    db
+      .prepare(
+        `INSERT INTO accounting_ledger_events(id,event_type,journal_entry_id,actor_type,actor_id,correlation_id) VALUES(?,?,?,?,?,?)`
+      )
+      .bind(
+        id('event'),
+        'journal_entry.created',
+        entryId,
+        actor.type || 'platform_user',
+        actor.id,
+        correlationId || null
+      ),
+  ]);
   return safeEntry(await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', entryId));
 }
 async function validateJournalEntryForPosting(db, { journalEntryId, expectedVersion }) {
@@ -275,6 +271,7 @@ async function validateJournalEntryForPosting(db, { journalEntryId, expectedVers
   if (lines.some((l) => !l.fund_id || !l.fund_active || l.fund_archived)) issues.push('invalid_fund');
   const debits = lines.reduce((sum, l) => sum + Number(l.debit_amount), 0),
     credits = lines.reduce((sum, l) => sum + Number(l.credit_amount), 0);
+  if (!Number.isSafeInteger(debits) || !Number.isSafeInteger(credits)) issues.push('unsafe_totals');
   if (debits <= 0 || debits !== credits) issues.push('entry_unbalanced');
   const period = await first(
     db,
@@ -301,14 +298,14 @@ async function validateJournalEntryForPosting(db, { journalEntryId, expectedVers
 }
 async function postJournalEntry(
   db,
-  { actor, journalEntryId, idempotencyKey, requestHash, expectedVersion, correlationId = '' }
+  { actor, journalEntryId, idempotencyKey, requestHash, expectedVersion, correlationId = '', additionalStatements = [] }
 ) {
   requireCapability(actor, 'accounting.journals.post');
   if (!idempotencyKey || !requestHash)
     throw new ValidationError('Posting idempotency key and request hash are required.');
   const prior = await first(db, 'SELECT * FROM accounting_posting_idempotency WHERE idempotency_key=?', idempotencyKey);
   if (prior) {
-    if (prior.request_hash !== requestHash)
+    if (prior.request_hash !== requestHash || prior.journal_entry_id !== journalEntryId)
       throw new ValidationError('Idempotency key was already used with different input.');
     return safeEntry(await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', prior.journal_entry_id));
   }
@@ -321,6 +318,13 @@ async function postJournalEntry(
     .toUpperCase()}`;
   const timestamp = now();
   const statements = [
+    // Recheck the version and close barriers inside the atomic write batch.
+    // The NOT NULL constraint aborts every write if a concurrent request won.
+    db
+      .prepare(
+        `UPDATE accounting_journal_entries SET version=CASE WHEN status IN ('draft','pending') AND version=? AND EXISTS(SELECT 1 FROM accounting_periods p JOIN accounting_fiscal_years f ON f.id=p.fiscal_year_id WHERE p.id=? AND p.status='open' AND f.status='open') AND NOT EXISTS(SELECT 1 FROM accounting_period_locks WHERE accounting_period_id=? AND unlocked_at IS NULL) THEN version ELSE NULL END WHERE id=?`
+      )
+      .bind(Number(check.entry.version), check.period.id, check.period.id, journalEntryId),
     db
       .prepare(
         `INSERT INTO accounting_posting_idempotency(id,idempotency_key,operation_type,source_type,source_id,request_hash,journal_entry_id,result_status,completed_at) VALUES(?,?,?,?,?,?,?,'completed',?)`
@@ -366,7 +370,7 @@ async function postJournalEntry(
         correlationId || null
       ),
   ];
-  await db.batch(statements);
+  await db.batch([...statements, ...additionalStatements]);
   return safeEntry(await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', journalEntryId));
 }
 async function recordSplitDeposit(
@@ -477,7 +481,16 @@ async function recordInKindGift(
 }
 async function reverseJournalEntry(
   db,
-  { actor, journalEntryId, entryDate, reason, idempotencyKey, requestHash, correlationId = '' }
+  {
+    actor,
+    journalEntryId,
+    entryDate,
+    reason,
+    idempotencyKey,
+    requestHash,
+    correlationId = '',
+    additionalStatements = [],
+  }
 ) {
   requireCapability(actor, 'accounting.journals.reverse');
   if (!reason) throw new ValidationError('A reversal reason is required.');
@@ -494,32 +507,60 @@ async function reverseJournalEntry(
     'SELECT * FROM accounting_journal_lines WHERE journal_entry_id=? ORDER BY line_number',
     journalEntryId
   );
-  const reversal = await createJournalDraft(db, {
-    actor: {
-      ...actor,
-      capabilities: [.../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.journals.create'])],
-    },
-    entryDate,
-    description: `Reversal: ${original.description}`,
-    sourceType: 'reversal',
-    sourceId: journalEntryId,
-    lines: lines.map((l) => ({
-      accountId: l.account_id,
-      fundId: l.fund_id,
-      description: l.description,
-      debitAmount: l.credit_amount,
-      creditAmount: l.debit_amount,
-    })),
-    correlationId,
-  });
-  await run(
-    db,
-    "INSERT INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?, 'journal_entry',?,'reversal')",
-    id('link'),
-    reversal.id,
-    journalEntryId
-  );
-  const posted = await postJournalEntry(db, {
+  const reversal =
+    (await first(
+      db,
+      "SELECT * FROM accounting_journal_entries WHERE source_type='reversal' AND source_id=? AND status='draft'",
+      journalEntryId
+    )) ||
+    (await createJournalDraft(db, {
+      actor: {
+        ...actor,
+        capabilities: [.../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.journals.create'])],
+      },
+      entryDate,
+      description: `Reversal: ${original.description}`,
+      sourceType: 'reversal',
+      sourceId: journalEntryId,
+      lines: lines.map((l) => ({
+        accountId: l.account_id,
+        fundId: l.fund_id,
+        description: l.description,
+        debitAmount: l.credit_amount,
+        creditAmount: l.debit_amount,
+      })),
+      correlationId,
+    }));
+  if (('entryDate' in reversal ? reversal.entryDate : reversal.entry_date) !== entryDate)
+    throw new ValidationError('An unfinished reversal exists with a different date.');
+  const finalization = [
+    db
+      .prepare(
+        "INSERT INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?, 'journal_entry',?,'reversal')"
+      )
+      .bind(id('link'), reversal.id, journalEntryId),
+    db
+      .prepare(
+        "UPDATE accounting_journal_entries SET status='reversed',reversed_at=?,updated_at=? WHERE id=? AND status='posted'"
+      )
+      .bind(now(), now(), journalEntryId),
+    db
+      .prepare(
+        `INSERT INTO accounting_ledger_events(id,event_type,journal_entry_id,related_entry_id,actor_type,actor_id,reason_code,correlation_id) VALUES(?,?,?,?,?,?,?,?)`
+      )
+      .bind(
+        id('event'),
+        'journal_entry.reversed',
+        journalEntryId,
+        reversal.id,
+        actor.type || 'platform_user',
+        actor.id,
+        reason,
+        correlationId || null
+      ),
+    ...additionalStatements,
+  ];
+  return postJournalEntry(db, {
     actor: {
       ...actor,
       capabilities: [.../* @__PURE__ */ new Set([...actor.capabilities, 'accounting.journals.post'])],
@@ -529,27 +570,8 @@ async function reverseJournalEntry(
     requestHash,
     expectedVersion: 1,
     correlationId,
+    additionalStatements: finalization,
   });
-  await run(
-    db,
-    "UPDATE accounting_journal_entries SET status='reversed',reversed_at=?,updated_at=? WHERE id=? AND status='posted'",
-    now(),
-    now(),
-    journalEntryId
-  );
-  await run(
-    db,
-    `INSERT INTO accounting_ledger_events(id,event_type,journal_entry_id,related_entry_id,actor_type,actor_id,reason_code,correlation_id) VALUES(?,?,?,?,?,?,?,?)`,
-    id('event'),
-    'journal_entry.reversed',
-    journalEntryId,
-    reversal.id,
-    actor.type || 'platform_user',
-    actor.id,
-    reason,
-    correlationId || null
-  );
-  return posted;
 }
 async function voidJournalDraft(db, { actor, journalEntryId, reason, correlationId = '' }) {
   requireCapability(actor, 'accounting.journals.create');

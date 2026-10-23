@@ -598,7 +598,7 @@ assert(
   'Every full Learn render should use the dedicated sanitized-render boundary.'
 );
 assert(
-  /import DOMPurify from ['"]\.\.\/vendor\/dompurify\.es\.mjs\?v=3\.4\.14['"]/.test(learnSanitizedRender),
+  /import DOMPurify from ['"]\.\.\/vendor\/dompurify\.es\.mjs\?v=3\.4\.17['"]/.test(learnSanitizedRender),
   'Learn should load the reviewed DOMPurify browser build.'
 );
 assert(

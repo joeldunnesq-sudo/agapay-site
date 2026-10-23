@@ -4,6 +4,14 @@ import { chromium } from 'playwright';
 import { readLearnDashboardSource } from './lib/learn-dashboard-source.mjs';
 
 const sanitizerSource = await readFile(new URL('../public/vendor/dompurify.es.mjs', import.meta.url), 'utf8');
+assert.equal(
+  sanitizerSource.replaceAll('\r\n', '\n'),
+  (await readFile(new URL('../node_modules/dompurify/dist/purify.es.mjs', import.meta.url), 'utf8')).replaceAll(
+    '\r\n',
+    '\n'
+  ),
+  'the shipped sanitizer must match the patched installed dependency'
+);
 const shellSource = readLearnDashboardSource();
 const renderBoundarySource = await readFile(new URL('../public/learn/sanitized-render.js', import.meta.url), 'utf8');
 
@@ -22,10 +30,14 @@ const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage();
   await page.setContent('<!doctype html><html><body></body></html>');
-  await page.addScriptTag({
-    type: 'module',
-    content: `${sanitizerSource}\nwindow.__AGAPAY_DOMPURIFY__ = purify;`,
-  });
+  await page.evaluate(async (source) => {
+    const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+    try {
+      window.__AGAPAY_DOMPURIFY__ = (await import(url)).default;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }, sanitizerSource);
 
   const sanitized = await page.evaluate(() =>
     window.__AGAPAY_DOMPURIFY__.sanitize(`

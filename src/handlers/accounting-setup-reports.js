@@ -6,6 +6,7 @@ import {
   getAccountingSettings,
   getAccountingSetupOverview,
   initializeAccountingSetup,
+  openAccountingPeriod,
   netAssetRollforward,
   reportCsv,
   statementOfActivities,
@@ -100,6 +101,7 @@ async function handleAccountingSetupReports(request, env, parishId) {
     path === '/setup/initialize' ||
     path === '/settings' ||
     path === '/workspace-reference' ||
+    path === '/periods/open' ||
     fundMatch ||
     accountMatch ||
     path.startsWith('/reports/');
@@ -131,6 +133,17 @@ async function handleAccountingSetupReports(request, env, parishId) {
       return reply({ ok: true, setup: await initializeAccountingSetup(ctx.db, { actor: ctx.actor }) }, 201);
     if (request.method === 'GET' && path === '/settings')
       return reply({ ok: true, settings: await getAccountingSettings(ctx.db, { actor: ctx.actor }) });
+    if (request.method === 'POST' && path === '/periods/open') {
+      const body = await request.json();
+      return reply({
+        ok: true,
+        period: await openAccountingPeriod(ctx.db, {
+          actor: ctx.actor,
+          periodId: body.periodId,
+          expectedVersion: body.expectedVersion,
+        }),
+      });
+    }
     if (request.method === 'GET' && path === '/workspace-reference')
       return reply({ ok: true, ...(await workspaceReference(ctx.db)) });
     if (request.method === 'POST' && accountMatch && !accountMatch[1]) {
