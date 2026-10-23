@@ -87,6 +87,16 @@ try {
   if (currentPeriod.status === 'future') {
     await page.locator('[data-accounting-experience="accountant"]').click();
     await page.locator('[data-accounting-view="settings"]').click();
+    const settingsState = await page.evaluate(() => ({
+      view: accountingView,
+      settingsLoaded: Boolean(accountingData.setup?.settings),
+      periods: accountingData.setup?.periods || [],
+      paneText: document.getElementById('accountingPane')?.innerText.slice(0, 1200),
+      controlPresent: Boolean(document.getElementById('accountingPeriodToOpen')),
+    }));
+    await writeArtifact(artifactRoot + '/period-settings-state.json', settingsState);
+    await page.screenshot({ path: artifactRoot + '/period-settings.png', fullPage: true });
+    assert.ok(settingsState.controlPresent, 'The period-opening control is missing: ' + JSON.stringify(settingsState));
     await page.locator('#accountingPeriodToOpen').selectOption(currentPeriod.id);
     page.once('dialog', (dialog) => dialog.accept());
     const opening = page.waitForResponse(
