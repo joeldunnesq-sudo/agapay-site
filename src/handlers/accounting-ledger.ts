@@ -183,11 +183,11 @@ export async function handleAccountingLedger(request: Request, env: Partial<Env>
     if (ctx.error) return ctx.error;
     const data = (await request.json().catch(() => ({}))) as LedgerRouteBody;
     if (request.method === 'POST' && path === '/simple/deposits')
-      return reply({ ok: true, entry: await recordSimpleDeposit(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+      return reply({ ok: true, entry: await recordSimpleDeposit(ctx.db, { ...data, actor: ctx.actor }) }, 201);
     if (request.method === 'POST' && path === '/simple/split-deposits')
-      return reply({ ok: true, entry: await recordSplitDeposit(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+      return reply({ ok: true, entry: await recordSplitDeposit(ctx.db, { ...data, actor: ctx.actor }) }, 201);
     if (request.method === 'POST' && path === '/simple/in-kind-gifts')
-      return reply({ ok: true, entry: await recordInKindGift(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+      return reply({ ok: true, entry: await recordInKindGift(ctx.db, { ...data, actor: ctx.actor }) }, 201);
     if (match) {
       const id = match[1] ? decodeURIComponent(match[1]) : '',
         action = match[2] || '';
@@ -207,13 +207,13 @@ export async function handleAccountingLedger(request: Request, env: Partial<Env>
           }),
         });
       if (request.method === 'POST' && !id)
-        return reply({ ok: true, entry: await createJournalDraft(ctx.db, { actor: ctx.actor, ...data }) }, 201);
+        return reply({ ok: true, entry: await createJournalDraft(ctx.db, { ...data, actor: ctx.actor }) }, 201);
       if (request.method === 'GET' && id && !action)
         return reply({ ok: true, entry: await getJournalEntry(ctx.db, { actor: ctx.actor, journalEntryId: id }) });
       if (request.method === 'PATCH' && id)
         return reply({
           ok: true,
-          entry: await updateJournalDraft(ctx.db, { actor: ctx.actor, journalEntryId: id, ...data }),
+          entry: await updateJournalDraft(ctx.db, { ...data, actor: ctx.actor, journalEntryId: id }),
         });
       if (request.method === 'POST' && action === 'validate')
         return reply({
@@ -226,7 +226,14 @@ export async function handleAccountingLedger(request: Request, env: Partial<Env>
       if (request.method === 'POST' && action === 'post')
         return reply({
           ok: true,
-          entry: await postJournalEntry(ctx.db, { actor: ctx.actor, journalEntryId: id, ...data }),
+          entry: await postJournalEntry(ctx.db, {
+            actor: ctx.actor,
+            journalEntryId: id,
+            expectedVersion: data.expectedVersion,
+            idempotencyKey: data.idempotencyKey,
+            requestHash: data.requestHash,
+            correlationId: data.correlationId,
+          }),
         });
       if (request.method === 'POST' && action === 'reverse')
         return reply({

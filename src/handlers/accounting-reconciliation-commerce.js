@@ -120,7 +120,7 @@ async function handleAccountingReconciliationCommerce(request, env, parishId) {
         }),
       });
     if (request.method === 'POST' && path === '/bank/imports/preview')
-      return reply({ ok: true, preview: await previewBankCsv({ actor: ctx.actor, entitlementTier: tier, ...body }) });
+      return reply({ ok: true, preview: await previewBankCsv({ ...body, actor: ctx.actor, entitlementTier: tier }) });
     if (request.method === 'POST' && path === '/bank/imports/commit')
       return reply({
         ok: true,
@@ -162,10 +162,10 @@ async function handleAccountingReconciliationCommerce(request, env, parishId) {
         return reply({
           ok: true,
           reconciliation: await confirmReconciliationMatch(ctx.db, {
+            ...body,
             actor: ctx.actor,
             entitlementTier: tier,
             reconciliationId,
-            ...body,
           }),
         });
       if (request.method === 'POST' && action === 'complete')
@@ -277,7 +277,7 @@ async function handleAccountingReconciliationCommerce(request, env, parishId) {
     if (request.method === 'POST' && path === '/integrations/give-stripe/backfill-preview')
       return reply({
         ok: true,
-        preview: await previewIntegrationBackfill(ctx.db, { actor: ctx.actor, entitlementTier: tier, ...body }),
+        preview: await previewIntegrationBackfill(ctx.db, { ...body, actor: ctx.actor, entitlementTier: tier }),
       });
     if (request.method === 'GET' && path === '/commerce/overview')
       return reply({

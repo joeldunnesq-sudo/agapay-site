@@ -90,3 +90,51 @@ export function validateAccountingContext<T>(context: T): T {
   }
   return context;
 }
+
+export function validateAccountingDate(entryDate: unknown) {
+  const date =
+    typeof entryDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(entryDate) ? new Date(`${entryDate}T00:00:00Z`) : null;
+  if (!date || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== entryDate) {
+    throw new ValidationError('A valid entry date is required.');
+  }
+  return entryDate;
+}
+
+export function validateJournalDraftInput({
+  entryDate,
+  description,
+  lines,
+}: {
+  entryDate: unknown;
+  description: unknown;
+  lines: readonly { accountId: unknown; fundId: unknown; debitAmount?: unknown; creditAmount?: unknown }[];
+}) {
+  validateAccountingDate(entryDate);
+  requireNonEmptyString(description, 'description');
+  if (!Array.isArray(lines) || lines.length < 2) {
+    throw new ValidationError('A description and at least two lines are required.');
+  }
+  let debits = 0,
+    credits = 0;
+  for (const line of lines) {
+    if (!line || typeof line !== 'object') throw new ValidationError('Each journal line is required.');
+    requireNonEmptyString(line.accountId, 'accountId');
+    requireNonEmptyString(line.fundId, 'fundId');
+    const debit = Number(line.debitAmount ?? 0),
+      credit = Number(line.creditAmount ?? 0);
+    if (
+      !Number.isSafeInteger(debit) ||
+      !Number.isSafeInteger(credit) ||
+      debit < 0 ||
+      credit < 0 ||
+      debit > 0 === credit > 0
+    ) {
+      throw new ValidationError('Each line must contain one positive integer debit or credit amount.');
+    }
+    debits += debit;
+    credits += credit;
+    if (!Number.isSafeInteger(debits) || !Number.isSafeInteger(credits)) {
+      throw new ValidationError('Journal totals exceed the supported whole-cent range.');
+    }
+  }
+}

@@ -1,5 +1,5 @@
 // Generated from src/browser/listen/opml.ts by npm run build:browser. Do not edit.
-import DOMPurify from '../vendor/dompurify.es.mjs?v=3.4.14';
+import DOMPurify from '../vendor/dompurify.es.mjs?v=3.4.17';
 function importOpml(text) {
   const xml = String(text ?? '');
   if (/<!DOCTYPE\s|<!ENTITY\s/i.test(xml)) return [];

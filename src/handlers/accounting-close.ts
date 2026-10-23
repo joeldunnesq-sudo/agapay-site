@@ -75,7 +75,7 @@ export async function handleAccountingClose(request: Request, env: Partial<Env>,
       });
     if (request.method === 'POST' && path === '/close/sessions')
       return reply(
-        { ok: true, session: await createCloseSession(ctx.db, { actor: ctx.actor, entitlementTier: tier, ...body }) },
+        { ok: true, session: await createCloseSession(ctx.db, { ...body, actor: ctx.actor, entitlementTier: tier }) },
         201
       );
     if (request.method === 'GET' && path === '/close/audit-trail.csv')

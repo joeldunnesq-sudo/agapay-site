@@ -171,9 +171,9 @@ assert.match(handler, /path\s*===\s*['"]\/simple\/deposits['"]/);
 assert.match(handler, /path\s*===\s*['"]\/simple\/split-deposits['"]/);
 assert.match(handler, /path\s*===\s*['"]\/simple\/in-kind-gifts['"]/);
 assert.match(handler, /let capability\s*=\s*request\.method\s*===\s*['"]GET['"]\s*\?\s*['"]accounting\.view['"]\s*:\s*['"]accounting\.journals\.create['"]/);
-assert.match(handler, /recordSimpleDeposit\(ctx\.db,\s*\{\s*actor:\s*ctx\.actor,\s*\.\.\.data\s*\}\)/);
-assert.match(handler, /recordSplitDeposit\(ctx\.db,\s*\{\s*actor:\s*ctx\.actor,\s*\.\.\.data\s*\}\)/);
-assert.match(handler, /recordInKindGift\(ctx\.db,\s*\{\s*actor:\s*ctx\.actor,\s*\.\.\.data\s*\}\)/);
+assert.match(handler, /recordSimpleDeposit\(ctx\.db,\s*\{\s*\.\.\.data,\s*actor:\s*ctx\.actor\s*\}\)/);
+assert.match(handler, /recordSplitDeposit\(ctx\.db,\s*\{\s*\.\.\.data,\s*actor:\s*ctx\.actor\s*\}\)/);
+assert.match(handler, /recordInKindGift\(ctx\.db,\s*\{\s*\.\.\.data,\s*actor:\s*ctx\.actor\s*\}\)/);
 assert.doesNotMatch(handler, /accounting\.simple/);
 console.log("PASS - the simple and split-deposit routes reuse accounting.journals.create");
 

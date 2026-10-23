@@ -1,5 +1,6 @@
 import type { LedgerServiceActor } from '../ledger/service.js';
 export interface PayablesSqlRow {
+  entry_date: string;
   line_amount: number;
   open_payables: number;
   awaiting_approval: number;

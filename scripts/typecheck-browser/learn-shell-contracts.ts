@@ -1,4 +1,4 @@
-import DOMPurify from '../../src/browser/vendor/dompurify.es.mjs?v=3.4.14';
+import DOMPurify from '../../src/browser/vendor/dompurify.es.mjs?v=3.4.17';
 import type { LearnShellBindings } from '../../src/browser/learn/dashboard-shell.js';
 import type { LearnShellPayload, LearnShellNode } from '../../src/browser/learn/dashboard-shell-contracts.js';
 import { safeArray } from '../../src/browser/learn/dashboard-view-models-shared.js';

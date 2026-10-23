@@ -188,6 +188,8 @@ const accounting = [
   'scripts/accounting-control-plane-tests.mjs',
   'scripts/accounting-provisioning-tests.mjs',
   'scripts/accounting-ledger-tests.mjs',
+  'scripts/accounting-transaction-safety-tests.mjs',
+  'scripts/accounting-request-boundary-tests.mjs',
   'scripts/accounting-setup-tests.mjs',
   'scripts/accounting-phase2b-tests.mjs',
   'scripts/accounting-phase2b2-tests.mjs',

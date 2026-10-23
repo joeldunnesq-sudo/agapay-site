@@ -1,4 +1,5 @@
 // Generated from src/accounting/payables/service-shared.ts by npm run build:server. Do not edit.
+import { validateAccountingDate } from '../validation.js';
 import { AccountingDatabaseError, ValidationError } from '../errors.js';
 import { createJournalDraft, postJournalEntry, reverseJournalEntry } from '../ledger/service.js';
 import { printableChecks } from './check-printing.js';
@@ -140,8 +141,13 @@ async function transition(db, billId, expectedVersion, from, set, params = []) {
   return billDto(await first(db, 'SELECT * FROM accounting_bills WHERE id=?', billId));
 }
 async function validatePaymentSelection(db, input) {
-  if (!DATE.test(input?.paymentDate) || !Array.isArray(input.applications) || !input.applications.length)
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(input?.paymentDate || '') ||
+    !Array.isArray(input.applications) ||
+    !input.applications.length
+  )
     throw new ValidationError('Payment date and bill applications are required.');
+  validateAccountingDate(input.paymentDate);
   const paymentMethod = text(input.paymentMethod || 'external');
   if (!['check', 'ach', 'wire', 'debit_card', 'credit_card', 'cash', 'external', 'other'].includes(paymentMethod))
     throw new ValidationError('Payment method is not supported.');
@@ -158,7 +164,10 @@ async function validatePaymentSelection(db, input) {
   if (!vendor || vendor.status !== 'active' || !bank)
     throw new ValidationError('Active vendor and bank account are required.');
   let total = 0;
+  const billIds = /* @__PURE__ */ new Set();
   for (const app of input.applications) {
+    if (!app || billIds.has(app.billId)) throw new ValidationError('Each bill can appear only once in a payment.');
+    billIds.add(app.billId);
     const bill = await first(
         db,
         "SELECT * FROM accounting_bills WHERE id=? AND vendor_id=? AND status IN('posted','partially_paid')",
@@ -169,6 +178,8 @@ async function validatePaymentSelection(db, input) {
     if (!bill || !Number.isSafeInteger(amount) || amount <= 0 || amount > Number(bill.amount_due))
       throw new ValidationError('Payment application exceeds the bill amount due.');
     total += amount;
+    if (!Number.isSafeInteger(total))
+      throw new ValidationError('Payment total exceeds the supported whole-cent range.');
   }
   if (input.totalAmount !== void 0 && Number(input.totalAmount) !== total)
     throw new ValidationError('Payment total must equal its bill applications.');
