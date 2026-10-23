@@ -1,3 +1,4 @@
+import { openAccountingPeriod, listAccountingPeriods } from '../src/accounting/setup/periods.js';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
@@ -306,5 +307,61 @@ assert.equal(
 );
 console.log(
   'PASS - interrupted payment void rolls back the reversal, bill balance and payment status; retry completes once'
+);
+s.prepare(
+  "UPDATE accounting_periods SET status='future',version=1 WHERE id IN ('period_2026_11','period_2026_12')"
+).run();
+await assert.rejects(
+  () =>
+    openAccountingPeriod(db, {
+      actor: { id: 'viewer', capabilities: ['accounting.view'] },
+      periodId: 'period_2026_11',
+      expectedVersion: 1,
+    }),
+  /capability/
+);
+const opened = await openAccountingPeriod(db, { actor, periodId: 'period_2026_11', expectedVersion: 1 });
+assert.equal(opened.status, 'open');
+assert.equal(opened.version, 2);
+assert.equal((await listAccountingPeriods(db)).find((period) => period.id === opened.id).status, 'open');
+const november = await createJournalDraft(db, { ...input, entryDate: '2026-11-01' });
+await postJournalEntry(db, {
+  actor,
+  journalEntryId: november.id,
+  expectedVersion: 1,
+  idempotencyKey: 'opened-period-post',
+  requestHash: 'november',
+});
+assert.equal(s.prepare('SELECT status FROM accounting_journal_entries WHERE id=?').get(november.id).status, 'posted');
+await assert.rejects(() => openAccountingPeriod(db, { actor, periodId: opened.id, expectedVersion: 2 }), /unopened/);
+beforeBatch = () => s.prepare("UPDATE accounting_periods SET version=2 WHERE id='period_2026_12'").run();
+await assert.rejects(() => openAccountingPeriod(db, { actor, periodId: 'period_2026_12', expectedVersion: 1 }));
+assert.equal(s.prepare("SELECT status FROM accounting_periods WHERE id='period_2026_12'").get().status, 'future');
+failSql = 'INSERT INTO accounting_ledger_events';
+await assert.rejects(
+  () => openAccountingPeriod(db, { actor, periodId: 'period_2026_12', expectedVersion: 2 }),
+  /Injected/
+);
+assert.equal(s.prepare("SELECT status FROM accounting_periods WHERE id='period_2026_12'").get().status, 'future');
+s.prepare(
+  "INSERT INTO accounting_period_locks(id,accounting_period_id,lock_type,locked_by_actor_type,locked_by_actor_id,reason) VALUES('december-lock','period_2026_12','hard_close','platform_user','rector','Audit')"
+).run();
+await assert.rejects(
+  () => openAccountingPeriod(db, { actor, periodId: 'period_2026_12', expectedVersion: 2 }),
+  /locked/
+);
+s.prepare("UPDATE accounting_periods SET status='closed' WHERE id='period_2026_8'").run();
+await assert.rejects(
+  () => openAccountingPeriod(db, { actor, periodId: 'period_2026_8', expectedVersion: 1 }),
+  /unopened/
+);
+s.prepare("UPDATE accounting_fiscal_years SET status='closed'").run();
+await assert.rejects(
+  () => openAccountingPeriod(db, { actor, periodId: 'period_2026_12', expectedVersion: 2 }),
+  /open fiscal year/
+);
+assert.equal(s.prepare("SELECT count(*) n FROM accounting_ledger_events WHERE event_type='period.opened'").get().n, 1);
+console.log(
+  'PASS - authorized opening enables posting in the next period; closed/locked years and periods, stale versions and failed audit writes remain protected'
 );
 s.close();

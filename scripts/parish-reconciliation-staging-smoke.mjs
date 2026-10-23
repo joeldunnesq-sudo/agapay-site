@@ -93,10 +93,13 @@ if (!proof.transactions.length) {
   assert.notEqual(proof.state, 'reconciled');
   const blocking = (proof.exceptions || []).filter((item) => item.severity !== 'info');
   assert.ok(
-    blocking.length > 0 && blocking.every((item) => item.code === 'unsupported_or_large_payout'),
+    blocking.length > 0 &&
+      blocking.every((item) => ['unsupported_or_large_payout', 'failed_payout'].includes(item.code)),
     'Empty transaction coverage requires an explicit unsupported-payout boundary; provider or matching failures must still fail acceptance.'
   );
-  evidence.transactionCoverage = 'unsupported_payouts_explicitly_blocked';
+  if ((proof.payouts || []).every((payout) => ['failed', 'canceled', 'cancelled'].includes(payout.status)))
+    assert.equal(proof.summary.depositedCents, 0, 'Failed payouts must never count as bank deposits.');
+  evidence.transactionCoverage = 'failed_or_unsupported_payouts_explicitly_blocked';
 } else evidence.transactionCoverage = 'real_payout_transactions';
 
 const expectedDepositCents = Number(proof.summary?.depositedCents || 0);

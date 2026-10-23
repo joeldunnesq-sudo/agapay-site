@@ -1714,7 +1714,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings)$',
+            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings|openAccountingSelectedPeriod)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },

@@ -236,3 +236,5 @@ export {
   runIntegrityScan,
   verifyRecoveryEvidence,
 } from './integrity/service.js';
+
+export { listAccountingPeriods, openAccountingPeriod } from './setup/periods.js';

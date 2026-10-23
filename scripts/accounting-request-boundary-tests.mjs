@@ -98,3 +98,23 @@ for (const path of [
 console.log(
   'PASS - hostile request bodies cannot replace authenticated actors, service tiers, URL IDs, or posting transaction statements'
 );
+
+let periodCapability;
+const setup = load('accounting-setup-reports.js', 'handleAccountingSetupReports', {
+  accountingContext: async (...args) => {
+    periodCapability = args[3];
+    return context();
+  },
+  reply,
+  openAccountingPeriod: dbService,
+});
+const periodResponse = await setup(
+  request('/periods/open', 'POST', { ...hostile, periodId: 'period_fixture' }),
+  {},
+  'parish-a'
+);
+assert.equal(periodResponse.status, 200, await periodResponse.text());
+assert.equal(periodCapability, 'accounting.configure');
+assert.equal(captured.at(-1).actor, actor);
+assert.equal(captured.at(-1).periodId, 'period_fixture');
+console.log('PASS - opening a period requires the server-selected configuration capability and authenticated actor');

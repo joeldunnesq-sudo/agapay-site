@@ -1,3 +1,4 @@
+import { listAccountingPeriods } from './periods.js';
 import type { PortabilityDatabase } from '../../portability/contracts.js';
 import type { LedgerServiceActor } from '../ledger/service.js';
 type SettingsRow = {
@@ -269,7 +270,8 @@ export async function getAccountingSetupOverview(
   );
   const period = await first<PeriodRow>(
     db,
-    "SELECT id,name,start_date,end_date,status FROM accounting_periods WHERE status='open' ORDER BY start_date LIMIT 1"
+    "SELECT id,name,start_date,end_date,status FROM accounting_periods WHERE status='open' ORDER BY CASE WHEN ? BETWEEN start_date AND end_date THEN 0 ELSE 1 END,start_date LIMIT 1",
+    new Date().toISOString().slice(0, 10)
   );
   const counts = await first<{ active_accounts: number; active_funds: number; posted_opening_batches: number }>(
     db,
@@ -315,6 +317,7 @@ export async function getAccountingSetupOverview(
     database: Object.freeze({ status: databaseStatus, health: databaseHealth }),
     initialization,
     settings,
+    periods: await listAccountingPeriods(db),
     currentFiscalYear: fiscalYear
       ? Object.freeze({
           name: fiscalYear.name,

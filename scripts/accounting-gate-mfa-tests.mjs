@@ -35,3 +35,52 @@ assert.equal(calls, 1);
 console.log(
   'PASS - protected gate MFA uses enrolled factors, refuses other origins and identities, and omits recovery credentials'
 );
+
+const { runCrossTenantMatrix } = await import('./lib/accounting-release-gates.mjs');
+const routes = [{ handler: 'fixture', method: 'GET', path: '/reports/test' }];
+let transportCalls = 0;
+const principal = {
+  name: 'fixture',
+  authPath: 'fixture',
+  parishId: 'a',
+  oppositeParishId: 'b',
+  headers: {},
+  context: {
+    request: {
+      async fetch() {
+        transportCalls++;
+        if (transportCalls === 1) throw new Error('fixture transport failure');
+        return {
+          status: () => 403,
+          headers: () => ({ 'content-type': 'application/json' }),
+          text: async () => '{"error":"Forbidden"}',
+        };
+      },
+    },
+  },
+};
+const matrix = await runCrossTenantMatrix({
+  baseUrl: 'https://example.test',
+  routes,
+  principals: [principal],
+  artifactPath: 'artifacts/fixture-transport-matrix.json',
+});
+assert.equal(matrix.matrix[0].transportAttempts, 2);
+assert.equal(matrix.passed, true);
+transportCalls = 0;
+principal.context.request.fetch = async () => {
+  transportCalls++;
+  return { status: () => 200, headers: () => ({}), text: async () => '{"unexpected":"access"}' };
+};
+await assert.rejects(
+  () =>
+    runCrossTenantMatrix({
+      baseUrl: 'https://example.test',
+      routes,
+      principals: [principal],
+      artifactPath: 'artifacts/fixture-rejected-matrix.json',
+    }),
+  /isolation failed/
+);
+assert.equal(transportCalls, 1, 'Unexpected HTTP access must fail immediately, never be retried into a false pass.');
+console.log('PASS - transport errors have bounded retries, while an unexpected HTTP success remains a gate failure');

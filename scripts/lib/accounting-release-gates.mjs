@@ -207,21 +207,29 @@ export async function runCrossTenantMatrix({
       let responseBytes = 0;
       let responseSha256 = '';
       let contentType = '';
-      try {
-        const response = await principal.context.request.fetch(target, {
-          method: route.method,
-          headers: { ...principal.headers, 'content-type': 'application/json' },
-          data: route.method === 'GET' ? undefined : {},
-        });
-        status = response.status();
-        contentType = response.headers()['content-type'] || '';
-        const body = new TextEncoder().encode(await response.text());
-        responseBytes = body.byteLength;
-        responseSha256 = [...new Uint8Array(await crypto.subtle.digest('SHA-256', body))]
-          .map((byte) => byte.toString(16).padStart(2, '0'))
-          .join('');
-      } catch (error) {
-        responseSha256 = `request-error:${error?.name || 'Error'}`;
+      let transportAttempts = 0;
+      for (; transportAttempts < 3;) {
+        transportAttempts++;
+        try {
+          const response = await principal.context.request.fetch(target, {
+            method: route.method,
+            headers: { ...principal.headers, 'content-type': 'application/json' },
+            data: route.method === 'GET' ? undefined : {},
+            timeout: 30000,
+          });
+          status = response.status();
+          contentType = response.headers()['content-type'] || '';
+          const body = new TextEncoder().encode(await response.text());
+          responseBytes = body.byteLength;
+          responseSha256 = [...new Uint8Array(await crypto.subtle.digest('SHA-256', body))]
+            .map((byte) => byte.toString(16).padStart(2, '0'))
+            .join('');
+          break;
+        } catch (error) {
+          status = 0;
+          responseSha256 = `request-error:${error?.name || 'Error'}`;
+        }
+        if (transportAttempts < 3) await new Promise((resolve) => setTimeout(resolve, 300 * transportAttempts));
       }
       const passed = denied.has(status);
       matrix.push({
@@ -234,6 +242,7 @@ export async function runCrossTenantMatrix({
         route: route.pattern || route.path,
         requestPath: route.path,
         status,
+        transportAttempts,
         passed,
         contentType,
         responseBytes,
