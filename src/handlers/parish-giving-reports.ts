@@ -2,6 +2,7 @@ import type { StripeRequestEnv, StripeCharge, StripeResponseBody } from '../lib/
 interface ReportingRegistration extends DashboardRegistration {
   timezone?: string | null;
   stripeAccountId?: string | null;
+  onboardingStripeTestFixture?: { id?: string } | null;
 }
 import type { ManualGivingRow } from '../lib/manual-giving-model.js';
 import type { DashboardRegistration } from './parish-dashboard-handler.js';
@@ -33,6 +34,18 @@ export { summarizeStoredParishGifts } from '../lib/stored-giving-summary.js';
 import { listYtdStripeCharges } from '../lib/stripe-connect.js';
 import { refreshStripeVolume, summarizeStoredStripeVolume } from '../lib/stripe-volume.js';
 import { resolveOperationalAccountingDatabase } from '../accounting/source-wiring.js';
+
+function stagingOnboardingFixture(env: Partial<Env>, registration: ReportingRegistration): boolean {
+  return (
+    ['development', 'local', 'preview', 'staging', 'test'].includes(
+      String(env.AGAPAY_ENVIRONMENT || '')
+        .trim()
+        .toLowerCase()
+    ) &&
+    String(registration.stripeAccountId || '').startsWith('acct_staging_') &&
+    registration.onboardingStripeTestFixture?.id === registration.stripeAccountId
+  );
+}
 
 // Keep parishDashboardPayload in the explicit shared-core dependency contract for
 // this reporting cluster, even though the current endpoints return narrower payloads.
@@ -113,6 +126,18 @@ export async function handleParishGivingSummary(
   const url = new URL(request.url);
   const forceStripe = url.searchParams.get('source') === 'stripe';
   const storedGifts = await loadParishPaidOfferings(env, parishId, 2000);
+  if (stagingOnboardingFixture(env, found.registration)) {
+    return json({
+      summary: {
+        ...summarizeStoredParishGifts(storedGifts),
+        dataSource: 'staging_fixture',
+        simulated: true,
+        generatedAt: new Date().toISOString(),
+        note: 'Staging onboarding simulation. No Stripe payment data was queried.',
+      },
+    });
+  }
+
   if (storedGifts.length && !forceStripe) {
     return json({
       summary: {
@@ -184,6 +209,17 @@ export async function handleParishStripeVolume(
   const found = await findRegistrationByParishId<ReportingRegistration>(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
+
+  if (stagingOnboardingFixture(env, found.registration)) {
+    return json({
+      volume: {
+        ...(await summarizeStoredStripeVolume(env, parishId)),
+        connected: false,
+        simulated: true,
+        note: 'Staging onboarding simulation. No Stripe payment data was queried.',
+      },
+    });
+  }
 
   const stripeAccountId = found.registration.stripeAccountId || '';
   if (!stripeAccountId || stripeAccountId.startsWith('acct_demo_')) {

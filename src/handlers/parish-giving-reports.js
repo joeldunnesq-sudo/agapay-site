@@ -24,6 +24,17 @@ import { summarizeStoredParishGifts as summarizeStoredParishGifts2 } from '../li
 import { listYtdStripeCharges } from '../lib/stripe-connect.js';
 import { refreshStripeVolume, summarizeStoredStripeVolume } from '../lib/stripe-volume.js';
 import { resolveOperationalAccountingDatabase } from '../accounting/source-wiring.js';
+function stagingOnboardingFixture(env, registration) {
+  return (
+    ['development', 'local', 'preview', 'staging', 'test'].includes(
+      String(env.AGAPAY_ENVIRONMENT || '')
+        .trim()
+        .toLowerCase()
+    ) &&
+    String(registration.stripeAccountId || '').startsWith('acct_staging_') &&
+    registration.onboardingStripeTestFixture?.id === registration.stripeAccountId
+  );
+}
 void parishDashboardPayload;
 import { manualAccountingGifts } from '../lib/manual-giving-model.js';
 async function loadManualAccountingGivingEntries(env, parishId, limit = 500) {
@@ -82,6 +93,17 @@ async function handleParishGivingSummary(request, env, parishId) {
   const url = new URL(request.url);
   const forceStripe = url.searchParams.get('source') === 'stripe';
   const storedGifts = await loadParishPaidOfferings(env, parishId, 2e3);
+  if (stagingOnboardingFixture(env, found.registration)) {
+    return json({
+      summary: {
+        ...summarizeStoredParishGifts(storedGifts),
+        dataSource: 'staging_fixture',
+        simulated: true,
+        generatedAt: /* @__PURE__ */ new Date().toISOString(),
+        note: 'Staging onboarding simulation. No Stripe payment data was queried.',
+      },
+    });
+  }
   if (storedGifts.length && !forceStripe) {
     return json({
       summary: {
@@ -141,6 +163,16 @@ async function handleParishStripeVolume(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
+  if (stagingOnboardingFixture(env, found.registration)) {
+    return json({
+      volume: {
+        ...(await summarizeStoredStripeVolume(env, parishId)),
+        connected: false,
+        simulated: true,
+        note: 'Staging onboarding simulation. No Stripe payment data was queried.',
+      },
+    });
+  }
   const stripeAccountId = found.registration.stripeAccountId || '';
   if (!stripeAccountId || stripeAccountId.startsWith('acct_demo_')) {
     return json({
