@@ -537,7 +537,8 @@ try {
   }
 
   {
-    const { env } = makeD1Env("test");
+    const { env, db } = makeD1Env("test");
+    db.exec(`CREATE TABLE donor_offerings (id TEXT PRIMARY KEY, parish_id TEXT, status TEXT, payment_status TEXT, created_at TEXT, updated_at TEXT, data TEXT);`);
     const registration = baseRegistration({
       status: "pending",
       reviewedBy: "",
@@ -569,6 +570,29 @@ try {
     const preparedStored = await loadRegistrationByReference(env, registration.reference);
     const preparedDashboardSession = await issueParishDashboardSession(preparedStored);
     await saveRegistrationRecord(env, registration.reference, preparedDashboardSession.registration, preparedStored);
+    const summaryRequest = () => new Request(`https://agapay.test/api/parish/dashboard/${registration.parishId}/giving-summary?source=stripe`, {
+      headers: { Authorization: `Bearer ${preparedDashboardSession.token}` }
+    });
+    db.exec(readFileSync(path.join(root, 'migrations/0041_stripe_nonprofit_volume_tracking.sql'), 'utf8'));
+    const volumeResponse = await worker.fetch(new Request(`https://agapay.test/api/parish/dashboard/${registration.parishId}/stripe-volume`, {
+      headers: { Authorization: `Bearer ${preparedDashboardSession.token}` }
+    }), env);
+    assert.equal(volumeResponse.status, 200);
+    assert.equal((await volumeResponse.json()).volume.simulated, true);
+    const callsBeforeFixtureSummary = stripeCalls;
+    const fixtureSummary = await worker.fetch(summaryRequest(), env);
+    assert.equal(fixtureSummary.status, 200);
+    const fixtureSummaryPayload = await fixtureSummary.json();
+    assert.equal(fixtureSummaryPayload.summary.dataSource, 'staging_fixture');
+    assert.equal(fixtureSummaryPayload.summary.simulated, true);
+    assert.equal(fixtureSummaryPayload.summary.giftCount, 0);
+    assert.equal(stripeCalls, callsBeforeFixtureSummary, 'simulated accounts must not be sent to Stripe');
+    for (const environment of ['production', undefined]) {
+      const realSummary = await worker.fetch(summaryRequest(), { ...env, AGAPAY_ENVIRONMENT: environment });
+      assert.equal(realSummary.status, 200);
+      assert.notEqual((await realSummary.json()).summary.simulated, true, 'production and unspecified environments must ignore the fixture');
+    }
+    assert.equal(stripeCalls, callsBeforeFixtureSummary + 2, 'real environments must continue to query Stripe');
     const stagingLaunch = await worker.fetch(new Request(`https://agapay.test/api/parish/dashboard/${registration.parishId}/onboarding`, {
       method: "POST",
       headers: {

@@ -907,7 +907,7 @@ body {
       selectedType = card.dataset.type;
 
       const needsNames = card.dataset.needsNames === 'true';
-      const needsFreq = card.dataset.needsFrequency === 'true';
+      const needsFreq = card.dataset.needsFrequency === 'true' && currentParish.recurringGivingEnabled !== false;
       const needsFeast = card.dataset.needsFeast === 'true';
       const needsFunds = card.dataset.needsFunds === 'true';
       const needsCampaign = card.dataset.needsCampaign === 'true';
@@ -1250,6 +1250,8 @@ body {
         renderCampaigns(activeCampaigns(parish));
         renderCurrentFestalCampaign(parish);
         applyGiftQueryParams();
+        if (parish.recurringGivingEnabled === false) selectFreq(document.querySelector('.freq-btn[data-freq="once"]'));
+        selectGiftType(document.querySelector('.gift-type-card.selected'));
         updateSummary();
         return true;
       } catch (err) {
@@ -1326,6 +1328,7 @@ body {
 
     // FREQUENCY
     function selectFreq(btn) {
+      if (currentParish.recurringGivingEnabled === false && btn.dataset.freq !== 'once') return;
       document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedFreq = btn.dataset.freq;
@@ -1388,7 +1391,7 @@ body {
       if (feeTitle) feeTitle.textContent = 'Cover the processing fees';
       if (feeCopy) {
         feeCopy.textContent = feeCovered
-          ? `When you cover the fees, ${currentParish.name} receives your full gift â€” nothing deducted. AGAPAY does not charge a donation fee; this covers Stripe's standard payment processing.`
+          ? `When you cover the fees, ${currentParish.name} receives your full gift — nothing deducted. AGAPAY does not charge a donation fee; this covers Stripe's standard payment processing.`
           : `${currentParish.name} receives your gift less standard Stripe processing costs. AGAPAY does not charge a donation fee.`;
       }
 
