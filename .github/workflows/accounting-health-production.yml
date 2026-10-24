@@ -29,6 +29,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
+      - name: Install health-check dependencies
+        run: npm ci
       - name: Verify production health-check safety
         run: |
           node scripts/accounting-health-live-tests.mjs
