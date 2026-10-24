@@ -465,16 +465,31 @@ try {
   for (const recurringGivingEnabled of [false, true]) {
     const publicPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
     const publicErrors = [];
-    publicPage.on('pageerror', error => publicErrors.push(error.message));
-    await publicPage.route('**/*', route => {
+    publicPage.on('pageerror', (error) => publicErrors.push(error.message));
+    await publicPage.route('**/*', (route) => {
       const url = new URL(route.request().url());
       if (url.pathname === '/give/rehearsal') return route.fulfill({ contentType: 'text/html', body: publicFormHtml });
-      if (url.pathname === '/api/parishes') return route.fulfill({ json: { parish: {
-        id: 'rehearsal', name: 'Staging Rehearsal', status: 'verified', givingStatus: 'active',
-        recurringGivingEnabled, candlesEnabled: true, designatedFundsEnabled: true,
-        funds: [{ id: 'general', name: 'General Operating Fund' }], campaigns: [], feastCampaigns: []
-      } } });
-      return route.fulfill({ contentType: route.request().resourceType() === 'script' ? 'application/javascript' : 'text/plain', body: '' });
+      if (url.pathname === '/api/parishes')
+        return route.fulfill({
+          json: {
+            parish: {
+              id: 'rehearsal',
+              name: 'Staging Rehearsal',
+              status: 'verified',
+              givingStatus: 'active',
+              recurringGivingEnabled,
+              candlesEnabled: true,
+              designatedFundsEnabled: true,
+              funds: [{ id: 'general', name: 'General Operating Fund' }],
+              campaigns: [],
+              feastCampaigns: [],
+            },
+          },
+        });
+      return route.fulfill({
+        contentType: route.request().resourceType() === 'script' ? 'application/javascript' : 'text/plain',
+        body: '',
+      });
     });
     try {
       await publicPage.goto('https://giving-rehearsal.test/give/rehearsal');
@@ -484,12 +499,19 @@ try {
       await publicPage.getByRole('button', { name: 'Tithes', exact: true }).click();
       assert.equal(await publicPage.locator('#frequencySection').isVisible(), recurringGivingEnabled);
       if (recurringGivingEnabled) await publicPage.getByRole('button', { name: 'Monthly', exact: true }).click();
-      assert.equal(await publicPage.locator('#summaryFreq').textContent(), recurringGivingEnabled ? 'Monthly' : 'One-time');
+      assert.equal(
+        await publicPage.locator('#summaryFreq').textContent(),
+        recurringGivingEnabled ? 'Monthly' : 'One-time'
+      );
       assert.doesNotMatch(await publicPage.locator('.fee-text p').textContent(), /â€/);
       assert.deepEqual(publicErrors, []);
-    } finally { await publicPage.close(); }
+    } finally {
+      await publicPage.close();
+    }
   }
-  console.log('PASS - public giving honors disabled recurring gifts after load and gift-type changes; enabled parishes retain recurring choices');
+  console.log(
+    'PASS - public giving honors disabled recurring gifts after load and gift-type changes; enabled parishes retain recurring choices'
+  );
 } finally {
   await browser.close();
 }
