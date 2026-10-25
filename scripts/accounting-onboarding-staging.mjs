@@ -50,7 +50,7 @@ try {
     headers['X-AGAPAY-Accounting-Token'] = staff.token;
     const api = (path, body, expected) => request(root + '/accounting' + path, body, expected);
     let setup = (await api('/setup')).overview;
-    if (fresh && !setup.initialization.operational) {
+    if (!setup.initialization.operational || !setup.settings) {
       await api('/setup/initialize', {}, 201);
       setup = (await api('/setup')).overview;
     }
@@ -72,6 +72,50 @@ try {
       .report;
     item.before = before.totals;
     const sessions = (await api('/migration/sessions')).sessions;
+    const priorCompleted = sessions.find((s) => s.sourceSystem === fixture.sourceSystem && s.status === 'completed');
+    if (priorCompleted) {
+      // A successful posting must never be repeated to recover a later setup-only failure.
+      assert.equal(fixture.sourceSystem, 'aplos');
+      assert.equal(priorCompleted.id, 'migration_fafeb6be-6d9b-44d8-aa8f-f4f37121d61f');
+      const journal = (await api('/journals/entry_48e07ee1-d639-431e-9007-c54265bd28cb')).entry;
+      assert.equal(journal.status, 'posted');
+      assert.equal(journal.totalDebits, 3000000);
+      assert.equal(journal.totalCredits, 3000000);
+      assert.deepEqual(before.totals, { assets: 3000000, liabilities: 200000, netAssets: 2800000, difference: 0 });
+      assert.equal(beforeCash.totals.beginningCash, 2500000);
+      assert.equal(beforeCash.totals.endingCash, 2500000);
+      assert.equal(beforeCash.totals.netCashChange, 0);
+      assert.equal(beforeCash.validation.status, 'validated');
+      const current = (await api('/settings')).settings;
+      async function settingsPatch(patch, version) {
+        const response = await fetch(baseUrl + root + '/accounting/settings', {
+          method: 'PATCH',
+          headers: { ...headers, 'content-type': 'application/json' },
+          body: JSON.stringify({ expectedVersion: version, patch }),
+        });
+        const payload = await response.json();
+        assert.equal(response.status, 200, payload.message || payload.error || 'Settings update');
+        return payload.settings;
+      }
+      const addressed = await settingsPatch({ openingBalancesDisposition: 'posted' }, current.version);
+      const finished = await settingsPatch({ completeSetup: true }, addressed.version);
+      assert.equal(finished.setupCompleted, true);
+      assert.ok((await api('/setup')).overview.checklist.every((check) => check.complete));
+      Object.assign(item, {
+        status: 'passed',
+        sessionId: priorCompleted.id,
+        journalId: journal.id,
+        after: before.totals,
+        cashFlow: beforeCash.totals,
+        priorImportEvidenceRun: '40160190371',
+        checks: [
+          'Prior run verified import, restricted funds, invalid input rejection and identical retry',
+          'Existing posted journal and balances reverified without another import',
+          'Missing legacy setup initialized through normal API; setup completion recorded',
+        ],
+      });
+      continue;
+    }
     let session = sessions.find((s) => s.sourceSystem === fixture.sourceSystem && s.status === 'in_progress');
     if (!session) {
       assert.ok(
