@@ -66,6 +66,8 @@ try {
       await api('/periods/open', { periodId: openingPeriod.id, expectedVersion: openingPeriod.version });
     else assert.equal(openingPeriod.status, 'open', 'Do not bypass a closed opening-balance period.');
     const before = (await api(`/reports/statement-of-financial-position?asOf=${date}`)).report;
+    const beforeCash = (await api(`/reports/statement-of-cash-flows?from=${date}&to=${date}`)).report;
+    const beforeActivities = (await api(`/reports/statement-of-activities?from=${date}&to=${date}`)).report;
     const beforeGeneral = (await api(`/reports/statement-of-financial-position?asOf=${date}&fundId=fund_general`))
       .report;
     item.before = before.totals;
@@ -160,6 +162,14 @@ try {
     item.restrictedFund = { id: building.id, totals: restricted.totals };
     const tb = (await api(`/reports/trial-balance?from=${date.slice(0, 4)}-01-01&to=${date}`)).report;
     assert.equal(tb.totals.difference, 0);
+    const cash = (await api(`/reports/statement-of-cash-flows?from=${date}&to=${date}`)).report;
+    const activities = (await api(`/reports/statement-of-activities?from=${date}&to=${date}`)).report;
+    assert.deepEqual(activities.totals, beforeActivities.totals);
+    assert.equal(cash.totals.beginningCash - beforeCash.totals.beginningCash, 2500000);
+    assert.equal(cash.totals.endingCash - beforeCash.totals.endingCash, 2500000);
+    assert.equal(cash.totals.netCashChange, beforeCash.totals.netCashChange);
+    assert.equal(cash.validation.status, 'validated');
+    item.cashFlow = cash.totals;
     const completed = (await api(`/migration/sessions/${session.id}`)).session;
     assert.equal(completed.status, 'completed');
     item.checks.push('trial balance, balance sheet delta and completed migration session verified');
