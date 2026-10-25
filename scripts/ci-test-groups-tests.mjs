@@ -12,6 +12,35 @@ assert.equal(new Set(combined).size, combined.length, 'CI partitions must not ov
 for (const name of ciGroupNames) assert.ok(groups[name].length, `${name} must contain tests`);
 assert.deepEqual(partitionCiTests(['scripts/new-feature-tests.mjs']).other, ['scripts/new-feature-tests.mjs']);
 
+const timing = JSON.parse(read('config/ci-test-durations.json'));
+assert.ok(Number.isFinite(timing.defaultSeconds) && timing.defaultSeconds > 0);
+for (const seconds of Object.values(timing.durationSeconds)) assert.ok(Number.isFinite(seconds) && seconds > 0);
+for (const [name, tests] of Object.entries(groups)) {
+  const expectedOrder = testGroups.all.filter((test) => tests.includes(test));
+  assert.deepEqual(tests, expectedOrder, `${name} must retain manifest order`);
+  const seconds = tests.reduce((sum, test) => sum + (timing.durationSeconds[test] ?? timing.defaultSeconds), 0);
+  if (name.startsWith('browser-')) assert.ok(seconds <= 65, `${name} exceeds the 65-second execution budget`);
+  if (name.startsWith('core-')) assert.ok(seconds <= 80, `${name} exceeds the 80-second execution budget`);
+}
+assert.ok(
+  [...groups['core-1'], ...groups['core-2']].includes('scripts/browser-typescript-tests.mjs'),
+  'Source-only TypeScript checks should not consume the Chromium jobs'
+);
+
+// Heavy tests in the same modulo position should still spread over all runners.
+const sample = Array.from({ length: 16 }, (_, index) => `scripts/example-${index}-browser-tests.mjs`);
+const costs = Object.fromEntries(sample.map((test, index) => [test, index % 4 === 0 ? 9 - index / 4 : 1]));
+const balanced = partitionCiTests(sample, costs);
+for (const name of ciGroupNames.filter((name) => name.startsWith('browser-'))) {
+  assert.ok(balanced[name].reduce((sum, test) => sum + costs[test], 0) <= 11, 'Heavy commands must be balanced');
+}
+assert.deepEqual(
+  partitionCiTests(sample, costs),
+  balanced,
+  'Every runner must compute the same deterministic assignment'
+);
+assert.equal(Object.values(partitionCiTests([...sample, 'scripts/new-browser-tests.mjs'], costs)).flat().length, 17);
+
 // Catch new Playwright consumers that do not follow the browser filename convention.
 for (const spec of testGroups.all) {
   if (spec.startsWith('node-check:') || spec.endsWith(' --static-only')) continue;
