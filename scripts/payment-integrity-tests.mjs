@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { processStripeWebhookEvent } from '../src/handlers/stripe.js';
 import { storeDonorOffering, loadDonorOfferings, paidOfferingStatus } from '../src/handlers/parish-donor-offerings.js';
 import { createFundAllocationResolver } from '../src/lib/fund-reporting.js';
+import { sendDonorDonationReceiptEmail } from '../src/handlers/donor.js';
 import { sendDonationReceiptMessage } from '../src/payments/donation-receipts.js';
 import { initializeLedger } from '../src/accounting/index.js';
 import { handleCheckout } from '../src/handlers/parish-checkout.js';
@@ -138,6 +139,30 @@ const invoice = {
 const event = (type, object) => ({ type, data: { object } });
 
 try {
+  const blockedFetch = globalThis.fetch;
+  for (const receiptEnv of [{}, { AGAPAY_FROM_EMAIL: 'AGAPAY <onboarding@agapay.app>' }]) {
+    let sentReceipt;
+    globalThis.fetch = async (url, options) => {
+      assert.equal(url, 'https://api.resend.com/emails');
+      sentReceipt = JSON.parse(options.body);
+      return Response.json({ id: 'receipt-sender-test' });
+    };
+    const receipt = await sendDonorDonationReceiptEmail(
+      {
+        ...receiptEnv,
+        RESEND_API_KEY: 'test-key',
+        AGAPAY_REPLY_TO_EMAIL: 'support@agapay.app',
+      },
+      { ...base, isDiagnostic: true, amountCents: 1000, chargeCents: 1061 }
+    );
+    assert.equal(receipt.status, 'sent');
+    assert.equal(sentReceipt.from, 'AGAPAY Receipts <receipts@agapay.app>');
+    assert.equal(sentReceipt.reply_to, 'support@agapay.app');
+    assert.deepEqual(sentReceipt.to, ['audit@example.invalid']);
+    assert.match(sentReceipt.subject, /AGAPAY receipt/);
+  }
+  globalThis.fetch = blockedFetch;
+  console.log('PASS - donation receipts use their own sender even when the global onboarding sender is configured');
   for (const invoiceFirst of [false, true]) {
     const env = await fixture();
     const saved = await storeDonorOffering(env, base);
