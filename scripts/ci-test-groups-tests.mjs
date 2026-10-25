@@ -26,12 +26,15 @@ for (const spec of testGroups.all) {
 
 const workflow = read('.github/workflows/test-suite.yml');
 assert.match(workflow, /workflow_call:/);
-const matrix = workflow.match(/group: \[([^\]]+)\]/);
-assert.ok(matrix, 'The reusable workflow must declare the group matrix');
-assert.deepEqual(
-  matrix[1].split(',').map((name) => name.trim()),
-  ciGroupNames
-);
+const matrix = workflow.match(/group:\s*\[([^\]]+)\]/);
+const matrixNames = matrix
+  ? matrix[1]
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean)
+  : [...workflow.matchAll(/^\s{10}- ([\w-]+)$/gm)].map((match) => match[1]);
+assert.ok(matrixNames.length, 'The reusable workflow must declare the group matrix');
+assert.deepEqual(matrixNames, ciGroupNames);
 assert.match(workflow, /fail-fast: false/);
 assert.match(workflow, /run: npm run precheck/);
 assert.match(workflow, /run: node scripts\/ci-test-groups-tests\.mjs/);
@@ -41,6 +44,19 @@ assert.match(
 );
 assert.match(workflow, /run: node scripts\/run-tests\.mjs --ci-group \$\{\{ matrix\.group \}\}/);
 assert.doesNotMatch(workflow, /secrets:|continue-on-error:|max-parallel:/);
+
+const qualityWorkflow = read('.github/workflows/quality-suite.yml');
+const qualityCommands = [...qualityWorkflow.matchAll(/^\s+command: (.+)$/gm)].flatMap((match) =>
+  match[1].split(' && ')
+);
+const requiredQualityCommands = JSON.parse(read('package.json')).scripts.quality.split(' && ');
+assert.deepEqual(
+  qualityCommands.sort(),
+  requiredQualityCommands.sort(),
+  'Parallel quality must preserve every npm run quality command exactly once'
+);
+assert.match(qualityWorkflow, /fail-fast: false/);
+assert.doesNotMatch(qualityWorkflow, /secrets:|continue-on-error:/);
 
 for (const path of ['.github/workflows/deploy.yml', '.github/workflows/deploy-staging.yml']) {
   const caller = read(path);
@@ -52,6 +68,9 @@ for (const path of ['.github/workflows/deploy.yml', '.github/workflows/deploy-st
     'Failed, skipped, or cancelled jobs must fail the Test gate'
   );
   assert.match(caller, /needs: \[quality, test\]/);
+  assert.match(caller, /uses: \.\/\.github\/workflows\/quality-suite\.yml/);
+  assert.match(caller, /quality:\s+name: Quality\s+needs: quality-checks\s+if: always\(\)/);
+  assert.ok(caller.includes('run: test "$QUALITY_RESULT" = success'));
 }
 
 for (const args of [['--ci-group'], ['--ci-group', 'unknown'], ['--ci-group', 'core', 'all']]) {

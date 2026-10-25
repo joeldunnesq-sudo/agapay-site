@@ -1,0 +1,31 @@
+name: Parallel quality checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Quality (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: types and builds
+            command: npm run build:server:check && npm run build:browser:check && npm run typecheck
+          - name: lint
+            command: npm run lint -- --no-cache && node scripts/lint-warning-baseline-tests.mjs
+          - name: formatting and architecture
+            command: npm run assets:check && npm run format:check && node scripts/source-size-budget-tests.mjs && node scripts/accounting-migration-ledger-tests.mjs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Run quality partition
+        run: ${{ matrix.command }}

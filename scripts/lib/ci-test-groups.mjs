@@ -3,7 +3,7 @@ import { testGroups } from '../test-manifest.mjs';
 // Partition the full manifest, rather than running overlapping local test tags.
 // Keep each job sequential: browser fixtures and tests may share local ports/files.
 const domainNames = ['accounting', 'browser', 'payments', 'directory', 'core', 'other'];
-const partitionCounts = { accounting: 2, browser: 3, core: 2 };
+const partitionCounts = { accounting: 2, browser: 4, core: 2 };
 export const ciGroupNames = Object.freeze(
   domainNames.flatMap((name) =>
     partitionCounts[name] ? Array.from({ length: partitionCounts[name] }, (_, index) => `${name}-${index + 1}`) : [name]

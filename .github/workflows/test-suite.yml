@@ -30,7 +30,20 @@ jobs:
       # Preserve results from independent suites even when another suite fails.
       fail-fast: false
       matrix:
-        group: [accounting-1, accounting-2, browser-1, browser-2, browser-3, payments, directory, core-1, core-2, other]
+        group:
+          [
+            accounting-1,
+            accounting-2,
+            browser-1,
+            browser-2,
+            browser-3,
+            browser-4,
+            payments,
+            directory,
+            core-1,
+            core-2,
+            other,
+          ]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
