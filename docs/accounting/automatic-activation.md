@@ -18,6 +18,20 @@ Without the secret, the welcome screen explains that automatic setup awaits plat
 
 ## Resource lifecycle and release operation
 
+### Staging walkthroughs
+
+Staging uses the separate `agapay-accounting-provisioner-staging` Worker and
+`agapay-accounting-activation-staging` Workflow, both backed by the staging central
+registry. Deploy it with `npx wrangler deploy --config wrangler.accounting-provisioner.json --env staging`.
+Install a dedicated D1-only token on that private Worker with
+`npx wrangler secret put ACCOUNTING_D1_API_TOKEN --config wrangler.accounting-provisioner.json --env staging`.
+Do not copy the production provisioner's secret or the CI deployment token.
+The staging release deploys the private service before the main staging application.
+Fresh-parish walkthroughs should use automatic activation rather than prepared books,
+so they exercise database creation, ownership metadata, migrations and validation.
+The token is account-scoped; the private service enforces staging registry and owner
+checks. Keep its value out of evidence files and track its expiration operationally.
+
 - One deterministic Workflow and D1 name per parish/environment. Central entity, database registry and operation reservation are atomic. No submitted database UUID or environment is accepted.
 - Each durable step rechecks parish verification, entitlement, closure and entity lifecycle. D1 creation records the provider ID before writing owner metadata. Existing unowned books require support review; they are not adopted, overwritten or deleted automatically.
 - Apply every checksum-verified migration in `accounting-migrations/manifest.json`, including required chart seeding before migration 0006. Each migration and its migration records commit as a batch. An interrupted workflow reuses its database and migration journal.

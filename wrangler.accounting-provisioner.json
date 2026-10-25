@@ -28,6 +28,30 @@
       "class_name": "AccountingProvisioningWorkflow"
     }
   ],
+  "env": {
+    "staging": {
+      "name": "agapay-accounting-provisioner-staging",
+      "vars": {
+        "AGAPAY_ENVIRONMENT": "staging",
+        "PARISH_PORTABILITY_ENABLED": "true",
+        "CLOUDFLARE_ACCOUNT_ID": "9198ae5ea8adc59e5dedd1b09c9478b9"
+      },
+      "d1_databases": [
+        {
+          "binding": "AGAPAY_DB",
+          "database_name": "agapay-staging",
+          "database_id": "cc6c97d1-01aa-4e3a-a5fe-7df467396a01"
+        }
+      ],
+      "workflows": [
+        {
+          "binding": "ACCOUNTING_ACTIVATION",
+          "name": "agapay-accounting-activation-staging",
+          "class_name": "AccountingProvisioningWorkflow"
+        }
+      ]
+    }
+  },
   "rules": [
     {
       "type": "Text",

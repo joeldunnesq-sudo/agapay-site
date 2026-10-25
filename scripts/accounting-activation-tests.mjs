@@ -22,6 +22,19 @@ import {
 } from '../src/accounting/provisioning/adapters.js';
 import { fiscalCalendar } from '../src/accounting/provisioning/fiscal-calendar.js';
 
+const provisionerConfig = JSON.parse(readFileSync('wrangler.accounting-provisioner.json', 'utf8'));
+const stagingProvisioner = provisionerConfig.env.staging;
+assert.equal(stagingProvisioner.vars.AGAPAY_ENVIRONMENT, 'staging');
+assert.equal(stagingProvisioner.d1_databases[0].database_name, 'agapay-staging');
+assert.notEqual(stagingProvisioner.d1_databases[0].database_id, provisionerConfig.d1_databases[0].database_id);
+assert.notEqual(stagingProvisioner.name, provisionerConfig.name);
+assert.notEqual(stagingProvisioner.workflows[0].name, provisionerConfig.workflows[0].name);
+assert.equal(provisionerConfig.workers_dev, false);
+assert.equal(provisionerConfig.preview_urls, false);
+const stagingApplicationConfig = readFileSync('wrangler.toml', 'utf8').split('[env.staging]')[1];
+assert.match(stagingApplicationConfig, /service = "agapay-accounting-provisioner-staging"/);
+assert.doesNotMatch(stagingApplicationConfig, /service = "agapay-accounting-provisioner"/);
+
 function database() {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec('PRAGMA foreign_keys=ON');

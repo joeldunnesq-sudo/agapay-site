@@ -23,7 +23,7 @@ class MemoryKV {
     };
   }
 }
-async function fixture(overrides = {}) {
+async function fixture(overrides = {}, sessionOptions = {}) {
   const registration = {
     reference: 'REG-A',
     parishId: 'a',
@@ -39,7 +39,7 @@ async function fixture(overrides = {}) {
     taxLegalName: 'Legal A',
     ...overrides,
   };
-  const session = await issueParishDashboardSession(registration);
+  const session = await issueParishDashboardSession(registration, sessionOptions);
   const env = {
     AGAPAY_ENVIRONMENT: 'test',
     AGAPAY_REGISTRATIONS: new MemoryKV(),
@@ -160,7 +160,21 @@ try {
   assert.equal(await verifyParishDashboardPassword(secured, 'new-test-password-123'), true);
   assert.equal(secured.parishDashboardToken, '');
   assert.equal(secured.parishDashboardSessions.length, 1);
-  assert.equal(secured.parishDashboardSessions[0].mfaVerifiedAt, '', 'new session does not inherit MFA assurance');
+  assert.equal(secured.parishDashboardSessions[0].mfaVerifiedAt, '', 'unverified rotation cannot create MFA assurance');
+
+  for (const accessType of ['primary_parish', 'staff']) {
+    const mfaVerifiedAt = new Date(Date.now() - 60_000).toISOString();
+    const verified = await fixture({}, { mfaVerifiedAt, accessType });
+    const response = await verified.call('PATCH', { newDashboardPassword: 'verified-rotation-password-123' });
+    assert.equal(response.status, 200);
+    const { token } = await response.json();
+    assert.equal((await verified.call('GET', undefined, verified.session.token)).status, 401);
+    assert.equal((await verified.call('GET', undefined, token)).status, 200);
+    const sessions = (await verified.saved()).parishDashboardSessions;
+    assert.equal(sessions.length, 1);
+    assert.equal(sessions[0].mfaVerifiedAt, mfaVerifiedAt, 'rotation preserves the original MFA timestamp');
+    assert.equal(sessions[0].accessType, accessType, 'rotation cannot promote staff access to primary parish');
+  }
 
   const interest = await fixture({ subscriptionTier: 'starter' });
   for (const featureId of ['ministry-service', 'pledge-tracker', 'giving-plus', 'unknown'])
