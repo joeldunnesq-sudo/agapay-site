@@ -259,6 +259,11 @@ PRIVILEGED_MFA_REQUIRED = "true"
 [env.staging.triggers]
 crons = []
 
+[[env.staging.services]]
+binding = "ACCOUNTING_PROVISIONER"
+service = "agapay-accounting-provisioner-staging"
+entrypoint = "AccountingProvisionerService"
+
 [[env.staging.kv_namespaces]]
 binding = "AGAPAY_REGISTRATIONS"
 id = "671fa037f7fc425189e356691b758f5a"

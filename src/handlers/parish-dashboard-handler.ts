@@ -53,6 +53,7 @@ import {
   getBearerToken,
   hasProductionStore,
   issueParishDashboardSession,
+  resolveParishDashboardSession,
   json,
   missingProductionStoreResponse,
   rateLimit,
@@ -578,12 +579,16 @@ export async function handleParishDashboard(request: Request, env: DashboardEnv,
 
     let nextSession: DashboardSession | null = null;
     if (requestedPassword) {
+      const currentSession = await resolveParishDashboardSession(current, token);
       updated = await applyParishDashboardPassword(updated, requestedPassword, { temporary: false });
       updated = {
         ...updated,
         parishDashboardSessions: [],
       };
-      nextSession = await issueParishDashboardSession(updated);
+      nextSession = await issueParishDashboardSession(updated, {
+        mfaVerifiedAt: String(currentSession?.mfaVerifiedAt || ''),
+        accessType: String(currentSession?.accessType || 'primary_parish'),
+      });
       updated = nextSession.registration;
     }
 

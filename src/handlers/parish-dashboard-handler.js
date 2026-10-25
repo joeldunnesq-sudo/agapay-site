@@ -4,6 +4,7 @@ import {
   getBearerToken,
   hasProductionStore,
   issueParishDashboardSession,
+  resolveParishDashboardSession,
   json,
   missingProductionStoreResponse,
   rateLimit,
@@ -496,12 +497,16 @@ async function handleParishDashboard(request, env, parishId) {
     };
     let nextSession = null;
     if (requestedPassword) {
+      const currentSession = await resolveParishDashboardSession(current, token);
       updated = await applyParishDashboardPassword(updated, requestedPassword, { temporary: false });
       updated = {
         ...updated,
         parishDashboardSessions: [],
       };
-      nextSession = await issueParishDashboardSession(updated);
+      nextSession = await issueParishDashboardSession(updated, {
+        mfaVerifiedAt: String(currentSession?.mfaVerifiedAt || ''),
+        accessType: String(currentSession?.accessType || 'primary_parish'),
+      });
       updated = nextSession.registration;
     }
     const accountingCatalogChanged =
