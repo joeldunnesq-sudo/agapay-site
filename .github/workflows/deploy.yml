@@ -160,12 +160,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-          cache: npm
-
-      - run: npm ci
 
       - name: Run production route and health smoke
-        run: npm run prelaunch
+        run: node scripts/prelaunch-checks.mjs --live-only
         env:
           AGAPAY_BASE_URL: https://agapay.app
 
