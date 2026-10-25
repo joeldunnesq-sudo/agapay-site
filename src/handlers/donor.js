@@ -85,7 +85,7 @@ async function sendDonorDonationReceiptEmail(env, offering = {}) {
   const donorEmail = normalizeEmail(offering.donorEmail);
   if (!donorEmail) return { status: 'missing_recipient' };
   const appUrl = env.AGAPAY_APP_URL || 'https://agapay.app';
-  const from = env.AGAPAY_FROM_EMAIL || 'AGAPAY <onboarding@agapay.app>';
+  const from = 'AGAPAY Receipts <receipts@agapay.app>';
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app';
   const donorName = htmlEscape(offering.donorName || 'friend');
   const lineItem = htmlEscape(offeringLabel(offering));
