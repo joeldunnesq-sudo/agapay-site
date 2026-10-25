@@ -127,6 +127,17 @@ export async function updateAccountingSettings(
     throw new AccountingDatabaseError('Accounting settings changed. Reload and try again.', {
       details: { conflict: true },
     });
+  const completeSetup = patch.completeSetup === true;
+  if (completeSetup) {
+    if (Object.keys(patch).some((key) => key !== 'completeSetup'))
+      throw new ValidationError('Save setting changes before finishing Accounting setup.');
+    const overview = await getAccountingSetupOverview(db, { actor });
+    const incomplete = overview.checklist.filter((item) => item.id !== 'complete' && !item.complete);
+    if (incomplete.length || overview.warnings.length)
+      throw new ValidationError(
+        'Address the setup checklist and validation warnings before finishing Accounting setup.'
+      );
+  }
   const currency = String(patch.baseCurrency ?? current.base_currency)
     .trim()
     .toUpperCase();
@@ -152,7 +163,11 @@ export async function updateAccountingSettings(
   }
   const result = await run(
     db,
-    `UPDATE accounting_settings SET base_currency=?,fiscal_year_start_month=?,pledge_comparison_account_id=?,opening_balances_required=?,opening_balances_disposition=?,account_numbers_required=?,allow_custom_account_numbers=?,soft_close_override_enabled=?,settings_version=settings_version+1,updated_at=datetime('now') WHERE id='primary' AND settings_version=?`,
+    `UPDATE accounting_settings SET base_currency=?,fiscal_year_start_month=?,pledge_comparison_account_id=?,opening_balances_required=?,opening_balances_disposition=?,account_numbers_required=?,allow_custom_account_numbers=?,soft_close_override_enabled=?,
+    setup_completed_at=CASE WHEN ? THEN COALESCE(setup_completed_at,datetime('now')) ELSE setup_completed_at END,
+    setup_completed_by_actor_id=CASE WHEN ? THEN COALESCE(setup_completed_by_actor_id,?) ELSE setup_completed_by_actor_id END,
+    setup_completed_by_actor_type=CASE WHEN ? THEN COALESCE(setup_completed_by_actor_type,?) ELSE setup_completed_by_actor_type END,
+    settings_version=settings_version+1,updated_at=datetime('now') WHERE id='primary' AND settings_version=?`,
     currency,
     month,
     pledgeComparisonAccountId,
@@ -161,6 +176,11 @@ export async function updateAccountingSettings(
     flag(patch.accountNumbersRequired, boolean(current.account_numbers_required)),
     flag(patch.allowCustomAccountNumbers, boolean(current.allow_custom_account_numbers)),
     flag(patch.softCloseOverrideEnabled, boolean(current.soft_close_override_enabled)),
+    completeSetup ? 1 : 0,
+    completeSetup ? 1 : 0,
+    actor.id,
+    completeSetup ? 1 : 0,
+    actor.type || 'platform_user',
     Number(expectedVersion)
   );
   if (!result.meta?.changes)

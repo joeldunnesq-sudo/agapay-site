@@ -18,6 +18,7 @@ import {
   commitOpeningBalanceImport,
 } from '../src/accounting/migration/service.js';
 import { statementOfFinancialPosition, trialBalance } from '../src/accounting/reports/service.js';
+import { getAccountingSetupOverview, updateAccountingSettings } from '../src/accounting/setup/service.js';
 
 const actor = {
   id: 'rehearsal-treasurer',
@@ -42,6 +43,16 @@ for (const fixture of onboardingFixtures) {
   }
   await initializeProvisionedCalendar(db, { startDate: '2026-10-01', fiscalYearStartMonth: 1 }, 'onboarding-rehearsal');
   const common = { actor, entitlementTier: 'parish' };
+  const pendingSetup = await getAccountingSetupOverview(db, { actor });
+  await assert.rejects(
+    () =>
+      updateAccountingSettings(db, {
+        actor,
+        expectedVersion: pendingSetup.settings.version,
+        patch: { completeSetup: true },
+      }),
+    /setup checklist/
+  );
   const session = await createMigrationSession(db, { ...common, sourceSystem: fixture.sourceSystem });
   const preview = await previewActivationChart(db, { actor, ...fixture.chart });
   assert.deepEqual(preview.errors, []);
@@ -131,6 +142,27 @@ for (const fixture of onboardingFixtures) {
   await assert.rejects(
     () => commitOpeningBalanceImport(db, { ...input, effectiveDate: '2026-10-02', acknowledgeExistingActivity: true }),
     /different input/
+  );
+  const ready = await getAccountingSetupOverview(db, { actor });
+  await assert.rejects(
+    () =>
+      updateAccountingSettings(db, {
+        actor,
+        expectedVersion: ready.settings.version,
+        patch: { completeSetup: true, openingBalancesDisposition: 'pending' },
+      }),
+    /Save setting changes/
+  );
+  const completed = await updateAccountingSettings(db, {
+    actor,
+    expectedVersion: ready.settings.version,
+    patch: { completeSetup: true },
+  });
+  assert.equal(completed.setupCompleted, true);
+  assert.ok((await getAccountingSetupOverview(db, { actor })).checklist.every((item) => item.complete));
+  assert.equal(
+    db.sqlite.prepare('SELECT setup_completed_by_actor_id actor FROM accounting_settings').get().actor,
+    actor.id
   );
   console.log(
     `PASS - ${fixture.sourceSystem}: empty books, chart, vendors, funds, opening balances, reports and retry`

@@ -1,23 +1,33 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { onboardingFixtures } from './fixtures/accounting-onboarding.mjs';
 import { loginGateParish } from './lib/release-gate-mfa.mjs';
 import { writeArtifact } from './lib/accounting-release-gates.mjs';
 
 const baseUrl = 'https://agapay-site-staging.joeldunnesq.workers.dev';
 const evidence = { target: baseUrl, generatedAt: new Date().toISOString(), status: 'running', cases: [] };
+const fresh = process.env.ACCOUNTING_ONBOARDING_FRESH_SESSIONS_FILE
+  ? JSON.parse(readFileSync(process.env.ACCOUNTING_ONBOARDING_FRESH_SESSIONS_FILE, 'utf8'))
+  : null;
 try {
   for (const [index, fixture] of onboardingFixtures.entries()) {
     const side = index ? 'B' : 'A';
-    const parishId = process.env[`ACCOUNTING_GATE_PARISH_${side}_ID`];
-    assert.equal(parishId, index ? 'st-tester-san-antonio' : 'st-fiacre');
+    const supplied = fresh?.find((item) => item.source === fixture.sourceSystem);
+    const parishId = supplied?.parishId || process.env[`ACCOUNTING_GATE_PARISH_${side}_ID`];
+    assert.equal(
+      parishId,
+      fresh ? `st-accounting-${fixture.sourceSystem}-rehearsal-marvin` : index ? 'st-tester-san-antonio' : 'st-fiacre'
+    );
     const root = `/api/parish/dashboard/${encodeURIComponent(parishId)}`;
     const item = { source: fixture.sourceSystem, parishId, status: 'running', checks: [] };
     evidence.cases.push(item);
-    const { payload: login } = await loginGateParish({
-      baseUrl,
-      parishId,
-      parishPassword: process.env[`ACCOUNTING_GATE_PARISH_${side}_PASSWORD`],
-    });
+    const { payload: login } = supplied
+      ? { payload: { token: supplied.token } }
+      : await loginGateParish({
+          baseUrl,
+          parishId,
+          parishPassword: process.env[`ACCOUNTING_GATE_PARISH_${side}_PASSWORD`],
+        });
     const headers = { authorization: `Bearer ${login.token}` };
     async function request(path, body, expected = 200) {
       assert.ok(path.startsWith(root + '/'));
@@ -33,13 +43,17 @@ try {
       return p;
     }
     const staff = await request(root + '/accounting-access/verify', {
-      profileId: process.env[`ACCOUNTING_GATE_STAFF_${side}_PROFILE_ID`],
-      pin: process.env[`ACCOUNTING_GATE_STAFF_${side}_PIN`],
+      profileId: supplied?.profileId || process.env[`ACCOUNTING_GATE_STAFF_${side}_PROFILE_ID`],
+      pin: supplied?.pin || process.env[`ACCOUNTING_GATE_STAFF_${side}_PIN`],
     });
     headers['X-AGAPAY-Accounting-Profile'] = staff.profile.id;
     headers['X-AGAPAY-Accounting-Token'] = staff.token;
     const api = (path, body, expected) => request(root + '/accounting' + path, body, expected);
-    const setup = (await api('/setup')).overview;
+    let setup = (await api('/setup')).overview;
+    if (fresh && !setup.initialization.operational) {
+      await api('/setup/initialize', {}, 201);
+      setup = (await api('/setup')).overview;
+    }
     assert.equal(setup.database.status, 'ready');
     assert.equal(setup.database.health, 'healthy');
     const date = new Date().toISOString().slice(0, 10);
@@ -141,6 +155,18 @@ try {
     const completed = (await api(`/migration/sessions/${session.id}`)).session;
     assert.equal(completed.status, 'completed');
     item.checks.push('trial balance, balance sheet delta and completed migration session verified');
+    const settings = (await api('/settings')).settings;
+    // Use the same versioned Settings action as the dashboard Finish setup button.
+    const finishResponse = await fetch(baseUrl + root + '/accounting/settings', {
+      method: 'PATCH',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: JSON.stringify({ expectedVersion: settings.version, patch: { completeSetup: true } }),
+    });
+    assert.equal(finishResponse.status, 200);
+    assert.equal((await finishResponse.json()).settings.setupCompleted, true);
+    const finished = (await api('/setup')).overview;
+    assert.ok(finished.checklist.every((check) => check.complete));
+    item.checks.push('Accounting setup completion recorded with all checklist items complete');
     item.status = 'passed';
     console.log(`PASS - ${fixture.sourceSystem} staging imports, opening balances, retry and reports`);
   }
