@@ -1,6 +1,7 @@
 import { includesJavaScriptFragment } from './lib/javascript-source-contract.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 const attachmentBytes = Buffer.from('synthetic attachment');
 const attachmentMetadata = {
   id: 'existing-attachment',
@@ -48,7 +49,7 @@ async function run({
           'Only authentication can write.'
         );
       }
-      const replacement = override(path, options);
+      const replacement = await override(path, options);
       if (replacement) return replacement;
       let payload;
       if (path === '/api/health') payload = { ok: true, checks: { d1: { ok: true }, kv: { ok: true } } };
@@ -301,3 +302,59 @@ for (const defect of ['empty', 'corrupt', 'missing', 'public-cache']) {
 }
 assert.equal(attached.evidence.checks.find((c) => c.name === 'accounting-attachment-download').passed, true);
 console.log('PASS - attachment content, metadata hash, download failure, private cache headers, and required coverage');
+
+let activeReads = 0;
+let peakReads = 0;
+const concurrent = await run({
+  override: async (path, options) => {
+    if (!path.includes('/accounting/')) return undefined;
+    assert.equal(options.method, 'GET', 'Only independent financial reads may overlap.');
+    activeReads += 1;
+    peakReads = Math.max(peakReads, activeReads);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    activeReads -= 1;
+    if (path.endsWith('/payables/bills')) return Response.json({ ok: true, bills: [] });
+    if (path.endsWith('/governance/health'))
+      return Response.json({ ok: true, health: { status: 'healthy', protectiveState: { state: 'normal' } } });
+    return Response.json({ ok: true });
+  },
+});
+assert.equal(concurrent.evidence.status, 'passed');
+assert.equal(peakReads, 3, 'Financial reads must overlap with a concurrency limit of three.');
+assert.equal(activeReads, 0, 'All reads must finish before reporting success.');
+
+const deployWorkflow = await readFile(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8');
+const smokeJob = deployWorkflow.slice(deployWorkflow.indexOf('  post-deploy-accounting-smoke:'));
+assert.match(smokeJob, /node scripts\/prelaunch-checks\.mjs --live-only/);
+assert.doesNotMatch(smokeJob, /npm ci|cache: npm/);
+const { testGroups } = await import('./test-manifest.mjs');
+assert.ok(testGroups.all.includes('scripts/prelaunch-checks.mjs'), 'Source prelaunch coverage must run before deploy.');
+console.log('PASS - bounded concurrent reads, complete evidence, and dependency-free post-deploy workflow');
+
+const liveOnly = spawnSync(
+  process.execPath,
+  [
+    '--input-type=module',
+    '-e',
+    `
+  import assert from 'node:assert/strict';
+  import { registerHooks } from 'node:module';
+  registerHooks({ resolve(specifier, context, next) {
+    assert.ok(/^(node:|file:|\\.)/.test(specifier), 'Live smoke must not require installed packages: ' + specifier);
+    return next(specifier, context);
+  }});
+  process.argv.push('--live-only');
+  process.env.AGAPAY_BASE_URL = 'https://fixture.invalid';
+  const routes = [];
+  globalThis.fetch = async (url) => {
+    routes.push(new URL(url).pathname);
+    return new Response('AGAPAY', { status: 200 });
+  };
+  await import('./scripts/prelaunch-checks.mjs');
+  assert.deepEqual(routes, ['/', '/give', '/marketplace', '/directory', '/onboarding', '/register', '/api/security/config']);
+`,
+  ],
+  { encoding: 'utf8' }
+);
+assert.equal(liveOnly.status, 0, liveOnly.stderr);
+console.log('PASS - live-only public checks retain all routes without third-party packages');
