@@ -805,6 +805,11 @@ export async function commitOpeningBalanceImport(
     sourceSystem: session.source_system,
     correlationId: migrationSessionId,
   });
+  await run(
+    db,
+    `UPDATE accounting_settings SET opening_balances_disposition='posted',settings_version=settings_version+1,updated_at=datetime('now')
+    WHERE id='primary' AND opening_balances_disposition<>'posted'`
+  );
   await updateStep(db, migrationSessionId, 'openingBalance', 'completed');
   await completeSessionIfReady(db, migrationSessionId);
   return entry;

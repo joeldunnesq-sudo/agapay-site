@@ -213,6 +213,7 @@ for (const fixture of onboardingFixtures) {
     patch: { completeSetup: true },
   });
   assert.equal(completed.setupCompleted, true);
+  assert.equal(completed.openingBalancesDisposition, 'posted');
   assert.ok((await getAccountingSetupOverview(db, { actor })).checklist.every((item) => item.complete));
   assert.equal(
     db.sqlite.prepare('SELECT setup_completed_by_actor_id actor FROM accounting_settings').get().actor,
