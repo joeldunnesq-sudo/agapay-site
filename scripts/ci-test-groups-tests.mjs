@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { testGroups } from './test-manifest.mjs';
+import { ciGroupNames, partitionCiTests } from './lib/ci-test-groups.mjs';
+
+const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const groups = partitionCiTests();
+const combined = Object.values(groups).flat();
+assert.deepEqual([...combined].sort(), [...testGroups.all].sort(), 'CI must run every full-suite command exactly once');
+assert.equal(new Set(combined).size, combined.length, 'CI partitions must not overlap');
+for (const name of ciGroupNames) assert.ok(groups[name].length, `${name} must contain tests`);
+assert.deepEqual(partitionCiTests(['scripts/new-feature-tests.mjs']).other, ['scripts/new-feature-tests.mjs']);
+
+// Catch new Playwright consumers that do not follow the browser filename convention.
+for (const spec of testGroups.all) {
+  if (spec.startsWith('node-check:') || spec.endsWith(' --static-only')) continue;
+  const source = read(spec.split(/\s+/)[0]);
+  if (/from ['"]playwright['"]|import\(['"]playwright['"]\)/.test(source)) {
+    assert.ok(
+      ciGroupNames.filter((name) => name.startsWith('browser-')).some((name) => groups[name].includes(spec)),
+      `${spec} requires a Chromium job`
+    );
+  }
+}
+
+const workflow = read('.github/workflows/test-suite.yml');
+assert.match(workflow, /workflow_call:/);
+const matrix = workflow.match(/group: \[([^\]]+)\]/);
+assert.ok(matrix, 'The reusable workflow must declare the group matrix');
+assert.deepEqual(
+  matrix[1].split(',').map((name) => name.trim()),
+  ciGroupNames
+);
+assert.match(workflow, /fail-fast: false/);
+assert.match(workflow, /run: npm run precheck/);
+assert.match(workflow, /run: node scripts\/ci-test-groups-tests\.mjs/);
+assert.match(
+  workflow,
+  /if: startsWith\(matrix\.group, 'browser-'\)\s+run: npx playwright install chromium --with-deps/
+);
+assert.match(workflow, /run: node scripts\/run-tests\.mjs --ci-group \$\{\{ matrix\.group \}\}/);
+assert.doesNotMatch(workflow, /secrets:|continue-on-error:|max-parallel:/);
+
+for (const path of ['.github/workflows/deploy.yml', '.github/workflows/deploy-staging.yml']) {
+  const caller = read(path);
+  assert.match(caller, /test-suites:\s+name: Parallel tests\s+uses: \.\/\.github\/workflows\/test-suite\.yml/);
+  assert.match(caller, /test:\s+name: Test\s+needs: test-suites\s+if: always\(\)/);
+  assert.match(caller, /TEST_RESULT: \$\{\{ needs\.test-suites\.result \}\}/);
+  assert.ok(
+    caller.includes('run: test "$TEST_RESULT" = success'),
+    'Failed, skipped, or cancelled jobs must fail the Test gate'
+  );
+  assert.match(caller, /needs: \[quality, test\]/);
+}
+
+for (const args of [['--ci-group'], ['--ci-group', 'unknown'], ['--ci-group', 'core', 'all']]) {
+  const result = spawnSync(process.execPath, ['scripts/run-tests.mjs', ...args], { encoding: 'utf8' });
+  assert.equal(result.status, 2, `Invalid selection must fail: ${args.join(' ')}`);
+}
+console.log(
+  `PASS - ${combined.length} commands partitioned exactly once: ${ciGroupNames.map((name) => `${name}=${groups[name].length}`).join(', ')}`
+);
