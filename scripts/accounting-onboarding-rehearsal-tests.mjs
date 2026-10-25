@@ -24,6 +24,7 @@ import {
   statementOfCashFlows,
 } from '../src/accounting/reports/service.js';
 import { openAccountingPeriod } from '../src/accounting/setup/periods.js';
+import { resolveOperationalAccountingDatabase } from '../src/accounting/source-wiring.js';
 import { getAccountingSetupOverview, updateAccountingSettings } from '../src/accounting/setup/service.js';
 
 const actor = {
@@ -40,6 +41,43 @@ const migrations = JSON.parse(readFileSync('accounting-migrations/manifest.json'
   ...m,
   sql: readFileSync(`accounting-migrations/${m.name}`, 'utf8'),
 }));
+{
+  const central = activationTestDatabase();
+  central.sqlite.exec(readFileSync('migrations/0021_accounting_control_plane.sql', 'utf8'));
+  central.sqlite.exec(
+    "INSERT INTO accounting_entities(id,parish_id,entity_status,activation_status) VALUES('entity','parish','ready','active')"
+  );
+  const env = {
+    AGAPAY_DB: central,
+    ACCOUNTING_DATABASE_BINDINGS: JSON.stringify({
+      'staging-books': 'STAGING_BOOKS',
+      'production-books': 'PRODUCTION_BOOKS',
+    }),
+  };
+  for (const environment of ['staging', 'production']) {
+    const books = activationTestDatabase();
+    books.sqlite.exec(
+      `CREATE TABLE rehearsal_identity(marker TEXT); INSERT INTO rehearsal_identity VALUES('${environment}')`
+    );
+    env[environment === 'staging' ? 'STAGING_BOOKS' : 'PRODUCTION_BOOKS'] = books;
+    central.sqlite
+      .prepare(
+        "INSERT INTO accounting_databases(id,accounting_entity_id,environment,database_identifier,provisioning_status,health_status) VALUES(?,'entity',?,?,'ready','healthy')"
+      )
+      .run(environment, environment, environment + '-books');
+  }
+  for (const environment of ['staging', 'production']) {
+    const resolved = await resolveOperationalAccountingDatabase({ ...env, AGAPAY_ENVIRONMENT: environment }, 'parish');
+    assert.equal(
+      (await resolved.prepare('SELECT marker FROM rehearsal_identity').first()).marker,
+      environment,
+      'Operational catalog resolution must stay in its own environment.'
+    );
+  }
+  console.log(
+    'PASS - operational fund catalogs resolve the current environment with separate staging and production records'
+  );
+}
 for (const fixture of onboardingFixtures) {
   const db = activationTestDatabase();
   await prepareAccountingMigrationLedger(db);
