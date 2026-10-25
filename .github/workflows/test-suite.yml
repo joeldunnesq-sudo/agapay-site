@@ -1,0 +1,58 @@
+name: Parallel test suite
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # Tests receive no production secrets and use local fixtures/mocked services.
+  # Precheck and all partitions are independent and start together.
+  precheck:
+    name: Precheck and partition coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      # npm run check previously invoked this through the npm precheck lifecycle.
+      - run: npm run precheck
+      - run: node scripts/ci-test-groups-tests.mjs
+
+  suites:
+    name: Tests (${{ matrix.group }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Preserve results from independent suites even when another suite fails.
+      fail-fast: false
+      matrix:
+        group:
+          [
+            accounting-1,
+            accounting-2,
+            browser-1,
+            browser-2,
+            browser-3,
+            browser-4,
+            payments,
+            directory,
+            core-1,
+            core-2,
+            other,
+          ]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        if: startsWith(matrix.group, 'browser-')
+        run: npx playwright install chromium --with-deps
+      - name: Run test partition
+        run: node scripts/run-tests.mjs --ci-group ${{ matrix.group }}
