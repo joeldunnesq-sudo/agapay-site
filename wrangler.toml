@@ -251,8 +251,8 @@ TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
 CLOUDFLARE_ACCOUNT_ID = "9198ae5ea8adc59e5dedd1b09c9478b9"
 CAMPAIGN_ASSETS_URL = "https://pub-7c0fef2b0b954c5b88f1cc3e944e97a7.r2.dev"
 TEACHING_ASSETS_URL = "https://pub-03d1c07bbdb14970a0b0021aeb0961d8.r2.dev"
-ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-staging-parish-a":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-staging-parish-b":"ACCOUNTING_DB_RELEASE_GATE_B"}'
-ACCOUNTING_PREPARED_PARISH_DATABASES = '{"st-fiacre":"agapay-acct-staging-parish-a","st-tester-san-antonio":"agapay-acct-staging-parish-b"}'
+ACCOUNTING_DATABASE_BINDINGS = '{"agapay-acct-staging-parish-a":"ACCOUNTING_DB_ST_FIACRE","agapay-acct-staging-parish-b":"ACCOUNTING_DB_RELEASE_GATE_B","agapay-acct-staging-onboard-aplos":"ACCOUNTING_DB_ONBOARD_APLOS","agapay-acct-staging-onboard-quickbooks":"ACCOUNTING_DB_ONBOARD_QUICKBOOKS"}'
+ACCOUNTING_PREPARED_PARISH_DATABASES = '{"st-fiacre":"agapay-acct-staging-parish-a","st-tester-san-antonio":"agapay-acct-staging-parish-b","st-accounting-aplos-rehearsal-marvin":"agapay-acct-staging-onboard-aplos","st-accounting-quickbooks-rehearsal-marvin":"agapay-acct-staging-onboard-quickbooks"}'
 ACCOUNTING_TEST_PARISH_IDS = "st-tester-san-antonio"
 PRIVILEGED_MFA_REQUIRED = "true"
 
@@ -279,6 +279,18 @@ migrations_dir = "accounting-migrations"
 binding = "ACCOUNTING_DB_RELEASE_GATE_B"
 database_name = "agapay-acct-staging-parish-b"
 database_id = "12a847b3-b292-4ba6-8694-091a30368659"
+migrations_dir = "accounting-migrations"
+
+[[env.staging.d1_databases]]
+binding = "ACCOUNTING_DB_ONBOARD_APLOS"
+database_name = "agapay-acct-staging-onboard-aplos"
+database_id = "eb421fe8-d2d2-49d7-a322-5fe534783f06"
+migrations_dir = "accounting-migrations"
+
+[[env.staging.d1_databases]]
+binding = "ACCOUNTING_DB_ONBOARD_QUICKBOOKS"
+database_name = "agapay-acct-staging-onboard-quickbooks"
+database_id = "c2cd266c-5dff-44fc-ba6d-d63c69753814"
 migrations_dir = "accounting-migrations"
 
 [[env.staging.r2_buckets]]

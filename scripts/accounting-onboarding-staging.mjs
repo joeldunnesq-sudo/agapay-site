@@ -1,0 +1,139 @@
+import assert from 'node:assert/strict';
+import { onboardingFixtures } from './fixtures/accounting-onboarding.mjs';
+import { loginGateParish } from './lib/release-gate-mfa.mjs';
+import { writeArtifact } from './lib/accounting-release-gates.mjs';
+
+const baseUrl = 'https://agapay-site-staging.joeldunnesq.workers.dev';
+const evidence = { target: baseUrl, generatedAt: new Date().toISOString(), status: 'running', cases: [] };
+try {
+  for (const [index, fixture] of onboardingFixtures.entries()) {
+    const side = index ? 'B' : 'A';
+    const parishId = process.env[`ACCOUNTING_GATE_PARISH_${side}_ID`];
+    assert.equal(parishId, index ? 'st-tester-san-antonio' : 'st-fiacre');
+    const root = `/api/parish/dashboard/${encodeURIComponent(parishId)}`;
+    const item = { source: fixture.sourceSystem, parishId, status: 'running', checks: [] };
+    evidence.cases.push(item);
+    const { payload: login } = await loginGateParish({
+      baseUrl,
+      parishId,
+      parishPassword: process.env[`ACCOUNTING_GATE_PARISH_${side}_PASSWORD`],
+    });
+    const headers = { authorization: `Bearer ${login.token}` };
+    async function request(path, body, expected = 200) {
+      assert.ok(path.startsWith(root + '/'));
+      const r = await fetch(baseUrl + path, {
+        method: body === undefined ? 'GET' : 'POST',
+        redirect: 'error',
+        signal: AbortSignal.timeout(60000),
+        headers: { ...headers, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      const p = await r.json();
+      assert.equal(r.status, expected, `${path} HTTP ${r.status}: ${p.message || p.error || ''}`);
+      return p;
+    }
+    const staff = await request(root + '/accounting-access/verify', {
+      profileId: process.env[`ACCOUNTING_GATE_STAFF_${side}_PROFILE_ID`],
+      pin: process.env[`ACCOUNTING_GATE_STAFF_${side}_PIN`],
+    });
+    headers['X-AGAPAY-Accounting-Profile'] = staff.profile.id;
+    headers['X-AGAPAY-Accounting-Token'] = staff.token;
+    const api = (path, body, expected) => request(root + '/accounting' + path, body, expected);
+    const setup = (await api('/setup')).overview;
+    assert.equal(setup.database.status, 'ready');
+    assert.equal(setup.database.health, 'healthy');
+    const date = new Date().toISOString().slice(0, 10);
+    const before = (await api(`/reports/statement-of-financial-position?asOf=${date}`)).report;
+    item.before = before.totals;
+    const sessions = (await api('/migration/sessions')).sessions;
+    let session = sessions.find((s) => s.sourceSystem === fixture.sourceSystem && s.status === 'in_progress');
+    if (!session) {
+      assert.ok(
+        !sessions.some((s) => s.sourceSystem === fixture.sourceSystem && s.status === 'completed'),
+        'This source has already completed its rehearsal. Inspect existing evidence before another import.'
+      );
+      session = (await api('/migration/sessions', { sourceSystem: fixture.sourceSystem }, 201)).session;
+    }
+    item.sessionId = session.id;
+    const common = { migrationSessionId: session.id, acknowledgeExistingActivity: true };
+    const chart = (await api('/migration/chart-of-accounts/preview', fixture.chart)).preview;
+    assert.equal(chart.invalidRows, 0);
+    await api('/migration/chart-of-accounts/commit', { ...common, preview: chart, typeMap: fixture.chart.typeMap });
+    item.checks.push('chart reviewed and imported');
+    const vendors = (await api('/migration/vendors/preview', fixture.vendors)).preview;
+    assert.equal(vendors.invalidRows, 0);
+    const vendorResult = (await api('/migration/vendors/commit', { ...common, preview: vendors })).result;
+    assert.equal(vendorResult.created + vendorResult.skipped, 2);
+    item.checks.push('vendor duplicates skipped');
+    const funds = (await api('/migration/funds/preview', fixture.funds)).preview;
+    assert.equal(funds.invalidRows, 0);
+    await api('/migration/funds/commit', {
+      ...common,
+      mappings: funds.rows
+        .filter((r) => r.status === 'matched')
+        .map((r) => ({ sourceFundRef: r.sourceFundRef, agapayFundId: r.agapayFundId })),
+      newFunds: funds.rows
+        .filter((r) => r.status !== 'matched')
+        .map((r) => ({
+          sourceFundRef: r.sourceFundRef,
+          displayName: r.name,
+          restrictionType: 'donor_restricted_temporary',
+          donorRestricted: true,
+          accountNumber: 'ONBOARD-BLDG',
+        })),
+    });
+    item.checks.push('general and restricted fund mappings committed through Funds & Alms');
+    const invalid = (
+      await api('/migration/opening-balance/preview', {
+        ...fixture.opening,
+        migrationSessionId: session.id,
+        csv: fixture.opening.csv.replace('18000.00', '17000.00'),
+      })
+    ).preview;
+    assert.equal(invalid.eligibleToCommit, false);
+    await api('/migration/opening-balance/commit', { ...common, preview: invalid, effectiveDate: date }, 400);
+    const negative = (
+      await api('/migration/opening-balance/preview', {
+        filename: 'negative.csv',
+        csv: 'Account,Debit,Credit\nbank,-100.00,\nunrestricted,,-100.00',
+        migrationSessionId: session.id,
+      })
+    ).preview;
+    assert.equal(negative.eligibleToCommit, false);
+    item.checks.push('unbalanced and negative amounts rejected');
+    const opening = (
+      await api('/migration/opening-balance/preview', { ...fixture.opening, migrationSessionId: session.id })
+    ).preview;
+    assert.equal(opening.eligibleToCommit, true);
+    assert.equal(opening.totalDebits, 3000000);
+    assert.equal(opening.totalCredits, 3000000);
+    const input = { ...common, preview: opening, effectiveDate: date };
+    const entry = (await api('/migration/opening-balance/commit', input)).entry;
+    assert.equal(entry.status, 'posted');
+    item.journalId = entry.id;
+    const retry = (await api('/migration/opening-balance/commit', { ...input, acknowledgeExistingActivity: false }))
+      .entry;
+    assert.equal(retry.id, entry.id);
+    item.checks.push('identical retry returned original posted journal');
+    const after = (await api(`/reports/statement-of-financial-position?asOf=${date}`)).report;
+    item.after = after.totals;
+    for (const [key, delta] of Object.entries({ assets: 3000000, liabilities: 200000, netAssets: 2800000 }))
+      assert.equal(after.totals[key] - before.totals[key], delta, key);
+    assert.equal(after.totals.difference, before.totals.difference);
+    const tb = (await api(`/reports/trial-balance?from=${date.slice(0, 4)}-01-01&to=${date}`)).report;
+    assert.equal(tb.totals.difference, 0);
+    const completed = (await api(`/migration/sessions/${session.id}`)).session;
+    assert.equal(completed.status, 'completed');
+    item.checks.push('trial balance, balance sheet delta and completed migration session verified');
+    item.status = 'passed';
+    console.log(`PASS - ${fixture.sourceSystem} staging imports, opening balances, retry and reports`);
+  }
+  evidence.status = 'passed';
+} catch (error) {
+  evidence.status = 'failed';
+  evidence.failure = error.message;
+  process.exitCode = 1;
+} finally {
+  await writeArtifact('artifacts/accounting-onboarding-staging/results.json', evidence);
+  console.log(JSON.stringify(evidence));
+}

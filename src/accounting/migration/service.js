@@ -567,11 +567,12 @@ async function previewOpeningBalanceCsv(
     const fundRef = indexes.fundRef >= 0 ? text(raw[indexes.fundRef]) : '';
     const fundId = fundRef ? maps.funds.get(fundRef) : 'fund_general';
     try {
-      const debit = indexes.debit >= 0 && text(raw[indexes.debit]) ? Math.abs(cents(raw[indexes.debit], 'Debit')) : 0;
-      const credit =
-        indexes.credit >= 0 && text(raw[indexes.credit]) ? Math.abs(cents(raw[indexes.credit], 'Credit')) : 0;
+      const debit = indexes.debit >= 0 && text(raw[indexes.debit]) ? cents(raw[indexes.debit], 'Debit') : 0;
+      const credit = indexes.credit >= 0 && text(raw[indexes.credit]) ? cents(raw[indexes.credit], 'Credit') : 0;
       if (!accountId) throw new Error('unmapped_account');
       if (!fundId) throw new Error('unmapped_fund');
+      if (!Number.isSafeInteger(debit) || !Number.isSafeInteger(credit) || debit < 0 || credit < 0)
+        throw new Error('invalid_amount');
       if (debit > 0 === credit > 0) throw new Error('invalid_amount');
       rows.push({ rowNumber, accountRef, accountId, fundRef, fundId, debitAmount: debit, creditAmount: credit });
       totalDebits += debit;
@@ -600,13 +601,33 @@ async function commitOpeningBalanceImport(
 ) {
   requireMigration(actor, entitlementTier);
   const session = await migrationSession(db, migrationSessionId, { allowCompleted: true });
-  await assertMigrationCommitSafe(db, { acknowledgeExistingActivity, migrationSessionId });
   if (!DATE.test(effectiveDate || '')) throw new ValidationError('A valid opening-balance effective date is required.');
   if (!preview?.eligibleToCommit || preview.errors?.length || preview.totalDebits !== preview.totalCredits) {
     throw new ValidationError('The opening-balance CSV must be error-free and balanced before commit.');
   }
-  await updateStep(db, migrationSessionId, 'openingBalance', 'in_progress');
   const key = `migration-opening:${migrationSessionId}:${preview.fileHash}`;
+  const requestHash = await digest(preview);
+  const prior = await first(
+    db,
+    'SELECT id FROM accounting_opening_balance_batches WHERE id=? AND journal_entry_id IS NOT NULL',
+    key
+  );
+  if (prior) {
+    const identical = await first(
+      db,
+      `SELECT b.id FROM accounting_opening_balance_batches b
+      JOIN accounting_posting_idempotency p ON p.journal_entry_id=b.journal_entry_id
+      WHERE b.id=? AND b.effective_date=? AND p.idempotency_key=? AND p.request_hash=?`,
+      key,
+      effectiveDate,
+      `opening:${key}`,
+      requestHash
+    );
+    if (!identical) throw new ValidationError('This opening-balance file was already posted with different input.');
+  } else {
+    await assertMigrationCommitSafe(db, { acknowledgeExistingActivity, migrationSessionId });
+  }
+  await updateStep(db, migrationSessionId, 'openingBalance', 'in_progress');
   const entry = await postOpeningBalanceBatch(db, {
     actor: withCapabilities(actor, 'accounting.opening_balances.manage'),
     effectiveDate,
@@ -619,7 +640,7 @@ async function commitOpeningBalanceImport(
       description: `Migration row ${row.rowNumber}`,
     })),
     idempotencyKey: key,
-    requestHash: await digest(preview),
+    requestHash,
     sourceSystem: session.source_system,
     correlationId: migrationSessionId,
   });

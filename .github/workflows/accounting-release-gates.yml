@@ -10,12 +10,17 @@ on:
         description: GitHub environment holding the protected release-gate credentials
         required: true
         default: accounting-release-gates
+      onboarding_rehearsal:
+        description: Run the synthetic Aplos and QuickBooks import rehearsal only
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   accounting-release-gates:
+    if: ${{ !inputs.onboarding_rehearsal }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     timeout-minutes: 30
@@ -115,4 +120,43 @@ jobs:
           name: accounting-release-gate-evidence-${{ github.run_id }}
           path: artifacts/
           if-no-files-found: warn
+          retention-days: 30
+
+  accounting-onboarding-rehearsal:
+    if: ${{ inputs.onboarding_rehearsal }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 15
+    env:
+      ACCOUNTING_GATE_USE_NAMED_STAFF: 'true'
+      ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
+      ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
+      ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
+      ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
+      ACCOUNTING_GATE_USER_B_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_B_EMAIL }}
+      ACCOUNTING_GATE_USER_B_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_B_PASSWORD }}
+      ACCOUNTING_GATE_USER_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_A_TOTP_SECRET }}
+      ACCOUNTING_GATE_USER_B_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_B_TOTP_SECRET }}
+      ACCOUNTING_GATE_STAFF_A_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PROFILE_ID }}
+      ACCOUNTING_GATE_STAFF_A_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_A_PIN }}
+      ACCOUNTING_GATE_STAFF_B_PROFILE_ID: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PROFILE_ID }}
+      ACCOUNTING_GATE_STAFF_B_PIN: ${{ secrets.ACCOUNTING_GATE_STAFF_B_PIN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Restrict rehearsal to dedicated staging
+        env:
+          TARGET_URL: ${{ inputs.target_url }}
+        run: node -e 'if (process.env.TARGET_URL !== "https://agapay-site-staging.joeldunnesq.workers.dev") throw new Error("Staging origin required")'
+      - name: Rehearse CSV imports and opening balances
+        run: node scripts/accounting-onboarding-staging.mjs
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: accounting-onboarding-evidence-${{ github.run_id }}
+          path: artifacts/accounting-onboarding-staging/
           retention-days: 30
