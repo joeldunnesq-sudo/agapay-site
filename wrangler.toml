@@ -286,12 +286,14 @@ binding = "ACCOUNTING_DB_ONBOARD_APLOS"
 database_name = "agapay-acct-staging-onboard-aplos"
 database_id = "eb421fe8-d2d2-49d7-a322-5fe534783f06"
 migrations_dir = "accounting-migrations"
+migrations_table = "_agapay_d1_migrations"
 
 [[env.staging.d1_databases]]
 binding = "ACCOUNTING_DB_ONBOARD_QUICKBOOKS"
 database_name = "agapay-acct-staging-onboard-quickbooks"
 database_id = "c2cd266c-5dff-44fc-ba6d-d63c69753814"
 migrations_dir = "accounting-migrations"
+migrations_table = "_agapay_d1_migrations"
 
 [[env.staging.r2_buckets]]
 binding = "ACCOUNTING_ATTACHMENTS"
