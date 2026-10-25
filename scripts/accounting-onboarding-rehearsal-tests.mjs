@@ -17,7 +17,13 @@ import {
   previewOpeningBalanceCsv,
   commitOpeningBalanceImport,
 } from '../src/accounting/migration/service.js';
-import { statementOfFinancialPosition, trialBalance } from '../src/accounting/reports/service.js';
+import {
+  statementOfFinancialPosition,
+  trialBalance,
+  statementOfActivities,
+  statementOfCashFlows,
+} from '../src/accounting/reports/service.js';
+import { openAccountingPeriod } from '../src/accounting/setup/periods.js';
 import { getAccountingSetupOverview, updateAccountingSettings } from '../src/accounting/setup/service.js';
 
 const actor = {
@@ -121,12 +127,22 @@ for (const fixture of onboardingFixtures) {
   });
   assert.equal(negative.eligibleToCommit, false, 'Negative debit/credit columns must never silently become positive.');
   assert.equal(db.sqlite.prepare('SELECT COUNT(*) n FROM accounting_journal_entries').get().n, 0);
-  const input = { ...common, migrationSessionId: session.id, preview: opening, effectiveDate: '2026-10-01' };
+  const priorPeriod = db.sqlite.prepare("SELECT id,version FROM accounting_periods WHERE id='period_2026_9'").get();
+  await openAccountingPeriod(db, { actor, periodId: priorPeriod.id, expectedVersion: priorPeriod.version });
+  const input = { ...common, migrationSessionId: session.id, preview: opening, effectiveDate: '2026-09-30' };
   const posted = await commitOpeningBalanceImport(db, input);
   assert.equal(posted.status, 'posted');
   const tb = await trialBalance(db, { actor, startDate: '2026-10-01', endDate: '2026-10-31' });
   assert.equal(tb.totals.endingDebits, 3000000);
   assert.equal(tb.totals.endingCredits, 3000000);
+  assert.equal(tb.totals.beginningDebits, 3000000);
+  const activities = await statementOfActivities(db, { actor, startDate: '2026-10-01', endDate: '2026-10-31' });
+  assert.deepEqual({ ...activities.totals }, { revenue: 0, expenses: 0, changeInNetAssets: 0 });
+  const cash = await statementOfCashFlows(db, { actor, startDate: '2026-10-01', endDate: '2026-10-31' });
+  assert.equal(cash.validation.status, 'validated');
+  assert.equal(cash.totals.beginningCash, 2500000);
+  assert.equal(cash.totals.endingCash, 2500000);
+  assert.equal(cash.totals.netCashChange, 0);
   const position = await statementOfFinancialPosition(db, { actor, asOfDate: '2026-10-31' });
   assert.deepEqual({ ...position.totals }, { assets: 3000000, liabilities: 200000, netAssets: 2800000, difference: 0 });
   for (const [fundId, assets, liabilities, netAssets] of [

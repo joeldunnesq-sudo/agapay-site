@@ -57,6 +57,14 @@ try {
     assert.equal(setup.database.status, 'ready');
     assert.equal(setup.database.health, 'healthy');
     const date = new Date().toISOString().slice(0, 10);
+    const effectiveDate = new Date(Date.parse(date + 'T00:00:00Z') - 86400000).toISOString().slice(0, 10);
+    const openingPeriod = setup.periods.find(
+      (period) => period.startDate <= effectiveDate && period.endDate >= effectiveDate
+    );
+    assert.ok(openingPeriod, 'The opening balance needs a fiscal period for the day before cutover.');
+    if (openingPeriod.status === 'future')
+      await api('/periods/open', { periodId: openingPeriod.id, expectedVersion: openingPeriod.version });
+    else assert.equal(openingPeriod.status, 'open', 'Do not bypass a closed opening-balance period.');
     const before = (await api(`/reports/statement-of-financial-position?asOf=${date}`)).report;
     const beforeGeneral = (await api(`/reports/statement-of-financial-position?asOf=${date}&fundId=fund_general`))
       .report;
@@ -124,7 +132,7 @@ try {
     assert.equal(opening.eligibleToCommit, true);
     assert.equal(opening.totalDebits, 3000000);
     assert.equal(opening.totalCredits, 3000000);
-    const input = { ...common, preview: opening, effectiveDate: date };
+    const input = { ...common, preview: opening, effectiveDate };
     const entry = (await api('/migration/opening-balance/commit', input)).entry;
     assert.equal(entry.status, 'posted');
     item.journalId = entry.id;
