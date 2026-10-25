@@ -44,6 +44,8 @@ try {
     assert.equal(setup.database.health, 'healthy');
     const date = new Date().toISOString().slice(0, 10);
     const before = (await api(`/reports/statement-of-financial-position?asOf=${date}`)).report;
+    const beforeGeneral = (await api(`/reports/statement-of-financial-position?asOf=${date}&fundId=fund_general`))
+      .report;
     item.before = before.totals;
     const sessions = (await api('/migration/sessions')).sessions;
     let session = sessions.find((s) => s.sourceSystem === fixture.sourceSystem && s.status === 'in_progress');
@@ -100,6 +102,7 @@ try {
       })
     ).preview;
     assert.equal(negative.eligibleToCommit, false);
+    await api('/migration/opening-balance/commit', { ...common, preview: negative, effectiveDate: date }, 400);
     item.checks.push('unbalanced and negative amounts rejected');
     const opening = (
       await api('/migration/opening-balance/preview', { ...fixture.opening, migrationSessionId: session.id })
@@ -120,6 +123,19 @@ try {
     for (const [key, delta] of Object.entries({ assets: 3000000, liabilities: 200000, netAssets: 2800000 }))
       assert.equal(after.totals[key] - before.totals[key], delta, key);
     assert.equal(after.totals.difference, before.totals.difference);
+    const afterGeneral = (await api(`/reports/statement-of-financial-position?asOf=${date}&fundId=fund_general`))
+      .report;
+    for (const [key, delta] of Object.entries({ assets: 2000000, liabilities: 200000, netAssets: 1800000 }))
+      assert.equal(afterGeneral.totals[key] - beforeGeneral.totals[key], delta, `general ${key}`);
+    const reference = await api('/workspace-reference');
+    const building = reference.funds.find((fund) => fund.name === 'Rehearsal Building Fund');
+    assert.ok(building);
+    assert.equal(building.restrictionType, 'donor_restricted_temporary');
+    const restricted = (
+      await api(`/reports/statement-of-financial-position?asOf=${date}&fundId=${encodeURIComponent(building.id)}`)
+    ).report;
+    assert.deepEqual(restricted.totals, { assets: 1000000, liabilities: 0, netAssets: 1000000, difference: 0 });
+    item.restrictedFund = { id: building.id, totals: restricted.totals };
     const tb = (await api(`/reports/trial-balance?from=${date.slice(0, 4)}-01-01&to=${date}`)).report;
     assert.equal(tb.totals.difference, 0);
     const completed = (await api(`/migration/sessions/${session.id}`)).session;
