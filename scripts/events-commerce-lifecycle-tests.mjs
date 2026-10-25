@@ -153,6 +153,7 @@ accountingSqlite.prepare("UPDATE accounting_commerce_settings SET posting_mode='
 
 const commerceDb = d1Database(commerceSqlite);
 const env = {
+  AGAPAY_ENVIRONMENT: 'production',
   AGAPAY_DB: commerceDb,
   ACCOUNTING_DATABASE_BINDINGS: JSON.stringify({ 'accounting-events-test': 'EVENTS_ACCOUNTING_DB' }),
   EVENTS_ACCOUNTING_DB: accountingDb,
