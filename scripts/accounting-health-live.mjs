@@ -210,14 +210,14 @@ export async function runAccountingHealth({
         evidence.checks.at(-1)?.reason === 'mfa_step_up_required' ? 'blocked_staff_mfa_refresh' : 'blocked_staff_login',
     };
   staffHeaders = { 'X-AGAPAY-Accounting-Profile': staff.profile.id, 'X-AGAPAY-Accounting-Token': staff.token };
-  for (const [section, suffix] of ACCOUNTING_READ_SMOKE_PATHS) {
+  async function checkSection([section, suffix]) {
     if (section === 'attachments') {
       const bills = await check(
         'accounting-attachment-records',
         `${root}/accounting/payables/bills`,
         (p) => p?.ok === true && Array.isArray(p.bills)
       );
-      if (!bills) continue;
+      if (!bills) return;
       const bill =
         bills.bills.find((item) => item.vendorInvoiceNumber === 'AGAPAY-ATTACHMENT-SMOKE-V1') ||
         bills.bills.find((item) => typeof item.id === 'string' && item.id.trim());
@@ -228,7 +228,7 @@ export async function runAccountingHealth({
           ...(requireAttachments ? {} : { skipped: true }),
           reason: 'no_existing_bill',
         });
-        continue;
+        return;
       }
       attachmentPath = `${root}/accounting/attachments?entityType=bill&entityId=${encodeURIComponent(bill.id)}`;
       const listed = await check(
@@ -241,7 +241,7 @@ export async function runAccountingHealth({
         listed?.attachments?.find((item) => item.storageStatus === 'stored');
       if (!attachment) {
         evidence.checks.push({ name: 'accounting-attachment-download', passed: false, reason: 'no_stored_attachment' });
-        continue;
+        return;
       }
       const downloadPath = root + '/accounting/attachments/' + encodeURIComponent(attachment.id) + '/download';
       try {
@@ -269,7 +269,7 @@ export async function runAccountingHealth({
       } catch {
         evidence.checks.push({ name: 'accounting-attachment-download', status: 0, passed: false });
       }
-      continue;
+      return;
     }
     const payload = await check(
       `accounting-${section}`,
@@ -284,6 +284,17 @@ export async function runAccountingHealth({
       evidence.integrityScanRecorded = Boolean(payload.health?.latestScan);
     }
   }
+  // Authenticate once before starting independent financial GETs. Keep the
+  // attachment list/download chain within one worker and cap load at three.
+  let nextSection = 0;
+  await Promise.all(
+    Array.from({ length: 3 }, async () => {
+      while (nextSection < ACCOUNTING_READ_SMOKE_PATHS.length) {
+        const section = ACCOUNTING_READ_SMOKE_PATHS[nextSection++];
+        await checkSection(section);
+      }
+    })
+  );
   return { ...evidence, status: evidence.checks.every((c) => c.passed || c.skipped) ? 'passed' : 'failed' };
 }
 

@@ -25,53 +25,35 @@ permissions:
   contents: read
 
 jobs:
+  quality-checks:
+    name: Parallel quality
+    uses: ./.github/workflows/quality-suite.yml
+
   quality:
     name: Quality
+    needs: quality-checks
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+      - name: Require every quality job to succeed
+        env:
+          QUALITY_RESULT: ${{ needs.quality-checks.result }}
+        run: test "$QUALITY_RESULT" = success
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies (deterministic)
-        run: npm ci
-
-      - name: Run lint, formatting, and architecture checks
-        run: npm run quality
+  test-suites:
+    name: Parallel tests
+    uses: ./.github/workflows/test-suite.yml
 
   test:
     name: Test
+    needs: test-suites
+    if: always()
     runs-on: ubuntu-latest
-    # This job intentionally has no access to Cloudflare, Stripe production,
-    # or any other production secret. Every script invoked by `npm run
-    # check` runs against mocked Stripe calls and/or a local, in-memory or
-    # throwaway SQLite database (via Node's built-in node:sqlite) -- never
-    # a real D1, KV, or R2 resource. See docs/accounting/
-    # 03-package-0.75a-ci-safety-report.md section 5 for the full script
-    # inventory and why each one is safe to run here.
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies (deterministic)
-        run: npm ci
-
-      - name: Install Chromium for dashboard browser tests
-        run: npx playwright install chromium --with-deps
-
-      - name: Run required checks (lint, route-map integrity, migration integrity, unit/integration tests)
-        run: npm run check
+      - name: Require every test job to succeed
+        env:
+          TEST_RESULT: ${{ needs.test-suites.result }}
+        run: test "$TEST_RESULT" = success
 
   deploy:
     name: Deploy
@@ -178,12 +160,9 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-          cache: npm
-
-      - run: npm ci
 
       - name: Run production route and health smoke
-        run: npm run prelaunch
+        run: node scripts/prelaunch-checks.mjs --live-only
         env:
           AGAPAY_BASE_URL: https://agapay.app
 

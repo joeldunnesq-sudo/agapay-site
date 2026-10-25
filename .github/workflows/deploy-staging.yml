@@ -10,46 +10,35 @@ permissions:
   contents: read
 
 jobs:
+  quality-checks:
+    name: Parallel quality
+    uses: ./.github/workflows/quality-suite.yml
+
   quality:
     name: Quality
+    needs: quality-checks
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+      - name: Require every quality job to succeed
+        env:
+          QUALITY_RESULT: ${{ needs.quality-checks.result }}
+        run: test "$QUALITY_RESULT" = success
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run lint, formatting, and architecture checks
-        run: npm run quality
+  test-suites:
+    name: Parallel tests
+    uses: ./.github/workflows/test-suite.yml
 
   test:
     name: Test
+    needs: test-suites
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Chromium for dashboard browser tests
-        run: npx playwright install chromium --with-deps
-
-      - name: Run required checks
-        run: npm run check
+      - name: Require every test job to succeed
+        env:
+          TEST_RESULT: ${{ needs.test-suites.result }}
+        run: test "$TEST_RESULT" = success
 
   deploy-staging:
     name: Migrate and deploy staging

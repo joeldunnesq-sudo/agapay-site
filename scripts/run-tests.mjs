@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { execFileSync } from 'node:child_process';
 import { testGroups } from './test-manifest.mjs';
 import { changedGroups } from './lib/test-selection.mjs';
+import { ciGroupNames, partitionCiTests } from './lib/ci-test-groups.mjs';
 
 function changedFiles() {
   try {
@@ -33,12 +34,24 @@ function run(spec, index, total) {
   const nodeCheck = spec.startsWith('node-check:');
   const parts = nodeCheck ? ['--check', spec.slice('node-check:'.length)] : spec.split(/\s+/);
   console.log(`\n[${index + 1}/${total}] node ${parts.join(' ')}`);
+  const started = performance.now();
   const result = spawnSync(process.execPath, parts, { stdio: 'inherit', env: process.env });
   if (result.error) throw result.error;
+  console.log(`Completed in ${((performance.now() - started) / 1000).toFixed(1)}s (exit ${result.status ?? 1})`);
   return result.status ?? 1;
 }
 
-const tests = resolveSelection(process.argv.slice(2));
+const args = process.argv.slice(2);
+let tests;
+if (args[0] === '--ci-group') {
+  if (args.length !== 2 || !ciGroupNames.includes(args[1])) {
+    console.error(`Usage: node scripts/run-tests.mjs --ci-group <${ciGroupNames.join('|')}>`);
+    process.exit(2);
+  }
+  tests = partitionCiTests()[args[1]];
+} else {
+  tests = resolveSelection(args);
+}
 console.log(`Running ${tests.length} test command(s).`);
 for (let index = 0; index < tests.length; index += 1) {
   const status = run(tests[index], index, tests.length);
