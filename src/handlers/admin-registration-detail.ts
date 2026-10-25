@@ -208,7 +208,10 @@ export async function handleAdminRegistrationDetail(request: Request, env: Admin
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
       parishDashboardToken,
-      parishDashboardTokenTemporary: Boolean(parishDashboardToken),
+      parishDashboardTokenTemporary:
+        parishDashboardToken && parishDashboardToken !== current.parishDashboardToken
+          ? true
+          : Boolean(current.parishDashboardTokenTemporary),
       parishDashboardTokenCreatedAt:
         parishDashboardToken && parishDashboardToken !== current.parishDashboardToken
           ? new Date().toISOString()
