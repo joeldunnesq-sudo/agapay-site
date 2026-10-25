@@ -378,6 +378,24 @@ try {
     const stored = await loadRegistrationByReference(env, registration.reference);
     assert.equal(stored.stripeAccountId, registration.stripeAccountId, "a stale Admin form must not erase a parish-created Stripe account ID");
     assert.equal(stored.stripeAccountStatus, registration.stripeAccountStatus, "a stale Admin form must not downgrade server-confirmed Stripe status");
+    assert.equal(stored.parishDashboardTokenTemporary, false, "reviewing a secured parish must not make its unchanged credential temporary");
+    assert.equal((await buildParishOnboardingWorkflow(stored, { appUrl: env.AGAPAY_APP_URL })).steps.find(step => step.key === "credential").passed, true);
+    const rotate = await worker.fetch(new Request(`https://agapay.test/api/admin/registrations/${registration.reference}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${admin.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "verified", parishDashboardToken: "new-temporary-token" })
+    }), env);
+    assert.equal(rotate.status, 200);
+    const rotated = await loadRegistrationByReference(env, registration.reference);
+    assert.equal(rotated.parishDashboardTokenTemporary, true, "an explicitly replaced credential must remain temporary");
+    const repeat = await worker.fetch(new Request(`https://agapay.test/api/admin/registrations/${registration.reference}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${admin.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "verified" })
+    }), env);
+    assert.equal(repeat.status, 200);
+    assert.equal((await loadRegistrationByReference(env, registration.reference)).parishDashboardTokenTemporary, true, "review must not secure a still-temporary credential");
+
   }
 
   {
