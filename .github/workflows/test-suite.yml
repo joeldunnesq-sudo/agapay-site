@@ -32,16 +32,18 @@ jobs:
       matrix:
         group:
           [
-            accounting-1,
-            accounting-2,
+            accounting,
             browser-1,
             browser-2,
             browser-3,
             browser-4,
+            browser-5,
+            browser-6,
             payments,
             directory,
             core-1,
             core-2,
+            core-3,
             other,
           ]
     steps:
