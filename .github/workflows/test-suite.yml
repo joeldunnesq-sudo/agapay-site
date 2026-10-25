@@ -55,6 +55,8 @@ jobs:
       - run: npm ci
       - name: Install Chromium
         if: startsWith(matrix.group, 'browser-')
-        run: npx playwright install chromium --with-deps
+        # All browser suites use the default headless shell. Avoid downloading
+        # headed Chromium as well; keep OS dependencies and the tested binary.
+        run: npx playwright install chromium --with-deps --only-shell
       - name: Run test partition
         run: node scripts/run-tests.mjs --ci-group ${{ matrix.group }}
