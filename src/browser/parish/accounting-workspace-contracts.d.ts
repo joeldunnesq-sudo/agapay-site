@@ -1,4 +1,5 @@
 interface AccountingWorkspaceSettings extends AccountingIntegrationSettings {
+  setupCompleted?: boolean;
   baseCurrency?: string;
   fiscalYearStartMonth?: number;
   openingBalancesDisposition?: string;

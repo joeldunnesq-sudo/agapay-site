@@ -90,6 +90,7 @@ async function fixture() {
     "UPDATE accounting_integration_settings SET give_posting_enabled=1, stripe_posting_enabled=1, posting_mode='automatic'"
   );
   return {
+    AGAPAY_ENVIRONMENT: 'production',
     AGAPAY_DB: db,
     LEDGER_A: ledger,
     ACCOUNTING_DATABASE_BINDINGS: JSON.stringify({ 'ledger-a': 'LEDGER_A' }),

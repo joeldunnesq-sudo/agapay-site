@@ -98,6 +98,20 @@ jobs:
           wranglerVersion: '4'
           command: d1 migrations apply ACCOUNTING_DB_RELEASE_GATE_B --env staging --remote
 
+      - name: Apply Aplos onboarding rehearsal migrations
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply ACCOUNTING_DB_ONBOARD_APLOS --env staging --remote
+
+      - name: Apply QuickBooks onboarding rehearsal migrations
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          wranglerVersion: '4'
+          command: d1 migrations apply ACCOUNTING_DB_ONBOARD_QUICKBOOKS --env staging --remote
+
       - name: Deploy staging Worker
         uses: cloudflare/wrangler-action@v4
         with:

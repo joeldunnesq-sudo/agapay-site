@@ -349,6 +349,7 @@ const releaseGates = [
   'scripts/parish-mfa-browser-tests.mjs',
   'scripts/public-media-delivery-tests.mjs',
   'scripts/accounting-migration-import-tests.mjs',
+  'scripts/accounting-onboarding-rehearsal-tests.mjs',
   'scripts/accounting-release-gate-2-sw-lifecycle.mjs --static-only',
   'scripts/accounting-release-gates-tests.mjs',
   'scripts/accounting-health-live-tests.mjs',

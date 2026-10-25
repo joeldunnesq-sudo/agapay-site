@@ -13,6 +13,7 @@ import {
 } from './index.js';
 import { d1All, d1First } from '../lib/core.js';
 import { recognizeGivingFeeCoverage } from './integrations/fee-coverage.js';
+import { detectAccountingEnvironment } from './environment.js';
 const actor = (capability) => ({ id: 'agapay_operational_sync', type: 'system', capabilities: [capability] });
 const text = (value) => String(value || '').trim();
 const cents = (value) => (Number.isSafeInteger(Number(value)) && Number(value) >= 0 ? Number(value) : 0);
@@ -61,11 +62,12 @@ async function digest(value) {
 }
 async function resolveOperationalAccountingDatabase(env, parishId) {
   if (!parishId) return null;
+  const environment = detectAccountingEnvironment(env);
   let entity;
   let registry;
   try {
     entity = await loadAccountingEntityByParish(env, parishId);
-    registry = entity && (await loadAccountingDatabaseForEntity(env, entity.id, 'production'));
+    registry = entity && (await loadAccountingDatabaseForEntity(env, entity.id, environment));
   } catch (error) {
     if (
       /no such table|accounting.*not configured|central agapay database is required/i.test(String(error?.message || ''))
@@ -80,7 +82,7 @@ async function resolveOperationalAccountingDatabase(env, parishId) {
     registry?.healthStatus !== 'healthy'
   )
     return null;
-  const provider = await loadAccountingDatabaseProviderRecord(env, entity.id, 'production');
+  const provider = await loadAccountingDatabaseProviderRecord(env, entity.id, environment);
   if (!provider?.databaseIdentifier) return null;
   const adapter = await resolveCloudflareD1Adapter(env, provider.databaseIdentifier);
   const physical = await adapter.findByName(provider.databaseIdentifier);
