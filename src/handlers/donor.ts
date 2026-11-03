@@ -37,6 +37,7 @@ import { htmlEscape } from '../lib/format.js';
 import '../lib/stripe-connect.js';
 
 import { offeringFeeBreakdown } from '../lib/stripe-fees.js';
+import { givingContribution } from '../lib/giving-contributions.js';
 
 import './parish.js';
 
@@ -126,6 +127,7 @@ export async function sendDonorDonationReceiptEmail(env: DonorEnvironment, offer
   const parishReceived = formatUsdFromCents(fees.parishNetCents);
   const totalFees = formatUsdFromCents(fees.totalFeeCents);
   const donorCovered = formatUsdFromCents(fees.donorCoveredFeeCents);
+  const contributionAmount = formatUsdFromCents(givingContribution(offering).contributionCents);
   const stripeReference = htmlEscape(offering.stripePaymentIntentId || offering.checkoutSessionId || offering.id || '');
   const donatedAt = htmlEscape(
     new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString('en-US', {
@@ -147,7 +149,7 @@ export async function sendDonorDonationReceiptEmail(env: DonorEnvironment, offer
     : `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Stripe processing fee deducted:</strong> ${htmlEscape(totalFees)}</p>
        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`;
   const coverFeesNote = fees.coverFees
-    ? ''
+    ? `<p style="margin:0 0 18px;font-size:14px;line-height:1.65;color:#171715;">Your fee-covering addition is part of your charitable gift and is generally tax-deductible to the same extent as your donation. It is included in your annual giving statement. Deductibility depends on the recipient's eligibility and applicable tax rules.</p>`
     : `
       <p style="margin:0 0 18px;padding:13px 15px;border-left:3px solid #C9A25B;background:#FFF8EA;font-size:14px;line-height:1.65;color:#171715;">
         Next time, you can choose to cover the processing fees so ${parishName} receives the full intended gift.
@@ -167,6 +169,7 @@ export async function sendDonorDonationReceiptEmail(env: DonorEnvironment, offer
       <div style="margin:0 0 20px;padding:16px 18px;border:1px solid rgba(201,162,91,0.34);border-radius:12px;background:#FDF9F0;">
         <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Your gift:</strong> ${htmlEscape(amount)}</p>
         <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Amount charged:</strong> ${htmlEscape(chargeAmount)}</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Total contribution, including any fee-covering addition:</strong> ${htmlEscape(contributionAmount)}</p>
         ${feeDetail}
         <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish:</strong> ${parishName}</p>
         <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Offering:</strong> ${lineItem}</p>

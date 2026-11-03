@@ -5,6 +5,8 @@ interface DonorDatedItem {
   submittedAt?: string;
 }
 interface DonorOffering extends DonorDatedItem {
+  contributionCents?: number;
+  feeCoverageCents?: number;
   amountCents?: number;
   parishNetCents?: number;
   giftAmountCents?: number;

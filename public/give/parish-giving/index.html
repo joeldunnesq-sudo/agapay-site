@@ -158,6 +158,11 @@
                   <input id="campaignAnonymous" type="checkbox" />
                   <span>Show my gift anonymously on this page. The parish still receives my real name for receipts and tax records.</span>
                 </label>
+                <label class="campaign-checkbox">
+                  <input id="campaignCoverFees" type="checkbox" checked aria-describedby="feeTaxNote" />
+                  <span>Cover processing fees so more of my gift reaches the parish.</span>
+                </label>
+                <p class="campaign-checkout-note" id="feeTaxNote">Your fee-covering addition is part of your charitable gift and is generally tax-deductible to the same extent as your donation. It is included in your annual giving statement.</p>
                 <div data-agapay-turnstile></div>
                 <button class="campaign-submit" type="submit" id="giveBtn">Continue to secure checkout</button>
                 <p class="campaign-security"><span aria-hidden="true">◇</span> Secure giving via Stripe</p>
@@ -189,6 +194,6 @@
     <img id="lightboxImg" src="" alt="Campaign photo" />
   </div>
   <script src="/security.js?v=30ead0682b18701b" defer></script>
-  <script src="/give/parish-giving/app.js?v=2dae672e217da643" defer></script>
+  <script src="/give/parish-giving/app.js?v=2aeddd37b42d4209" defer></script>
 </body>
 </html>

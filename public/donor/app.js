@@ -1440,15 +1440,16 @@ function renderMyAgapayDashboard(data) {
   const summary = data?.summary || {};
   const parish = data?.parish || null;
   const recentOfferings = Array.isArray(data?.recentOfferings) ? data.recentOfferings : [];
-  const monthCents = summary.parishNetMonthCents ?? summary.monthCents;
-  const ytdCents = summary.parishNetYtdCents ?? summary.ytdCents;
+  const monthCents = summary.monthCents;
+  const ytdCents = summary.ytdCents;
   const latestOffering = recentOfferings[0] || null;
   setText('myAgapayGreetingName', donorDisplayName(donor));
   setText('myAgapayDefaultParish', parish?.name || 'Choose a church in Settings');
   renderMyAgapayLearnCard();
   setText('myAgapayGivingParish', parish?.name || 'Choose church');
   setText('myAgapayRecurringCount', `${summary.recurringCount || 0} Active`);
-  setText('myAgapayRecentAmount', latestOffering ? money(latestOffering.amountCents) : 'No gifts yet');
+  const latestAmount = latestOffering?.contributionCents ?? latestOffering?.amountCents;
+  setText('myAgapayRecentAmount', latestOffering ? money(latestAmount) : 'No gifts yet');
   setText('myAgapayGivingMonth', money(monthCents));
   setText('myAgapaySnapshotMonth', money(monthCents));
   setText('myAgapaySnapshotRecurring', String(summary.recurringCount || 0));
@@ -1459,7 +1460,7 @@ function renderMyAgapayDashboard(data) {
     glyph: 'G',
     title: `Donation to ${offering.parishName || parish?.name || 'your parish'}`,
     meta: `${offering.giftType || 'Offering'} - ${shortDate(offering.createdAt)}`,
-    value: money(offering.amountCents),
+    value: money(offering.contributionCents ?? offering.amountCents),
     href: '/myagapay/giving/history',
   }));
   const fallbackActivities = [
@@ -1500,14 +1501,14 @@ function renderDonorDashboardPayload(data, { renderPledge = true, syncGivingTier
   const parish = data.parish || null;
   const recentOfferings = data.recentOfferings || [];
   renderMyAgapayDashboard(data);
-  setText('metricMonth', money(summary.parishNetMonthCents ?? summary.monthCents));
-  setText('metricYtd', money(summary.parishNetYtdCents ?? summary.ytdCents));
+  setText('metricMonth', money(summary.monthCents));
+  setText('metricYtd', money(summary.ytdCents));
   setText('metricOfferings', String(summary.offeringCount || 0));
   setText('metricCommemorations', String(summary.commemorationCount || 0));
   setText('metricRecurring', String(summary.recurringCount || 0));
   setText('donorParishName', parish?.name || 'Choose a church in Settings');
-  setText('desktopMetricMonth', money(summary.parishNetMonthCents ?? summary.monthCents));
-  setText('desktopMetricYtd', money(summary.parishNetYtdCents ?? summary.ytdCents));
+  setText('desktopMetricMonth', money(summary.monthCents));
+  setText('desktopMetricYtd', money(summary.ytdCents));
   setText('desktopMetricOfferings', String(summary.offeringCount || 0));
   setText('desktopMetricCommemorations', String(summary.commemorationCount || 0));
   setText('desktopParishName', parish?.name || 'Choose a church in Settings to personalize your dashboard.');

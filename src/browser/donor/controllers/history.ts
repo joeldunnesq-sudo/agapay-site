@@ -13,12 +13,12 @@ function offeringRows(offerings: DonorOffering[]) {
     .map(
       ([month, items]) => `
     <section class="giving-receipt-month">
-      <header><span>${escapeHtml(month)}</span><strong>${money(items.filter(donorOfferingIsComplete).reduce((sum, item) => sum + Number(item.amountCents || 0), 0))}</strong></header>
+      <header><span>${escapeHtml(month)}</span><strong>${money(items.filter(donorOfferingIsComplete).reduce((sum, item) => sum + Number(item.contributionCents ?? item.amountCents ?? 0), 0))}</strong></header>
       <div class="giving-receipt-list">${items
         .map((item) => {
           const status = item.paymentStatus || item.status || 'recorded';
           const detail = item.coverFees
-            ? `You covered ${money(item.totalFeeCents || Math.max(0, Number(item.chargeCents || 0) - Number(item.amountCents || 0)))} in processing fees`
+            ? `You covered ${money(item.feeCoverageCents ?? Math.max(0, Number(item.chargeCents || 0) - Number(item.amountCents || 0)))} in processing fees`
             : `Parish received ${money(item.parishNetCents ?? item.amountCents)}`;
           return `
           <article class="giving-receipt-row">
@@ -28,7 +28,7 @@ function offeringRows(offerings: DonorOffering[]) {
               <small>${escapeHtml(item.parishName || item.parishId || 'Parish')} · ${escapeHtml(detail)}</small>
             </span>
             <span class="status-pill ${status === 'pending' || status === 'unpaid' ? 'pending' : ''}">${escapeHtml(status)}</span>
-            <span class="giving-receipt-amount"><strong>${money(item.amountCents)}</strong><small>${item.frequency && item.frequency !== 'once' ? escapeHtml(item.frequency) : 'one-time'}</small></span>
+            <span class="giving-receipt-amount"><strong>${money(item.contributionCents ?? item.amountCents)}</strong><small>${item.frequency && item.frequency !== 'once' ? escapeHtml(item.frequency) : 'one-time'}</small></span>
           </article>`;
         })
         .join('')}</div>
@@ -70,9 +70,9 @@ function buildHistoryActivities({
       product,
       title: item.fund || item.campaign || item.title || item.giftType || 'Parish offering',
       subtitle: item.parishName || item.parishId || 'Parish',
-      meta: `${money(item.amountCents)} · ${item.frequency && item.frequency !== 'once' ? item.frequency : 'one-time'}${item.coverFees ? ' · fees covered' : ''}`,
+      meta: `${money(item.contributionCents ?? item.amountCents)} · ${item.frequency && item.frequency !== 'once' ? item.frequency : 'one-time'}${item.coverFees ? ' · fees covered' : ''}`,
       status: item.paymentStatus || item.status || 'recorded',
-      amountCents: item.amountCents,
+      amountCents: item.contributionCents ?? item.amountCents,
       date: activityDate(item),
     });
   });
@@ -175,7 +175,7 @@ function renderDonorGivingStory(offerings: DonorOffering[] = []) {
   const activeMonths = new Set(
     thisYear.map((item) => String(item.createdAt || item.updatedAt || '').slice(0, 7)).filter(Boolean)
   );
-  const total = thisYear.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+  const total = thisYear.reduce((sum, item) => sum + Number(item.contributionCents ?? item.amountCents ?? 0), 0);
   const monthlyAverage = activeMonths.size ? Math.round(total / activeMonths.size) : 0;
   setText('historyGiftCount', String(thisYear.length));
   setText('historyMonthlyAverage', money(monthlyAverage));
@@ -193,7 +193,7 @@ function renderDonorGivingStory(offerings: DonorOffering[] = []) {
   const monthMap = new Map(months.map((month) => [month.key, month]));
   complete.forEach((item) => {
     const key = String(item.createdAt || item.updatedAt || '').slice(0, 7);
-    if (monthMap.has(key)) monthMap.get(key)!.cents += Number(item.amountCents || 0);
+    if (monthMap.has(key)) monthMap.get(key)!.cents += Number(item.contributionCents ?? item.amountCents ?? 0);
   });
   const maxMonth = Math.max(1, ...months.map((month) => month.cents));
   const trend = document.getElementById('myHistoryTrend') as HTMLElement;
@@ -212,7 +212,7 @@ function renderDonorGivingStory(offerings: DonorOffering[] = []) {
   const fundTotals = new Map<string, number>();
   thisYear.forEach((item) => {
     const fund = item.fund || item.campaign || item.title || 'Parish offering';
-    fundTotals.set(fund, (fundTotals.get(fund) || 0) + Number(item.amountCents || 0));
+    fundTotals.set(fund, (fundTotals.get(fund) || 0) + Number(item.contributionCents ?? item.amountCents ?? 0));
   });
   const funds = [...fundTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   const maxFund = Math.max(1, ...funds.map(([, cents]) => cents));
@@ -330,7 +330,7 @@ function renderOfferingsPayload(
     bookstore: productPayloads.bookstore || historyBookstoreCache(),
     dashboard: fallbackDashboard,
   });
-  setText('offeringsYtd', money(summary.parishNetYtdCents ?? summary.ytdCents));
+  setText('offeringsYtd', money(summary.ytdCents));
   setText('offeringsRecurring', String(summary.recurringCount || 0));
   setText('offeringsStatus', offerings.length ? statusText : 'No data yet');
   renderHistorySummary(window.donorHistoryActivities, summary);

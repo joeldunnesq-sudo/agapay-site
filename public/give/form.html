@@ -737,12 +737,13 @@ body {
     <!-- FEE COVERAGE -->
     <div class="fee-section reveal reveal-delay-3">
       <label class="fee-toggle" for="feeCoverage">
-        <input type="checkbox" id="feeCoverage" checked onchange="updateSummary()" />
+        <input type="checkbox" id="feeCoverage" checked onchange="updateSummary()" aria-describedby="feeTaxNote" />
         <span class="fee-toggle-track"></span>
       </label>
       <div class="fee-text">
         <strong id="feeCoverageTitle">Cover the processing fees</strong>
         <p>The fee estimate will appear after the parish details load.</p>
+        <p id="feeTaxNote">Your fee-covering addition is part of your charitable gift and is generally tax-deductible to the same extent as your donation. It is included in your annual giving statement.</p>
         <span class="fee-calc" id="feeCalc">Calculating&hellip;</span>
       </div>
     </div>

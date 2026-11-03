@@ -295,7 +295,7 @@
           campaign: selectedCampaignKey(activeCampaign),
           campaignDescription: activeCampaign.name || '',
           paymentMethod: 'card',
-          coverFees: true,
+          coverFees: el('campaignCoverFees').checked,
           firstName,
           lastName,
           email,

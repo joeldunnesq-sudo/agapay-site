@@ -32,7 +32,19 @@ function accountingStatementDocument() {
     rows: [],
     notes: [],
   };
-  const row = (kind: string, cells: AccountingCell[]) => statement.rows.push({ kind, cells });
+  const row = (kind: string, cells: AccountingCell[], drilldown?: AccountingDrilldown) =>
+    statement.rows.push({ kind, cells, ...(drilldown ? { drilldown } : {}) });
+  const detail = (item: AccountingReportRow, label = accountName(item)): AccountingDrilldown | undefined =>
+    item.accountNumber
+      ? {
+          label,
+          accountNumber: String(item.accountNumber),
+          start: ['position', 'trialBalance'].includes(id) ? '0001-01-01' : period.start,
+          end: period.end,
+          ...(item.fundId ? { fundId: String(item.fundId) } : {}),
+        }
+      : undefined;
+
   const section = (label: string) => row('section', [label]);
   const money = (label: string, key?: string) => ({ label, key, money: true });
   const accountName = (item: AccountingReportRow) =>
@@ -47,7 +59,8 @@ function accountingStatementDocument() {
 
   if (id === 'trialBalance') {
     statement.columns = [{ label: 'Account' }, money('Debit', 'endingDebit'), money('Credit', 'endingCredit')];
-    for (const item of source.rows || []) row('detail', [accountName(item), item.endingDebit, item.endingCredit]);
+    for (const item of source.rows || [])
+      row('detail', [accountName(item), item.endingDebit, item.endingCredit], detail(item));
     const debit = sum(source.rows || [], 'endingDebit'),
       credit = sum(source.rows || [], 'endingCredit');
     row('grand', ['Total', debit, credit]);
@@ -69,15 +82,27 @@ function accountingStatementDocument() {
       ['expense', 'Expenses'],
     ]) {
       section(label);
-      const groups = new Map<unknown, { label: string; without: number; with: number }>();
+      const groups = new Map<unknown, { label: string; accountNumber: string; without: number; with: number }>();
       for (const item of (source.rows || []).filter((entry) => entry.category === category)) {
         const key = item.accountId || item.accountNumber || item.accountName;
-        const grouped = groups.get(key) || { label: accountName(item), without: 0, with: 0 };
+        const grouped = groups.get(key) || {
+          label: accountName(item),
+          accountNumber: String(item.accountNumber || ''),
+          without: 0,
+          with: 0,
+        };
         grouped[/^donor_restricted/.test(item.restrictionType || '') ? 'with' : 'without'] += Number(item.amount || 0);
         groups.set(key, grouped);
       }
       const items = [...groups.values()].sort((a, b) => a.label.localeCompare(b.label));
-      for (const item of items) row('detail', [item.label, item.without, item.with, item.without + item.with]);
+      for (const item of items)
+        row(
+          'detail',
+          [item.label, item.without, item.with, item.without + item.with],
+          item.accountNumber
+            ? { label: item.label, accountNumber: item.accountNumber, start: period.start, end: period.end }
+            : undefined
+        );
       const totals = [sum(items, 'without'), sum(items, 'with')];
       groupTotals[category] = totals;
       row('subtotal', [`Total ${label.toLowerCase()}`, ...totals, totals[0] + totals[1]]);
@@ -100,7 +125,7 @@ function accountingStatementDocument() {
       if (category === 'net_asset' && source.netAssetsByRestriction) {
         row('detail', ['Without donor restrictions', source.netAssetsByRestriction.withoutDonorRestrictions]);
         row('detail', ['With donor restrictions', source.netAssetsByRestriction.withDonorRestrictions]);
-      } else for (const item of items) row('detail', [accountName(item), item.amount]);
+      } else for (const item of items) row('detail', [accountName(item), item.amount], detail(item));
       if (category === 'net_asset' && !source.netAssetsByRestriction) {
         const unclosed = Number(source.totals?.netAssets || 0) - sum(items, 'amount');
         if (unclosed) row('detail', ['Unclosed revenue less expenses', unclosed]);
@@ -122,7 +147,14 @@ function accountingStatementDocument() {
       const key = accountName(item);
       groups.set(key, (groups.get(key) || 0) + Number(item.amount || 0));
     }
-    for (const [label, amount] of [...groups].sort((a, b) => a[0].localeCompare(b[0]))) row('detail', [label, amount]);
+    for (const [label, amount] of [...groups].sort((a, b) => a[0].localeCompare(b[0])))
+      row(
+        'detail',
+        [label, amount],
+        /^\d+\s/.test(label)
+          ? { label, accountNumber: label.split(/\s/)[0], start: period.start, end: period.end }
+          : undefined
+      );
     row('grand', ['Total expenses', [...groups.values()].reduce((a, b) => a + b, 0)]);
   } else if (custom) {
     statement.columns = custom.columns!;
@@ -155,7 +187,22 @@ function accountingStatementDocument() {
       ]) {
         section(label);
         const part = items.filter((item) => item.category === category);
-        for (const item of part) row('detail', cells(item));
+        for (const item of part)
+          row(
+            'detail',
+            cells(item),
+            ['budgetActual', 'comparativeBudget'].includes(id)
+              ? detail(item, String(item.account || 'Account'))
+              : id === 'budgetByFund' && item.fundId
+                ? {
+                    label: String(item.name || 'Fund'),
+                    fundId: String(item.fundId),
+                    category: item.category,
+                    start: period.start,
+                    end: period.end,
+                  }
+                : undefined
+          );
         totals[category] = totalCells(part, `Total ${label.toLowerCase()}`);
         row('subtotal', totals[category]);
       }
@@ -174,6 +221,16 @@ function accountingStatementDocument() {
               : ''
         )
       );
+    } else if (id === 'assetRegister') {
+      const active = items.filter((item) => item.status === 'active');
+      section('Active assets');
+      for (const item of active) row('detail', cells(item));
+      row('grand', totalCells(active, 'Active assets total'));
+      const disposed = items.filter((item) => item.status === 'disposed');
+      if (disposed.length) {
+        section('Disposed assets · historical reference');
+        for (const item of disposed) row('detail', cells(item));
+      }
     } else {
       for (const item of items) row(item.kind || 'detail', cells(item));
       if (id !== 'generalLedger') row('grand', totalCells(items, 'Total'));
@@ -184,9 +241,25 @@ function accountingStatementDocument() {
   return statement;
 }
 
-function accountingStatementHtml(report: AccountingStatement) {
+function accountingStatementHtml(report: AccountingStatement, interactive = true) {
   const columns = report.columns;
-  return `<article class="acct-statement"><header><div class="acct-statement-parish">${escapeHtml(report.parish)}</div><h2>${escapeHtml(report.title)}</h2>${report.subtitle ? `<p>${escapeHtml(report.subtitle)}</p>` : ''}<p>${escapeHtml(report.period)}</p><small>${escapeHtml(report.basis)} · ${escapeHtml(report.currency)} · Negative amounts in parentheses</small></header><div class="acct-table-wrap"><table><thead><tr>${columns.map((col) => `<th scope="col" class="${col.money ? 'number' : ''}">${escapeHtml(col.label)}</th>`).join('')}</tr></thead><tbody>${report.rows.map((item) => (item.kind === 'section' ? `<tr class="section"><th colspan="${columns.length}" scope="rowgroup">${escapeHtml(item.cells[0])}</th></tr>` : `<tr class="${item.kind}">${columns.map((col, i) => `<td class="${col.money ? 'number' : ''}">${escapeHtml(col.money ? accountingStatementMoney(item.cells[i]) : (item.cells[i] ?? ''))}</td>`).join('')}</tr>`)).join('')}</tbody></table></div>${report.notes.map((note) => `<p class="acct-statement-note">${escapeHtml(note)}</p>`).join('')}</article>`;
+  return `<article class="acct-statement"><header><div class="acct-statement-parish">${escapeHtml(report.parish)}</div><h2>${escapeHtml(report.title)}</h2>${report.subtitle ? `<p>${escapeHtml(report.subtitle)}</p>` : ''}<p class="acct-statement-period">${escapeHtml(report.period)}</p><small>${escapeHtml(report.basis)} · ${escapeHtml(report.currency)} · Negative amounts in parentheses</small></header><div class="acct-table-wrap"><table><thead><tr>${columns.map((col) => `<th scope="col" class="${col.money ? 'number' : ''}">${escapeHtml(col.label)}</th>`).join('')}</tr></thead><tbody>${report.rows
+    .map((item) =>
+      item.kind === 'section'
+        ? `<tr class="section"><th colspan="${columns.length}" scope="rowgroup">${escapeHtml(item.cells[0])}</th></tr>`
+        : `<tr class="${item.kind}">${columns
+            .map((col, i) => {
+              const value = col.money ? accountingStatementMoney(item.cells[i]) : String(item.cells[i] ?? '');
+              const budget = ['budgetActual', 'comparativeBudget', 'budgetByFund'].includes(accountingReportView);
+              const link =
+                interactive && item.drilldown && (i === 0 || (col.money && (!budget || col.key === 'actual')));
+              return `<td class="${col.money ? 'number' : ''}">${link ? accountingReportDetailLink(value, item.drilldown!, i) : escapeHtml(value)}</td>`;
+            })
+            .join('')}</tr>`
+    )
+    .join(
+      ''
+    )}</tbody></table></div>${report.notes.map((note) => `<p class="acct-statement-note">${escapeHtml(note)}</p>`).join('')}</article>`;
 }
 
 function accountingStatementActions() {
@@ -201,7 +274,7 @@ async function downloadAccountingReportPdf(button: HTMLButtonElement | null) {
       button.disabled = true;
       button.textContent = 'Preparing PDF…';
     }
-    const { createAccountingReportPdf } = await import('/parish/accounting-report-pdf.js?v=20260930reports1');
+    const { createAccountingReportPdf } = await import('/parish/accounting-report-pdf.js?v=20261103treasurer1');
     const bytes = await createAccountingReportPdf(report);
     const filename = `agapay-${report.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${accountingReportPeriod().end}.pdf`;
     downloadBlob(filename, new Blob([bytes], { type: 'application/pdf' }));

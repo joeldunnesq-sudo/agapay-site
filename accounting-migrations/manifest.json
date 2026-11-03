@@ -105,6 +105,10 @@
     {
       "name": "0026_service_subscription_costs.sql",
       "sha256": "c5e730d7719c95f87af7c0aed81268a6b428c5734f4af4e9fa5be8f361608631"
+    },
+    {
+      "name": "0027_fixed_assets.sql",
+      "sha256": "feaebfb0d9f7127a52b685a22f8c417df51c7488b2cdcdc156360a4545e6692a"
     }
   ]
 }

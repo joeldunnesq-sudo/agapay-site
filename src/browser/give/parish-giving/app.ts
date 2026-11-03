@@ -69,6 +69,7 @@ interface CampaignElements {
   campaignEmail: HTMLInputElement;
   campaignComment: HTMLTextAreaElement;
   campaignAnonymous: HTMLInputElement;
+  campaignCoverFees: HTMLInputElement;
   campaignCheckoutForm: HTMLFormElement;
   topbarGiveBtn: HTMLAnchorElement;
   shareFacebook: HTMLAnchorElement;
@@ -421,7 +422,7 @@ import type {} from '../../native-contracts.js';
           campaign: selectedCampaignKey(activeCampaign),
           campaignDescription: activeCampaign.name || '',
           paymentMethod: 'card',
-          coverFees: true,
+          coverFees: el('campaignCoverFees').checked,
           firstName,
           lastName,
           email,

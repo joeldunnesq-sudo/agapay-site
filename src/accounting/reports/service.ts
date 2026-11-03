@@ -195,13 +195,17 @@ export async function trialBalance(
     }),
   });
 }
-async function activityRows(db: PortabilityDatabase, { startDate, endDate, fundId = '' }: ReportOptions) {
+async function activityRows(
+  db: PortabilityDatabase,
+  { startDate, endDate, fundId = '' }: ReportOptions,
+  excludeOpeningBalances = false
+) {
   const params = [startDate, endDate],
     fund = fundId ? ' AND l.fund_id=?' : '';
   if (fundId) params.push(fundId);
   return all(
     db,
-    `SELECT a.id,a.account_number,a.name,a.normal_balance,a.cash_flow_classification,t.category,t.name account_type,f.restriction_type,SUM(l.debit_amount-l.credit_amount) raw_balance FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status IN ('posted','reversed') AND COALESCE(e.posting_date,e.entry_date) BETWEEN ? AND ?${fund} GROUP BY a.id,f.restriction_type ORDER BY t.sort_order,a.account_number`,
+    `SELECT a.id,a.account_number,a.name,a.normal_balance,a.cash_flow_classification,t.category,t.name account_type,f.restriction_type,SUM(l.debit_amount-l.credit_amount) raw_balance FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status IN ('posted','reversed') AND COALESCE(e.posting_date,e.entry_date) BETWEEN ? AND ?${fund}${excludeOpeningBalances ? " AND e.source_type<>'opening_balance'" : ''} GROUP BY a.id,f.restriction_type ORDER BY t.sort_order,a.account_number`,
     ...params
   );
 }
@@ -392,9 +396,10 @@ function accountBalances(rows: ReportSqlRow[]) {
 async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDate, fundId }: ReportOptions) {
   const activities = await statementOfActivities(db, { actor, startDate, endDate, fundId });
   const beginning = accountBalances(
-    await activityRows(db, { startDate: '0001-01-01', endDate: dayBefore(startDate), fundId })
+    await activityRows(db, { startDate: '0001-01-01', endDate: dayBefore(startDate), fundId }, true)
   );
-  const ending = accountBalances(await activityRows(db, { startDate: '0001-01-01', endDate, fundId }));
+  // Imported opening position is disclosed separately from period cash receipts.
+  const ending = accountBalances(await activityRows(db, { startDate: '0001-01-01', endDate, fundId }, true));
   const ids = new Set([...beginning.keys(), ...ending.keys()]);
   const changes = [...ids].map((accountId) => {
     const account = (ending.get(accountId) || beginning.get(accountId))!;
@@ -415,14 +420,35 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
     (row) =>
       row.classification === 'financing' && ['asset', 'liability', 'net_asset'].includes(row.category) && !isCash(row)
   );
-  const operatingAdjustments = operating.reduce((sum, row) => sum + cashEffect(row), 0);
-  const investingCashFlow = investing.reduce((sum, row) => sum + cashEffect(row), 0);
+  const hasAssets = await db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='accounting_asset_movements'")
+    .first();
+  const disposal = hasAssets
+    ? await db
+        .prepare(
+          `SELECT COALESCE(SUM(m.accumulated-m.gain_loss),0) adjustment
+    FROM accounting_asset_movements m JOIN accounting_fixed_assets a ON a.id=m.asset_id
+    JOIN accounting_journal_entries e ON e.id=m.journal_id
+    WHERE m.kind='disposal' AND e.status='posted' AND e.posting_date BETWEEN ? AND ?
+    AND (?='' OR a.fund_id=?)`
+        )
+        .bind(startDate, endDate, fundId || '', fundId || '')
+        .first<{ adjustment: number }>()
+    : null;
+  const disposalReclassification = money(disposal?.adjustment);
+  const operatingAdjustments = operating.reduce((sum, row) => sum + cashEffect(row), 0) + disposalReclassification;
+  const investingCashFlow = investing.reduce((sum, row) => sum + cashEffect(row), 0) - disposalReclassification;
   const financingCashFlow = financing.reduce((sum, row) => sum + cashEffect(row), 0);
   const netCashChange =
     activities.totals.changeInNetAssets + operatingAdjustments + investingCashFlow + financingCashFlow;
   const actualCashChange = changes.filter(isCash).reduce((sum, row) => sum + row.change, 0);
-  const beginningCash = [...beginning.values()].filter(isCash).reduce((sum, row) => sum + row.amount, 0);
-  const endingCash = [...ending.values()].filter(isCash).reduce((sum, row) => sum + row.amount, 0);
+  const cashTotal = (balances: Map<string, BalanceAccount>) =>
+    [...balances.values()].filter(isCash).reduce((sum, row) => sum + row.amount, 0);
+  const beginningCash = cashTotal(
+    accountBalances(await activityRows(db, { startDate: '0001-01-01', endDate: dayBefore(startDate), fundId }))
+  );
+  const endingCash = cashTotal(accountBalances(await activityRows(db, { startDate: '0001-01-01', endDate, fundId })));
+  const openingCashRecorded = endingCash - beginningCash - actualCashChange;
   const difference = netCashChange - actualCashChange;
   const rows = [
     { section: 'operating', label: 'Change in net assets', amount: activities.totals.changeInNetAssets },
@@ -432,6 +458,12 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
       accountId: row.accountId,
       amount: cashEffect(row),
     })),
+    ...(disposalReclassification
+      ? [
+          { section: 'operating', label: 'Remove noncash asset disposal effects', amount: disposalReclassification },
+          { section: 'investing', label: 'Adjust asset disposals to cash proceeds', amount: -disposalReclassification },
+        ]
+      : []),
     ...investing.map((row) => ({
       section: 'investing',
       label: `Change in ${row.accountName}`,
@@ -445,8 +477,17 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
       amount: cashEffect(row),
     })),
     { section: 'reconciliation', label: 'Net change in cash', amount: netCashChange },
-    { section: 'reconciliation', label: 'Actual change in cash accounts', amount: actualCashChange },
+    { section: 'reconciliation', label: 'Cash movement excluding imported opening balances', amount: actualCashChange },
     { section: 'reconciliation', label: 'Cash at beginning of period', amount: beginningCash },
+    ...(openingCashRecorded
+      ? [
+          {
+            section: 'reconciliation',
+            label: 'Opening cash balances recorded in period (not cash flow)',
+            amount: openingCashRecorded,
+          },
+        ]
+      : []),
     { section: 'reconciliation', label: 'Cash at end of period', amount: endingCash },
   ];
   return Object.freeze({
@@ -464,6 +505,7 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
       netCashChange,
       actualCashChange,
       beginningCash,
+      openingCashRecorded,
       endingCash,
       difference,
     }),

@@ -25,6 +25,7 @@ import sql22 from '../../../accounting-migrations/0023_migration_import_sessions
 import sql23 from '../../../accounting-migrations/0024_recurring_vendor_bills.sql';
 import sql24 from '../../../accounting-migrations/0025_in_kind_contributions_account.sql';
 import sql25 from '../../../accounting-migrations/0026_service_subscription_costs.sql';
+import sql26 from '../../../accounting-migrations/0027_fixed_assets.sql';
 const provisioningMigrations = [
   {
     name: '0001_accounting_database_foundation.sql',
@@ -155,6 +156,11 @@ const provisioningMigrations = [
     name: '0026_service_subscription_costs.sql',
     sha256: 'c5e730d7719c95f87af7c0aed81268a6b428c5734f4af4e9fa5be8f361608631',
     sql: sql25,
+  },
+  {
+    name: '0027_fixed_assets.sql',
+    sha256: 'feaebfb0d9f7127a52b685a22f8c417df51c7488b2cdcdc156360a4545e6692a',
+    sql: sql26,
   },
 ];
 export { provisioningMigrations };

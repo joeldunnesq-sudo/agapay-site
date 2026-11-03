@@ -64,7 +64,8 @@ assert.match(holder.innerHTML, /Access denied/);
 assert.doesNotMatch(holder.innerHTML, /Confirm match/);
 
 const reports = vm.createContext({
-  accountingData: { setup: {} },
+  accountingData: { setup: {}, reports: {} },
+  accountingCustomReport: null,
   Date,
   FormData: class {
     constructor(form) {

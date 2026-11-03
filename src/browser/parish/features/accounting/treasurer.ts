@@ -154,14 +154,15 @@ function accountingInKindGiftForm() {
 }
 
 function accountingOverviewHero() {
-  if (accountingExperienceMode === 'treasurer')
-    return `<section class="acct-command-hero">
-      <div><span class="acct-kicker">Treasurer view</span><h2>Clarity for every parish dollar.</h2><p>Weekly parish bookkeeping in plain language, backed by the same audited accounting records.</p></div>
-      <div class="acct-command-actions acct-command-actions-treasurer"><button onclick="openAccountingSimpleIncome()"><b>＋</b><span>Record Income<small>Cash, checks, and deposits</small></span></button><button onclick="openAccountingSimpleBill()"><b>◇</b><span>Pay a Bill<small>Enter a vendor expense</small></span></button><button onclick="openAccountingInKindGift()"><b>◆</b><span>Record a Non-Cash Gift<small>Donated goods, equipment, or services</small></span></button></div>
-    </section>`;
-  return `<section class="acct-command-hero">
-      <div><span class="acct-kicker">Financial command center</span><h2>Clarity for every parish dollar.</h2><p>Fund accounting, giving, commerce, payables, and bank activity—one balanced set of books.</p></div>
-      <div class="acct-command-actions"><button onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>
+  const treasurer = accountingExperienceMode === 'treasurer';
+  return `<section class="acct-command-hero acct-home-hero">
+      <div><span class="acct-kicker">${treasurer ? 'Treasurer view' : 'Financial command center'}</span><h2>Clarity for every parish dollar.</h2><p>${treasurer ? 'Weekly parish bookkeeping in plain language, backed by the same audited accounting records.' : 'Fund accounting, giving, commerce, payables, and bank activity—one balanced set of books.'}</p></div>
+      <section class="acct-home-actions" aria-labelledby="accountingEverydayActions"><h3 id="accountingEverydayActions">Everyday bookkeeping</h3><div class="acct-command-actions acct-command-actions-treasurer acct-home-action-grid">
+        <button type="button" class="acct-home-action-income" onclick="openAccountingSimpleIncome()"><b aria-hidden="true">＋</b><span>Record Income<small>Cash, checks, and deposits</small></span><i aria-hidden="true">→</i></button>
+        <button type="button" onclick="openAccountingSimpleBill()"><b aria-hidden="true">◇</b><span>Pay a Bill<small>Enter a vendor expense</small></span><i aria-hidden="true">→</i></button>
+        <button type="button" onclick="openAccountingInKindGift()"><b aria-hidden="true">◆</b><span>Record a Non-Cash Gift<small>Donated goods, equipment, or services</small></span><i aria-hidden="true">→</i></button>
+      </div></section>
+      ${treasurer ? '' : `<div class="acct-command-actions"><button type="button" onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button type="button" onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button type="button" onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button type="button" onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>`}
     </section>`;
 }
 
@@ -192,8 +193,8 @@ function accountingOverviewFundRank(fund: AccountingFund) {
 }
 
 function renderAccountingOverview(pane: HTMLElement) {
-  const position = accountingData.reports.position || {},
-    activities = accountingData.reports.activities || {};
+  const position = accountingOverviewFinancials.position || accountingData.reports.position || {},
+    activities = accountingOverviewFinancials.activities || accountingData.reports.activities || {};
   const cash = (position.rows || [])
     .filter((row) => row.category === 'asset' && /cash|checking|bank|undeposited/i.test(`${row.accountName || ''}`))
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
@@ -201,9 +202,21 @@ function renderAccountingOverview(pane: HTMLElement) {
     activity = Number(activities.totals?.changeInNetAssets || 0);
   const posted = accountingData.journals.filter((entry) => ['posted', 'reversed'].includes(entry.status));
   const drafts = accountingData.journals.filter((entry) => entry.status === 'draft').length;
-  const payables = accountingData.payables?.overview || {},
+  const payables = accountingOverviewSummaries.payables || accountingData.payables?.overview || {},
     banking: Partial<AccountingBanking> = accountingData.banking || {},
     close: Partial<AccountingCloseWorkspace> = accountingData.close || {};
+  const payablesLoaded =
+    !accountingOverviewSummaries.errors.payables &&
+    Boolean(accountingData.payables?.overview || accountingOverviewSummaries.payables);
+  const bankingLoaded =
+    !accountingOverviewSummaries.errors.banking &&
+    (accountingData.banking != null || accountingOverviewSummaries.openReconciliations != null);
+  const closeLoaded =
+    !accountingOverviewSummaries.errors.close &&
+    (accountingData.close != null || accountingOverviewSummaries.activeCloses != null);
+  const budgetsLoaded =
+    !accountingOverviewSummaries.errors.budgets &&
+    (accountingData.budgets != null || accountingOverviewSummaries.budgetCount != null);
   const fundActivity = accountingData.reports.fundActivity?.rows || [];
   const overviewFunds = accountingData.funds
     .map((fund) => ({ fund, summary: accountingOverviewFundSummary(fund, fundActivity) }))
@@ -212,17 +225,17 @@ function renderAccountingOverview(pane: HTMLElement) {
         accountingOverviewFundRank(a.fund) - accountingOverviewFundRank(b.fund) ||
         String(a.fund.name || '').localeCompare(String(b.fund.name || ''))
     );
-  pane.innerHTML = `${accountingOverviewHero()}<div class="acct-report-quick"><button type="button" onclick="openAccountingIncomeReport()">Generate revenue minus expenses report</button></div><div class="acct-suite-stats">
+  pane.innerHTML = `${accountingOverviewHero()}<div class="acct-report-quick"><span>Reports for your next council meeting</span><button type="button" onclick="openAccountingIncomeReport()">Income and expenses</button><button type="button" onclick="openAccountingTreasurerReport('budgetActual')">Budget vs actual YTD</button><button type="button" onclick="openAccountingTreasurerReport('position')">Balance Sheet</button></div><div class="acct-suite-stats">
       <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
       <div class="acct-suite-stat"><span>Total net assets</span><strong>${accountingMoney(netAssets)}</strong><small>${position.validation?.status === 'validated' ? 'Financial position is balanced' : 'Review the financial position'}</small></div>
-      <div class="acct-suite-stat"><span>Current activity</span><strong>${accountingMoney(activity)}</strong><small>${posted.length} posted entries · ${drafts} draft${drafts === 1 ? '' : 's'}</small></div>
+      <div class="acct-suite-stat"><span>Current activity</span><strong>${accountingMoney(activity)}</strong><small>${activities.startDate && activities.endDate ? `${escapeHtml(activities.startDate)} to ${escapeHtml(activities.endDate)} · ` : ''}${posted.length} recent posted entries · ${drafts} recent draft${drafts === 1 ? '' : 's'}</small></div>
       <div class="acct-suite-stat"><span>Tracked funds</span><strong>${accountingData.funds.length}</strong><small>${accountingData.funds.filter((f) => String(f.restrictionType || f.restriction_type).startsWith('donor_restricted')).length} donor restricted</small></div>
-    </div><div class="acct-suite-overview-grid"><div><div class="acct-suite-section-head"><h2>Where things stand</h2><span>Open a module to continue</span></div><div class="acct-suite-modules">
-      <button class="acct-suite-module" onclick="setAccountingView('payables')"><span>Payables</span><strong>${accountingMoney(payables.openPayables)}</strong><small>${payables.awaitingApproval || 0} awaiting approval</small></button>
-      <button class="acct-suite-module" onclick="setAccountingView('banking')"><span>Reconciliation</span><strong>${(banking.sessions || []).filter((item) => item.status !== 'completed').length} open</strong><small>${(banking.accounts || []).length} connected bank account${(banking.accounts || []).length === 1 ? '' : 's'}</small></button>
-      <button class="acct-suite-module" onclick="setAccountingView('close')"><span>Period Close</span><strong>${(close.sessions || []).filter((item) => !['completed', 'voided'].includes(item.status)).length} active</strong><small>${(close.sessions || []).filter((item) => item.status === 'completed').length} completed closes</small></button>
-      <button class="acct-suite-module" onclick="setAccountingView('budgets')"><span>Budget vs actual</span><strong>${(accountingData.budgets?.items || []).length} plans</strong><small>Open budget versions and variance</small></button>
-      <button class="acct-suite-module" onclick="setAccountingView('ledger')"><span>Giving → Ledger</span><strong>${posted.length ? 'In sync' : 'Ready'}</strong><small>${posted.length} posted source entries</small></button>
+    </div><div class="acct-suite-overview-grid"><div><div class="acct-suite-section-head"><h2>Where things stand</h2><span role="status">${accountingOverviewSummaries.loading ? 'Updating summaries…' : accountingOverviewSummaries.loadedAt ? `Updated ${new Date(accountingOverviewSummaries.loadedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Summary status'}</span><button type="button" class="acct-link" onclick="loadAccountingOverviewSummaries(true)" ${accountingOverviewSummaries.loading ? 'disabled' : ''}>Refresh summaries</button></div><div class="acct-suite-modules">
+      <button class="acct-suite-module" onclick="setAccountingView('payables')"><span>Payables</span><strong>${accountingData.tier !== 'advanced_operations' ? 'Parish plan' : payablesLoaded ? accountingMoney(payables.openPayables) : accountingOverviewSummaryLabel('payables')}</strong><small>${accountingData.tier !== 'advanced_operations' ? 'Payables are available with Advanced Operations' : payablesLoaded ? `${payables.awaitingApproval || 0} awaiting approval` : accountingOverviewSummaries.errors.payables || 'Loading payable balances automatically'}</small></button>
+      <button class="acct-suite-module" onclick="setAccountingView('banking')"><span>Reconciliation</span><strong>${bankingLoaded ? `${accountingOverviewSummaries.openReconciliations ?? (banking.sessions || []).filter((item) => !['completed', 'voided'].includes(item.status)).length} open` : accountingOverviewSummaryLabel('banking')}</strong><small>${bankingLoaded ? 'Review bank statement matches' : accountingOverviewSummaries.errors.banking || 'Loading statement sessions automatically'}</small></button>
+      <button class="acct-suite-module" onclick="setAccountingView('close')"><span>Period Close</span><strong>${closeLoaded ? `${accountingOverviewSummaries.activeCloses ?? (close.sessions || []).filter((item) => !['completed', 'voided'].includes(item.status)).length} active` : accountingOverviewSummaryLabel('close')}</strong><small>${closeLoaded ? `${accountingOverviewSummaries.completedCloses ?? (close.sessions || []).filter((item) => item.status === 'completed').length} completed closes` : accountingOverviewSummaries.errors.close || 'Loading period-close status automatically'}</small></button>
+      <button class="acct-suite-module" onclick="setAccountingView('budgets')"><span>Budget vs actual</span><strong>${accountingData.tier !== 'advanced_operations' ? 'Parish plan' : budgetsLoaded ? `${accountingOverviewSummaries.budgetCount ?? accountingData.budgets?.items.length} plans` : accountingOverviewSummaryLabel('budgets')}</strong><small>${accountingData.tier !== 'advanced_operations' ? 'Budgets are available with Advanced Operations' : budgetsLoaded ? 'Open budget versions and variance' : accountingOverviewSummaries.errors.budgets || 'Loading budget versions automatically'}</small></button>
+      <button class="acct-suite-module" onclick="setAccountingView('integrations')"><span>Giving → Ledger</span><strong>Review postings</strong><small>Inspect source events and posting exceptions</small></button>
       <button class="acct-suite-module" onclick="setAccountingView('reports')"><span>Financial reports</span><strong>${position.validation?.status === 'validated' ? 'Balanced' : 'Review'}</strong><small>Statements and trial balance</small></button>
     </div><div class="acct-suite-activity"><div class="acct-suite-section-head"><h2>Recent posted activity</h2><button class="acct-link" onclick="setAccountingView('ledger')">View ledger →</button></div><div class="acct-table-wrap acct-overview-activity-table"><table class="acct-table"><colgroup><col class="date"><col class="entry"><col class="memo"><col class="amount"></colgroup><thead><tr><th>Date</th><th>Entry</th><th>Memo</th><th>Amount</th></tr></thead><tbody>${
       posted
