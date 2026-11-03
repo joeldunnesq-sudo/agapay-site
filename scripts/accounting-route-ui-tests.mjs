@@ -542,8 +542,8 @@ for (const reportName of [
 ])
   assert.ok(new RegExp(`title:\\s*'${reportName}'`).test(app), `missing report library option ${reportName}`);
 assert.ok(
-  app.includes(`<button onclick="openAccountingReport('expenses')">Expense Report</button>`),
-  'Reports quick access should include Expense Report'
+  app.includes("Spending by category") && app.includes("accountingReportShortcuts"),
+  'Reports quick access should describe spending by category'
 );
 for (const reportAction of [
   'renderAccountingReportLibrary',

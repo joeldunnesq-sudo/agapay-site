@@ -98,6 +98,7 @@ import {
   parseJsonRow,
   stripePaymentIntentIndexKey,
 } from '../lib/core.js';
+import { givingContribution } from '../lib/giving-contributions.js';
 import { offeringFeeBreakdown } from '../lib/stripe-fees.js';
 import {
   booleanFromStripeMetadata,
@@ -623,7 +624,7 @@ export function donorSummaryFromOfferings(offerings: ReceiptOffering[], commemor
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
   const paid = ytd.filter(paidOfferingStatus);
   const recurring = offerings.filter((item) => item.frequency && item.frequency !== 'once');
-  const ytdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
+  const ytdCents = paid.reduce((sum, item) => sum + givingContribution(item).contributionCents, 0);
   const parishNetYtdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
   const feeSavingsCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).donorCoveredFeeCents, 0);
   const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
@@ -644,7 +645,7 @@ export function donorSummaryFromOfferings(offerings: ReceiptOffering[], commemor
       const created = new Date(item.createdAt || 0);
       return created.getUTCFullYear() === year && created.getUTCMonth() === month;
     })
-    .reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
+    .reduce((sum, item) => sum + givingContribution(item).contributionCents, 0);
   const parishNetMonthCents = paid
     .filter((item) => {
       const created = new Date(item.createdAt || 0);
@@ -679,9 +680,12 @@ export function donorSummaryFromOfferings(offerings: ReceiptOffering[], commemor
 }
 
 export function publicDonorOffering(offering: ReceiptOffering = {}) {
+  const contribution = givingContribution(offering);
   const fees = offeringFeeBreakdown(offering);
   return {
     ...offering,
+    contributionCents: contribution.contributionCents,
+    feeCoverageCents: contribution.feeCoverageCents,
     amountCents: fees.giftAmountCents,
     giftAmountCents: fees.giftAmountCents,
     chargeCents: fees.chargeCents,

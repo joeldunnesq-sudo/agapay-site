@@ -20,7 +20,7 @@ interface AccountingSetupOverview {
   validation?: { ok?: boolean };
   currentPeriod?: { name?: string };
   settings?: AccountingWorkspaceSettings;
-  currentFiscalYear?: { name?: string; startDate?: string; endDate?: string };
+  currentFiscalYear?: { id?: string; name?: string; startDate?: string; endDate?: string };
   initialization?: { operational?: boolean };
 }
 interface AccountingPayablesOverview {
@@ -60,6 +60,7 @@ interface AccountingServerReportRow extends AccountingReportRow {
   total?: number;
 }
 interface AccountingBudgetSummary {
+  versionNumber?: number;
   id: string;
   status: string;
   name?: string;

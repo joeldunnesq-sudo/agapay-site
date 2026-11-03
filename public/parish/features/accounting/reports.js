@@ -1,6 +1,233 @@
 // Generated from src/browser/parish/features/accounting/reports.ts by npm run build:browser. Do not edit.
 'use strict';
+function accountingLocalDate(value = /* @__PURE__ */ new Date()) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+}
+function accountingReportPreferenceKey() {
+  return `agapay.report-period:${currentParish?.parishId || ''}:${accountingData.setup?.currentFiscalYear?.startDate || ''}`;
+}
+function accountingSaveReportPreferences() {
+  try {
+    sessionStorage.setItem(
+      accountingReportPreferenceKey(),
+      JSON.stringify({ period: accountingReportPeriod(), budgetId: accountingSelectedBudgetId })
+    );
+  } catch {}
+}
+function accountingPeriodPreset(preset) {
+  const today = /* @__PURE__ */ new Date();
+  const fiscal = accountingData.setup?.currentFiscalYear;
+  const fiscalStart = fiscal?.startDate || `${today.getFullYear()}-01-01`;
+  const fiscalEnd = fiscal?.endDate || `${today.getFullYear()}-12-31`;
+  const lastEnd = accountingLocalDate(new Date(today.getFullYear(), today.getMonth(), 0));
+  const end = lastEnd < fiscalStart ? accountingLocalDate(today) : lastEnd > fiscalEnd ? fiscalEnd : lastEnd;
+  if (preset === 'lastMonth') return { start: end.slice(0, 7) + '-01', end };
+  return { start: fiscalStart, end: preset === 'today' ? [accountingLocalDate(today), fiscalEnd].sort()[0] : end };
+}
+async function setAccountingReportPreset(preset) {
+  if (accountingReportLoading) return;
+  const period = accountingPeriodPreset(preset);
+  if (accountingReportView === 'library') {
+    accountingReportDateRange = period;
+    accountingSaveReportPreferences();
+    renderAccountingPane();
+    return;
+  }
+  const form = document.querySelector('#accountingPane [data-report-period]');
+  if (!form) return;
+  form.elements.namedItem('start').value = period.start;
+  form.elements.namedItem('end').value = period.end;
+  await applyAccountingReportDates({ preventDefault() {}, currentTarget: form });
+}
+function accountingReportShortcuts() {
+  const choices = [
+    ['activities', 'Income and expenses', 'What came in and what did we spend?', 'Income Statement'],
+    ['budgetActual', 'Budget vs actual YTD', 'Are we within our parish plan?', 'Budget to Actual'],
+    ['position', 'Cash and fund balances', 'What do we own and what do we owe?', 'Balance Sheet'],
+    ['expenses', 'Spending by category', 'Where is parish money going?', 'Expense Breakdown'],
+  ];
+  return `<div class="acct-report-start" aria-label="Common treasurer reports">${choices.map(([id, title, copy, formal]) => `<button type="button" data-report-search="${escapeAttr(`${title} ${copy} ${formal} ${id === 'activities' ? 'tithes donations' : id === 'budgetActual' ? 'plan ytd' : ''}`.toLowerCase())}" onclick="openAccountingTreasurerReport('${id}')"><span class="acct-kicker">${escapeHtml(formal)}</span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(copy)}</small><span class="acct-report-open">Open report →</span></button>`).join('')}</div>`;
+}
+async function selectAccountingReportBudget(id) {
+  if (accountingReportLoading) return;
+  const previous = accountingSelectedBudgetId;
+  accountingSelectedBudgetId = id;
+  await openAccountingReport(accountingReportView);
+  if (accountingCustomReport?.error) accountingSelectedBudgetId = previous;
+  else accountingSaveReportPreferences();
+}
+function accountingReportBudgetPicker() {
+  if (
+    !['budgetActual', 'comparativeBudget', 'budgetByFund'].includes(accountingReportView) ||
+    !accountingAvailableBudgets.length
+  )
+    return '';
+  return `<label class="acct-budget-selection">Budget version<select aria-label="Budget version" onchange="selectAccountingReportBudget(this.value)" ${accountingReportLoading ? 'disabled' : ''}>${accountingAvailableBudgets.map((b) => `<option value="${escapeAttr(b.id)}" ${b.id === accountingSelectedBudgetId ? 'selected' : ''}>${escapeHtml(b.name || 'Budget')} · ${escapeHtml(b.status || 'Status not supplied')}${b.versionNumber ? ` · v${b.versionNumber}` : ''}</option>`).join('')}</select></label>`;
+}
+async function loadAccountingOverviewSummaries(force = false) {
+  if (accountingOverviewSummaries.loading || (!force && accountingOverviewSummaries.loadedAt)) return;
+  const parishId = currentParish?.parishId;
+  const snapshot = accountingOverviewSummaries;
+  snapshot.loading = true;
+  snapshot.errors = {};
+  if (accountingView === 'overview') renderAccountingPane();
+  const requests = [
+    ['banking', '/bank/reconciliations'],
+    ['close', '/close/workspace'],
+    ...(accountingData.tier === 'advanced_operations'
+      ? [
+          ['payables', '/payables/overview'],
+          ['budgets', '/budgets'],
+        ]
+      : []),
+  ];
+  await Promise.allSettled(
+    requests.map(async ([key, path]) => {
+      try {
+        const response = await fetch(accountingApi(path), { headers: authHeaders() });
+        const payload = await response.json();
+        if (!response.ok)
+          throw new Error(
+            response.status === 403
+              ? 'Your profile does not have access to this summary.'
+              : payload.message || payload.error || 'Summary unavailable.'
+          );
+        if (currentParish?.parishId !== parishId || snapshot !== accountingOverviewSummaries) return;
+        if (key === 'payables') snapshot.payables = payload.overview;
+        if (key === 'budgets')
+          snapshot.budgetCount = (payload.budgets || []).filter((b) => b.status !== 'voided').length;
+        if (key === 'banking')
+          snapshot.openReconciliations = (payload.sessions || []).filter((s) =>
+            ['in_progress', 'reopened'].includes(s.status)
+          ).length;
+        if (key === 'close') {
+          snapshot.activeCloses = (payload.sessions || []).filter(
+            (s) => !['completed', 'voided'].includes(s.status)
+          ).length;
+          snapshot.completedCloses = (payload.sessions || []).filter((s) => s.status === 'completed').length;
+        }
+      } catch (error) {
+        if (snapshot === accountingOverviewSummaries) {
+          snapshot.errors[key] = error.message;
+          if (key === 'payables') delete snapshot.payables;
+          if (key === 'budgets') delete snapshot.budgetCount;
+          if (key === 'banking') delete snapshot.openReconciliations;
+          if (key === 'close') {
+            delete snapshot.activeCloses;
+            delete snapshot.completedCloses;
+          }
+        }
+      }
+    })
+  );
+  if (currentParish?.parishId !== parishId || snapshot !== accountingOverviewSummaries) return;
+  snapshot.loading = false;
+  snapshot.loadedAt = /* @__PURE__ */ new Date().toISOString();
+  if (accountingView === 'overview') renderAccountingPane();
+}
+function accountingOverviewSummaryLabel(key) {
+  return accountingOverviewSummaries.errors[key]
+    ? 'Unavailable'
+    : accountingOverviewSummaries.loading
+      ? 'Loading…'
+      : 'Not loaded';
+}
+function accountingReportDetailLink(value, detail, column) {
+  const spec = { ...detail };
+  if (accountingReportView === 'activities' && column === 1) spec.restriction = 'without';
+  if (accountingReportView === 'activities' && column === 2) spec.restriction = 'with';
+  const encoded = escapeAttr(encodeURIComponent(JSON.stringify(spec)).replaceAll("'", '%27'));
+  return `<button type="button" class="acct-report-drill" title="View posted transactions" aria-label="View posted transactions for ${escapeAttr(spec.label)}" onclick="openAccountingReportTransactions(decodeURIComponent('${encoded}'))">${escapeHtml(value)}<span aria-hidden="true"> ↗</span></button>`;
+}
+function openAccountingReportTransactions(encoded) {
+  try {
+    const detail = JSON.parse(encoded);
+    if (!detail || typeof detail.label !== 'string') return;
+    accountingTransactionDetail = detail;
+    accountingTransactionPage = 0;
+    accountingTransactionSearch = '';
+    accountingTransactionJournal = '';
+    renderAccountingPane();
+    document.querySelector('#accountingPane [data-transaction-heading]')?.focus();
+  } catch {}
+}
+function accountingReportTransactionRows() {
+  const detail = accountingTransactionDetail;
+  const period = accountingReportPeriod();
+  const fund = accountingData.funds.find((f) => f.id === detail.fundId);
+  return accountingReportLedgerRows(detail.start || period.start, detail.end || period.end).filter((row) => {
+    if (detail.accountNumber && row.accountNumber !== detail.accountNumber) return false;
+    if (detail.category && row.category !== detail.category) return false;
+    if (detail.fundId && (!fund || (row.fundCode ? row.fundCode !== fund.code : row.fund !== fund.name))) return false;
+    if (detail.restriction) {
+      const rowFund = accountingData.funds.find((f) => (row.fundCode ? f.code === row.fundCode : f.name === row.fund));
+      if (
+        /^donor_restricted/.test(rowFund?.restrictionType || rowFund?.restriction_type || '') !==
+        (detail.restriction === 'with')
+      )
+        return false;
+    }
+    return (
+      !accountingTransactionSearch ||
+      `${row.entryNumber} ${row.description} ${row.fund} ${row.accountName}`
+        .toLowerCase()
+        .includes(accountingTransactionSearch)
+    );
+  });
+}
+function filterAccountingReportTransactions(value) {
+  accountingTransactionSearch = value.trim().toLowerCase();
+  accountingTransactionPage = 0;
+  const results = document.getElementById('accountingTransactionResults');
+  if (results) results.innerHTML = accountingReportTransactionTable();
+}
+function accountingReportTransactionTable() {
+  const rows = accountingReportTransactionRows();
+  const start = accountingTransactionPage * 50;
+  const visible = rows.slice(start, start + 50);
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  return `<div class="acct-detail-summary"><span>${rows.length} posted ledger lines</span><strong>${accountingMoney(total)}</strong><small>Net account activity for the filters shown. A balance detail includes all posted history through its as-of date.</small></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Entry and description</th><th>Account / fund</th><th class="number">Debit</th><th class="number">Credit</th></tr></thead><tbody>${visible.map((row) => `<tr><td>${escapeHtml(row.date)}</td><td><button class="acct-link" onclick="showAccountingReportJournal('${escapeAttr(encodeURIComponent(row.entryNumber).replaceAll("'", '%27'))}')">${escapeHtml(row.entryNumber)}</button><small>${escapeHtml(row.description || '')}</small><small>${escapeHtml(row.sourceType || '')}</small></td><td>${escapeHtml(row.accountNumber)} · ${escapeHtml(row.accountName)}<small>${escapeHtml(row.fund)}</small></td><td class="number">${accountingStatementMoney(row.debitAmount)}</td><td class="number">${accountingStatementMoney(row.creditAmount)}</td></tr>`).join('') || '<tr><td colspan="5">No posted transactions match these filters.</td></tr>'}</tbody></table></div><div class="acct-detail-pagination"><button type="button" onclick="changeAccountingTransactionPage(-1)" ${start === 0 ? 'disabled' : ''}>Previous</button><span>${rows.length ? start + 1 : 0}–${Math.min(start + 50, rows.length)} of ${rows.length}</span><button type="button" onclick="changeAccountingTransactionPage(1)" ${start + 50 >= rows.length ? 'disabled' : ''}>Next</button></div>`;
+}
+function changeAccountingTransactionPage(change) {
+  const count = accountingReportTransactionRows().length;
+  accountingTransactionPage = Math.max(
+    0,
+    Math.min(Math.max(0, Math.ceil(count / 50) - 1), accountingTransactionPage + change)
+  );
+  const results = document.getElementById('accountingTransactionResults');
+  if (results) results.innerHTML = accountingReportTransactionTable();
+}
+function showAccountingReportJournal(encoded) {
+  accountingTransactionJournal = decodeURIComponent(encoded);
+  renderAccountingPane();
+}
+function closeAccountingReportTransactions() {
+  accountingTransactionDetail = null;
+  accountingTransactionJournal = '';
+  renderAccountingPane();
+}
+function renderAccountingReportTransactions(pane) {
+  const detail = accountingTransactionDetail;
+  const period = accountingReportPeriod();
+  const journal = accountingTransactionJournal
+    ? accountingReportLedgerRows('0001-01-01', '9999-12-31').filter(
+        (row) => row.entryNumber === accountingTransactionJournal
+      )
+    : [];
+  pane.innerHTML = `<section class="acct-report-detail"><button type="button" class="acct-link" onclick="closeAccountingReportTransactions()">← Back to ${escapeHtml(ACCOUNTING_REPORT_LIBRARY.find((r) => r.id === accountingReportView)?.title || 'report')}</button><span class="acct-kicker">Posted transaction detail · read only</span><h2 tabindex="-1" data-transaction-heading>${escapeHtml(detail.label)}</h2><p>${escapeHtml(detail.start || period.start)} through ${escapeHtml(detail.end || period.end)}${detail.restriction ? ` · ${escapeHtml(detail.restriction)} donor restrictions` : ''}</p><label>Find an entry<input type="search" value="${escapeAttr(accountingTransactionSearch)}" placeholder="Entry, description, account or fund" oninput="filterAccountingReportTransactions(this.value)"></label><div id="accountingTransactionResults">${accountingReportTransactionTable()}</div>${journal.length ? `<section class="acct-journal-preview"><h3>Complete journal ${escapeHtml(accountingTransactionJournal)}</h3><p>All posted lines in this entry, including accounts outside the report filter.</p><table class="acct-table"><thead><tr><th>Account and fund</th><th>Debit</th><th>Credit</th></tr></thead><tbody>${journal.map((row) => `<tr><td>${escapeHtml(row.accountNumber)} ${escapeHtml(row.accountName)} · ${escapeHtml(row.fund)}</td><td>${accountingStatementMoney(row.debitAmount)}</td><td>${accountingStatementMoney(row.creditAmount)}</td></tr>`).join('')}</tbody></table></section>` : ''}</section>`;
+}
+async function openAccountingTreasurerReport(id) {
+  if (accountingReportLoading) return;
+  accountingView = 'reports';
+  await openAccountingReport(id);
+}
 const ACCOUNTING_REPORT_LIBRARY = [
+  {
+    id: 'assetRegister',
+    title: 'Asset Register',
+    group: 'Assets',
+    copy: 'Property, locations, acquisition cost, posted depreciation and net book value as of the selected date.',
+  },
   {
     id: 'generalLedger',
     title: 'General Ledger',
@@ -17,7 +244,7 @@ const ACCOUNTING_REPORT_LIBRARY = [
     id: 'comparativePeriods',
     title: 'Comparative Income Statement Periods',
     group: 'Income statements',
-    copy: 'Compare this month with the immediately preceding month.',
+    copy: 'Compare the selected period with the preceding period.',
   },
   {
     id: 'incomeByFund',
@@ -41,7 +268,7 @@ const ACCOUNTING_REPORT_LIBRARY = [
     id: 'position',
     title: 'Balance Sheet',
     group: 'Balance sheets',
-    copy: 'Assets, liabilities, and net assets as of today.',
+    copy: 'Assets, liabilities, and net assets as of the selected report end.',
   },
   {
     id: 'balanceByFund',
@@ -78,7 +305,7 @@ const ACCOUNTING_REPORT_LIBRARY = [
     id: 'comparativeBudget',
     title: 'Comparative Budget to Actual',
     group: 'Budgeting',
-    copy: 'Compare the two most recent budget versions and actual results.',
+    copy: 'Compare the selected budget with its preceding approved version and actual results.',
     parishOnly: true,
   },
   {
@@ -101,16 +328,31 @@ const ACCOUNTING_REPORT_LIBRARY = [
     copy: 'Visual expense analysis with the current AGAPAY subscription rate shown separately.',
   },
 ];
+let accountingTransactionPage = 0;
+let accountingTransactionSearch = '';
+let accountingTransactionJournal = '';
 let accountingReportDateRange = null;
+let accountingSelectedBudgetId = '';
+let accountingAvailableBudgets = [];
+let accountingReportLoading = false;
+let accountingTransactionDetail = null;
 function accountingReportPeriod() {
   if (accountingReportDateRange) return accountingReportDateRange;
-  const fiscal = accountingData.setup?.currentFiscalYear || {};
-  const now = /* @__PURE__ */ new Date(),
-    today = now.toISOString().slice(0, 10);
-  return {
-    start: fiscal.startDate || `${now.getUTCFullYear()}-01-01`,
-    end: fiscal.endDate && fiscal.endDate < today ? fiscal.endDate : today,
-  };
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(accountingReportPreferenceKey()) || 'null');
+    const validDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
+    if (
+      saved?.period &&
+      validDate(saved.period.start) &&
+      validDate(saved.period.end) &&
+      saved.period.start <= saved.period.end
+    ) {
+      accountingReportDateRange = { start: saved.period.start, end: saved.period.end };
+      accountingSelectedBudgetId = typeof saved.budgetId === 'string' ? saved.budgetId : '';
+      return accountingReportDateRange;
+    }
+  } catch {}
+  return accountingPeriodPreset('ytd');
 }
 function accountingReportLedgerRows(startDate = '0001-01-01', endDate = '9999-12-31') {
   const accounts = new Map(
@@ -277,51 +519,69 @@ function accountingTabularReport(id) {
 }
 function renderAccountingReportLibrary(pane) {
   const groups = [...new Set(ACCOUNTING_REPORT_LIBRARY.map((report) => report.group))];
-  pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Financial reporting</span><h2>Reports</h2><p>Create clear parish financial statements, fund views, comparisons, and budget reports.</p></div><label>Search reports<input type="search" placeholder="Search by report name" oninput="filterAccountingReportLibrary(this.value)"></label></section><div class="acct-report-quick"><span>Quick access</span><button onclick="openAccountingReport('position')">Balance Sheet</button><button onclick="openAccountingReport('activities')">Revenue minus expenses</button><button onclick="openAccountingReport('expenses')">Expense Report</button><button onclick="openAccountingReport('budgetActual')">Budget to Actual</button></div><div class="acct-report-library">${groups
+  pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Parish financial reporting</span><h2>What would you like to understand?</h2><p>Start with a treasurer report, or explore the full library below.</p></div><label>Find a report<input type="search" placeholder="Try budget, tithes, cash or expenses" oninput="filterAccountingReportLibrary(this.value)"></label></section>${accountingReportDateForm()}${accountingReportShortcuts()}<p class="acct-library-result" role="status" id="accountingReportSearchStatus"></p><div class="acct-report-library">${groups
     .map(
       (group) =>
-        `<section><div class="acct-report-library-section"><div><strong>${escapeHtml(group)}</strong><small>${ACCOUNTING_REPORT_LIBRARY.filter((report) => report.group === group).length} reports</small></div><span>⌄</span></div><div class="acct-report-library-grid">${ACCOUNTING_REPORT_LIBRARY.filter(
-          (report) => report.group === group
+        `<section data-report-group><div class="acct-report-library-section"><div><strong>${escapeHtml(group)}</strong><small>${ACCOUNTING_REPORT_LIBRARY.filter((r) => r.group === group).length} reports</small></div></div><div class="acct-report-library-grid">${ACCOUNTING_REPORT_LIBRARY.filter(
+          (r) => r.group === group
         )
           .map(
             (report) =>
-              `<button class="acct-report-library-card" data-report-search="${escapeAttr(`${report.title} ${report.copy} ${group}`.toLowerCase())}" onclick="openAccountingReport('${report.id}')"><i>☆</i><span><strong>${escapeHtml(report.title)}</strong><small>${escapeHtml(report.copy)}</small></span>${report.parishOnly && accountingData.tier !== 'advanced_operations' ? '<b>Parish</b>' : '<b>Open →</b>'}</button>`
+              `<button type="button" class="acct-report-library-card" data-report-search="${escapeAttr(`${report.title} ${report.copy} ${group} ${report.id === 'budgetActual' ? 'within budget ytd plan' : report.id === 'activities' ? 'tithes donations income spending surplus' : report.id === 'position' ? 'cash assets liabilities' : ''}`.toLowerCase())}" onclick="openAccountingReport('${report.id}')"><span><strong>${escapeHtml(report.title)}</strong><small>${escapeHtml(report.copy)}</small></span><b>Open →</b></button>`
           )
           .join('')}</div></section>`
     )
     .join('')}</div>`;
 }
 function filterAccountingReportLibrary(query) {
-  const value = String(query || '')
-    .trim()
-    .toLowerCase();
-  document
-    .querySelectorAll('[data-report-search]')
-    .forEach((card) => (card.hidden = value && !card.dataset.reportSearch.includes(value)));
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const cards = [...document.querySelectorAll('[data-report-search]')];
+  cards.forEach((card) => (card.hidden = !terms.every((term) => card.dataset.reportSearch.includes(term))));
+  document.querySelectorAll('[data-report-group]').forEach((group) => {
+    group.hidden = ![...group.querySelectorAll('[data-report-search]')].some((card) => !card.hidden);
+  });
+  const status = document.getElementById('accountingReportSearchStatus');
+  if (status)
+    status.textContent =
+      terms.length && cards.every((card) => card.hidden)
+        ? 'No matching reports. Try income, budget, fund or cash.'
+        : '';
 }
 async function openAccountingReport(id) {
+  if (accountingReportLoading) return;
   const definition = ACCOUNTING_REPORT_LIBRARY.find((report) => report.id === id);
   if (!definition) return;
   if (definition.parishOnly && accountingData.tier !== 'advanced_operations') {
     alert('This budgeting report is available with Parish Accounting.');
     return;
   }
-  accountingReportView = id;
-  accountingCustomReport = null;
-  if (['activities', 'position', 'trialBalance', 'expenses'].includes(id)) {
-    await loadAccountingCoreReport(id);
-    return;
+  accountingReportLoading = true;
+  accountingTransactionDetail = null;
+  try {
+    accountingReportView = id;
+    accountingCustomReport = null;
+    if (id === 'assetRegister') {
+      await loadAccountingAssetReport();
+      return;
+    }
+    if (['activities', 'position', 'trialBalance', 'expenses'].includes(id)) {
+      await loadAccountingCoreReport(id);
+      return;
+    }
+    if (['cashFlows', 'functionalExpenses', 'netAssetRollforward'].includes(id)) {
+      await loadAccountingDepthReport(id);
+      return;
+    }
+    if (['budgetActual', 'comparativeBudget', 'budgetByFund'].includes(id)) {
+      await loadAccountingBudgetLibraryReport(id);
+      return;
+    }
+    accountingCustomReport = accountingTabularReport(id);
+    renderAccountingPane();
+  } finally {
+    accountingReportLoading = false;
+    if (typeof accountingView === 'undefined' || accountingView === 'reports') renderAccountingPane();
   }
-  if (['cashFlows', 'functionalExpenses', 'netAssetRollforward'].includes(id)) {
-    await loadAccountingDepthReport(id);
-    return;
-  }
-  if (['budgetActual', 'comparativeBudget', 'budgetByFund'].includes(id)) {
-    await loadAccountingBudgetLibraryReport(id);
-    return;
-  }
-  accountingCustomReport = accountingTabularReport(id);
-  renderAccountingPane();
 }
 async function loadAccountingDepthReport(id) {
   const pane = document.getElementById('accountingPane');
@@ -434,16 +694,56 @@ async function loadAccountingBudgetLibraryReport(id) {
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Creating budget report…</p>';
   try {
-    const listResponse = await fetch(accountingApi('/budgets'), { headers: authHeaders() }),
+    const fiscalId = accountingData.setup?.currentFiscalYear?.id;
+    const budgetPath = fiscalId ? `/budgets?fiscalYearId=${encodeURIComponent(fiscalId)}` : '/budgets';
+    const listResponse = await fetch(accountingApi(budgetPath), { headers: authHeaders() }),
       list = await listResponse.json().catch(() => ({}));
     if (!listResponse.ok) throw new Error(list.message || 'Budgets are unavailable.');
-    const budgets = (list.budgets || list.items || []).filter((budget) => budget.status !== 'voided');
+    const budgets = (list.budgets || list.items || [])
+      .filter((budget) => budget.id && budget.status !== 'voided')
+      .map((budget) => ({
+        id: String(budget.id),
+        name: budget.name,
+        status: budget.status || '',
+        versionNumber: 'versionNumber' in budget ? Number(budget.versionNumber) : void 0,
+      }));
+    accountingAvailableBudgets = budgets;
     if (!budgets.length) throw new Error('Create a budget before running this report.');
-    const selected = budgets.slice(0, id === 'comparativeBudget' ? 2 : 1),
+    const period = accountingReportPeriod();
+    const fiscalStart = accountingData.setup?.currentFiscalYear?.startDate || period.start;
+    const fiscalEnd = accountingData.setup?.currentFiscalYear?.endDate || period.end;
+    const [year, month] = period.end.split('-').map(Number);
+    const monthEnd = accountingLocalDate(new Date(year, month, 0));
+    if (period.end !== monthEnd || period.start !== fiscalStart || period.end < fiscalStart || period.end > fiscalEnd)
+      throw new Error(
+        'Budget reports compare whole fiscal months. Choose Fiscal YTD through last month, or set the fiscal-year start and a month-end cutoff within this fiscal year. No dates have been changed.'
+      );
+    if (!budgets.some((b) => b.id === accountingSelectedBudgetId))
+      accountingSelectedBudgetId = (budgets.find((b) => ['approved', 'locked'].includes(b.status)) || budgets[0]).id;
+    const throughMonth = Math.min(
+      12,
+      Math.max(
+        1,
+        (Number(period.end.slice(0, 4)) - Number(fiscalStart.slice(0, 4))) * 12 +
+          Number(period.end.slice(5, 7)) -
+          Number(fiscalStart.slice(5, 7)) +
+          1
+      )
+    );
+    const chosen = budgets.find((b) => b.id === accountingSelectedBudgetId);
+    const priorBudgets = budgets
+      .filter(
+        (b) =>
+          b.id !== chosen.id &&
+          (!b.status || ['approved', 'locked'].includes(b.status)) &&
+          (chosen.versionNumber == null || b.versionNumber == null || b.versionNumber < chosen.versionNumber)
+      )
+      .sort((a, b) => (b.versionNumber || 0) - (a.versionNumber || 0));
+    const selected = [chosen, ...priorBudgets].slice(0, id === 'comparativeBudget' ? 2 : 1),
       reports = [];
     for (const budget of selected) {
       const response = await fetch(
-          accountingApi(`/budgets/${encodeURIComponent(budget.id)}/variance?throughMonth=12`),
+          accountingApi(`/budgets/${encodeURIComponent(budget.id)}/variance?throughMonth=${throughMonth}`),
           { headers: authHeaders() }
         ),
         payload = await response.json().catch(() => ({}));
@@ -457,7 +757,14 @@ async function loadAccountingBudgetLibraryReport(id) {
         const fund = accountingData.funds.find((item2) => item2.id === row.fundId),
           name = fund?.name || 'Unassigned',
           groupKey = name + ':' + row.category,
-          item = groups.get(groupKey) || { name, category: row.category, budget: 0, actual: 0, variance: 0 };
+          item = groups.get(groupKey) || {
+            name,
+            fundId: row.fundId,
+            category: row.category,
+            budget: 0,
+            actual: 0,
+            variance: 0,
+          };
         item.budget += Number(row.budget || 0);
         item.actual += Number(row.actual || 0);
         item.variance += Number(row.variance || 0);
@@ -475,7 +782,8 @@ async function loadAccountingBudgetLibraryReport(id) {
         rows: [...groups.values()],
       };
     } else if (id === 'comparativeBudget') {
-      if (!reports[1]) throw new Error('Create a second budget before running a comparative budget report.');
+      if (!reports[1])
+        throw new Error('Choose a budget with an earlier approved or locked version before running this comparison.');
       const prior = new Map((reports[1]?.rows || []).map((row) => [row.accountId + ':' + row.fundId, row]));
       accountingCustomReport = {
         title: 'Comparative Budget to Actual',
@@ -498,6 +806,8 @@ async function loadAccountingBudgetLibraryReport(id) {
             )
             .map((row) => ({ ...row, budget: 0, actual: 0, variance: 0 })),
         ].map((row) => ({
+          accountNumber: row.accountNumber,
+          fundId: row.fundId,
           account: `${row.accountNumber} · ${row.account} (${accountingData.funds.find((fund) => fund.id === row.fundId)?.name || 'Unassigned'})`,
           category: row.category,
           budget: row.budget,
@@ -518,7 +828,9 @@ async function loadAccountingBudgetLibraryReport(id) {
           { key: 'assessment', label: 'Assessment' },
         ],
         rows: (reports[0].rows || []).map((row) => ({
-          account: `${row.accountNumber} · ${row.account}`,
+          accountNumber: row.accountNumber,
+          fundId: row.fundId,
+          account: `${row.accountNumber} · ${row.account} (${accountingData.funds.find((fund) => fund.id === row.fundId)?.name || 'Unassigned'})`,
           category: row.category,
           budget: row.budget,
           actual: row.actual,
@@ -526,9 +838,9 @@ async function loadAccountingBudgetLibraryReport(id) {
           assessment: row.varianceLabel,
         })),
       };
-    accountingCustomReport.subtitle += ' | Fiscal year through ' + reports[0].throughDate;
+    accountingCustomReport.subtitle += ' | Fiscal YTD through ' + reports[0].throughDate + ' (whole months)';
     accountingCustomReport.disclaimer =
-      'Full fiscal-year budget compared with posted actuals through ' +
+      'Fiscal year-to-date budget compared with posted actuals through ' +
       reports[0].throughDate +
       '. Variance is actual less budget; positive revenue variance is favorable and positive expense variance is unfavorable.';
     renderAccountingPane();
@@ -538,6 +850,10 @@ async function loadAccountingBudgetLibraryReport(id) {
   }
 }
 function renderAccountingReports(pane) {
+  if (accountingTransactionDetail) {
+    renderAccountingReportTransactions(pane);
+    return;
+  }
   if (accountingReportView === 'library') {
     renderAccountingReportLibrary(pane);
     return;
@@ -545,7 +861,8 @@ function renderAccountingReports(pane) {
   if (accountingCustomReport?.error) {
     pane.innerHTML =
       '<button class="acct-refresh" onclick="setAccountingReportView(&quot;library&quot;)">← All reports</button>' +
-      accountingEmpty('Report unavailable', accountingCustomReport.error);
+      accountingReportDateForm() +
+      accountingEmpty('Report needs a selection', accountingCustomReport.error);
     return;
   }
   try {
@@ -569,7 +886,12 @@ function renderAccountingReports(pane) {
       comparison +
       accountingStatementActions() +
       '</div></div>' +
-      (accountingReportView.toLowerCase().includes('budget') ? '' : accountingReportDateForm()) +
+      accountingReportDateForm() +
+      accountingReportBudgetPicker() +
+      (report.rows.some((row) => row.drilldown)
+        ? '<p class="acct-report-hint">Select an underlined account or amount to see its posted transactions.</p>'
+        : '') +
+      '<p class="acct-report-mobile-hint">Swipe across the statement to see all columns.</p>' +
       (accountingReportView === 'activities' ? accountingIncomeSummary(accountingData.reports.activities) : '') +
       accountingStatementHtml(report) +
       insights;
@@ -578,9 +900,7 @@ function renderAccountingReports(pane) {
   }
 }
 function openAccountingIncomeReport() {
-  accountingReportView = 'activities';
-  accountingCustomReport = null;
-  setAccountingView('reports');
+  void openAccountingTreasurerReport('activities');
 }
 function accountingIncomeSummary(report, printable = false) {
   const totals = report.totals;
@@ -599,6 +919,7 @@ function accountingIncomeSummary(report, printable = false) {
   return `<section class="acct-income-summary">${heading}<div class="acct-income-equation">${cells}</div></section>`;
 }
 function setAccountingReportView(view) {
+  accountingTransactionDetail = null;
   accountingReportView = view;
   accountingCustomReport = null;
   renderAccountingPane();
@@ -648,8 +969,8 @@ function printAccountingReport() {
   win.document.write(
     '<!doctype html><html><head><meta charset="utf-8"><title>' +
       escapeHtml(report.title) +
-      '</title><link rel="stylesheet" href="/parish/accounting-reports.css?v=20260930reports1"></head><body><button onclick="print()">Print</button>' +
-      accountingStatementHtml(report) +
+      '</title><link rel="stylesheet" href="/parish/accounting-reports.css?v=20261103treasurer1"></head><body><button onclick="print()">Print</button>' +
+      accountingStatementHtml(report, false) +
       '</body></html>'
   );
   win.document.close();
@@ -703,24 +1024,37 @@ async function printAccountingLedger() {
 }
 function accountingReportDateForm() {
   const period = accountingReportPeriod();
-  return (
-    '<form class="acct-phase-form" onsubmit="applyAccountingReportDates(event)"><div class="acct-form-grid"><label>Report start<input name="start" type="date" value="' +
-    escapeAttr(period.start) +
-    '" required></label><label>Report end<input name="end" type="date" value="' +
-    escapeAttr(period.end) +
-    '" required></label></div><button class="acct-primary">Apply report dates</button><span class="acct-form-status" role="status"></span></form>'
-  );
+  const budget = ['budgetActual', 'comparativeBudget', 'budgetByFund'].includes(accountingReportView);
+  return `<section class="acct-period-panel"><div class="acct-period-context"><span class="acct-kicker">Shared reporting period</span><strong>${escapeHtml(period.start)} through ${escapeHtml(period.end)}</strong><small>${budget ? 'Fiscal YTD budget and actuals use the same month-end cutoff.' : 'This selection follows you between reports.'}</small></div><div class="acct-period-presets"><button type="button" onclick="setAccountingReportPreset('lastMonth')" ${accountingReportLoading ? 'disabled' : ''}>Last completed month</button><button type="button" onclick="setAccountingReportPreset('ytd')" ${accountingReportLoading ? 'disabled' : ''}>Fiscal YTD through last month</button><button type="button" onclick="setAccountingReportPreset('today')" ${accountingReportLoading ? 'disabled' : ''}>Fiscal YTD through today</button></div><form data-report-period class="acct-phase-form" onsubmit="applyAccountingReportDates(event)"><div class="acct-form-grid"><label>Report start<input name="start" type="date" value="${escapeAttr(period.start)}" required></label><label>Report end<input name="end" type="date" value="${escapeAttr(period.end)}" required></label></div><button class="acct-primary" ${accountingReportLoading ? 'disabled' : ''}>Apply report dates</button><span class="acct-form-status" role="status"></span></form></section>`;
 }
 async function applyAccountingReportDates(event) {
   event.preventDefault();
+  if (accountingReportLoading) return;
   const form = event.currentTarget,
     values = Object.fromEntries(new FormData(form));
   if (!values.start || !values.end || values.start > values.end) {
     form.querySelector('.acct-form-status').textContent = 'Choose a start date on or before the end date.';
     return;
   }
+  const previousRange = accountingReportDateRange;
+  const previousReports = { ...accountingData.reports };
+  const previousCustom = accountingCustomReport;
   accountingReportDateRange = { start: values.start, end: values.end };
+  if (accountingReportView === 'library') {
+    accountingSaveReportPreferences();
+    renderAccountingPane();
+    return;
+  }
   await openAccountingReport(accountingReportView);
+  if (accountingCustomReport?.error) {
+    const message = accountingCustomReport.error;
+    accountingReportDateRange = previousRange;
+    accountingData.reports = previousReports;
+    accountingCustomReport = previousCustom;
+    renderAccountingPane();
+    const status = document.querySelector('#accountingPane .acct-form-status');
+    if (status) status.textContent = message;
+  } else accountingSaveReportPreferences();
 }
 function renderAccountingExpenses(pane, report, reportTabs) {
   const grouped = /* @__PURE__ */ new Map();

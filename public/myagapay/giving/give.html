@@ -15,9 +15,9 @@
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
   <script src="/myagapay-shell.js?v=85c1aaaa41e1e09a"></script>
   <script src="/donor/controllers/calendar.js?v=2edc15b643149352" defer></script>
-  <script src="/donor/controllers/history.js?v=98402daefb888295" defer></script>
+  <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0563aa47128c1c3b" defer></script>
-  <script src="/donor/app.js?v=348989100096cee1" defer></script>
+  <script src="/donor/app.js?v=129d21aa5be3c184" defer></script>
   <script src="/donor/pwa-install.js?v=7702a89df6bc6199" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
@@ -157,7 +157,7 @@
                   <div class="payment-method-card"><span><strong>Secure Stripe checkout</strong><small>Cards, wallets, and any Stripe-supported options appear on the checkout page when available.</small></span></div>
                 </div>
               </div>
-              <label class="fee-toggle" for="coverFees"><input id="coverFees" type="checkbox" checked /><span><strong>Cover processing fees</strong><small>Default yes, so your parish receives the full intended gift.</small></span></label>
+              <label class="fee-toggle" for="coverFees"><input id="coverFees" type="checkbox" checked aria-describedby="feeTaxNote" /><span><strong>Cover processing fees</strong><small>Default yes, so your parish receives the full intended gift.</small><small id="feeTaxNote">Your fee-covering addition is part of your charitable gift and is generally tax-deductible to the same extent as your donation. It is included in your annual giving statement.</small></span></label>
               <p class="form-help">This uses the live AGAPAY checkout API and records the gift under your donor account.</p>
               <div data-agapay-turnstile class="section-gap"></div>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AGAPAY checkout</button></div>

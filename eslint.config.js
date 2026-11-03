@@ -1183,7 +1183,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(accountingView|accountingReportView|accountingCustomReport|accountingDepthComparative|accountingData|accountingBankPreview|accountingFundCatalog|accountingShowInactiveFunds|accountingFundAccountSections|accountingExpenseAccountEditor|accountingVendorLifecycleConfirm|accountingAccountLifecycleConfirm|accountingLifecycleMessage|accountingReconciliationView|accountingCloseDetail|accountingJournalEditor|accountingLedgerNewestFirst|accountingLedgerAccountNumber|accountingLedgerSearch|accountingRegisterEntryMode|accountingRecurringEditor|accountingPayablesView|accountingBudgetReport|accountingBudgetEditor|accountingMigration|accountingAdvancedNavExpanded|accountingSimpleIncomeMessage|accountingSimpleEntryMode|accountingInKindGiftMessage|accountingExperienceMode|ACCOUNTING_SIMPLE_REVENUE_LABELS|bootstrapAccountingStaff|verifyAccountingStaff|addAccountingStaff|changeAccountingPin|lockAccountingWorkspace|accountingApi|accountingMoney|accountingDate)$',
+            '^(accountingOverviewSummaries|accountingOverviewFinancials|accountingWorkspaceParishId|accountingView|accountingReportView|accountingCustomReport|accountingDepthComparative|accountingData|accountingBankPreview|accountingFundCatalog|accountingShowInactiveFunds|accountingFundAccountSections|accountingExpenseAccountEditor|accountingVendorLifecycleConfirm|accountingAccountLifecycleConfirm|accountingLifecycleMessage|accountingReconciliationView|accountingCloseDetail|accountingJournalEditor|accountingLedgerNewestFirst|accountingLedgerAccountNumber|accountingLedgerSearch|accountingRegisterEntryMode|accountingRecurringEditor|accountingPayablesView|accountingBudgetReport|accountingBudgetEditor|accountingMigration|accountingAdvancedNavExpanded|accountingSimpleIncomeMessage|accountingSimpleEntryMode|accountingInKindGiftMessage|accountingExperienceMode|ACCOUNTING_SIMPLE_REVENUE_LABELS|bootstrapAccountingStaff|verifyAccountingStaff|addAccountingStaff|changeAccountingPin|lockAccountingWorkspace|accountingApi|accountingMoney|accountingDate)$',
         },
       ],
       'prefer-const': 'off',
@@ -1722,13 +1722,29 @@ export default [
     },
   },
   {
-    files: ['src/browser/parish/features/accounting/reports.ts'],
+    files: ['src/browser/parish/features/accounting/report-experience.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
           varsIgnorePattern:
-            '^(ACCOUNTING_REPORT_LIBRARY|accountingReportDateRange|accountingReportPeriod|accountingReportLedgerRows|accountingTabularReport|renderAccountingReportLibrary|filterAccountingReportLibrary|openAccountingReport|loadAccountingDepthReport|toggleAccountingDepthComparative|loadAccountingBudgetLibraryReport|renderAccountingReports|openAccountingIncomeReport|accountingIncomeSummary|setAccountingReportView|downloadAccountingReport|printAccountingReport|downloadAccountingFile|downloadAccountingLedger|printAccountingLedger|accountingReportDateForm|applyAccountingReportDates|renderAccountingExpenses)$',
+            '^(' +
+            'setAccountingReportPreset|accountingReportShortcuts|selectAccountingReportBudget|accountingReportBudgetPicker|loadAccountingOverviewSummaries|accountingOverviewSummaryLabel|accountingReportDetailLink|openAccountingReportTransactions|filterAccountingReportTransactions|changeAccountingTransactionPage|showAccountingReportJournal|closeAccountingReportTransactions|renderAccountingReportTransactions|openAccountingTreasurerReport' +
+            ')$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/reports.ts'],
+    rules: {
+      // Mutable classic-script state is assigned by report-experience.ts.
+      'prefer-const': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(accountingTransactionPage|accountingTransactionSearch|accountingTransactionJournal|accountingAvailableBudgets|ACCOUNTING_REPORT_LIBRARY|accountingReportDateRange|accountingReportPeriod|accountingReportLedgerRows|accountingTabularReport|renderAccountingReportLibrary|filterAccountingReportLibrary|openAccountingReport|loadAccountingDepthReport|toggleAccountingDepthComparative|loadAccountingBudgetLibraryReport|renderAccountingReports|openAccountingIncomeReport|accountingIncomeSummary|setAccountingReportView|downloadAccountingReport|printAccountingReport|downloadAccountingFile|downloadAccountingLedger|printAccountingLedger|accountingReportDateForm|applyAccountingReportDates|renderAccountingExpenses)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },
@@ -2614,6 +2630,18 @@ export default [
         {
           varsIgnorePattern:
             '^(cloneLearnViewModel|isFaithSpecific|secularPrintText|itemIsFaithSpecific|secularPlannerDay|demoPlannerItems|demoBooks|prepareOdysseyViewModel|setLearnViewMode|safeExternalUrl|cssVars|check|completionCheck|bar|pageIntroIcon|pageIntroMeta|pageIntro|downloadBlob|isLearnFamilyPlan|printCount|setPrintCount|learnAccountEmail|learnRequestHeaders|openLearnCheckout|saintStoryDialogHtml|saintMatchKey|saintMatchScore|saintPrecedence|orderSaintsByPrecedence|orderSaintsForCard|forceDisplayedSaintFirst|saintCardTitle|plannerScopeFromQuery|mealToolFromQuery|plannerSidebarSubnav|sidebar|globalProductNav|topbar|shell|renderGraceModePanel|renderTermProgressPanel|renderTodayLearnContext|weekAssignmentStorageKey|readWeekAssignmentState|designedAssignmentsForDate|timeLabel|eventsForDate|mealForDate|choresForDate|renderDesignedLessonList|renderDashboardDesignedLessons|renderDashboardFamilyCards|renderTefaViewToggleBanner|renderDashboard|renderPlanner|plannerStatusMeta|statusPill|renderPlannerReserveCard|gracePriorityBadge|renderTermAtAGlance|renderPlannerWeek|moveUnfinishedWorkControl|renderPlannerDay|renderFamilyPlanningEditor|renderFamilyPlannerIntro|renderFamilyPlannerScopeLegacy|dayKeyForChore|prototypeRecipeType|prototypeDaySeeds|prototypeMonthSeed|prototypeSetupSeed|prototypeKidsSeed|backendRecipeToPrototype|seedFamilyPrototypeState|wireFamilyPrototypeBackend|renderTefaFormation|renderFormation|bookCover|renderBooks|renderReports|gradeOption|renderGradeTermFields|renderGradeCourseEditor|renderTestScoreRow|renderTestScoresPanel|renderGrades|renderCoOp|scheduledDays|setupDayPicker|setupSourceInput|setupWeeklyPlanFields|setupMultiChildPicker|churchRhythmSetupPanel|setupTileValue|setupSectionCard|setupSectionPanel|formationSetupPanel|formSubjectsSetupPanel|setupStepTarget|setupStepState|setupProgressCard|setupPanelCollapsed|collapsibleSetupPanel|simpleSetupDraftKey|suggestedFormForChild|defaultSimpleSetupDraft|loadSimpleSetupDraft|saveSimpleSetupDraft|simpleSetupField|simpleSetupStepBody|renderSimpleSetupWizard|renderTefaCommunity|renderCommunity|renderReportsComingSoon|captureSimpleSetupStep|validateSimpleSetupStep|validateSimpleSetupMinimum|simpleSetupDates|simpleSetupPayload|applySimpleDraftToSetupVm|wireSimpleSetupWizard|setupExperience|mealSetupRow|familyPlanningSetupPanel|renderSetup|renderPrintCenter|redirectExpiredLearnSession|waitForLearnSignIn|syncLearnGoogleCalendar|localIsoDate|storedLearnCalendar|learnApiUrl|rowValue|setupChildRowsFromForm|rowWeeklyPlans|rowResourceValue|rowResourceWeeklyPlans|rowResources|resourceRowPrimaryGroupLabel|refreshResourceLaneCounts|moveResourceRowToLane|reindexResourceList|moveResourceRowToSubject|refreshResourceSummary|snapshotResourceModal|restoreResourceModal|rowTileMinutes|collectRows|openSaintOfDay|wireDashboard|setupPayloadFromForm|currentSetupChildren|familyPlanningPayloadFromForm|currentSetupTerms|setupChildCount|syncSetupChildLimit|setupBlankRow|setSetupSectionOpen|syncSetupTermSelects|wireSetupPage|wireWeeklyAssignmentBoard|wireMoveUnfinishedWork|wirePlanner|updateActiveButton|wireCommunityLegacy|wireCommunity|wireReports|gradeCourseFromElement|blankGradeCourse|attendanceEntryFromCell|setAttendanceCellStatus|wireGrades|testScoreFromElement|wireTestScores|canUsePrint|wirePrintCenter|wireFormation|learnGoogleCalendarStatus|ODYSSEY_FAITH_SPECIFIC|MARKETING_LEARNERS|LEARN_VIEW_MODE_KEY|learnCheckoutOpening|PLANNER_STATUS_META|homeschoolMethodOptions|subjectTypeOptions|schedulingModeOptions|lessonPriorityOptions|instructionModeOptions|setupWeekdays|sourceTypeOptions|SIMPLE_SETUP_STEPS)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/assets.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(showAccountingAssetAccountSetup|saveAccountingAssetAccountSetup|invalidateAccountingAssetPreview|renderAccountingAssets|filterAccountingAssets|closeAccountingAsset|newAccountingAsset|saveAccountingAsset|saveAccountingAssetMetadata|previewAccountingAsset|postAccountingAsset|loadAccountingAssetReport)$',
         },
       ],
     },

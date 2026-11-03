@@ -93,10 +93,11 @@ interface AccountingStatement {
   basis: string;
   period: string;
   columns: AccountingStatementColumn[];
-  rows: { kind: string; cells: AccountingCell[] }[];
+  rows: { kind: string; cells: AccountingCell[]; drilldown?: AccountingDrilldown }[];
   notes: string[];
 }
 interface AccountingLedgerEntry {
+  fundCode?: string;
   accountNumber: string;
   accountName: string;
   date: string;
@@ -137,7 +138,7 @@ interface AccountingMigrationState {
 declare function accountingStaffSessionKey(): string;
 declare function accountingStaffSession(): { profile: AccountingAccessProfile } | null;
 
-declare module '*parish/accounting-report-pdf.js?v=20260930reports1' {
+declare module '*parish/accounting-report-pdf.js?v=20261103treasurer1' {
   export function createAccountingReportPdf(report: AccountingStatement): Promise<Uint8Array<ArrayBuffer>>;
 }
 interface AccountingFundResponse {
@@ -310,4 +311,23 @@ interface AccountingGovernance {
 interface AccountingGovernanceResponse extends Partial<AccountingGovernance> {
   message?: string;
   error?: string;
+}
+interface AccountingDrilldown {
+  label: string;
+  accountNumber?: string;
+  category?: string;
+  fundId?: string;
+  restriction?: string;
+  start?: string;
+  end?: string;
+}
+interface AccountingOverviewSummaries {
+  loading: boolean;
+  loadedAt: string;
+  errors: Record<string, string>;
+  payables?: AccountingPayablesOverview;
+  budgetCount?: number;
+  openReconciliations?: number;
+  activeCloses?: number;
+  completedCloses?: number;
 }

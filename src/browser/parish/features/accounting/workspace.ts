@@ -201,6 +201,7 @@ function accountingViewTitle() {
     journals: 'Journal Entries',
     funds: 'Funds',
     reports: 'Financial Reports',
+    assets: 'Assets',
     payables: 'Payables',
     budgets: 'Budgets',
     banking: 'Reconciliation',
@@ -231,6 +232,7 @@ function syncAccountingExperienceChrome() {
         'payables',
         'banking',
         'reports',
+        'assets',
         'budgets',
         'advanced',
         'ledger',
@@ -246,6 +248,7 @@ function syncAccountingExperienceChrome() {
         'payables',
         'banking',
         'reports',
+        'assets',
         'budgets',
         'close',
         'governance',
@@ -354,6 +357,10 @@ function renderAccountingPane() {
     renderAccountingReports(pane);
     return;
   }
+  if (accountingView === 'assets') {
+    renderAccountingAssets(pane);
+    return;
+  }
   if (accountingView === 'funds') {
     renderAccountingFunds(pane);
     return;
@@ -459,11 +466,13 @@ function setAccountingView(view: string) {
     renderAccountingPaywall();
     return;
   }
+  if (view === 'reports') accountingTransactionDetail = null;
   accountingView = [
     'overview',
     'setup',
     'settings',
     'reports',
+    'assets',
     'journals',
     'ledger',
     'funds',
@@ -488,6 +497,7 @@ function setAccountingView(view: string) {
     !accountingData[accountingView as keyof AccountingWorkspaceData]
   )
     loadAccountingPhaseE();
+  if (accountingView === 'assets') loadAccountingAssets();
   if (accountingView === 'funds' && !accountingFundCatalog) loadAccountingFunds();
   if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
   if (accountingView === 'governance' && !accountingData.governance) loadAccountingGovernance();
@@ -524,6 +534,24 @@ async function loadAccountingTab(force = false) {
   }
   pane.closest<HTMLElement>('.acct-suite-shell')?.classList.remove('acct-suite-shell--tier-paywall');
   if (!force && pane.dataset.loaded === 'true') return;
+  if (accountingWorkspaceParishId !== currentParish.parishId) {
+    accountingWorkspaceParishId = currentParish.parishId;
+    resetAccountingAssets();
+    accountingReportView = 'library';
+    accountingCustomReport = null;
+    accountingReportDateRange = null;
+    accountingSelectedBudgetId = '';
+    accountingAvailableBudgets = [];
+    accountingTransactionDetail = null;
+    accountingOverviewFinancials = {};
+    accountingData.payables = null;
+    accountingData.budgets = null;
+    accountingData.banking = null;
+    accountingData.integrations = null;
+    accountingData.close = null;
+    accountingOverviewSummaries = { loading: false, loadedAt: '', errors: {} };
+  }
+  const requestParishId = currentParish.parishId;
   pane.innerHTML = '<p class="sw-tool-loading">Loading Accounting...</p>';
   try {
     if (typeof accountingActivationGuard === 'function' && (await accountingActivationGuard(pane))) return;
@@ -563,6 +591,7 @@ async function loadAccountingTab(force = false) {
     const recurring = await (recurringRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
     const ledgerStatus = await (ledgerStatusRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
     const bankAccounts = await (bankAccountsRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
+    if (currentParish?.parishId !== requestParishId) return;
     if (setupRes.status === 401) {
       await renderAccountingAccess();
       return;
@@ -572,6 +601,9 @@ async function loadAccountingTab(force = false) {
       return;
     }
     if (!setupRes.ok) throw new Error(setup.message || setup.error || 'Accounting setup is unavailable.');
+    if (!trialRes.ok || !activitiesRes.ok || !positionRes.ok)
+      throw new Error('Financial summaries are unavailable. Please retry.');
+
     if (!referenceRes.ok)
       throw new Error(reference.message || reference.error || 'The chart of accounts is unavailable.');
     if (!journalRes.ok) throw new Error(journals.message || journals.error || 'Accounting is unavailable.');
@@ -617,8 +649,10 @@ async function loadAccountingTab(force = false) {
     (document.getElementById('accountingFiscalYear') as HTMLElement).textContent = fiscal?.name
       ? `FY ${fiscal.name}`
       : 'Current fiscal year';
+    accountingOverviewFinancials = { position: position.report, activities: activities.report };
     pane.dataset.loaded = 'true';
     renderAccountingPane();
+    void loadAccountingOverviewSummaries(force);
   } catch (error) {
     pane.innerHTML = `<div class="acct-empty error"><strong>Accounting needs attention</strong><span>${escapeHtml((error as Error).message || 'Unable to load Accounting.')}</span><button type="button" onclick="loadAccountingTab(true)">Try again</button></div>`;
   }

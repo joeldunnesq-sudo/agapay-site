@@ -1,18 +1,849 @@
-.acct-statement { margin:20px 0; padding:28px; border:1px solid #d9dfe3; border-radius:12px; background:#fff; color:#172d3c; font:13px/1.5 'DM Sans',Arial,sans-serif; }
-.acct-statement header { text-align:center; margin-bottom:24px; }
-.acct-statement-parish { font-size:15px; font-weight:700; }
-.acct-statement h2 { margin:6px 0; font:600 26px/1.2 Georgia,serif; }
-.acct-statement header p { margin:4px 0; }
-.acct-statement header small,.acct-statement-note { color:#53636e; font-size:11px; }
-.acct-statement table { width:100%; border-collapse:collapse; }
-.acct-statement .acct-table-wrap { max-width:100%; overflow-x:auto; }
-.acct-statement th,.acct-statement td { padding:9px 10px; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
-.acct-statement thead th { background:#eff3f5; border-bottom:1px solid #acbac4; font-size:11px; }
-.acct-statement .number { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.acct-statement .section { background:#f4f6f7; }
-.acct-statement .subtotal { border-top:1px solid #a6b3bb; font-weight:700; }
-.acct-statement .grand { border-top:1px solid #172d3c; border-bottom:3px double #172d3c; font-weight:700; }
-.acct-statement-note { margin:16px 0 0; }
-.acct-report-actions { display:flex; flex-wrap:wrap; gap:8px; }
-@media(max-width:700px) { .acct-statement { padding:16px 10px; } .acct-statement table { min-width:460px; } }
-@media print { @page { size:auto; margin:16mm; } body { margin:0; background:#fff; } .acct-statement { border:0; padding:0; margin:0; } .acct-statement .acct-table-wrap { overflow:visible; } .acct-statement table { min-width:0; } thead { display:table-header-group; } tr { break-inside:avoid; } tr.section { break-after:avoid; } button { display:none; } }
+.acct-statement {
+  margin: 20px 0;
+  padding: 28px;
+  border: 1px solid #d9dfe3;
+  border-radius: 12px;
+  background: #fff;
+  color: #172d3c;
+  font:
+    13px/1.5 'DM Sans',
+    Arial,
+    sans-serif;
+}
+.acct-statement header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.acct-statement-parish {
+  font-size: 15px;
+  font-weight: 700;
+}
+.acct-statement h2 {
+  margin: 6px 0;
+  font:
+    600 26px/1.2 Georgia,
+    serif;
+}
+.acct-statement header p {
+  margin: 4px 0;
+}
+.acct-statement header small,
+.acct-statement-note {
+  color: #53636e;
+  font-size: 11px;
+}
+.acct-statement table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.acct-statement .acct-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.acct-statement th,
+.acct-statement td {
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.acct-statement thead th {
+  background: #eff3f5;
+  border-bottom: 1px solid #acbac4;
+  font-size: 11px;
+}
+.acct-statement .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.acct-statement .section {
+  background: #f4f6f7;
+}
+.acct-statement .subtotal {
+  border-top: 1px solid #a6b3bb;
+  font-weight: 700;
+}
+.acct-statement .grand {
+  border-top: 1px solid #172d3c;
+  border-bottom: 3px double #172d3c;
+  font-weight: 700;
+}
+.acct-statement-note {
+  margin: 16px 0 0;
+}
+.acct-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 700px) {
+  .acct-statement {
+    padding: 16px 10px;
+  }
+  .acct-statement table {
+    min-width: 460px;
+  }
+}
+@media print {
+  @page {
+    size: auto;
+    margin: 16mm;
+  }
+  body {
+    margin: 0;
+    background: #fff;
+  }
+  .acct-statement {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .acct-statement .acct-table-wrap {
+    overflow: visible;
+  }
+  .acct-statement table {
+    min-width: 0;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    break-inside: avoid;
+  }
+  tr.section {
+    break-after: avoid;
+  }
+  button {
+    display: none;
+  }
+}
+/* Treasurer report experience: warm paper, restrained gold and clear financial hierarchy. */
+.acct-report-library-head {
+  align-items: flex-start;
+  gap: 24px;
+  margin: 8px 0 24px;
+}
+.acct-report-library-head h2 {
+  font:
+    500 clamp(26px, 3vw, 38px)/1.15 Georgia,
+    serif;
+  letter-spacing: -0.02em;
+  color: #102f3c;
+  margin: 8px 0;
+}
+.acct-report-library-head p,
+.acct-report-hint {
+  color: #52636b;
+  line-height: 1.6;
+}
+.acct-report-library-head input {
+  min-width: 240px;
+  font-size: 15px;
+  border: 1px solid #c9d2d3;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fff;
+}
+.acct-report-start {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0 32px;
+}
+.acct-report-start > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid #d9d5c7;
+  border-top: 3px solid #ad8b42;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff, #faf7ef);
+  color: #173a47;
+  cursor: pointer;
+  box-shadow: 0 6px 18px #173a4709;
+}
+.acct-report-start strong {
+  font:
+    500 24px/1.2 Georgia,
+    serif;
+}
+.acct-report-start small {
+  font:
+    14px/1.5 'DM Sans',
+    Arial,
+    sans-serif;
+  color: #52636b;
+}
+.acct-report-open {
+  margin-top: auto;
+  padding-top: 8px;
+  font:
+    600 13px 'DM Sans',
+    Arial,
+    sans-serif;
+}
+.acct-report-start > button:hover {
+  border-color: #997632;
+  background: #fffaf0;
+  transform: translateY(-2px);
+}
+.acct-period-panel {
+  background: #f8f7f1;
+  border: 1px solid #dedbce;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 18px 0;
+}
+.acct-period-context {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-bottom: 14px;
+}
+.acct-period-context strong {
+  font-size: 15px;
+  color: #173a47;
+  font-variant-numeric: tabular-nums;
+}
+.acct-period-context small {
+  color: #52636b;
+}
+.acct-period-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.acct-period-presets button,
+.acct-detail-pagination button {
+  border: 1px solid #bdc8c8;
+  background: #fff;
+  color: #173a47;
+  border-radius: 8px;
+  padding: 9px 13px;
+  font:
+    600 13px/1.4 'DM Sans',
+    Arial,
+    sans-serif;
+  cursor: pointer;
+}
+.acct-period-presets button:hover {
+  background: #eaf0ee;
+  border-color: #173a47;
+}
+.acct-period-panel form.acct-phase-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.acct-period-panel input,
+.acct-budget-selection select {
+  font-size: 15px;
+  min-height: 42px;
+}
+.acct-budget-selection {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+  max-width: 760px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #173a47;
+}
+.acct-budget-selection select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #c9d2d3;
+  background: #fff;
+  color: #173a47;
+}
+.acct-report-library-card {
+  min-height: 120px;
+  border-radius: 12px;
+}
+.acct-report-library-card strong {
+  font-size: 16px;
+}
+.acct-report-library-card small {
+  line-height: 1.6;
+}
+.acct-report-library-card:hover {
+  border-color: #ad8b42;
+  background: #fffdf7;
+}
+.acct-statement {
+  margin: 24px 0;
+  padding: 36px;
+  border-color: #d9d5c7;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px #173a4708;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.acct-statement header {
+  position: relative;
+  padding: 12px 0 24px;
+  border-bottom: 1px solid #d9d5c7;
+  margin-bottom: 24px;
+}
+.acct-statement header:before {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 3px;
+  background: #ad8b42;
+  margin: 0 auto 18px;
+}
+.acct-statement-parish {
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+.acct-statement h2 {
+  color: #102f3c;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 10px 0;
+}
+.acct-statement-period {
+  font-weight: 600;
+}
+.acct-statement th,
+.acct-statement td {
+  padding: 12px 14px;
+}
+.acct-statement thead th {
+  background: #edf2ef;
+  color: #173a47;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.acct-statement .section {
+  background: #f5f1e7;
+  color: #173a47;
+  font-size: 14px;
+}
+.acct-statement tr.detail:nth-child(even) {
+  background: #fbfcfa;
+}
+.acct-statement .subtotal {
+  background: #f1f5f2;
+}
+.acct-statement .grand {
+  background: #edf2ef;
+  font-size: 15px;
+}
+.acct-statement-note {
+  padding: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.acct-report-drill {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: inherit;
+  text-decoration: underline;
+  text-decoration-color: #c8b88b;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.acct-report-drill span {
+  font-size: 0.8em;
+  color: #7d673a;
+}
+.acct-report-drill:hover {
+  color: #125668;
+  text-decoration-color: currentColor;
+}
+.acct-report-detail {
+  max-width: 1240px;
+  margin: auto;
+  background: #fff;
+  border: 1px solid #d9d5c7;
+  border-radius: 14px;
+  padding: 28px;
+}
+.acct-report-detail > .acct-link {
+  display: block;
+  margin-bottom: 24px;
+}
+.acct-report-detail h2 {
+  font:
+    500 30px/1.2 Georgia,
+    serif;
+  color: #173a47;
+}
+.acct-report-detail label {
+  display: grid;
+  gap: 8px;
+  max-width: 540px;
+  margin: 18px 0;
+  font-size: 14px;
+}
+.acct-report-detail input {
+  font:
+    15px 'DM Sans',
+    Arial,
+    sans-serif;
+  padding: 12px;
+  border: 1px solid #c9d2d3;
+  border-radius: 8px;
+}
+.acct-report-detail td small {
+  display: block;
+  max-width: 420px;
+  color: #52636b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.acct-report-detail .number {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.acct-detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  border-block: 1px solid #dedbce;
+  padding: 18px 0;
+  margin: 20px 0;
+  color: #173a47;
+}
+.acct-detail-summary strong {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.acct-detail-summary small {
+  flex-basis: 100%;
+  color: #52636b;
+}
+.acct-detail-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+.acct-journal-preview {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #dedbce;
+}
+.acct-report-detail button:disabled,
+.acct-period-panel button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+.acct-report-start button:focus-visible,
+.acct-report-drill:focus-visible,
+.acct-period-presets button:focus-visible {
+  outline: 3px solid #326779;
+  outline-offset: 4px;
+}
+.acct-report-start [hidden],
+.acct-report-library [hidden] {
+  display: none !important;
+}
+@media (max-width: 1100px) {
+  .acct-report-start {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .acct-report-start {
+    grid-template-columns: 1fr;
+  }
+  .acct-report-library-head {
+    display: block;
+  }
+  .acct-report-library-head label {
+    display: grid;
+    margin-top: 18px;
+  }
+  .acct-period-panel {
+    padding: 16px;
+  }
+  .acct-period-presets {
+    display: grid;
+  }
+  .acct-statement {
+    padding: 20px 12px;
+  }
+  .acct-statement h2 {
+    font-size: 26px;
+  }
+  .acct-report-detail {
+    padding: 18px 12px;
+  }
+  .acct-report-detail table {
+    min-width: 640px;
+  }
+}
+@media print {
+  .acct-statement {
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+  }
+  .acct-statement header {
+    padding-top: 0;
+  }
+  .acct-statement header:before {
+    background: #333;
+  }
+  .acct-report-hint,
+  .acct-period-panel,
+  .acct-budget-selection,
+  .acct-report-start {
+    display: none !important;
+  }
+}
+.acct-report-library {
+  display: grid;
+  gap: 18px;
+}
+.acct-report-library > section {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.acct-report-library-section {
+  background: transparent;
+  color: #173a47;
+  padding: 16px 0 10px;
+  border-bottom: 1px solid #d9d5c7;
+}
+.acct-report-library-section strong {
+  font:
+    500 22px Georgia,
+    serif;
+}
+.acct-report-library-section small {
+  color: #52636b;
+  display: block;
+  margin-top: 5px;
+}
+.acct-report-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 0;
+  background: transparent;
+}
+.acct-report-library-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 20px;
+  border: 1px solid #d9d5c7;
+  background: #fff;
+  text-align: left;
+}
+.acct-report-library-card > span {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.acct-report-library-card strong {
+  line-height: 1.4;
+}
+.acct-report-library-card small {
+  display: block;
+  font-size: 14px;
+  color: #52636b;
+}
+.acct-report-library-card > b {
+  white-space: nowrap;
+  font-size: 12px;
+  color: #48616a;
+}
+.acct-income-summary h2 {
+  font:
+    500 26px Georgia,
+    serif;
+  color: #173a47;
+}
+.acct-income-equation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 24px;
+}
+.acct-income-equation > div {
+  background: #fff;
+  border: 1px solid #dedbce;
+  border-radius: 12px;
+  padding: 20px;
+}
+.acct-income-equation span {
+  display: block;
+  font-size: 13px;
+  color: #52636b;
+  margin-bottom: 8px;
+}
+.acct-income-equation strong {
+  display: block;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  color: #173a47;
+}
+@media (max-width: 700px) {
+  .acct-report-library-grid,
+  .acct-income-equation {
+    grid-template-columns: 1fr;
+  }
+  .acct-report-library-card {
+    padding: 16px;
+  }
+}
+
+/* Keep account names readable while wide statements scroll inside the page. */
+.acct-statement table {
+  table-layout: auto;
+}
+.acct-statement th:first-child,
+.acct-statement td:first-child {
+  min-width: 220px;
+  overflow-wrap: normal;
+}
+@media (max-width: 700px) {
+  .acct-statement table {
+    min-width: 760px;
+  }
+}
+
+.acct-report-mobile-hint {
+  display: none;
+}
+@media (max-width: 700px) {
+  .acct-report-mobile-hint {
+    display: block;
+    color: #52636b;
+    font-size: 13px;
+  }
+}
+
+/* Keep everyday bookkeeping visible at the top of both accounting views. */
+.acct-command-hero.acct-home-hero {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+.acct-home-actions {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.acct-home-actions h3 {
+  margin: 0 0 12px;
+  color: #fffaf0;
+  font: 600 15px/1.4 var(--sans, Arial, sans-serif);
+  letter-spacing: 0.02em;
+}
+.acct-home-action-grid {
+  gap: 14px;
+}
+.acct-home-action-grid button {
+  min-height: 114px;
+  padding: 22px 18px;
+  border: 2px solid #e5dcc7;
+  border-radius: 12px;
+  background: #fffdf7;
+  color: #173a47;
+  box-shadow: 0 5px 16px #06152220;
+}
+.acct-home-action-grid button.acct-home-action-income {
+  background: #f4e6bf;
+  border-color: #dfc07b;
+}
+.acct-home-action-grid button:hover {
+  background: #fff4d7;
+  border-color: #dfc07b;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #06152235;
+}
+.acct-home-action-grid button:focus-visible {
+  outline: 3px solid #fffaf0;
+  outline-offset: 4px;
+}
+.acct-home-action-grid b {
+  width: 42px;
+  height: 42px;
+  background: #173a470d;
+  color: #173a47;
+  border-radius: 10px;
+  font-size: 24px;
+}
+.acct-home-action-grid span {
+  flex: 1;
+  overflow: visible;
+  font: 700 18px/1.35 var(--sans, Arial, sans-serif);
+}
+.acct-home-action-grid small {
+  margin-top: 7px;
+  overflow: visible;
+  white-space: normal;
+  color: #4c626b;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.acct-home-action-grid i {
+  font-size: 20px;
+  font-style: normal;
+  color: #6b5833;
+}
+@media (max-width: 1000px) {
+  .acct-home-action-grid {
+    grid-template-columns: 1fr;
+  }
+  .acct-home-action-grid button {
+    min-height: 90px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .acct-home-action-grid button {
+    transition: none;
+  }
+  .acct-home-action-grid button:hover {
+    transform: none;
+  }
+}
+
+.acct-home-hero > div > .acct-kicker {
+  color: #f0d38d;
+}
+
+/* Property stewardship */
+.acct-asset-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #172b41, #284d60);
+  color: #fff;
+  margin-bottom: 20px;
+}
+.acct-asset-hero h2 {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  margin: 8px 0;
+  color: #fff;
+}
+.acct-asset-hero p {
+  color: #e0e9ed;
+  max-width: 620px;
+}
+.acct-asset-hero .acct-kicker {
+  color: #ead7a6;
+}
+.acct-asset-hero .acct-primary {
+  background: #ead7a6;
+  color: #172b41;
+  white-space: nowrap;
+}
+.acct-asset-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.acct-asset-toolbar label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.acct-asset-toolbar input {
+  padding: 10px;
+  border: 1px solid #cbd5df;
+  border-radius: 8px;
+  background: #fff;
+}
+.acct-asset-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.acct-asset-metrics section {
+  padding: 22px;
+  border: 1px solid #e2e8ec;
+  background: #fff;
+  border-radius: 14px;
+}
+.acct-asset-metrics span {
+  display: block;
+  color: #536778;
+  font-size: 13px;
+}
+.acct-asset-metrics strong {
+  display: block;
+  font-size: 27px;
+  color: #172b41;
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.acct-asset-policy {
+  font-size: 13px;
+  color: #536778;
+  line-height: 1.6;
+}
+.acct-asset-review {
+  margin-top: 20px;
+  padding: 20px;
+  border: 2px solid #b89c55;
+  border-radius: 12px;
+  background: #fffcf4;
+}
+.acct-asset-schedule {
+  max-height: 420px;
+  overflow: auto;
+}
+@media (max-width: 650px) {
+  .acct-asset-hero {
+    display: block;
+    padding: 22px;
+  }
+  .acct-asset-hero .acct-primary {
+    margin-top: 16px;
+    white-space: normal;
+  }
+  .acct-asset-metrics {
+    grid-template-columns: 1fr;
+  }
+  .acct-asset-toolbar {
+    align-items: stretch;
+  }
+  .acct-asset-toolbar label {
+    flex: 1 1 180px;
+  }
+}
+
+.acct-asset-review .acct-primary {
+  display: inline-flex;
+  align-items: center;
+  background: #173a47;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-top: 16px;
+  font-weight: 600;
+}
+.acct-asset-review .acct-primary:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}

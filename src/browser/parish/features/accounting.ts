@@ -4,6 +4,9 @@
 // Classic script; preserve global names used by the dashboard and inline actions.
 
 let accountingView = 'overview';
+let accountingOverviewSummaries: AccountingOverviewSummaries = { loading: false, loadedAt: '', errors: {} };
+let accountingOverviewFinancials: Record<string, AccountingReport> = {};
+let accountingWorkspaceParishId = '';
 
 let accountingReportView = 'library';
 

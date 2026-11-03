@@ -134,6 +134,23 @@ try {
       });
     if (url.pathname.startsWith('/api/')) {
       requests.push(url.pathname + url.search);
+      if (url.pathname.endsWith('/assets'))
+        return route.fulfill({
+          json: {
+            rows: [
+              {
+                tag: 'EQ-001',
+                name: 'Sound system',
+                location: 'Hall',
+                cost: 120000,
+                postedDepreciation: 18000,
+                netBookValue: 102000,
+                status: 'active',
+              },
+            ],
+            policy: 'Monthly straight-line; posted balances.',
+          },
+        });
       let report = {};
       if (url.pathname.endsWith('/statement-of-activities'))
         report = { ...activities, startDate: url.searchParams.get('from'), endDate: url.searchParams.get('to') };
@@ -271,13 +288,13 @@ try {
     },
     { accounts, activities, position, trial, ledger }
   );
-  for (const file of ['report-documents', 'report-loaders', 'reports'])
+  for (const file of ['assets', 'report-documents', 'report-loaders', 'reports'])
     await page.addScriptTag({ url: `/parish/features/accounting/${file}.js` });
   await page.evaluate(() => {
     accountingReportDateRange = { start: '2026-01-01', end: '2026-09-30' };
   });
   const ids = await page.evaluate(() => ACCOUNTING_REPORT_LIBRARY.map((report) => report.id));
-  assert.equal(ids.length, 16);
+  assert.equal(ids.length, 17);
   for (const id of ids) {
     await page.evaluate((id) => openAccountingReport(id), id);
     assert.equal(await page.locator('.acct-statement').count(), 1, `${id} renders a financial statement`);
@@ -304,7 +321,14 @@ try {
         '25,000.00',
         '42,000.00',
       ]);
-    if (id === 'budgetActual') assert.deepEqual(await page.locator('.acct-statement .grand td').allTextContents(), ['Revenue less expenses', '30,000.00', '42,000.00', '12,000.00', '']);
+    if (id === 'budgetActual')
+      assert.deepEqual(await page.locator('.acct-statement .grand td').allTextContents(), [
+        'Revenue less expenses',
+        '30,000.00',
+        '42,000.00',
+        '12,000.00',
+        '',
+      ]);
     if (id === 'expenses')
       assert.doesNotMatch(await page.locator('.acct-statement tbody').textContent(), /Contributions/);
   }
@@ -326,7 +350,7 @@ try {
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   assert.deepEqual(errors, []);
   console.log(
-    'PASS - all 16 report PDFs download, financial totals, debit/credit columns, Greek fonts, ledger pagination, selected dates, CSV parity, and mobile layout'
+    'PASS - all 17 report PDFs download, financial totals, debit/credit columns, Greek fonts, ledger pagination, selected dates, CSV parity, and mobile layout'
   );
 } finally {
   await browser.close();

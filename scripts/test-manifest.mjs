@@ -172,6 +172,9 @@ const core = [
 ];
 
 const accounting = [
+  'scripts/fee-coverage-readiness-tests.mjs',
+  'scripts/fee-coverage-campaign-browser-tests.mjs',
+  'scripts/fee-coverage-layout-browser-tests.mjs',
   'scripts/service-cost-accounting-tests.mjs',
   'scripts/organization-authorization-adoption-tests.mjs',
   'scripts/payment-classification-tests.mjs',
@@ -210,6 +213,7 @@ const accounting = [
   'scripts/accounting-route-ui-tests.mjs',
   'scripts/accounting-demo-ui-tests.mjs',
   'scripts/accounting-report-pdf-browser-tests.mjs',
+  'scripts/treasurer-report-experience-browser-tests.mjs',
   'scripts/accounting-trial-access-tests.mjs',
   'scripts/accounting-phase-i-tests.mjs',
   'scripts/accounting-phase-j-tests.mjs',
@@ -218,6 +222,8 @@ const accounting = [
   'scripts/accounting-phase-m-tests.mjs',
   'scripts/accounting-phase-n-tests.mjs',
   'scripts/accounting-treasurer-mode-tests.mjs',
+  'scripts/accounting-assets-tests.mjs',
+  'scripts/accounting-assets-browser-tests.mjs',
 ];
 
 const productUi = [

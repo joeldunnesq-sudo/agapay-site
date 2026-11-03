@@ -4,7 +4,8 @@ import fontkit from '../vendor/pdf-lib/fontkit-1.1.1.es.min.js';
 const navy = rgb(0.06, 0.14, 0.21),
   muted = rgb(0.36, 0.41, 0.46);
 const rule = rgb(0.78, 0.81, 0.83),
-  wash = rgb(0.94, 0.96, 0.97);
+  wash = rgb(0.94, 0.96, 0.95);
+const gold = rgb(0.66, 0.52, 0.25);
 const clean = (value) =>
   String(value ?? '')
     .replace(/[\u2010-\u2015]/g, '-')
@@ -106,7 +107,15 @@ async function createAccountingReportPdf(report, fonts = null) {
   function newPage(withTable = true, continuation = '') {
     page = pdf.addPage([width, height]);
     y = height - margin;
-    page.drawRectangle({ x: margin, y: y - 3, width: 30, height: 3, color: navy });
+    page.drawRectangle({ x: margin, y: y - 3, width: 44, height: 3, color: gold });
+    text(
+      'AGAPAY  |  PARISH FINANCES',
+      width - margin - regular.widthOfTextAtSize('AGAPAY  |  PARISH FINANCES', 7),
+      y,
+      regular,
+      7,
+      muted
+    );
     y -= 15;
     for (const label of wrap(report.parish, bold, 11, usable)) {
       text(label, margin, y, bold, 11);
@@ -155,6 +164,8 @@ async function createAccountingReportPdf(report, fonts = null) {
       const fit = Math.max(1, Math.floor((y - bottom - 14) / 13));
       const take = Math.min(count, fit),
         h = take * 13 + 14;
+      if (!heading && ['subtotal', 'grand'].includes(item.kind))
+        page.drawRectangle({ x: margin, y: y - h, width: usable, height: h, color: wash });
       if (heading) page.drawRectangle({ x: margin, y: y - h, width: usable, height: h, color: wash });
       if (['subtotal', 'grand'].includes(item.kind)) line(y, item.kind === 'grand' ? 1 : 0.6, navy);
       values.forEach((labels, i) =>

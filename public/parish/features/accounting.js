@@ -1,6 +1,9 @@
 // Generated from src/browser/parish/features/accounting.ts by npm run build:browser. Do not edit.
 'use strict';
 let accountingView = 'overview';
+let accountingOverviewSummaries = { loading: false, loadedAt: '', errors: {} };
+let accountingOverviewFinancials = {};
+let accountingWorkspaceParishId = '';
 let accountingReportView = 'library';
 let accountingCustomReport = null;
 let accountingDepthComparative = true;

@@ -1,5 +1,6 @@
 import { readParishDashboardSource } from './lib/parish-dashboard-source.mjs';
 import assert from "node:assert/strict";
+import { runInNewContext } from "node:vm";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -187,14 +188,18 @@ assert.match(app, /function renderAccountingJournalEditor/);
 assert.match(app, /accountingExperienceMode === 'treasurer' && accountingView === 'ledger'/);
 assert.match(app, /newAccountingJournal\(\)/);
 assert.match(app, /function accountingOverviewHero\(\)/);
-assert.match(app, /if \(accountingExperienceMode === 'treasurer'\)\s+return `<section class="acct-command-hero">/);
 assert.match(app, /pane\.innerHTML = `\$\{accountingOverviewHero\(\)\}[\s\S]*openAccountingIncomeReport\(\)[\s\S]*<div class="acct-suite-stats">/);
 assert.doesNotMatch(app, /renderAccountingTreasurerHome/);
-const overviewHero = app.slice(app.indexOf("function accountingOverviewHero"), app.indexOf("function renderAccountingOverview"));
-const treasurerHero = overviewHero.slice(0, overviewHero.lastIndexOf('return `<section class="acct-command-hero">'));
-assert.match(treasurerHero, /Record Income/);
-assert.match(treasurerHero, /Pay a Bill/);
-assert.doesNotMatch(treasurerHero, /New journal|Manage funds|Reconcile|Run reports/);
+const overviewHero = app.slice(app.indexOf("function accountingOverviewHero"), app.indexOf("function accountingOverviewFundSummary"));
+for (const mode of ['treasurer', 'accountant']) {
+  const html = runInNewContext(overviewHero + ';accountingOverviewHero()', {accountingExperienceMode:mode});
+  assert.match(html, /Record Income/);
+  assert.match(html, /Pay a Bill/);
+  assert.match(html, /Record a Non-Cash Gift/);
+  assert.match(html, /Everyday bookkeeping/);
+  if(mode === 'treasurer') assert.doesNotMatch(html, /New journal|Manage funds|Reconcile|Run reports/);
+  else assert.match(html, /New journal/);
+}
 assert.match(dashboard, /data-accounting-advanced-toggle/);
 assert.equal((dashboard.match(/data-accounting-advanced(?:\s|>)/g) || []).length, 5);
 assert.match(app, /button\.hidden = isTreasurer && !accountingAdvancedNavExpanded/);

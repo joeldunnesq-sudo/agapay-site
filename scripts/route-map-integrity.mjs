@@ -124,6 +124,8 @@ const accountingServiceAllowList = new Set([
   'nextCheckNumber',
   'reserveCheckNumbers',
   'classifyIntegritySeverity',
+  'getAsset', // Internal authorized asset lookup shared by detail and posting workflows.
+  'assetAccount', // Internal chart validation shared by asset setup, registration and disposal.
 ]);
 const accountingDir = path.join(repoRoot, 'src/accounting');
 const handlerDir = path.join(repoRoot, 'src/handlers');

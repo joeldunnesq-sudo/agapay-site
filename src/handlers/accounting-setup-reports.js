@@ -1,4 +1,5 @@
 // Generated from src/handlers/accounting-setup-reports.ts by npm run build:server. Do not edit.
+import { handleAccountingAssets } from './accounting-assets.js';
 import { json } from '../lib/core.js';
 import {
   archiveAccount,
@@ -92,6 +93,7 @@ async function handleAccountingSetupReports(request, env, parishId) {
   const base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting`;
   if (!url.pathname.startsWith(base)) return null;
   let path = url.pathname.slice(base.length);
+  if (path === '/assets' || path.startsWith('/assets/')) return handleAccountingAssets(request, env, parishId);
   const csv = path.endsWith('.csv');
   if (csv) path = path.slice(0, -4);
   const fundMatch = path.match(/^\/funds(?:\/([^/]+))?$/);
