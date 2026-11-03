@@ -1,5 +1,18 @@
 'use strict';
 
+function installAccountingAssetsNavigation() {
+  if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+  const reports = document.querySelector('[data-accounting-view="reports"]');
+  if (!reports || document.querySelector('[data-accounting-view="assets"]')) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.accountingView = 'assets';
+  button.innerHTML = '<span class="acct-nav-icon">◇</span>Assets';
+  button.addEventListener('click', () => setAccountingView('assets'));
+  reports.before(button);
+}
+installAccountingAssetsNavigation();
+
 interface AccountingAssetRow {
   [key: string]: string | number;
   id: string;

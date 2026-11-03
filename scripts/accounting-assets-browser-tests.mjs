@@ -43,7 +43,7 @@ try {
     if (p === '/')
       return route.fulfill({
         contentType: 'text/html',
-        body: '<html><head><meta charset="utf-8"><link rel="stylesheet" href="/parish/redesign.css"><link rel="stylesheet" href="/parish/accounting-reports.css"><style>*{box-sizing:border-box}body{margin:0;background:#f6f3ec;color:#173a47;font-family:Arial,sans-serif;padding:28px}button,input,select,textarea{font:inherit}button{cursor:pointer}main{max-width:1300px;margin:auto}</style></head><body><main id="accountingPane"></main></body></html>',
+        body: '<html><head><meta charset="utf-8"><link rel="stylesheet" href="/parish/redesign.css"><link rel="stylesheet" href="/parish/accounting-reports.css"><style>*{box-sizing:border-box}body{margin:0;background:#f6f3ec;color:#173a47;font-family:Arial,sans-serif;padding:28px}button,input,select,textarea{font:inherit}button{cursor:pointer}main{max-width:1300px;margin:auto}</style></head><body><nav><button data-accounting-view="reports">Reports</button></nav><main id="accountingPane"></main></body></html>',
       });
     if (p.includes('/api/')) {
       if (p.endsWith('/account-setup')) {
@@ -132,6 +132,20 @@ try {
   for (const script of ['workspace', 'assets', 'report-documents', 'report-loaders', 'reports'])
     await page.addScriptTag({ url: '/parish/features/accounting/' + script + '.js' });
   await page.addScriptTag({ url: '/parish/features/accounting.js' });
+  assert.equal(await page.locator('[data-accounting-view=assets]').count(), 1);
+  await page.evaluate(() => installAccountingAssetsNavigation());
+  assert.equal(await page.locator('[data-accounting-view=assets]').count(), 1, 'Navigation installation is idempotent');
+  const navigationTarget = await page.evaluate(() => {
+    const original = setAccountingView;
+    let target = '';
+    setAccountingView = (view) => {
+      target = view;
+    };
+    document.querySelector('[data-accounting-view=assets]').click();
+    setAccountingView = original;
+    return target;
+  });
+  assert.equal(navigationTarget, 'assets');
   await page.evaluate((accounts) => {
     accountingData.accounts = accounts;
     accountingData.funds = [{ id: 'fund_general', name: 'General' }];
