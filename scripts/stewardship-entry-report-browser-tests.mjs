@@ -13,6 +13,7 @@ try {
   for (const file of [
     'parish/style.css',
     'parish/redesign.css',
+    'parish/accounting-reports.css',
     'styles/stewardship.css',
     'styles/stewardship-intelligence.css',
     'styles/stewardship-entry.css',
@@ -45,6 +46,14 @@ try {
         },
       },
     };
+    window.accountingView = 'overview';
+    window.accountingApi = (path) => '/api/accounting' + path;
+    window.authHeaders = () => ({});
+    window.fetch = async () =>
+      new Response(JSON.stringify({ report: accountingData.reports.activities }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     window.accountingReportView = 'library';
     window.accountingCustomReport = null;
     window.renderAccountingPane = () => renderAccountingReports(document.getElementById('accountingPane'));
@@ -53,7 +62,14 @@ try {
       renderAccountingPane();
     };
   });
-  for (const file of ['stewardship/outside-giving', 'stewardship/reports', 'giving/insights', 'accounting/report-documents', 'accounting/report-loaders', 'accounting/reports'])
+  for (const file of [
+    'stewardship/outside-giving',
+    'stewardship/reports',
+    'giving/insights',
+    'accounting/report-documents',
+    'accounting/report-loaders',
+    'accounting/reports',
+  ])
     await page.addScriptTag({
       content: await readFile(new URL('../public/parish/features/' + file + '.js', import.meta.url), 'utf8'),
     });
@@ -65,7 +81,8 @@ try {
     );
     openAccountingIncomeReport();
   });
-  assert.equal(await page.evaluate(() => selectedView), 'reports');
+  await page.waitForFunction(() => !accountingReportLoading && accountingReportView === 'activities');
+  assert.equal(await page.evaluate(() => accountingView), 'reports');
   assert.match(await page.locator('.acct-income-summary').textContent(), /Net surplus.*\$400\.25/s);
   assert.match(await page.locator('.acct-income-summary').textContent(), /\$1,200\.50/);
   assert.match(await page.locator('.sw-giving-comparison').textContent(), /\$750\.00 · 75\.0%/);

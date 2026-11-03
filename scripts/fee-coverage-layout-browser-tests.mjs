@@ -6,7 +6,10 @@ const browser = await chromium.launch({ headless: true });
 await mkdir('output/fee-coverage-screenshots', { recursive: true });
 try {
   for (const width of [390, 1280]) {
-    const page = await browser.newPage({ viewport: { width, height: 900 }, serviceWorkers: 'block' });
+    const page = await browser.newPage({
+      viewport: { width, height: 900 },
+      serviceWorkers: 'block',
+    });
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url());
       if (url.hostname !== 'demo.test') return route.fulfill({ body: '', contentType: 'text/css' });
@@ -30,9 +33,12 @@ try {
       ['campaign', 'give/parish-giving/index.html'],
     ]) {
       let html = await readFile('public/' + file, 'utf8');
-      html = html
-        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-        .replace('<head>', '<head><base href="https://demo.test/' + file + '">');
+      html = html.replace(
+        '<head>',
+        '<head><meta http-equiv="Content-Security-Policy" content="script-src &#39;none&#39;"><base href="https://demo.test/' +
+          file +
+          '">'
+      );
       await page.setContent(html);
       if (name === 'campaign') await page.locator('#campaignContent').evaluate((el) => (el.hidden = false));
       const note = page.locator('#feeTaxNote');

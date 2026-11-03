@@ -503,7 +503,7 @@ try {
         await publicPage.locator('#summaryFreq').textContent(),
         recurringGivingEnabled ? 'Monthly' : 'One-time'
       );
-      assert.doesNotMatch(await publicPage.locator('.fee-text p').textContent(), /â€/);
+      assert.doesNotMatch(await publicPage.locator('.fee-text').textContent(), /â€/);
       assert.deepEqual(publicErrors, []);
     } finally {
       await publicPage.close();
