@@ -374,7 +374,9 @@ for (const section of [
   assert(healthy.evidence.checks.some((check) => check.name === 'accounting-' + section && check.passed));
   const failure = await run({
     override: (path) =>
-      path.endsWith(suffix.split('?')[0]) ? Response.json({ error: 'Synthetic new feature failure' }, { status: 503 }) : undefined,
+      path.endsWith(suffix.split('?')[0])
+        ? Response.json({ error: 'Synthetic new feature failure' }, { status: 503 })
+        : undefined,
   });
   assert.equal(failure.evidence.status, 'failed', 'New feature failures must fail the live release gate: ' + section);
 }
