@@ -101,7 +101,10 @@ assert.equal(healthy.evidence.status, 'passed');
 assert.equal(healthy.evidence.payoutHistory, 'empty_no_payout_history_coverage');
 assert.equal(healthy.evidence.integrityScanRecorded, false);
 assert.equal(healthy.requests.filter((r) => r.method === 'POST').length, 2);
-assert.equal(healthy.evidence.checks.filter((c) => c.name.startsWith('accounting-') && c.passed).length, 11);
+assert.equal(
+  healthy.evidence.checks.filter((c) => c.name.startsWith('accounting-') && c.passed).length,
+  ACCOUNTING_READ_SMOKE_PATHS.length + 3
+);
 assert.equal(healthy.evidence.checks.find((c) => c.name === 'accounting-attachments').reason, 'no_existing_bill');
 assert.equal(
   healthy.requests.some((r) => r.path.endsWith('/attachments')),
@@ -358,3 +361,21 @@ const liveOnly = spawnSync(
 );
 assert.equal(liveOnly.status, 0, liveOnly.stderr);
 console.log('PASS - live-only public checks retain all routes without third-party packages');
+
+for (const section of [
+  'assets',
+  'asset-opening-lines',
+  'dimensions',
+  'dimension-report',
+  'dimension-transactions',
+  'council-packages',
+]) {
+  const suffix = ACCOUNTING_READ_SMOKE_PATHS.find(([name]) => name === section)[1];
+  assert(healthy.evidence.checks.some((check) => check.name === 'accounting-' + section && check.passed));
+  const failure = await run({
+    override: (path) =>
+      path.endsWith(suffix.split('?')[0]) ? Response.json({ error: 'Synthetic new feature failure' }, { status: 503 }) : undefined,
+  });
+  assert.equal(failure.evidence.status, 'failed', 'New feature failures must fail the live release gate: ' + section);
+}
+console.log('PASS new asset, department/project and council-package live reads fail the release gate on error');
