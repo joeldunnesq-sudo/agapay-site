@@ -323,6 +323,45 @@ assert.equal(concurrent.evidence.status, 'passed');
 assert.equal(peakReads, 3, 'Financial reads must overlap with a concurrency limit of three.');
 assert.equal(activeReads, 0, 'All reads must finish before reporting success.');
 
+let activePrereads = 0;
+let peakPrereads = 0;
+let reconciliationReads = 0;
+const overlappingPrereads = await run({
+  override: async (path, options) => {
+    if (options.method === 'POST')
+      assert.equal(activePrereads, 0, 'Never overlap authentication with prerequisite reads');
+    if (!path.endsWith('/reconciliation') && !path.endsWith('/profiles')) return undefined;
+    activePrereads += 1;
+    peakPrereads = Math.max(peakPrereads, activePrereads);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    activePrereads -= 1;
+    if (path.endsWith('/profiles'))
+      return Response.json({ accounting: { ready: true }, profiles: [{ id: env.TEST_LUBBOCK_STAFF_PROFILE_ID }] });
+    reconciliationReads += 1;
+    return Response.json({
+      parishId: 'test-lubbock',
+      available: true,
+      summary: { payoutCount: 0, depositedCents: 0 },
+      transactions: [],
+    });
+  },
+});
+assert.equal(overlappingPrereads.evidence.status, 'passed');
+assert.equal(peakPrereads, 3, 'Fast/full reconciliation and readiness should overlap');
+assert.equal(reconciliationReads, 2, 'Both reconciliation contracts remain covered');
+assert.equal(activePrereads, 0);
+
+let reconciliationAttempt = 0;
+const failedPreread = await run({
+  override: (path) => {
+    if (path.endsWith('/reconciliation') && ++reconciliationAttempt === 1) throw new Error('synthetic network failure');
+    return undefined;
+  },
+});
+assert.equal(failedPreread.evidence.status, 'failed', 'An overlapping read failure must fail the health check');
+assert.equal(reconciliationAttempt, 2, 'A failing read must not cancel independent coverage');
+assert.ok(failedPreread.evidence.checks.some((check) => check.name === 'accounting-attachment-records'));
+
 const deployWorkflow = await readFile(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8');
 const smokeJob = deployWorkflow.slice(deployWorkflow.indexOf('  post-deploy-accounting-smoke:'));
 assert.match(smokeJob, /node scripts\/prelaunch-checks\.mjs --live-only/);

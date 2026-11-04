@@ -163,20 +163,29 @@ export async function runAccountingHealth({
       ? 'present'
       : 'empty_no_payout_history_coverage'
     : 'unavailable';
-  const fast = await check(
-    'reconciliation-fast',
-    `${root}/reconciliation?month=${month}`,
-    (p) => p?.parishId === parishId && p.available === true && Number.isInteger(p.summary?.payoutCount)
-  );
-  const full = await check(
-    'reconciliation-full',
-    `${root}/reconciliation?month=${month}&detail=full`,
-    (p) =>
-      p?.parishId === parishId &&
-      p.available === true &&
-      Number.isInteger(p.summary?.payoutCount) &&
-      Array.isArray(p.transactions)
-  );
+  // These GETs depend only on parish authentication and the selected month.
+  // Keep authentication/PIN writes sequential and wait for every read result.
+  const [fast, full, profiles] = await Promise.all([
+    check(
+      'reconciliation-fast',
+      `${root}/reconciliation?month=${month}`,
+      (p) => p?.parishId === parishId && p.available === true && Number.isInteger(p.summary?.payoutCount)
+    ),
+    check(
+      'reconciliation-full',
+      `${root}/reconciliation?month=${month}&detail=full`,
+      (p) =>
+        p?.parishId === parishId &&
+        p.available === true &&
+        Number.isInteger(p.summary?.payoutCount) &&
+        Array.isArray(p.transactions)
+    ),
+    check(
+      'accounting-readiness',
+      `${root}/accounting-access/profiles`,
+      (p) => p?.accounting?.ready === true && Array.isArray(p.profiles)
+    ),
+  ]);
   if (fast && full)
     evidence.checks.push({
       name: 'reconciliation-summary-consistency',
@@ -185,11 +194,6 @@ export async function runAccountingHealth({
         fast.summary.depositedCents === full.summary.depositedCents,
     });
 
-  const profiles = await check(
-    'accounting-readiness',
-    `${root}/accounting-access/profiles`,
-    (p) => p?.accounting?.ready === true && Array.isArray(p.profiles)
-  );
   if (!profiles || !profiles.profiles.some((p) => p.id === env.TEST_LUBBOCK_STAFF_PROFILE_ID)) {
     return { ...evidence, status: 'blocked_accounting_profile_or_readiness' };
   }

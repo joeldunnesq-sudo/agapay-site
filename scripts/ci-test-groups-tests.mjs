@@ -19,11 +19,13 @@ for (const [name, tests] of Object.entries(groups)) {
   const expectedOrder = testGroups.all.filter((test) => tests.includes(test));
   assert.deepEqual(tests, expectedOrder, `${name} must retain manifest order`);
   const seconds = tests.reduce((sum, test) => sum + (timing.durationSeconds[test] ?? timing.defaultSeconds), 0);
-  if (name.startsWith('browser-')) assert.ok(seconds <= 65, `${name} exceeds the 65-second execution budget`);
-  if (name.startsWith('core-')) assert.ok(seconds <= 80, `${name} exceeds the 80-second execution budget`);
+  if (name.startsWith('browser-')) assert.ok(seconds <= 45, `${name} exceeds the 45-second execution budget`);
+  if (name.startsWith('core-')) assert.ok(seconds <= 60, `${name} exceeds the 60-second execution budget`);
 }
 assert.ok(
-  [...groups['core-1'], ...groups['core-2']].includes('scripts/browser-typescript-tests.mjs'),
+  ciGroupNames
+    .filter((name) => name.startsWith('core-'))
+    .some((name) => groups[name].includes('scripts/browser-typescript-tests.mjs')),
   'Source-only TypeScript checks should not consume the Chromium jobs'
 );
 
@@ -50,6 +52,11 @@ for (const spec of testGroups.all) {
       ciGroupNames.filter((name) => name.startsWith('browser-')).some((name) => groups[name].includes(spec)),
       `${spec} requires a Chromium job`
     );
+    assert.doesNotMatch(
+      source,
+      /headless:\s*false|\bchannel\s*:|\bexecutablePath\s*:|\blaunchPersistentContext\s*\(/,
+      `${spec} requires more than the installed default headless shell`
+    );
   }
 }
 
@@ -69,7 +76,7 @@ assert.match(workflow, /run: npm run precheck/);
 assert.match(workflow, /run: node scripts\/ci-test-groups-tests\.mjs/);
 assert.match(
   workflow,
-  /if: startsWith\(matrix\.group, 'browser-'\)\s+run: npx playwright install chromium --with-deps/
+  /if: startsWith\(matrix\.group, 'browser-'\)[\s\S]*?run: npx playwright install chromium --with-deps --only-shell/
 );
 assert.match(workflow, /run: node scripts\/run-tests\.mjs --ci-group \$\{\{ matrix\.group \}\}/);
 assert.doesNotMatch(workflow, /secrets:|continue-on-error:|max-parallel:/);
