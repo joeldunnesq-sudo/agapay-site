@@ -429,13 +429,29 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
           `SELECT COALESCE(SUM(m.accumulated-m.gain_loss),0) adjustment
     FROM accounting_asset_movements m JOIN accounting_fixed_assets a ON a.id=m.asset_id
     JOIN accounting_journal_entries e ON e.id=m.journal_id
-    WHERE m.kind='disposal' AND e.status='posted' AND e.posting_date BETWEEN ? AND ?
+    WHERE m.kind='disposal' AND e.status IN ('posted','reversed') AND e.posting_date BETWEEN ? AND ?
     AND (?='' OR a.fund_id=?)`
         )
         .bind(startDate, endDate, fundId || '', fundId || '')
         .first<{ adjustment: number }>()
     : null;
-  const disposalReclassification = money(disposal?.adjustment);
+  const hasCorrections =
+    hasAssets &&
+    (await db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='accounting_asset_reversals'")
+      .first());
+  const reversed = hasCorrections
+    ? await db
+        .prepare(
+          `SELECT COALESCE(SUM(m.accumulated-m.gain_loss),0) adjustment
+   FROM accounting_asset_reversals r JOIN accounting_asset_movements m ON m.id=r.movement_id JOIN accounting_fixed_assets a ON a.id=m.asset_id
+   JOIN accounting_journal_entries e ON e.id=r.reversal_journal_id WHERE m.kind='disposal' AND e.status IN ('posted','reversed')
+   AND r.entry_date BETWEEN ? AND ? AND (?='' OR a.fund_id=?)`
+        )
+        .bind(startDate, endDate, fundId || '', fundId || '')
+        .first<{ adjustment: number }>()
+    : null;
+  const disposalReclassification = money(disposal?.adjustment) - money(reversed?.adjustment);
   const operatingAdjustments = operating.reduce((sum, row) => sum + cashEffect(row), 0) + disposalReclassification;
   const investingCashFlow = investing.reduce((sum, row) => sum + cashEffect(row), 0) - disposalReclassification;
   const financingCashFlow = financing.reduce((sum, row) => sum + cashEffect(row), 0);

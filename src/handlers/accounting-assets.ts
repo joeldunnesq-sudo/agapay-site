@@ -1,3 +1,9 @@
+import {
+  previewAssetCorrection,
+  correctAssetPosting,
+  cancelAssetRegistration,
+  type AssetCorrectionInput,
+} from '../accounting/assets/corrections.js';
 import { json } from '../lib/core.js';
 import { setupAssetAccounts, type AssetAccountSetup } from '../accounting/assets/setup.js';
 import { accountingContext } from './accounting-ledger.js';
@@ -18,7 +24,9 @@ export async function handleAccountingAssets(request: Request, env: Partial<Env>
     base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting/assets`;
   if (url.pathname !== base && !url.pathname.startsWith(base + '/')) return null;
   const path = url.pathname.slice(base.length),
-    match = path.match(/^\/([^/]+)(?:\/(depreciation-preview|depreciation-post|disposal-preview|dispose))?$/);
+    match = path.match(
+      /^\/([^/]+)(?:\/(depreciation-preview|depreciation-post|disposal-preview|dispose|correction-preview|correct|cancel-registration))?$/
+    );
   try {
     const ctx = await accountingContext(
       request,
@@ -39,6 +47,17 @@ export async function handleAccountingAssets(request: Request, env: Partial<Env>
         ok: true,
         ...(await assetRegister(db, actor, url.searchParams.get('asOf') || new Date().toISOString().slice(0, 10))),
       });
+    if (request.method === 'GET' && path === '/opening-lines') {
+      const rows =
+        (
+          await db
+            .prepare(
+              `SELECT l.id,e.entry_number entryNumber,e.posting_date entryDate,a.name accountName,f.name fundName,l.credit_amount amount FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status='posted' AND l.credit_amount>0 AND t.category='asset' AND a.normal_balance='credit' ORDER BY e.posting_date DESC LIMIT 500`
+            )
+            .all()
+        ).results || [];
+      return reply({ ok: true, rows });
+    }
     if (request.method === 'GET' && path === '/acquisition-lines')
       return reply({ ok: true, rows: await acquisitionLines(db, actor) });
     if (request.method === 'POST' && !path)
@@ -58,7 +77,20 @@ export async function handleAccountingAssets(request: Request, env: Partial<Env>
           ),
         });
       if (request.method === 'POST' && action) {
-        const input = (await request.json()) as AssetOperation,
+        const body = (await request.json()) as AssetCorrectionInput;
+        const correction = {
+          expectedVersion: body.expectedVersion,
+          movementId: body.movementId,
+          entryDate: body.entryDate,
+          reason: body.reason,
+          operationKey: body.operationKey,
+        };
+        if (action === 'correction-preview')
+          return reply({ ok: true, ...(await previewAssetCorrection(db, actor, id, correction)) });
+        if (action === 'correct') return reply({ ok: true, ...(await correctAssetPosting(db, actor, id, correction)) });
+        if (action === 'cancel-registration')
+          return reply({ ok: true, ...(await cancelAssetRegistration(db, actor, id, correction)) });
+        const input = body as unknown as AssetOperation,
           kind = action.startsWith('depreciation') ? 'depreciation' : 'disposal';
         return reply({
           ok: true,

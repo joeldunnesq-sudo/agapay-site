@@ -124,6 +124,10 @@ const accountingServiceAllowList = new Set([
   'nextCheckNumber',
   'reserveCheckNumbers',
   'classifyIntegritySeverity',
+  'dimensionAccess', // Internal capability check for reporting metadata and council packages.
+  'dimensionDates', // Shared date-range validation for dimension and package reports.
+  'dimensionRefs', // Shared active-kind validation for labels and budget allocations.
+  'dimensionText', // Shared bounded input validation; never a public operation.
   'getAsset', // Internal authorized asset lookup shared by detail and posting workflows.
   'assetAccount', // Internal chart validation shared by asset setup, registration and disposal.
 ]);

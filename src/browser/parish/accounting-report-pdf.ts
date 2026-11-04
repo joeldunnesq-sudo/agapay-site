@@ -230,3 +230,13 @@ export async function createAccountingReportPdf(
   });
   return pdf.save();
 }
+
+export async function createAccountingReportPacketPdf(reports: AccountingPdfReport[]) {
+  if (!reports.length || reports.length > 7) throw new Error('Choose one through seven council reports.');
+  const document = await PDFDocument.create();
+  for (const report of reports) {
+    const source = await PDFDocument.load(await createAccountingReportPdf(report));
+    for (const page of await document.copyPages(source, source.getPageIndices())) document.addPage(page);
+  }
+  return document.save();
+}

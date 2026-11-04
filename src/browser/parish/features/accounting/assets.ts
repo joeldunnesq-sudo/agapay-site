@@ -18,6 +18,10 @@ interface AccountingAssetRow {
   id: string;
   tag: string;
   name: string;
+  original_acquisition_date: string;
+  ledger_start_date: string;
+  opening_through_date: string;
+  opening_depreciation: number;
   acquisition_date: string;
   in_service_date: string;
   cost: number;
@@ -36,6 +40,7 @@ interface AccountingAssetRow {
 }
 interface AccountingAssetPayload {
   reconciliation?: { balanced: boolean; costDifference: number; accumulatedDifference: number };
+  latestMovementId?: string;
   error?: string;
   rows: AccountingAssetRow[];
   totals: { cost: number; accumulated: number; netBookValue: number };
@@ -43,7 +48,7 @@ interface AccountingAssetPayload {
   asset: AccountingAssetRow;
   source: { journal_entry_id: string };
   schedule: { throughDate: string; amount: number; accumulated: number; netBookValue: number }[];
-  movements: { kind: string; through_date: string; depreciation: number; journal_id: string }[];
+  movements: { reversed_date?: string; kind: string; through_date: string; depreciation: number; journal_id: string }[];
   lines: { accountId: string; debitAmount: number; creditAmount: number; description: string }[];
   depreciation: number;
   proceeds: number;
@@ -159,12 +164,15 @@ async function newAccountingAsset() {
   try {
     const response = await fetch(accountingApi('/assets/acquisition-lines'), { headers: authHeaders() });
     const data = (await response.json()) as {
+      latestMovementId?: string;
       error?: string;
       rows: { id: string; available: number; entry_date: string; description: string; account_name: string }[];
     };
     if (!response.ok) throw new Error(data.error || 'Unable to load acquisitions.');
     if (tenant !== currentParish?.parishId || request !== accountingAssetsRequest || accountingView !== 'assets')
       return;
+    const opening = await accountingAssetFetch('/opening-lines');
+    if (tenant !== currentParish?.parishId) return;
     pane.innerHTML = `<button class="acct-link" onclick="closeAccountingAsset()">← Asset register</button><section class="acct-card"><span class="acct-kicker">Add to the register</span><h2>Register a parish asset</h2><button class="acct-link" type="button" onclick="showAccountingAssetAccountSetup()">Set up asset accounts</button><p>Record the purchase, opening balance, or in-kind gift in the ledger first. Select its asset debit below. Registration does not book the cost again.</p><p>Cost account: debit asset, investing classification. Accumulated depreciation: credit asset, operating classification. Use Set up asset accounts to create or select these accounts before registering.</p><form class="acct-phase-form" onsubmit="saveAccountingAsset(event)"><div class="acct-form-grid">
  <label>Acquisition entry<select name="acquisitionLineId" required><option value="">Choose posted asset debit</option>${data.rows
    .filter((r) => r.available > 0)
@@ -174,9 +182,9 @@ async function newAccountingAsset() {
    )
    .join('')}</select></label>
  <label>Asset tag<input name="tag" required maxlength="80" placeholder="EQ-001"></label><label>Asset name<input name="name" required maxlength="160"></label><label>In-service date<input name="inServiceDate" type="date" required></label>
- <label>Cost allocated to this asset<input name="cost" type="number" min="0.01" step="0.01" required></label><label>Salvage value<input name="salvage" type="number" min="0" step="0.01" value="0" required></label><label>Useful life (months)<input name="lifeMonths" type="number" min="1" max="1200" value="60" required></label><label>Depreciation method<select name="method"><option value="straight_line">Monthly straight-line</option><option value="none">Nondepreciable (e.g. land)</option></select></label>
+ <label>Cost allocated to this asset<input name="cost" type="number" min="0.01" step="0.01" required></label><label>Salvage value<input name="salvage" type="number" min="0" step="0.01" value="0" required></label><label>Useful life / remaining life for imported assets (months)<input name="lifeMonths" type="number" min="1" max="1200" value="60" required></label><label>Depreciation method<select name="method"><option value="straight_line">Monthly straight-line</option><option value="none">Nondepreciable (e.g. land)</option></select></label>
  <label>Accumulated depreciation<select name="accumulatedAccountId">${accountingAssetAccountOptions('asset', 'credit')}</select></label><label>Depreciation expense<select name="expenseAccountId">${accountingAssetAccountOptions('expense', 'debit')}</select></label><label>Location<input name="location" maxlength="160"></label><label>Serial number<input name="serialNumber" maxlength="160"></label><label>Insurance value<input name="insuranceValue" type="number" min="0" step="0.01" value="0"></label><label>Notes<textarea name="notes" maxlength="4000"></textarea></label></div>
- <p>Monthly straight-line includes the full in-service and disposal months. Financial terms are fixed when registered. Historical assets with prior depreciation require a reviewed opening subledger import; do not register them as new acquisitions.</p><button class="acct-primary">Register asset</button><span class="acct-form-status" role="status"></span></form></section>`;
+ <details><summary>Import an older asset with opening depreciation</summary><p>Link existing posted opening balances. No new cost or depreciation is booked. Enter remaining useful life above. Opening through must be a month-end in the ledger recognition month or the month immediately before it.</p><div class="acct-form-grid"><label>Original acquisition date<input name="originalAcquisitionDate" type="date"></label><label>Opening depreciation through<input name="openingThrough" type="date"></label><label>Opening accumulated depreciation<input name="openingAmount" type="number" min="0" step="0.01" value="0"></label><label>Existing accumulated-depreciation credit<select name="openingLine"><option value="">None (zero opening depreciation)</option>${opening.rows.map((l) => `<option value="${escapeAttr(l.id)}">${escapeHtml(String(l.entryNumber) + ' · ' + String(l.accountName) + ' · ' + String(l.fundName))} · ${accountingMoney(Number(l.amount))}</option>`).join('')}</select></label></div></details><p>Monthly straight-line includes full months. Financial terms are fixed when registered; corrections preserve the earlier registration and journal history.</p><button class="acct-primary">Register asset</button><span class="acct-form-status" role="status"></span></form></section>`;
   } catch (error) {
     if (tenant === currentParish?.parishId)
       pane.innerHTML = accountingEmpty('Asset registration unavailable', (error as Error).message);
@@ -198,6 +206,14 @@ async function saveAccountingAsset(event: AccountingFormEvent) {
   button.disabled = true;
   status.textContent = 'Registering…';
   const values = accountingAssetFormValues(form);
+  if (values.originalAcquisitionDate)
+    values.opening = {
+      originalAcquisitionDate: values.originalAcquisitionDate,
+      throughDate: values.openingThrough,
+      amount: Math.round(Number(values.openingAmount) * 100),
+      creditLineId: values.openingLine || undefined,
+    };
+  for (const key of ['originalAcquisitionDate', 'openingThrough', 'openingAmount', 'openingLine']) delete values[key];
   values.operationKey = form.dataset.operationKey ||= crypto.randomUUID();
   try {
     const result = await accountingAssetFetch('', 'POST', values);
@@ -210,10 +226,11 @@ async function saveAccountingAsset(event: AccountingFormEvent) {
 function renderAccountingAssetDetail(pane: HTMLElement) {
   const detail = accountingAssetDetail!,
     a = detail.asset;
-  pane.innerHTML = `<button class="acct-link" onclick="closeAccountingAsset()">← Asset register</button><section class="acct-asset-hero"><div><span class="acct-kicker">${escapeHtml(a.tag)} · ${escapeHtml(a.status)}</span><h2>${escapeHtml(a.name)}</h2><p>Acquired ${accountingDate(a.acquisition_date)} · In service ${accountingDate(a.in_service_date)}</p></div><strong>${accountingMoney(a.cost)} cost</strong></section>
+  pane.innerHTML = `<button class="acct-link" onclick="closeAccountingAsset()">← Asset register</button><section class="acct-asset-hero"><div><span class="acct-kicker">${escapeHtml(a.tag)} · ${escapeHtml(a.status)}</span><h2>${escapeHtml(a.name)}</h2><p>Acquired ${accountingDate(a.original_acquisition_date || a.acquisition_date)} · Ledger recognition ${accountingDate(a.ledger_start_date || a.acquisition_date)} · In service ${accountingDate(a.in_service_date)}</p></div><strong>${accountingMoney(a.cost)} cost</strong></section>
  <section class="acct-card"><h3>Property details</h3><form class="acct-phase-form" onsubmit="saveAccountingAssetMetadata(event)"><div class="acct-form-grid"><label>Location<input name="location" maxlength="160" value="${escapeAttr(a.location)}"></label><label>Serial number<input name="serialNumber" maxlength="160" value="${escapeAttr(a.serial_number)}"></label><label>Insurance value<input name="insuranceValue" type="number" min="0" step="0.01" value="${a.insurance_value / 100}"></label><label>Notes<textarea name="notes" maxlength="4000">${escapeHtml(a.notes)}</textarea></label></div><button class="acct-refresh">Save details</button><span class="acct-form-status" role="status"></span></form></section>
  ${a.status === 'active' ? `<section class="acct-card"><h3>Review an accounting action</h3><p>Preview calculated entries before posting. Disposal includes any depreciation due through its month.</p><form class="acct-phase-form" onsubmit="previewAccountingAsset(event)" oninput="invalidateAccountingAssetPreview()"><div class="acct-form-grid"><label>Action<select name="kind"><option value="depreciation">Post depreciation</option><option value="disposal">Dispose / retire asset</option></select></label><label>Posting date<input type="date" name="throughDate" required value="${escapeAttr(accountingAssetAsOf)}"></label><label>Disposal proceeds (zero for retirement)<input name="proceeds" type="number" step="0.01" min="0" value="0"></label><label>Proceeds cash account<select name="cashAccountId">${accountingAssetAccountOptions('asset', 'debit')}</select></label><label>Gain account<select name="gainAccountId">${accountingAssetAccountOptions('revenue', 'credit')}</select></label><label>Loss account<select name="lossAccountId">${accountingAssetAccountOptions('expense', 'debit')}</select></label></div><button class="acct-primary">Preview journal</button><span class="acct-form-status" role="status"></span></form><div id="accountingAssetPreview"></div></section>` : ''}
- <section class="acct-card"><h3>Posted asset history</h3><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Through</th><th>Action</th><th>Depreciation</th><th>Supporting entry</th></tr></thead><tbody>${detail.movements.map((m) => `<tr><td>${accountingDate(m.through_date)}</td><td>${escapeHtml(m.kind)}</td><td>${accountingMoney(m.depreciation)}</td><td><button class="acct-link" data-journal="${escapeAttr(m.journal_id)}" onclick="openAccountingJournalAttachments(this.dataset.journal)">Journal documents</button></td></tr>`).join('') || '<tr><td colspan="4">No asset postings yet.</td></tr>'}</tbody></table></div></section>
+ <section class="acct-card"><h3>Posted asset history</h3><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Through</th><th>Action</th><th>Depreciation</th><th>Supporting entry</th></tr></thead><tbody>${detail.movements.map((m) => `<tr><td>${accountingDate(m.through_date)}</td><td>${escapeHtml(m.kind)}${m.reversed_date ? ' · reversed ' + accountingDate(m.reversed_date) : ''}</td><td>${accountingMoney(m.depreciation)}</td><td><button class="acct-link" data-journal="${escapeAttr(m.journal_id)}" onclick="openAccountingJournalAttachments(this.dataset.journal)">Journal documents</button></td></tr>`).join('') || '<tr><td colspan="4">No asset postings yet.</td></tr>'}</tbody></table></div></section>
+ ${a.status !== 'cancelled' ? `<section class="acct-card"><h3>Correct an asset record</h3><p>${detail.latestMovementId ? 'Reverse the latest asset posting with an equal and opposite journal. Earlier reports retain the original posting until the correction date.' : 'Cancel this registration to replace incorrect financial terms. This releases its existing ledger allocation without changing the ledger.'}</p><form class="acct-phase-form" onsubmit="correctAccountingAsset(event)"><label>Correction date<input type="date" name="entryDate" required value="${escapeAttr(accountingAssetAsOf)}"></label><label>Reason<textarea name="reason" required maxlength="1600"></textarea></label><button class="acct-refresh">${detail.latestMovementId ? 'Preview correction' : 'Review registration cancellation'}</button><span class="acct-form-status" role="status"></span><div class="acct-correction-preview"></div></form></section>` : ''}
  <section class="acct-card"><h3>Depreciation schedule</h3><p>Estimated monthly charges · ${a.life_months} months · ${accountingMoney(a.salvage)} salvage. A schedule is not evidence of a posting.</p><details><summary>Show schedule (${detail.schedule.length} months)</summary><div class="acct-table-wrap acct-asset-schedule"><table class="acct-table"><thead><tr><th>Month-end</th><th>Charge</th><th>Accumulated</th><th>Book value</th></tr></thead><tbody>${detail.schedule.map((s) => `<tr><td>${accountingDate(s.throughDate)}</td><td>${accountingMoney(s.amount)}</td><td>${accountingMoney(s.accumulated)}</td><td>${accountingMoney(s.netBookValue)}</td></tr>`).join('')}</tbody></table></div></details></section><section class="acct-card"><h3>Acquisition documents</h3><p>Invoices, appraisals and property documents are stored with the acquisition journal entry and shared by assets linked to it.</p><div id="accountingAssetDocuments"></div></section>`;
   renderAccountingAttachments(
     'journal_entry',
@@ -402,6 +419,62 @@ async function saveAccountingAssetAccountSetup(event: AccountingFormEvent) {
     accountingData.accounts = reference.accounts || accountingData.accounts;
     accountingData.accountCatalog = reference.accountCatalog || accountingData.accountCatalog;
     closeAccountingAsset();
+  } catch (error) {
+    status.textContent = (error as Error).message;
+    button.disabled = false;
+  }
+}
+
+async function correctAccountingAsset(event: AccountingFormEvent) {
+  event.preventDefault();
+  const form = event.currentTarget,
+    detail = accountingAssetDetail!,
+    tenant = currentParish?.parishId,
+    status = form.querySelector<HTMLElement>('.acct-form-status')!,
+    button = form.querySelector<HTMLButtonElement>('button')!,
+    pane = form.querySelector<HTMLElement>('.acct-correction-preview')!;
+  const input = {
+    ...Object.fromEntries(new FormData(form)),
+    expectedVersion: detail.asset.version,
+    movementId: detail.latestMovementId,
+    operationKey: (form.dataset.operationKey ||= crypto.randomUUID()),
+  };
+  button.disabled = true;
+  status.textContent = 'Reviewing…';
+  try {
+    const preview = detail.latestMovementId
+      ? await accountingAssetFetch('/' + encodeURIComponent(detail.asset.id) + '/correction-preview', 'POST', input)
+      : null;
+    if (tenant !== currentParish?.parishId || accountingAssetDetail !== detail) return;
+    pane.innerHTML = preview
+      ? `<p>Equal and opposite correction journal:</p><ul>${preview.lines.map((l) => `<li>${escapeHtml(l.accountId)} · Debit ${accountingMoney(l.debitAmount)} · Credit ${accountingMoney(l.creditAmount)}</li>`).join('')}</ul>`
+      : '<p>The registration will be retained as cancelled. The ledger balances will remain unchanged. Register a replacement afterward.</p>';
+    const confirm = document.createElement('button');
+    confirm.type = 'button';
+    confirm.className = 'acct-primary';
+    confirm.textContent = preview ? 'Confirm and post correction' : 'Confirm cancellation';
+    pane.append(confirm);
+    status.textContent = 'Review the details before confirming.';
+    form.oninput = () => {
+      pane.replaceChildren();
+      button.disabled = false;
+      status.textContent = 'Details changed. Review again.';
+      confirm.disabled = true;
+    };
+    confirm.onclick = async () => {
+      confirm.disabled = true;
+      try {
+        await accountingAssetFetch(
+          '/' + encodeURIComponent(detail.asset.id) + (preview ? '/correct' : '/cancel-registration'),
+          'POST',
+          input
+        );
+        if (tenant === currentParish?.parishId) await openAccountingAsset(detail.asset.id);
+      } catch (error) {
+        status.textContent = (error as Error).message;
+        confirm.disabled = false;
+      }
+    };
   } catch (error) {
     status.textContent = (error as Error).message;
     button.disabled = false;

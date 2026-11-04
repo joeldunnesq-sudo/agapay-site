@@ -642,7 +642,12 @@ export async function reverseJournalEntry(
     requestHash,
     correlationId = '',
     additionalStatements = [],
-  }: Omit<PostingOptions, 'expectedVersion'> & { entryDate: string; reason: string }
+    preFinalizationStatements = [],
+  }: Omit<PostingOptions, 'expectedVersion'> & {
+    entryDate: string;
+    reason: string;
+    preFinalizationStatements?: PortabilityStatement[];
+  }
 ) {
   requireCapability(actor, 'accounting.journals.reverse');
   if (!reason) throw new ValidationError('A reversal reason is required.');
@@ -683,6 +688,7 @@ export async function reverseJournalEntry(
   if (('entryDate' in reversal ? reversal.entryDate : reversal.entry_date) !== entryDate)
     throw new ValidationError('An unfinished reversal exists with a different date.');
   const finalization = [
+    ...preFinalizationStatements,
     db
       .prepare(
         "INSERT INTO accounting_entry_links(id,journal_entry_id,source_type,source_id,relationship_type) VALUES(?,?, 'journal_entry',?,'reversal')"

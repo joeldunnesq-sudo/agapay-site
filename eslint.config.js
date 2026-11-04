@@ -2641,7 +2641,19 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(showAccountingAssetAccountSetup|saveAccountingAssetAccountSetup|invalidateAccountingAssetPreview|renderAccountingAssets|filterAccountingAssets|closeAccountingAsset|newAccountingAsset|saveAccountingAsset|saveAccountingAssetMetadata|previewAccountingAsset|postAccountingAsset|loadAccountingAssetReport)$',
+            '^(correctAccountingAsset|showAccountingAssetAccountSetup|saveAccountingAssetAccountSetup|invalidateAccountingAssetPreview|renderAccountingAssets|filterAccountingAssets|closeAccountingAsset|newAccountingAsset|saveAccountingAsset|saveAccountingAssetMetadata|previewAccountingAsset|postAccountingAsset|loadAccountingAssetReport)$',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/features/accounting/readiness.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern:
+            '^(accountingReadinessLink|saveAccountingDimension|saveAccountingCouncilPackage|saveAccountingClassification|openAccountingBudgetAllocations|saveAccountingBudgetAllocation|openAccountingDimensionReport|generateAccountingCouncilPackage)$',
         },
       ],
     },

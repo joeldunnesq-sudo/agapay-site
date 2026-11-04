@@ -316,6 +316,21 @@ async function copyBudget(db, { actor, entitlementTier, sourceBudgetId, name, in
           source.id
         )
       : [];
+  const dimensional = await first(
+    db,
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='accounting_budget_dimension_allocations'"
+  );
+  if (
+    dimensional &&
+    (await first(
+      db,
+      `SELECT x.id FROM accounting_budget_dimension_allocations x JOIN accounting_budget_lines l ON l.id=x.budget_line_id LEFT JOIN accounting_dimensions d ON d.id=x.department_id LEFT JOIN accounting_dimensions p ON p.id=x.project_id WHERE l.budget_id=? AND (d.is_active=0 OR p.is_active=0) LIMIT 1`,
+      sourceBudgetId
+    ))
+  )
+    throw new ValidationError(
+      'Reactivate archived department/project labels before copying this budget, then review its allocations.'
+    );
   const created = await createBudget(db, {
     actor,
     entitlementTier,
@@ -335,6 +350,22 @@ async function copyBudget(db, { actor, entitlementTier, sourceBudgetId, name, in
       assumptions,
     },
   });
+  if (
+    await first(
+      db,
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='accounting_budget_dimension_allocations'"
+    )
+  ) {
+    await run(
+      db,
+      `INSERT INTO accounting_budget_dimension_allocations(id,budget_line_id,department_id,project_id,basis_points,sort_order)
+    SELECT 'dimcopy_'||lower(hex(randomblob(16))),target.id,x.department_id,x.project_id,x.basis_points,x.sort_order
+    FROM accounting_budget_dimension_allocations x JOIN accounting_budget_lines original ON original.id=x.budget_line_id
+    JOIN accounting_budget_lines target ON target.budget_id=? AND target.account_id=original.account_id AND target.fund_id=original.fund_id WHERE original.budget_id=?`,
+      created.id,
+      sourceBudgetId
+    );
+  }
   await event(db, created.id, 'budget_copied', actor, '', { sourceBudgetId });
   return created;
 }

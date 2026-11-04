@@ -71,6 +71,7 @@ for (const name of [
   '0004_phase2b_manual_ledger.sql',
   '0016_expense_account_groups.sql',
   '0027_fixed_assets.sql',
+  '0028_asset_opening_corrections.sql',
 ])
   db.sqlite.exec(read('accounting-migrations/' + name));
 for (const [id, number, name, type, balance, classification] of [

@@ -1,4 +1,5 @@
 // Generated from src/accounting/assets/service.ts by npm run build:server. Do not edit.
+import { assetOpening } from './opening.js';
 import { CapabilityDeniedError, ValidationError } from '../errors.js';
 import { accumulatedAt, cents, date, depreciationSchedule } from './schedule.js';
 function permitted(actor, capability = 'accounting.view') {
@@ -17,6 +18,13 @@ function text(value, label, max = 160, required = false) {
 async function getAsset(db, actor, id) {
   permitted(actor);
   const asset = await db.prepare('SELECT * FROM accounting_fixed_assets WHERE id=?').bind(id).first();
+  if (asset) {
+    const cancelled = await db
+      .prepare('SELECT entry_date FROM accounting_asset_cancellations WHERE asset_id=?')
+      .bind(id)
+      .first();
+    if (cancelled) asset.status = 'cancelled';
+  }
   if (!asset) throw new ValidationError('Asset not found.');
   return asset;
 }
@@ -39,7 +47,7 @@ async function acquisitionLines(db, actor) {
       await db
         .prepare(
           `SELECT l.id,l.account_id,l.fund_id,l.debit_amount,e.id journal_id,e.entry_date,e.entry_number,
- e.description,a.name account_name,f.name fund_name,l.debit_amount-COALESCE((SELECT SUM(cost) FROM accounting_fixed_assets WHERE acquisition_line_id=l.id),0) available
+ e.description,a.name account_name,f.name fund_name,l.debit_amount-COALESCE((SELECT SUM(cost) FROM accounting_fixed_assets a WHERE acquisition_line_id=l.id AND NOT EXISTS(SELECT 1 FROM accounting_asset_cancellations c WHERE c.asset_id=a.id)),0) available
  FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id
  JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id
  JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status='posted' AND l.debit_amount>0
@@ -78,7 +86,11 @@ async function registerAsset(db, actor, input) {
   )
     throw new ValidationError('Check salvage value, method and useful life (1–1200 months).');
   const id = `asset_${(await hash(key)).slice(0, 40)}`,
-    requestHash = await hash(values);
+    requestHash = await hash({
+      ...values,
+      ...(input.opening ? { opening: input.opening } : {}),
+      ...(input.effectiveDate ? { effectiveDate: input.effectiveDate } : {}),
+    });
   const prior = await db.prepare('SELECT * FROM accounting_fixed_assets WHERE id=?').bind(id).first();
   if (prior) {
     if (prior.request_hash !== requestHash)
@@ -96,7 +108,12 @@ async function registerAsset(db, actor, input) {
   const costAccount = await assetAccount(db, line.account_id, 'asset', 'debit');
   if (costAccount.cash_flow_classification !== 'investing' || Number(costAccount.account_number) < 1100)
     throw new ValidationError('The cost account must be classified as investing, not a cash or operating account.');
-  if (values.inServiceDate < line.entry_date) throw new ValidationError('In-service date cannot precede acquisition.');
+  const openingState = await assetOpening(
+    db,
+    { ...values, opening: input.opening, effectiveDate: input.effectiveDate },
+    line,
+    values.accumulatedAccountId
+  );
   if (values.method === 'straight_line') {
     const contra = await assetAccount(db, values.accumulatedAccountId, 'asset', 'credit');
     if (contra.cash_flow_classification !== 'operating')
@@ -109,8 +126,8 @@ async function registerAsset(db, actor, input) {
     db
       .prepare(
         `INSERT INTO accounting_fixed_assets(id,tag,name,acquisition_line_id,acquisition_date,in_service_date,cost,salvage,
-  life_months,method,cost_account_id,accumulated_account_id,expense_account_id,fund_id,location,serial_number,insurance_value,notes,request_hash,created_by)
-  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  life_months,method,cost_account_id,accumulated_account_id,expense_account_id,fund_id,location,serial_number,insurance_value,notes,request_hash,created_by,original_acquisition_date,ledger_start_date,opening_through_date,opening_depreciation,opening_line_id)
+  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       )
       .bind(
         id,
@@ -132,7 +149,12 @@ async function registerAsset(db, actor, input) {
         values.insuranceValue,
         values.notes,
         requestHash,
-        actor.id
+        actor.id,
+        openingState.opening?.originalAcquisitionDate || null,
+        openingState.ledgerStart,
+        openingState.opening?.throughDate || null,
+        openingState.opening?.amount || 0,
+        openingState.opening?.creditLineId || null
       ),
     db
       .prepare('INSERT INTO accounting_asset_audit(id,asset_id,action,actor_id,detail) VALUES(?,?,?,?,?)')
@@ -143,7 +165,12 @@ async function registerAsset(db, actor, input) {
 async function assetDetail(db, actor, id) {
   const asset = await getAsset(db, actor, id);
   const [movements, source, audit] = await Promise.all([
-    db.prepare('SELECT * FROM accounting_asset_movements WHERE asset_id=? ORDER BY through_date,id').bind(id).all(),
+    db
+      .prepare(
+        `SELECT m.*,r.entry_date reversed_date,r.reversal_journal_id FROM accounting_asset_movements m LEFT JOIN accounting_asset_reversals r ON r.movement_id=m.id WHERE m.asset_id=? ORDER BY m.through_date,m.asset_version,m.id`
+      )
+      .bind(id)
+      .all(),
     db
       .prepare('SELECT journal_entry_id FROM accounting_journal_lines WHERE id=?')
       .bind(asset.acquisition_line_id)
@@ -152,6 +179,15 @@ async function assetDetail(db, actor, id) {
   ]);
   return {
     asset,
+    latestMovementId:
+      (
+        await db
+          .prepare(
+            `SELECT m.id FROM accounting_asset_movements m JOIN accounting_journal_entries e ON e.id=m.journal_id WHERE m.asset_id=? AND NOT EXISTS(SELECT 1 FROM accounting_asset_reversals r WHERE r.movement_id=m.id) ORDER BY m.asset_version DESC,m.through_date DESC,e.entry_number DESC LIMIT 1`
+          )
+          .bind(id)
+          .first()
+      )?.id || null,
     movements: movements.results || [],
     schedule: depreciationSchedule(asset),
     source,
@@ -163,23 +199,35 @@ async function assetRegister(db, actor, asOf) {
   date(asOf);
   const data = await db
     .prepare(
-      `SELECT a.*,COALESCE((SELECT SUM(depreciation) FROM accounting_asset_movements m
- WHERE m.asset_id=a.id AND m.through_date<=?),0) posted_depreciation FROM accounting_fixed_assets a
- WHERE a.acquisition_date<=? ORDER BY a.tag LIMIT 5001`
+      `SELECT a.*,a.opening_depreciation+COALESCE((SELECT SUM(depreciation) FROM accounting_asset_movements m
+ WHERE m.asset_id=a.id AND m.through_date<=? AND NOT EXISTS(SELECT 1 FROM accounting_asset_reversals r WHERE r.movement_id=m.id AND r.entry_date<=?)),0) posted_depreciation FROM accounting_fixed_assets a
+ WHERE COALESCE(a.ledger_start_date,a.acquisition_date)<=? AND NOT EXISTS(SELECT 1 FROM accounting_asset_cancellations c WHERE c.asset_id=a.id AND c.entry_date<=?) ORDER BY a.tag LIMIT 5001`
     )
-    .bind(asOf, asOf)
+    .bind(asOf, asOf, asOf, asOf)
     .all();
   if ((data.results || []).length > 5e3)
     throw new ValidationError('Asset register exceeds 5,000 rows. Contact support for a full export.');
+  const history =
+    (
+      await db
+        .prepare(
+          `SELECT m.asset_id,m.through_date FROM accounting_asset_movements m WHERE m.kind='disposal' AND m.through_date<=? AND NOT EXISTS(SELECT 1 FROM accounting_asset_reversals r WHERE r.movement_id=m.id AND r.entry_date<=?)`
+        )
+        .bind(asOf, asOf)
+        .all()
+    ).results || [];
+  const disposalDates = new Map(history.map((m) => [m.asset_id, m.through_date]));
   const rows = (data.results || []).map((a) => {
-    const disposed = !!a.disposal_date && a.disposal_date <= asOf;
+    const disposalDate = disposalDates.get(a.id) || null,
+      disposed = !!disposalDate;
     const accumulated = a.posted_depreciation;
     return {
       ...a,
       asOf,
+      disposal_date: disposalDate,
       status: disposed ? 'disposed' : 'active',
       postedDepreciation: accumulated,
-      scheduledDepreciation: accumulatedAt(a, disposed ? a.disposal_date : asOf),
+      scheduledDepreciation: accumulatedAt(a, disposalDate || asOf),
       netBookValue: disposed ? 0 : a.cost - accumulated,
     };
   });
@@ -195,8 +243,8 @@ async function assetRegister(db, actor, asOf) {
       await db
         .prepare(
           `WITH mapped AS (
- SELECT DISTINCT cost_account_id account_id,fund_id,'cost' kind FROM accounting_fixed_assets WHERE acquisition_date<=?
- UNION SELECT DISTINCT accumulated_account_id,fund_id,'accumulated' FROM accounting_fixed_assets WHERE acquisition_date<=? AND accumulated_account_id IS NOT NULL)
+ SELECT DISTINCT cost_account_id account_id,fund_id,'cost' kind FROM accounting_fixed_assets WHERE COALESCE(ledger_start_date,acquisition_date)<=?
+ UNION SELECT DISTINCT accumulated_account_id,fund_id,'accumulated' FROM accounting_fixed_assets WHERE COALESCE(ledger_start_date,acquisition_date)<=? AND accumulated_account_id IS NOT NULL)
  SELECT mapped.kind,COALESCE(SUM(CASE WHEN e.id IS NOT NULL THEN l.debit_amount-l.credit_amount ELSE 0 END),0) amount
  FROM mapped LEFT JOIN accounting_journal_lines l ON l.account_id=mapped.account_id AND l.fund_id=mapped.fund_id
  LEFT JOIN accounting_journal_entries e ON e.id=l.journal_entry_id AND e.status IN ('posted','reversed') AND e.posting_date<=?
@@ -226,6 +274,8 @@ async function assetRegister(db, actor, asOf) {
 async function updateAssetMetadata(db, actor, id, input) {
   permitted(actor, 'accounting.configure');
   const a = await getAsset(db, actor, id);
+  if (a.status === 'cancelled')
+    throw new ValidationError('A cancelled registration is retained for history and cannot be edited.');
   if (input.expectedVersion !== a.version) throw new ValidationError('Asset changed. Reload before saving.');
   const location = text(input.location, 'Location'),
     serial = text(input.serialNumber, 'Serial number'),

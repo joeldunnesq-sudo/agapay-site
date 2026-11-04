@@ -36,6 +36,9 @@ declare module '*pdf-lib-1.17.1.esm.min.js' {
     drawRectangle(options: { x: number; y: number; width: number; height: number; color: PDFColor }): void;
   }
   export interface PDFDocumentInstance {
+    copyPages(source: PDFDocumentInstance, indices: number[]): Promise<PDFPage[]>;
+    getPageIndices(): number[];
+    addPage(page: PDFPage): PDFPage;
     registerFontkit(fontkit: unknown): void;
     embedFont(bytes: ArrayBuffer | Uint8Array, options: { subset: boolean }): Promise<PDFFont>;
     setTitle(value: string): void;
@@ -46,7 +49,10 @@ declare module '*pdf-lib-1.17.1.esm.min.js' {
     getPages(): PDFPage[];
     save(): Promise<Uint8Array>;
   }
-  export const PDFDocument: { create(): Promise<PDFDocumentInstance> };
+  export const PDFDocument: {
+    create(): Promise<PDFDocumentInstance>;
+    load(bytes: Uint8Array): Promise<PDFDocumentInstance>;
+  };
   export function rgb(red: number, green: number, blue: number): PDFColor;
 }
 declare module '*fontkit-1.1.1.es.min.js' {

@@ -1,7 +1,9 @@
 // Generated from src/portability/accounting-schema.ts by npm run build:server. Do not edit.
+import { READINESS_PORTABILITY_SCHEMA } from './accounting-readiness-schema.js';
 import { ASSET_PORTABILITY_SCHEMA } from './accounting-asset-schema.js';
 const PORTABILITY_SCHEMA = Object.freeze({
   ...ASSET_PORTABILITY_SCHEMA,
+  ...READINESS_PORTABILITY_SCHEMA,
   accounting_account_presentations: ['account_id', 'created_at', 'default_fund_id', 'expense_group', 'updated_at'],
   accounting_account_types: [
     'category',
