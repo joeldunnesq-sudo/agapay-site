@@ -1,3 +1,4 @@
+import { PDFDocument, PDFName } from 'pdf-lib';
 import { readBrowserContractSourceSync } from './lib/browser-typescript.mjs';
 import { readServerContractSourceSync } from './lib/server-typescript.mjs';
 import { readServerModuleSourceSync } from './lib/server-typescript.mjs';
@@ -157,7 +158,11 @@ assert.ok(!parishNotifications.match(/subject: `Welcome to AGAPAY[\s\S]{0,5000}a
 assert.equal(parishOnboardingGuide.subarray(0, 4).toString(), "%PDF", "parish onboarding guide should be a real PDF");
 assert.ok(parishOnboardingGuide.length > 10000, "parish onboarding guide should contain the complete current setup guide");
 assert.equal(accountingSuiteGuide.subarray(0, 4).toString(), "%PDF", "accounting suite guide should be a real PDF");
-assert.ok(accountingSuiteGuide.length > 100000, "accounting suite guide should contain the complete comprehensive guide");
+const accountingGuideDocument = await PDFDocument.load(accountingSuiteGuide);
+assert.equal(accountingGuideDocument.getPageCount(), 24, "accounting handbook should retain all reviewed topic pages");
+assert.match(accountingGuideDocument.getTitle(), /AGAPAY Accounting Suite Guide/, "accounting handbook should have meaningful document metadata");
+assert.equal(accountingGuideDocument.catalog.lookup(PDFName.of("Outlines")).lookup(PDFName.of("Count")).asNumber(), 23, "accounting handbook should retain its topic bookmarks");
+assert.equal(accountingGuideDocument.getPage(1).node.lookup(PDFName.of("Annots")).size(), 10, "accounting handbook contents should retain its ten task links");
 
 const onboardingPage = await readFile("public/onboarding.html", "utf8");
 assert.ok(onboardingPage.includes("Register your Orthodox parish.") && onboardingPage.includes("Register Parish"), "onboarding page should present parish registration only for now");
