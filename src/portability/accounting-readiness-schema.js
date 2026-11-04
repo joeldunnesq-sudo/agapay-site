@@ -1,5 +1,7 @@
 // Generated from src/portability/accounting-readiness-schema.ts by npm run build:server. Do not edit.
+import { ONBOARDING_PORTABILITY_SCHEMA } from './accounting-onboarding-schema.js';
 const READINESS_PORTABILITY_SCHEMA = Object.freeze({
+  ...ONBOARDING_PORTABILITY_SCHEMA,
   accounting_dimensions: ['code', 'created_at', 'created_by', 'id', 'is_active', 'kind', 'name', 'version'],
   accounting_journal_line_dimensions: ['department_id', 'line_id', 'project_id', 'updated_at', 'updated_by', 'version'],
   accounting_budget_dimension_allocations: [

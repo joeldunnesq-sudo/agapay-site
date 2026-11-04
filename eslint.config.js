@@ -2174,7 +2174,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(givingCatalogSnapshot|accountingCatalogSnapshot|saveSession|logoutParish|setPaymentStatus|openParishSupportTicket|showParishFeatureRequestPopup|dismissParishFeatureRequest|submitParishSupportTicket|renderDirectoryAdminAccessError|renderDirectoryAdminGenericError|statusLabel|loginFromParishPage|showParishLogin|showParishPasswordReset|requestParishPasswordReset|confirmParishPasswordReset|initParishPasswordResetPage|fallbackFundsArray|fallbackCampaignsArray|dedicatedGivingUrl|dedicatedGivingEmbedUrl|downloadBlob|slugifyLocal|money|moneyFull|shortDate|fullDate|isoDateLabel|isParishTier|isParishPlusActive|isStarterTier|openParishPortability|acceptParishAccessInvitation|initParishAccessInvitationPage|hasFundManagementAccess|isGeneralDashboardFund|isCandleDashboardFund|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation)$',
+            '^(givingCatalogSnapshot|accountingCatalogSnapshot|saveSession|logoutParish|setPaymentStatus|openParishSupportTicket|closeParishSupportTicket|showParishFeatureRequestPopup|dismissParishFeatureRequest|submitParishSupportTicket|renderDirectoryAdminAccessError|renderDirectoryAdminGenericError|statusLabel|loginFromParishPage|showParishLogin|showParishPasswordReset|requestParishPasswordReset|confirmParishPasswordReset|initParishPasswordResetPage|fallbackFundsArray|fallbackCampaignsArray|dedicatedGivingUrl|dedicatedGivingEmbedUrl|downloadBlob|slugifyLocal|money|moneyFull|shortDate|fullDate|isoDateLabel|isParishTier|isParishPlusActive|isStarterTier|openParishPortability|acceptParishAccessInvitation|initParishAccessInvitationPage|hasFundManagementAccess|isGeneralDashboardFund|isCandleDashboardFund|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation)$',
         },
       ],
     },
@@ -2655,6 +2655,15 @@ export default [
           varsIgnorePattern:
             '^(accountingReadinessLink|saveAccountingDimension|saveAccountingCouncilPackage|saveAccountingClassification|openAccountingBudgetAllocations|saveAccountingBudgetAllocation|openAccountingDimensionReport|generateAccountingCouncilPackage)$',
         },
+      ],
+    },
+  },
+  {
+    files: ['src/browser/parish/accounting-journey.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { varsIgnorePattern: '^(accountingJourneyEntry|accountingJourneyAction|saveAccountingJourneyReview)$' },
       ],
     },
   },

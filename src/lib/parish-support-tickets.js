@@ -1,4 +1,5 @@
 // Generated from src/lib/parish-support-tickets.ts by npm run build:server. Do not edit.
+import { SUPPORT_POLICY, supportResponseDueAt } from './support-policy.js';
 import { d1, d1All, d1First, d1SetSetting, generateSecret, listKvKeys } from './core.js';
 import { agapayEmailHtml, sendEmail } from './email.js';
 import { htmlEscape } from './format.js';
@@ -25,6 +26,10 @@ const TICKET_STRING_FIELDS = [
   'updatedAt',
   'adminNote',
   'updatedBy',
+  'responseDueAt',
+  'firstResponseAt',
+  'firstResponseBy',
+  'supportPolicyVersion',
 ];
 function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -136,34 +141,41 @@ async function submitParishSupportTicket(env, request, parish = {}, body = {}) {
     updatedAt: now,
     adminNote: '',
     updatedBy: '',
+    responseDueAt: supportResponseDueAt(now),
+    firstResponseAt: '',
+    firstResponseBy: '',
+    supportPolicyVersion: SUPPORT_POLICY.version,
     email: null,
   };
   await save(env, ticket);
-  const recipient =
-    env.AGAPAY_SUPPORT_EMAIL ||
-    env.AGAPAY_REGISTRATION_NOTIFY_EMAIL ||
-    env.AGAPAY_REPLY_TO_EMAIL ||
-    'support@agapay.app';
+  const recipient = env.AGAPAY_SUPPORT_EMAIL || SUPPORT_POLICY.email;
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const email = await sendEmail(env, {
-    from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <hello@agapay.app>',
-    to: [recipient],
-    reply_to: ticket.submittedBy || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
-    subject: `[${sourceLabel} ${type}] ${ticket.parishName || ticket.parishId}: ${ticket.subject}`,
-    html: agapayEmailHtml(
-      appUrl,
-      `New ${sourceLabel} support ticket`,
-      `<p><strong>${htmlEscape(ticket.parishName || ticket.parishId)}</strong> submitted a ${htmlEscape(type)} from ${htmlEscape(sourceLabel)}.</p><p><strong>Subject:</strong> ${htmlEscape(ticket.subject)}</p><p><strong>App area:</strong> ${htmlEscape(ticket.page || 'Not specified')}</p><p style="white-space:pre-wrap">${htmlEscape(ticket.message)}</p><p><strong>Reply to:</strong> ${htmlEscape(ticket.submittedBy || 'Not provided')}</p>`
-    ),
-    text: `New ${sourceLabel} ${type}
+  let email;
+  try {
+    email = await sendEmail(env, {
+      from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <hello@agapay.app>',
+      to: [recipient],
+      reply_to: ticket.submittedBy || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
+      subject: `[${sourceLabel} ${type}] ${ticket.parishName || ticket.parishId}: ${ticket.subject}`,
+      html: agapayEmailHtml(
+        appUrl,
+        `New ${sourceLabel} support ticket`,
+        `<p><strong>${htmlEscape(ticket.parishName || ticket.parishId)}</strong> submitted a ${htmlEscape(type)} from ${htmlEscape(sourceLabel)}.</p><p><strong>Subject:</strong> ${htmlEscape(ticket.subject)}</p><p><strong>App area:</strong> ${htmlEscape(ticket.page || 'Not specified')}</p><p style="white-space:pre-wrap">${htmlEscape(ticket.message)}</p><p><strong>Reply to:</strong> ${htmlEscape(ticket.submittedBy || 'Not provided')}</p><p><strong>First response due:</strong> ${htmlEscape(ticket.responseDueAt)} (${htmlEscape(SUPPORT_POLICY.hoursLabel)}; 16 business hours).</p>`
+      ),
+      text: `New ${sourceLabel} ${type}
 
 Parish: ${ticket.parishName || ticket.parishId}
 Subject: ${ticket.subject}
 Area: ${ticket.page || 'Not specified'}
 Reply to: ${ticket.submittedBy || 'Not provided'}
 
-${ticket.message}`,
-  });
+${ticket.message}
+
+First response due: ${ticket.responseDueAt} (${SUPPORT_POLICY.hoursLabel}; 16 business hours).`,
+    });
+  } catch {
+    email = { status: 'failed' };
+  }
   ticket.email = { status: email.status || 'unknown', sentAt: email.status === 'sent' ? now : '' };
   await save(env, ticket);
   return { ok: true, ticket };
@@ -176,9 +188,12 @@ async function updateParishSupportTicket(env, adminContext, id, body = {}) {
   const updated = {
     ...ticket,
     status,
-    adminNote: clean(body.note, 1e3),
+    adminNote: body.note === void 0 ? ticket.adminNote : clean(body.note, 1e3),
     updatedAt: /* @__PURE__ */ new Date().toISOString(),
     updatedBy: adminContext.actor || 'Admin',
+    firstResponseAt:
+      ticket.firstResponseAt || (body.responded === true ? /* @__PURE__ */ new Date().toISOString() : ''),
+    firstResponseBy: ticket.firstResponseBy || (body.responded === true ? adminContext.actor || 'Admin' : ''),
   };
   await save(env, updated);
   return { ok: true, ticket: updated };

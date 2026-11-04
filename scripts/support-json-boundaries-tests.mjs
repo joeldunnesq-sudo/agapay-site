@@ -72,6 +72,10 @@ const valid = {
   updatedAt: '2026-01-01',
   adminNote: '',
   updatedBy: '',
+  responseDueAt: '',
+  firstResponseAt: '',
+  firstResponseBy: '',
+  supportPolicyVersion: '',
   email: null,
   metadata: { future: true },
 };
@@ -116,6 +120,10 @@ try {
     'updatedAt',
     'adminNote',
     'updatedBy',
+    'responseDueAt',
+    'firstResponseAt',
+    'firstResponseBy',
+    'supportPolicyVersion',
   ])
     invalid.push({ ...valid, [field]: {} }, { ...valid, [field]: null });
   for (const bad of invalid) {

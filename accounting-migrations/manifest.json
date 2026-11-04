@@ -121,6 +121,10 @@
     {
       "name": "0030_council_report_packages.sql",
       "sha256": "d794dd5040088f845cec28a0b8e92f476efb8481a7503514fbc3a87e96418e88"
+    },
+    {
+      "name": "0031_onboarding_reviews.sql",
+      "sha256": "c25fbfd69b601a17fff22aade376a57e015dd58aec83dee19c909d2e11787a61"
     }
   ]
 }

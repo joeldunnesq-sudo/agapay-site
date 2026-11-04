@@ -1,6 +1,8 @@
+import { ONBOARDING_PORTABILITY_SCHEMA } from './accounting-onboarding-schema.js';
 // Reviewed reporting metadata and immutable council package snapshots.
 // prettier-ignore
 export const READINESS_PORTABILITY_SCHEMA: Readonly<Partial<Record<string, readonly string[]>>> = Object.freeze({
+  ...ONBOARDING_PORTABILITY_SCHEMA,
   "accounting_dimensions": [
     "code",
     "created_at",

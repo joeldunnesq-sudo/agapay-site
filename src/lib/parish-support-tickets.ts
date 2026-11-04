@@ -1,3 +1,4 @@
+import { SUPPORT_POLICY, supportResponseDueAt } from './support-policy.js';
 import type { EmailEnv } from './email.js';
 export type SupportTicketEnv = EmailEnv & { AGAPAY_SUPPORT_EMAIL?: string };
 export interface SupportTicket {
@@ -17,6 +18,10 @@ export interface SupportTicket {
   updatedAt: string;
   adminNote: string;
   updatedBy: string;
+  responseDueAt: string;
+  firstResponseAt: string;
+  firstResponseBy: string;
+  supportPolicyVersion: string;
   email: { status: string; sentAt: string } | null;
 }
 export interface SupportTicketInput {
@@ -29,6 +34,7 @@ export interface SupportTicketInput {
   path?: unknown;
   status?: unknown;
   note?: unknown;
+  responded?: unknown;
 }
 
 import { d1, d1All, d1First, d1SetSetting, generateSecret, listKvKeys } from './core.js';
@@ -58,6 +64,10 @@ const TICKET_STRING_FIELDS = [
   'updatedAt',
   'adminNote',
   'updatedBy',
+  'responseDueAt',
+  'firstResponseAt',
+  'firstResponseBy',
+  'supportPolicyVersion',
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -182,27 +192,32 @@ export async function submitParishSupportTicket(
     updatedAt: now,
     adminNote: '',
     updatedBy: '',
+    responseDueAt: supportResponseDueAt(now),
+    firstResponseAt: '',
+    firstResponseBy: '',
+    supportPolicyVersion: SUPPORT_POLICY.version,
     email: null,
   };
   await save(env, ticket);
-  const recipient =
-    env.AGAPAY_SUPPORT_EMAIL ||
-    env.AGAPAY_REGISTRATION_NOTIFY_EMAIL ||
-    env.AGAPAY_REPLY_TO_EMAIL ||
-    'support@agapay.app';
+  const recipient = env.AGAPAY_SUPPORT_EMAIL || SUPPORT_POLICY.email;
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const email = await sendEmail(env, {
-    from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <hello@agapay.app>',
-    to: [recipient],
-    reply_to: ticket.submittedBy || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
-    subject: `[${sourceLabel} ${type}] ${ticket.parishName || ticket.parishId}: ${ticket.subject}`,
-    html: agapayEmailHtml(
-      appUrl,
-      `New ${sourceLabel} support ticket`,
-      `<p><strong>${htmlEscape(ticket.parishName || ticket.parishId)}</strong> submitted a ${htmlEscape(type)} from ${htmlEscape(sourceLabel)}.</p><p><strong>Subject:</strong> ${htmlEscape(ticket.subject)}</p><p><strong>App area:</strong> ${htmlEscape(ticket.page || 'Not specified')}</p><p style="white-space:pre-wrap">${htmlEscape(ticket.message)}</p><p><strong>Reply to:</strong> ${htmlEscape(ticket.submittedBy || 'Not provided')}</p>`
-    ),
-    text: `New ${sourceLabel} ${type}\n\nParish: ${ticket.parishName || ticket.parishId}\nSubject: ${ticket.subject}\nArea: ${ticket.page || 'Not specified'}\nReply to: ${ticket.submittedBy || 'Not provided'}\n\n${ticket.message}`,
-  });
+  let email: { status?: string };
+  try {
+    email = await sendEmail(env, {
+      from: env.AGAPAY_FROM_EMAIL || 'AGAPAY <hello@agapay.app>',
+      to: [recipient],
+      reply_to: ticket.submittedBy || env.AGAPAY_REPLY_TO_EMAIL || 'support@agapay.app',
+      subject: `[${sourceLabel} ${type}] ${ticket.parishName || ticket.parishId}: ${ticket.subject}`,
+      html: agapayEmailHtml(
+        appUrl,
+        `New ${sourceLabel} support ticket`,
+        `<p><strong>${htmlEscape(ticket.parishName || ticket.parishId)}</strong> submitted a ${htmlEscape(type)} from ${htmlEscape(sourceLabel)}.</p><p><strong>Subject:</strong> ${htmlEscape(ticket.subject)}</p><p><strong>App area:</strong> ${htmlEscape(ticket.page || 'Not specified')}</p><p style="white-space:pre-wrap">${htmlEscape(ticket.message)}</p><p><strong>Reply to:</strong> ${htmlEscape(ticket.submittedBy || 'Not provided')}</p><p><strong>First response due:</strong> ${htmlEscape(ticket.responseDueAt)} (${htmlEscape(SUPPORT_POLICY.hoursLabel)}; 16 business hours).</p>`
+      ),
+      text: `New ${sourceLabel} ${type}\n\nParish: ${ticket.parishName || ticket.parishId}\nSubject: ${ticket.subject}\nArea: ${ticket.page || 'Not specified'}\nReply to: ${ticket.submittedBy || 'Not provided'}\n\n${ticket.message}\n\nFirst response due: ${ticket.responseDueAt} (${SUPPORT_POLICY.hoursLabel}; 16 business hours).`,
+    });
+  } catch {
+    email = { status: 'failed' };
+  }
   ticket.email = { status: email.status || 'unknown', sentAt: email.status === 'sent' ? now : '' };
   await save(env, ticket);
   return { ok: true, ticket };
@@ -221,9 +236,11 @@ export async function updateParishSupportTicket(
   const updated = {
     ...ticket,
     status,
-    adminNote: clean(body.note, 1000),
+    adminNote: body.note === undefined ? ticket.adminNote : clean(body.note, 1000),
     updatedAt: new Date().toISOString(),
     updatedBy: adminContext.actor || 'Admin',
+    firstResponseAt: ticket.firstResponseAt || (body.responded === true ? new Date().toISOString() : ''),
+    firstResponseBy: ticket.firstResponseBy || (body.responded === true ? adminContext.actor || 'Admin' : ''),
   };
   await save(env, updated);
   return { ok: true, ticket: updated };

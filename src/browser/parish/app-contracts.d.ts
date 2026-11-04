@@ -185,7 +185,7 @@ export interface ParishAppPayload extends Record<string, unknown> {
   volume?: ParishAppVolume;
   application?: ParishAppNonprofit;
   portalUrl?: string;
-  ticket?: { email?: { status?: string } };
+  ticket?: { id?: string; responseDueAt?: string; email?: { status?: string } };
 }
 export interface ParishAppOptions {
   quiet?: boolean;

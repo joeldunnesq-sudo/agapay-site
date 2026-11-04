@@ -15,6 +15,7 @@ const smoke = [
 ];
 
 const core = [
+  'scripts/support-operational-readiness-tests.mjs',
   'scripts/storage-session-contract-tests.mjs',
   'scripts/admin-donor-session-tests.mjs',
   'scripts/identity-contract-tests.mjs',
@@ -172,6 +173,8 @@ const core = [
 ];
 
 const accounting = [
+  'scripts/onboarding-support-browser-tests.mjs',
+  'scripts/accounting-guided-onboarding-tests.mjs',
   'scripts/accounting-readiness-browser-tests.mjs',
   'scripts/accounting-asset-readiness-tests.mjs',
   'scripts/accounting-report-readiness-tests.mjs',

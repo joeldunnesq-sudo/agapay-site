@@ -174,6 +174,9 @@ export interface AdminAppSuggestion {
   userNotification?: { status?: string };
 }
 export interface AdminAppTicket extends AdminAppSuggestion {
+  responseDueAt?: string;
+  firstResponseAt?: string;
+  firstResponseBy?: string;
   type?: string;
   source?: string;
   email?: { status?: string };

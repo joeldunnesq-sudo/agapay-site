@@ -29,6 +29,7 @@ import sql26 from '../../../accounting-migrations/0027_fixed_assets.sql';
 import sql27 from '../../../accounting-migrations/0028_asset_opening_corrections.sql';
 import sql28 from '../../../accounting-migrations/0029_reporting_dimensions.sql';
 import sql29 from '../../../accounting-migrations/0030_council_report_packages.sql';
+import sql30 from '../../../accounting-migrations/0031_onboarding_reviews.sql';
 export const provisioningMigrations: readonly { name: string; sha256: string; sql: string }[] = [
   {
     name: '0001_accounting_database_foundation.sql',
@@ -179,5 +180,10 @@ export const provisioningMigrations: readonly { name: string; sha256: string; sq
     name: '0030_council_report_packages.sql',
     sha256: 'd794dd5040088f845cec28a0b8e92f476efb8481a7503514fbc3a87e96418e88',
     sql: sql29,
+  },
+  {
+    name: '0031_onboarding_reviews.sql',
+    sha256: 'c25fbfd69b601a17fff22aade376a57e015dd58aec83dee19c909d2e11787a61',
+    sql: sql30,
   },
 ];

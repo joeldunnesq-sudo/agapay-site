@@ -578,8 +578,8 @@ function renderParishSupportTickets(data = {}) {
           tickets
             .map(
               (ticket) => `<article class="learn-feedback-row ${(ticket.status || 'new') === 'new' ? 'is-new' : ''}">
-          <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(ticket.status || 'new'))} · ${escapeHtml(readable(ticket.type || 'help'))} · ${escapeHtml(ticket.source === 'myagapay' ? 'My AGAPAY' : 'Parish dashboard')}${ticket.email?.status ? ` · Email: ${escapeHtml(readable(ticket.email.status))}` : ''}</span><strong>${escapeHtml(ticket.subject || 'Parish support ticket')}</strong><p>${escapeHtml(ticket.message || '')}</p><small>${escapeHtml(ticket.parishName || ticket.parishId || 'Parish')} · ${escapeHtml(ticket.page || 'dashboard')} · ${escapeHtml(ticket.submittedBy || 'No reply address')} · ${escapeHtml(shortDate(ticket.createdAt))}</small>${ticket.adminNote ? `<small>Note: ${escapeHtml(ticket.adminNote)} · ${escapeHtml(ticket.updatedBy || 'Admin')}</small>` : ''}</div>
-          <div class="learn-moderation-actions"><select id="support-status-${jsAttr(ticket.id)}"><option value="new" ${ticket.status === 'new' ? 'selected' : ''}>New</option><option value="in_progress" ${ticket.status === 'in_progress' ? 'selected' : ''}>In progress</option><option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>Resolved</option><option value="closed" ${ticket.status === 'closed' ? 'selected' : ''}>Closed</option></select><button class="gold btn-sm" onclick="updateParishSupportTicket('${jsAttr(ticket.id)}',this)">Save</button></div>
+          <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(ticket.status || 'new'))} · ${escapeHtml(readable(ticket.type || 'help'))} · ${escapeHtml(ticket.source === 'myagapay' ? 'My AGAPAY' : 'Parish dashboard')}${ticket.email?.status ? ` · Email: ${escapeHtml(readable(ticket.email.status))}` : ''}</span><strong>${escapeHtml(ticket.subject || 'Parish support ticket')}</strong><p>${escapeHtml(ticket.message || '')}</p><small>${escapeHtml(ticket.parishName || ticket.parishId || 'Parish')} · ${escapeHtml(ticket.page || 'dashboard')} · ${escapeHtml(ticket.submittedBy || 'No reply address')} · ${escapeHtml(shortDate(ticket.createdAt))}</small>${ticket.responseDueAt ? `<small>${ticket.firstResponseAt ? 'First response recorded ' + escapeHtml(ticket.firstResponseAt) : 'First response due ' + escapeHtml(new Date(ticket.responseDueAt).toLocaleString('en-US', { timeZone: 'America/Chicago' })) + ' Central Time' + (Date.parse(ticket.responseDueAt) < Date.now() ? ' · OVERDUE' : '')}</small>` : ''}${ticket.adminNote ? `<small>Note: ${escapeHtml(ticket.adminNote)} · ${escapeHtml(ticket.updatedBy || 'Admin')}</small>` : ''}</div>
+          <div class="learn-moderation-actions"><select id="support-status-${jsAttr(ticket.id)}"><option value="new" ${ticket.status === 'new' ? 'selected' : ''}>New</option><option value="in_progress" ${ticket.status === 'in_progress' ? 'selected' : ''}>In progress</option><option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>Resolved</option><option value="closed" ${ticket.status === 'closed' ? 'selected' : ''}>Closed</option></select><button class="gold btn-sm" onclick="updateParishSupportTicket('${jsAttr(ticket.id)}',this)">Save</button>${!ticket.firstResponseAt ? `<button class="btn-sm" onclick="updateParishSupportTicket('${jsAttr(ticket.id)}',this,true)">Mark response sent</button>` : ''}</div>
         </article>`
             )
             .join('') || '<div class="revenue-empty">No parish support tickets have been submitted yet.</div>'
@@ -599,7 +599,7 @@ async function loadParishSupportTickets() {
       list.innerHTML = `<div class="revenue-empty">${escapeHtml(error.message || 'Unable to load parish support tickets.')}</div>`;
   }
 }
-async function updateParishSupportTicket(ticketId, button) {
+async function updateParishSupportTicket(ticketId, button, responded = false) {
   const select = document.getElementById(`support-status-${ticketId}`);
   if (!select) return;
   button.disabled = true;
@@ -607,7 +607,10 @@ async function updateParishSupportTicket(ticketId, button) {
     const response = await fetch(`/api/admin/parish-support-tickets/${encodeURIComponent(ticketId)}`, {
       method: 'PATCH',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ status: select.value }),
+      body: JSON.stringify({
+        status: select.value,
+        responded,
+      }),
     });
     const result = await response.json().catch(() => ({}));
     if (handleAuthFailure(response, result)) return;

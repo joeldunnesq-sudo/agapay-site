@@ -17,6 +17,7 @@ export const ACCOUNTING_HANDLER_FILES = Object.freeze([
 
 export const ACCOUNTING_READ_SMOKE_PATHS = Object.freeze([
   ['ledger', '/general-ledger'],
+  ['onboarding', '/onboarding'],
   ['assets', '/assets'],
   ['asset-opening-lines', '/assets/opening-lines'],
   ['dimensions', '/dimensions'],

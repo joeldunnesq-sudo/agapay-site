@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "support": {
+    "email": "support@agapay.app",
+    "primaryOwner": "Platform owner",
+    "backupOwner": null,
+    "timeZone": "America/Chicago",
+    "weekdays": [1, 2, 3, 4, 5],
+    "startHour": 8,
+    "endHour": 18,
+    "responseBusinessHours": 16
+  },
+  "evidence": [
+    { "workflow": "production-monitor.yml", "name": "Outside-in health and backup monitoring", "maxAgeHours": 1 },
+    { "workflow": "production-d1-backup.yml", "name": "Production database backup", "maxAgeHours": 30 },
+    {
+      "workflow": "production-d1-recovery-drill.yml",
+      "name": "Stored backup restored into disposable D1",
+      "maxAgeHours": 840
+    },
+    {
+      "workflow": "self-service-recovery-qualification.yml",
+      "name": "Hosted parish/accounting recovery and cleanup",
+      "maxAgeHours": 840
+    }
+  ]
+}
