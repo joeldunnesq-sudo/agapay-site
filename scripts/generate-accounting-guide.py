@@ -331,7 +331,7 @@ def build():
         if index < len(TOPICS)-1: story.append(PageBreak())
     candidate=ROOT / 'tmp/pdfs/accounting-guide-build.pdf'
     candidate.parent.mkdir(parents=True,exist_ok=True)
-    doc = SimpleDocTemplate(str(candidate), pagesize=letter, rightMargin=54, leftMargin=54, topMargin=59, bottomMargin=66, pageCompression=1)
+    doc = SimpleDocTemplate(str(candidate), pagesize=letter, title='AGAPAY Accounting Suite Guide - November 2026', author='AGAPAY', subject='Parish accounting workflows, reporting, onboarding, assets and support', rightMargin=54, leftMargin=54, topMargin=59, bottomMargin=66, pageCompression=1)
     doc.build(story, onFirstPage=decorate, onLaterPages=decorate, canvasmaker=GuideCanvas)
     reader = PdfReader(candidate)
     if len(reader.pages) != 24:
