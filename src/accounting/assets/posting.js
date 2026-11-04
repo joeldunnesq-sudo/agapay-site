@@ -9,19 +9,21 @@ async function previewAssetOperation(db, actor, id, kind, input) {
     through = date(input.throughDate);
   if (asset.status !== 'active') throw new ValidationError('Asset is already disposed.');
   if (input.expectedVersion !== asset.version) throw new ValidationError('Asset changed. Reload and preview again.');
+  if (through < (asset.ledger_start_date || asset.acquisition_date))
+    throw new ValidationError('Posting date precedes ledger recognition.');
   if (through < asset.in_service_date) throw new ValidationError('Posting date must be on or after in-service date.');
   if (kind === 'depreciation' && monthEnd(through) !== through)
     throw new ValidationError('Choose a month-end date for depreciation.');
   const existing = await db
     .prepare(
-      'SELECT COALESCE(SUM(depreciation),0) amount,MAX(through_date) latest FROM accounting_asset_movements WHERE asset_id=?'
+      `SELECT COALESCE(SUM(CASE WHEN r.id IS NULL THEN m.depreciation ELSE 0 END),0) amount,MAX(MAX(m.through_date,COALESCE(r.entry_date,m.through_date))) latest FROM accounting_asset_movements m LEFT JOIN accounting_asset_reversals r ON r.movement_id=m.id WHERE m.asset_id=?`
     )
     .bind(id)
     .first();
   if (existing?.latest && through < existing.latest)
     throw new ValidationError('Date precedes an existing asset posting.');
   const target = accumulatedAt(asset, through),
-    depreciation = target - (existing?.amount || 0);
+    depreciation = target - (asset.opening_depreciation || 0) - (existing?.amount || 0);
   if (depreciation < 0) throw new ValidationError('Depreciation is inconsistent. Review the asset ledger.');
   const lines = [];
   const line = (accountId, debitAmount, creditAmount, description) => {
@@ -114,7 +116,11 @@ async function postAssetOperation(db, actor, id, kind, input) {
       credit_amount: l.creditAmount,
       description: l.description,
     }));
-    if (existingDraft.status !== 'draft' || JSON.stringify(saved) !== JSON.stringify(expected))
+    if (
+      existingDraft.status !== 'draft' ||
+      saved.length !== expected.length ||
+      saved.some((row, i) => Object.entries(expected[i]).some(([key2, value]) => row[key2] !== value))
+    )
       throw new ValidationError('The prepared asset draft changed. Review it and start a new asset preview.');
   }
   const journal =
@@ -147,8 +153,8 @@ async function postAssetOperation(db, actor, id, kind, input) {
         ),
       db
         .prepare(
-          `INSERT INTO accounting_asset_movements(id,asset_id,kind,through_date,depreciation,accumulated,proceeds,gain_loss,journal_id,operation_key,request_hash,created_by)
-  VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`
+          `INSERT INTO accounting_asset_movements(id,asset_id,kind,through_date,depreciation,accumulated,proceeds,gain_loss,journal_id,operation_key,request_hash,created_by,asset_version)
+  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`
         )
         .bind(
           crypto.randomUUID(),
@@ -162,7 +168,8 @@ async function postAssetOperation(db, actor, id, kind, input) {
           journal.id,
           key,
           requestHash,
-          actor.id
+          actor.id,
+          preview.asset.version
         ),
       db.prepare('INSERT INTO accounting_asset_audit(id,asset_id,action,actor_id,detail) VALUES(?,?,?,?,?)').bind(
         crypto.randomUUID(),

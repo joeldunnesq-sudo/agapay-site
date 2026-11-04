@@ -139,6 +139,7 @@ declare function accountingStaffSessionKey(): string;
 declare function accountingStaffSession(): { profile: AccountingAccessProfile } | null;
 
 declare module '*parish/accounting-report-pdf.js?v=20261103treasurer1' {
+  export function createAccountingReportPacketPdf(reports: AccountingStatement[]): Promise<Uint8Array<ArrayBuffer>>;
   export function createAccountingReportPdf(report: AccountingStatement): Promise<Uint8Array<ArrayBuffer>>;
 }
 interface AccountingFundResponse {

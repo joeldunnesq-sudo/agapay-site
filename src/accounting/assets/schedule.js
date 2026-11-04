@@ -23,12 +23,22 @@ function monthEnd(value) {
 function accumulatedAt(asset, through) {
   date(through);
   if (asset.method === 'none' || through < asset.in_service_date) return 0;
+  if (asset.opening_through_date) {
+    const base = asset.opening_depreciation || 0;
+    const months2 = Math.min(
+      asset.life_months,
+      Math.max(0, monthIndex(through) - monthIndex(asset.opening_through_date))
+    );
+    return base + Number((BigInt(asset.cost - asset.salvage - base) * BigInt(months2)) / BigInt(asset.life_months));
+  }
   const months = Math.min(asset.life_months, Math.max(0, monthIndex(through) - monthIndex(asset.in_service_date) + 1));
   return Number((BigInt(asset.cost - asset.salvage) * BigInt(months)) / BigInt(asset.life_months));
 }
 function depreciationSchedule(asset) {
-  const start = monthIndex(asset.in_service_date);
-  let prior = 0;
+  const start = asset.opening_through_date
+    ? monthIndex(asset.opening_through_date) + 1
+    : monthIndex(asset.in_service_date);
+  let prior = asset.opening_depreciation || 0;
   const months = asset.disposal_date
     ? Math.min(asset.life_months, monthIndex(asset.disposal_date) - start + 1)
     : asset.life_months;

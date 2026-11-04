@@ -172,6 +172,10 @@ const core = [
 ];
 
 const accounting = [
+  'scripts/accounting-readiness-browser-tests.mjs',
+  'scripts/accounting-asset-readiness-tests.mjs',
+  'scripts/accounting-report-readiness-tests.mjs',
+  'scripts/accounting-recovery-readiness-tests.mjs',
   'scripts/fee-coverage-readiness-tests.mjs',
   'scripts/fee-coverage-campaign-browser-tests.mjs',
   'scripts/fee-coverage-layout-browser-tests.mjs',

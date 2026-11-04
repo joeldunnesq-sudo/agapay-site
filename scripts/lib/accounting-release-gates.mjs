@@ -17,6 +17,12 @@ export const ACCOUNTING_HANDLER_FILES = Object.freeze([
 
 export const ACCOUNTING_READ_SMOKE_PATHS = Object.freeze([
   ['ledger', '/general-ledger'],
+  ['assets', '/assets'],
+  ['asset-opening-lines', '/assets/opening-lines'],
+  ['dimensions', '/dimensions'],
+  ['dimension-report', '/dimensions/report?from=2026-01-01&to=2026-10-31'],
+  ['dimension-transactions', '/dimensions/transactions?from=2026-01-01&to=2026-10-31'],
+  ['council-packages', '/report-packages'],
   ['reports', '/reports/statement-of-financial-position'],
   ['payables', '/payables/overview'],
   ['budgets', '/budgets'],

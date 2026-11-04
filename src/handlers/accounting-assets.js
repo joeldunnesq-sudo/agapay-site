@@ -1,4 +1,9 @@
 // Generated from src/handlers/accounting-assets.ts by npm run build:server. Do not edit.
+import {
+  previewAssetCorrection,
+  correctAssetPosting,
+  cancelAssetRegistration,
+} from '../accounting/assets/corrections.js';
 import { json } from '../lib/core.js';
 import { setupAssetAccounts } from '../accounting/assets/setup.js';
 import { accountingContext } from './accounting-ledger.js';
@@ -17,7 +22,9 @@ async function handleAccountingAssets(request, env, parishId) {
     base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting/assets`;
   if (url.pathname !== base && !url.pathname.startsWith(base + '/')) return null;
   const path = url.pathname.slice(base.length),
-    match = path.match(/^\/([^/]+)(?:\/(depreciation-preview|depreciation-post|disposal-preview|dispose))?$/);
+    match = path.match(
+      /^\/([^/]+)(?:\/(depreciation-preview|depreciation-post|disposal-preview|dispose|correction-preview|correct|cancel-registration))?$/
+    );
   try {
     const ctx = await accountingContext(
       request,
@@ -42,6 +49,17 @@ async function handleAccountingAssets(request, env, parishId) {
           url.searchParams.get('asOf') || /* @__PURE__ */ new Date().toISOString().slice(0, 10)
         )),
       });
+    if (request.method === 'GET' && path === '/opening-lines') {
+      const rows =
+        (
+          await db
+            .prepare(
+              `SELECT l.id,e.entry_number entryNumber,e.posting_date entryDate,a.name accountName,f.name fundName,l.credit_amount amount FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status='posted' AND l.credit_amount>0 AND t.category='asset' AND a.normal_balance='credit' ORDER BY e.posting_date DESC LIMIT 500`
+            )
+            .all()
+        ).results || [];
+      return reply({ ok: true, rows });
+    }
     if (request.method === 'GET' && path === '/acquisition-lines')
       return reply({ ok: true, rows: await acquisitionLines(db, actor) });
     if (request.method === 'POST' && !path)
@@ -56,7 +74,20 @@ async function handleAccountingAssets(request, env, parishId) {
           asset: await updateAssetMetadata(db, actor, id, await request.json()),
         });
       if (request.method === 'POST' && action) {
-        const input = await request.json(),
+        const body = await request.json();
+        const correction = {
+          expectedVersion: body.expectedVersion,
+          movementId: body.movementId,
+          entryDate: body.entryDate,
+          reason: body.reason,
+          operationKey: body.operationKey,
+        };
+        if (action === 'correction-preview')
+          return reply({ ok: true, ...(await previewAssetCorrection(db, actor, id, correction)) });
+        if (action === 'correct') return reply({ ok: true, ...(await correctAssetPosting(db, actor, id, correction)) });
+        if (action === 'cancel-registration')
+          return reply({ ok: true, ...(await cancelAssetRegistration(db, actor, id, correction)) });
+        const input = body,
           kind = action.startsWith('depreciation') ? 'depreciation' : 'disposal';
         return reply({
           ok: true,

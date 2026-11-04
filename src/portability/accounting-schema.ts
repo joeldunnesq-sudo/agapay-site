@@ -1,9 +1,11 @@
+import { READINESS_PORTABILITY_SCHEMA } from './accounting-readiness-schema.js';
 import { ASSET_PORTABILITY_SCHEMA } from './accounting-asset-schema.js';
 // Reviewed schema boundary for portability. New tables/columns require explicit review.
 // Keep the reviewed schema allowlist in its existing compact tabular layout.
 // prettier-ignore
 export const PORTABILITY_SCHEMA: Readonly<Partial<Record<string, readonly string[]>>> = Object.freeze({
   ...ASSET_PORTABILITY_SCHEMA,
+  ...READINESS_PORTABILITY_SCHEMA,
   "accounting_account_presentations": ["account_id","created_at","default_fund_id","expense_group","updated_at"],
   "accounting_account_types": ["category","code","created_at","id","is_system","name","normal_balance","sort_order","statement_type","updated_at"],
   "accounting_accountant_exports": ["close_session_id","completed_at","downloaded_at","expires_at","fiscal_year_id","format","generated_by_actor_id","generated_by_actor_type","id","manifest_json","package_json","request_hash","requested_at","status","version"],

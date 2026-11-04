@@ -109,6 +109,18 @@
     {
       "name": "0027_fixed_assets.sql",
       "sha256": "feaebfb0d9f7127a52b685a22f8c417df51c7488b2cdcdc156360a4545e6692a"
+    },
+    {
+      "name": "0028_asset_opening_corrections.sql",
+      "sha256": "1b29d901a62607a25de6062a955034dea0f1c2ab2dedadc48904ebc69138d4e7"
+    },
+    {
+      "name": "0029_reporting_dimensions.sql",
+      "sha256": "3cc745150d8a6296264dcc71c57aae38dde7095d803890a70a85a3226bc56ac9"
+    },
+    {
+      "name": "0030_council_report_packages.sql",
+      "sha256": "d794dd5040088f845cec28a0b8e92f476efb8481a7503514fbc3a87e96418e88"
     }
   ]
 }

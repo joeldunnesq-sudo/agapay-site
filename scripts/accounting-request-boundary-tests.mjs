@@ -36,6 +36,7 @@ const hostile = {
   journalEntryId: 'other-journal',
   entitlementTier: 'parish',
   additionalStatements: [{ sql: 'untrusted' }],
+  preFinalizationStatements: [{ sql: 'untrusted-before' }],
   expectedVersion: 1,
   idempotencyKey: 'post-1234',
   requestHash: 'hash',
@@ -59,7 +60,10 @@ for (const [path, method] of [
   const options = captured.at(-1);
   assert.equal(options.actor, actor);
   if (path.includes('url-journal')) assert.equal(options.journalEntryId, 'url-journal');
-  if (path.endsWith('/post')) assert.equal(options.additionalStatements, undefined);
+  if (path.endsWith('/post')) {
+    assert.equal(options.additionalStatements, undefined);
+    assert.equal(options.preFinalizationStatements, undefined);
+  }
 }
 const close = load('accounting-close.js', 'handleAccountingClose', {
   accountingContext: context,
@@ -118,3 +122,57 @@ assert.equal(periodCapability, 'accounting.configure');
 assert.equal(captured.at(-1).actor, actor);
 assert.equal(captured.at(-1).periodId, 'period_fixture');
 console.log('PASS - opening a period requires the server-selected configuration capability and authenticated actor');
+
+const readinessCalls = [];
+const positional = async (...args) => {
+  readinessCalls.push(args);
+  return {};
+};
+const readiness = load('accounting-readiness.js', 'handleAccountingReadiness', {
+  accountingContext: context,
+  reply,
+  saveDimension: positional,
+  classifyJournalLine: positional,
+  allocateDimensionBudget: positional,
+  saveReportPackage: positional,
+  generateReportPackage: positional,
+});
+for (const [path, method] of [
+  ['/dimensions', 'POST'],
+  ['/dimensions/transactions/url-line', 'PATCH'],
+  ['/dimensions/budgets/url-budget/lines/url-line', 'POST'],
+  ['/report-packages', 'POST'],
+  ['/report-packages/url-package/generate', 'POST'],
+]) {
+  const response = await readiness(
+    request(path, method, {
+      ...hostile,
+      lineId: 'forged',
+      budgetId: 'selected-budget',
+      packageId: 'forged',
+      allocations: [],
+      reportIds: ['activities'],
+    }),
+    {},
+    'parish-a'
+  );
+  assert.equal(response.status, 200, await response.text());
+  const args = readinessCalls.at(-1);
+  assert.equal(args[1], actor);
+  const input = args.at(-1);
+  for (const key of ['actor', 'entitlementTier', 'additionalStatements', 'preFinalizationStatements'])
+    assert.equal(input[key], undefined);
+  if (path.includes('/transactions/')) assert.equal(args[2], 'url-line');
+  if (path.includes('/budgets/')) {
+    assert.equal(args[2], 'advanced_operations');
+    assert.equal(args[3], 'url-budget');
+    assert.equal(args[4], 'url-line');
+  }
+  if (path.endsWith('/generate')) {
+    assert.equal(args[2], 'advanced_operations');
+    assert.equal(args[3], 'url-package');
+  }
+}
+console.log(
+  'PASS - reporting metadata and council packages preserve authenticated actor, server tier and URL identities'
+);

@@ -26,6 +26,9 @@ import sql23 from '../../../accounting-migrations/0024_recurring_vendor_bills.sq
 import sql24 from '../../../accounting-migrations/0025_in_kind_contributions_account.sql';
 import sql25 from '../../../accounting-migrations/0026_service_subscription_costs.sql';
 import sql26 from '../../../accounting-migrations/0027_fixed_assets.sql';
+import sql27 from '../../../accounting-migrations/0028_asset_opening_corrections.sql';
+import sql28 from '../../../accounting-migrations/0029_reporting_dimensions.sql';
+import sql29 from '../../../accounting-migrations/0030_council_report_packages.sql';
 const provisioningMigrations = [
   {
     name: '0001_accounting_database_foundation.sql',
@@ -161,6 +164,21 @@ const provisioningMigrations = [
     name: '0027_fixed_assets.sql',
     sha256: 'feaebfb0d9f7127a52b685a22f8c417df51c7488b2cdcdc156360a4545e6692a',
     sql: sql26,
+  },
+  {
+    name: '0028_asset_opening_corrections.sql',
+    sha256: '1b29d901a62607a25de6062a955034dea0f1c2ab2dedadc48904ebc69138d4e7',
+    sql: sql27,
+  },
+  {
+    name: '0029_reporting_dimensions.sql',
+    sha256: '3cc745150d8a6296264dcc71c57aae38dde7095d803890a70a85a3226bc56ac9',
+    sql: sql28,
+  },
+  {
+    name: '0030_council_report_packages.sql',
+    sha256: 'd794dd5040088f845cec28a0b8e92f476efb8481a7503514fbc3a87e96418e88',
+    sql: sql29,
   },
 ];
 export { provisioningMigrations };

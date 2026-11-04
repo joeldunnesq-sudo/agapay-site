@@ -1,3 +1,4 @@
+import { handleAccountingReadiness } from './accounting-readiness.js';
 import { handleAccountingAssets } from './accounting-assets.js';
 import type { AccountingHttpDatabase, AccountingHttpActor, AccountingHttpError } from './accounting-http-contracts.js';
 import { json } from '../lib/core.js';
@@ -98,6 +99,8 @@ export async function handleAccountingSetupReports(request: Request, env: Partia
   const base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting`;
   if (!url.pathname.startsWith(base)) return null;
   let path = url.pathname.slice(base.length);
+  if (['/dimensions', '/report-packages'].some((prefix) => path === prefix || path.startsWith(prefix + '/')))
+    return handleAccountingReadiness(request, env, parishId);
   if (path === '/assets' || path.startsWith('/assets/')) return handleAccountingAssets(request, env, parishId);
   const csv = path.endsWith('.csv');
   if (csv) path = path.slice(0, -4);

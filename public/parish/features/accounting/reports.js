@@ -519,7 +519,7 @@ function accountingTabularReport(id) {
 }
 function renderAccountingReportLibrary(pane) {
   const groups = [...new Set(ACCOUNTING_REPORT_LIBRARY.map((report) => report.group))];
-  pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Parish financial reporting</span><h2>What would you like to understand?</h2><p>Start with a treasurer report, or explore the full library below.</p></div><label>Find a report<input type="search" placeholder="Try budget, tithes, cash or expenses" oninput="filterAccountingReportLibrary(this.value)"></label></section>${accountingReportDateForm()}${accountingReportShortcuts()}<p class="acct-library-result" role="status" id="accountingReportSearchStatus"></p><div class="acct-report-library">${groups
+  pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Parish financial reporting</span><h2>What would you like to understand?</h2><p>Start with a treasurer report, or explore the full library below.</p></div><label>Find a report<input type="search" placeholder="Try budget, tithes, cash or expenses" oninput="filterAccountingReportLibrary(this.value)"></label></section>${accountingReportDateForm()}${accountingReportShortcuts()}${accountingReadinessLink()}<p class="acct-library-result" role="status" id="accountingReportSearchStatus"></p><div class="acct-report-library">${groups
     .map(
       (group) =>
         `<section data-report-group><div class="acct-report-library-section"><div><strong>${escapeHtml(group)}</strong><small>${ACCOUNTING_REPORT_LIBRARY.filter((r) => r.group === group).length} reports</small></div></div><div class="acct-report-library-grid">${ACCOUNTING_REPORT_LIBRARY.filter(
