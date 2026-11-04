@@ -46,7 +46,8 @@
     "build:server": "node scripts/build-server-typescript.mjs",
     "build:server:check": "node scripts/build-server-typescript.mjs --check",
     "build:browser": "node scripts/build-browser-typescript.mjs",
-    "build:browser:check": "node scripts/build-browser-typescript.mjs --check"
+    "build:browser:check": "node scripts/build-browser-typescript.mjs --check",
+    "ops:readiness": "node scripts/operational-readiness.mjs"
   },
   "engines": {
     "node": ">=22"

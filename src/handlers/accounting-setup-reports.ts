@@ -1,3 +1,5 @@
+import { accountingOnboardingJourney } from '../accounting/onboarding/service.js';
+import { saveOnboardingReview } from '../accounting/onboarding/evidence.js';
 import { handleAccountingReadiness } from './accounting-readiness.js';
 import { handleAccountingAssets } from './accounting-assets.js';
 import type { AccountingHttpDatabase, AccountingHttpActor, AccountingHttpError } from './accounting-http-contracts.js';
@@ -107,6 +109,8 @@ export async function handleAccountingSetupReports(request: Request, env: Partia
   const fundMatch = path.match(/^\/funds(?:\/([^/]+))?$/);
   const accountMatch = path.match(/^\/accounts(?:\/([^/]+)(?:\/(archive|unarchive))?)?$/);
   const supported =
+    path === '/onboarding' ||
+    /^\/onboarding\/reviews\/(fiscal|accounts|funds|records|assets)$/.test(path) ||
     path === '/setup' ||
     path === '/setup/initialize' ||
     path === '/settings' ||
@@ -128,6 +132,19 @@ export async function handleAccountingSetupReports(request: Request, env: Partia
     const ctx = await accountingContext(request, env, parishId, capability);
     if (!ctx) return reply({ error: 'Unauthorized' }, 401);
     if (ctx.error) return ctx.error;
+    if (request.method === 'GET' && path === '/onboarding')
+      return reply({ ok: true, journey: await accountingOnboardingJourney(ctx.db, ctx.actor, ctx.tier) });
+    const onboardingReview = path.match(/^\/onboarding\/reviews\/(fiscal|accounts|funds|records|assets)$/);
+    if (request.method === 'POST' && onboardingReview) {
+      const body = (await request.json()) as Parameters<typeof saveOnboardingReview>[3];
+      await saveOnboardingReview(ctx.db, ctx.actor, onboardingReview[1], {
+        choice: body.choice,
+        note: body.note,
+        expectedVersion: body.expectedVersion,
+        evidenceHash: body.evidenceHash,
+      });
+      return reply({ ok: true, journey: await accountingOnboardingJourney(ctx.db, ctx.actor, ctx.tier) });
+    }
     if (request.method === 'GET' && path === '/setup')
       return reply({
         ok: true,

@@ -1902,7 +1902,7 @@
 <div class="toast-container" id="toastContainer"></div>
 <dialog id="parishSupportDialog" style="width:min(560px,calc(100% - 32px));border:0;border-radius:16px;padding:0;box-shadow:0 24px 70px rgba(6,21,34,.3)">
   <form method="dialog" style="padding:22px;display:grid;gap:14px">
-    <div style="display:flex;justify-content:space-between;gap:16px;align-items:start"><div><div style="color:#a97c25;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">AGAPAY Support</div><h2 style="margin:4px 0 0;font-family:Georgia,serif;font-size:25px;color:#061522">How can we help?</h2><p style="margin:6px 0 0;color:#62717c;font-size:13px;line-height:1.45">Your message becomes a support ticket and is emailed to the AGAPAY team.</p></div><button type="button" class="btn btn-ghost btn-sm" onclick="closeParishSupportTicket()">Close</button></div>
+    <div style="display:flex;justify-content:space-between;gap:16px;align-items:start"><div><div style="color:#a97c25;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">AGAPAY Support</div><h2 style="margin:4px 0 0;font-family:Georgia,serif;font-size:25px;color:#061522">How can we help?</h2><p style="margin:6px 0 0;color:#62717c;font-size:13px;line-height:1.45">Tickets are saved and emailed to support@agapay.app. M–F, 8 a.m.–6 p.m. Central; response within 16 business hours. Omit passwords, bank credentials and donor details.</p></div><button type="button" class="btn btn-ghost btn-sm" onclick="closeParishSupportTicket()">Close</button></div>
     <label style="display:grid;gap:6px;font-size:13px;font-weight:700;color:#243746">I need<select id="parishSupportType"><option value="help">Help using the dashboard</option><option value="issue">Report an issue</option><option value="question">Ask a question</option></select></label>
     <label style="display:grid;gap:6px;font-size:13px;font-weight:700;color:#243746">Subject<input id="parishSupportSubject" maxlength="160" placeholder="Briefly describe what you need" /></label>
     <label style="display:grid;gap:6px;font-size:13px;font-weight:700;color:#243746">Message<textarea id="parishSupportMessage" maxlength="2400" required placeholder="Tell us what happened, what you expected, and any details that would help us respond."></textarea></label>
@@ -1932,82 +1932,83 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js?v=b5c70581b2da0cd5"></script>
-  <script src="/parish/library.js?v=99cddac19e36c8d8"></script>
-  <script src="/scripts/privileged-mfa.js?v=a99a29b9a4439f8b"></script>
+<script src="/parish/library.js?v=99cddac19e36c8d8"></script>
+<script src="/scripts/privileged-mfa.js?v=a99a29b9a4439f8b"></script>
   <link rel="stylesheet" href="/parish/directory-import.css?v=20260828import1" />
-  <script src="/parish/directory-import.js?v=af92622d3ab273c7"></script>
+<script src="/parish/directory-import.js?v=af92622d3ab273c7"></script>
   <link rel="stylesheet" href="/parish/portability.css?v=20260923backup1" />
-  <script src="/parish/portability.js?v=1a203fdb62424e82"></script>
-  <script src="/parish/mfa-settings.js?v=514f2486283f5ce1"></script>
+<script src="/parish/portability.js?v=1a203fdb62424e82"></script>
+<script src="/parish/mfa-settings.js?v=514f2486283f5ce1"></script>
 <script src="/parish/recovery.js?v=52a862a303ac63d1"></script>
-  <script src="/parish/backup.js?v=13e38cd89fa1572e"></script>
-  <script src="/parish/feature-registry.js?v=b1ab21289b59564b"></script>
-  <script src="/parish/features/staff-access.js?v=0464a9452ef9b876"></script>
-  <script src="/parish/features/directory.js?v=d7b69802cbc6502c"></script>
-  <script src="/parish/features/library.js?v=bec3925960687e23"></script>
-  <script src="/parish/features/sacraments/pastoral-followup.js?v=1d6bd0e1345d3d18"></script>
-  <script src="/parish/features/sacraments/preparation.js?v=a740deb36bc2c83a"></script>
-  <script src="/parish/features/sacraments.js?v=557ffeb7bc3dbe6d"></script>
-  <script src="/parish/features/accounting/assets.js?v=a8f8810d458074a4"></script>
-  <script src="/parish/features/accounting/workspace.js?v=d733ab937e1ef439"></script>
-  <script src="/parish/features/accounting/treasurer.js?v=e1c3002644b6bfc5"></script>
-  <script src="/parish/features/accounting/ledger.js?v=cda12625d4044bc6"></script>
-  <script src="/parish/features/accounting/payables.js?v=eb428268dd8f53d9"></script>
-  <link rel="stylesheet" href="/parish/accounting-reports.css?v=9dc0398213599ed8">
-  <script src="/parish/features/accounting/report-documents.js?v=fd8112a2f8862524"></script>
-  <script src="/parish/features/accounting/report-loaders.js?v=b12de6791b015bf8"></script>
-  <script src="/parish/features/accounting/reports.js?v=53c103400d358524"></script>
-  <script src="/parish/features/accounting/funds.js?v=e66c6d88d7418903"></script>
-  <script src="/parish/features/accounting/banking.js?v=155a2a3de95dafdc"></script>
-  <script src="/parish/features/accounting/close.js?v=b1a848d81376cd28"></script>
-  <script src="/parish/features/accounting/migration.js?v=b4a9922847685091"></script>
-  <script src="/parish/features/accounting/activation.js?v=58b020f9d4227c3e"></script>
-  <script src="/parish/features/accounting.js?v=5276a7af3cb268f8"></script>
-  <script src="/parish/features/commerce/bookstore-catalog.js?v=c228ee90fc233fb6"></script>
-  <script src="/parish/features/commerce/bookstore-checkout.js?v=408c0df8ac281d32"></script>
-  <script src="/parish/features/commerce/bookstore-sales.js?v=bb593e2f23b2fae2"></script>
-  <script src="/parish/features/commerce/offerings.js?v=8aa08f521de7ddd6"></script>
-  <script src="/parish/features/commerce/bookstore-counts.js?v=660f430cd2593a6e"></script>
-  <script src="/parish/features/commerce/bookstore-inventory.js?v=2685b3ba6bbb82c6"></script>
-  <script src="/parish/features/commerce.js?v=31050e34b00688a4"></script>
-  <script src="/parish/features/koinonia/ministries.js?v=425f74c0f9d33109"></script>
-  <script src="/parish/features/koinonia/bulletins.js?v=23ba755862708f95"></script>
-  <script src="/parish/features/koinonia/announcements.js?v=9e88438b1f68c3eb"></script>
-  <script src="/parish/features/koinonia/prayers.js?v=dd6236a3b2deedc6"></script>
-  <script src="/parish/features/koinonia/media.js?v=c49f0e24c56d5d23"></script>
-  <script src="/parish/features/koinonia.js?v=7d774ebcbcb09b3e"></script>
-  <script src="/parish/features/onboarding.js?v=50614381b65844f2"></script>
-  <script src="/parish/features/campaigns/website-embed.js?v=0c8bcf3af3b84659"></script>
-  <script src="/parish/features/campaigns.js?v=c3c1cf2e54ddd9c3"></script>
-  <script src="/parish/features/stewardship/reports.js?v=4b361c1bf0175d0f"></script>
-  <script src="/parish/features/stewardship/fees.js?v=058dac8424764f45"></script>
-  <script src="/parish/features/stewardship/metrics.js?v=d01d4bc1834fa3dd"></script>
-  <script src="/parish/features/stewardship/financials.js?v=1d2b40fd0db377c8"></script>
-  <script src="/parish/features/stewardship/financials-editor.js?v=2c8491be913cca6c"></script>
-  <script src="/parish/features/stewardship/outside-giving.js?v=f9d15a8c5fd5c59e"></script>
-  <script src="/parish/features/stewardship/nudges.js?v=891ff7174fbf3468"></script>
-  <script src="/parish/features/stewardship/meetings.js?v=f38e5104308532f0"></script>
-  <script src="/parish/features/stewardship.js?v=ab0b115a135ca529"></script>
-  <script src="/parish/features/giving/commemorations.js?v=e3cd9e7d75da0d4e"></script>
-  <script src="/parish/features/giving/feasts.js?v=60f12e957152dced"></script>
-  <script src="/parish/features/giving/givers.js?v=c0e3b7858346cc7e"></script>
-  <script src="/parish/features/giving/outside-gifts.js?v=bbe178e84e4f86cc"></script>
-  <script src="/parish/features/giving/history.js?v=509b9fb5e9227b23"></script>
-  <script src="/parish/features/giving/options.js?v=ff23ac541f80a38c"></script>
-  <script src="/parish/features/giving/overview.js?v=a6f7d4b0806c3333"></script>
-  <script src="/parish/features/giving/weekly-funds.js?v=291e00bd290eb9e8"></script>
-  <script src="/parish/features/giving/reconciliation-reports.js?v=48e8f0e0a0149244"></script>
-  <script src="/parish/features/giving/reconciliation.js?v=9e612d00025d704d"></script>
-  <script src="/parish/features/giving/recurring.js?v=56b68ececf1f6027"></script>
-  <script src="/parish/features/giving/sharing.js?v=fa9d878390b23813"></script>
-  <script src="/parish/features/giving/embed-theme.js?v=bc431b0c4c7afa7c"></script>
-  <script src="/parish/features/giving/statements.js?v=d1ed9be505ad219f"></script>
-  <script src="/parish/features/giving/transfers.js?v=c4c120c8886b8769"></script>
-  <script src="/parish/features/giving/insights.js?v=46975b9e8339c4e0"></script>
-  <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
-  <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
-  <script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
-  <script src="/parish/app-subscriptions-and-settlement.js?v=ed4eef319b4d4074"></script>
-  <script src="/parish/app.js?v=01b61a0029eb422b"></script>
+<script src="/parish/backup.js?v=13e38cd89fa1572e"></script>
+<script src="/parish/feature-registry.js?v=b1ab21289b59564b"></script>
+<script src="/parish/features/staff-access.js?v=0464a9452ef9b876"></script>
+<script src="/parish/features/directory.js?v=d7b69802cbc6502c"></script>
+<script src="/parish/features/library.js?v=bec3925960687e23"></script>
+<script src="/parish/features/sacraments/pastoral-followup.js?v=1d6bd0e1345d3d18"></script>
+<script src="/parish/features/sacraments/preparation.js?v=a740deb36bc2c83a"></script>
+<script src="/parish/features/sacraments.js?v=557ffeb7bc3dbe6d"></script>
+<script src="/parish/accounting-journey.js?v=8aea4d32b6874f07"></script>
+<script src="/parish/features/accounting/assets.js?v=a8f8810d458074a4"></script>
+<script src="/parish/features/accounting/workspace.js?v=4defcf2fc9af4612"></script>
+<script src="/parish/features/accounting/treasurer.js?v=e1c3002644b6bfc5"></script>
+<script src="/parish/features/accounting/ledger.js?v=cda12625d4044bc6"></script>
+<script src="/parish/features/accounting/payables.js?v=eb428268dd8f53d9"></script>
+  <link rel="stylesheet" href="/parish/accounting-reports.css?v=6041c130a35b0250">
+<script src="/parish/features/accounting/report-documents.js?v=fd8112a2f8862524"></script>
+<script src="/parish/features/accounting/report-loaders.js?v=b12de6791b015bf8"></script>
+<script src="/parish/features/accounting/reports.js?v=53c103400d358524"></script>
+<script src="/parish/features/accounting/funds.js?v=e66c6d88d7418903"></script>
+<script src="/parish/features/accounting/banking.js?v=155a2a3de95dafdc"></script>
+<script src="/parish/features/accounting/close.js?v=b1a848d81376cd28"></script>
+<script src="/parish/features/accounting/migration.js?v=b4a9922847685091"></script>
+<script src="/parish/features/accounting/activation.js?v=58b020f9d4227c3e"></script>
+<script src="/parish/features/accounting.js?v=5276a7af3cb268f8"></script>
+<script src="/parish/features/commerce/bookstore-catalog.js?v=c228ee90fc233fb6"></script>
+<script src="/parish/features/commerce/bookstore-checkout.js?v=408c0df8ac281d32"></script>
+<script src="/parish/features/commerce/bookstore-sales.js?v=bb593e2f23b2fae2"></script>
+<script src="/parish/features/commerce/offerings.js?v=8aa08f521de7ddd6"></script>
+<script src="/parish/features/commerce/bookstore-counts.js?v=660f430cd2593a6e"></script>
+<script src="/parish/features/commerce/bookstore-inventory.js?v=2685b3ba6bbb82c6"></script>
+<script src="/parish/features/commerce.js?v=31050e34b00688a4"></script>
+<script src="/parish/features/koinonia/ministries.js?v=425f74c0f9d33109"></script>
+<script src="/parish/features/koinonia/bulletins.js?v=23ba755862708f95"></script>
+<script src="/parish/features/koinonia/announcements.js?v=9e88438b1f68c3eb"></script>
+<script src="/parish/features/koinonia/prayers.js?v=dd6236a3b2deedc6"></script>
+<script src="/parish/features/koinonia/media.js?v=c49f0e24c56d5d23"></script>
+<script src="/parish/features/koinonia.js?v=7d774ebcbcb09b3e"></script>
+<script src="/parish/features/onboarding.js?v=50614381b65844f2"></script>
+<script src="/parish/features/campaigns/website-embed.js?v=0c8bcf3af3b84659"></script>
+<script src="/parish/features/campaigns.js?v=c3c1cf2e54ddd9c3"></script>
+<script src="/parish/features/stewardship/reports.js?v=4b361c1bf0175d0f"></script>
+<script src="/parish/features/stewardship/fees.js?v=058dac8424764f45"></script>
+<script src="/parish/features/stewardship/metrics.js?v=d01d4bc1834fa3dd"></script>
+<script src="/parish/features/stewardship/financials.js?v=1d2b40fd0db377c8"></script>
+<script src="/parish/features/stewardship/financials-editor.js?v=2c8491be913cca6c"></script>
+<script src="/parish/features/stewardship/outside-giving.js?v=f9d15a8c5fd5c59e"></script>
+<script src="/parish/features/stewardship/nudges.js?v=891ff7174fbf3468"></script>
+<script src="/parish/features/stewardship/meetings.js?v=f38e5104308532f0"></script>
+<script src="/parish/features/stewardship.js?v=ab0b115a135ca529"></script>
+<script src="/parish/features/giving/commemorations.js?v=e3cd9e7d75da0d4e"></script>
+<script src="/parish/features/giving/feasts.js?v=60f12e957152dced"></script>
+<script src="/parish/features/giving/givers.js?v=c0e3b7858346cc7e"></script>
+<script src="/parish/features/giving/outside-gifts.js?v=bbe178e84e4f86cc"></script>
+<script src="/parish/features/giving/history.js?v=509b9fb5e9227b23"></script>
+<script src="/parish/features/giving/options.js?v=ff23ac541f80a38c"></script>
+<script src="/parish/features/giving/overview.js?v=a6f7d4b0806c3333"></script>
+<script src="/parish/features/giving/weekly-funds.js?v=291e00bd290eb9e8"></script>
+<script src="/parish/features/giving/reconciliation-reports.js?v=48e8f0e0a0149244"></script>
+<script src="/parish/features/giving/reconciliation.js?v=9e612d00025d704d"></script>
+<script src="/parish/features/giving/recurring.js?v=56b68ececf1f6027"></script>
+<script src="/parish/features/giving/sharing.js?v=fa9d878390b23813"></script>
+<script src="/parish/features/giving/embed-theme.js?v=bc431b0c4c7afa7c"></script>
+<script src="/parish/features/giving/statements.js?v=d1ed9be505ad219f"></script>
+<script src="/parish/features/giving/transfers.js?v=c4c120c8886b8769"></script>
+<script src="/parish/features/giving/insights.js?v=46975b9e8339c4e0"></script>
+<script src="/parish/features/giving.js?v=47a087c782872d35"></script>
+<script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
+<script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
+<script src="/parish/app-subscriptions-and-settlement.js?v=ed4eef319b4d4074"></script>
+<script src="/parish/app.js?v=073bc5182091a2cd"></script>
 </body>
 </html>

@@ -170,6 +170,7 @@ function renderAccountingReadiness(accounting, pane = document.getElementById('a
 function accountingViewTitle() {
   const titles = {
     overview: 'Overview',
+    journey: 'Guided setup',
     ledger: 'General Ledger',
     journals: 'Journal Entries',
     funds: 'Funds',
@@ -280,8 +281,13 @@ function renderAccountingPane() {
     );
   const pageTitle = document.getElementById('accountingPageTitle');
   if (pageTitle) pageTitle.textContent = accountingViewTitle();
+  if (accountingView === 'journey') {
+    openAccountingJourney();
+    return;
+  }
   if (accountingView === 'overview') {
     renderAccountingOverview(pane);
+    if (typeof accountingJourneyEntry === 'function') pane.insertAdjacentHTML('afterbegin', accountingJourneyEntry());
     return;
   }
   if (accountingView === 'settings') {
@@ -310,7 +316,7 @@ function renderAccountingPane() {
       return;
     }
     const settings = overview.settings || {};
-    pane.innerHTML = `<div class="acct-setup-grid">
+    pane.innerHTML = `${typeof accountingJourneyEntry === 'function' ? accountingJourneyEntry() : ''}<div class="acct-setup-grid">
         <section class="acct-card acct-setup-lead"><span class="acct-kicker">Setup progress</span><h2>${overview.initialization?.operational ? 'Your ledger is ready.' : 'Initialize your parish ledger.'}</h2><p>${overview.initialization?.operational ? `${overview.activeAccountCount || 0} accounts and ${overview.activeFundCount || 0} fund are ready for use.` : 'Create the protected nonprofit chart of accounts, General Operating Fund, fiscal year, and periods.'}</p>${overview.initialization?.operational ? '' : '<button type="button" class="acct-primary" onclick="initializeAccounting()">Initialize Accounting</button>'}</section>
         <section class="acct-card"><span class="acct-kicker">Readiness</span><div class="acct-checklist">${(overview.checklist || []).map((item) => `<div class="${item.complete ? 'complete' : ''}"><i>${item.complete ? '✓' : '○'}</i><span>${escapeHtml(item.label)}</span></div>`).join('')}</div>${settings.setupCompleted ? '<p>Accounting setup is complete.</p>' : '<button type="button" class="acct-primary" onclick="saveAccountingSettings(true)">Finish Accounting setup</button><small>Save your settings and address each item before finishing.</small>'}</section>
         <section class="acct-card acct-settings"><span class="acct-kicker">Parish settings</span><h2>Fiscal year & opening balances</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({ length: 12 }, (_, index) => `<option value="${index + 1}" ${Number(settings.fiscalYearStartMonth || 1) === index + 1 ? 'selected' : ''}>${new Date(2026, index, 1).toLocaleString('en-US', { month: 'long' })}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition === 'pending' ? 'selected' : ''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition === 'required' ? 'selected' : ''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition === 'deferred' ? 'selected' : ''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition === 'not_applicable' ? 'selected' : ''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition === 'posted' ? 'selected' : ''}>Posted</option></select></label>${accountingPledgeAccountSetting(settings)}<button type="button" class="acct-primary" onclick="saveAccountingSettings()" ${settings.version ? '' : 'disabled'}>Save settings</button>${accountingPeriodOpeningControls()}</section>
@@ -427,6 +433,7 @@ function setAccountingView(view) {
   if (view === 'reports') accountingTransactionDetail = null;
   accountingView = [
     'overview',
+    'journey',
     'setup',
     'settings',
     'reports',

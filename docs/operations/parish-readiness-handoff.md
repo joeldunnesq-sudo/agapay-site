@@ -1,6 +1,6 @@
 # Parish readiness and operational handoff
 
-This handoff covers work that can be validated with synthetic records before a real parish joins. It does not claim an independent usability study, an accountant's approval, a live production restore, or staffed response commitments.
+This handoff covers work that can be validated with synthetic records before a real parish joins. It does not claim an independent usability study, an accountant's approval, a live production restore, or round-the-clock staffing.
 
 ## Product promise
 
@@ -57,7 +57,7 @@ The recovery rehearsal uses the application's capture, plan, apply and file-vali
 
 ## Support triage and ownership
 
-Actual primary owner, backup owner, coverage hours and response targets must be assigned before making customer support commitments. Those staffing decisions remain **unassigned**; this document does not invent an SLA.
+Primary support is the platform owner through **support@agapay.app** or the dashboard ticket form. Regular support hours are **Monday–Friday, 8 a.m.–6 p.m. Central Time (America/Chicago)**. The first-response commitment is **16 business hours**; resolution depends on the issue. The backup owner remains unassigned. Record a backup before claiming coverage when the owner is unavailable.
 
 | Situation                                                  | First response                                                                                 | Evidence to preserve                                                           | Resolution gate                                                                      |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |

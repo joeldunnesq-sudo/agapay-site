@@ -280,11 +280,24 @@ async function submitParishSupportTicket() {
     const result = (await response.json().catch(() => ({}))) as ParishAppPayload;
     if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to send your support ticket.');
     const emailNote = result.ticket?.email?.status === 'sent' ? ' We also emailed the AGAPAY team.' : '';
-    status!.textContent = 'Your ticket was created.' + emailNote;
+    const due = result.ticket?.responseDueAt
+      ? new Date(result.ticket.responseDueAt).toLocaleString('en-US', {
+          timeZone: 'America/Chicago',
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }) + ' Central Time'
+      : '';
+    status!.textContent =
+      'Your ticket was created' +
+      (result.ticket?.id ? ' — ' + result.ticket.id : '') +
+      '.' +
+      emailNote +
+      ' We respond within 16 business hours (Monday–Friday, 8 a.m.–6 p.m. Central Time).' +
+      (due ? ' Response due by ' + due + '.' : '');
     (document.getElementById('parishSupportMessage') as HTMLTextAreaElement | null)!.value = '';
     (document.getElementById('parishSupportSubject') as HTMLInputElement | null)!.value = '';
     setStatus('Support ticket sent.', 'success');
-    setTimeout(closeParishSupportTicket, 900);
+    // Keep the confirmation and ticket reference visible until the operator closes it.
   } catch (error) {
     status!.textContent = (error as ParishAppError).message || 'Unable to send your support ticket.';
   } finally {

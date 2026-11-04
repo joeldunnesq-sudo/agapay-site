@@ -245,9 +245,9 @@ async function getAccountingSetupOverview(
       complete: databaseStatus === 'ready' && databaseHealth === 'healthy',
     },
     { id: 'ledger', label: 'Ledger initialized', complete: initialization.operational },
-    { id: 'fiscal_year', label: 'Fiscal year confirmed', complete: Boolean(fiscalYear) },
-    { id: 'accounts', label: 'Chart of Accounts reviewed', complete: Number(counts?.active_accounts || 0) > 0 },
-    { id: 'funds', label: 'Funds reviewed', complete: Number(counts?.active_funds || 0) > 0 },
+    { id: 'fiscal_year', label: 'Fiscal year available', complete: Boolean(fiscalYear) },
+    { id: 'accounts', label: 'Chart of Accounts available', complete: Number(counts?.active_accounts || 0) > 0 },
+    { id: 'funds', label: 'Funds available', complete: Number(counts?.active_funds || 0) > 0 },
     {
       id: 'opening_balances',
       label: 'Opening balances addressed',

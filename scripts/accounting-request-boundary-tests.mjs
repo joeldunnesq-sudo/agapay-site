@@ -176,3 +176,32 @@ for (const [path, method] of [
 console.log(
   'PASS - reporting metadata and council packages preserve authenticated actor, server tier and URL identities'
 );
+
+const reviewCalls = [];
+const onboarding = load('accounting-setup-reports.js', 'handleAccountingSetupReports', {
+  accountingContext: context,
+  reply,
+  saveOnboardingReview: async (...args) => {
+    reviewCalls.push(args);
+    return {};
+  },
+  accountingOnboardingJourney: async () => ({}),
+});
+const reviewResponse = await onboarding(
+  request('/onboarding/reviews/fiscal', 'POST', {
+    ...hostile,
+    taskId: 'funds',
+    choice: 'reviewed',
+    note: 'Synthetic review',
+    evidenceHash: 'hash',
+  }),
+  {},
+  'parish-a'
+);
+assert.equal(reviewResponse.status, 200);
+const reviewArgs = reviewCalls[0];
+assert.equal(reviewArgs[1], actor);
+assert.equal(reviewArgs[2], 'fiscal');
+assert.equal(reviewArgs[3].actor, undefined);
+assert.equal(reviewArgs[3].additionalStatements, undefined);
+console.log('PASS guided setup binds the server actor and URL task and ignores privileged request fields');
