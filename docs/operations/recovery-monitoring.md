@@ -16,6 +16,8 @@ Scheduled invocations wrap central and bound accounting D1 reads, plus read-only
 
 The outside-in monitor confirms a failed read-only check after two seconds and, if still failing, four more seconds. A healthy confirmation avoids an email while retaining the original failure and confirmation samples in the JSON evidence. Repeated latency, HTTP, unhealthy-payload, or scheduler failures still fail the workflow. Backup freshness remains a separate mandatory gate.
 
+The private R2 backup manifest download also gets three attempts with two- and four-second delays. Exhausted downloads fail before freshness validation; successfully downloaded manifests must still pass the unchanged 30-hour age and validity checks. A transient R2 control-plane failure is not evidence of an overdue backup.
+
 `Production outside-in monitor` runs every 15 minutes and checks:
 
 - three `/api/health` samples, including live D1 and KV checks, for a short-window error-rate signal;

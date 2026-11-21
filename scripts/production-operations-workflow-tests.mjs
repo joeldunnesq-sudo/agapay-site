@@ -30,6 +30,8 @@ assert.doesNotMatch(
 assert.match(monitor, /cron: '7,22,37,52 \* \* \* \*'/);
 assert.match(monitor, /AGAPAY_MONITOR_CANARY_TOKEN: \$\{\{ secrets\.AGAPAY_MONITOR_CANARY_TOKEN \}\}/);
 assert.match(monitor, /d1-recovery\.mjs inspect-manifest[^\n]+--max-age-hours 30/);
+assert.match(monitor, /for attempt in 1 2 3; do[\s\S]+if npx wrangler r2 object get/);
+assert.match(monitor, /if \[ "\$downloaded" != true \]; then exit 1; fi[\s\S]+d1-recovery\.mjs inspect-manifest/);
 assert.match(monitor, /production-monitor-alert\.mjs/);
 assert.doesNotMatch(monitor, /allow-unconfigured/);
 
