@@ -101,7 +101,8 @@ export function withScheduledD1Retries<T extends object>(env: T, options: RetryO
     return wrapped;
   }
   const wrapped = { ...env };
-  for (const [name, value] of Object.entries(env)) {
+  for (const [name, candidate] of Object.entries(env)) {
+    const value: unknown = candidate;
     if (
       (name === 'DB' || name === 'AGAPAY_DB' || /^ACCOUNTING_DB(?:_|$)/.test(name)) &&
       value &&

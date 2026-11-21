@@ -81,7 +81,8 @@ function withScheduledD1Retries(env, options = {}) {
     return wrapped2;
   }
   const wrapped = { ...env };
-  for (const [name, value] of Object.entries(env)) {
+  for (const [name, candidate] of Object.entries(env)) {
+    const value = candidate;
     if (
       (name === 'DB' || name === 'AGAPAY_DB' || /^ACCOUNTING_DB(?:_|$)/.test(name)) &&
       value &&
