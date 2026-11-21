@@ -126,6 +126,7 @@ const core = [
   'scripts/email-timeout-tests.mjs',
   'scripts/rate-limiter-tests.mjs',
   'scripts/scheduled-job-observability-tests.mjs',
+  'scripts/scheduled-d1-retries-tests.mjs',
   'scripts/resend-webhook-tests.mjs',
   'scripts/launch-controls-tests.mjs',
   'scripts/admin-usability-tests.mjs',

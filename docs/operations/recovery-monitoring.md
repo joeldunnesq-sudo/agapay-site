@@ -12,6 +12,10 @@ An off-provider copy is not enabled because the production database payload shou
 
 ## Outside-in monitor
 
+Scheduled invocations wrap central and bound accounting D1 reads, plus read-only accounting provisioner RPC queries, with up to three retries for recognized D1 throttling (including the accounting adapter's HTTP 429). Delays use exponential backoff with jitter: 1–2, 2–4, and 4–8 seconds. All jobs share a 20-second total delay allowance per invocation. The fixed-value portability retention-review update is also safe to retry; other writes, mixed batches, payments, messages, and whole jobs are never replayed. SQL errors, limits requiring intervention, and unknown write outcomes still fail normally. Retry exhaustion reaches the existing failed heartbeat and email path, with the existing one-hour per-job email deduplication. Recurring accounting processors finish both branches and surface failed saved runs to that alert path.
+
+The outside-in monitor confirms a failed read-only check after two seconds and, if still failing, four more seconds. A healthy confirmation avoids an email while retaining the original failure and confirmation samples in the JSON evidence. Repeated latency, HTTP, unhealthy-payload, or scheduler failures still fail the workflow. Backup freshness remains a separate mandatory gate.
+
 `Production outside-in monitor` runs every 15 minutes and checks:
 
 - three `/api/health` samples, including live D1 and KV checks, for a short-window error-rate signal;
