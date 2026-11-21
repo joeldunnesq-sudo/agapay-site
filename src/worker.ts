@@ -38,6 +38,7 @@ import { runScheduledAccountingIntegrity } from './accounting/integrity/schedule
 import { sweepAccountingBackupRetention } from './accounting/backup-retention.js';
 import { handleParishPortability } from './handlers/parish-portability.js';
 import { runRecoveryJobs } from './recovery/maintenance.js';
+import { withScheduledD1Retries } from './operations/scheduled-d1-retries.js';
 import { runPortabilityJobs } from './portability/service.js';
 import { assertRestoreSafe } from './portability/suppression.js';
 import { protectFileStorage } from './portability/storage.js';
@@ -341,6 +342,7 @@ const API_ROUTE_REGISTRIES = Object.freeze([
 
 export default withRequestDiagnostics({
   async scheduled(event: ScheduledController, env: WorkerEnvironment, ctx: ExecutionContext) {
+    env = withScheduledD1Retries(env);
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     await assertRestoreSafe(env);
     env = protectLegacyStorage(protectFileStorage(env));

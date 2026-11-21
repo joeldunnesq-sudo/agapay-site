@@ -42,7 +42,15 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/production-monitor
-          npx wrangler r2 object get "agapay-accounting-backups/platform-d1/latest.json" --remote --file artifacts/production-monitor/latest-backup.json
+          downloaded=false
+          for attempt in 1 2 3; do
+            if npx wrangler r2 object get "agapay-accounting-backups/platform-d1/latest.json" --remote --file artifacts/production-monitor/latest-backup.json; then
+              downloaded=true
+              break
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep $((attempt * 2)); fi
+          done
+          if [ "$downloaded" != true ]; then exit 1; fi
           node scripts/d1-recovery.mjs inspect-manifest --manifest artifacts/production-monitor/latest-backup.json --max-age-hours 30
 
       - name: Send independent email alert through production Resend
