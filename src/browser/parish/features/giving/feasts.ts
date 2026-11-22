@@ -65,7 +65,13 @@ function feastPresetsForCalendar(cal: string): ParishFeastChoice[] {
   return api
     .liturgicalFeastsForYear(new Date().getFullYear(), cal)
     .filter((feast) => ['great', 'major'].includes(feast.rank))
-    .map((feast) => ({ id: feast.id, name: feast.name, displayDate: feast.displayDate, sourceDate: feast.sourceDate }));
+    .map((feast) => ({
+      id: feast.id,
+      name: feast.name,
+      date: feast.date,
+      displayDate: feast.displayDate,
+      sourceDate: feast.sourceDate,
+    }));
 }
 
 function feastDateLabel(feast: ParishFeastChoice) {
@@ -194,6 +200,7 @@ function updatePatronalFeastDays(preferredDay?: number) {
   if (!daySelect) return;
   const selected = Math.min(Number(preferredDay || daySelect.value || 1), new Date(2024, month, 0).getDate());
   daySelect.innerHTML = patronalDayOptions(month, selected);
+  updatePatronalFeastPreview();
 }
 
 function syncPatronalFeastOptionsFromSettings() {
@@ -202,11 +209,40 @@ function syncPatronalFeastOptionsFromSettings() {
   const dayInput = document.getElementById('patronalFeastDay') as HTMLSelectElement | null;
   if (!nameInput || !monthInput || !dayInput) return;
   const match = allFeastPresets().find((feast) => feast.name === nameInput.value);
-  if (match) {
-    const parts = patronalMonthDay(match.date);
+  if (match && !(currentParish?.patronalFeastChurchDate && nameInput.value === currentParish?.patronalFeastName)) {
+    const fixed = window.AGAPAYLiturgicalCalendar?.FIXED_FEASTS.find((feast) => feast.id === match.id);
+    const basis = document.getElementById('patronalFeastDateBasis') as HTMLSelectElement | null;
+    if (basis) basis.value = fixed ? 'church' : 'civil';
+    const parts = fixed ? { month: fixed.month, day: fixed.day } : patronalMonthDay(match.date);
     if (parts.month) monthInput.value = String(parts.month);
     updatePatronalFeastDays(parts.day);
   }
+  updatePatronalFeastPreview();
+}
+
+function updatePatronalFeastPreview() {
+  const target = document.getElementById('patronalFeastPreview');
+  if (!target) return;
+  const month = Number((document.getElementById('patronalFeastMonth') as HTMLSelectElement | null)?.value || 0);
+  const day = Number((document.getElementById('patronalFeastDay') as HTMLSelectElement | null)?.value || 0);
+  const church = (document.getElementById('patronalFeastDateBasis') as HTMLSelectElement | null)?.value === 'church';
+  const cal = (document.getElementById('settingsLiturgicalCalendar') as HTMLSelectElement | null)?.value || 'julian';
+  const value = String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+  const observed = church
+    ? window.AGAPAYLiturgicalCalendar?.churchFeastDateForYear(value, new Date().getFullYear(), cal)
+    : String(new Date().getFullYear()) + '-' + value;
+  target.textContent =
+    !month || !day
+      ? 'Enter the feast date from the church calendar. Julian dates are converted automatically.'
+      : observed
+        ? 'Observed civil date: ' +
+          new Date(observed + 'T12:00:00').toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          }) +
+          (church && cal === 'julian' ? ' (converted from Julian).' : '.')
+        : 'Select a valid feast date for this year.';
 }
 
 function upsertPatronalFeastCampaign(patronalFeastId: string, calendar: string, customName = '', customDate = '') {

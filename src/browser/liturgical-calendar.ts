@@ -47,6 +47,7 @@ interface ParishLiturgicalCalendarApi {
   liturgicalFeastsForYear(year: number, calendar?: string): ParishCalendarFeast[];
   nextLiturgicalFeast(calendar?: string, fromDate?: Date): ParishCalendarFeast | null;
   calendarLabel(value?: string): string;
+  churchFeastDateForYear(value: string, year: number, calendar?: string): string;
 }
 interface Window {
   AGAPAYLiturgicalCalendar?: ParishLiturgicalCalendarApi;
@@ -178,7 +179,7 @@ interface Window {
       : 'julian';
   }
 
-  function fixedFeastDateForCivilYear(feast: ParishFixedFeast, year: number, calendar?: string) {
+  function fixedFeastDateForCivilYear(feast: Pick<ParishFixedFeast, 'month' | 'day'>, year: number, calendar?: string) {
     const key = calendarKey(calendar);
     if (key === 'gregorian') return { year, month: feast.month, day: feast.day, sourceYear: year };
 
@@ -189,6 +190,21 @@ interface Window {
 
     const fallback = jdnToGregorian(julianToJdn(year, feast.month, feast.day));
     return { ...fallback, sourceYear: year };
+  }
+
+  function churchFeastDateForYear(value: string, year: number, calendar = 'julian') {
+    const match = /^(?:\d{4}-)?(\d{2})-(\d{2})$/.exec(value);
+    if (!match || !Number.isInteger(year)) return '';
+    const month = Number(match[1]);
+    const day = Number(match[2]);
+    if (month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(2024, month, 0)).getUTCDate()) return '';
+    const civil = fixedFeastDateForCivilYear({ month, day }, year, calendar);
+    const leap =
+      calendarKey(calendar) === 'julian'
+        ? civil.sourceYear % 4 === 0
+        : new Date(Date.UTC(civil.sourceYear, 1, 29)).getUTCMonth() === 1;
+    if (month === 2 && day === 29 && !leap) return '';
+    return isoFromGregorianDate(civil);
   }
 
   function fixedFeastsForYear(year: number, calendar?: string) {
@@ -261,5 +277,6 @@ interface Window {
     liturgicalFeastsForYear,
     nextLiturgicalFeast,
     calendarLabel,
+    churchFeastDateForYear,
   };
 })();

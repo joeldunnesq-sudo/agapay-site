@@ -34,6 +34,57 @@ async function scenario(name, response, run, apiResponses) {
 }
 
 try {
+  await scenario(
+    'Settings logo upgrade selects Give + and church-calendar dates convert automatically',
+    () => ({
+      parish: {
+        ...parish,
+        subscriptionTiers: [
+          { id: 'starter', label: 'Give', monthlyCents: 0 },
+          { id: 'giving', label: 'Give +', monthlyCents: 1900 },
+        ],
+        subscriptionStatus: 'not_started',
+        subscriptionIntroDemoEligible: true,
+        liturgicalCalendar: 'julian',
+        setup: { billingActive: false, stripeConnected: false },
+      },
+    }),
+    async (fixture) => {
+      await fixture.open();
+      await fixture.page.locator('#nav-settings').click();
+      await fixture.page.getByRole('button', { name: 'Upgrade to Give +', exact: true }).click();
+      assert.equal(await fixture.page.locator('#subscriptionTierUpgrade').inputValue(), 'giving');
+      assert.equal(
+        await fixture.page.locator('#subscriptionTierUpgrade').evaluate((el) => el === document.activeElement),
+        true
+      );
+      await fixture.page.locator('#patronalFeastName').fill('St. Catherine');
+      await fixture.page.locator('#patronalFeastMonth').selectOption('11');
+      await fixture.page.locator('#patronalFeastDay').selectOption('25');
+      assert.match(await fixture.page.locator('#patronalFeastPreview').textContent(), /December 8/);
+      const payload = await fixture.page.evaluate(() => window.payload());
+      assert.equal(payload.patronalFeastDate, '12-08');
+      assert.equal(payload.patronalFeastChurchDate, '11-25');
+      await fixture.page.locator('#settingsLiturgicalCalendar').selectOption('gregorian');
+      assert.match(await fixture.page.locator('#patronalFeastPreview').textContent(), /November 25/);
+      assert.equal(await fixture.page.evaluate(() => window.payload().patronalFeastDate), '11-25');
+      await fixture.page.evaluate(() => {
+        window.open = () => null;
+      });
+      await fixture.page.getByRole('button', { name: 'Start free 30-day demo', exact: true }).click();
+      await fixture.page.locator('#subscriptionUpgradeLinkBox.visible').waitFor();
+      assert.equal(
+        await fixture.page.locator('#subscriptionUpgradeLink').getAttribute('href'),
+        'https://checkout.stripe.com/synthetic'
+      );
+    },
+    {
+      '/subscription-checkout': (request) => {
+        assert.equal(request.postDataJSON().subscriptionTier, 'giving');
+        return { body: { checkoutUrl: 'https://checkout.stripe.com/synthetic' } };
+      },
+    }
+  );
   // Prove the gate fails on both thrown callbacks and unhandled rejections.
   for (const rejection of [false, true]) {
     const probe = await browser.newPage();

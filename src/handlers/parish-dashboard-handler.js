@@ -1,4 +1,5 @@
 // Generated from src/handlers/parish-dashboard-handler.ts by npm run build:server. Do not edit.
+import { churchFeastDateForYear } from '../liturgical-calendar.js';
 import {
   applyParishDashboardPassword,
   getBearerToken,
@@ -166,7 +167,14 @@ function parishDashboardPayload(parishId, registration) {
     koinoniaCalendarUrl: registration.koinoniaCalendarUrl || '',
     patronalFeast: registration.patronalFeast || '',
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || '',
-    patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || '',
+    patronalFeastChurchDate: registration.patronalFeastChurchDate || '',
+    patronalFeastDate: registration.patronalFeastChurchDate
+      ? churchFeastDateForYear(
+          registration.patronalFeastChurchDate,
+          /* @__PURE__ */ new Date().getFullYear(),
+          registration.liturgicalCalendar || 'julian'
+        ).slice(-5)
+      : registration.patronalFeastDate || registration.parishPatronalFeastDate || '',
     givingStatus: registration.givingStatus || 'active',
     stripeAccountId: registration.stripeAccountId || '',
     stripeAccountStatus: registration.stripeAccountStatus || 'not_started',
@@ -405,6 +413,16 @@ async function handleParishDashboard(request, env, parishId) {
       const limitError = starterFundCatalogError(body.funds);
       if (limitError) return json({ error: limitError }, { status: 422 });
     }
+    const churchDate = String(body.patronalFeastChurchDate ?? current.patronalFeastChurchDate ?? '').trim();
+    if (
+      churchDate &&
+      !churchFeastDateForYear(
+        churchDate,
+        /* @__PURE__ */ new Date().getFullYear(),
+        body.liturgicalCalendar || current.liturgicalCalendar || 'julian'
+      )
+    )
+      return json({ error: 'Select a valid patronal feast date.' }, { status: 422 });
     const requestedPassword =
       body.newDashboardPassword !== void 0 ? String(body.newDashboardPassword || '').trim() : '';
     if (requestedPassword && requestedPassword.length < 8) {
@@ -467,7 +485,17 @@ async function handleParishDashboard(request, env, parishId) {
       )
         .trim()
         .slice(0, 160),
+      patronalFeastChurchDate: String(body.patronalFeastChurchDate ?? current.patronalFeastChurchDate ?? '')
+        .trim()
+        .slice(-5),
       patronalFeastDate: (() => {
+        const churchDate2 = String(body.patronalFeastChurchDate ?? current.patronalFeastChurchDate ?? '').trim();
+        if (churchDate2)
+          return churchFeastDateForYear(
+            churchDate2,
+            /* @__PURE__ */ new Date().getFullYear(),
+            body.liturgicalCalendar || current.liturgicalCalendar || 'julian'
+          ).slice(-5);
         const value = String(
           body.patronalFeastDate ?? current.patronalFeastDate ?? current.parishPatronalFeastDate ?? ''
         ).trim();

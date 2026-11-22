@@ -1225,6 +1225,15 @@ async function startStripeOnboarding(btn) {
     }
   }
 }
+function reviewSubscriptionUpgrade() {
+  switchTab('settings');
+  const tier = document.getElementById('subscriptionTierUpgrade');
+  if (!tier) return;
+  tier.value = 'giving';
+  tier.dispatchEvent(new Event('change', { bubbles: true }));
+  tier.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  tier.focus({ preventScroll: true });
+}
 async function startSubscriptionCheckout(btn, tierSelectId) {
   if (!currentParish) return;
   const startingFreeDemo =
@@ -1887,7 +1896,7 @@ function renderDashboard() {
                 ? `<div class="parish-logo-preview parish-logo-placeholder">Give +<br>feature</div>
                 <div>
                   <p class="section-note">Add your parish logo to the dashboard, public giving pages, campaign pages, and church search with Give +. Any logo previously uploaded is preserved and will reappear if you upgrade.</p>
-                  <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Upgrade to Give +</button>
+                  <button class="btn btn-gold" type="button" onclick="reviewSubscriptionUpgrade()">Upgrade to Give +</button>
                 </div>`
                 : p.logoUrl
                   ? `<img class="parish-logo-preview" src="${escapeHtml(p.logoUrl)}" alt="${escapeHtml((p.parishName || 'Parish') + ' logo')}" />`
@@ -1918,7 +1927,7 @@ function renderDashboard() {
         <div class="form-group full"><label class="form-label" for="website">Website</label><input id="website" value="${escapeHtml(p.website || '')}" placeholder="https://example.org" /></div>
         <div class="form-group full"><label class="form-label" for="taxLegalName">Legal name for tax receipts</label><input id="taxLegalName" value="${escapeHtml(p.taxLegalName || '')}" placeholder="Defaults to parish name if left blank" /></div>
         <div class="form-group"><label class="form-label" for="taxEin">Federal EIN</label><input id="taxEin" value="${escapeHtml(p.taxEin || '')}" placeholder="##-#######" /></div>
-        <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar"><option value="julian" ${(p.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian</option><option value="gregorian" ${p.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised-Julian</option></select></div>
+        <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar" onchange="updatePatronalFeastPreview()"><option value="julian" ${(p.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian</option><option value="gregorian" ${p.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised-Julian</option></select></div>
         <div class="form-group full">
           <label class="form-label" for="patronalFeastName">Patronal saint or feast</label>
           <input id="patronalFeastName" list="patronalFeastSuggestions" value="${escapeHtml(patronalFeastDisplayName(p))}" placeholder="e.g. St. Nicholas the Wonderworker" onchange="syncPatronalFeastOptionsFromSettings()" />
@@ -1928,22 +1937,23 @@ function renderDashboard() {
           <p class="section-note">Begin typing or enter any Orthodox saint or feast. The suggestions are conveniences, not the complete Church calendar.</p>
         </div>
         ${(() => {
-          const observed = patronalMonthDay(p.patronalFeastDate);
+          const observed = patronalMonthDay(p.patronalFeastChurchDate || p.patronalFeastDate);
           return `
         <div class="form-group">
-          <label class="form-label" for="patronalFeastMonth">Observed feast month</label>
+          <label class="form-label" for="patronalFeastMonth">Feast month</label>
           <select id="patronalFeastMonth" onchange="updatePatronalFeastDays()">
             <option value="">Select month...</option>
             ${patronalMonthOptions(observed.month)}
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label" for="patronalFeastDay">Observed feast day</label>
-          <select id="patronalFeastDay">
+          <label class="form-label" for="patronalFeastDay">Feast day</label>
+          <select id="patronalFeastDay" onchange="updatePatronalFeastPreview()">
             <option value="">Select day...</option>
             ${patronalDayOptions(observed.month, observed.day)}
           </select>
           <p class="section-note">The patronal feast recurs annually, so no year is needed.</p>
+        </div><div class="form-group full"><label class="form-label" for="patronalFeastDateBasis">Date entered above</label><select id="patronalFeastDateBasis" onchange="updatePatronalFeastPreview()"><option value="church" ${p.patronalFeastChurchDate || !p.patronalFeastDate ? 'selected' : ''}>Date in the church calendar</option><option value="civil" ${!p.patronalFeastChurchDate && p.patronalFeastDate ? 'selected' : ''}>Already-observed civil date</option></select><p class="section-note" id="patronalFeastPreview" aria-live="polite"></p>
         </div>
         `;
         })()}
@@ -2062,10 +2072,20 @@ function payload() {
   const patronalFeastDay = Number(document.getElementById('patronalFeastDay')?.value || 0);
   if (patronalFeastName && (!patronalFeastMonth || !patronalFeastDay))
     throw new Error('Select the patronal feast month and day.');
-  const patronalFeastDate =
+  const enteredPatronalFeastDate =
     patronalFeastMonth && patronalFeastDay
       ? `${String(patronalFeastMonth).padStart(2, '0')}-${String(patronalFeastDay).padStart(2, '0')}`
       : '';
+  const patronalFeastChurchDate =
+    document.getElementById('patronalFeastDateBasis')?.value === 'church' ? enteredPatronalFeastDate : '';
+  const patronalFeastDate = patronalFeastChurchDate
+    ? window.AGAPAYLiturgicalCalendar.churchFeastDateForYear(
+        patronalFeastChurchDate,
+        /* @__PURE__ */ new Date().getFullYear(),
+        liturgicalCalendar
+      ).slice(-5)
+    : enteredPatronalFeastDate;
+  if (enteredPatronalFeastDate && !patronalFeastDate) throw new Error('Select a valid feast date for this year.');
   const knownPatronalFeast = allFeastPresets().find((feast) => feast.name === patronalFeastName);
   const patronalFeast = patronalFeastName ? knownPatronalFeast?.id || slugifyLocal(patronalFeastName) : '';
   upsertPatronalFeastCampaign(patronalFeast, liturgicalCalendar, patronalFeastName, patronalFeastDate);
@@ -2084,6 +2104,7 @@ function payload() {
     patronalFeast,
     patronalFeastName,
     patronalFeastDate,
+    patronalFeastChurchDate,
     givingStatus: document.getElementById('givingStatus')?.value,
     recurringGivingEnabled: document.getElementById('recurringGivingEnabled')?.checked,
     candlesEnabled: document.getElementById('candlesEnabled')?.checked,

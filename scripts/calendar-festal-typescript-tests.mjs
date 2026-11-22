@@ -14,6 +14,7 @@ assert.deepEqual(
     'MOVEABLE_FEASTS',
     'addDaysToIso',
     'calendarLabel',
+    'churchFeastDateForYear',
     'displayDate',
     'fixedFeastDateForCivilYear',
     'fixedFeastsForYear',
@@ -76,3 +77,16 @@ assert.equal(festalAlmsVisibilityWindow({ id: 'custom', feastDate: '12/19' }, 'j
 console.log(
   'PASS - server/browser calendar parity across 300 years, date boundaries, public exports, campaign statuses, custom/patronal visibility, ordering and metadata preservation'
 );
+
+for (const [date, year, key, expected] of [
+  ['11-25', 2026, 'julian', '2026-12-08'],
+  ['11-25', 2026, 'gregorian', '2026-11-25'],
+  ['12-25', 2026, 'julian', '2026-01-07'],
+  ['11-25', 2100, 'julian', '2100-12-09'],
+  ['02-30', 2026, 'julian', ''],
+  ['02-29', 2026, 'julian', ''],
+  ['02-29', 2024, 'julian', '2024-03-13'],
+]) {
+  assert.equal(calendar.churchFeastDateForYear(date, year, key), expected);
+  assert.equal(browser.churchFeastDateForYear(date, year, key), expected);
+}
