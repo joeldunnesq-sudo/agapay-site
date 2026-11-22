@@ -35,67 +35,7 @@ declare const loadPublicParishes: DonorAppBindings['loadPublicParishes'];
 
 async function signupFromPage(event: Event) {
   event.preventDefault();
-  const donorName = (document.getElementById('donorName') as HTMLInputElement | null)?.value.trim();
-  const email = (document.getElementById('donorEmail') as HTMLInputElement | null)?.value.trim();
-  const password = (document.getElementById('donorPassword') as HTMLInputElement | null)?.value;
-  const parishId =
-    (document.getElementById('parish') as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value || '';
-  const termsAccepted = (document.getElementById('agreeTerms') as HTMLInputElement | null)?.checked === true;
-  if (!donorName || !email || !password) {
-    setDonorStatus('Enter your name, email, and password.', 'error');
-    return;
-  }
-  if (!termsAccepted) {
-    setDonorStatus('Agree to the Terms of Service before creating your account.', 'error');
-    return;
-  }
-  setDonorStatus('Creating your donor account...');
-  try {
-    const data = await donorApi('/api/donor/signup', {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        donorName,
-        householdName: donorName,
-        next: new URLSearchParams(window.location.search).get('next') || '',
-        email,
-        password,
-        parishId,
-        addressLine1: (document.getElementById('addressLine1') as HTMLInputElement | null)?.value.trim() || '',
-        addressLine2: (document.getElementById('addressLine2') as HTMLInputElement | null)?.value.trim() || '',
-        city: (document.getElementById('city') as HTMLInputElement | null)?.value.trim() || '',
-        state:
-          (
-            document.getElementById('state') as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-          )?.value.trim() || '',
-        postalCode: (document.getElementById('postalCode') as HTMLInputElement | null)?.value.trim() || '',
-        country: (document.getElementById('country') as HTMLInputElement | null)?.value.trim() || 'US',
-        termsAccepted,
-        ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {}),
-      }),
-    });
-    window.AGAPAYDonorSession.saveSession({ donor: data.donor }, email);
-    setDonorProfile(data.donor);
-    if (data.verificationUrl) {
-      setDonorStatus(
-        'Account created. Email is not configured, so a test verification link is shown below.',
-        'success'
-      );
-      const box = document.getElementById('verificationLinkBox');
-      const link = document.getElementById('verificationLink') as HTMLAnchorElement | null;
-      if (box && link) {
-        link.href = data.verificationUrl;
-        link.textContent = 'Open test verification link';
-        box.style.display = 'block';
-      }
-      return;
-    }
-    setDonorStatus('Account created. Check your email to verify your AGAPAY account.', 'success');
-    const next = document.getElementById('signupNextStep');
-    if (next) next.style.display = 'block';
-  } catch (err) {
-    setDonorStatus((err as DonorAppError).message, 'error');
-  }
+  await window.AgapaySignup.submit(event);
 }
 
 async function verifyDonorEmail() {

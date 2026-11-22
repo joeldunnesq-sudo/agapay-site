@@ -127,6 +127,7 @@ export const appAssets = Object.freeze([
   '/donor/style.css',
   '/myagapay-shell.js',
   '/donor/session.js',
+  '/donor/signup.js',
   '/scripts/consumer-passkeys.js',
   '/donor/controllers/calendar.js',
   '/donor/controllers/history.js',

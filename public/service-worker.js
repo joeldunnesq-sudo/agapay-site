@@ -107,6 +107,7 @@ function isVersionedStaticAsset(request, url) {
     url.pathname === '/donor/style.css' ||
     url.pathname === '/donor/app.js' ||
     url.pathname === '/donor/session.js' ||
+    url.pathname === '/donor/signup.js' ||
     url.pathname === '/donor/controllers/calendar.js' ||
     url.pathname === '/donor/controllers/history.js' ||
     url.pathname === '/learn/legacy-planner.js' ||
