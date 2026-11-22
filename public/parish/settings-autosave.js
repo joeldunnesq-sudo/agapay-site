@@ -12,6 +12,7 @@ function settingsAutosaveState() {
       dirty: false,
       manual: false,
       fields: /* @__PURE__ */ new Set(),
+      observed: /* @__PURE__ */ new Map(),
     };
   }
   return pane.autosaveState;
@@ -26,6 +27,7 @@ function installSettingsAutosave() {
   const pane = document.getElementById('settingsPane');
   if (!pane) return;
   const state = settingsAutosaveState();
+  if (state && !state.dirty && !state.pending) state.observed.clear();
   if (!document.getElementById('settingsAutosaveStatus'))
     pane.insertAdjacentHTML(
       'afterbegin',
@@ -71,6 +73,17 @@ function installSettingsAutosave() {
     if (!ids.includes(input.id)) return;
     const state2 = settingsAutosaveState();
     if (!state2) return;
+    const value = input instanceof HTMLInputElement && input.type === 'checkbox' ? String(input.checked) : input.value;
+    if (state2.observed.get(input.id) === value) {
+      if (event.type === 'change' && state2.dirty) {
+        if (state2.timer) clearTimeout(state2.timer);
+        state2.timer = setTimeout(() => {
+          void flushSettingsAutosave();
+        }, 0);
+      }
+      return;
+    }
+    state2.observed.set(input.id, value);
     state2.fields.add(input.id);
     state2.version++;
     state2.dirty = true;

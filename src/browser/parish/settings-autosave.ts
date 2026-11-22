@@ -17,6 +17,7 @@ type SettingsAutosaveState = {
   dirty: boolean;
   manual: boolean;
   fields: Set<string>;
+  observed: Map<string, string>;
 };
 function settingsAutosaveState() {
   const pane = document.getElementById('settingsPane') as
@@ -32,6 +33,7 @@ function settingsAutosaveState() {
       dirty: false,
       manual: false,
       fields: new Set(),
+      observed: new Map(),
     };
   }
   return pane.autosaveState;
@@ -46,6 +48,7 @@ function installSettingsAutosave() {
   const pane = document.getElementById('settingsPane');
   if (!pane) return;
   const state = settingsAutosaveState();
+  if (state && !state.dirty && !state.pending) state.observed.clear();
   if (!document.getElementById('settingsAutosaveStatus'))
     pane.insertAdjacentHTML(
       'afterbegin',
@@ -91,6 +94,17 @@ function installSettingsAutosave() {
     if (!ids.includes(input.id)) return;
     const state = settingsAutosaveState();
     if (!state) return;
+    const value = input instanceof HTMLInputElement && input.type === 'checkbox' ? String(input.checked) : input.value;
+    if (state.observed.get(input.id) === value) {
+      if (event.type === 'change' && state.dirty) {
+        if (state.timer) clearTimeout(state.timer);
+        state.timer = setTimeout(() => {
+          void flushSettingsAutosave();
+        }, 0);
+      }
+      return;
+    }
+    state.observed.set(input.id, value);
     state.fields.add(input.id);
     state.version++;
     state.dirty = true;
