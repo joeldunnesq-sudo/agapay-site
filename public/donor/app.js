@@ -16,7 +16,7 @@ async function refreshStaleDashboardShell() {
   if (navigator.serviceWorker.controller) location.reload();
 }
 function setDonorStatus(message, tone = 'info') {
-  ['donorStatus', 'desktopDonorStatus'].forEach((id) => {
+  ['donorStatus', 'desktopDonorStatus', 'donorCheckoutStatus'].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
     const isBookstoreToast = id === 'donorStatus' && document.body?.classList.contains('donor-bookstore-page');
@@ -50,6 +50,7 @@ function setDonorStatus(message, tone = 'info') {
     el.textContent = message || '';
     el.className = message ? `notice ${tone}` : 'notice';
     el.style.display = message ? 'block' : 'none';
+    if (id === 'donorCheckoutStatus' && message) el.scrollIntoView({ block: 'nearest' });
   });
 }
 function setText(id, value) {
@@ -842,7 +843,7 @@ function renderActiveFunds(parish, { confirmed = false } = {}) {
     .map((fund) => {
       const label = fundLabel(fund);
       const description = fund.description || fund.note || 'Give directly to this parish fund.';
-      const link = donorGiftUrl('fund', parish, { fund: fund.id || fund.name || label });
+      const link = quickDonorGiftUrl('fund', parish, { fund: fund.id || fund.name || label });
       return `
       <article class="active-funds-card">
         <div>
@@ -946,7 +947,13 @@ function applyDonorGiveParams() {
   setText('giftDetailsTitle', copy.detailsTitle);
   const context = document.getElementById('quickGiveContext');
   if (context) {
-    context.textContent = copy.context;
+    const selectedFund = document.getElementById('fund');
+    const chosenFund = giftType === 'fund' && params.get('fund') && selectedFund?.value === params.get('fund');
+    context.textContent = chosenFund
+      ? 'Your gift to ' + selectedFund.selectedOptions[0].textContent + '.'
+      : copy.context;
+    const fundFields = document.getElementById('fundFields');
+    if (chosenFund && fundFields) fundFields.hidden = true;
     context.hidden = false;
   }
   const giftTypeField = document.getElementById('giftTypeField');
@@ -2026,6 +2033,8 @@ async function submitCommemoration(event) {
 }
 async function startDonorCheckout(event) {
   event.preventDefault();
+  const button = document.querySelector('#donorCheckoutForm button[type="submit"]');
+  if (button?.disabled) return;
   const session = donorSession();
   const donor = donorProfile();
   if (!session.email || !session.token) {
@@ -2084,12 +2093,21 @@ async function startDonorCheckout(event) {
           .trim()
           .slice(0, 280)
       : '';
+  const controller = new AbortController();
+  let timeout;
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Preparing checkout…';
+  }
   try {
     setDonorStatus('Preparing checkout...');
+    await window.agapayWaitForSecurity?.();
+    timeout = window.setTimeout(() => controller.abort(), 2e4);
     const frequency = document.getElementById('frequency')?.value || 'once';
     const paymentMethod = selectedDonorPaymentMethod(frequency);
     const data = await donorApi('/api/create-checkout-session', {
       method: 'POST',
+      signal: controller.signal,
       body: JSON.stringify({
         parishId: document.getElementById('parish')?.value,
         giftType,
@@ -2129,7 +2147,22 @@ async function startDonorCheckout(event) {
     if (data.url) window.location.href = data.url;
     else setDonorStatus(data.message || 'Checkout is not available yet.', 'error');
   } catch (err) {
-    setDonorStatus(err.message, 'error');
+    window.agapayResetSecurity?.();
+    const message = err.message || 'Unable to connect. Check your connection and try again.';
+    setDonorStatus(
+      controller.signal.aborted
+        ? 'Checkout timed out. Please try again.'
+        : /security check/i.test(message)
+          ? 'The security check could not complete. Allow the security challenge in your browser, refresh, and try again.'
+          : message,
+      'error'
+    );
+  } finally {
+    window.clearTimeout(timeout);
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Continue to AGAPAY checkout';
+    }
   }
 }
 async function handleDonorCheckoutReturn() {

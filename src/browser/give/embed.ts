@@ -417,7 +417,8 @@ interface EmbedElementMap {
 
   function checkoutErrorMessage(result: EmbedCheckoutResponse, fallback: string) {
     const message = cleanText(result.detail || result.error || fallback);
-    if (/turnstile|verification/i.test(message)) return 'Please complete the security check and try again.';
+    if (/turnstile|verification|security check/i.test(message))
+      return 'Please complete the security check and try again.';
     return message || fallback;
   }
 
@@ -431,6 +432,7 @@ interface EmbedElementMap {
     button.disabled = true;
     button.textContent = 'Preparing secure checkout…';
     try {
+      await window.agapayWaitForSecurity?.();
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -452,6 +454,7 @@ interface EmbedElementMap {
       }
       throw new Error(result.message || 'Secure checkout is not available yet.');
     } catch (error) {
+      window.agapayResetSecurity?.();
       setStatus((error as Error).message || 'Checkout could not be started. Please try again.');
     } finally {
       state.loading = false;

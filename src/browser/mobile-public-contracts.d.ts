@@ -20,6 +20,7 @@ interface Window {
   __agapaySwRegisterStarted?: boolean;
   agapayTurnstileToken: string;
   turnstile?: {
+    reset?(): void;
     render(
       target: HTMLElement,
       options: {
@@ -31,6 +32,8 @@ interface Window {
       }
     ): unknown;
   };
+  agapayWaitForSecurity?(): Promise<void>;
+  agapayResetSecurity?(): void;
   agapaySecurityPayload(): { turnstileToken: string };
   fbq?: AgapayPixel;
   _fbq?: AgapayPixel;

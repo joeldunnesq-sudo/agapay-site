@@ -352,6 +352,8 @@ async function submitCommemoration(event: Event) {
 
 async function startDonorCheckout(event: Event) {
   event.preventDefault();
+  const button = document.querySelector<HTMLButtonElement>('#donorCheckoutForm button[type="submit"]');
+  if (button?.disabled) return;
   const session = donorSession();
   const donor = donorProfile();
   if (!session.email || !session.token) {
@@ -421,12 +423,21 @@ async function startDonorCheckout(event: Event) {
           .trim()
           .slice(0, 280)
       : '';
+  const controller = new AbortController();
+  let timeout: number | undefined;
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Preparing checkout…';
+  }
   try {
     setDonorStatus('Preparing checkout...');
+    await window.agapayWaitForSecurity?.();
+    timeout = window.setTimeout(() => controller.abort(), 20000);
     const frequency = (document.getElementById('frequency') as HTMLInputElement | null)?.value || 'once';
     const paymentMethod = selectedDonorPaymentMethod(frequency);
     const data = await donorApi('/api/create-checkout-session', {
       method: 'POST',
+      signal: controller.signal,
       body: JSON.stringify({
         parishId: (document.getElementById('parish') as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
           ?.value,
@@ -470,7 +481,22 @@ async function startDonorCheckout(event: Event) {
     if (data.url) window.location.href = data.url;
     else setDonorStatus(data.message || 'Checkout is not available yet.', 'error');
   } catch (err) {
-    setDonorStatus((err as DonorAppError).message, 'error');
+    window.agapayResetSecurity?.();
+    const message = (err as DonorAppError).message || 'Unable to connect. Check your connection and try again.';
+    setDonorStatus(
+      controller.signal.aborted
+        ? 'Checkout timed out. Please try again.'
+        : /security check/i.test(message)
+          ? 'The security check could not complete. Allow the security challenge in your browser, refresh, and try again.'
+          : message,
+      'error'
+    );
+  } finally {
+    window.clearTimeout(timeout);
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Continue to AGAPAY checkout';
+    }
   }
 }
 

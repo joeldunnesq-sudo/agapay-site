@@ -108,15 +108,22 @@ function parseSacramentPriestsFromSettings() {
     .slice(0, 12);
 }
 
-async function saveDashboard(btn?: HTMLButtonElement | null) {
+async function saveDashboard(btn?: HTMLButtonElement | null, givingOnly = false) {
   if (!currentParish) return;
   const autosave = window.ParishSettings?.state();
-  if (autosave?.pending) await autosave.pending;
-  if (autosave?.dirty) await window.ParishSettings?.flush();
+  if (!givingOnly && autosave?.pending) await autosave.pending;
+  if (!givingOnly && autosave?.dirty) await window.ParishSettings?.flush();
   if (autosave) autosave.manual = true;
   let body;
   try {
-    body = payload(false);
+    body = givingOnly
+      ? {
+          funds: editableFunds,
+          givingCatalogChanged: givingCatalogSnapshot() !== givingCatalogBaseline,
+          accountingCatalogChanged: accountingCatalogSnapshot() !== accountingCatalogBaseline,
+          ...(hasGivingPlusAccess() ? { campaigns: editableCampaigns, feastCampaigns: editableFeastCampaigns } : {}),
+        }
+      : payload(false);
   } catch (err) {
     setStatus((err as ParishAppError).message, 'error');
     if (autosave) autosave.manual = false;
@@ -134,8 +141,7 @@ async function saveDashboard(btn?: HTMLButtonElement | null) {
     });
     const data = (await res.json()) as ParishAppPayload;
     if (!res.ok) {
-      setStatus(data.error || data.detail || 'Unable to save dashboard.', 'error');
-      return;
+      throw new Error(data.error || data.detail || 'Unable to save dashboard.');
     }
     if (body.newDashboardPassword && data.token) {
       (document.getElementById('parishToken') as HTMLInputElement | null)!.value = data.token;
@@ -143,8 +149,10 @@ async function saveDashboard(btn?: HTMLButtonElement | null) {
     }
     setStatus(body.newDashboardPassword ? 'Settings saved. Password updated.' : 'Parish settings saved.', 'success');
     await loadDashboard();
+    return true;
   } catch (err) {
     setStatus((err as ParishAppError).message, 'error');
+    if (givingOnly) throw err;
   } finally {
     if (autosave) {
       autosave.manual = false;

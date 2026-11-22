@@ -435,7 +435,7 @@ assert.equal(
 const signed = readyRegistration({
   givingStatus: 'active',
   onboardingState: 'LIVE',
-  treasurerSignoff: { status: 'signed', snapshotVersion: versionBefore },
+  treasurerSignoff: { status: 'signed', signedAt: now, snapshotVersion: versionBefore },
 });
 const verifiedHidden = await buildParishOnboardingWorkflow(readyRegistration({ givingStatus: 'hidden' }), {
   now: Date.now(),
@@ -478,6 +478,19 @@ assert.equal(invalidated.treasurerSignoff.status, 'invalidated');
 assert.equal(invalidated.onboardingState, 'CONFIGURING');
 assert.equal(invalidated.givingStatus, 'paused');
 
+for (const change of [{ name: 'Renamed operating fund' }, { description: 'Updated public description' }]) {
+  const renamed = await invalidateOnboardingSignoffIfChanged(
+    signed,
+    { ...signed, funds: signed.funds.map((fund, index) => (index === 0 ? { ...fund, ...change } : fund)) },
+    { actor: 'regression-test' }
+  );
+  assert.equal(renamed.givingStatus, 'active', 'fund display edits must not interrupt giving');
+  assert.equal(renamed.treasurerSignoff.status, 'signed');
+  assert.equal((await buildParishOnboardingWorkflow(renamed)).state, 'LIVE');
+}
+const reapproval = await buildParishOnboardingWorkflow(invalidated);
+assert.equal(reapproval.canGoLive, true, 'an automatically paused parish must be able to review and relaunch');
+assert.deepEqual(reapproval.blockers, []);
 const materialMutations = [
   ['legal receipt name', { taxLegalName: 'Renamed Legal Parish' }],
   ['plan', { subscriptionTier: 'starter' }],
