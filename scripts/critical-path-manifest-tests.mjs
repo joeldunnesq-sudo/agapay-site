@@ -5,6 +5,7 @@ const requiredCriticalSuites = [
   'scripts/payment-integrity-tests.mjs',
   'scripts/worker-hardening-tests.mjs',
   'scripts/privileged-mfa-tests.mjs',
+  'scripts/mfa-qr-tests.mjs',
   'scripts/consumer-passkey-tests.mjs',
   'scripts/accounting-gateway-tests.mjs',
   'scripts/organization-authorization-adoption-tests.mjs',

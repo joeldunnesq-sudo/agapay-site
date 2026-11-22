@@ -59,7 +59,7 @@ import type {} from '../native-contracts.js';
           reject(new Error('QR code unavailable'));
         };
         document.head.appendChild(script);
-      }).catch((error) => {
+      }).catch((error: unknown) => {
         qrEncoderPromise = null;
         throw error;
       });
