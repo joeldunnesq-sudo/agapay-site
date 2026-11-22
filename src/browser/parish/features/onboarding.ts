@@ -173,6 +173,7 @@ function renderSimpleParishSetupWizard(workflow: ParishOnboardingWorkflow) {
   const pane = document.getElementById('setupWizardPane') as HTMLElement;
   if (!pane) return;
   const live = workflow.state === 'LIVE';
+  const stripeVerificationPending = workflow.stripe?.verificationPending === true;
   const givingUrl = workflow.summary?.givingUrl || `/give/${encodeURIComponent(currentParish!.parishId || '')}`;
   const stages = workflow.parishStages || [
     { key: 'access', title: 'Accept access', detail: 'Create your personal password.', passed: true },
@@ -192,7 +193,7 @@ function renderSimpleParishSetupWizard(workflow: ParishOnboardingWorkflow) {
   const stageMarkup = stages
     .map((stage, index) => {
       const current = !stage.passed && stages.slice(0, index).every((item) => item.passed);
-      return `<div class="parish-setup-stage ${stage.passed ? 'done' : current ? 'current' : 'later'}"><span>${stage.passed ? '&#10003;' : index + 1}</span><div><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.detail || '')}</small></div><em>${stage.passed ? 'Complete' : current ? 'Now' : 'Next'}</em></div>`;
+      return `<div class="parish-setup-stage ${stage.passed ? 'done' : current ? 'current' : 'later'}"><span>${stage.passed ? '&#10003;' : index + 1}</span><div><strong>${escapeHtml(stage.title)}</strong><small>${escapeHtml(stage.key === 'payments' && stripeVerificationPending ? 'Stripe setup is complete. Verification is pending.' : stage.detail || '')}</small></div><em>${stage.passed ? 'Complete' : stage.key === 'payments' && stripeVerificationPending ? 'Pending' : current ? 'Now' : 'Next'}</em></div>`;
     })
     .join('');
   const blockerKeys = new Set((workflow.blockers || []).map((item) => item.key));
@@ -213,7 +214,9 @@ function renderSimpleParishSetupWizard(workflow: ParishOnboardingWorkflow) {
       : needsPlan
         ? `<strong>Choose your AGAPAY plan</strong><p class="setup-copy setup-action-copy">Confirm your plan and start the free 30-day demo if eligible. No card is required for the demo. Then connect Stripe for donations.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Choose plan</button>`
         : needsStripe
-          ? `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button><button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Continue Stripe setup</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
+          ? stripeVerificationPending
+            ? `<strong>Stripe setup is complete</strong><p class="setup-copy setup-action-copy">Verification is pending. Stripe is reviewing the submitted information before enabling payments and payouts. No additional information is currently due.</p><button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button>`
+            : `<strong>${workflow.stripe?.connected ? 'Finish connecting Stripe' : 'Connect the parish Stripe account'}</strong><p class="setup-copy setup-action-copy">Stripe securely collects the parish and payout-bank details. AGAPAY never sees the full bank account number.</p>${workflow.stripe?.connected ? '<button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button><button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Continue Stripe setup</button>' : '<button class="btn btn-gold" type="button" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}`
           : needsGivingReview
             ? `<strong>Review the giving setup</strong><p class="setup-copy setup-action-copy">A short wizard will show only the giving choices included with ${escapeHtml(currentParish!.subscriptionTierLabel || 'your plan')}.</p>${workflow.accountingSetupRequired ? '<p class="setup-copy setup-action-copy">Your plan includes Accounting. Complete Accounting setup first, then return here to review and save giving setup so the General Operating Fund is linked to your books.</p><button class="btn btn-gold" type="button" onclick="switchTab(\'accounting\')">Open Accounting setup</button>' : ''}<button class="btn btn-gold" type="button" onclick="openGivingSetupWizard()">Review giving setup</button>`
             : `<strong>Next step: ${blockerKeys.has('credential') ? 'secure parish access' : 'AGAPAY review'}</strong><p class="setup-copy setup-action-copy">${escapeHtml(waiting)}</p><a href="mailto:onboarding@agapay.app">Contact onboarding support</a><button class="btn btn-ghost" type="button" onclick="loadDashboard()">Check for updates</button>`;

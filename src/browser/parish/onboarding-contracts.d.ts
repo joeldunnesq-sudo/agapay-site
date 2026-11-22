@@ -18,7 +18,7 @@ interface ParishOnboardingWorkflow {
   updatedAt?: string;
   canGoLive?: boolean;
   accountingSetupRequired?: boolean;
-  stripe?: { checkedAt?: string; ready?: boolean; connected?: boolean };
+  stripe?: { checkedAt?: string; ready?: boolean; connected?: boolean; verificationPending?: boolean };
   parishStages?: { key: string; title: string; detail?: string; passed?: boolean }[];
   steps?: { key: string; passed?: boolean }[];
   blockers?: { key: string }[];

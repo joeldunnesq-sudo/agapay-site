@@ -147,6 +147,32 @@ const payoutsBlocked = await buildParishOnboardingWorkflow(readyRegistration({ s
 assert.equal(payoutsBlocked.canGoLive, false);
 assert.ok(payoutsBlocked.blockers.some((item) => item.key === 'stripeReady'));
 
+for (const [overrides, expected] of [
+  [
+    {
+      stripeDisabledReason: 'requirements.pending_verification',
+      stripeChargesEnabled: false,
+      stripePayoutsEnabled: false,
+      stripeRequirementsDue: [],
+    },
+    true,
+  ],
+  [{ stripeDisabledReason: 'requirements.pending_verification', stripeRequirementsDue: ['company.tax_id'] }, false],
+  [{ stripeDisabledReason: 'requirements.pending_verification', stripeDetailsSubmitted: false }, false],
+  [{ stripeDisabledReason: 'requirements.past_due' }, false],
+  [{ stripeDisabledReason: 'requirements.pending_verification', stripeAccountId: '' }, false],
+]) {
+  const workflow = await buildParishOnboardingWorkflow(readyRegistration(overrides), { now: Date.now() });
+  assert.equal(workflow.stripe.verificationPending, expected);
+  assert.equal(workflow.canGoLive, false);
+  if (expected)
+    assert.match(
+      workflow.parishStages.find((stage) => stage.key === 'payments').detail,
+      /setup is complete.*Verification is pending/
+    );
+}
+assert.equal(readyWorkflow.stripe.verificationPending, false);
+
 const reviewedWithoutImport = recordParishGivingSetupReview(
   readyRegistration({ onboardingChecks: {} }),
   'none',
