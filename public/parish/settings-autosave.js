@@ -203,19 +203,12 @@ function renderPermanentPasswordNotice() {
     showPermanentPasswordPrompt();
   }
 }
-async function savePermanentDashboardPassword(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const status = document.getElementById('permanentPasswordStatus');
-  const button = form.querySelector('button[type=submit]');
-  const fields = new FormData(form);
-  const password = String(fields.get('password') || '');
-  if (password.length < 8 || password !== fields.get('confirmation')) {
-    status.textContent = 'Enter matching passwords with at least eight characters.';
-    return;
+async function persistDashboardPassword(password, confirmation, report, button) {
+  if (password.length < 8 || password !== confirmation) {
+    report('Enter matching passwords with at least eight characters.');
+    return false;
   }
   button.disabled = true;
-  status.textContent = 'Saving your permanent password…';
   try {
     await flushSettingsAutosave();
     const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
@@ -230,15 +223,40 @@ async function savePermanentDashboardPassword(event) {
     document.getElementById('parishToken').value = data.token;
     saveSession();
     currentParish = { ...currentParish, ...data.parish };
-    form.reset();
     renderPermanentPasswordNotice();
     await loadDashboard();
     setStatus('Permanent password saved. Review the remaining launch steps.', 'success');
+    return true;
   } catch (error) {
-    status.textContent = error.message;
+    report(error.message);
+    return false;
   } finally {
     button.disabled = false;
   }
+}
+async function savePermanentDashboardPassword(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const fields = new FormData(form);
+  const status = document.getElementById('permanentPasswordStatus');
+  status.textContent = 'Saving your permanent password…';
+  const saved = await persistDashboardPassword(
+    String(fields.get('password') || ''),
+    String(fields.get('confirmation') || ''),
+    (message) => {
+      status.textContent = message;
+    },
+    form.querySelector('button[type=submit]')
+  );
+  if (saved) form.reset();
+}
+async function saveSettingsPassword(button) {
+  await persistDashboardPassword(
+    document.getElementById('newDashboardPassword').value.trim(),
+    document.getElementById('confirmDashboardPassword').value.trim(),
+    (message) => setStatus(message, 'error'),
+    button
+  );
 }
 window.ParishSettings = {
   state: settingsAutosaveState,
@@ -247,4 +265,5 @@ window.ParishSettings = {
   renderPasswordNotice: renderPermanentPasswordNotice,
   showPasswordPrompt: showPermanentPasswordPrompt,
   savePassword: savePermanentDashboardPassword,
+  saveSettingsPassword,
 };

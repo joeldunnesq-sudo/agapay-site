@@ -225,19 +225,17 @@ function renderPermanentPasswordNotice() {
     showPermanentPasswordPrompt();
   }
 }
-async function savePermanentDashboardPassword(event: SubmitEvent) {
-  event.preventDefault();
-  const form = event.currentTarget as HTMLFormElement;
-  const status = document.getElementById('permanentPasswordStatus')!;
-  const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
-  const fields = new FormData(form);
-  const password = String(fields.get('password') || '');
-  if (password.length < 8 || password !== fields.get('confirmation')) {
-    status.textContent = 'Enter matching passwords with at least eight characters.';
-    return;
+async function persistDashboardPassword(
+  password: string,
+  confirmation: string,
+  report: (message: string) => void,
+  button: HTMLButtonElement
+) {
+  if (password.length < 8 || password !== confirmation) {
+    report('Enter matching passwords with at least eight characters.');
+    return false;
   }
   button.disabled = true;
-  status.textContent = 'Saving your permanent password…';
   try {
     await flushSettingsAutosave();
     const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish!.parishId), {
@@ -252,17 +250,41 @@ async function savePermanentDashboardPassword(event: SubmitEvent) {
     (document.getElementById('parishToken') as HTMLInputElement).value = data.token;
     saveSession();
     currentParish = { ...currentParish!, ...data.parish };
-    form.reset();
     renderPermanentPasswordNotice();
     await loadDashboard();
     setStatus('Permanent password saved. Review the remaining launch steps.', 'success');
+    return true;
   } catch (error) {
-    status.textContent = (error as Error).message;
+    report((error as Error).message);
+    return false;
   } finally {
     button.disabled = false;
   }
 }
-
+async function savePermanentDashboardPassword(event: SubmitEvent) {
+  event.preventDefault();
+  const form = event.currentTarget as HTMLFormElement;
+  const fields = new FormData(form);
+  const status = document.getElementById('permanentPasswordStatus')!;
+  status.textContent = 'Saving your permanent password…';
+  const saved = await persistDashboardPassword(
+    String(fields.get('password') || ''),
+    String(fields.get('confirmation') || ''),
+    (message: string) => {
+      status.textContent = message;
+    },
+    form.querySelector<HTMLButtonElement>('button[type=submit]')!
+  );
+  if (saved) form.reset();
+}
+async function saveSettingsPassword(button: HTMLButtonElement) {
+  await persistDashboardPassword(
+    (document.getElementById('newDashboardPassword') as HTMLInputElement).value.trim(),
+    (document.getElementById('confirmDashboardPassword') as HTMLInputElement).value.trim(),
+    (message: string) => setStatus(message, 'error'),
+    button
+  );
+}
 declare global {
   interface Window {
     ParishSettings?: {
@@ -272,6 +294,7 @@ declare global {
       renderPasswordNotice: typeof renderPermanentPasswordNotice;
       showPasswordPrompt: typeof showPermanentPasswordPrompt;
       savePassword: typeof savePermanentDashboardPassword;
+      saveSettingsPassword: typeof saveSettingsPassword;
     };
   }
 }
@@ -282,4 +305,5 @@ window.ParishSettings = {
   renderPasswordNotice: renderPermanentPasswordNotice,
   showPasswordPrompt: showPermanentPasswordPrompt,
   savePassword: savePermanentDashboardPassword,
+  saveSettingsPassword,
 };

@@ -116,9 +116,7 @@ async function saveDashboard(btn?: HTMLButtonElement | null) {
   if (autosave) autosave.manual = true;
   let body;
   try {
-    const password = payload().newDashboardPassword;
-    if (!password) throw new Error('Enter and confirm a new password first. Your other settings save automatically.');
-    body = { newDashboardPassword: password };
+    body = payload(false);
   } catch (err) {
     setStatus((err as ParishAppError).message, 'error');
     if (autosave) autosave.manual = false;

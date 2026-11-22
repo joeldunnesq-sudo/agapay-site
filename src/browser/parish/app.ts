@@ -411,7 +411,7 @@ function renderDashboard(preserveSettings = false) {
         <div class="form-group"><label class="form-label" for="newDashboardPassword">New password</label><input id="newDashboardPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" /></div>
         <div class="form-group"><label class="form-label" for="confirmDashboardPassword">Confirm password</label><input id="confirmDashboardPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" /></div>
       </div>
-      <p class="section-note">Password changes require confirmation. Your other settings save automatically.</p><button type="button" class="btn btn-gold" onclick="saveDashboard(this)">Update password</button>
+      <p class="section-note">Password changes require confirmation. Your other settings save automatically.</p><button type="button" class="btn btn-gold" onclick="window.ParishSettings.saveSettingsPassword(this)">Update password</button>
       <div class="section-divider"><span>Team access</span></div>
       <div id="parishStaffAccessManager"><div class="staff-access-loading">Loading staff access…</div></div>
       <div class="section-divider"><span>Clergy scheduling contacts</span></div>
