@@ -31,7 +31,6 @@ export interface ParishAppAddOn {
 export interface ParishAppIdentity extends Omit<ParishWorkspaceIdentity, 'entitlements' | 'sacramentPriests'> {
   parishId: string;
   parishName?: string;
-  patronalFeastChurchDate?: string;
   name?: string;
   entitlements?: ParishAppEntitlements;
   stewardshipActive?: boolean;
