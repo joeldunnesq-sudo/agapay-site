@@ -2223,7 +2223,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(saveSession|switchTab|money|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation|selectedSubscriptionAddOns|dashboardLoadPromise|activeParishFeatureRequest|parishFeatureRequests|identitySessionStorageKey|identityEmailStorageKey|escapeAttr|starterLockedFeatures|settlementProfilesState|SETTLEMENT_MODULE_LABELS|SETTLEMENT_TYPE_LABELS|taxExemptionJurisdictions|renderDashboard|payload)$',
+            '^(saveSession|switchTab|money|syncDashboardPaywall|syncTierRequirementNavigation|syncModuleStatusNavigation|selectedSubscriptionAddOns|dashboardLoadPromise|activeParishFeatureRequest|parishFeatureRequests|identitySessionStorageKey|identityEmailStorageKey|escapeAttr|starterLockedFeatures|settlementProfilesState|SETTLEMENT_MODULE_LABELS|SETTLEMENT_TYPE_LABELS|taxExemptionJurisdictions|renderDashboard|recordSettingsSaveBaselines|payload)$',
         },
       ],
     },

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { transformSync } from 'esbuild';
+import { readFileSync } from 'node:fs';
 import * as dashboard from '../src/handlers/parish-dashboard-handler.js';
 import * as parishFacade from '../src/handlers/parish.js';
 import { issueParishDashboardSession, verifyParishDashboardPassword, parishIdIndexKey } from '../src/lib/core.js';
@@ -48,8 +50,8 @@ async function fixture(overrides = {}, sessionOptions = {}) {
   await env.AGAPAY_REGISTRATIONS.put('REG-A', JSON.stringify(session.registration));
   await env.AGAPAY_REGISTRATIONS.put(parishIdIndexKey('a'), 'REG-A');
   const saved = async () => JSON.parse(await env.AGAPAY_REGISTRATIONS.get('REG-A'));
-  const call = (method = 'GET', body, token = session.token, parishId = 'a') =>
-    dashboard.handleParishDashboard(
+  const call = (method = 'GET', body, token = session.token, parishId = 'a', handlers = dashboard) =>
+    handlers.handleParishDashboard(
       new Request(`https://example.test/api/parish/${parishId}/dashboard`, {
         method,
         headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
@@ -171,6 +173,72 @@ try {
   });
   assert.equal(preserved.status, 200);
   assert.deepEqual((await linked.saved()).funds, linkedBefore.funds);
+
+  const handlerUrl = new URL('../src/handlers/parish-dashboard-handler.js', import.meta.url);
+  const compiled = transformSync(readFileSync(handlerUrl, 'utf8'), { format: 'cjs', target: 'es2022' }).code;
+  const dependencies = new Map();
+  for (const [, specifier] of compiled.matchAll(/require\("([^"]+)"\)/g))
+    dependencies.set(specifier, await import(new URL(specifier, handlerUrl)));
+  let syncCalls = 0,
+    failSync = false;
+  const wiring = dependencies.get('../accounting/source-wiring.js');
+  dependencies.set('../accounting/source-wiring.js', {
+    ...wiring,
+    synchronizeGivingCatalogWithAccounting: async (env, parishId, registration) => {
+      syncCalls++;
+      return failSync
+        ? { available: false }
+        : {
+            available: true,
+            synchronized: 1,
+            funds: registration.funds.map((fund) => ({ ...fund, accountingFundId: 'fund_general' })),
+            campaigns: registration.campaigns,
+            feastCampaigns: registration.feastCampaigns,
+          };
+    },
+  });
+  dependencies.set('../lib/accounting-availability.js', {
+    ...dependencies.get('../lib/accounting-availability.js'),
+    accountingCatalogRequiredForParish: async () => true,
+  });
+  const module = { exports: {} };
+  new Function('require', 'module', 'exports', compiled)(
+    (specifier) => dependencies.get(specifier),
+    module,
+    module.exports
+  );
+  const unlinked = await fixture({ subscriptionTier: 'parish' });
+  assert.equal(
+    (await unlinked.call('PATCH', { parishName: 'Saved settings' }, unlinked.session.token, 'a', module.exports))
+      .status,
+    200
+  );
+  assert.equal(
+    (await unlinked.saved()).funds[0].accountingFundId,
+    'fund_general',
+    'ordinary settings saves repair missing Accounting links'
+  );
+  assert.equal(syncCalls, 1);
+  assert.equal(
+    (
+      await unlinked.call(
+        'PATCH',
+        { givingSetupReviewed: true, givingCatalogChanged: false },
+        unlinked.session.token,
+        'a',
+        module.exports
+      )
+    ).status,
+    200
+  );
+  assert.equal(syncCalls, 2, 'unchanged giving reviews still synchronize the Accounting mapping');
+  failSync = true;
+  const unchanged = await unlinked.saved();
+  assert.equal(
+    (await unlinked.call('PATCH', { givingSetupReviewed: true }, unlinked.session.token, 'a', module.exports)).status,
+    503
+  );
+  assert.deepEqual(await unlinked.saved(), unchanged, 'failed synchronization cannot persist an unverified mapping');
 
   const password = await fixture({ parishDashboardToken: 'old-token' });
   const rotation = await password.call('PATCH', { newDashboardPassword: 'new-test-password-123' });

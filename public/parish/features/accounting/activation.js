@@ -61,7 +61,10 @@ async function renderAccountingActivation(pane = document.getElementById('accoun
     if (status.staffReady === false || !accountingStaffSession()) {
       await renderAccountingAccess();
       const form = pane.innerHTML;
-      pane.innerHTML = accountingActivationShell(2, form);
+      pane.innerHTML = accountingActivationShell(
+        2,
+        `${form}<div class="acct-wizard-skip"><span>Already created or unlocked your Accounting profile? Check access and continue without refreshing the page.</span><button type="button" class="acct-refresh" onclick="loadAccountingTab(true)">Check access and continue</button></div>`
+      );
       return;
     }
     if (!accountingActivation.import) {
@@ -277,6 +280,7 @@ async function finishAccountingActivation(button) {
     await accountingAccessRequest('/activation/complete');
     accountingActivation.import = null;
     accountingActivation.complete = true;
+    await loadDashboard();
     await loadAccountingTab(true);
   } catch (error) {
     button.disabled = false;

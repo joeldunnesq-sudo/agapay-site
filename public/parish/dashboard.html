@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/parish/tier-navigation.css?v=20260831tiers1" />
   <link rel="stylesheet" href="/parish/fund-reconciliation.css?v=20260831funds3" />
   <link rel="stylesheet" href="/parish/outside-giving.css?v=20260831outside1" />
+<link rel="stylesheet" href="/styles/parish-settings.css?v=20261122autosave1" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -178,6 +179,7 @@
         <button class="btn btn-ghost btn-sm" onclick="logoutParish()">Log out</button>
       </div>
     </div>
+    <div id="dashboardPasswordNotice" hidden></div>
     <div class="detail-wrap">
       <!-- ── GIVING OVERVIEW TAB ─────────────────────────────── -->
       <div class="tab-panel active" id="tab-giving">
@@ -900,7 +902,7 @@
             <span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
           </div>
         </div>
-        <!-- A compact health overview followed by four data-led giving charts. -->
+        
         <div class="sw-suite-tool-grid sw-suite-tool-grid--health">
           <div class="sw-suite-tool-card sw-tool-health-score">
             <div class="sw-tool-card-icon">
@@ -1050,10 +1052,7 @@
       </div>
       </div>
       <!-- ── SACRAMENTS & SERVICES TAB ────────────────────── -->
-      <!-- Limited rollout: the live panel only renders for allowlisted
-           parishes (currently just st-fiacre, for internal testing) —
-           see SACRAMENTS_ROLLOUT_PARISH_IDS in app.js. Everyone else sees
-           the coming-soon banner. -->
+      
       <div class="tab-panel parish-tier-panel" id="tab-sacraments">
         <div class="sac-paywall" id="sacramentsComingSoonBanner">
           <div class="text-give-header sw-suite-hero sac-paywall-hero">
@@ -1891,8 +1890,8 @@
 <script src="/parish/features/accounting/banking.js?v=155a2a3de95dafdc"></script>
 <script src="/parish/features/accounting/close.js?v=b1a848d81376cd28"></script>
 <script src="/parish/features/accounting/migration.js?v=b4a9922847685091"></script>
-<script src="/parish/features/accounting/activation.js?v=58b020f9d4227c3e"></script>
-<script src="/parish/features/accounting.js?v=5276a7af3cb268f8"></script>
+<script src="/parish/features/accounting/activation.js?v=879fca12e6e60d31"></script>
+<script src="/parish/features/accounting.js?v=53972b355f934940"></script>
 <script src="/parish/features/commerce/bookstore-catalog.js?v=c228ee90fc233fb6"></script>
 <script src="/parish/features/commerce/bookstore-checkout.js?v=408c0df8ac281d32"></script>
 <script src="/parish/features/commerce/bookstore-sales.js?v=bb593e2f23b2fae2"></script>
@@ -1906,7 +1905,7 @@
 <script src="/parish/features/koinonia/prayers.js?v=dd6236a3b2deedc6"></script>
 <script src="/parish/features/koinonia/media.js?v=c49f0e24c56d5d23"></script>
 <script src="/parish/features/koinonia.js?v=7d774ebcbcb09b3e"></script>
-<script src="/parish/features/onboarding.js?v=531a1c5237b6f717"></script>
+<script src="/parish/features/onboarding.js?v=0d4dcad78a6b3983"></script>
 <script src="/parish/features/campaigns/website-embed.js?v=0c8bcf3af3b84659"></script>
 <script src="/parish/features/campaigns.js?v=c3c1cf2e54ddd9c3"></script>
 <script src="/parish/features/stewardship/reports.js?v=4b361c1bf0175d0f"></script>
@@ -1938,6 +1937,7 @@
 <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
 <script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
 <script src="/parish/app-subscriptions-and-settlement.js?v=ed4eef319b4d4074"></script>
-<script src="/parish/app.js?v=6a2335cae018f056"></script>
+<script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
+<script src="/parish/app.js?v=bde1eba65b838128"></script>
 </body>
 </html>

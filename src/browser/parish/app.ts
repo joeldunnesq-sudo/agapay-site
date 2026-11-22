@@ -279,7 +279,9 @@ const taxExemptionJurisdictions = [
 ];
 
 // ── RENDER DASHBOARD ──────────────────────────────────────
-function renderDashboard() {
+function renderDashboard(preserveSettings = false) {
+  const editingSettings = window.ParishSettings?.state();
+  if (editingSettings?.dirty || editingSettings?.pending) preserveSettings = true;
   const p = currentParish!;
   updateTierScopedNavigation();
   renderSubscriptionPanel();
@@ -313,6 +315,10 @@ function renderDashboard() {
   if (overviewEmpty) overviewEmpty.style.display = 'none';
   renderSetupWizard();
   updateStarterPaywalls();
+  if (preserveSettings) {
+    window.ParishSettings?.renderPasswordNotice();
+    return;
+  }
 
   const billingActive = Boolean((p.setup || {}).billingActive);
   const demoActive = subscriptionDemoActive(p);
@@ -405,7 +411,7 @@ function renderDashboard() {
         <div class="form-group"><label class="form-label" for="newDashboardPassword">New password</label><input id="newDashboardPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" /></div>
         <div class="form-group"><label class="form-label" for="confirmDashboardPassword">Confirm password</label><input id="confirmDashboardPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" /></div>
       </div>
-      <p class="section-note">Leave blank unless you want to change the parish dashboard password.</p>
+      <p class="section-note">Password changes require confirmation. Your other settings save automatically.</p><button type="button" class="btn btn-gold" onclick="window.ParishSettings.saveSettingsPassword(this)">Update password</button>
       <div class="section-divider"><span>Team access</span></div>
       <div id="parishStaffAccessManager"><div class="staff-access-loading">Loading staff access…</div></div>
       <div class="section-divider"><span>Clergy scheduling contacts</span></div>
@@ -463,7 +469,7 @@ function renderDashboard() {
       </div>
       ${moduleIncluded('bookstore') ? '' : '<p class="section-note">Bookstore is included in Give +. Full Commerce adds Events and Meals; Parish includes the entire suite.</p>'}
       <div class="btn-row">
-        <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
+        <span>Profile settings and preferences save automatically.</span>
         ${(p.setup || {}).billingActive ? '<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>' : '<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}
         <button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button>
         <button class="btn btn-ghost" onclick="logoutParish()">Log out</button>
@@ -484,6 +490,7 @@ function renderDashboard() {
     'subscriptionHouseholdBandPrice'
   );
   syncSubscriptionAddOnVisibility('subscriptionTierUpgrade', 'subscriptionAddOnUpgradeGroup');
+  window.ParishSettings?.renderPasswordNotice();
   syncPatronalFeastOptionsFromSettings();
   loadParishTaxExemption();
   loadParishStaffAccess();
@@ -504,6 +511,7 @@ function renderDashboard() {
       p.patronalFeastDate || p.parishPatronalFeastDate || ''
     );
   }
+  window.ParishSettings?.install();
   givingCatalogBaseline = givingCatalogSnapshot();
   accountingCatalogBaseline = accountingCatalogSnapshot();
   if (activeTab === 'options')
@@ -512,17 +520,24 @@ function renderDashboard() {
 }
 
 // ── SAVE DASHBOARD ────────────────────────────────────────
-function payload() {
-  const newPw = (document.getElementById('newDashboardPassword') as HTMLInputElement | null)?.value.trim() || '';
-  const conPw = (document.getElementById('confirmDashboardPassword') as HTMLInputElement | null)?.value.trim() || '';
+function recordSettingsSaveBaselines(giving: string, accounting: string) {
+  givingCatalogBaseline = giving;
+  accountingCatalogBaseline = accounting;
+}
+function payload(includePassword = true) {
+  const newPw = includePassword
+    ? (document.getElementById('newDashboardPassword') as HTMLInputElement | null)?.value.trim() || ''
+    : '';
+  const conPw = includePassword
+    ? (document.getElementById('confirmDashboardPassword') as HTMLInputElement | null)?.value.trim() || ''
+    : '';
   if (newPw || conPw) {
     if (newPw.length < 8) throw new Error('Password must be at least 8 characters.');
     if (newPw !== conPw) throw new Error('Passwords do not match.');
   }
   const liturgicalCalendar =
-    (document.getElementById('feastLiturgicalCalendar') as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)
-      ?.value ||
     (document.getElementById('settingsLiturgicalCalendar') as HTMLSelectElement | null)?.value ||
+    (document.getElementById('feastLiturgicalCalendar') as HTMLSelectElement | null)?.value ||
     currentParish?.liturgicalCalendar ||
     'julian';
   const patronalFeastName =
@@ -635,6 +650,10 @@ export type ParishAppBindings = {
   loadRegisteredParishFeature: typeof loadRegisteredParishFeature;
   switchTab: typeof switchTab;
   taxExemptionJurisdictions: typeof taxExemptionJurisdictions;
+  recordSettingsSaveBaselines: typeof recordSettingsSaveBaselines;
+  givingCatalogSnapshot: typeof givingCatalogSnapshot;
+  accountingCatalogSnapshot: typeof accountingCatalogSnapshot;
+  renderDashboard: typeof renderDashboard;
   payload: typeof payload;
   saveSession: typeof saveSession;
   selectedSubscriptionAddOns: typeof selectedSubscriptionAddOns;

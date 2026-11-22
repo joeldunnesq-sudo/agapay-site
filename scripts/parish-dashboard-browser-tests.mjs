@@ -231,7 +231,12 @@ try {
 
   await scenario(
     'refresh failures preserve the existing parish and unsaved form before a successful retry',
-    (count) => (count === 2 ? { status: 503, body: {} } : { parish }),
+    (count, request) =>
+      request.method() === 'PATCH'
+        ? { body: { ok: true, parish: { ...parish, ...request.postDataJSON() } } }
+        : count === 2
+          ? { status: 503, body: {} }
+          : { parish },
     async (fixture) => {
       const { page } = fixture;
       await fixture.open();
@@ -239,12 +244,12 @@ try {
       await page.locator('#nav-settings').click();
       await page.locator('#parishName').fill('Unsaved draft');
       await page.evaluate(() => loadDashboard(document.getElementById('loadBtn')));
-      assert.equal(await page.evaluate(() => currentParish.parishName), parish.parishName);
       assert.equal(await page.locator('#parishName').inputValue(), 'Unsaved draft');
       assert.equal(await page.evaluate(() => document.body.classList.contains('dashboard-refreshing')), false);
       await ready(page);
       await page.evaluate(() => loadDashboard());
-      assert.equal(await page.locator('#parishName').inputValue(), parish.parishName);
+      assert.equal(await page.locator('#parishName').inputValue(), 'Unsaved draft');
+      await page.waitForFunction(() => document.getElementById('settingsAutosaveText').textContent === 'Saved');
       assert.equal(fixture.requests(), 3);
     }
   );

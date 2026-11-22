@@ -75,7 +75,7 @@ export async function openParishFixture(browser, dashboardResponse = () => ({ pa
       });
     }
     if (url.pathname === base) {
-      requests++;
+      if (route.request().method() === 'GET') requests++;
       const response = await dashboardResponse(requests, route.request());
       if (response.abort) return route.abort('failed');
       if (response.raw !== undefined)
