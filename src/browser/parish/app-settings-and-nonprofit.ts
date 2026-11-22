@@ -110,11 +110,18 @@ function parseSacramentPriestsFromSettings() {
 
 async function saveDashboard(btn?: HTMLButtonElement | null) {
   if (!currentParish) return;
+  const autosave = window.ParishSettings?.state();
+  if (autosave?.pending) await autosave.pending;
+  if (autosave?.dirty) await window.ParishSettings?.flush();
+  if (autosave) autosave.manual = true;
   let body;
   try {
-    body = payload();
+    const password = payload().newDashboardPassword;
+    if (!password) throw new Error('Enter and confirm a new password first. Your other settings save automatically.');
+    body = { newDashboardPassword: password };
   } catch (err) {
     setStatus((err as ParishAppError).message, 'error');
+    if (autosave) autosave.manual = false;
     return;
   }
   if (btn) {
@@ -141,6 +148,10 @@ async function saveDashboard(btn?: HTMLButtonElement | null) {
   } catch (err) {
     setStatus((err as ParishAppError).message, 'error');
   } finally {
+    if (autosave) {
+      autosave.manual = false;
+      if (autosave.dirty) void window.ParishSettings?.flush();
+    }
     if (btn) {
       btn.classList.remove('loading');
       btn.disabled = false;

@@ -621,10 +621,15 @@ export async function handleParishDashboard(request: Request, env: DashboardEnv,
       updated = nextSession.registration;
     }
 
+    const missingGeneralFundLink =
+      accountingEnabledFor(updated) &&
+      (updated.funds || []).some((fund) => fund.id === 'general' && !fund.accountingFundId);
     const accountingCatalogChanged =
-      catalogChanged &&
+      (catalogChanged || missingGeneralFundLink || body.givingSetupReviewed === true) &&
       (await accountingCatalogRequiredForParish(env, parishId, current)) &&
-      (body.accountingCatalogChanged === true ||
+      (missingGeneralFundLink ||
+        body.givingSetupReviewed === true ||
+        body.accountingCatalogChanged === true ||
         (body.accountingCatalogChanged === undefined &&
           givingCatalogChanged(
             {

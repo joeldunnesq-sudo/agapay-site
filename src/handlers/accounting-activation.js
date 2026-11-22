@@ -1,4 +1,7 @@
 // Generated from src/handlers/accounting-activation.ts by npm run build:server. Do not edit.
+import { findRegistrationByParishId, saveRegistrationRecord } from './parish.js';
+import { synchronizeGivingCatalogWithAccounting } from '../accounting/source-wiring.js';
+import { invalidateOnboardingSignoffIfChanged } from '../lib/parish-onboarding.js';
 import { json } from '../lib/core.js';
 import { requireAccountingStaffProfile } from '../lib/accounting-staff.js';
 import { activationDto, activationOperation, first, run } from '../accounting/provisioning/activation.js';
@@ -89,6 +92,25 @@ async function handleAccountingActivation(request, env, parishId, path) {
         operation.health_status !== 'healthy'
       )
         return reply({ error: 'The books are not ready.' }, 409);
+      const found = await findRegistrationByParishId(env, parishId);
+      if (!found) return reply({ error: 'Parish dashboard record not found.' }, 404);
+      const catalog = await synchronizeGivingCatalogWithAccounting(env, parishId, found.registration);
+      if (!catalog.available)
+        return reply(
+          { error: 'Your books are ready, but giving funds could not be linked. Retry to finish setup.' },
+          503
+        );
+      const updated = await invalidateOnboardingSignoffIfChanged(
+        found.registration,
+        {
+          ...found.registration,
+          funds: catalog.funds,
+          campaigns: catalog.campaigns,
+          feastCampaigns: catalog.feastCampaigns || [],
+        },
+        { actor: staff.user.id, reason: 'Accounting activation linked the parish giving funds.' }
+      );
+      await saveRegistrationRecord(env, found.key, updated, found.registration);
       await run(
         env,
         "UPDATE accounting_provisioning_operations SET wizard_completed_at=COALESCE(wizard_completed_at,datetime('now')) WHERE id=?",

@@ -753,7 +753,7 @@ assert.match(
 );
 assert.match(
   parishHandler,
-  /accountingCatalogChanged\s*=\s*catalogChanged\s*&&\s*\(await accountingCatalogRequiredForParish\(env, parishId, current\)\)/,
+  /accountingCatalogChanged[\s\S]*accountingCatalogRequiredForParish\(env, parishId, current\)/,
   'parishes awaiting their first books must be able to save giving setup, while existing books still require synchronization'
 );
 assert.match(
