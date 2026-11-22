@@ -190,10 +190,7 @@ try {
         currentParish.onboarding = { enabled: true, state: 'LIVE' };
         renderSetupWizard();
       });
-      assert.ok(
-        (await pane.textContent()).includes('Giving is live'),
-        'completed onboarding should provide sharing actions'
-      );
+      assert.equal(await pane.textContent(), '', 'completed onboarding must clear the setup wizard');
       await page.evaluate(() => {
         currentParish.onboarding.steps = [{ key: 'credential', passed: false }];
         renderSetupWizard();

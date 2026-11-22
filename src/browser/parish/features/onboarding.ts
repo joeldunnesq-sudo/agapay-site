@@ -716,8 +716,7 @@ function renderOnboardingSetup() {
         String(currentParish!.subscriptionStatus || '').toLowerCase() === 'active' &&
         credentialStep &&
         !credentialStep.passed;
-      renderSimpleParishSetupWizard(currentParish!.onboarding);
-      pane.innerHTML += paidTreasurerAccessNeeded
+      pane.innerHTML = paidTreasurerAccessNeeded
         ? `<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="onboarding-kicker">Paid account security</div><div class="setup-title">Treasurer access needs one final step</div><p class="setup-copy">Your giving page remains live. We sent the treasurer an individual access link now that the parish subscription is paid.</p></div><div class="setup-action-panel"><strong>Check the treasurer email</strong><p class="setup-copy setup-action-copy">The treasurer creates a personal password once. Trial setup and Go Live never require this second login.</p></div></div></div>`
         : '';
       return;

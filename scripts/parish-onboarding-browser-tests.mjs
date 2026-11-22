@@ -45,6 +45,17 @@ async function confirmations(page, checked) {
 }
 
 try {
+  await scenario(
+    'live parish keeps the completed wizard cleared after reload',
+    () => ({ parish: { ...parish, givingStatus: 'active', onboarding: { enabled: true, state: 'LIVE' } } }),
+    async (page) => {
+      assert.equal(await page.locator('#setupWizardPane').textContent(), '');
+      await page.reload();
+      await page.waitForFunction(() => document.body.classList.contains('dashboard-ready'));
+      assert.equal(await page.locator('#setupWizardPane').textContent(), '');
+      assert.equal(await page.locator('.treasurer-signoff, .parish-setup-stages').count(), 0);
+    }
+  );
   const registrationPage = await browser.newPage();
   try {
     const html = await readFile(new URL('../public/register.html', import.meta.url), 'utf8');
@@ -414,8 +425,8 @@ try {
       await confirmations(page, true);
       await goLive.click();
       await page.locator('#treasurerSignoff').waitFor({ state: 'detached' });
-      assert.ok((await page.locator('#setupWizardPane').textContent()).includes('Giving is live'));
-      assert.equal(await page.getByRole('button', { name: 'Download giving QR code', exact: true }).count(), 1);
+      assert.equal(await page.locator('#setupWizardPane').textContent(), '', 'Go Live clears the wizard immediately');
+      assert.equal(await page.locator('.setup-wizard-card').count(), 0);
       assert.equal(submissions.length, 3);
       assert.deepEqual(
         submissions.map((body) => body.snapshotVersion),
