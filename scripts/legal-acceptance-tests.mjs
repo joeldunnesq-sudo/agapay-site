@@ -82,9 +82,9 @@ const parishLogin = readFileSync(path.join(root, "public", "parish", "login.html
 assert.match(register, /id="agreeTerms"[\s\S]*id="submitBtn"[^>]*disabled/);
 assert.match(register, /target="_blank" rel="noopener noreferrer">Terms of Service/);
 assert.match(signup, /id="agreeTerms" type="checkbox" required/);
-assert.match(signup, /id="signupSubmit"[^>]*disabled/);
+assert.doesNotMatch(signup, /id="signupSubmit"[^>]*disabled/);
 assert.match(legacySignup, /id="agreeTerms" type="checkbox" required/);
-assert.match(legacySignup, /id="signupSubmit"[^>]*disabled/);
+assert.doesNotMatch(legacySignup, /id="signupSubmit"[^>]*disabled/);
 assert.doesNotMatch(accountLogin, /donorAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/);
 assert.doesNotMatch(parishLogin, /parishAgreeTerms|termsAccepted|Terms of Service|Privacy Policy/);
 

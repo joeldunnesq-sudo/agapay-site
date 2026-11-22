@@ -10,6 +10,7 @@ import { repoRoot } from './server-typescript.mjs';
 // Classic scripts retain lexical globals; explicitly marked native modules retain ESM.
 // Existing entries retain their bindings. Private support sources can opt into one isolated response.
 export const browserTypeScriptEntries = Object.freeze([
+  { source: 'src/browser/donor/signup.ts', output: 'public/donor/signup.js' },
   { source: 'src/browser/parish/settings-autosave.ts', output: 'public/parish/settings-autosave.js' },
   { source: 'src/browser/parish/accounting-journey.ts', output: 'public/parish/accounting-journey.js' },
   {
