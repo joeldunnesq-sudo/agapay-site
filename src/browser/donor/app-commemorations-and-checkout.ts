@@ -424,13 +424,15 @@ async function startDonorCheckout(event: Event) {
           .slice(0, 280)
       : '';
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 20000);
+  let timeout: number | undefined;
   if (button) {
     button.disabled = true;
     button.textContent = 'Preparing checkout…';
   }
   try {
     setDonorStatus('Preparing checkout...');
+    await window.agapayWaitForSecurity?.();
+    timeout = window.setTimeout(() => controller.abort(), 20000);
     const frequency = (document.getElementById('frequency') as HTMLInputElement | null)?.value || 'once';
     const paymentMethod = selectedDonorPaymentMethod(frequency);
     const data = await donorApi('/api/create-checkout-session', {
@@ -479,6 +481,7 @@ async function startDonorCheckout(event: Event) {
     if (data.url) window.location.href = data.url;
     else setDonorStatus(data.message || 'Checkout is not available yet.', 'error');
   } catch (err) {
+    window.agapayResetSecurity?.();
     const message = (err as DonorAppError).message || 'Unable to connect. Check your connection and try again.';
     setDonorStatus(
       controller.signal.aborted

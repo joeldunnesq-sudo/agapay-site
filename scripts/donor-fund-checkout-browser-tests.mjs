@@ -20,11 +20,19 @@ try {
     );
   });
   let checkoutFails = true;
+  let challengeFails = false;
   const checkoutBodies = [];
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
+    if (url.hostname === 'challenges.cloudflare.com') {
+      if (challengeFails) return route.abort();
+      return route.fulfill({
+        contentType: 'application/javascript',
+        body: `window.turnstile = {render(target, options) { const button = document.createElement('button'); button.type='button'; button.textContent='Verify you are human'; button.onclick=()=>options.callback('synthetic-verified-token'); target.append(button); }, reset() { window.agapayTurnstileToken=''; }};`,
+      });
+    }
     if (url.hostname !== 'fund.test')
       return route.fulfill({
         body: '',
@@ -42,7 +50,14 @@ try {
     if (url.pathname === '/synthetic-checkout')
       return route.fulfill({ contentType: 'text/html', body: '<h1>Synthetic Stripe destination</h1>' });
     if (url.pathname.startsWith('/api/'))
-      return route.fulfill({ json: url.pathname === '/api/parishes' ? { parishes: [parish] } : {} });
+      return route.fulfill({
+        json:
+          url.pathname === '/api/parishes'
+            ? { parishes: [parish] }
+            : url.pathname === '/api/security/config'
+              ? { turnstileEnabled: true, turnstileSiteKey: 'synthetic-key' }
+              : {},
+      });
     const path = url.pathname === '/myagapay/giving/give' ? '/myagapay/giving/give.html' : url.pathname;
     try {
       return route.fulfill({
@@ -71,6 +86,9 @@ try {
   await page.waitForFunction(() => document.body.classList.contains('quick-give-mode'));
   const checkout = page.getByRole('button', { name: 'Continue to AGAPAY checkout', exact: true });
   await checkout.click();
+  await page.getByText('Complete “Verify you are human” above. Your checkout will continue automatically.').waitFor();
+  assert.equal(checkoutBodies.length, 0, 'checkout must wait for verification instead of posting an empty token');
+  await page.getByRole('button', { name: 'Verify you are human', exact: true }).click();
   await page.locator('#donorCheckoutStatus').filter({ hasText: 'security challenge' }).waitFor();
   assert.equal(await checkout.isEnabled(), true);
   assert.equal(checkoutBodies[0].giftType, 'stewardship');
@@ -78,8 +96,16 @@ try {
   assert.equal(await page.locator('#donorCheckoutStatus').isVisible(), true);
   checkoutFails = false;
   await checkout.click();
+  await page.getByRole('button', { name: 'Verify you are human', exact: true }).click();
   await page.waitForURL('https://fund.test/synthetic-checkout');
   assert.equal(checkoutBodies.length, 2);
+  assert.equal(checkoutBodies[1].turnstileToken, 'synthetic-verified-token');
+  challengeFails = true;
+  await page.goto('https://fund.test/myagapay/giving/give?parish=synthetic-parish&giftType=stewardship&quick=1');
+  await page.getByText('The security check could not load.', { exact: false }).waitFor();
+  await page.getByRole('button', { name: 'Continue to AGAPAY checkout', exact: true }).click();
+  await page.locator('#donorCheckoutStatus').filter({ hasText: 'security challenge' }).waitFor();
+  assert.equal(checkoutBodies.length, 2, 'blocked challenge must not send a checkout request');
   assert.deepEqual(errors, []);
   console.log(
     'PASS - designated fund Donate opens the donation form with its fund selected and no repeated fund picker'

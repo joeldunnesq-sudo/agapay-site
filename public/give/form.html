@@ -1563,6 +1563,7 @@ body {
       submitBtn.textContent = 'Preparing secure checkout...';
 
       try {
+        await window.agapayWaitForSecurity?.();
         const festalDestinationId = selectedFestalCampaign?.destinationFundId || 'benevolence-fund';
         const festalDestination = selectedType === 'feast'
           ? (Array.isArray(currentParish?.funds) ? currentParish.funds : []).find((fund) =>
@@ -1613,6 +1614,7 @@ body {
         document.getElementById('successState').classList.add('visible');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
+        window.agapayResetSecurity?.();
         alert(`Checkout error: ${err.message}. Please try again or contact support@agapay.app.`);
         console.error('AGAPAY checkout error:', err);
       } finally {
@@ -1630,7 +1632,7 @@ body {
 
     initGivingPage();
   </script>
-  <script src="/security.js?v=30ead0682b18701b" defer></script>
+  <script src="/security.js?v=75eba12e9a4d5837" defer></script>
 
 </body>
 </html>
