@@ -1,4 +1,5 @@
 'use strict';
+/* global saveDashboard */
 declare function saveDashboard(button?: HTMLButtonElement | null, givingOnly?: boolean): Promise<boolean | undefined>;
 
 declare let editableCampaigns: ParishGivingOption[];

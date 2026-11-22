@@ -698,6 +698,7 @@ export default [
     files: ['public/parish/features/giving/options.js'],
     languageOptions: {
       globals: {
+        saveDashboard: 'readonly',
         escapeHtml: 'readonly',
         escapeAttr: 'readonly',
         restrictionLabel: 'readonly',

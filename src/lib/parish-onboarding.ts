@@ -735,6 +735,12 @@ export function validateTreasurerGoLiveInput(
   return { ok: errors.length === 0, errors, missingAffirmations, signerName, signerTitle, signerEmail, affirmations };
 }
 
+function withoutFundDisplayCopy(registration: OnboardingRegistration): OnboardingRegistration {
+  return {
+    ...registration,
+    funds: registration.funds?.map((fund) => (fund.id ? { ...fund, name: '', description: '' } : fund)),
+  };
+}
 export function invalidateOnboardingSignoffIfChanged<T extends OnboardingRegistration>(
   previous: OnboardingRegistration,
   next: T,
@@ -747,12 +753,6 @@ export function invalidateOnboardingSignoffIfChanged(
   next?: OnboardingRegistration,
   options?: OnboardingOptions
 ): Promise<OnboardingRegistration>;
-function withoutFundDisplayCopy(registration: OnboardingRegistration): OnboardingRegistration {
-  return {
-    ...registration,
-    funds: registration.funds?.map((fund) => (fund.id ? { ...fund, name: '', description: '' } : fund)),
-  };
-}
 export async function invalidateOnboardingSignoffIfChanged(
   previous: OnboardingRegistration = {},
   next: OnboardingRegistration = {},
