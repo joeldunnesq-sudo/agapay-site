@@ -17,7 +17,7 @@
   <script src="/donor/controllers/calendar.js?v=2edc15b643149352" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0563aa47128c1c3b" defer></script>
-  <script src="/donor/app.js?v=08fa209512fcaf95" defer></script>
+  <script src="/donor/app.js?v=bc326ede7997f41d" defer></script>
   <script src="/donor/pwa-install.js?v=7702a89df6bc6199" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
@@ -161,6 +161,7 @@
               <p class="form-help">This uses the live AGAPAY checkout API and records the gift under your donor account.</p>
               <div data-agapay-turnstile class="section-gap"></div>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AGAPAY checkout</button></div>
+              <div id="donorCheckoutStatus" class="notice" role="status" aria-live="polite" style="display:none;margin-top:1rem;"></div>
             </form>
           </div>
         </section>

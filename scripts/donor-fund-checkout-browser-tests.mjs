@@ -19,6 +19,8 @@ try {
       JSON.stringify({ email: 'synthetic@example.test', defaultParishId: 'synthetic-parish' })
     );
   });
+  let checkoutFails = true;
+  const checkoutBodies = [];
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.route('**/*', async (route) => {
@@ -28,6 +30,17 @@ try {
         body: '',
         contentType: url.hostname.includes('fonts') ? 'text/css' : 'application/javascript',
       });
+    if (url.pathname === '/api/create-checkout-session') {
+      checkoutBodies.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: checkoutFails ? 403 : 200,
+        json: checkoutFails
+          ? { error: 'Security check is required. Please refresh and try again.' }
+          : { url: 'https://fund.test/synthetic-checkout' },
+      });
+    }
+    if (url.pathname === '/synthetic-checkout')
+      return route.fulfill({ contentType: 'text/html', body: '<h1>Synthetic Stripe destination</h1>' });
     if (url.pathname.startsWith('/api/'))
       return route.fulfill({ json: url.pathname === '/api/parishes' ? { parishes: [parish] } : {} });
     const path = url.pathname === '/myagapay/giving/give' ? '/myagapay/giving/give.html' : url.pathname;
@@ -54,6 +67,19 @@ try {
   assert.equal(await page.locator('#fundFields').isVisible(), false);
   assert.match(await page.locator('#quickGiveContext').textContent(), /Building Fund/);
   assert.equal(await page.locator('#amount').isVisible(), true);
+  await page.goto('https://fund.test/myagapay/giving/give?parish=synthetic-parish&giftType=stewardship&quick=1');
+  await page.waitForFunction(() => document.body.classList.contains('quick-give-mode'));
+  const checkout = page.getByRole('button', { name: 'Continue to AGAPAY checkout', exact: true });
+  await checkout.click();
+  await page.locator('#donorCheckoutStatus').filter({ hasText: 'security challenge' }).waitFor();
+  assert.equal(await checkout.isEnabled(), true);
+  assert.equal(checkoutBodies[0].giftType, 'stewardship');
+  assert.equal(checkoutBodies[0].parishId, 'synthetic-parish');
+  assert.equal(await page.locator('#donorCheckoutStatus').isVisible(), true);
+  checkoutFails = false;
+  await checkout.click();
+  await page.waitForURL('https://fund.test/synthetic-checkout');
+  assert.equal(checkoutBodies.length, 2);
   assert.deepEqual(errors, []);
   console.log(
     'PASS - designated fund Donate opens the donation form with its fund selected and no repeated fund picker'

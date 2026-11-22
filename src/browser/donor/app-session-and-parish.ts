@@ -49,7 +49,7 @@ async function refreshStaleDashboardShell() {
 }
 
 function setDonorStatus(message: string | undefined, tone: string = 'info') {
-  ['donorStatus', 'desktopDonorStatus'].forEach((id) => {
+  ['donorStatus', 'desktopDonorStatus', 'donorCheckoutStatus'].forEach((id) => {
     const el = document.getElementById(id) as DonorStatusElement | null;
     if (!el) return;
     const isBookstoreToast = id === 'donorStatus' && document.body?.classList.contains('donor-bookstore-page');
@@ -83,6 +83,7 @@ function setDonorStatus(message: string | undefined, tone: string = 'info') {
     el.textContent = message || '';
     el.className = message ? `notice ${tone}` : 'notice';
     el.style.display = message ? 'block' : 'none';
+    if (id === 'donorCheckoutStatus' && message) el.scrollIntoView({ block: 'nearest' });
   });
 }
 
