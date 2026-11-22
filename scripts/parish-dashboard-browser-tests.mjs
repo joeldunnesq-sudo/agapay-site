@@ -154,6 +154,11 @@ try {
           'Finish connecting Stripe',
           'Check Stripe status',
         ],
+        [
+          { blockers: [{ key: 'stripeReady' }], stripe: { connected: true, verificationPending: true } },
+          'Stripe setup is complete',
+          'Check Stripe status',
+        ],
         [{ blockers: [{ key: 'givingConfiguration' }] }, 'Review the giving setup', 'Review giving setup'],
         [{ blockers: [{ key: 'internal' }] }, 'Next step: AGAPAY review', 'Check for updates'],
         [{ blockers: [], canGoLive: true }, 'Review and launch', 'Go Live'],
@@ -167,6 +172,12 @@ try {
         assert.equal(await pane.locator('.parish-setup-stage').count(), 3);
         if (button) assert.equal(await pane.getByRole('button', { name: button, exact: true }).count(), 1);
         assert.equal(await pane.locator('#treasurerSignoff').count(), changes.canGoLive ? 1 : 0);
+        if (changes.stripe?.verificationPending) {
+          assert.ok((await pane.textContent()).includes('Verification is pending'));
+          assert.equal(await pane.getByRole('button', { name: 'Continue Stripe setup', exact: true }).count(), 0);
+          assert.ok(!(await pane.textContent()).includes('Finish connecting Stripe'));
+          assert.equal(await pane.getByRole('button', { name: 'Go Live', exact: true }).count(), 0);
+        }
       }
       assert.equal(await pane.locator('.treasurer-affirmation').count(), 8);
       await page.evaluate(() => {

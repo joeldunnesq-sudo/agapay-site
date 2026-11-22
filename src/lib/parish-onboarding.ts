@@ -306,6 +306,12 @@ function stripeReadiness(registration: OnboardingRegistration = {}, now = Date.n
     connected: Boolean(text(registration.stripeAccountId, 255)),
     chargesEnabled: registration.stripeChargesEnabled === true,
     payoutsEnabled: registration.stripePayoutsEnabled === true,
+    verificationPending: Boolean(
+      text(registration.stripeAccountId, 255) &&
+      registration.stripeDetailsSubmitted === true &&
+      requirements.length === 0 &&
+      registration.stripeDisabledReason === 'requirements.pending_verification'
+    ),
     detailsSubmitted: registration.stripeDetailsSubmitted === true,
     noDisabledReason: !text(registration.stripeDisabledReason, 500),
     noRequirementsDue: requirements.length === 0,
@@ -680,7 +686,9 @@ export async function buildParishOnboardingWorkflow(
         detail:
           stripe.ready && subscriptionReady(registration)
             ? 'Your plan and Stripe account are ready.'
-            : 'Choose your plan and connect the parish Stripe account.',
+            : stripe.verificationPending
+              ? 'Stripe setup is complete. Verification is pending.'
+              : 'Choose your plan and connect the parish Stripe account.',
         passed: stripe.ready && subscriptionReady(registration),
       },
       {
