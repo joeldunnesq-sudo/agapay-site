@@ -121,6 +121,29 @@ try {
   });
   assert.equal(saved.taxLegalName, before.taxLegalName);
   assert.deepEqual(saved.funds, before.funds);
+  const julian = await fixture({ liturgicalCalendar: 'julian' });
+  assert.equal(
+    (
+      await julian.call('PATCH', {
+        patronalFeastName: 'Custom saint',
+        patronalFeastChurchDate: '11-25',
+        patronalFeastDate: '11-25',
+      })
+    ).status,
+    200
+  );
+  assert.equal(
+    (await julian.saved()).patronalFeastDate,
+    '12-08',
+    'server computes civil date rather than trusting the client'
+  );
+  assert.equal((await julian.saved()).patronalFeastChurchDate, '11-25');
+  assert.equal((await (await julian.call()).json()).parish.patronalFeastChurchDate, '11-25');
+  const validFeast = await julian.saved();
+  assert.equal((await julian.call('PATCH', { patronalFeastChurchDate: '02-30' })).status, 422);
+  assert.deepEqual(await julian.saved(), validFeast);
+  assert.equal((await julian.call('PATCH', { liturgicalCalendar: 'gregorian' })).status, 200);
+  assert.equal((await julian.saved()).patronalFeastDate, '11-25');
   const calendarBefore = await f.saved();
   assert.equal((await f.call('PATCH', { koinoniaCalendarUrl: 'http://127.0.0.1/private' })).status, 422);
   assert.deepEqual(await f.saved(), calendarBefore);

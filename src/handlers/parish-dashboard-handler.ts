@@ -1,3 +1,4 @@
+import { churchFeastDateForYear } from '../liturgical-calendar.js';
 import type { StripeCharge } from '../lib/stripe-connect.js';
 import type { OnboardingRegistration, OnboardingFund } from '../lib/parish-onboarding.js';
 import type { CatalogRegistration, CatalogCampaign } from './parish-giving-catalog.js';
@@ -12,6 +13,7 @@ export interface SacramentPriestInput {
   customServices?: unknown;
 }
 export interface DashboardRegistration extends OnboardingRegistration, CatalogRegistration {
+  patronalFeastChurchDate?: string;
   parishDashboardSessions?: unknown[];
   parishDashboardPasswordSalt?: string;
   parishDashboardPasswordHash?: string;
@@ -223,7 +225,14 @@ export function parishDashboardPayload(parishId: string, registration: Dashboard
     koinoniaCalendarUrl: registration.koinoniaCalendarUrl || '',
     patronalFeast: registration.patronalFeast || '',
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || '',
-    patronalFeastDate: registration.patronalFeastDate || registration.parishPatronalFeastDate || '',
+    patronalFeastChurchDate: registration.patronalFeastChurchDate || '',
+    patronalFeastDate: registration.patronalFeastChurchDate
+      ? churchFeastDateForYear(
+          registration.patronalFeastChurchDate,
+          new Date().getFullYear(),
+          registration.liturgicalCalendar || 'julian'
+        ).slice(-5)
+      : registration.patronalFeastDate || registration.parishPatronalFeastDate || '',
     givingStatus: registration.givingStatus || 'active',
     stripeAccountId: registration.stripeAccountId || '',
     stripeAccountStatus: registration.stripeAccountStatus || 'not_started',
@@ -483,6 +492,16 @@ export async function handleParishDashboard(request: Request, env: DashboardEnv,
       const limitError = starterFundCatalogError(body.funds);
       if (limitError) return json({ error: limitError }, { status: 422 });
     }
+    const churchDate = String(body.patronalFeastChurchDate ?? current.patronalFeastChurchDate ?? '').trim();
+    if (
+      churchDate &&
+      !churchFeastDateForYear(
+        churchDate,
+        new Date().getFullYear(),
+        body.liturgicalCalendar || current.liturgicalCalendar || 'julian'
+      )
+    )
+      return json({ error: 'Select a valid patronal feast date.' }, { status: 422 });
     const requestedPassword =
       body.newDashboardPassword !== undefined ? String(body.newDashboardPassword || '').trim() : '';
     if (requestedPassword && requestedPassword.length < 8) {
@@ -548,7 +567,17 @@ export async function handleParishDashboard(request: Request, env: DashboardEnv,
       )
         .trim()
         .slice(0, 160),
+      patronalFeastChurchDate: String(body.patronalFeastChurchDate ?? current.patronalFeastChurchDate ?? '')
+        .trim()
+        .slice(-5),
       patronalFeastDate: (() => {
+        const churchDate = String(body.patronalFeastChurchDate ?? current.patronalFeastChurchDate ?? '').trim();
+        if (churchDate)
+          return churchFeastDateForYear(
+            churchDate,
+            new Date().getFullYear(),
+            body.liturgicalCalendar || current.liturgicalCalendar || 'julian'
+          ).slice(-5);
         const value = String(
           body.patronalFeastDate ?? current.patronalFeastDate ?? current.parishPatronalFeastDate ?? ''
         ).trim();

@@ -2186,7 +2186,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(uploadParishLogo|removeParishLogo|formatSacramentPriestsForSettings|parseSacramentPriestsFromSettings|saveDashboard|copyPayload|startStripeOnboarding|startSubscriptionCheckout|loadStripeVolume|copyNonprofitPricingStatement|saveNonprofitPricingAttestation|uploadNonprofitPricingDocument|markNonprofitPricingSubmitted|recordNonprofitPricingDecision|viewNonprofitPricingDocument)$',
+            '^(uploadParishLogo|removeParishLogo|formatSacramentPriestsForSettings|parseSacramentPriestsFromSettings|saveDashboard|copyPayload|startStripeOnboarding|startSubscriptionCheckout|reviewSubscriptionUpgrade|loadStripeVolume|copyNonprofitPricingStatement|saveNonprofitPricingAttestation|uploadNonprofitPricingDocument|markNonprofitPricingSubmitted|recordNonprofitPricingDecision|viewNonprofitPricingDocument)$',
         },
       ],
     },

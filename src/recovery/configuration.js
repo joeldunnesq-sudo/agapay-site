@@ -2,7 +2,7 @@
 import { rawStorageEnv } from '../portability/storage.js';
 import { sha256 } from '../portability/archive.js';
 const CONFIG_FIELDS =
-  'parishName addressLine1 addressLine2 city state postalCode country website taxLegalName taxEin timezone liturgicalCalendar koinoniaCalendarUrl patronalFeast patronalFeastName patronalFeastDate givingStatus recurringGivingEnabled candlesEnabled commemorationsEnabled communicationsEnabled signupsEnabled exchangeEnabled prayerRequestsEnabled sacramentsEnabled sacramentPriests bookstoreEnabled eventsEnabled mealsEnabled funds campaigns feastCampaigns'.split(
+  'parishName addressLine1 addressLine2 city state postalCode country website taxLegalName taxEin timezone liturgicalCalendar koinoniaCalendarUrl patronalFeast patronalFeastName patronalFeastDate patronalFeastChurchDate givingStatus recurringGivingEnabled candlesEnabled commemorationsEnabled communicationsEnabled signupsEnabled exchangeEnabled prayerRequestsEnabled sacramentsEnabled sacramentPriests bookstoreEnabled eventsEnabled mealsEnabled funds campaigns feastCampaigns'.split(
     ' '
   );
 function configuration(data) {

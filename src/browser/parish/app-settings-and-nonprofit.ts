@@ -204,6 +204,16 @@ async function startStripeOnboarding(btn?: HTMLButtonElement | null) {
   }
 }
 
+function reviewSubscriptionUpgrade() {
+  switchTab('settings');
+  const tier = document.getElementById('subscriptionTierUpgrade') as HTMLSelectElement | null;
+  if (!tier) return;
+  tier.value = 'giving';
+  tier.dispatchEvent(new Event('change', { bubbles: true }));
+  tier.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  tier.focus({ preventScroll: true });
+}
+
 // ── SUBSCRIPTION CHECKOUT ─────────────────────────────────
 async function startSubscriptionCheckout(btn?: HTMLButtonElement | null, tierSelectId?: string) {
   if (!currentParish) return;
@@ -639,6 +649,7 @@ export type ParishAppPart4 = {
   copyPayload: typeof copyPayload;
   startStripeOnboarding: typeof startStripeOnboarding;
   startSubscriptionCheckout: typeof startSubscriptionCheckout;
+  reviewSubscriptionUpgrade: typeof reviewSubscriptionUpgrade;
   loadStripeVolume: typeof loadStripeVolume;
   renderStripeVolume: typeof renderStripeVolume;
   nonprofitPricingFetch: typeof nonprofitPricingFetch;
