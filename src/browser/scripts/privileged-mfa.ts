@@ -38,6 +38,35 @@ import type {} from '../native-contracts.js';
   let activeFlow: ActiveMfaFlow | null = null;
   let stepUpPromise: Promise<MfaPayload> | null = null;
 
+  type QrEncoder = (
+    version: number,
+    level: string
+  ) => {
+    addData(data: string, mode: string): void;
+    make(): void;
+    createSvgTag(options: { cellSize: number; margin: number; scalable: boolean }): string;
+  };
+  let qrEncoderPromise: Promise<QrEncoder> | null = null;
+
+  function loadQrEncoder() {
+    if (!qrEncoderPromise) {
+      qrEncoderPromise = new Promise<QrEncoder>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = '/vendor/qrcode.js?v=1.4.4';
+        script.onload = () => resolve((window as unknown as { qrcode: QrEncoder }).qrcode);
+        script.onerror = () => {
+          script.remove();
+          reject(new Error('QR code unavailable'));
+        };
+        document.head.appendChild(script);
+      }).catch((error) => {
+        qrEncoderPromise = null;
+        throw error;
+      });
+    }
+    return qrEncoderPromise;
+  }
+
   function b64urlToBytes(value: unknown) {
     const normalized = String(value || '')
       .replace(/-/g, '+')
@@ -260,8 +289,10 @@ import type {} from '../native-contracts.js';
     if (activeFlow !== flow) return;
     setBody(`<div class="agapay-mfa-eyebrow">Authenticator app</div>
       <h2 id="agapayMfaTitle">Add AGAPAY to your app</h2>
-      <p>Open your authenticator app, add an account, and enter this setup key. On a phone, the button may open your authenticator automatically.</p>
-      <div class="agapay-mfa-secret"><span>Setup key</span><strong>${started.secret}</strong><button type="button" id="agapayMfaCopySecret">Copy</button></div>
+      <p>Open your authenticator app, add an account, and scan this QR code. Then enter the six-digit code from your app below.</p>
+      <div id="agapayMfaQr" class="agapay-mfa-qr" role="img" aria-label="Scan to add AGAPAY to your authenticator app">Preparing QR code…</div>
+      <details class="agapay-mfa-manual"><summary>Can’t scan? Enter a setup key instead</summary>
+      <div class="agapay-mfa-secret"><span>Setup key</span><strong>${started.secret}</strong><button type="button" id="agapayMfaCopySecret">Copy</button></div></details>
       <a class="agapay-mfa-link" href="${started.otpauthUri}">Open authenticator app</a>
       <form id="agapayMfaCodeForm"><label>Six-digit code<input id="agapayMfaCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus></label><button class="agapay-mfa-primary" type="submit">Verify and continue</button></form>
       <button type="button" class="agapay-mfa-back" id="agapayMfaBack">Choose another method</button>
@@ -277,6 +308,19 @@ import type {} from '../native-contracts.js';
       back.onclick = cancelFlow;
     }
     (document.getElementById('agapayMfaCodeForm') as HTMLElement).onsubmit = (event) => submitCode(event, 'totp', true);
+    const qrTarget = document.getElementById('agapayMfaQr')!;
+    try {
+      const createQr = await loadQrEncoder();
+      const qr = createQr(0, 'M');
+      qr.addData(started.otpauthUri!, 'Byte');
+      qr.make();
+      qrTarget.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 16, scalable: true });
+    } catch {
+      qrTarget.removeAttribute('role');
+      qrTarget.removeAttribute('aria-label');
+      qrTarget.textContent = 'QR code unavailable. Use the setup key or open your authenticator app below.';
+      (qrTarget.nextElementSibling as HTMLDetailsElement).open = true;
+    }
   }
 
   function renderCodeEntry(method: string) {
