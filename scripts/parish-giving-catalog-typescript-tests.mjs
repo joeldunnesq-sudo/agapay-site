@@ -9,7 +9,11 @@ const element = (id) => {
 const statuses = [];
 let plus = true;
 const context = vm.createContext({
-  document: { getElementById: element },
+  document: { getElementById: element, createElement: () => ({ dataset: {}, setAttribute() {} }) },
+  saveDashboard: async (_button, givingOnly) => {
+    assert.equal(givingOnly, true);
+    return true;
+  },
   window: {},
   currentParish: { parishId: 'p', liturgicalCalendar: 'julian' },
   editableFunds: [
@@ -98,6 +102,8 @@ assert.equal(context.editableFunds.at(-1).id, 'building');
 assert.equal(context.editableFunds.at(-1).fundType, 'custom');
 assert.equal(element('fundName').value, '');
 const form = {
+  querySelector: () => null,
+  append() {},
   elements: {
     name: { value: 'Renamed' },
     description: { value: 'New description' },
@@ -105,13 +111,13 @@ const form = {
     restrictionType: { value: 'invalid' },
   },
 };
-context.updateGivingOption({ preventDefault() {}, currentTarget: form }, 'fund', 2);
+await context.updateGivingOption({ preventDefault() {}, currentTarget: form }, 'fund', 2);
 assert.equal(context.editableFunds[2].id, 'building');
 assert.equal(context.editableFunds[2].name, 'Renamed');
 assert.equal(context.editableFunds[2].accountNumber, 'A12');
 assert.equal(context.editableFunds[2].restrictionType, 'unrestricted');
 form.elements.name.value = 'General';
-context.updateGivingOption({ preventDefault() {}, currentTarget: form }, 'fund', 2);
+await context.updateGivingOption({ preventDefault() {}, currentTarget: form }, 'fund', 2);
 assert.equal(context.editableFunds[2].name, 'Renamed');
 element('campaignName').value = 'Help';
 element('campaignGoal').value = '10.50';
