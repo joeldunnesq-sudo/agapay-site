@@ -115,7 +115,7 @@ function optionCards(items, kind, emptyText) {
             </label>
             <label class="full">Description<textarea name="description" maxlength="500">${escapeHtml(item.description || '')}</textarea></label>
             <div class="option-edit-actions">
-              <button class="btn btn-primary btn-sm" type="submit">Apply changes</button>
+              <button class="btn btn-primary btn-sm" type="submit">${kind === 'fund' ? 'Save fund' : 'Save campaign'}</button>
               <button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('${kind}',${i})">Cancel</button>
               <small>The fund ID stays unchanged so prior gifts remain linked correctly.</small>
             </div>
@@ -246,7 +246,7 @@ function renderOptionsProgressSummary() {
             </label>
             <label class="full">Description<textarea name="description" maxlength="500">${escapeHtml(row.item.description || '')}</textarea></label>
             <div class="option-edit-actions">
-              <button class="btn btn-primary btn-sm" type="submit">Apply changes</button>
+              <button class="btn btn-primary btn-sm" type="submit">Save fund</button>
               <button class="btn btn-ghost btn-sm" type="button" onclick="editGivingOption('fund',${row.index})">Cancel</button>
               <small>The fund ID stays unchanged so prior gifts remain linked correctly.</small>
             </div>
@@ -325,7 +325,7 @@ function editGivingOption(kind, i) {
     editingGivingOption?.kind === kind && editingGivingOption?.index === i ? null : { kind, index: i };
   renderGivingOptionsEditor();
 }
-function updateGivingOption(event, kind, i) {
+async function updateGivingOption(event, kind, i) {
   event.preventDefault();
   const target = kind === 'fund' ? editableFunds : editableCampaigns;
   const current = target[i];
@@ -369,9 +369,24 @@ function updateGivingOption(event, kind, i) {
       ? requestedRestriction
       : current.restrictionType || 'unrestricted',
   };
-  editingGivingOption = null;
-  renderGivingOptionsEditor();
-  setStatus(`${kind === 'fund' ? 'Fund' : 'Campaign'} updated. Save giving options to publish the change.`, 'success');
+  const button = form.querySelector('button[type="submit"]');
+  if (button?.disabled) return;
+  let status = form.querySelector('[data-fund-save-status]');
+  if (!status) {
+    status = document.createElement('p');
+    status.dataset.fundSaveStatus = '';
+    status.setAttribute('role', 'status');
+    form.append(status);
+  }
+  status.textContent = 'Saving…';
+  try {
+    await saveDashboard(button, true);
+    editingGivingOption = null;
+    renderGivingOptionsEditor();
+    setStatus(kind === 'fund' ? 'Fund saved.' : 'Campaign saved.', 'success');
+  } catch (error) {
+    status.textContent = error.message + ' Your changes are still here. Try Save again.';
+  }
 }
 function removeGivingOption(kind, i) {
   if (kind === 'fund') editableFunds.splice(i, 1);
@@ -387,5 +402,5 @@ function renderGivingOptionsEditor() {
       ${renderOptionsProgressSummary()}
       <div class="giving-options-intro">${hasGivingPlusAccess() ? 'These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.' : 'Give includes <strong>General Operating</strong>, <strong>unlimited designated funds</strong>, and <strong>Candles</strong>.'}</div>
       ${hasGivingPlusAccess() ? `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns, 'campaign', 'No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignAccountNumber" maxlength="24" placeholder="Account number, e.g. 2200" /><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><select id="campaignRestriction"><option value="donor_restricted_temporary">Donor restricted · temporary</option><option value="donor_restricted_permanent">Donor restricted · permanent</option><option value="board_designated">Board designated</option><option value="unrestricted">Unrestricted</option></select><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>${renderFeastCampaignSetup()}` : `<aside class="starter-tier-upgrade-card"><div><span class="starter-tier-paywall-badge">Give +</span><strong>Ready for campaigns and parish life?</strong><p>Give includes unlimited funds, candles, commemorations, giver records, and CSV export. Give + adds campaigns, festal alms, branding, statements, enhanced reporting, and connected parish life.</p></div><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Compare plans</button></aside>`}
-      <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
+      <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this,true).catch(() => {})">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
 }

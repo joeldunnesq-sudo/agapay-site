@@ -250,6 +250,7 @@ const productUi = [
   'scripts/parish-dashboard-browser-tests.mjs',
   'scripts/parish-first-login-browser-tests.mjs',
   'scripts/donor-signup-browser-tests.mjs',
+  'scripts/donor-fund-checkout-browser-tests.mjs',
   'scripts/parish-settings-autosave-browser-tests.mjs',
   'scripts/parish-onboarding-browser-tests.mjs',
   'scripts/parish-campaign-browser-tests.mjs',

@@ -536,6 +536,11 @@ export async function buildParishOnboardingWorkflow(
   const paidSubscription =
     text(registration.subscriptionStatus, 80).toLowerCase() === 'active' &&
     Boolean(registration.goLiveAt || registration.treasurerSignoff?.signedAt);
+  const reapprovalPending =
+    registration.givingStatus === 'paused' &&
+    registration.onboardingState === 'CONFIGURING' &&
+    registration.treasurerSignoff?.status === 'invalidated' &&
+    Boolean(registration.treasurerSignoff?.signedAt);
   const workflowSteps = [
     step(
       'registration',
@@ -547,7 +552,7 @@ export async function buildParishOnboardingWorkflow(
     step(
       'verifiedHidden',
       'Organization verified and hidden',
-      registration.status === 'verified' && registration.givingStatus === 'hidden',
+      registration.status === 'verified' && (registration.givingStatus === 'hidden' || reapprovalPending),
       registration.status === 'verified'
         ? `Giving status: ${registration.givingStatus || 'hidden'}.`
         : 'Verify the organization in AGAPAY Admin.'
@@ -634,7 +639,7 @@ export async function buildParishOnboardingWorkflow(
   const blockers = workflowSteps
     .filter((item) => !item.passed && !(lifecycleComplete && item.key === 'verifiedHidden'))
     .map((item) => ({ key: item.key, title: item.title, detail: item.detail }));
-  if (registration.givingStatus !== 'hidden' && !lifecycleComplete) {
+  if (registration.givingStatus !== 'hidden' && !reapprovalPending && !lifecycleComplete) {
     blockers.push({
       key: 'givingHidden',
       title: 'Giving page hidden until signoff',
@@ -644,7 +649,7 @@ export async function buildParishOnboardingWorkflow(
   const canGoLive =
     onboardingWorkflowEnabled(registration) &&
     state !== 'LIVE' &&
-    registration.givingStatus === 'hidden' &&
+    (registration.givingStatus === 'hidden' || reapprovalPending) &&
     blockers.length === 0;
 
   return {
@@ -742,6 +747,12 @@ export function invalidateOnboardingSignoffIfChanged(
   next?: OnboardingRegistration,
   options?: OnboardingOptions
 ): Promise<OnboardingRegistration>;
+function withoutFundDisplayCopy(registration: OnboardingRegistration): OnboardingRegistration {
+  return {
+    ...registration,
+    funds: registration.funds?.map((fund) => (fund.id ? { ...fund, name: '', description: '' } : fund)),
+  };
+}
 export async function invalidateOnboardingSignoffIfChanged(
   previous: OnboardingRegistration = {},
   next: OnboardingRegistration = {},
@@ -769,6 +780,21 @@ export async function invalidateOnboardingSignoffIfChanged(
         snapshotVersion: nextVersion,
         publicNameUpdatedAt: new Date().toISOString(),
         publicNameUpdatedBy: text(options.actor || 'parish', 160),
+      },
+    };
+  }
+  const [previousFundConfiguration, nextFundConfiguration] = await Promise.all([
+    onboardingMaterialVersion(withoutFundDisplayCopy(previous), options),
+    onboardingMaterialVersion(withoutFundDisplayCopy(next), options),
+  ]);
+  if (previousFundConfiguration === nextFundConfiguration) {
+    return {
+      ...next,
+      treasurerSignoff: {
+        ...previous.treasurerSignoff,
+        snapshotVersion: nextVersion,
+        fundDisplayUpdatedAt: new Date().toISOString(),
+        fundDisplayUpdatedBy: text(options.actor || 'parish', 160),
       },
     };
   }

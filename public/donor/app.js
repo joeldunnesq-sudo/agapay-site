@@ -842,7 +842,7 @@ function renderActiveFunds(parish, { confirmed = false } = {}) {
     .map((fund) => {
       const label = fundLabel(fund);
       const description = fund.description || fund.note || 'Give directly to this parish fund.';
-      const link = donorGiftUrl('fund', parish, { fund: fund.id || fund.name || label });
+      const link = quickDonorGiftUrl('fund', parish, { fund: fund.id || fund.name || label });
       return `
       <article class="active-funds-card">
         <div>
@@ -946,7 +946,13 @@ function applyDonorGiveParams() {
   setText('giftDetailsTitle', copy.detailsTitle);
   const context = document.getElementById('quickGiveContext');
   if (context) {
-    context.textContent = copy.context;
+    const selectedFund = document.getElementById('fund');
+    const chosenFund = giftType === 'fund' && params.get('fund') && selectedFund?.value === params.get('fund');
+    context.textContent = chosenFund
+      ? 'Your gift to ' + selectedFund.selectedOptions[0].textContent + '.'
+      : copy.context;
+    const fundFields = document.getElementById('fundFields');
+    if (chosenFund && fundFields) fundFields.hidden = true;
     context.hidden = false;
   }
   const giftTypeField = document.getElementById('giftTypeField');
