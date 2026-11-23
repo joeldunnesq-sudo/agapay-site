@@ -252,6 +252,7 @@ const productUi = [
   'scripts/donor-signup-browser-tests.mjs',
   'scripts/donor-fund-checkout-browser-tests.mjs',
   'scripts/parish-settings-autosave-browser-tests.mjs',
+  'scripts/koinonia-workspace-browser-tests.mjs',
   'scripts/parish-onboarding-browser-tests.mjs',
   'scripts/parish-campaign-browser-tests.mjs',
   'scripts/campaign-embed-browser-tests.mjs',

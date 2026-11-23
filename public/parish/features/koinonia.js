@@ -55,6 +55,8 @@ function contentCategoryLabel(category) {
 function setKoinoniaStudioView(view = 'overview') {
   const allowed = /* @__PURE__ */ new Set([
     'overview',
+    'content',
+    'connections',
     'bulletins',
     'announcements',
     'audio',
@@ -68,11 +70,15 @@ function setKoinoniaStudioView(view = 'overview') {
     panel.hidden = panel.dataset.koinoniaPanel !== koinoniaStudioView;
   });
   document.querySelectorAll('[data-koinonia-view]').forEach((button) => {
-    const active = button.dataset.koinoniaView === koinoniaStudioView;
+    const active =
+      button.dataset.koinoniaView === koinoniaStudioView ||
+      (button.dataset.koinoniaView === 'content' &&
+        ['announcements', 'audio', 'video', 'news'].includes(koinoniaStudioView));
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-current', active ? 'page' : 'false');
   });
   if (koinoniaStudioView === 'overview') renderKoinoniaOverview();
+  if (koinoniaStudioView === 'content') renderKoinoniaContentLibrary();
   if (koinoniaStudioView === 'bulletins') void loadBulletins();
   if (koinoniaStudioView === 'ministries') loadKoinoniaMinistries();
   if (koinoniaStudioView === 'prayers') loadParishPrayerRequests();

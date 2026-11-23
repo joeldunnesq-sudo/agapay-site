@@ -6,6 +6,7 @@ import type {
   ParishAppStewardshipFeature,
 } from './app-contracts.js';
 import type { ParishAppBindings } from './app.js';
+declare const selectParishSettings: ParishAppBindings['selectParishSettings'];
 
 // Match Boolean filtering while exposing its non-null result to TypeScript.
 function truthyParishSession<T>(value: T | null | undefined | false): value is NonNullable<T> {
@@ -241,6 +242,7 @@ async function dismissParishFeatureRequest(viewStewardship: boolean = false) {
     else dialog?.removeAttribute('open');
     if (viewStewardship) {
       switchTab('settings');
+      selectParishSettings('billing');
       (document.getElementById('subscriptionTierUpgrade') as HTMLSelectElement | null)?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',

@@ -52,12 +52,15 @@ try {
     async (fixture) => {
       await fixture.open();
       await fixture.page.locator('#nav-settings').click();
+      assert.equal(await fixture.page.locator('#settings-profile').isVisible(), true);
       await fixture.page.getByRole('button', { name: 'Upgrade to Give +', exact: true }).click();
+      assert.equal(await fixture.page.locator('#settings-billing').isVisible(), true);
       assert.equal(await fixture.page.locator('#subscriptionTierUpgrade').inputValue(), 'giving');
       assert.equal(
         await fixture.page.locator('#subscriptionTierUpgrade').evaluate((el) => el === document.activeElement),
         true
       );
+      await fixture.page.locator('[data-settings-section="profile"]').click();
       await fixture.page.locator('#patronalFeastName').fill('St. Catherine');
       await fixture.page.locator('#patronalFeastMonth').selectOption('11');
       await fixture.page.locator('#patronalFeastDay').selectOption('25');
@@ -71,6 +74,7 @@ try {
       await fixture.page.evaluate(() => {
         window.open = () => null;
       });
+      await fixture.page.locator('[data-settings-section="billing"]').click();
       await fixture.page.getByRole('button', { name: 'Start free 30-day demo', exact: true }).click();
       await fixture.page.locator('#subscriptionUpgradeLinkBox.visible').waitFor();
       assert.equal(

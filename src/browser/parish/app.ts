@@ -278,6 +278,19 @@ const taxExemptionJurisdictions = [
   'OTHER',
 ];
 
+let parishSettingsSection = 'profile';
+function selectParishSettings(section: string) {
+  const selected = document.getElementById('settings-' + section);
+  if (!selected) return;
+  parishSettingsSection = section;
+  document.querySelectorAll<HTMLElement>('#settingsPane .settings-panel').forEach((panel) => {
+    panel.hidden = panel !== selected;
+  });
+  document.querySelectorAll<HTMLElement>('[data-settings-section]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.settingsSection === section));
+  });
+}
+
 // ── RENDER DASHBOARD ──────────────────────────────────────
 function renderDashboard(preserveSettings = false) {
   const editingSettings = window.ParishSettings?.state();
@@ -332,7 +345,7 @@ function renderDashboard(preserveSettings = false) {
     : '';
   const tierOptions = tierOptionsMarkup(p.subscriptionTier);
   document.getElementById('settingsPane')!.innerHTML = `
-      <div class="form-grid">
+      <section class="settings-panel" id="settings-profile"  aria-labelledby="settings-profile-title"><header class="settings-panel-heading"><h2 id="settings-profile-title">Parish profile</h2><p>Your parish identity, contact details, and liturgical calendar.</p></header><div class="form-grid">
         <div class="form-group full">
           <label class="form-label">Parish logo</label>
           <div class="parish-logo-settings">
@@ -402,17 +415,16 @@ function renderDashboard(preserveSettings = false) {
         </div>
         `;
         })()}
-        <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus === 'active' ? 'selected' : ''} ${p.onboarding?.enabled && p.onboarding?.state !== 'LIVE' ? 'disabled' : ''}>Active${p.onboarding?.enabled && p.onboarding?.state !== 'LIVE' ? ' — requires treasurer signoff' : ''}</option><option value="paused" ${p.givingStatus === 'paused' ? 'selected' : ''}>Paused</option><option value="hidden" ${p.givingStatus === 'hidden' ? 'selected' : ''}>Hidden</option></select>${p.onboarding?.enabled && p.onboarding?.state !== 'LIVE' ? '<p class="section-note">AGAPAY activates the page automatically when the treasurer completes Go Live.</p>' : ''}</div>
-        <div class="form-group"><label class="form-label">Stripe onboarding</label><input value="${escapeHtml(p.stripeAccountStatus || 'not_started')}" disabled /></div>
+
       </div>
       <p class="section-note">Changes here affect the parish's public giving page and visibility in the AGAPAY directory. Legal name and EIN are used on annual donor giving statements (Givers tab).</p>
-      <div class="section-divider"><span>Dashboard password</span></div>
+      </section><section class="settings-panel" id="settings-security" hidden aria-labelledby="settings-security-title"><header class="settings-panel-heading"><h2 id="settings-security-title">Security</h2><p>Update the shared parish dashboard password.</p></header>
       <div class="form-grid">
         <div class="form-group"><label class="form-label" for="newDashboardPassword">New password</label><input id="newDashboardPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" /></div>
         <div class="form-group"><label class="form-label" for="confirmDashboardPassword">Confirm password</label><input id="confirmDashboardPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" /></div>
       </div>
       <p class="section-note">Password changes require confirmation. Your other settings save automatically.</p><button type="button" class="btn btn-gold" onclick="window.ParishSettings.saveSettingsPassword(this)">Update password</button>
-      <div class="section-divider"><span>Team access</span></div>
+      </section><section class="settings-panel" id="settings-team" hidden aria-labelledby="settings-team-title"><header class="settings-panel-heading"><h2 id="settings-team-title">Team &amp; clergy</h2><p>Manage personal access and service scheduling contacts.</p></header>
       <div id="parishStaffAccessManager"><div class="staff-access-loading">Loading staff access…</div></div>
       <div class="section-divider"><span>Clergy scheduling contacts</span></div>
       <div class="form-grid">
@@ -421,7 +433,7 @@ function renderDashboard(preserveSettings = false) {
         <div class="form-group full"><label class="form-label" for="sacramentPriestsText">Sacraments &amp; Services priests</label><textarea id="sacramentPriestsText" rows="4" placeholder="Fr. Michael | fr.michael@example.org&#10;Fr. Andrew | fr.andrew@example.org">${escapeHtml(formatSacramentPriestsForSettings(p.sacramentPriests || []))}</textarea></div>
       </div>
       <p class="section-note">These addresses route Sacraments &amp; Services assignments and notifications; they do not create logins. Add personal access above for every person who signs in.</p>
-      <div class="section-divider"><span>AGAPAY sales tax</span></div>
+      </section><section class="settings-panel" id="settings-billing" hidden aria-labelledby="settings-billing-title"><header class="settings-panel-heading"><h2 id="settings-billing-title">Plan &amp; billing</h2><p>Manage your subscription, payment account, and tax exemption.</p></header><div class="section-divider"><span>AGAPAY sales tax</span></div>
       <p class="section-note">A parish's nonprofit status does not automatically make every purchase tax-free. Submit the applicable exemption certificate here; AGAPAY will review it before changing subscription billing in Stripe.</p>
       <div id="taxExemptionPane" class="tax-exemption-pane"><p class="section-note">Loading sales-tax status…</p></div>
       <div class="section-divider"><span>AGAPAY subscription</span></div>
@@ -448,7 +460,7 @@ function renderDashboard(preserveSettings = false) {
         }
       </div>
       <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
-      <div id="parishBackupCard"></div>
+
       <div class="section-divider"><span>Stripe account</span></div>
       <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
       <div class="btn-row">
@@ -458,7 +470,8 @@ function renderDashboard(preserveSettings = false) {
             : `<button class="btn btn-ghost" disabled title="Complete Stripe onboarding to access your Stripe account">Stripe account not yet active</button>`
         }
       </div>
-      <div class="section-divider"><span>Feature toggles</span></div>
+      </section><section class="settings-panel" id="settings-giving" hidden aria-labelledby="settings-giving-title"><header class="settings-panel-heading"><h2 id="settings-giving-title">Giving preferences</h2><p>Control your public giving page and available features.</p></header><div class="form-grid">        <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus === 'active' ? 'selected' : ''} ${p.onboarding?.enabled && p.onboarding?.state !== 'LIVE' ? 'disabled' : ''}>Active${p.onboarding?.enabled && p.onboarding?.state !== 'LIVE' ? ' — requires treasurer signoff' : ''}</option><option value="paused" ${p.givingStatus === 'paused' ? 'selected' : ''}>Paused</option><option value="hidden" ${p.givingStatus === 'hidden' ? 'selected' : ''}>Hidden</option></select>${p.onboarding?.enabled && p.onboarding?.state !== 'LIVE' ? '<p class="section-note">AGAPAY activates the page automatically when the treasurer completes Go Live.</p>' : ''}</div>
+        <div class="form-group"><label class="form-label">Stripe onboarding</label><input value="${escapeHtml(p.stripeAccountStatus || 'not_started')}" disabled /></div></div><div class="section-divider"><span>Available features</span></div>
       <div class="toggle-row">
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
         <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(p.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
@@ -469,15 +482,14 @@ function renderDashboard(preserveSettings = false) {
       </div>
       ${moduleIncluded('bookstore') ? '' : '<p class="section-note">Bookstore is included in Give +. Full Commerce adds Events and Meals; Parish includes the entire suite.</p>'}
       <div class="btn-row">
-        <span>Profile settings and preferences save automatically.</span>
         ${(p.setup || {}).billingActive ? '<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>' : '<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}
-        <button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button>
-        <button class="btn btn-ghost" onclick="logoutParish()">Log out</button>
       </div>
       <div class="stripe-link-box" id="stripeLinkBox">
         <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
         <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
-      </div>`;
+      </div></section><section class="settings-panel" id="settings-backup" hidden aria-labelledby="settings-backup-title"><header class="settings-panel-heading"><h2 id="settings-backup-title">Backups</h2><p>Review backup status and download your parish data.</p></header><div id="parishBackupCard"></div></section><footer class="settings-save-bar"><span>Parish settings<small>Profile and giving preferences save automatically.</small></span><div class="btn-row"><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button><button class="btn btn-ghost" onclick="logoutParish()">Log out</button></div></footer>`;
+  selectParishSettings(parishSettingsSection);
+
   window.ParishBackup?.mount({
     element: document.getElementById('parishBackupCard')!,
     parishId: p.parishId,
@@ -621,6 +633,7 @@ if (params.get('parish') && parishIdField) parishIdField.value = params.get('par
 if (!initParishAccessInvitationPage()) initParishPasswordResetPage();
 
 export type ParishAppBindings = {
+  selectParishSettings: typeof selectParishSettings;
   editableFunds: ParishGivingOption[];
   editableCampaigns: ParishGivingOption[];
   editableFeastCampaigns: ParishGivingOption[];

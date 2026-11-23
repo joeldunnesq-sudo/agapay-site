@@ -479,6 +479,12 @@ async function saveKoinoniaCalendar(event: SubmitEvent) {
     const payload = (await response.json().catch(() => ({}))) as KoinoniaResponse;
     if (!response.ok) throw new Error(payload.error || 'Unable to save this calendar link.');
     currentParish!.koinoniaCalendarUrl = payload.parish?.koinoniaCalendarUrl || value;
+    const calendarInput = document.getElementById('koinoniaCalendarUrl') as HTMLInputElement | null;
+    if (calendarInput) {
+      calendarInput.value = currentParish!.koinoniaCalendarUrl;
+      calendarInput.dataset.savedCalendarUrl = currentParish!.koinoniaCalendarUrl;
+      calendarInput.dataset.calendarParishId = currentParish!.parishId;
+    }
     if (status)
       status.textContent = currentParish!.koinoniaCalendarUrl
         ? 'Calendar verified and saved.'
