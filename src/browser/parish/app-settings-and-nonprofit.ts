@@ -6,6 +6,7 @@ import type {
   ParishAppAccountingFeature,
 } from './app-contracts.js';
 import type { ParishAppBindings } from './app.js';
+declare const selectParishSettings: ParishAppBindings['selectParishSettings'];
 
 // Match Boolean filtering while exposing its non-null result to TypeScript.
 function truthyParishSettings<T>(value: T | null | undefined | false): value is NonNullable<T> {
@@ -223,6 +224,7 @@ async function startStripeOnboarding(btn?: HTMLButtonElement | null) {
 
 function reviewSubscriptionUpgrade() {
   switchTab('settings');
+  selectParishSettings('billing');
   const tier = document.getElementById('subscriptionTierUpgrade') as HTMLSelectElement | null;
   if (!tier) return;
   tier.value = 'giving';

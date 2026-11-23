@@ -1,0 +1,265 @@
+#tab-settings {
+  max-width: 1240px;
+  margin-inline: auto;
+}
+.settings-page-heading {
+  padding: 8px 0 28px;
+}
+.settings-page-heading > span {
+  color: #8c6c34;
+  font: 600 12px/1.5 var(--sans);
+  letter-spacing: 0.14em;
+}
+.settings-page-heading h1 {
+  margin: 8px 0;
+  color: #102c41;
+  font: 500 42px/1.1 var(--serif, Georgia, serif);
+}
+.settings-page-heading p {
+  margin: 0;
+  color: #61707d;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.settings-workspace {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+.settings-navigation {
+  display: grid;
+  gap: 5px;
+  position: sticky;
+  top: 24px;
+}
+.settings-navigation button {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #536574;
+  text-align: left;
+  padding: 13px 16px;
+  font: 500 14px/1.4 var(--sans);
+  cursor: pointer;
+}
+.settings-navigation button:hover {
+  background: #edf1f4;
+}
+.settings-navigation button[aria-pressed='true'] {
+  color: #12384e;
+  background: #e7eef2;
+  box-shadow: inset 3px 0 #a58346;
+  font-weight: 600;
+}
+.settings-resource {
+  display: grid;
+  gap: 7px;
+  margin: 22px 12px 0;
+  padding-top: 22px;
+  border-top: 1px solid #dce3e8;
+  text-decoration: none;
+  color: #23485d;
+  font-size: 14px;
+}
+.settings-resource span {
+  color: #657582;
+  line-height: 1.6;
+}
+#settingsPane {
+  min-width: 0;
+}
+#settingsPane .settings-panel {
+  padding: 30px;
+  background: #fff;
+  border: 1px solid #dce3e8;
+  border-radius: 14px;
+  box-shadow: 0 5px 20px #102c4105;
+}
+#settingsPane .settings-panel[hidden] {
+  display: none;
+}
+.settings-panel-heading {
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e8edf0;
+}
+.settings-panel-heading h2 {
+  margin: 0 0 8px;
+  color: #16364b;
+  font: 600 23px/1.3 var(--sans);
+}
+.settings-panel-heading p {
+  margin: 0;
+  color: #657582;
+  font-size: 15px;
+  line-height: 1.6;
+}
+#settingsPane .form-grid {
+  gap: 22px 20px;
+}
+#settingsPane .form-group {
+  min-width: 0;
+  margin: 0;
+}
+#settingsPane .form-label {
+  margin-bottom: 9px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+#settingsPane input:not([type='checkbox']),
+#settingsPane select,
+#settingsPane textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  font-size: 15px;
+  min-height: 46px;
+  border-radius: 8px;
+}
+#settingsPane input[type='file'] {
+  min-height: 0;
+  width: 100%;
+  font-size: 14px;
+}
+#settingsPane .section-note {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #657582;
+  margin-top: 12px;
+}
+#settingsPane .section-divider {
+  margin: 30px 0 22px;
+}
+#settingsPane .section-divider span {
+  font-size: 14px;
+}
+#settingsPane .parish-logo-settings {
+  align-items: start;
+  gap: 22px;
+}
+#settingsPane .parish-logo-settings > div {
+  min-width: 0;
+}
+#settingsPane .parish-logo-actions {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#settingsPane .toggle-row {
+  margin-top: 16px;
+  gap: 12px;
+}
+#settingsPane .check-card {
+  padding: 16px;
+  font-size: 14px;
+}
+#settingsPane .btn-row {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.settings-save-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 18px 22px;
+  border: 1px solid #dce3e8;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 30px #102c4112;
+}
+.settings-save-bar > span {
+  color: #17394e;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-save-bar small {
+  display: block;
+  color: #657582;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.settings-save-bar .btn-row {
+  margin: 0;
+}
+.settings-navigation button:focus-visible,
+.settings-resource:focus-visible {
+  outline: 2px solid #a58346;
+  outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+  .settings-workspace {
+    grid-template-columns: 175px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .settings-save-bar {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 700px) {
+  .settings-page-heading {
+    padding-bottom: 20px;
+  }
+  .settings-page-heading h1 {
+    font-size: 34px;
+  }
+  .settings-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .settings-navigation {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .settings-navigation button {
+    padding: 12px;
+  }
+  .settings-resource {
+    grid-column: 1 / -1;
+    margin: 10px 0 0;
+    padding: 14px 12px 0;
+  }
+  #settingsPane .settings-panel {
+    padding: 22px 18px;
+  }
+  #settingsPane .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-save-bar {
+    bottom: 10px;
+    padding: 16px;
+  }
+  .settings-save-bar > span {
+    display: none;
+  }
+  .settings-save-bar .btn-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+  #settingsPane .parish-logo-settings {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 700px) {
+  #tab-settings .settings-save-bar {
+    bottom: 100px;
+  }
+  #tab-settings .settings-save-bar .btn-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  #tab-settings .settings-save-bar .btn {
+    width: auto;
+    flex: 1;
+    padding-inline: 10px;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+}

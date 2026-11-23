@@ -31,6 +31,8 @@
   <link rel="stylesheet" href="/parish/fund-reconciliation.css?v=20260831funds3" />
   <link rel="stylesheet" href="/parish/outside-giving.css?v=20260831outside1" />
 <link rel="stylesheet" href="/styles/parish-settings.css?v=20261122autosave1" />
+  <link rel="stylesheet" href="/parish/koinonia-workspace.css?v=20261123studio1" />
+  <link rel="stylesheet" href="/parish/settings.css?v=20261123settings1" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -363,7 +365,7 @@
               <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div>
               Your Subscription
             </div>
-            <button class="pdx-link-btn" type="button" onclick="switchTab('settings')">Manage plan</button>
+            <button class="pdx-link-btn" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Manage plan</button>
           </div>
           <div id="pdxSubscriptionBody" class="pdx-sub-body">
             <div class="pdx-recurring-empty">Load your dashboard to see your plan and included modules.</div>
@@ -690,45 +692,9 @@
         </section>
       </div>
       <div class="tab-panel" id="tab-settings">
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
-              Parish Resources
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="resource-card-list">
-              <a class="resource-card" href="/docs/AGAPAY-Stripe-Setup-Guide.pdf" target="_blank" rel="noopener">
-                <span class="resource-card-icon">
-                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 15h8"/><path d="M8 19h5"/></svg>
-                </span>
-                <span>
-                  <strong>Stripe, Payouts, Nonprofit Pricing &amp; Bookstore Guide</strong>
-                  <small>Connect Stripe, request eligible nonprofit pricing, launch giving, reconcile deposits, and operate parish commerce &mdash; updated July 2026.</small>
-                </span>
-                <b>Open</b>
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-              Parish Information
-            </div>
-          </div>
-          <div class="section-body" id="settingsPane">
-            <div class="empty-state">
-              <div class="empty-state-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg></div>
-              <h3>Not loaded</h3>
-              <p>Enter your parish ID and password to manage giving page settings.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Funds -->
+<header class="settings-page-heading"><span>PARISH ADMINISTRATION</span><h1>Settings</h1><p>A home for your parish details, people, and preferences.</p></header>
+<div class="settings-workspace"><nav class="settings-navigation" aria-label="Settings categories"><button type="button" data-settings-section="profile" aria-pressed="true" onclick="selectParishSettings('profile')">Parish profile</button><button type="button" data-settings-section="giving" aria-pressed="false" onclick="selectParishSettings('giving')">Giving preferences</button><button type="button" data-settings-section="team" aria-pressed="false" onclick="selectParishSettings('team')">Team & clergy</button><button type="button" data-settings-section="security" aria-pressed="false" onclick="selectParishSettings('security')">Security</button><button type="button" data-settings-section="billing" aria-pressed="false" onclick="selectParishSettings('billing')">Plan & billing</button><button type="button" data-settings-section="backup" aria-pressed="false" onclick="selectParishSettings('backup')">Backups</button><a class="settings-resource" href="/docs/AGAPAY-Stripe-Setup-Guide.pdf" target="_blank" rel="noopener"><strong>Need a hand?</strong><span>Open the parish setup guide</span></a></nav><div id="settingsPane"><div class="empty-state"><h3>Parish settings</h3><p>Load your parish to manage its settings.</p></div></div></div></div>
+
       <div class="tab-panel" id="tab-options">
         <div class="feature-tab-hero funds-feature-hero">
           <div>
@@ -1074,7 +1040,7 @@
               <h2>Bring pastoral requests into one organized workflow</h2>
               <p>Upgrade to receive requests from My AGAPAY, coordinate clergy calendars, set service rules, and keep families informed from request through completion.</p>
             </div>
-            <button class="btn btn-gold sac-paywall-upgrade" type="button" onclick="switchTab('settings')">Review Parish tier</button>
+            <button class="btn btn-gold sac-paywall-upgrade" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review Parish tier</button>
           </div>
           <div class="text-give-grid sac-paywall-grid">
             <section class="text-give-card">
@@ -1158,256 +1124,254 @@
       <div class="tab-panel parish-tier-panel" id="tab-communications">
         <div class="communications-admin-shell koinonia-studio">
           <header class="communications-admin-header koinonia-studio-hero">
-            <div class="koinonia-studio-identity"><span class="koinonia-studio-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span><div><span class="eyebrow">Parish publishing studio</span><h1>Koinonia</h1><p>Shape the digital life of your parish with news, teaching, audio, and video.</p></div></div>
-            <div class="communications-admin-actions">
-              <div class="koinonia-feature-toggle"><span><strong>Koinonia</strong><small>Publishing and parish life</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Koinonia content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Koinonia content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-            </div>
+<div class="koinonia-studio-identity"><span class="koinonia-studio-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span><div><span class="eyebrow">Parish publishing studio</span><h1>Koinonia</h1><p>Shape the digital life of your parish with news, teaching, audio, and video.</p></div></div>
+<div class="communications-admin-actions">
+  <div class="koinonia-feature-toggle"><span><strong>Koinonia</strong><small>Publishing and parish life</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Koinonia content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Koinonia content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+</div>
           </header>
-          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Koinonia is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button></div>
+          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Koinonia is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review Parish tier</button></div>
           <div id="communicationsDisabledNotice" class="communications-paywall koinonia-studio-notice" hidden><strong>Parish publishing is off.</strong><p>The Koinonia calendar remains available, but parish announcements, audio, video, and connected writing are hidden. Your library is safe until you turn publishing on.</p></div>
           <div id="communicationsWorkspace" class="communications-workspace-stack">
-            <nav class="koinonia-studio-nav" aria-label="Koinonia workspace">
-              <button type="button" class="is-active" data-koinonia-view="overview" onclick="setKoinoniaStudioView('overview')"><span>⌂</span>Overview</button>
-              <button type="button" data-koinonia-view="announcements" onclick="setKoinoniaStudioView('announcements')"><span>▤</span>Announcements</button>
-              <button type="button" data-koinonia-view="audio" onclick="setKoinoniaStudioView('audio')"><span>♪</span>Audio</button>
-              <button type="button" data-koinonia-view="video" onclick="setKoinoniaStudioView('video')"><span>▶</span>Video</button>
-              <button type="button" data-koinonia-view="ministries" onclick="setKoinoniaStudioView('ministries')"><span>✦</span>Ministries</button>
-              <button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span aria-hidden="true"><svg class="prayer-candle-icon" viewBox="0 0 24 24" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg></span>Prayer Requests</button>
-              <button type="button" data-koinonia-view="news" onclick="setKoinoniaStudioView('news')"><span>↗</span>News feeds</button>
-            </nav>
-            <div class="koinonia-feature-menu" role="group" aria-label="Koinonia community feature controls">
-              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">✓</span><div><strong>Parish Signups</strong><small>Serve the faithful</small></div><label class="sac-admin-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">⇄</span><div><strong>Parish Exchange</strong><small>Offer or request useful items</small></div><label class="sac-admin-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-              <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true"><svg class="prayer-candle-icon" viewBox="0 0 24 24" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg></span><div><strong>Prayer Requests</strong><small>Pray for one another</small></div><label class="sac-admin-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
-            </div>
-            <section class="koinonia-studio-view" data-koinonia-panel="overview" aria-labelledby="koinoniaOverviewHeading">
-              <div class="koinonia-overview-welcome">
-                <div><span class="eyebrow">At a glance</span><h2 id="koinoniaOverviewHeading">Your parish, beautifully connected.</h2><p>Publish what matters and see the health of your Koinonia library from one calm workspace.</p></div>
-                <section class="koinonia-calendar-connect is-compact" aria-labelledby="koinoniaCalendarHeading">
-                  <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
-                  <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Koinonia</h3><p>Connect a public ICS or iCal feed from Google Calendar, Squarespace, Wix, and most calendar platforms. Google Calendar share links are converted automatically.</p></div>
-                  <form onsubmit="saveKoinoniaCalendar(event)">
-                    <label for="koinoniaCalendarUrl">Public calendar (iCal/ICS) link</label>
-                    <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.example.org/public-feed" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
-                    <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
-                  </form>
-                </section>
-              </div>
-              <div class="koinonia-metric-grid" aria-label="Create Koinonia content">
-                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('announcements')" aria-label="Create a new announcement"><span class="koinonia-metric-icon is-gold">▤</span><div><small>New announcement</small><strong id="koinoniaPublishedAnnouncements">—</strong><em id="koinoniaAnnouncementDrafts">Loading drafts</em></div></button>
-                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('audio')" aria-label="Add a new audio file"><span class="koinonia-metric-icon">♪</span><div><small>New audio file</small><strong id="koinoniaPublishedAudio">—</strong><em id="koinoniaAudioDrafts">Loading drafts</em></div></button>
-                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('video')" aria-label="Add a YouTube video"><span class="koinonia-metric-icon is-rust">▶</span><div><small>Add YouTube video</small><strong id="koinoniaPublishedVideo">—</strong><em id="koinoniaVideoDrafts">Loading media</em></div></button>
-                <button class="koinonia-metric-card" type="button" onclick="openKoinoniaComposer('news')" aria-label="Connect the priest's blog RSS feed"><span class="koinonia-metric-icon is-green">↗</span><div><small>Priest’s blog RSS</small><strong id="koinoniaBlogStatus">—</strong><em id="koinoniaBlogDetail">Checking feed</em></div></button>
-              </div>
-              <div class="koinonia-overview-grid">
-                <section class="koinonia-overview-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Recently updated</span><h3>Content activity</h3></div><button type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="koinoniaRecentContent" class="koinonia-recent-list"><p class="sw-tool-loading">Loading Koinonia…</p></div></section>
-                <section class="koinonia-overview-panel koinonia-channel-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Channels</span><h3>What parishioners see</h3></div></div>
-                  <button type="button" onclick="setKoinoniaStudioView('announcements')"><span class="koinonia-channel-icon">▤</span><span><strong>Announcements</strong><small>Pinned updates and parish notices</small></span><em>Manage →</em></button>
-                  <button type="button" onclick="setKoinoniaStudioView('audio')"><span class="koinonia-channel-icon">♪</span><span><strong>Recent Audio</strong><small>Homilies, catechism, choir, and events</small></span><em>Manage →</em></button>
-                  <button type="button" onclick="setKoinoniaStudioView('video')"><span class="koinonia-channel-icon">▶</span><span><strong>Recent Videos</strong><small>YouTube videos curated by your parish</small></span><em>Manage →</em></button>
-                  <button type="button" onclick="setKoinoniaStudioView('news')"><span class="koinonia-channel-icon">↗</span><span><strong>News feeds</strong><small>Priest’s blog and Orthodox news sources</small></span><em>Manage →</em></button>
-                </section>
-              </div>
-            </section>
-            <div class="koinonia-studio-view bulletin-workspace" data-koinonia-panel="bulletins" id="bulletinMount" hidden></div>
-            <section class="koinonia-studio-view koinonia-ministries-workspace" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>
-              <div class="koinonia-ministries-head">
-                <div><span class="eyebrow">People serving together</span><h2 id="koinoniaMinistriesHeading">Ministries</h2><p>Create ministry groups, welcome parishioners onto teams, and respond to requests to serve.</p></div>
-                <button class="btn btn-gold" type="button" onclick="toggleKoinoniaMinistryComposer(true)">＋ Create ministry</button>
-              </div>
-              <div class="koinonia-ministry-metrics">
-                <article><span>Active teams</span><strong id="koinoniaActiveMinistries">—</strong><small>Visible in My AGAPAY</small></article>
-                <article><span>Team members</span><strong id="koinoniaMinistryMembers">—</strong><small>Across every ministry</small></article>
-                <article class="is-interest"><span>Waiting for a response</span><strong id="koinoniaMinistryRequests">—</strong><small>Specific and general interest</small></article>
-              </div>
-              <div id="koinoniaGeneralInterest" class="koinonia-general-interest" hidden></div>
-              <form id="koinoniaMinistryComposer" class="koinonia-ministry-composer" onsubmit="createKoinoniaMinistry(event)" hidden>
-                <div class="koinonia-ministry-composer-head"><div><span class="eyebrow">New team</span><h3>Create a ministry</h3></div><button type="button" aria-label="Close" onclick="toggleKoinoniaMinistryComposer(false)">×</button></div>
-                <div class="koinonia-ministry-form-grid">
-                  <label>Ministry name<input name="displayName" maxlength="160" required placeholder="Sunday School" /></label>
-                  <label>Category<select name="category"><option value="liturgical">Liturgical</option><option value="educational">Educational</option><option value="charitable">Charitable</option><option value="hospitality">Hospitality</option><option value="youth">Youth</option><option value="fellowship">Fellowship</option><option value="outreach">Outreach</option><option value="administrative">Administrative</option><option value="maintenance">Maintenance</option><option value="bookstore">Bookstore</option><option value="committee">Committee</option><option value="other">Other</option></select></label>
-                  <label class="is-wide">Short description<textarea name="shortDescription" maxlength="300" rows="3" placeholder="What this ministry does and who it serves."></textarea></label>
-                  <label>Status<select name="status"><option value="active">Active and visible</option><option value="draft">Draft</option></select></label>
-                  <label>Join requests<select name="requestPolicy"><option value="request_interest">Welcome requests</option><option value="closed">Closed for now</option><option value="administrator_assignment_only">Invitation only</option></select></label>
-                </div>
-                <div class="koinonia-ministry-form-actions"><button class="btn btn-ghost" type="button" onclick="toggleKoinoniaMinistryComposer(false)">Cancel</button><button class="btn btn-gold" type="submit">Create ministry</button></div>
-              </form>
-              <div class="koinonia-ministry-layout">
-                <section class="koinonia-ministry-list-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Your teams</span><h3>Ministry groups</h3></div><button type="button" onclick="loadKoinoniaMinistries(true)">Refresh</button></div><div id="koinoniaMinistryList"><p class="sw-tool-loading">Loading ministries…</p></div></section>
-                <section class="koinonia-ministry-detail" id="koinoniaMinistryDetail"><div class="koinonia-ministry-empty"><span>✦</span><strong>Select a ministry</strong><p>Choose a team to see its members, add a parishioner, and review requests.</p></div></section>
-              </div>
-            </section>
-            <section class="koinonia-studio-view prayer-admin-workspace" data-koinonia-panel="prayers" aria-labelledby="prayerAdminHeading" hidden>
-              <div class="prayer-admin-head"><div><span class="eyebrow">Pastoral care</span><h2 id="prayerAdminHeading">Prayer Requests</h2><p>Review community requests, protect private submissions, and mark answered prayers.</p></div><button class="btn btn-ghost" type="button" onclick="loadParishPrayerRequests(true)">Refresh</button></div>
-              <div class="prayer-admin-metrics" aria-label="Prayer request summary">
-                <article><span>Awaiting review</span><strong id="prayerMetricPending">—</strong><small>Pending or reported</small></article>
-                <article><span>Active</span><strong id="prayerMetricActive">—</strong><small>Visible to parishioners</small></article>
-                <article><span>Clergy only</span><strong id="prayerMetricClergy">—</strong><small>Private dashboard requests</small></article>
-                <article><span>Answered</span><strong id="prayerMetricAnswered">—</strong><small>Thanksgiving shared</small></article>
-              </div>
-              <div class="prayer-admin-layout">
-                <section class="prayer-admin-inbox" aria-labelledby="prayerInboxHeading">
-                  <div class="prayer-admin-panel-head"><div><span class="eyebrow">Moderation inbox</span><h3 id="prayerInboxHeading">Parish requests</h3></div><div class="prayer-admin-filters" aria-label="Filter prayer requests"><button type="button" data-prayer-admin-filter="review" aria-pressed="true" onclick="setParishPrayerFilter('review',this)">Needs review</button><button type="button" data-prayer-admin-filter="active" aria-pressed="false" onclick="setParishPrayerFilter('active',this)">Active</button><button type="button" data-prayer-admin-filter="clergy" aria-pressed="false" onclick="setParishPrayerFilter('clergy',this)">Clergy only</button><button type="button" data-prayer-admin-filter="answered" aria-pressed="false" onclick="setParishPrayerFilter('answered',this)">Answered</button><button type="button" data-prayer-admin-filter="all" aria-pressed="false" onclick="setParishPrayerFilter('all',this)">All</button></div></div>
-                  <div id="prayerAdminList"><p class="sw-tool-loading">Loading prayer requests…</p></div>
-                </section>
-                <aside class="prayer-admin-settings" aria-labelledby="prayerSettingsHeading">
-                  <div><span class="eyebrow">Parish settings</span><h3 id="prayerSettingsHeading">Prayer list safeguards</h3><p>These settings apply whenever Prayer Requests is turned on above.</p></div>
-                  <form id="prayerSettingsForm" onsubmit="saveParishPrayerSettings(event)">
-                    <label class="prayer-admin-check"><input id="prayerApprovalRequired" type="checkbox" /><span><strong>Require approval</strong><small>Review parish-wide requests before publishing.</small></span></label>
-                    <label class="prayer-admin-check"><input id="prayerAnonymousAllowed" type="checkbox" /><span><strong>Allow anonymous posts</strong><small>Names remain visible to dashboard staff.</small></span></label>
-                    <label>Archive active requests after<input id="prayerArchiveDays" type="number" min="7" max="365" step="1" /><small>Days; answered requests remain in their own view.</small></label>
-                    <label>Pastoral notice<textarea id="prayerPastoralNoticeInput" maxlength="500" rows="5"></textarea></label>
-                    <button class="btn btn-gold" type="submit">Save safeguards</button>
-                  </form>
-                </aside>
-              </div>
-            </section>
-            <dialog class="prayer-admin-dialog" id="prayerAdminReviewDialog" aria-labelledby="prayerAdminReviewHeading">
-              <form id="prayerAdminReviewForm" onsubmit="submitParishPrayerReview(event)">
-                <button class="prayer-admin-dialog-close" type="button" aria-label="Close" onclick="closeParishPrayerReview()">×</button>
-                <span class="eyebrow">Prayer request review</span><h2 id="prayerAdminReviewHeading">Review request</h2>
-                <div class="prayer-admin-review-request"><strong id="prayerAdminReviewName">Parishioner</strong><p id="prayerAdminReviewBody"></p></div>
-                <div class="prayer-admin-review-grid"><label>Status<select id="prayerAdminReviewStatus"><option value="pending">Awaiting review</option><option value="active">Active</option><option value="answered">Answered</option><option value="flagged">Hold for review</option><option value="declined">Declined</option><option value="archived">Archived</option></select></label><label>Visibility<select id="prayerAdminReviewVisibility"><option value="parish_members">Parish community</option><option value="clergy_only">Clergy only</option></select></label></div>
-                <label>Private dashboard note<textarea id="prayerAdminReviewNote" maxlength="1000" rows="3" placeholder="Optional internal note"></textarea></label>
-                <label>Reason shown when declined<textarea id="prayerAdminDeclineReason" maxlength="500" rows="2" placeholder="Optional pastoral explanation for the requester"></textarea></label>
-                <div class="prayer-admin-dialog-actions"><button class="btn btn-ghost" type="button" onclick="closeParishPrayerReview()">Cancel</button><button class="btn btn-gold" type="submit">Save decision</button></div>
-              </form>
-            </dialog>
-            <section class="communications-content-section koinonia-studio-view blog-admin-section" data-koinonia-panel="news" aria-labelledby="blogAdminHeading" hidden>
-              <div class="communications-section-heading"><span class="eyebrow">External writing</span><h2 id="blogAdminHeading">Priest’s Blog</h2><p>Surface the newest posts from a priest’s public blog in Koinonia through RSS or Atom.</p></div>
-              <form class="communications-compose" onsubmit="saveParishBlogSettings(event)">
-                <label class="communications-pin"><input id="parishBlogEnabled" type="checkbox" /> Show new blog posts in Koinonia</label>
-                <label>Blog homepage or RSS feed URL<input id="parishBlogSourceUrl" type="url" inputmode="url" placeholder="https://father.example.org/blog" /><small>Paste the public blog homepage or its HTTPS RSS/Atom address. AGAPAY will discover and validate the feed.</small></label>
-                <p class="section-note" id="parishBlogFeedStatus">No blog feed configured.</p>
-                <button class="btn btn-gold" type="submit">Save blog feed</button>
-              </form>
-              <div class="koinonia-news-sources" aria-label="Built-in Orthodox news sources">
-                <article><span>OCA</span><div><strong>Orthodox Church in America News</strong><p>Available to parishioners in OCA parishes through the official OCA news feed.</p></div><em>Donor controlled</em></article>
-                <article><span>OC</span><div><strong>OrthoChristian</strong><p>Each parishioner chooses whether to follow this source on their personal News page.</p></div><em>Donor controlled</em></article>
-                <article><span>SP</span><div><strong>SPZH</strong><p>Parishioners can choose this international Orthodox news source on their personal News page.</p></div><em>Donor controlled</em></article>
-                <article><span>OT</span><div><strong>Orthodox Times</strong><p>Parishioners can follow Orthodox Times without changing the parish-wide Koinonia setup.</p></div><em>Donor controlled</em></article>
-                <article><span>OE</span><div><strong>Orthodox Ethos</strong><p>Parishioners can follow Orthodox Ethos or add another public RSS feed of their choice.</p></div><em>Donor controlled</em></article>
-              </div>
-            </section>
-            <section class="communications-content-section koinonia-studio-view" data-koinonia-panel="announcements" aria-labelledby="announcementsAdminHeading" hidden>
-              <div class="communications-section-heading"><span class="eyebrow">Parish news</span><h2 id="announcementsAdminHeading">Announcements</h2><p>Notices, reminders, and time-sensitive parish updates.</p></div>
-              <div class="communications-grid">
-              <form class="communications-compose" onsubmit="createAnnouncementDraft(event)">
-              <span class="eyebrow">Compose</span><h2>New announcement</h2>
-              <label>Title<input id="announcementTitle" maxlength="180" required placeholder="Parish picnic this Sunday" /></label>
-              <label>Category<select id="announcementCategory" required><option value="general">General</option><option value="services">Services</option><option value="events">Events</option><option value="youth">Youth</option><option value="outreach">Outreach</option><option value="education">Education</option></select></label>
-              <label>Message
-                <span class="communications-format-toolbar" aria-label="Announcement formatting">
-                  <button type="button" onclick="insertAnnouncementFormatting('bold')"><strong>B</strong><span>Bold</span></button>
-                  <button type="button" onclick="insertAnnouncementFormatting('italic')"><em>I</em><span>Italic</span></button>
-                  <button type="button" onclick="insertAnnouncementFormatting('link')">↗<span>Link</span></button>
-                  <button type="button" onclick="insertAnnouncementFormatting('list')">•<span>List</span></button>
-                </span>
-                <textarea id="announcementBody" maxlength="12000" rows="8" required placeholder="Share the details with your parish. Use **bold**, *italic*, [link text](https://example.org), or - list items."></textarea>
-                <small class="communications-format-help">Formatting stays simple and safe: bold, italic, links, and bulleted lists.</small>
-              </label>
-              <label>Hero image <input id="announcementHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small>Optional JPG, PNG, or WebP image, up to 10MB.</small></label>
-              <label class="communications-pin"><input id="announcementPinned" type="checkbox" /> Pin this announcement above newer updates</label>
-              <button class="btn btn-gold" type="submit">Save draft</button>
-              </form>
-              <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All announcements</span><h2>Drafts and published updates</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="communicationsList"><p class="sw-tool-loading">Loading...</p></div></section>
-              </div>
-            </section>
-            <dialog class="communications-edit-dialog" id="announcementEditDialog" aria-labelledby="announcementEditHeading">
-              <form class="communications-compose" id="announcementEditForm" onsubmit="saveAnnouncementEdit(event)">
-                <button class="communications-edit-close" type="button" aria-label="Close announcement editor" onclick="closeAnnouncementEditor()">×</button>
-                <div class="communications-edit-heading"><span class="eyebrow">Edit announcement</span><h2 id="announcementEditHeading">Update the full announcement</h2><p id="announcementEditStatus">Changes to published announcements appear immediately in My AGAPAY.</p></div>
-                <label>Title<input id="announcementEditTitle" maxlength="180" required /></label>
-                <label>Category<select id="announcementEditCategory" required><option value="general">General</option><option value="services">Services</option><option value="events">Events</option><option value="youth">Youth</option><option value="outreach">Outreach</option><option value="education">Education</option></select></label>
-                <label>Message
-                  <span class="communications-format-toolbar" aria-label="Announcement formatting tools">
-                    <button type="button" onclick="insertAnnouncementFormatting('bold','announcementEditBody')"><strong>B</strong><span>Bold</span></button>
-                    <button type="button" onclick="insertAnnouncementFormatting('italic','announcementEditBody')"><em>I</em><span>Italic</span></button>
-                    <button type="button" onclick="insertAnnouncementFormatting('link','announcementEditBody')">↗<span>Link</span></button>
-                    <button type="button" onclick="insertAnnouncementFormatting('list','announcementEditBody')">•<span>List</span></button>
-                  </span>
-                  <textarea id="announcementEditBody" maxlength="12000" rows="10" required></textarea>
-                  <small>Update the complete message using bold, italic, links, or bulleted lists.</small>
-                </label>
-                <label>Replace hero image <input id="announcementEditHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small id="announcementEditHeroCurrent">Choose a file only when you want to replace the current image.</small></label>
-                <label class="communications-pin"><input id="announcementEditPinned" type="checkbox" /> Pin this announcement above newer updates</label>
-                <div class="communications-edit-actions"><button class="btn btn-ghost" type="button" onclick="closeAnnouncementEditor()">Cancel</button><button class="btn btn-gold" type="submit">Save changes</button></div>
-              </form>
-            </dialog>
-            <section class="communications-content-section koinonia-studio-view teaching-admin-section" data-koinonia-panel="audio" aria-labelledby="teachingAdminHeading" hidden>
-              <div class="communications-section-heading"><span class="eyebrow">Formation and sound</span><h2 id="teachingAdminHeading">Audio</h2><p>Publish homilies, catechism, liturgical recordings, choir, and special events by uploading audio or linking to a recording.</p></div>
-              <div class="communications-grid">
-                <form class="communications-compose" onsubmit="createTeachingDraft(event)">
-                  <span class="eyebrow">Compose</span><h2>New audio post</h2>
-                  <label>Title<input id="teachingTitle" maxlength="180" required placeholder="Reflection for the Sunday of the Cross" /></label>
-                  <label>Category<select id="teachingCategory" required><option value="homilies">Homilies</option><option value="catechism">Catechism</option><option value="liturgical">Liturgical</option><option value="choir">Choir</option><option value="special_events">Special Events</option></select></label>
-                  <label>Reflection
-                    <span class="communications-format-toolbar" aria-label="Teaching formatting">
-                      <button type="button" onclick="insertTeachingFormatting('bold')"><strong>B</strong><span>Bold</span></button>
-                      <button type="button" onclick="insertTeachingFormatting('italic')"><em>I</em><span>Italic</span></button>
-                      <button type="button" onclick="insertTeachingFormatting('link')">↗<span>Link</span></button>
-                      <button type="button" onclick="insertTeachingFormatting('list')">•<span>List</span></button>
-                    </span>
-                    <textarea id="teachingBody" maxlength="20000" rows="10" required placeholder="Share the reflection. Use **bold**, *italic*, [link text](https://example.org), or - list items."></textarea>
-                    <small class="communications-format-help">Formatting is bounded to bold, italic, links, and bulleted lists.</small>
-                  </label>
-                  <label>Audio recording <input id="teachingAudio" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg,audio/webm" /><small>Optional MP3, M4A, WAV, OGG, or WebM file, up to 50MB.</small></label>
-                  <div class="communications-input-divider"><span>or</span></div>
-                  <label>Link to audio<input id="teachingAudioUrl" type="url" inputmode="url" placeholder="https://media.example.org/sunday-homily.mp3" /><small>Use a public HTTPS link that plays the recording directly. Choose either a file or a link.</small></label>
-                  <label class="youtube-pin-option teaching-pin-option">
-                    <input id="teachingPinned" type="checkbox" />
-                    <span><strong>Pin when published</strong><small>After you publish this draft, place the recording at the top of Recent Audio in My AGAPAY.</small></span>
-                  </label>
-                  <button class="btn btn-gold" type="submit">Save audio draft</button>
-                </form>
-                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Audio library</span><h2>Drafts and published posts</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="teachingAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
-              </div>
-            </section>
-            <section class="communications-content-section koinonia-studio-view video-admin-section" data-koinonia-panel="video" aria-labelledby="videoAdminHeading" hidden>
-              <div class="communications-section-heading"><span class="eyebrow">YouTube-hosted media</span><h2 id="videoAdminHeading">Video</h2><p>Add YouTube videos to the parish Media library. Native Stream uploads are paused for now.</p></div>
-              <!-- New Cloudflare Stream uploads remain paused; existing records stay manageable and permanently deletable. -->
-              <div class="communications-grid" data-native-video-management hidden>
-                <form class="communications-compose" data-native-video-upload onsubmit="createVideoUpload(event)">
-                  <span class="eyebrow">Upload</span><h2>New private video</h2>
-                  <label>Title<input id="videoTitle" maxlength="180" required placeholder="Sunday homily · July 27" /></label>
-                  <label>Description<textarea id="videoDescription" maxlength="20000" rows="7" placeholder="Add context for parishioners. **Bold**, *italic*, links, and lists are supported."></textarea></label>
-                  <label>Video file<input id="videoFile" type="file" accept="video/*" required /><small>Recorded video up to 200MB. The file uploads directly to Stream; AGAPAY never proxies the video bytes.</small></label>
-                  <label class="communications-pin"><input id="videoPinned" type="checkbox" /> Feature this video at the top of Media</label>
-                  <div class="video-upload-progress" id="videoUploadProgress" hidden><span><i id="videoUploadProgressFill"></i></span><strong id="videoUploadProgressLabel">Preparing secure upload…</strong></div>
-                  <button class="btn btn-gold" type="submit">Upload private video</button>
-                </form>
-                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Native video</span><h2>Processing and published</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="videoAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
-              </div>
-              <div class="communications-grid youtube-admin-grid is-primary">
-                <form class="communications-compose" onsubmit="saveYouTubeChannel(event)">
-                  <span class="eyebrow">Automatic YouTube media</span><h2>Connect your YouTube channel</h2><p class="section-note">Connect once and Koinonia will embed the channel’s complete uploads playlist. New public videos appear automatically—no manual adding required.</p>
-                  <aside class="youtube-privacy-guidance" aria-labelledby="youtubePrivacyGuidanceHeading">
-                    <strong id="youtubePrivacyGuidanceHeading">Choose the YouTube privacy setting intentionally</strong>
-                    <ul>
-                      <li><b>Public:</b> Searchable on YouTube, and anyone can watch.</li>
-                      <li><b>Unlisted:</b> Not searchable or listed on the channel, but anyone with the link can watch. YouTube does not require a login or perform a viewer check.</li>
-                      <li><b>Private:</b> Only explicitly invited Google accounts can watch. This is real access control: every viewer needs a Google account and an individual invitation.</li>
-                    </ul>
-                    <p><strong>Koinonia access:</strong> Announcements, Groups, and Teaching are restricted by AGAPAY’s verified-household gate. YouTube-hosted video—even Unlisted—does not carry that same guarantee because AGAPAY cannot control YouTube access.</p>
-                  </aside>
-                  <label>YouTube channel URL or ID<input id="youtubeChannelUrl" required placeholder="https://www.youtube.com/@yourparish" /></label>
-                  <button class="btn btn-gold" type="submit">Connect channel</button>
-                </form>
-                <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Channel connection</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
-              </div>
-              <form class="communications-compose youtube-curated-form" onsubmit="addYouTubeVideo(event)">
-                <span class="eyebrow">Optional curation</span><h2>Add or pin a specific YouTube video</h2><p class="section-note">Paste any video URL—including one from the connected channel—to spotlight it for parishioners.</p>
-                <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
-                <label class="youtube-pin-option">
-                  <input id="youtubeVideoPinned" type="checkbox" />
-                  <span><strong>Pin in Recent Videos</strong><small>Place this video at the top of Koinonia for parishioners.</small></span>
-                </label>
-                <button class="btn btn-ghost" type="submit">Validate and add</button>
-              </form>
-            </section>
+<nav class="koinonia-studio-nav" aria-label="Koinonia workspace">
+<button type="button" class="is-active" data-koinonia-view="overview" onclick="setKoinoniaStudioView('overview')">Overview</button>
+<button type="button" data-koinonia-view="content" onclick="setKoinoniaStudioView('content')">Content library</button>
+<button type="button" data-koinonia-view="bulletins" onclick="setKoinoniaStudioView('bulletins')">Bulletins</button>
+<button type="button" data-koinonia-view="ministries" onclick="setKoinoniaStudioView('ministries')">Ministries</button>
+<button type="button" data-koinonia-view="prayers" onclick="setKoinoniaStudioView('prayers')"><span aria-hidden="true"><svg class="prayer-candle-icon" viewBox="0 0 24 24" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg></span>Prayer Requests</button>
+<button type="button" data-koinonia-view="connections" onclick="setKoinoniaStudioView('connections')">Connections &amp; settings</button>
+</nav>
+<section class="koinonia-studio-view" data-koinonia-panel="overview" aria-labelledby="koinoniaOverviewHeading">
+  <div class="koinonia-overview-welcome"><details class="koinonia-create-menu"><summary class="btn btn-gold">Create content</summary><div><button type="button" onclick="openKoinoniaComposer('announcements')">New announcement</button><button type="button" onclick="openKoinoniaComposer('audio')">New audio post</button><button type="button" onclick="openKoinoniaComposer('video')">Add video</button></div></details>
+    <div><span class="eyebrow">At a glance</span><h2 id="koinoniaOverviewHeading">Your publishing desk</h2><p>Pick up a draft or share something new with your parish.</p></div>
+
+  </div>
+<div class="koinonia-desk-summary" aria-label="Content summary"><article><span>Published posts</span><strong id="koinoniaPublishedTotal">—</strong></article><article><span>Drafts to finish</span><strong id="koinoniaDraftTotal">—</strong></article><article><span>Content channels</span><strong id="koinoniaChannelTotal">—</strong></article></div>
+  <div class="koinonia-overview-grid">
+    <section class="koinonia-overview-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Recently updated</span><h3>Content activity</h3></div><button type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="koinoniaRecentContent" class="koinonia-recent-list"><p class="sw-tool-loading">Loading Koinonia…</p></div></section>
+
+  </div>
+</section>
+
+<section class="koinonia-studio-view" data-koinonia-panel="content" aria-labelledby="koinoniaContentHeading" hidden><div class="koinonia-desk-heading"><div><span class="eyebrow">Parish publishing</span><h2 id="koinoniaContentHeading">Content library</h2><p>Announcements, audio, and video in one place.</p></div><details class="koinonia-create-menu"><summary class="btn btn-gold">Create content</summary><div><button type="button" onclick="openKoinoniaComposer('announcements')">New announcement</button><button type="button" onclick="openKoinoniaComposer('audio')">New audio post</button><button type="button" onclick="openKoinoniaComposer('video')">Add video</button></div></details></div><div class="koinonia-library-filter"><label for="koinoniaContentFilter">Show</label><select id="koinoniaContentFilter" onchange="renderKoinoniaContentLibrary()"><option value="all">All content</option><option value="announcements">Announcements</option><option value="audio">Audio</option><option value="video">Video</option><option value="draft">Drafts</option></select></div><div id="koinoniaContentLibrary" class="koinonia-overview-panel koinonia-recent-list"></div></section>
+<section class="koinonia-studio-view" data-koinonia-panel="connections" aria-labelledby="koinoniaConnectionsHeading" hidden><div class="koinonia-desk-heading"><div><span class="eyebrow">Configuration</span><h2 id="koinoniaConnectionsHeading">Connections &amp; settings</h2><p>Connect your sources and choose which community features parishioners see.</p></div></div>                <section class="koinonia-calendar-connect is-compact" aria-labelledby="koinoniaCalendarHeading">
+      <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
+      <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Koinonia</h3><p>Connect a public ICS or iCal feed from Google Calendar, Squarespace, Wix, and most calendar platforms. Google Calendar share links are converted automatically.</p></div>
+      <form onsubmit="saveKoinoniaCalendar(event)">
+        <label for="koinoniaCalendarUrl">Public calendar (iCal/ICS) link</label>
+        <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.example.org/public-feed" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
+        <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
+      </form>
+    </section><h3 class="koinonia-config-title">Community features</h3>            <div class="koinonia-feature-menu" role="group" aria-label="Koinonia community feature controls">
+  <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">✓</span><div><strong>Parish Signups</strong><small>Serve the faithful</small></div><label class="sac-admin-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+  <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">⇄</span><div><strong>Parish Exchange</strong><small>Offer or request useful items</small></div><label class="sac-admin-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+  <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true"><svg class="prayer-candle-icon" viewBox="0 0 24 24" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg></span><div><strong>Prayer Requests</strong><small>Pray for one another</small></div><label class="sac-admin-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+</div>
+
+<div class="koinonia-source-actions"><h3>Connected writing &amp; video</h3><p>Manage the priest’s blog, Orthodox news sources, and your parish YouTube channel.</p><div class="btn-row"><button class="btn btn-ghost" type="button" onclick="setKoinoniaStudioView('news')">Blog &amp; news feeds</button><button class="btn btn-ghost" type="button" onclick="setKoinoniaStudioView('video')">YouTube connection</button></div></div></section>
+<div class="koinonia-studio-view bulletin-workspace" data-koinonia-panel="bulletins" id="bulletinMount" hidden></div>
+
+<section class="koinonia-studio-view koinonia-ministries-workspace" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>
+  <div class="koinonia-ministries-head">
+    <div><span class="eyebrow">People serving together</span><h2 id="koinoniaMinistriesHeading">Ministries</h2><p>Create ministry groups, welcome parishioners onto teams, and respond to requests to serve.</p></div>
+    <button class="btn btn-gold" type="button" onclick="toggleKoinoniaMinistryComposer(true)">＋ Create ministry</button>
+  </div>
+  <div class="koinonia-ministry-metrics">
+    <article><span>Active teams</span><strong id="koinoniaActiveMinistries">—</strong><small>Visible in My AGAPAY</small></article>
+    <article><span>Team members</span><strong id="koinoniaMinistryMembers">—</strong><small>Across every ministry</small></article>
+    <article class="is-interest"><span>Waiting for a response</span><strong id="koinoniaMinistryRequests">—</strong><small>Specific and general interest</small></article>
+  </div>
+  <div id="koinoniaGeneralInterest" class="koinonia-general-interest" hidden></div>
+  <form id="koinoniaMinistryComposer" class="koinonia-ministry-composer" onsubmit="createKoinoniaMinistry(event)" hidden>
+    <div class="koinonia-ministry-composer-head"><div><span class="eyebrow">New team</span><h3>Create a ministry</h3></div><button type="button" aria-label="Close" onclick="toggleKoinoniaMinistryComposer(false)">×</button></div>
+    <div class="koinonia-ministry-form-grid">
+      <label>Ministry name<input name="displayName" maxlength="160" required placeholder="Sunday School" /></label>
+      <label>Category<select name="category"><option value="liturgical">Liturgical</option><option value="educational">Educational</option><option value="charitable">Charitable</option><option value="hospitality">Hospitality</option><option value="youth">Youth</option><option value="fellowship">Fellowship</option><option value="outreach">Outreach</option><option value="administrative">Administrative</option><option value="maintenance">Maintenance</option><option value="bookstore">Bookstore</option><option value="committee">Committee</option><option value="other">Other</option></select></label>
+      <label class="is-wide">Short description<textarea name="shortDescription" maxlength="300" rows="3" placeholder="What this ministry does and who it serves."></textarea></label>
+      <label>Status<select name="status"><option value="active">Active and visible</option><option value="draft">Draft</option></select></label>
+      <label>Join requests<select name="requestPolicy"><option value="request_interest">Welcome requests</option><option value="closed">Closed for now</option><option value="administrator_assignment_only">Invitation only</option></select></label>
+    </div>
+    <div class="koinonia-ministry-form-actions"><button class="btn btn-ghost" type="button" onclick="toggleKoinoniaMinistryComposer(false)">Cancel</button><button class="btn btn-gold" type="submit">Create ministry</button></div>
+  </form>
+  <div class="koinonia-ministry-layout">
+    <section class="koinonia-ministry-list-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Your teams</span><h3>Ministry groups</h3></div><button type="button" onclick="loadKoinoniaMinistries(true)">Refresh</button></div><div id="koinoniaMinistryList"><p class="sw-tool-loading">Loading ministries…</p></div></section>
+    <section class="koinonia-ministry-detail" id="koinoniaMinistryDetail"><div class="koinonia-ministry-empty"><span>✦</span><strong>Select a ministry</strong><p>Choose a team to see its members, add a parishioner, and review requests.</p></div></section>
+  </div>
+</section>
+
+<section class="koinonia-studio-view prayer-admin-workspace" data-koinonia-panel="prayers" aria-labelledby="prayerAdminHeading" hidden>
+  <div class="prayer-admin-head"><div><span class="eyebrow">Pastoral care</span><h2 id="prayerAdminHeading">Prayer Requests</h2><p>Review community requests, protect private submissions, and mark answered prayers.</p></div><button class="btn btn-ghost" type="button" onclick="loadParishPrayerRequests(true)">Refresh</button></div>
+  <div class="prayer-admin-metrics" aria-label="Prayer request summary">
+    <article><span>Awaiting review</span><strong id="prayerMetricPending">—</strong><small>Pending or reported</small></article>
+    <article><span>Active</span><strong id="prayerMetricActive">—</strong><small>Visible to parishioners</small></article>
+    <article><span>Clergy only</span><strong id="prayerMetricClergy">—</strong><small>Private dashboard requests</small></article>
+    <article><span>Answered</span><strong id="prayerMetricAnswered">—</strong><small>Thanksgiving shared</small></article>
+  </div>
+  <div class="prayer-admin-layout">
+    <section class="prayer-admin-inbox" aria-labelledby="prayerInboxHeading">
+      <div class="prayer-admin-panel-head"><div><span class="eyebrow">Moderation inbox</span><h3 id="prayerInboxHeading">Parish requests</h3></div><div class="prayer-admin-filters" aria-label="Filter prayer requests"><button type="button" data-prayer-admin-filter="review" aria-pressed="true" onclick="setParishPrayerFilter('review',this)">Needs review</button><button type="button" data-prayer-admin-filter="active" aria-pressed="false" onclick="setParishPrayerFilter('active',this)">Active</button><button type="button" data-prayer-admin-filter="clergy" aria-pressed="false" onclick="setParishPrayerFilter('clergy',this)">Clergy only</button><button type="button" data-prayer-admin-filter="answered" aria-pressed="false" onclick="setParishPrayerFilter('answered',this)">Answered</button><button type="button" data-prayer-admin-filter="all" aria-pressed="false" onclick="setParishPrayerFilter('all',this)">All</button></div></div>
+      <div id="prayerAdminList"><p class="sw-tool-loading">Loading prayer requests…</p></div>
+    </section>
+    <aside class="prayer-admin-settings" aria-labelledby="prayerSettingsHeading">
+      <div><span class="eyebrow">Parish settings</span><h3 id="prayerSettingsHeading">Prayer list safeguards</h3><p>These settings apply whenever Prayer Requests is turned on above.</p></div>
+      <form id="prayerSettingsForm" onsubmit="saveParishPrayerSettings(event)">
+        <label class="prayer-admin-check"><input id="prayerApprovalRequired" type="checkbox" /><span><strong>Require approval</strong><small>Review parish-wide requests before publishing.</small></span></label>
+        <label class="prayer-admin-check"><input id="prayerAnonymousAllowed" type="checkbox" /><span><strong>Allow anonymous posts</strong><small>Names remain visible to dashboard staff.</small></span></label>
+        <label>Archive active requests after<input id="prayerArchiveDays" type="number" min="7" max="365" step="1" /><small>Days; answered requests remain in their own view.</small></label>
+        <label>Pastoral notice<textarea id="prayerPastoralNoticeInput" maxlength="500" rows="5"></textarea></label>
+        <button class="btn btn-gold" type="submit">Save safeguards</button>
+      </form>
+    </aside>
+  </div>
+</section>
+
+<dialog class="prayer-admin-dialog" id="prayerAdminReviewDialog" aria-labelledby="prayerAdminReviewHeading">
+  <form id="prayerAdminReviewForm" onsubmit="submitParishPrayerReview(event)">
+    <button class="prayer-admin-dialog-close" type="button" aria-label="Close" onclick="closeParishPrayerReview()">×</button>
+    <span class="eyebrow">Prayer request review</span><h2 id="prayerAdminReviewHeading">Review request</h2>
+    <div class="prayer-admin-review-request"><strong id="prayerAdminReviewName">Parishioner</strong><p id="prayerAdminReviewBody"></p></div>
+    <div class="prayer-admin-review-grid"><label>Status<select id="prayerAdminReviewStatus"><option value="pending">Awaiting review</option><option value="active">Active</option><option value="answered">Answered</option><option value="flagged">Hold for review</option><option value="declined">Declined</option><option value="archived">Archived</option></select></label><label>Visibility<select id="prayerAdminReviewVisibility"><option value="parish_members">Parish community</option><option value="clergy_only">Clergy only</option></select></label></div>
+    <label>Private dashboard note<textarea id="prayerAdminReviewNote" maxlength="1000" rows="3" placeholder="Optional internal note"></textarea></label>
+    <label>Reason shown when declined<textarea id="prayerAdminDeclineReason" maxlength="500" rows="2" placeholder="Optional pastoral explanation for the requester"></textarea></label>
+    <div class="prayer-admin-dialog-actions"><button class="btn btn-ghost" type="button" onclick="closeParishPrayerReview()">Cancel</button><button class="btn btn-gold" type="submit">Save decision</button></div>
+  </form>
+</dialog>
+
+<section class="communications-content-section koinonia-studio-view blog-admin-section" data-koinonia-panel="news" aria-labelledby="blogAdminHeading" hidden><button class="btn btn-ghost koinonia-back" type="button" onclick="setKoinoniaStudioView('connections')">Back to connections</button>
+  <div class="communications-section-heading"><span class="eyebrow">External writing</span><h2 id="blogAdminHeading">Priest’s Blog</h2><p>Surface the newest posts from a priest’s public blog in Koinonia through RSS or Atom.</p></div>
+  <form class="communications-compose" onsubmit="saveParishBlogSettings(event)">
+    <label class="communications-pin"><input id="parishBlogEnabled" type="checkbox" /> Show new blog posts in Koinonia</label>
+    <label>Blog homepage or RSS feed URL<input id="parishBlogSourceUrl" type="url" inputmode="url" placeholder="https://father.example.org/blog" /><small>Paste the public blog homepage or its HTTPS RSS/Atom address. AGAPAY will discover and validate the feed.</small></label>
+    <p class="section-note" id="parishBlogFeedStatus">No blog feed configured.</p>
+    <button class="btn btn-gold" type="submit">Save blog feed</button>
+  </form>
+  <div class="koinonia-news-sources" aria-label="Built-in Orthodox news sources">
+    <article><span>OCA</span><div><strong>Orthodox Church in America News</strong><p>Available to parishioners in OCA parishes through the official OCA news feed.</p></div><em>Donor controlled</em></article>
+    <article><span>OC</span><div><strong>OrthoChristian</strong><p>Each parishioner chooses whether to follow this source on their personal News page.</p></div><em>Donor controlled</em></article>
+    <article><span>SP</span><div><strong>SPZH</strong><p>Parishioners can choose this international Orthodox news source on their personal News page.</p></div><em>Donor controlled</em></article>
+    <article><span>OT</span><div><strong>Orthodox Times</strong><p>Parishioners can follow Orthodox Times without changing the parish-wide Koinonia setup.</p></div><em>Donor controlled</em></article>
+    <article><span>OE</span><div><strong>Orthodox Ethos</strong><p>Parishioners can follow Orthodox Ethos or add another public RSS feed of their choice.</p></div><em>Donor controlled</em></article>
+  </div>
+</section>
+<section class="communications-content-section koinonia-studio-view" data-koinonia-panel="announcements" aria-labelledby="announcementsAdminHeading" hidden><button class="btn btn-ghost koinonia-back" type="button" onclick="setKoinoniaStudioView('content')">Back to content library</button>
+  <div class="communications-section-heading"><span class="eyebrow">Parish news</span><h2 id="announcementsAdminHeading">Announcements</h2><p>Notices, reminders, and time-sensitive parish updates.</p></div>
+  <div class="communications-grid">
+  <form class="communications-compose" onsubmit="createAnnouncementDraft(event)">
+  <span class="eyebrow">Compose</span><h2>New announcement</h2>
+  <label>Title<input id="announcementTitle" maxlength="180" required placeholder="Parish picnic this Sunday" /></label>
+  <label>Category<select id="announcementCategory" required><option value="general">General</option><option value="services">Services</option><option value="events">Events</option><option value="youth">Youth</option><option value="outreach">Outreach</option><option value="education">Education</option></select></label>
+  <label>Message
+    <span class="communications-format-toolbar" aria-label="Announcement formatting">
+      <button type="button" onclick="insertAnnouncementFormatting('bold')"><strong>B</strong><span>Bold</span></button>
+      <button type="button" onclick="insertAnnouncementFormatting('italic')"><em>I</em><span>Italic</span></button>
+      <button type="button" onclick="insertAnnouncementFormatting('link')">↗<span>Link</span></button>
+      <button type="button" onclick="insertAnnouncementFormatting('list')">•<span>List</span></button>
+    </span>
+    <textarea id="announcementBody" maxlength="12000" rows="8" required placeholder="Share the details with your parish. Use **bold**, *italic*, [link text](https://example.org), or - list items."></textarea>
+    <small class="communications-format-help">Formatting stays simple and safe: bold, italic, links, and bulleted lists.</small>
+  </label>
+  <label>Hero image <input id="announcementHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small>Optional JPG, PNG, or WebP image, up to 10MB.</small></label>
+  <label class="communications-pin"><input id="announcementPinned" type="checkbox" /> Pin this announcement above newer updates</label>
+  <button class="btn btn-gold" type="submit">Save draft</button>
+  </form>
+  <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">All announcements</span><h2>Drafts and published updates</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="communicationsList"><p class="sw-tool-loading">Loading...</p></div></section>
+  </div>
+</section>
+<dialog class="communications-edit-dialog" id="announcementEditDialog" aria-labelledby="announcementEditHeading">
+  <form class="communications-compose" id="announcementEditForm" onsubmit="saveAnnouncementEdit(event)">
+    <button class="communications-edit-close" type="button" aria-label="Close announcement editor" onclick="closeAnnouncementEditor()">×</button>
+    <div class="communications-edit-heading"><span class="eyebrow">Edit announcement</span><h2 id="announcementEditHeading">Update the full announcement</h2><p id="announcementEditStatus">Changes to published announcements appear immediately in My AGAPAY.</p></div>
+    <label>Title<input id="announcementEditTitle" maxlength="180" required /></label>
+    <label>Category<select id="announcementEditCategory" required><option value="general">General</option><option value="services">Services</option><option value="events">Events</option><option value="youth">Youth</option><option value="outreach">Outreach</option><option value="education">Education</option></select></label>
+    <label>Message
+      <span class="communications-format-toolbar" aria-label="Announcement formatting tools">
+        <button type="button" onclick="insertAnnouncementFormatting('bold','announcementEditBody')"><strong>B</strong><span>Bold</span></button>
+        <button type="button" onclick="insertAnnouncementFormatting('italic','announcementEditBody')"><em>I</em><span>Italic</span></button>
+        <button type="button" onclick="insertAnnouncementFormatting('link','announcementEditBody')">↗<span>Link</span></button>
+        <button type="button" onclick="insertAnnouncementFormatting('list','announcementEditBody')">•<span>List</span></button>
+      </span>
+      <textarea id="announcementEditBody" maxlength="12000" rows="10" required></textarea>
+      <small>Update the complete message using bold, italic, links, or bulleted lists.</small>
+    </label>
+    <label>Replace hero image <input id="announcementEditHeroImage" type="file" accept="image/jpeg,image/png,image/webp" /><small id="announcementEditHeroCurrent">Choose a file only when you want to replace the current image.</small></label>
+    <label class="communications-pin"><input id="announcementEditPinned" type="checkbox" /> Pin this announcement above newer updates</label>
+    <div class="communications-edit-actions"><button class="btn btn-ghost" type="button" onclick="closeAnnouncementEditor()">Cancel</button><button class="btn btn-gold" type="submit">Save changes</button></div>
+  </form>
+</dialog>
+<section class="communications-content-section koinonia-studio-view teaching-admin-section" data-koinonia-panel="audio" aria-labelledby="teachingAdminHeading" hidden><button class="btn btn-ghost koinonia-back" type="button" onclick="setKoinoniaStudioView('content')">Back to content library</button>
+  <div class="communications-section-heading"><span class="eyebrow">Formation and sound</span><h2 id="teachingAdminHeading">Audio</h2><p>Publish homilies, catechism, liturgical recordings, choir, and special events by uploading audio or linking to a recording.</p></div>
+  <div class="communications-grid">
+    <form class="communications-compose" onsubmit="createTeachingDraft(event)">
+      <span class="eyebrow">Compose</span><h2>New audio post</h2>
+      <label>Title<input id="teachingTitle" maxlength="180" required placeholder="Reflection for the Sunday of the Cross" /></label>
+      <label>Category<select id="teachingCategory" required><option value="homilies">Homilies</option><option value="catechism">Catechism</option><option value="liturgical">Liturgical</option><option value="choir">Choir</option><option value="special_events">Special Events</option></select></label>
+      <label>Reflection
+        <span class="communications-format-toolbar" aria-label="Teaching formatting">
+          <button type="button" onclick="insertTeachingFormatting('bold')"><strong>B</strong><span>Bold</span></button>
+          <button type="button" onclick="insertTeachingFormatting('italic')"><em>I</em><span>Italic</span></button>
+          <button type="button" onclick="insertTeachingFormatting('link')">↗<span>Link</span></button>
+          <button type="button" onclick="insertTeachingFormatting('list')">•<span>List</span></button>
+        </span>
+        <textarea id="teachingBody" maxlength="20000" rows="10" required placeholder="Share the reflection. Use **bold**, *italic*, [link text](https://example.org), or - list items."></textarea>
+        <small class="communications-format-help">Formatting is bounded to bold, italic, links, and bulleted lists.</small>
+      </label>
+      <label>Audio recording <input id="teachingAudio" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,audio/ogg,audio/webm" /><small>Optional MP3, M4A, WAV, OGG, or WebM file, up to 50MB.</small></label>
+      <div class="communications-input-divider"><span>or</span></div>
+      <label>Link to audio<input id="teachingAudioUrl" type="url" inputmode="url" placeholder="https://media.example.org/sunday-homily.mp3" /><small>Use a public HTTPS link that plays the recording directly. Choose either a file or a link.</small></label>
+      <label class="youtube-pin-option teaching-pin-option">
+        <input id="teachingPinned" type="checkbox" />
+        <span><strong>Pin when published</strong><small>After you publish this draft, place the recording at the top of Recent Audio in My AGAPAY.</small></span>
+      </label>
+      <button class="btn btn-gold" type="submit">Save audio draft</button>
+    </form>
+    <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Audio library</span><h2>Drafts and published posts</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="teachingAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+  </div>
+</section>
+<section class="communications-content-section koinonia-studio-view video-admin-section" data-koinonia-panel="video" aria-labelledby="videoAdminHeading" hidden><button class="btn btn-ghost koinonia-back" type="button" onclick="setKoinoniaStudioView('content')">Back to content library</button>
+  <div class="communications-section-heading"><span class="eyebrow">YouTube-hosted media</span><h2 id="videoAdminHeading">Video</h2><p>Add YouTube videos to the parish Media library. Native Stream uploads are paused for now.</p></div>
+  <!-- New Cloudflare Stream uploads remain paused; existing records stay manageable and permanently deletable. -->
+  <div class="communications-grid" data-native-video-management hidden>
+    <form class="communications-compose" data-native-video-upload onsubmit="createVideoUpload(event)">
+      <span class="eyebrow">Upload</span><h2>New private video</h2>
+      <label>Title<input id="videoTitle" maxlength="180" required placeholder="Sunday homily · July 27" /></label>
+      <label>Description<textarea id="videoDescription" maxlength="20000" rows="7" placeholder="Add context for parishioners. **Bold**, *italic*, links, and lists are supported."></textarea></label>
+      <label>Video file<input id="videoFile" type="file" accept="video/*" required /><small>Recorded video up to 200MB. The file uploads directly to Stream; AGAPAY never proxies the video bytes.</small></label>
+      <label class="communications-pin"><input id="videoPinned" type="checkbox" /> Feature this video at the top of Media</label>
+      <div class="video-upload-progress" id="videoUploadProgress" hidden><span><i id="videoUploadProgressFill"></i></span><strong id="videoUploadProgressLabel">Preparing secure upload…</strong></div>
+      <button class="btn btn-gold" type="submit">Upload private video</button>
+    </form>
+    <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">Native video</span><h2>Processing and published</h2></div><button class="btn btn-ghost btn-sm" type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="videoAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+  </div>
+  <div class="communications-grid youtube-admin-grid is-primary">
+    <form class="communications-compose" onsubmit="saveYouTubeChannel(event)">
+      <span class="eyebrow">Automatic YouTube media</span><h2>Connect your YouTube channel</h2><p class="section-note">Connect once and Koinonia will embed the channel’s complete uploads playlist. New public videos appear automatically—no manual adding required.</p>
+      <aside class="youtube-privacy-guidance" aria-labelledby="youtubePrivacyGuidanceHeading">
+        <strong id="youtubePrivacyGuidanceHeading">Choose the YouTube privacy setting intentionally</strong>
+        <ul>
+          <li><b>Public:</b> Searchable on YouTube, and anyone can watch.</li>
+          <li><b>Unlisted:</b> Not searchable or listed on the channel, but anyone with the link can watch. YouTube does not require a login or perform a viewer check.</li>
+          <li><b>Private:</b> Only explicitly invited Google accounts can watch. This is real access control: every viewer needs a Google account and an individual invitation.</li>
+        </ul>
+        <p><strong>Koinonia access:</strong> Announcements, Groups, and Teaching are restricted by AGAPAY’s verified-household gate. YouTube-hosted video—even Unlisted—does not carry that same guarantee because AGAPAY cannot control YouTube access.</p>
+      </aside>
+      <label>YouTube channel URL or ID<input id="youtubeChannelUrl" required placeholder="https://www.youtube.com/@yourparish" /></label>
+      <button class="btn btn-gold" type="submit">Connect channel</button>
+    </form>
+    <section class="communications-list-panel"><div class="communications-list-head"><div><span class="eyebrow">YouTube</span><h2>Channel connection</h2></div></div><div id="youtubeAdminList"><p class="sw-tool-loading">Loading...</p></div></section>
+  </div>
+  <form class="communications-compose youtube-curated-form" onsubmit="addYouTubeVideo(event)">
+    <span class="eyebrow">Optional curation</span><h2>Add or pin a specific YouTube video</h2><p class="section-note">Paste any video URL—including one from the connected channel—to spotlight it for parishioners.</p>
+    <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
+    <label class="youtube-pin-option">
+      <input id="youtubeVideoPinned" type="checkbox" />
+      <span><strong>Pin in Recent Videos</strong><small>Place this video at the top of Koinonia for parishioners.</small></span>
+    </label>
+    <button class="btn btn-ghost" type="submit">Validate and add</button>
+  </form>
+</section>
           </div>
         </div>
       </div>
+
       <!-- ── ACCOUNTING TAB ────────────────────── -->
       <div class="tab-panel parish-tier-panel" id="tab-accounting">
         <div class="acct-suite-shell">
@@ -1452,7 +1416,7 @@
             <span>Parish Commerce</span>
             <h2>Commerce is included with the Parish tier</h2>
             <p>Start with Bookstore payments for books, prayer ropes, icons, and other parish items. Additional Commerce products will appear here as they become available.</p>
-            <button class="btn btn-gold" type="button" onclick="switchTab('settings')">Review Parish tier</button>
+            <button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review Parish tier</button>
           </div>
         </div>
         <div id="bookstoreLiveContent" hidden>
@@ -1899,13 +1863,13 @@
 <script src="/parish/features/commerce/bookstore-counts.js?v=660f430cd2593a6e"></script>
 <script src="/parish/features/commerce/bookstore-inventory.js?v=2685b3ba6bbb82c6"></script>
 <script src="/parish/features/commerce.js?v=31050e34b00688a4"></script>
-<script src="/parish/features/koinonia/ministries.js?v=425f74c0f9d33109"></script>
+<script src="/parish/features/koinonia/ministries.js?v=d8d38cda87aa518e"></script>
 <script src="/parish/features/koinonia/bulletins.js?v=23ba755862708f95"></script>
-<script src="/parish/features/koinonia/announcements.js?v=9e88438b1f68c3eb"></script>
+<script src="/parish/features/koinonia/announcements.js?v=6edf0b7b02889713"></script>
 <script src="/parish/features/koinonia/prayers.js?v=dd6236a3b2deedc6"></script>
 <script src="/parish/features/koinonia/media.js?v=c49f0e24c56d5d23"></script>
-<script src="/parish/features/koinonia.js?v=7d774ebcbcb09b3e"></script>
-<script src="/parish/features/onboarding.js?v=d57e8086b417f160"></script>
+<script src="/parish/features/koinonia.js?v=d65ba8ed53875581"></script>
+<script src="/parish/features/onboarding.js?v=5791ad66f8dd1b59"></script>
 <script src="/parish/features/campaigns/website-embed.js?v=0c8bcf3af3b84659"></script>
 <script src="/parish/features/campaigns.js?v=c3c1cf2e54ddd9c3"></script>
 <script src="/parish/features/stewardship/reports.js?v=4b361c1bf0175d0f"></script>
@@ -1936,8 +1900,8 @@
 <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
 <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
 <script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
-<script src="/parish/app-subscriptions-and-settlement.js?v=ed4eef319b4d4074"></script>
+<script src="/parish/app-subscriptions-and-settlement.js?v=50c249e196063e22"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
-<script src="/parish/app.js?v=bb330b0367101dcd"></script>
+<script src="/parish/app.js?v=54efeb4a3ac3b487"></script>
 </body>
 </html>

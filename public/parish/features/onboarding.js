@@ -198,7 +198,7 @@ function renderSimpleParishSetupWizard(workflow) {
       : blockerKeys.has('credential') && currentParish?.parishDashboardTokenTemporary === true
         ? '<strong>Set your permanent dashboard password</strong><p class="setup-copy setup-action-copy">Your parish is still using its temporary invitation password. Set a permanent password before reviewing and launching giving. Your authenticator stays connected.</p><button class="btn btn-gold" type="button" onclick="window.ParishSettings.showPasswordPrompt()">Set permanent password</button>'
         : needsPlan
-          ? `<strong>Choose your AGAPAY plan</strong><p class="setup-copy setup-action-copy">Confirm your plan and start the free 30-day demo if eligible. No card is required for the demo. Then connect Stripe for donations.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings')">Choose plan</button>`
+          ? `<strong>Choose your AGAPAY plan</strong><p class="setup-copy setup-action-copy">Confirm your plan and start the free 30-day demo if eligible. No card is required for the demo. Then connect Stripe for donations.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Choose plan</button>`
           : needsStripe
             ? stripeVerificationPending
               ? `<strong>Stripe setup is complete</strong><p class="setup-copy setup-action-copy">Verification is pending. Stripe is reviewing the submitted information before enabling payments and payouts. No additional information is currently due.</p><button class="btn btn-gold" type="button" onclick="refreshStripeStatus({force:true})">Check Stripe status</button>`

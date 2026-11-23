@@ -48,6 +48,14 @@ const fixture = await openParishFixture(browser, async (count, request) => {
 try {
   await fixture.open();
   await fixture.page.locator('#nav-settings').click();
+  assert.equal(await fixture.page.locator('#settings-profile').isVisible(), true);
+  for (const section of ['giving', 'team', 'security', 'billing', 'backup', 'profile']) {
+    const button = fixture.page.locator(`[data-settings-section="${section}"]`);
+    await button.click();
+    assert.equal(await button.getAttribute('aria-pressed'), 'true');
+    assert.equal(await fixture.page.locator(`#settings-${section}`).isVisible(), true);
+    assert.equal(await fixture.page.locator('#settingsPane .settings-panel:visible').count(), 1);
+  }
   const name = fixture.page.locator('#settingsPane #parishName');
   await name.fill('First saved name');
   await started;
@@ -62,12 +70,15 @@ try {
   assert.equal(await fixture.page.locator('#sidebarParishName').textContent(), 'Latest parish name');
   assert.equal(fixture.requests(), 1, 'autosave updates the dashboard without a full reload');
   const beforeDrafts = bodies.length;
+  await fixture.page.locator('[data-settings-section="security"]').click();
   await fixture.page.locator('#newDashboardPassword').fill('partial-password');
+  await fixture.page.locator('[data-settings-section="billing"]').click();
   await fixture.page.locator('#subscriptionTierUpgrade').selectOption('giving');
   await fixture.page.waitForTimeout(1100);
   assert.equal(bodies.length, beforeDrafts, 'password and billing drafts do not trigger autosave requests');
   const before = bodies.length;
   failNext = true;
+  await fixture.page.locator('[data-settings-section="profile"]').click();
   await fixture.page.locator('#city').fill('Synthetic City');
   await fixture.page.locator('#settingsAutosaveRetry').waitFor({ state: 'visible' });
   assert.match(await fixture.page.locator('#settingsAutosaveText').textContent(), /Synthetic save failed/);

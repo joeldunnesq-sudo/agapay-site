@@ -1360,7 +1360,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(openKoinoniaComposer|renderKoinoniaOverview|renderCommunicationsList|toggleAnnouncementReaders|insertAnnouncementFormatting|insertTeachingFormatting|createAnnouncementDraft|editAnnouncement|saveAnnouncementEdit|publishAnnouncement|archiveAnnouncement|deleteAnnouncement)$',
+            '^(openKoinoniaComposer|openKoinoniaLibraryItem|renderKoinoniaOverview|renderCommunicationsList|toggleAnnouncementReaders|insertAnnouncementFormatting|insertTeachingFormatting|createAnnouncementDraft|editAnnouncement|saveAnnouncementEdit|publishAnnouncement|archiveAnnouncement|deleteAnnouncement)$',
         },
       ],
     },

@@ -33,6 +33,20 @@ function renderKoinoniaOverview() {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
   };
+  setText('koinoniaPublishedTotal', String(publishedAnnouncements + publishedAudio + publishedVideo));
+  setText(
+    'koinoniaDraftTotal',
+    String(announcementDrafts + audioDrafts + videos.filter((item) => item.status === 'draft').length)
+  );
+  setText(
+    'koinoniaChannelTotal',
+    String(
+      [publishedAnnouncements, publishedAudio, publishedVideo, communicationsState.blog?.enabled ? 1 : 0].filter(
+        Boolean
+      ).length
+    )
+  );
+  renderKoinoniaContentLibrary();
   setText('koinoniaPublishedAnnouncements', String(publishedAnnouncements));
   setText('koinoniaAnnouncementDrafts', `${announcementDrafts} draft${announcementDrafts === 1 ? '' : 's'}`);
   setText('koinoniaPublishedAudio', String(publishedAudio));
@@ -43,8 +57,16 @@ function renderKoinoniaOverview() {
   setText('koinoniaBlogDetail', communicationsState.blog?.feedUrl ? 'Feed validated' : 'Optional news source');
   const calendarInput = document.getElementById('koinoniaCalendarUrl');
   const calendarStatus = document.getElementById('koinoniaCalendarStatus');
-  if (calendarInput && document.activeElement !== calendarInput)
-    calendarInput.value = currentParish?.koinoniaCalendarUrl || '';
+  if (calendarInput) {
+    const parishId = currentParish?.parishId || '';
+    const savedUrl = currentParish?.koinoniaCalendarUrl || '';
+    const previousUrl = calendarInput.dataset.savedCalendarUrl;
+    const changedParish = calendarInput.dataset.calendarParishId !== parishId;
+    const pristine = previousUrl === void 0 || calendarInput.value === previousUrl;
+    if (changedParish || pristine) calendarInput.value = savedUrl;
+    calendarInput.dataset.calendarParishId = parishId;
+    calendarInput.dataset.savedCalendarUrl = savedUrl;
+  }
   if (calendarStatus)
     calendarStatus.textContent = currentParish?.koinoniaCalendarUrl
       ? 'Public calendar link saved.'
@@ -69,11 +91,66 @@ function renderKoinoniaOverview() {
       <button type="button" onclick="setKoinoniaStudioView('${escapeAttr(item.view)}')">
         <span class="koinonia-recent-icon">${item.icon}</span>
         <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.kind)} · ${escapeHtml(announcementStatusLabel(item.status))} · ${escapeHtml(shortDate(item.updatedAt || item.publishedAt || item.createdAt))}</small></span>
-        <em>Open →</em>
+        <em>Open</em>
       </button>`
         )
         .join('')
     : '<div class="communications-empty"><strong>Your studio is ready</strong><p>Publish the first announcement, audio post, or video for your parish.</p></div>';
+}
+let koinoniaLibraryRenderedItems = [];
+function koinoniaLibraryItems() {
+  return [
+    ...(communicationsState.announcements || []).map((item) => ({
+      ...item,
+      kind: 'Announcement',
+      view: 'announcements',
+      source: 'announcement',
+    })),
+    ...(communicationsState.teaching || []).map((item) => ({ ...item, kind: 'Audio', view: 'audio', source: 'audio' })),
+    ...(communicationsState.videos || []).map((item) => ({ ...item, kind: 'Video', view: 'video', source: 'video' })),
+    ...(communicationsState.youtube || []).map((item) => ({
+      ...item,
+      kind: 'YouTube video',
+      view: 'video',
+      source: 'youtube',
+      status: 'published',
+    })),
+  ].sort(
+    (left, right) =>
+      new Date(right.updatedAt || right.publishedAt || right.createdAt || 0).getTime() -
+      new Date(left.updatedAt || left.publishedAt || left.createdAt || 0).getTime()
+  );
+}
+function renderKoinoniaContentLibrary() {
+  const target = document.getElementById('koinoniaContentLibrary');
+  if (!target) return;
+  const filter = document.getElementById('koinoniaContentFilter')?.value || 'all';
+  const items = koinoniaLibraryItems();
+  koinoniaLibraryRenderedItems = items;
+  const rows = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => filter === 'all' || item.view === filter || (filter === 'draft' && item.status === 'draft'));
+  target.innerHTML = rows.length
+    ? rows
+        .map(
+          ({ item, index }) => `
+    <article class="koinonia-library-row">
+      <div><h3>${escapeHtml(item.title || 'Untitled')}</h3><p>${escapeHtml(item.kind)} · ${escapeHtml(shortDate(item.updatedAt || item.publishedAt || item.createdAt))}</p></div>
+      <span class="communications-status is-${['published', 'draft', 'archived'].includes(item.status) ? item.status : 'draft'}">${escapeHtml(announcementStatusLabel(item.status))}</span>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="openKoinoniaLibraryItem(${index})">${item.status !== 'archived' && item.source !== 'youtube' ? 'Edit' : 'Manage'}</button>
+    </article>`
+        )
+        .join('')
+    : '<div class="communications-empty"><strong>No content here yet</strong><p>Create an announcement, audio post, or video to begin.</p></div>';
+}
+function openKoinoniaLibraryItem(index) {
+  const item = koinoniaLibraryRenderedItems[index];
+  if (!item) return;
+  setKoinoniaStudioView(item.view);
+  if (item.status === 'archived') return;
+  if (item.source === 'announcement') editAnnouncement(item.id);
+  if (item.source === 'audio') editTeachingPost(item.id);
+  if (item.source === 'video') editVideoPost(item.id);
 }
 function renderCommunicationsList() {
   const list = document.getElementById('communicationsList');
