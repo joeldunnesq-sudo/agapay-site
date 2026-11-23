@@ -101,21 +101,18 @@ function renderCommerceOverview() {
       <div class="commerce-overview-grid">
         <section class="commerce-overview-card commerce-product-summary">
           <header>
-            <div><span class="commerce-card-eyebrow">Products</span><h2>Commerce activity</h2></div>
-            <span class="commerce-card-note">All products</span>
+            <div><h2>Needs attention</h2></div>
+
           </header>
-          <button class="commerce-product-summary-row" type="button" onclick="switchCommerceProduct('bookstore')">
+          <button class="commerce-product-summary-row" type="button" onclick="switchCommerceProduct('bookstore');setBookstoreLowStockFilter(${lowStockCount > 0});document.getElementById('commerceInventory')?.scrollIntoView()">
             <span class="commerce-product-summary-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </span>
-            <span class="commerce-product-summary-copy"><strong>Bookstore</strong><small>${escapeHtml(bookstoreState)} · ${activeProducts.length} active offering${activeProducts.length === 1 ? '' : 's'}${lowStockCount ? ` · ${lowStockCount} item${lowStockCount === 1 ? '' : 's'} low on stock` : ''}</small></span>
-            <span class="commerce-product-summary-metrics"><strong>${money(kpis.netCents || 0)}</strong><small>${Number(kpis.orderCount || 0)} order${Number(kpis.orderCount || 0) === 1 ? '' : 's'}</small></span>
+            <span class="commerce-product-summary-copy"><strong>${lowStockCount ? `${lowStockCount} low-stock ${lowStockCount === 1 ? 'item' : 'items'}` : 'Review bookstore inventory'}</strong><small>${escapeHtml(bookstoreState)} · ${activeProducts.length} active offering${activeProducts.length === 1 ? '' : 's'}${lowStockCount ? ` · ${lowStockCount} item${lowStockCount === 1 ? '' : 's'} low on stock` : ''}</small></span>
+            <span class="commerce-product-summary-metrics">Review inventory</span>
             <span class="commerce-product-summary-arrow" aria-hidden="true">→</span>
           </button>
-          <div class="commerce-coming-products">
-            <span>Events</span><span>Meals</span><span>Retreats</span><span>Camp</span><span>Tuition</span>
-            <small>Additional product activity will roll into this overview as each product launches.</small>
-          </div>
+          <div class="commerce-quick-actions"><button class="btn btn-ghost" type="button" onclick="switchCommerceProduct('events')">View events</button><button class="btn btn-ghost" type="button" onclick="switchCommerceProduct('meals')">View meals</button></div>
         </section>
 
         <section class="commerce-overview-card commerce-recent-activity">

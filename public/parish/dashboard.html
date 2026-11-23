@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="/styles/parish-settings.css?v=20261122autosave1" />
   <link rel="stylesheet" href="/parish/koinonia-workspace.css?v=20261123studio1" />
   <link rel="stylesheet" href="/parish/settings.css?v=20261123settings1" />
+<link rel="stylesheet" href="/parish/commerce-refresh.css?v=1" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -868,7 +869,7 @@
             <span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
           </div>
         </div>
-        
+
         <div class="sw-suite-tool-grid sw-suite-tool-grid--health">
           <div class="sw-suite-tool-card sw-tool-health-score">
             <div class="sw-tool-card-icon">
@@ -1018,7 +1019,7 @@
       </div>
       </div>
       <!-- ── SACRAMENTS & SERVICES TAB ────────────────────── -->
-      
+
       <div class="tab-panel parish-tier-panel" id="tab-sacraments">
         <div class="sac-paywall" id="sacramentsComingSoonBanner">
           <div class="text-give-header sw-suite-hero sac-paywall-hero">
@@ -1420,35 +1421,28 @@
           </div>
         </div>
         <div id="bookstoreLiveContent" hidden>
+<header class="commerce-refresh-hero"><span>Parish Commerce</span><h1>Commerce</h1><p>Manage bookstore sales, event registrations, and parish meals.</p></header>
           <nav class="commerce-product-tabs" role="tablist" aria-label="Commerce products">
-            <button class="commerce-product-tab is-active" type="button" role="tab" aria-selected="true" data-commerce-product="overview" onclick="switchCommerceProduct('overview')">
-              <span>Overview</span>
+            <button class="commerce-product-tab is-active" type="button" role="tab" aria-selected="true" data-commerce-product="overview" onclick="switchCommerceProduct('overview')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 9v12"/></svg><span>Overview</span>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="bookstore" onclick="switchCommerceProduct('bookstore')">
-              <span>Bookstore</span>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="bookstore" onclick="switchCommerceProduct('bookstore')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h14v18H6a2 2 0 0 1 0-4h14M8 7h8"/></svg><span>Bookstore</span>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="events" onclick="switchCommerceProduct('events')">
-              <span>Events</span>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="events" onclick="switchCommerceProduct('events')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v15H3zM7 3v6m10-6v6M3 11h18"/></svg><span>Events</span>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="meals" onclick="switchCommerceProduct('meals')">
-              <span>Meals</span>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="meals" onclick="switchCommerceProduct('meals')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 3v6a3 3 0 0 0 6 0V3M7 3v18M18 21V3c-3 0-4 6-4 10h4"/></svg><span>Meals</span>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="retreats">
-              <span>Retreats</span><em>Coming soon</em>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="retreats"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20 9 8l4 7 3-5 6 10z"/></svg><span>Retreats</span><em>Coming soon</em>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="camp">
-              <span>Camp</span><em>Coming soon</em>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="camp"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20 12 4l10 16zM8 20l4-7 4 7"/></svg><span>Camp</span><em>Coming soon</em>
             </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="tuition">
-              <span>Tuition</span><em>Coming soon</em>
+            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="tuition"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11v6q6 5 12 0v-6"/></svg><span>Tuition</span><em>Coming soon</em>
             </button>
           </nav>
           <section class="commerce-workspace-panel is-active" id="commerceOverviewPanel" data-commerce-panel="overview">
             <div class="sw-suite-hero commerce-overview-hero">
               <div class="sw-suite-hero-copy">
-                <span class="sw-suite-eyebrow">Parish Commerce</span>
-                <h1 class="sw-suite-heading">Commerce Overview</h1>
-                <p class="sw-suite-subhead">See revenue, customers, orders, and activity across every Commerce product in one place.</p>
+                <h2 class="sw-suite-heading">Commerce at a glance</h2>
+                <p class="sw-suite-subhead">Review sales and see what needs attention.</p>
               </div>
               <div class="sw-suite-hero-status">
                 <span class="commerce-overview-range-label">Reporting period</span>
@@ -1494,28 +1488,8 @@
             </div>
           </div>
           <div id="bookstoreTaxReminder" class="notice" style="margin-bottom:16px;" hidden></div>
-          <section class="bk-sales" id="bookstoreSalesPanel" aria-live="polite">
-            <div class="bk-sales-head">
-              <div class="bk-sales-head-copy">
-                <span class="bk-sales-eyebrow">My AGAPAY Purchases</span>
-                <h2 class="bk-sales-title">Bookstore Sales</h2>
-                <p class="bk-sales-sub">Every purchase your parishioners make from My AGAPAY — with buyer detail and what you net.</p>
-              </div>
-              <div class="bk-sales-controls">
-                <div class="bk-range" role="tablist" aria-label="Date range">
-                  <button type="button" class="bk-range-btn" data-range="30d" onclick="setBookstoreSalesRange('30d')">30d</button>
-                  <button type="button" class="bk-range-btn is-active" data-range="90d" onclick="setBookstoreSalesRange('90d')">90d</button>
-                  <button type="button" class="bk-range-btn" data-range="ytd" onclick="setBookstoreSalesRange('ytd')">YTD</button>
-                  <button type="button" class="bk-range-btn" data-range="all" onclick="setBookstoreSalesRange('all')">All</button>
-                </div>
-                <button class="sw-suite-refresh-btn" type="button" onclick="loadBookstoreSalesPanel(true)" title="Refresh sales">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
-                </button>
-              </div>
-            </div>
-            <div id="bookstoreSalesBody" class="bk-sales-body"><p class="sw-tool-loading">Loading sales…</p></div>
-          </section>
-          <div class="bookstore-grid">
+
+          <div class="commerce-bookstore-actions"><button class="btn btn-ghost" type="button" onclick="document.getElementById('bookstoreSalesPanel')?.scrollIntoView()">View sales</button></div><div class="bookstore-grid" id="commerceInventory">
             <section class="section-card bookstore-card">
               <div class="section-header">
                 <div class="section-title">
@@ -1565,6 +1539,27 @@
               <p class="section-note">Choose common parish bookstore items, adjust the price, then add them to your live catalog.</p>
               <div id="bookstoreStarterCatalog"><p class="sw-tool-loading">Loading...</p></div>
             </div>
+          </section>
+<section class="bk-sales" id="bookstoreSalesPanel" aria-live="polite">
+            <div class="bk-sales-head">
+              <div class="bk-sales-head-copy">
+                <span class="bk-sales-eyebrow">My AGAPAY Purchases</span>
+                <h2 class="bk-sales-title">Bookstore Sales</h2>
+                <p class="bk-sales-sub">Every purchase your parishioners make from My AGAPAY — with buyer detail and what you net.</p>
+              </div>
+              <div class="bk-sales-controls">
+                <div class="bk-range" role="tablist" aria-label="Date range">
+                  <button type="button" class="bk-range-btn" data-range="30d" onclick="setBookstoreSalesRange('30d')">30d</button>
+                  <button type="button" class="bk-range-btn is-active" data-range="90d" onclick="setBookstoreSalesRange('90d')">90d</button>
+                  <button type="button" class="bk-range-btn" data-range="ytd" onclick="setBookstoreSalesRange('ytd')">YTD</button>
+                  <button type="button" class="bk-range-btn" data-range="all" onclick="setBookstoreSalesRange('all')">All</button>
+                </div>
+                <button class="sw-suite-refresh-btn" type="button" onclick="loadBookstoreSalesPanel(true)" title="Refresh sales">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="bookstoreSalesBody" class="bk-sales-body"><p class="sw-tool-loading">Loading sales…</p></div>
           </section>
           </section>
           <section class="commerce-workspace-panel" id="commerceEventsPanel" data-commerce-panel="events" hidden>
@@ -1862,7 +1857,7 @@
 <script src="/parish/features/commerce/offerings.js?v=8aa08f521de7ddd6"></script>
 <script src="/parish/features/commerce/bookstore-counts.js?v=660f430cd2593a6e"></script>
 <script src="/parish/features/commerce/bookstore-inventory.js?v=2685b3ba6bbb82c6"></script>
-<script src="/parish/features/commerce.js?v=31050e34b00688a4"></script>
+<script src="/parish/features/commerce.js?v=c396970026faac5e"></script>
 <script src="/parish/features/koinonia/ministries.js?v=d8d38cda87aa518e"></script>
 <script src="/parish/features/koinonia/bulletins.js?v=23ba755862708f95"></script>
 <script src="/parish/features/koinonia/announcements.js?v=6edf0b7b02889713"></script>

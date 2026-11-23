@@ -1,0 +1,35 @@
+#tab-bookstore .commerce-refresh-hero {
+  background: linear-gradient(110deg, #0d1823, #1d3240);
+  color: #fff;
+  border-radius: 16px;
+  padding: clamp(18px, 3vw, 30px);
+  margin-bottom: 18px;
+}
+#tab-bookstore .commerce-refresh-hero span { color: #d1ad5e; font-size: 13px; }
+#tab-bookstore .commerce-refresh-hero h1 { font: 600 clamp(32px, 5vw, 44px)/1.1 var(--serif); margin: 4px 0 8px; }
+#tab-bookstore .commerce-refresh-hero p { color: #d5dee4; font-size: 15px; margin: 0; }
+#tab-bookstore .commerce-product-tabs { display: flex; flex-wrap: wrap; padding: 0 0 6px; gap: 6px; border: 0; border-bottom: 1px solid #ded5c5; background: transparent; box-shadow: none; }
+#tab-bookstore .commerce-product-tab { display: inline-flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 44px; padding: 9px 13px; border-radius: 8px; font-size: 14px; }
+#tab-bookstore .commerce-product-tab[hidden] { display: none; }
+#tab-bookstore .commerce-product-tab svg { width: 18px; height: 18px; flex: none; fill: none; stroke: #9b7a36; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+#tab-bookstore .commerce-product-tab.is-active { background: #0d1722; color: #fff; box-shadow: inset 3px 0 #d1ad5e; }
+#tab-bookstore .commerce-product-tab.is-active svg { stroke: #d1ad5e; }
+#tab-bookstore .commerce-overview-hero { background: transparent; color: #0d1722; padding: 0; border: 0; box-shadow: none; min-height: 0; }
+#tab-bookstore .commerce-overview-hero .sw-suite-heading { color: #0d1722; font-size: 29px; }
+#tab-bookstore .commerce-overview-hero .sw-suite-subhead,
+#tab-bookstore .commerce-overview-range-label { color: #505d65; }
+#tab-bookstore .commerce-overview-hero .sw-suite-refresh-btn { color: #102535; border-color: #cfc2aa; }
+#tab-bookstore .commerce-overview-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+#tab-bookstore .commerce-overview-kpi { background: #fffdf9; color: #102535; border-color: #e1d9cb; }
+#tab-bookstore .commerce-overview-kpi > * { color: inherit; }
+#tab-bookstore .commerce-bookstore-actions { margin-bottom: 14px; }
+#tab-bookstore #bookstoreSalesPanel { margin-top: 20px; scroll-margin-top: 80px; }
+#tab-bookstore #commerceInventory { scroll-margin-top: 80px; }
+#tab-bookstore .commerce-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 18px 18px; }
+@media (max-width: 640px) {
+  #tab-bookstore .commerce-product-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #tab-bookstore .commerce-product-tab { padding-inline: 8px; flex-wrap: wrap; }
+  #tab-bookstore .commerce-overview-hero { align-items: flex-start; }
+}
+#tab-bookstore .commerce-overview-range { background: #fffdf9; border-color: #ded5c5; }
+#tab-bookstore .commerce-overview-range button:not(.is-active) { color: #485861; }
