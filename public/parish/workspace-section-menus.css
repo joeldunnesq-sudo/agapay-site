@@ -1,0 +1,133 @@
+/* In-workspace navigation. The parish dashboard sidebar owns app-level navigation. */
+#bookstoreLiveContent:not([hidden]) {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+#bookstoreLiveContent > .commerce-refresh-hero {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+#tab-bookstore .commerce-workspace-panel {
+  grid-column: 2;
+  min-width: 0;
+}
+#tab-bookstore .commerce-product-tabs,
+#tab-accounting .acct-suite-rail nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#tab-bookstore .commerce-product-tabs {
+  position: sticky;
+  top: 24px;
+  margin: 0;
+}
+#tab-bookstore .commerce-product-tab,
+#tab-accounting .acct-suite-rail nav button {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  justify-content: flex-start;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #465864;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+}
+#tab-bookstore .commerce-product-tab[hidden],
+#tab-bookstore .commerce-product-tab:disabled,
+#tab-accounting .acct-suite-rail nav button[hidden] {
+  display: none;
+}
+#tab-bookstore .commerce-product-tab:hover,
+#tab-accounting .acct-suite-rail nav button:hover {
+  background: #ece5d8;
+}
+#tab-bookstore .commerce-product-tab.is-active,
+#tab-accounting .acct-suite-rail nav button.active {
+  color: #fff;
+  background: #0d1722;
+  box-shadow: inset 3px 0 #d1ad5e;
+}
+#tab-accounting .acct-suite-rail nav button.active::after {
+  display: none;
+}
+#tab-accounting .acct-suite-rail .acct-nav-icon {
+  stroke: #9b7a36;
+}
+#tab-accounting .acct-suite-rail button.active .acct-nav-icon {
+  stroke: #d1ad5e;
+}
+#tab-accounting .acct-suite-shell:not(.acct-suite-shell--tier-paywall) {
+  flex-direction: row;
+}
+#tab-accounting .acct-suite-rail {
+  display: flex;
+  flex: 0 0 210px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  padding: 20px 10px;
+  overflow: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#tab-accounting .acct-suite-rail .acct-suite-brand {
+  display: none;
+}
+#tab-accounting .acct-suite-rail .acct-suite-tier {
+  margin: 0;
+  padding: 12px;
+  border: 0;
+}
+#tab-accounting .acct-suite-tier strong,
+#tab-accounting .acct-suite-tier span {
+  color: #465864;
+}
+#tab-accounting .acct-suite-main {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  #bookstoreLiveContent:not([hidden]) {
+    display: block;
+  }
+  #bookstoreLiveContent > .commerce-refresh-hero {
+    margin-bottom: 18px;
+  }
+  #tab-bookstore .commerce-product-tabs {
+    position: static;
+    margin-bottom: 24px;
+  }
+  #tab-bookstore .commerce-product-tabs,
+  #tab-accounting .acct-suite-rail nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  #tab-accounting .acct-suite-shell:not(.acct-suite-shell--tier-paywall) {
+    flex-direction: column;
+  }
+  #tab-accounting .acct-suite-rail {
+    flex: 0 0 auto;
+    max-height: 44dvh;
+    padding: 12px 14px;
+  }
+  #tab-accounting .acct-suite-rail .acct-suite-tier {
+    display: none;
+  }
+}
+#tab-accounting .acct-suite-shell--tier-paywall > .acct-suite-rail {
+  display: none;
+}
