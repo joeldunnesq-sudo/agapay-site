@@ -82,6 +82,9 @@ export async function openParishFixture(browser, dashboardResponse = () => ({ pa
         return route.fulfill({ status: response.status || 200, body: response.raw, contentType: 'text/html' });
       return route.fulfill({ status: response.status || 200, json: response.body || response });
     }
+    if (url.pathname === base + '/session-activity' && route.request().method() === 'POST') {
+      return route.fulfill({ status: 204 });
+    }
     if (url.pathname.startsWith('/api/')) {
       const suffix = url.pathname.slice(base.length);
       const responseKey = Object.hasOwn(apiResponses, url.pathname) ? url.pathname : suffix;
