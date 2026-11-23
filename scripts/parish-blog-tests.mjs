@@ -153,13 +153,28 @@ assert.ok(
 );
 assert.match(
   dashboard,
-  /data-koinonia-view="overview"[\s\S]*data-koinonia-view="announcements"[\s\S]*data-koinonia-view="audio"[\s\S]*data-koinonia-view="video"[\s\S]*data-koinonia-view="news"/,
-  'Koinonia Studio should separate publishing channels'
+  /data-koinonia-view="overview"[\s\S]*data-koinonia-view="content"[\s\S]*data-koinonia-view="bulletins"[\s\S]*data-koinonia-view="ministries"[\s\S]*data-koinonia-view="prayers"[\s\S]*data-koinonia-view="connections"/,
+  'Koinonia should give content, bulletins, ministries, prayer requests, and configuration distinct navigation entries'
+);
+const contentWorkspace = dashboard.match(/<section[^>]*data-koinonia-panel="content"[\s\S]*?<\/section>/)?.[0];
+assert.ok(contentWorkspace, 'Koinonia should retain a dedicated content library');
+for (const channel of ['announcements', 'audio', 'video']) {
+  assert.ok(
+    contentWorkspace.includes(`openKoinoniaComposer('${channel}')`),
+    `the content library should retain access to the ${channel} channel`
+  );
+}
+const connectionsWorkspace = dashboard.match(
+  /<section[^>]*data-koinonia-panel="connections"[\s\S]*?(?=<section[^>]*data-koinonia-panel=)/
+)?.[0];
+assert.ok(
+  connectionsWorkspace?.includes("setKoinoniaStudioView('news')"),
+  'Connections & settings should retain access to the priest blog and news feeds'
 );
 assert.match(
   dashboard,
-  /koinoniaPublishedAnnouncements[\s\S]*koinoniaPublishedAudio[\s\S]*koinoniaPublishedVideo[\s\S]*koinoniaBlogStatus/,
-  'the studio overview should expose live channel health'
+  /koinoniaPublishedTotal[\s\S]*koinoniaDraftTotal[\s\S]*koinoniaChannelTotal/,
+  'the studio overview should expose live published, draft, and channel summaries'
 );
 assert.ok(includesJavaScriptFragment(parishApp, 'function setKoinoniaStudioView'));
 assert.ok(includesJavaScriptFragment(parishApp, 'function renderKoinoniaOverview'));

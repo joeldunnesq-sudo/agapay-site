@@ -108,6 +108,8 @@ try {
     await fixture.page.evaluate(() => {
       document.getElementById('nav-settings').click();
     });
+    await fixture.page.locator('[data-settings-section="backup"]').click();
+    assert.equal(await fixture.page.locator('#settings-backup').isVisible(), true);
     await fixture.page.locator('#parishBackupCard').scrollIntoViewIfNeeded();
     await fixture.page.screenshot({ path: 'artifacts/parish-backup/settings-desktop.png', fullPage: true });
     await fixture.page.setViewportSize({ width: 390, height: 844 });

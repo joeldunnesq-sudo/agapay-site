@@ -585,10 +585,10 @@ function renderSubscriptionPanel() {
           ${statusChip(stripeConnected ? 'Stripe connected' : 'Stripe not connected', stripeConnected)}
           ${pricingUsage.upgradeRequired ? statusChip('Household band update needed', false) : ''}
         </div>
-        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings')">${demoActive ? 'Add billing details or manage demo' : ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
+        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings');selectParishSettings('billing')">${demoActive ? 'Add billing details or manage demo' : ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
       </div>
       <div class="pdx-sub-modules">
-        <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings')">Compare tiers</button></div>
+        <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings');selectParishSettings('billing')">Compare tiers</button></div>
         <div class="pdx-sub-module-grid">
           ${moduleRow('Give +', 'givingPlus', 'Campaigns, branding, and annual statements', 'Give +')}
           ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Give +')}
@@ -684,6 +684,7 @@ async function changeDemoTier(btn) {
     currentParish = { ...currentParish, ...(data.parish || {}) };
     await loadDashboard();
     switchTab('settings');
+    selectParishSettings('billing');
     setStatus(`St. Fiacre is now demonstrating the ${data.parish?.subscriptionTierLabel || tier} tier.`, 'success');
   } catch (err) {
     setStatus(err.message, 'error');
