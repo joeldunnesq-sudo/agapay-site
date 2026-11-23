@@ -188,7 +188,7 @@ assert.match(app, /function renderAccountingJournalEditor/);
 assert.match(app, /accountingExperienceMode === 'treasurer' && accountingView === 'ledger'/);
 assert.match(app, /newAccountingJournal\(\)/);
 assert.match(app, /function accountingOverviewHero\(\)/);
-assert.match(app, /pane\.innerHTML = `\$\{accountingOverviewHero\(\)\}[\s\S]*openAccountingIncomeReport\(\)[\s\S]*<div class="acct-suite-stats">/);
+assert.match(app, /pane\.innerHTML = `\$\{accountingOverviewHero\(\)\}<div class="acct-suite-stats">[\s\S]*Needs attention[\s\S]*openAccountingIncomeReport\(\)/);
 assert.doesNotMatch(app, /renderAccountingTreasurerHome/);
 const overviewHero = app.slice(app.indexOf("function accountingOverviewHero"), app.indexOf("function accountingOverviewFundSummary"));
 for (const mode of ['treasurer', 'accountant']) {
