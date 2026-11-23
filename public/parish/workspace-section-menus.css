@@ -131,3 +131,81 @@
 #tab-accounting .acct-suite-shell--tier-paywall > .acct-suite-rail {
   display: none;
 }
+#tab-sacraments .sac-admin-shell {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px 24px;
+}
+#tab-sacraments .sac-admin-head,
+#tab-sacraments .sac-admin-context-bar {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+#tab-sacraments .sac-admin-workspace {
+  grid-column: 2;
+  min-width: 0;
+}
+#tab-sacraments .sac-admin-tabs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  position: sticky;
+  top: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#tab-sacraments .sac-admin-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #465864;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+}
+#tab-sacraments .sac-admin-tab:hover {
+  background: #ece5d8;
+}
+#tab-sacraments .sac-admin-tab.active {
+  background: #0d1722;
+  color: #fff;
+  box-shadow: inset 3px 0 #d1ad5e;
+}
+#tab-sacraments .sac-admin-tab svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: #9b7a36;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#tab-sacraments .sac-admin-tab.active svg {
+  stroke: #d1ad5e;
+}
+@media (max-width: 760px) {
+  #tab-sacraments .sac-admin-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  #tab-sacraments .sac-admin-workspace {
+    grid-column: 1;
+  }
+  #tab-sacraments .sac-admin-tabs {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+}
