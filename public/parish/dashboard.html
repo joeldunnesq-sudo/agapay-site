@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="/parish/koinonia-workspace.css?v=20261123studio1" />
   <link rel="stylesheet" href="/parish/settings.css?v=20261123settings1" />
 <link rel="stylesheet" href="/parish/commerce-refresh.css?v=1" />
+<link rel="stylesheet" href="/parish/accounting-refresh.css?v=1" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -1373,40 +1374,40 @@
         </div>
       </div>
 
-      <!-- ── ACCOUNTING TAB ────────────────────── -->
-      <div class="tab-panel parish-tier-panel" id="tab-accounting">
-        <div class="acct-suite-shell">
-          <header class="acct-suite-rail" aria-label="Accounting suite navigation">
-            <div class="acct-suite-brand"><strong>AGAPAY</strong><span>Accounting Suite</span></div>
-            <nav role="tablist" aria-label="Accounting views">
-              <button type="button" class="active" data-accounting-view="overview" onclick="setAccountingView('overview')"><span class="acct-nav-icon">⌂</span>Overview</button>
-              <button type="button" data-accounting-view="funds" onclick="setAccountingView('funds')"><span class="acct-nav-icon">◫</span>Funds</button>
-              <button type="button" data-accounting-view="payables" onclick="setAccountingView('payables')"><span class="acct-nav-icon">◇</span>Payables</button>
-              <button type="button" data-accounting-view="banking" onclick="setAccountingView('banking')"><span class="acct-nav-icon">⇄</span>Reconciliation</button>
-              <button type="button" data-accounting-view="reports" onclick="setAccountingView('reports')"><span class="acct-nav-icon">▤</span>Reports</button>
-              <button type="button" data-accounting-view="budgets" onclick="setAccountingView('budgets')"><span class="acct-nav-icon">◎</span>Budgets</button>
-              <button type="button" class="acct-suite-advanced-toggle" data-accounting-advanced-toggle onclick="toggleAccountingAdvancedNav()" aria-expanded="false" aria-controls="accountingAdvancedLedger accountingAdvancedClose accountingAdvancedGovernance accountingAdvancedSetup accountingAdvancedSettings"><span class="acct-nav-icon">•••</span>Advanced</button>
-              <button type="button" id="accountingAdvancedLedger" data-accounting-view="ledger" data-accounting-advanced onclick="setAccountingView('ledger')"><span class="acct-nav-icon">≡</span>Ledger</button>
-              <button type="button" id="accountingAdvancedClose" data-accounting-view="close" data-accounting-advanced onclick="setAccountingView('close')"><span class="acct-nav-icon">✓</span>Period Close</button>
-              <button type="button" id="accountingAdvancedGovernance" data-accounting-view="governance" data-accounting-advanced onclick="setAccountingView('governance')"><span class="acct-nav-icon">⌘</span>Governance</button>
-              <button type="button" id="accountingAdvancedSetup" data-accounting-view="setup" data-accounting-advanced onclick="setAccountingView('setup')"><span class="acct-nav-icon">＋</span>Setup</button>
-              <button type="button" id="accountingAdvancedSettings" data-accounting-view="settings" data-accounting-advanced onclick="setAccountingView('settings')"><span class="acct-nav-icon">⚙</span>Settings</button>
-            </nav>
-            <div class="acct-suite-tier"><i></i><div><strong id="accountingTierLabel">Accounting</strong><span id="accountingTierCopy">Core fund accounting</span></div></div>
-          </header>
-          <section class="acct-suite-main">
-            <header class="acct-suite-header">
-              <div><span>Accounting</span><h1 id="accountingPageTitle">Overview</h1></div>
-              <div class="acct-experience-toggle" role="group" aria-label="Accounting view detail">
-                <button type="button" class="active" data-accounting-experience="treasurer" onclick="setAccountingExperienceMode('treasurer')" aria-pressed="true">Treasurer view</button>
-                <button type="button" data-accounting-experience="accountant" onclick="setAccountingExperienceMode('accountant')" aria-pressed="false">Accountant view</button>
-              </div>
-              <div class="acct-suite-header-meta"><span id="accountingParishName">Parish books</span><span id="accountingFiscalYear">Current fiscal year</span><button type="button" class="acct-refresh" onclick="loadAccountingTab(true)" aria-label="Refresh accounting data">Refresh</button></div>
-            </header>
-            <div id="accountingPane" class="acct-workspace"><p class="sw-tool-loading">Loading Accounting...</p></div>
-          </section>
-        </div>
-      </div>
+<!-- ── ACCOUNTING TAB ────────────────────── -->
+<div class="tab-panel parish-tier-panel" id="tab-accounting">
+<div class="acct-suite-shell">
+<header class="acct-suite-rail" aria-label="Accounting suite navigation">
+<div class="acct-suite-brand"><strong>AGAPAY</strong><span>Accounting Suite</span></div>
+<nav role="tablist" aria-label="Accounting views">
+<button type="button" class="active" data-accounting-view="overview" onclick="setAccountingView('overview')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 9v12"/></svg>Overview</button>
+<button type="button" data-accounting-view="funds" onclick="setAccountingView('funds')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 6l13-3v3m3 5h-6v4h6"/></svg>Funds</button>
+<button type="button" data-accounting-view="payables" onclick="setAccountingView('payables')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6m-6 4h6"/></svg>Payables</button>
+<button type="button" data-accounting-view="banking" onclick="setAccountingView('banking')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5zM5 20h14M7 10v7m5-7v7m5-7v7"/></svg>Reconciliation</button>
+<button type="button" data-accounting-view="reports" onclick="setAccountingView('reports')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16M8 16v-4m4 4V9m4 7V6"/></svg>Reports</button>
+<button type="button" data-accounting-view="budgets" onclick="setAccountingView('budgets')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5H5v16h14V5h-3M8 3h8v4H8zM8 11h8m-8 5h8"/></svg>Budgets</button>
+<button type="button" class="acct-suite-advanced-toggle" data-accounting-advanced-toggle onclick="toggleAccountingAdvancedNav()" aria-expanded="false" aria-controls="accountingAdvancedLedger accountingAdvancedClose accountingAdvancedGovernance accountingAdvancedSetup accountingAdvancedSettings"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2M10 5v4m4-4v4m0 6v4m4-4v4"/></svg>Advanced</button>
+<button type="button" id="accountingAdvancedLedger" data-accounting-view="ledger" data-accounting-advanced onclick="setAccountingView('ledger')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM9 3v18m3-13h4m-4 4h4"/></svg>Ledger</button>
+<button type="button" id="accountingAdvancedClose" data-accounting-view="close" data-accounting-advanced onclick="setAccountingView('close')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v15H4zM7 3v6m10-6v6m-9 6 3 3 5-5"/></svg>Period Close</button>
+<button type="button" id="accountingAdvancedGovernance" data-accounting-view="governance" data-accounting-advanced onclick="setAccountingView('governance')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4"/></svg>Governance</button>
+<button type="button" id="accountingAdvancedSetup" data-accounting-view="setup" data-accounting-advanced onclick="setAccountingView('setup')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Setup</button>
+<button type="button" id="accountingAdvancedSettings" data-accounting-view="settings" data-accounting-advanced onclick="setAccountingView('settings')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14M9 4v4m6 2v4m-5 2v4"/></svg>Settings</button>
+</nav>
+<div class="acct-suite-tier"><i></i><div><strong id="accountingTierLabel">Accounting</strong><span id="accountingTierCopy">Core fund accounting</span></div></div>
+</header>
+<section class="acct-suite-main">
+<header class="acct-suite-header">
+<div><span>Accounting</span><h1 id="accountingPageTitle">Overview</h1></div>
+<div class="acct-experience-toggle" role="group" aria-label="Accounting view detail">
+<button type="button" class="active" data-accounting-experience="treasurer" onclick="setAccountingExperienceMode('treasurer')" aria-pressed="true">Treasurer view</button>
+<button type="button" data-accounting-experience="accountant" onclick="setAccountingExperienceMode('accountant')" aria-pressed="false">Accountant view</button>
+</div>
+<div class="acct-suite-header-meta"><span id="accountingParishName">Parish books</span><span id="accountingFiscalYear">Current fiscal year</span><button type="button" class="acct-refresh" onclick="loadAccountingTab(true)" aria-label="Refresh accounting data">Refresh</button></div>
+</header>
+<div id="accountingPane" class="acct-workspace"><p class="sw-tool-loading">Loading Accounting...</p></div>
+</section>
+</div>
+</div>
       <!-- ── COMMERCE TAB ────────────────────── -->
       <div class="tab-panel" id="tab-bookstore">
         <div id="bookstoreUpsellBanner" class="text-give-launch" hidden>
@@ -1423,21 +1424,21 @@
         <div id="bookstoreLiveContent" hidden>
 <header class="commerce-refresh-hero"><span>Parish Commerce</span><h1>Commerce</h1><p>Manage bookstore sales, event registrations, and parish meals.</p></header>
           <nav class="commerce-product-tabs" role="tablist" aria-label="Commerce products">
-            <button class="commerce-product-tab is-active" type="button" role="tab" aria-selected="true" data-commerce-product="overview" onclick="switchCommerceProduct('overview')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 9v12"/></svg><span>Overview</span>
-            </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="bookstore" onclick="switchCommerceProduct('bookstore')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h14v18H6a2 2 0 0 1 0-4h14M8 7h8"/></svg><span>Bookstore</span>
-            </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="events" onclick="switchCommerceProduct('events')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v15H3zM7 3v6m10-6v6M3 11h18"/></svg><span>Events</span>
-            </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="meals" onclick="switchCommerceProduct('meals')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 3v6a3 3 0 0 0 6 0V3M7 3v18M18 21V3c-3 0-4 6-4 10h4"/></svg><span>Meals</span>
-            </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="retreats"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20 9 8l4 7 3-5 6 10z"/></svg><span>Retreats</span><em>Coming soon</em>
-            </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="camp"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20 12 4l10 16zM8 20l4-7 4 7"/></svg><span>Camp</span><em>Coming soon</em>
-            </button>
-            <button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="tuition"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11v6q6 5 12 0v-6"/></svg><span>Tuition</span><em>Coming soon</em>
-            </button>
-          </nav>
+<button class="commerce-product-tab is-active" type="button" role="tab" aria-selected="true" data-commerce-product="overview" onclick="switchCommerceProduct('overview')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 9v12"/></svg><span>Overview</span>
+</button>
+<button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="bookstore" onclick="switchCommerceProduct('bookstore')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h14v18H6a2 2 0 0 1 0-4h14M8 7h8"/></svg><span>Bookstore</span>
+</button>
+<button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="events" onclick="switchCommerceProduct('events')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 6h18v15H3zM7 3v6m10-6v6M3 11h18"/></svg><span>Events</span>
+</button>
+<button class="commerce-product-tab" type="button" role="tab" aria-selected="false" data-commerce-product="meals" onclick="switchCommerceProduct('meals')"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 3v6a3 3 0 0 0 6 0V3M7 3v18M18 21V3c-3 0-4 6-4 10h4"/></svg><span>Meals</span>
+</button>
+<button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="retreats"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20 9 8l4 7 3-5 6 10z"/></svg><span>Retreats</span><em>Coming soon</em>
+</button>
+<button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="camp"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 20 12 4l10 16zM8 20l4-7 4 7"/></svg><span>Camp</span><em>Coming soon</em>
+</button>
+<button class="commerce-product-tab" type="button" role="tab" aria-selected="false" aria-disabled="true" disabled data-commerce-product="tuition"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5zM6 11v6q6 5 12 0v-6"/></svg><span>Tuition</span><em>Coming soon</em>
+</button>
+</nav>
           <section class="commerce-workspace-panel is-active" id="commerceOverviewPanel" data-commerce-panel="overview">
             <div class="sw-suite-hero commerce-overview-hero">
               <div class="sw-suite-hero-copy">
@@ -1838,7 +1839,7 @@
 <script src="/parish/accounting-journey.js?v=8aea4d32b6874f07"></script>
 <script src="/parish/features/accounting/assets.js?v=a8f8810d458074a4"></script>
 <script src="/parish/features/accounting/workspace.js?v=652c1550784d98fe"></script>
-<script src="/parish/features/accounting/treasurer.js?v=e1c3002644b6bfc5"></script>
+<script src="/parish/features/accounting/treasurer.js?v=9c216550ca8d308a"></script>
 <script src="/parish/features/accounting/ledger.js?v=cda12625d4044bc6"></script>
 <script src="/parish/features/accounting/payables.js?v=eb428268dd8f53d9"></script>
   <link rel="stylesheet" href="/parish/accounting-reports.css?v=6041c130a35b0250">

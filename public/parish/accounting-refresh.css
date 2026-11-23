@@ -1,0 +1,65 @@
+#tab-accounting .acct-suite-rail nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding-block: 4px;
+}
+#tab-accounting .acct-suite-rail nav button {
+  min-height: 44px;
+  padding: 8px 12px;
+  justify-content: flex-start;
+  gap: 7px;
+  font-size: 13px;
+  border-radius: 7px 7px 0 0;
+}
+#tab-accounting .acct-suite-rail nav button[hidden] {
+  display: none;
+}
+#tab-accounting .acct-suite-rail .acct-nav-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: #d1ad5e;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#tab-accounting .acct-home-hero {
+  border-radius: 16px;
+}
+#tab-accounting .acct-suite-overview-grid,
+#tab-accounting .acct-suite-overview-grid > div,
+#tab-accounting .acct-suite-overview-grid > aside {
+  min-width: 0;
+}
+#tab-accounting .acct-suite-overview-grid .acct-report-quick {
+  margin-block: 20px;
+}
+#tab-accounting .acct-suite-overview-grid .acct-suite-module {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#tab-accounting .acct-suite-overview-grid .acct-suite-modules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 760px) {
+  #tab-accounting .acct-suite-rail nav {
+    gap: 3px;
+  }
+  #tab-accounting .acct-suite-rail nav button {
+    width: auto;
+    flex: 1 1 30%;
+    padding-inline: 6px;
+    font-size: 12px;
+  }
+  #tab-accounting .acct-suite-overview-grid .acct-suite-modules {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+#tab-accounting .acct-suite-module[onclick="setAccountingView('banking')"] {
+  border-color: #bb9853;
+}
+#tab-accounting .acct-suite-section-head h2 {
+  color: #102535;
+}
