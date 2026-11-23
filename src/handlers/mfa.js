@@ -1,5 +1,6 @@
 // Generated from src/handlers/mfa.ts by npm run build:server. Do not edit.
 import {
+  d1First,
   getBearerToken,
   issueAdminSession,
   issueParishDashboardSession,
@@ -256,8 +257,9 @@ function mfaReloginRequired() {
   );
 }
 async function enforcePrivilegedMfa(request, env, url) {
-  if (!privilegedMfaRequired(env)) return null;
   const path = url.pathname;
+  const activityPing = request.method === 'POST' && /^\/api\/parish\/dashboard\/[^/]+\/session-activity$/.test(path);
+  if (!privilegedMfaRequired(env)) return activityPing ? new Response(null, { status: 204 }) : null;
   if (
     path.startsWith('/api/mfa/') ||
     path === '/api/admin/session' ||
@@ -283,10 +285,57 @@ async function enforcePrivilegedMfa(request, env, url) {
     if (!session) return null;
     if (!session.mfaVerifiedAt) return mfaReloginRequired();
     const sensitiveRead = /\/(?:tax-exemption|nonprofit-pricing)\/document|\/giving-statements\//.test(path);
-    const refreshSafePost = request.method === 'POST' && /\/(?:subscription-refresh|stripe-refresh)$/.test(path);
-    if (((request.method !== 'GET' && !refreshSafePost) || sensitiveRead) && !freshMfaAt(session.mfaVerifiedAt)) {
+    const suffix = path.slice(parishMatch[0].length).replace(/\/+$/, '');
+    const write = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+    let sensitiveWrite =
+      write &&
+      /^\/(?:stripe-onboarding|subscription-checkout|subscription-portal|settlement-profiles|memberships)(?:\/|$)/.test(
+        suffix
+      );
+    let requiresActiveSession =
+      write && /^\/(?:onboarding|accounting-access\/(?:activation|bootstrap)|accounting\/setup)(?:\/|$)/.test(suffix);
+    if (request.method === 'PATCH' && !suffix) {
+      const body = await bodyJson(request.clone());
+      sensitiveWrite = Boolean(String(body?.newDashboardPassword || '').trim());
+      requiresActiveSession = body?.givingStatus === 'active' && found.registration.givingStatus !== 'active';
+    }
+    if ((sensitiveWrite || sensitiveRead) && !freshMfaAt(session.mfaVerifiedAt)) {
       return stepUpRequired('parish_admin', parishId);
     }
+    const background =
+      /^(?:\/accounting-access\/activation|\/(?:stripe|subscription)-refresh)$/.test(suffix) && !requiresActiveSession;
+    if (!background && session.id) {
+      const now = Date.now();
+      const verified = Date.parse(String(session.mfaVerifiedAt));
+      if (Number.isFinite(verified)) {
+        const cutoff = now - 15 * 6e4;
+        const activity = await d1First(
+          env,
+          `
+          INSERT INTO parish_mfa_activity (session_id, verified_at_ms, last_activity_ms)
+          VALUES (?, ?, CASE WHEN ? >= ? THEN ? ELSE ? END)
+          ON CONFLICT(session_id) DO UPDATE SET
+            last_activity_ms = MAX(parish_mfa_activity.last_activity_ms, ?),
+            verified_at_ms = excluded.verified_at_ms
+          WHERE excluded.verified_at_ms > parish_mfa_activity.verified_at_ms
+            OR (excluded.verified_at_ms = parish_mfa_activity.verified_at_ms
+                AND parish_mfa_activity.last_activity_ms >= ?)
+          RETURNING last_activity_ms
+        `,
+          session.id,
+          verified,
+          verified,
+          cutoff,
+          now,
+          verified,
+          now,
+          cutoff
+        );
+        if ((activity?.last_activity_ms ?? 0) >= cutoff && !activityPing) return null;
+      }
+    }
+    if (requiresActiveSession) return stepUpRequired('parish_admin', parishId);
+    if (activityPing) return new Response(null, { status: 204 });
   }
   return null;
 }

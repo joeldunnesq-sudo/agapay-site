@@ -197,6 +197,7 @@ const PORTABILITY_SCHEMA = Object.freeze({
   "parish_youtube_channels": ["added_at", "added_by", "channel_id", "channel_title", "channel_url", "parish_id", "updated_at"],
   "parish_youtube_links": ["added_at", "added_by", "id", "parish_id", "pinned", "thumbnail_url", "title", "youtube_url"],
   "platform_users": ["created_at", "display_name", "email", "email_verified_at", "id", "password_record", "session_expires_at", "session_mfa_verified_at", "session_salt", "session_token_hash", "status", "updated_at"],
+  "parish_mfa_activity": ["last_activity_ms", "session_id", "verified_at_ms"],
   "privileged_mfa_profiles": ["created_at", "principal_id", "principal_type", "recovery_code_hashes_json", "recovery_codes_generated_at", "required_at", "totp_confirmed_at", "totp_secret_ciphertext", "totp_secret_iv", "updated_at"],
   "privileged_mfa_transactions": ["attempts", "consumed_at", "created_at", "expires_at", "id", "metadata_json", "principal_id", "principal_type", "purpose", "selected_method", "token_hash", "token_salt", "webauthn_challenge"],
   "privileged_webauthn_credentials": ["backed_up", "counter", "created_at", "credential_id", "credential_public_key", "device_type", "label", "last_used_at", "principal_id", "principal_type", "transports_json"],

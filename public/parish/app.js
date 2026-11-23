@@ -1734,6 +1734,25 @@ function authHeaders() {
   }
   return headers;
 }
+let lastSessionActivity = 0;
+let activityParishId;
+function reportSessionActivity(event) {
+  if (!event.isTrusted || document.visibilityState !== 'visible') return;
+  const parishId = currentParish?.parishId;
+  if (!parishId || !document.getElementById('parishToken')?.value.trim()) return;
+  const now = Date.now();
+  if (activityParishId === parishId && now - lastSessionActivity < 15e3) return;
+  activityParishId = parishId;
+  lastSessionActivity = now;
+  void fetch('/api/parish/dashboard/' + encodeURIComponent(parishId) + '/session-activity', {
+    method: 'POST',
+    headers: authHeaders(),
+    keepalive: true,
+  }).catch(() => {});
+}
+for (const eventType of ['pointerdown', 'keydown', 'input', 'scroll', 'click']) {
+  document.addEventListener(eventType, reportSessionActivity, { capture: true, passive: true });
+}
 function escapeHtml(v) {
   return String(v || '')
     .replace(/&/g, '&amp;')
