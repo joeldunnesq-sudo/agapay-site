@@ -321,10 +321,7 @@ export async function enforcePrivilegedMfa(request: Request, env: Partial<Env>, 
     if (request.method === 'PATCH' && !suffix) {
       // Settings and password changes share an endpoint. Preserve the body
       // for the handler and require fresh assurance only for sensitive fields.
-      const body = await request
-        .clone()
-        .json()
-        .catch(() => null);
+      const body = await bodyJson(request.clone());
       sensitiveWrite = Boolean(String(body?.newDashboardPassword || '').trim());
       requiresActiveSession = body?.givingStatus === 'active' && found.registration.givingStatus !== 'active';
     }

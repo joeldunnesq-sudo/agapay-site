@@ -100,6 +100,7 @@ const SECRET_TABLES = new Set([
   'directory_import_leases',
   'privileged_mfa_profiles',
   'privileged_mfa_transactions',
+  'parish_mfa_activity',
   'privileged_webauthn_credentials',
   'push_subscriptions',
 ]);

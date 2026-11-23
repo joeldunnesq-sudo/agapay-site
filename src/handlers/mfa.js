@@ -295,10 +295,7 @@ async function enforcePrivilegedMfa(request, env, url) {
     let requiresActiveSession =
       write && /^\/(?:onboarding|accounting-access\/(?:activation|bootstrap)|accounting\/setup)(?:\/|$)/.test(suffix);
     if (request.method === 'PATCH' && !suffix) {
-      const body = await request
-        .clone()
-        .json()
-        .catch(() => null);
+      const body = await bodyJson(request.clone());
       sensitiveWrite = Boolean(String(body?.newDashboardPassword || '').trim());
       requiresActiveSession = body?.givingStatus === 'active' && found.registration.givingStatus !== 'active';
     }
