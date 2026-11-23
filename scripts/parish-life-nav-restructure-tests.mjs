@@ -413,16 +413,21 @@ assert.doesNotMatch(
 );
 assert.match(
   parishDashboard,
-  /koinonia-overview-welcome[\s\S]*koinonia-calendar-connect is-compact[\s\S]*id="koinoniaCalendarUrl"/,
-  'At a glance should contain the calendar connection card'
+  /data-koinonia-panel="connections"[\s\S]*koinonia-calendar-connect is-compact[\s\S]*id="koinoniaCalendarUrl"/,
+  'Connections & settings should contain the calendar connection card'
 );
-for (const view of ['announcements', 'audio', 'video', 'news']) {
+for (const view of ['announcements', 'audio', 'video']) {
   assert.match(
     parishDashboard,
-    new RegExp(`class="koinonia-metric-card"[^>]+openKoinoniaComposer\\('${view}'\\)`),
-    `the ${view} metric card should initiate its composer`
+    new RegExp(`koinonia-create-menu[\\s\\S]*<button[^>]+openKoinoniaComposer\\('${view}'\\)`),
+    `the Create content menu should initiate the ${view} composer`
   );
 }
+assert.match(
+  parishDashboard,
+  /data-koinonia-panel="connections"[\s\S]*setKoinoniaStudioView\('news'\)/,
+  'blog and news source management should remain available from Connections & settings'
+);
 assert.match(
   parishDashboardApp,
   /view === 'news'[\s\S]*\? 'parishBlogSourceUrl'/,
