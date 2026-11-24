@@ -2,6 +2,7 @@
 import { processAccountingSourceEvent } from '../accounting/integrations/service.js';
 import { givingFeeCoverageBackfill } from '../accounting/integrations/fee-coverage.js';
 import { json } from '../lib/core.js';
+import { recordBankTransfer } from '../accounting/ledger/service.js';
 import {
   commitBankImport,
   commerceOverview,
@@ -45,6 +46,7 @@ function capability(path, method) {
   if (path.startsWith('/integrations/service-invoices/') && method !== 'GET') return 'accounting.integrations.review';
   if (path.startsWith('/bank/accounts'))
     return method === 'GET' ? 'accounting.bank_accounts.view' : 'accounting.bank_accounts.manage';
+  if (path === '/bank/transfers' && method === 'POST') return 'accounting.journals.post';
   if (path.startsWith('/bank/imports')) return 'accounting.bank_imports.manage';
   if (path.endsWith('/complete')) return 'accounting.reconciliation.complete';
   if (path.endsWith('/reopen')) return 'accounting.reconciliation.reopen';
@@ -97,6 +99,8 @@ async function handleAccountingReconciliationCommerce(request, env, parishId) {
     }
     const tier = serviceTier(ctx.tier),
       body = request.method === 'GET' ? {} : await request.json().catch(() => ({}));
+    if (request.method === 'POST' && path === '/bank/transfers')
+      return reply({ ok: true, entry: await recordBankTransfer(ctx.db, { actor: ctx.actor, input: body }) }, 201);
     if (request.method === 'GET' && path === '/bank/accounts')
       return reply({ ok: true, accounts: await listBankAccounts(ctx.db, { actor: ctx.actor, entitlementTier: tier }) });
     if (request.method === 'POST' && path === '/bank/accounts')
