@@ -577,6 +577,7 @@ async function loadAccountingTab(force = false) {
       accountCatalog: reference.accountCatalog || reference.accounts || [],
       funds: reference.funds || [],
       bankAccounts: bankAccountsRes.ok ? bankAccounts.accounts || [] : [],
+      bankAccountsUnavailable: !bankAccountsRes.ok || !Array.isArray(bankAccounts.accounts),
       journals: journals.entries || [],
       ledger: ledger.rows || [],
       recurring: recurring.items || [],
