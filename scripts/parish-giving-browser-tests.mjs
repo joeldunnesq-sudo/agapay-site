@@ -372,6 +372,12 @@ try {
     'statement preview failure, cancelled batch, synthetic batch retry, polling, and job history',
     async (page) => {
       await page.locator('#nav-givers').click();
+      await page
+        .locator('.pdx-gv-dir-card')
+        .filter({ hasText: 'amy@example.test' })
+        .getByRole('button', { name: 'View giving statement' })
+        .click();
+      assert.equal(await page.locator('#gsPreviewDonor').inputValue(), 'amy@example.test');
       await page.locator('#gsFiscalYear').selectOption(String(year - 1));
       await page.locator('#gsPreviewDonor').selectOption('amy@example.test');
       await page.getByRole('button', { name: 'Preview PDF', exact: true }).click();

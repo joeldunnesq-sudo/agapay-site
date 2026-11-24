@@ -12,6 +12,7 @@ function populateGivingStatementsPanel() {
   }
   const donorSel = document.getElementById('gsPreviewDonor');
   if (donorSel) {
+    const selected = donorSel.value;
     const givers = (Array.isArray(window.pdxGiversAll) ? window.pdxGiversAll : []).filter((g) => g.email);
     donorSel.innerHTML = givers.length
       ? givers
@@ -21,6 +22,7 @@ function populateGivingStatementsPanel() {
           )
           .join('')
       : '<option value="">No donors with gifts loaded yet</option>';
+    if (givers.some((giver) => giver.email === selected)) donorSel.value = selected;
   }
   if (!gsJobHistoryLoaded) {
     gsJobHistoryLoaded = true;

@@ -251,6 +251,7 @@ function renderGiversDirectory() {
           <span class="pdx-gv-dir-amount">${escapeHtml(money(g.totalCents))}</span>
         </div>
         <div class="pdx-gv-dir-email">${escapeHtml(g.email || 'No email shown')}</div>
+        ${g.email && currentParish?.entitlements?.givingFeatures?.annualStatements ? `<button type="button" class="pdx-link-btn" data-gv-statement="${escapeHtml(g.email)}">View giving statement</button>` : ''}
         <div class="pdx-gv-dir-meta">
           <span>${g.giftCount} gift${g.giftCount === 1 ? '' : 's'}${g.outsideCount ? ' · ' + g.outsideCount + ' outside' : ''}</span>
           ${g.recurring ? '<span class="pdx-gv-dir-recur">Recurring</span>' : `<span>Last ${escapeHtml(shortDate(g.lastGiftAt))}</span>`}

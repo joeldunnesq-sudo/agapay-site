@@ -78,6 +78,7 @@ try {
         await page.getByRole('button', { name: 'Record a donor’s gift', exact: true }).click();
       } else {
         await page.locator('.mobile-tab-link[data-nav-tab="givers"]').click();
+        await page.locator('.gv-section-nav [data-gv-view="outside"]').click();
         await page.getByRole('button', { name: '＋ Record outside gift', exact: true }).click();
       }
       await page
@@ -95,9 +96,10 @@ try {
       await page.getByRole('button', { name: 'Record gift', exact: true }).click();
       await page.locator('#outsideGiftDialog').waitFor({ state: 'hidden' });
       if (width === 1280) await page.locator('#nav-givers').click();
+      await page.locator('.gv-section-nav [data-gv-view="outside"]').click();
       await page.getByText('1 contribution recorded for ' + new Date().getFullYear(), { exact: false }).waitFor();
       assert.match(await page.locator('.og-record summary').innerText(), /Anna Martin[\s\S]*Pledge[\s\S]*\$125\.50/);
-      assert.match(await page.locator('#giversPane').innerText(), /outside/);
+      assert.match(await page.locator('#giversPane').textContent(), /outside/);
       await page.locator('.og-record summary').click();
       await page.getByRole('button', { name: 'Correct gift', exact: true }).click();
       await page.getByRole('combobox', { name: 'Giving purpose', exact: true }).selectOption('other');
