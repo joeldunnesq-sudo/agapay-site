@@ -78,6 +78,20 @@ try {
     assert.equal(parishFacade[name], dashboard[name], `${name} compatibility export`);
   const f = await fixture({ parishDashboardToken: 'private-legacy-token', stripeCustomerId: 'cus_a' });
   const before = await f.saved();
+  const customQr = await fixture();
+  const churchUrl = 'https://church.example.test/give?source=bulletin';
+  for (const invalid of [
+    'javascript:alert(1)',
+    'http://church.example.test',
+    'https://user:pass@church.example.test',
+  ]) {
+    assert.equal((await customQr.call('PATCH', { givingQrDestination: invalid })).status, 422);
+  }
+  assert.equal((await customQr.call('PATCH', { givingQrDestination: churchUrl })).status, 200);
+  assert.equal((await (await customQr.call()).json()).parish.givingQrDestination, churchUrl);
+  assert.equal((await customQr.call('PATCH', { givingQrDestination: '' })).status, 200);
+  assert.equal((await customQr.saved()).givingQrDestination, '');
+
   assert.equal((await f.call('GET', undefined, 'invalid')).status, 401);
   assert.equal((await f.call('GET', undefined, f.session.token, 'b')).status, 404);
   assert.equal((await f.call('DELETE')).status, 405);

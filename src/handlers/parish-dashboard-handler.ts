@@ -26,6 +26,7 @@ export interface DashboardRegistration extends OnboardingRegistration, CatalogRe
   subscriptionPricingProgram?: string;
   stripeAccountStatus?: string | null;
   liturgicalCalendar?: string;
+  givingQrDestination?: string;
 }
 export interface DashboardPatch extends Partial<DashboardRegistration> {
   givingCatalogChanged?: unknown;
@@ -223,6 +224,7 @@ export function parishDashboardPayload(parishId: string, registration: Dashboard
     timezone: registration.timezone || '',
     liturgicalCalendar: registration.liturgicalCalendar || 'julian',
     koinoniaCalendarUrl: registration.koinoniaCalendarUrl || '',
+    givingQrDestination: registration.givingQrDestination || '',
     patronalFeast: registration.patronalFeast || '',
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || '',
     patronalFeastChurchDate: registration.patronalFeastChurchDate || '',
@@ -537,6 +539,20 @@ export async function handleParishDashboard(request: Request, env: DashboardEnv,
       }
     }
 
+    let givingQrDestination = current.givingQrDestination || '';
+    if (body.givingQrDestination !== undefined) {
+      try {
+        const value = body.givingQrDestination.trim();
+        const url = value ? new URL(value) : null;
+        if (url && (url.protocol !== 'https:' || url.username || url.password || url.href.length > 1000)) {
+          throw new Error('Invalid giving destination');
+        }
+        givingQrDestination = url?.href || '';
+      } catch {
+        return json({ error: 'Enter a valid HTTPS giving page URL (up to 1,000 characters).' }, { status: 422 });
+      }
+    }
+
     let updated: DashboardRegistration = {
       ...current,
       parishName: String(body.parishName ?? current.parishName ?? '').trim() || current.parishName || '',
@@ -561,6 +577,7 @@ export async function handleParishDashboard(request: Request, env: DashboardEnv,
       })(),
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || 'julian',
       koinoniaCalendarUrl: normalizedKoinoniaCalendarUrl,
+      givingQrDestination,
       patronalFeast: String(body.patronalFeast ?? current.patronalFeast ?? '').trim(),
       patronalFeastName: String(
         body.patronalFeastName ?? current.patronalFeastName ?? current.parishPatronalFeastName ?? ''
