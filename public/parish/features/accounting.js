@@ -86,6 +86,13 @@ async function accountingAccessRequest(path, body) {
 async function renderAccountingAccess(message = '') {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
+  pane.dataset.loaded = 'locked';
+  accountingHomeTask = '';
+  accountingView = 'overview';
+  accountingData.payables = null;
+  accountingData.close = null;
+  accountingCloseDetail = null;
+  syncAccountingHomeTask();
   try {
     const response = await fetch(accountingAccessApi('/profiles'), { headers: authHeaders() });
     const payload = await response.json().catch(() => ({}));

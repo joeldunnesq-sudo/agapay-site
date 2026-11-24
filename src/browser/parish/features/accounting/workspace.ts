@@ -106,6 +106,8 @@ function renderAccountingPaywall(pane: HTMLElement | null = document.getElementB
   (document.getElementById('accountingParishName') as HTMLElement).textContent =
     currentParish?.name || currentParish?.parishName || 'Your parish';
   (document.getElementById('accountingFiscalYear') as HTMLElement).textContent = 'Current fiscal year';
+  accountingHomeTask = '';
+  syncAccountingHomeTask();
   pane.dataset.loaded = 'preview';
   if (!included) {
     pane.innerHTML = `
@@ -188,6 +190,8 @@ function renderAccountingReadiness(
     : disabled
       ? 'Accounting is included in your plan, but access has been disabled for this parish. Contact AGAPAY support for help.'
       : 'Accounting is included in your plan, but its books are not ready or did not pass their safety checks. Contact AGAPAY support before continuing.';
+  accountingHomeTask = '';
+  syncAccountingHomeTask();
   pane.dataset.loaded = 'pending';
   const copy = document.getElementById('accountingTierCopy') as HTMLElement;
   if (copy) copy.textContent = setup ? 'Included · Setup required' : 'Included · Needs attention';
@@ -593,8 +597,11 @@ async function loadAccountingTab(force = false) {
     return;
   }
   pane.closest<HTMLElement>('.acct-suite-shell')?.classList.remove('acct-suite-shell--tier-paywall');
-  if (!force && pane.dataset.loaded === 'true') return;
+  if (!force && pane.dataset.loaded === 'true' && accountingWorkspaceParishId === currentParish.parishId) return;
   if (accountingWorkspaceParishId !== currentParish.parishId) {
+    accountingHomeTask = '';
+    accountingView = 'overview';
+    syncAccountingHomeTask();
     accountingWorkspaceParishId = currentParish.parishId;
     resetAccountingAssets();
     accountingReportView = 'library';
