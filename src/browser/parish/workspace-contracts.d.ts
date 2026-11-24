@@ -48,6 +48,7 @@ declare function setStatus(message: string, tone?: string): void;
 declare function showParishAuthForm(id: string): void;
 
 interface ParishWorkspaceIdentity {
+  givingQrDestination?: string;
   parishDashboardTokenTemporary?: boolean;
   patronalFeastChurchDate?: string;
   name?: string;

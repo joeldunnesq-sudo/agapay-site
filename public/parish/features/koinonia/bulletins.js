@@ -493,7 +493,9 @@ function bulletinBlockMarkup(block, { omitSaintLife = false, omitSaintQuote = fa
   }
   if (block.type === 'giving') {
     const givingUrl =
-      currentParish?.dedicatedGivingUrl || (typeof dedicatedGivingUrl === 'function' ? dedicatedGivingUrl() : '');
+      currentParish?.givingQrDestination ||
+      currentParish?.dedicatedGivingUrl ||
+      (typeof dedicatedGivingUrl === 'function' ? dedicatedGivingUrl() : '');
     const qr = typeof currentQrSvg !== 'undefined' ? currentQrSvg : '';
     return `<section class="bulletin-print-block bulletin-print-giving"><h2>${escapeHtml(block.title)}</h2>${qr ? `<div class="bulletin-giving-qr">${qr}</div>` : ''}<p>${escapeHtml(block.body)}</p><strong>${escapeHtml((givingUrl || 'agapay.app/give').replace(/^https?:\/\//, ''))}</strong></section>`;
   }

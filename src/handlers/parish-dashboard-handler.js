@@ -165,6 +165,7 @@ function parishDashboardPayload(parishId, registration) {
     timezone: registration.timezone || '',
     liturgicalCalendar: registration.liturgicalCalendar || 'julian',
     koinoniaCalendarUrl: registration.koinoniaCalendarUrl || '',
+    givingQrDestination: registration.givingQrDestination || '',
     patronalFeast: registration.patronalFeast || '',
     patronalFeastName: registration.patronalFeastName || registration.parishPatronalFeastName || '',
     patronalFeastChurchDate: registration.patronalFeastChurchDate || '',
@@ -455,6 +456,19 @@ async function handleParishDashboard(request, env, parishId) {
         }
       }
     }
+    let givingQrDestination = current.givingQrDestination || '';
+    if (body.givingQrDestination !== void 0) {
+      try {
+        const value = body.givingQrDestination.trim();
+        const url = value ? new URL(value) : null;
+        if (url && (url.protocol !== 'https:' || url.username || url.password || url.href.length > 1e3)) {
+          throw new Error('Invalid giving destination');
+        }
+        givingQrDestination = url?.href || '';
+      } catch {
+        return json({ error: 'Enter a valid HTTPS giving page URL (up to 1,000 characters).' }, { status: 422 });
+      }
+    }
     let updated = {
       ...current,
       parishName: String(body.parishName ?? current.parishName ?? '').trim() || current.parishName || '',
@@ -479,6 +493,7 @@ async function handleParishDashboard(request, env, parishId) {
       })(),
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || 'julian',
       koinoniaCalendarUrl: normalizedKoinoniaCalendarUrl,
+      givingQrDestination,
       patronalFeast: String(body.patronalFeast ?? current.patronalFeast ?? '').trim(),
       patronalFeastName: String(
         body.patronalFeastName ?? current.patronalFeastName ?? current.parishPatronalFeastName ?? ''

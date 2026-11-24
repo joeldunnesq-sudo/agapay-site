@@ -46,6 +46,38 @@ function markDataUri(): Promise<string> {
   return markDataUriPromise;
 }
 
+function givingQrUrl(): string {
+  return currentParish?.givingQrDestination || dedicatedGivingUrl();
+}
+
+async function updateGivingQrDestination(button: HTMLButtonElement) {
+  const parish = currentParish;
+  if (!parish) return;
+  const entered = window.prompt(
+    'Enter your church giving page HTTPS URL. Leave blank to use the AGAPAY giving page.',
+    parish.givingQrDestination || ''
+  );
+  if (entered === null) return;
+  button.disabled = true;
+  try {
+    const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(parish.parishId), {
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ givingQrDestination: entered.trim() }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Unable to save the QR destination.');
+    if (currentParish?.parishId !== parish.parishId) return;
+    currentParish.givingQrDestination = data.parish?.givingQrDestination || '';
+    await renderQrCode();
+    setStatus('Giving QR destination saved. Download a new QR code for printed materials.', 'success');
+  } catch (error) {
+    setStatus((error as Error).message || 'Unable to save the QR destination.', 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function renderQrCode(): Promise<void> {
   const targets = ['qrCode', 'qrCodeHero', 'qrCodeHeroPreview', 'bulletinQrCode']
     .map((id) => document.getElementById(id))
@@ -53,7 +85,12 @@ async function renderQrCode(): Promise<void> {
   const inputs = ['givingUrlInput', 'givingUrlHeroInput', 'qrGivingUrlInput']
     .map((id) => document.getElementById(id))
     .filter(Boolean) as HTMLInputElement[];
-  const url = dedicatedGivingUrl();
+  const editor = document.getElementById('editGivingQrDestination') as HTMLButtonElement | null;
+  if (editor)
+    editor.onclick = () => {
+      void updateGivingQrDestination(editor);
+    };
+  const url = givingQrUrl();
   inputs.forEach((inp) => {
     inp.value = url;
   });
@@ -95,7 +132,7 @@ function brandQrSvg(svg: string, logoHref: string): string {
 }
 
 async function copyGivingLink(): Promise<void> {
-  const url = dedicatedGivingUrl();
+  const url = givingQrUrl();
   if (!url) {
     setStatus('Load a parish first.', 'error');
     return;
@@ -189,7 +226,7 @@ async function downloadQrPng(): Promise<void> {
 
 // ── BULLETIN INSERT ───────────────────────────────────────
 function bulletinDisplayUrl(): string {
-  return (dedicatedGivingUrl() || 'agapay.app/give/parish-name-city').replace(/^https?:\/\//i, '');
+  return (givingQrUrl() || 'agapay.app/give/parish-name-city').replace(/^https?:\/\//i, '');
 }
 
 function positionBulletinQr(svg: string, x: number, y: number, size: number): string {
