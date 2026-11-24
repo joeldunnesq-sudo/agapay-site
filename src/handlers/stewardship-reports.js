@@ -1,5 +1,6 @@
 // Generated from src/handlers/stewardship-reports.ts by npm run build:server. Do not edit.
 import { platformCostTable } from '../stewardship/platform-costs.js';
+import { readStewardshipMonthGifts } from '../lib/stewardship-summary.js';
 import { GIVING_GROSS_CENTS_SQL } from '../lib/giving-contributions.js';
 import { readGivingFeeReport } from '../lib/giving-fee-report.js';
 import { givingFeeReportHtml, appendGivingFeeReport } from '../stewardship/giving-fee-presentation.js';
@@ -68,16 +69,7 @@ async function handleStewardshipMonthlyReport(
       handleStewardshipGivingRetention(withYear('retention'), env, parishId).then(reportJson),
       handleStewardshipGivingHealthScore(withYear('health-score'), env, parishId).then(reportJson),
       handleStewardshipGivingFunds(withYear('funds'), env, parishId).then(reportJson),
-      env.AGAPAY_DB.prepare(
-        `
-      SELECT COALESCE(SUM(${GIVING_GROSS_CENTS_SQL}), 0) AS total_cents,
-             COUNT(DISTINCT donor_email) AS donor_count
-      FROM donor_offerings
-      WHERE parish_id = ? AND payment_status IN ('paid','succeeded') AND created_at >= ? AND created_at < ?
-    `
-      )
-        .bind(parishId, monthStart, nextMonthStart)
-        .first(),
+      readStewardshipMonthGifts(env, parishId, monthStart, nextMonthStart),
       accounting.available
         ? Promise.resolve(null)
         : handleStewardshipFinancials(withYear('financials'), env, parishId).then(reportJson),

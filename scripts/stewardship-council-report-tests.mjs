@@ -118,6 +118,17 @@ try {
     boundaryHtml.includes(expectedMonth),
     'selected month includes succeeded gifts on its last day and excludes next month'
   );
+  f.db.prepare('INSERT INTO household_pledges VALUES (?, ?, ?, ?)').run(pid, 'council@example.test', 2026, 240000);
+  const overviewQuery = 'view=council-overview&year=2026&month=2026-07';
+  const overview = await handleStewardshipGivingSummary(request(overviewQuery), f.env, pid);
+  assert.equal(overview.status, 200);
+  assert.deepEqual(await overview.json(), {
+    monthLabel: 'July 2026',
+    monthGivingCents: beforeMonth + 12300,
+    yearGivingCents: (await (await handleStewardshipGivingSummary(request(), f.env, pid)).json()).total_actual_cents,
+    annualPledgeGoalCents: 240000,
+  });
+  assert.equal((await handleStewardshipGivingSummary(request(overviewQuery, 'invalid'), f.env, pid)).status, 401);
   f.registration.subscriptionTier = 'parish';
   f.registration.accountingEnabled = false;
   f.updateRegistration();

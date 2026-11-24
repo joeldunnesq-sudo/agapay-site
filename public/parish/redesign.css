@@ -106,6 +106,21 @@
 
 .pdx-hero-spark { flex: 1; min-width: 0; height: 130px; position: relative; margin-bottom: -4px; }
 .pdx-hero-spark svg { width: 100%; height: 100%; }
+.pdx-council-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 14px; font-size: .84rem; color: var(--cream); }
+.pdx-council-actions[hidden] { display: none; }
+.pdx-council-actions strong, .pdx-council-actions .pdx-link-btn { color: var(--pdx-gold-bright); }
+.pdx-council-actions .pdx-link-btn { padding: 6px 9px; border: 1px solid rgba(232, 200, 121, .5); border-radius: 7px; }
+.pdx-hero-total-block:has(.pdx-council-actions:not([hidden])) { flex-shrink: 1; min-width: 0; }
+.pdx-council-report { width: min(32rem, calc(100% - 2rem)); max-height: calc(100% - 2rem); overflow: auto; padding: clamp(16px, 4vw, 24px); border: 1px solid var(--gold); border-radius: 14px; background: var(--cream); color: var(--ink); }
+.pdx-council-report::backdrop { background: rgba(7, 30, 42, .68); }
+.pdx-council-report h2 { margin: 0 0 12px; }
+.pdx-council-period { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pdx-council-period button { border: 1px solid var(--gold); }
+.pdx-council-period button[aria-pressed="true"] { background: var(--deep); color: var(--cream); }
+.pdx-council-report dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; margin: 0 0 14px; }
+.pdx-council-report dd { margin: 0; text-align: right; font-weight: 600; }
+.pdx-council-report p { margin: 0 0 12px; font-size: .85rem; }
+.pdx-council-report form { margin-top: 16px; }
 
 /* ────────── KPI band ────────── */
 .pdx-kpi-band { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }

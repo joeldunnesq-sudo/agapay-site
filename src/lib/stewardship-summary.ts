@@ -1,5 +1,22 @@
 import { parishPledgeReceivedCents } from './pledge-report-reads.js';
 import type { manualIncomeTotalCents as readManualIncome } from './stewardship-income.js';
+import { GIVING_GROSS_CENTS_SQL } from './giving-contributions.js';
+
+export function readStewardshipMonthGifts(
+  env: Pick<Env, 'AGAPAY_DB'>,
+  parishId: string,
+  startDate: string,
+  nextMonthStart: string
+) {
+  return env.AGAPAY_DB.prepare(
+    `SELECT COALESCE(SUM(${GIVING_GROSS_CENTS_SQL}), 0) AS total_cents,
+            COUNT(DISTINCT donor_email) AS donor_count
+     FROM donor_offerings
+     WHERE parish_id = ? AND payment_status IN ('paid','succeeded') AND created_at >= ? AND created_at < ?`
+  )
+    .bind(parishId, startDate, nextMonthStart)
+    .first<{ total_cents: number; donor_count: number }>();
+}
 
 export interface StewardshipGivingSummary {
   fiscal_year: number;

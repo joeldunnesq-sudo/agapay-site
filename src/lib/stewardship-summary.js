@@ -1,5 +1,16 @@
 // Generated from src/lib/stewardship-summary.ts by npm run build:server. Do not edit.
 import { parishPledgeReceivedCents } from './pledge-report-reads.js';
+import { GIVING_GROSS_CENTS_SQL } from './giving-contributions.js';
+function readStewardshipMonthGifts(env, parishId, startDate, nextMonthStart) {
+  return env.AGAPAY_DB.prepare(
+    `SELECT COALESCE(SUM(${GIVING_GROSS_CENTS_SQL}), 0) AS total_cents,
+            COUNT(DISTINCT donor_email) AS donor_count
+     FROM donor_offerings
+     WHERE parish_id = ? AND payment_status IN ('paid','succeeded') AND created_at >= ? AND created_at < ?`
+  )
+    .bind(parishId, startDate, nextMonthStart)
+    .first();
+}
 async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCents) {
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
@@ -63,4 +74,4 @@ async function stewardshipGivingSummary(env, parishId, year, manualIncomeTotalCe
     days_in_year: daysInYear,
   };
 }
-export { stewardshipGivingSummary };
+export { readStewardshipMonthGifts, stewardshipGivingSummary };

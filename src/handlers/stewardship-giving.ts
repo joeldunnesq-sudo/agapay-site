@@ -45,7 +45,8 @@ interface ModuleRow {
   source: string;
   notes: string;
 }
-import { stewardshipGivingSummary } from '../lib/stewardship-summary.js';
+import { readStewardshipMonthGifts, stewardshipGivingSummary } from '../lib/stewardship-summary.js';
+import { councilReportPeriod } from '../stewardship/council-reports.js';
 import { readGivingFeeReport } from '../lib/giving-fee-report.js';
 import { manualIncomeTotalCents } from '../lib/stewardship-income.js';
 import {
@@ -248,6 +249,22 @@ export async function handleStewardshipGivingSummary(request: Request, env: Modu
   if (gate) return gate;
 
   const url = new URL(request.url);
+  if (url.searchParams.get('view') === 'council-overview') {
+    const period = councilReportPeriod(url);
+    if (!period) return json({ error: 'Choose a valid report month and matching year.' }, { status: 422 });
+    const db = env as Pick<Env, 'AGAPAY_DB'>;
+    const [summary, gifts, outsideCents] = await Promise.all([
+      stewardshipGivingSummary(db, parishId, period.year, manualIncomeTotalCents),
+      readStewardshipMonthGifts(db, parishId, period.monthStart, period.nextMonthStart),
+      manualIncomeTotalCents(db, parishId, period.monthStart, period.monthEnd),
+    ]);
+    return json({
+      monthLabel: period.monthLabel,
+      monthGivingCents: (gifts?.total_cents || 0) + outsideCents,
+      yearGivingCents: summary.total_actual_cents,
+      annualPledgeGoalCents: summary.total_pledged_cents,
+    });
+  }
   const year = parseInt((url.searchParams.get('year') || new Date().getFullYear()) as string, 10);
   return json(await stewardshipGivingSummary(env as Pick<Env, 'AGAPAY_DB'>, parishId, year, manualIncomeTotalCents));
 }
