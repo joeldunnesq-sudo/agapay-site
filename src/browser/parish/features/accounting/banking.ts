@@ -29,7 +29,7 @@ function renderAccountingBankAccounts(pane: HTMLElement) {
     return;
   }
   const accounts = accountingData.bankAccounts;
-  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Bank accounts</h2><p>Add the checking or savings accounts your parish uses for deposits and statement reconciliation.</p></div><button type="button" class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button></div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${accounts.map((account) => `<article class="acct-budget-card"><div><span>${escapeHtml((account.accountType || 'Bank account').replaceAll('_', ' '))}</span><h3>${escapeHtml(account.name)}</h3><p>${escapeHtml(account.institutionName || '')}${account.maskedLast4 ? ` · •••• ${escapeHtml(account.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(account.id)}')">Edit bank account</button></div></article>`).join('')}</div></section>`;
+  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Bank accounts</h2><p>Add the checking or savings accounts your parish uses for deposits and statement reconciliation.</p></div><button type="button" class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button><button type="button" class="acct-refresh" onclick="showAccountingBankTransferForm()">Record a transfer</button></div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${accounts.map((account) => `<article class="acct-budget-card"><div><span>${escapeHtml((account.accountType || 'Bank account').replaceAll('_', ' '))}</span><h3>${escapeHtml(account.name)}</h3><p>${escapeHtml(account.institutionName || '')}${account.maskedLast4 ? ` · •••• ${escapeHtml(account.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(account.id)}')">Edit bank account</button></div></article>`).join('')}</div></section>`;
 }
 
 function renderAccountingBanking(pane: HTMLElement) {
@@ -181,6 +181,79 @@ function showAccountingBankAccountForm() {
   if (!holder) return;
   holder.innerHTML = accountingBankAccountForm();
   holder.querySelector<HTMLInputElement>('[name="name"]')?.focus();
+}
+
+function showAccountingBankTransferForm() {
+  const holder = document.getElementById('accountingPhaseEForm');
+  if (!holder) return;
+  const accounts = accountingData.bankAccounts.filter(
+    (bank) => bank.ledgerAccountId && bank.isActive !== false && (!bank.status || bank.status === 'active')
+  );
+  if (accounts.length < 2) {
+    holder.innerHTML =
+      '<p role="status">Add two bank accounts before recording a transfer.</p><button type="button" class="acct-refresh" onclick="showAccountingBankAccountForm()">Add bank account</button>';
+    return;
+  }
+  const funds = accountingData.funds.filter((fund) => Boolean(fund.isActive));
+  const defaultFund = funds.find((fund) => Number(fund.isDefault)) || funds[0];
+  const options = accounts
+    .map(
+      (bank) =>
+        `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`
+    )
+    .join('');
+  holder.innerHTML = `<form class="acct-phase-form" data-operation-key="${crypto.randomUUID()}" onsubmit="submitAccountingBankTransfer(event)">
+    <h3>Record a transfer</h3><p>Use this after money has moved between parish bank accounts. If it came from a check, record the check once in the account that received it first.</p>
+    <div class="acct-form-grid">
+      <label>From<select name="fromAccountId" required><option value="">Choose sending account</option>${options}</select></label>
+      <label>To<select name="toAccountId" required><option value="">Choose receiving account</option>${options}</select></label>
+      <label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+      <label>Transfer date<input name="entryDate" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label>
+      <label>Fund<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id)}</select><small>Choose the fund the money already belongs to.</small></label>
+      <label>Memo (optional)<input name="description" maxlength="240" placeholder="Move funds to savings"></label>
+    </div>
+    <div class="acct-phase-form-foot"><button type="submit" class="acct-primary">Save transfer</button><button type="button" class="acct-refresh" onclick="renderAccountingPane()">Cancel</button><span class="acct-form-status" role="status"></span></div>
+  </form>`;
+  holder.querySelector<HTMLSelectElement>('select')?.focus();
+}
+
+async function submitAccountingBankTransfer(event: AccountingFormEvent) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const values = Object.fromEntries(new FormData(form));
+  const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  const status = form.querySelector<HTMLElement>('.acct-form-status')!;
+  if (button.disabled) return;
+  if (!values.fromAccountId || !values.toAccountId || values.fromAccountId === values.toAccountId) {
+    status.textContent = 'Choose two different bank accounts.';
+    return;
+  }
+  const amount = Math.round(Number(values.amount) * 100);
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    status.textContent = 'Enter a transfer amount greater than zero.';
+    return;
+  }
+  button.disabled = true;
+  status.textContent = 'Recording transfer…';
+  try {
+    const payload = await phaseEMutation(
+      '/bank/transfers',
+      { ...values, amount, operationKey: form.dataset.operationKey },
+      'POST',
+      form
+    );
+    if (!payload) return;
+    accountingData.banking = null;
+    if (!form.isConnected) return;
+    const holder = form.parentElement;
+    if (holder)
+      holder.innerHTML =
+        '<p role="status">Transfer recorded. It will appear in both bank accounts for reconciliation.</p>';
+  } catch {
+    status.textContent = 'Could not confirm the transfer. Submit these same details again to check or complete it.';
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function accountingBankAccountForm() {

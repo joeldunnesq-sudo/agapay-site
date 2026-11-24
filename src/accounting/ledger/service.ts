@@ -485,6 +485,90 @@ export async function postJournalEntry(
   return safeEntry(await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', journalEntryId));
 }
 
+async function activeBankDestinations(db: PortabilityDatabase, firstAccountId: string, secondAccountId: string) {
+  const accounts = await all<{ account_id: string; currency: string }>(
+    db,
+    `SELECT b.account_id,b.currency FROM accounting_bank_accounts b JOIN accounting_accounts a ON a.id=b.account_id
+       WHERE b.account_id IN (?,?) AND b.is_active=1 AND b.status='active' AND a.is_active=1
+       AND a.archived_at IS NULL AND a.is_posting_account=1`,
+    firstAccountId,
+    secondAccountId
+  );
+  if (accounts.length !== 2)
+    throw new ValidationError('Both destinations must be active bank accounts in this parish.');
+  return accounts;
+}
+
+export async function recordBankTransfer(
+  db: PortabilityDatabase,
+  { actor, input }: { actor: LedgerServiceActor; input: Record<string, unknown> }
+) {
+  requireCapability(actor, 'accounting.journals.create');
+  requireCapability(actor, 'accounting.journals.post');
+  requireCapability(actor, 'accounting.bank_accounts.view');
+  const entryDate = String(input.entryDate || '');
+  const fromAccountId = String(input.fromAccountId || '');
+  const toAccountId = String(input.toAccountId || '');
+  const fundId = String(input.fundId || '');
+  const operationKey = String(input.operationKey || '');
+  const description = String(input.description || '').trim() || 'Bank transfer';
+  const amount = Number(input.amount);
+  if (!/^[a-f0-9-]{36}$/i.test(operationKey)) throw new ValidationError('Reload the transfer form and try again.');
+  if (!fromAccountId || !toAccountId || fromAccountId === toAccountId)
+    throw new ValidationError('Choose two different bank accounts.');
+  if (!Number.isSafeInteger(amount) || amount <= 0)
+    throw new ValidationError('Enter a transfer amount greater than zero.');
+  const destinations = await activeBankDestinations(db, fromAccountId, toAccountId);
+  if (destinations[0].currency !== destinations[1].currency)
+    throw new ValidationError('Choose bank accounts that use the same currency.');
+  const fund = await first(
+    db,
+    'SELECT id FROM accounting_funds WHERE id=? AND is_active=1 AND archived_at IS NULL',
+    fundId
+  );
+  if (!fund) throw new ValidationError('Choose an active fund.');
+
+  const requestHash = await hash({ fromAccountId, toAccountId, fundId, entryDate, description, amount });
+  const findDraft = () =>
+    first<{ id: string; correlation_id: string }>(
+      db,
+      "SELECT id,correlation_id FROM accounting_journal_entries WHERE source_type='bank_transfer' AND source_id=?",
+      operationKey
+    );
+  let draft = await findDraft();
+  if (!draft) {
+    try {
+      const created = await createJournalDraft(db, {
+        actor,
+        entryDate,
+        description,
+        sourceType: 'bank_transfer',
+        sourceId: operationKey,
+        correlationId: requestHash,
+        lines: [
+          { accountId: toAccountId, fundId, debitAmount: amount },
+          { accountId: fromAccountId, fundId, creditAmount: amount },
+        ],
+      });
+      draft = { id: created.id, correlation_id: requestHash };
+    } catch (error) {
+      draft = await findDraft();
+      if (!draft) throw error;
+    }
+  }
+  if (draft.correlation_id !== requestHash)
+    throw new ValidationError(
+      'This transfer was already submitted with different details. Reload Banking before trying again.'
+    );
+  return postJournalEntry(db, {
+    actor,
+    journalEntryId: draft.id,
+    idempotencyKey: `bank_transfer:${operationKey}`,
+    requestHash,
+    expectedVersion: 1,
+  });
+}
+
 export async function recordSplitDeposit(
   db: PortabilityDatabase,
   {
@@ -518,16 +602,7 @@ export async function recordSplitDeposit(
       throw new ValidationError(
         'The amount for the second bank account must be greater than zero and less than the check total.'
       );
-    const destinations = await first<{ count: number }>(
-      db,
-      `SELECT COUNT(*) AS count FROM accounting_bank_accounts b JOIN accounting_accounts a ON a.id=b.account_id
-         WHERE b.account_id IN (?,?) AND b.is_active=1 AND b.status='active' AND a.is_active=1
-         AND a.archived_at IS NULL AND a.is_posting_account=1`,
-      depositAccountId,
-      secondDepositAccountId
-    );
-    if (Number(destinations?.count) !== 2)
-      throw new ValidationError('Both destinations must be active bank accounts in this parish.');
+    await activeBankDestinations(db, depositAccountId, secondDepositAccountId);
   }
   const secondAmount = secondDepositAmount ?? 0;
   const lines = [

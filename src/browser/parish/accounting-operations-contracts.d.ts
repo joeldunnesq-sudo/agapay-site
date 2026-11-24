@@ -45,6 +45,8 @@ interface AccountingRecurring {
 interface AccountingBankAccount {
   ledgerAccountId?: string;
   accountType?: string;
+  isActive?: boolean;
+  status?: string;
   id: string;
   version: number;
   name: string;

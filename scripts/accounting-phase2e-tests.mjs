@@ -58,3 +58,23 @@ for (const [reconciliationId, netEffect] of [[reopened.id, 6000], [savingsSessio
   assert.equal(entries.find((entry) => entry.journalEntryId === checkEntry.id)?.netEffect, netEffect);
 }
 console.log('PASS - one check posts income once and exposes only each bank account’s portion for reconciliation');
+const { recordBankTransfer } = await import('../src/accounting/index.js');
+const transfer = {
+  fromAccountId: bank.ledgerAccountId, toAccountId: savingsBank.ledgerAccountId, fundId: 'fund_general',
+  entryDate: '2026-07-24', amount: 1300, operationKey: '34787622-0d3a-4693-8306-f39105a95151',
+};
+await assert.rejects(() => recordBankTransfer(db, { actor, input: { ...transfer, toAccountId: bank.ledgerAccountId } }), /two different bank accounts/);
+await assert.rejects(() => recordBankTransfer(db, { actor, input: { ...transfer, toAccountId: 'acct_1100' } }), /active bank accounts/);
+await assert.rejects(() => recordBankTransfer(db, { actor: { ...actor, capabilities: ['accounting.journals.create'] }, input: transfer }), /capability/);
+const transferEntry = await recordBankTransfer(db, { actor, input: transfer });
+assert.equal(transferEntry.status, 'posted');
+assert.equal(transferEntry.sourceType, 'bank_transfer');
+assert.equal((await recordBankTransfer(db, { actor, input: transfer })).id, transferEntry.id);
+await assert.rejects(() => recordBankTransfer(db, { actor, input: { ...transfer, amount: 2000 } }), /different details/);
+for (const [reconciliationId, netEffect] of [[reopened.id, -1300], [savingsSession.id, 1300]]) {
+  const entries = await eligibleLedgerItems(db, { actor, entitlementTier: 'mission', reconciliationId });
+  assert.equal(entries.find((entry) => entry.journalEntryId === transferEntry.id)?.netEffect, netEffect);
+}
+const transferAccounts = s.prepare('SELECT account_id, fund_id FROM accounting_journal_lines WHERE journal_entry_id=? ORDER BY line_number').all(transferEntry.id);
+assert.deepEqual(transferAccounts.map((line) => [line.account_id, line.fund_id]), [[savingsBank.ledgerAccountId, 'fund_general'], [bank.ledgerAccountId, 'fund_general']]);
+console.log('PASS - a later transfer moves cash without adding income, remains in its fund, and can be retried without double posting');
