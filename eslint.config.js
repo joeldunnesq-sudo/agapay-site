@@ -1253,7 +1253,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(renderAccountingClose|createAccountingClose|createAccountingYearEnd|waiveAccountingCloseCheck|completeAccountingClose|printAccountingClosePacket|downloadAccountingAuditTrail|downloadAccountingAccountantExport|createAccountingAdjustment|postAccountingAdjustment|createAccountingAdjustmentTemplate|archiveAccountingFiscalYear|reopenAccountingFiscalYear|renderAccountingGovernance|saveAccountingRetention|createAccountingLegalHold|releaseAccountingLegalHold)$',
+            '^(renderAccountingClose|createAccountingClose|createAccountingYearEnd|waiveAccountingCloseCheck|completeAccountingClose|printAccountingClosePacket|downloadAccountingAuditTrail|downloadAccountingAccountantExport|createAccountingAdjustment|postAccountingAdjustment|createAccountingAdjustmentTemplate|archiveAccountingFiscalYear|reopenAccountingFiscalYear|renderAccountingGovernance|saveAccountingRetention|createAccountingLegalHold|releaseAccountingLegalHold|beginAccountingMonthEnd)$',
         },
       ],
     },
@@ -1691,7 +1691,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(renderAccountingBankStatements|renderAccountingBanking|setAccountingReconciliationView|renderAccountingIntegrationsBase|renderAccountingIntegrations|renderAccountingServiceInvoices|postAccountingServiceInvoice|configureAccountingCommerceItem|previewAccountingCommerceBackfill|loadAccountingPhaseE|showAccountingBankAccountForm|showAccountingBankTransferForm|submitAccountingBankTransfer|toggleAccountingNewBankLedger|phaseEMutation|createAccountingBankAccount|previewAccountingBankCsv|commitAccountingBankCsv|createAccountingReconciliation|completeAccountingReconciliation|editAccountingBankAccount|updateAccountingBankAccount|showAccountingEligibleItems|showAccountingReconciliationAdjustment|postAccountingReconciliationAdjustment|saveAccountingIntegrationSettings|accountingMatchSuggestions|showAccountingMatchSuggestions|confirmAccountingSuggestedMatch|renderAccountingFeeCoverageRepair|previewAccountingFeeCoverage)$',
+            '^(renderAccountingBankStatements|renderAccountingBanking|setAccountingReconciliationView|renderAccountingIntegrationsBase|renderAccountingIntegrations|renderAccountingServiceInvoices|postAccountingServiceInvoice|configureAccountingCommerceItem|previewAccountingCommerceBackfill|loadAccountingPhaseE|showAccountingBankAccountForm|showAccountingBankTransferForm|submitAccountingBankTransfer|toggleAccountingNewBankLedger|phaseEMutation|createAccountingBankAccount|previewAccountingBankCsv|commitAccountingBankCsv|createAccountingReconciliation|completeAccountingReconciliation|editAccountingBankAccount|updateAccountingBankAccount|showAccountingEligibleItems|showAccountingReconciliationAdjustment|postAccountingReconciliationAdjustment|saveAccountingIntegrationSettings|accountingMatchSuggestions|showAccountingMatchSuggestions|confirmAccountingSuggestedMatch|renderAccountingFeeCoverageRepair|previewAccountingFeeCoverage|submitAccountingManualMatch|confirmAccountingStatementMatch|completeAccountingStatementReview)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },
@@ -1705,7 +1705,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(accountingSimpleRevenueOptions|accountingSimpleFundOptions|accountingSimpleIncomeForm|accountingIncomeSplitRow|enableAccountingIncomeSplits|disableAccountingIncomeSplits|addAccountingIncomeSplit|removeAccountingIncomeSplit|collectAccountingIncomeSplits|updateAccountingSplitDepositBalance|accountingSimpleActivityFeed|accountingInKindDebitOptions|accountingInKindGiftForm|accountingOverviewHero|accountingOverviewFundSummary|accountingOverviewFundRank|renderAccountingOverview|accountingRegisterModel|accountingRegisterEntryForm|accountingRecurringPanel|accountingPledgeAccountSetting|submitAccountingSimpleIncome|submitAccountingInKindGift)$',
+            '^(accountingSimpleRevenueOptions|accountingSimpleFundOptions|accountingSimpleIncomeForm|accountingIncomeSplitRow|enableAccountingIncomeSplits|disableAccountingIncomeSplits|addAccountingIncomeSplit|removeAccountingIncomeSplit|collectAccountingIncomeSplits|updateAccountingSplitDepositBalance|accountingSimpleActivityFeed|accountingInKindDebitOptions|accountingInKindGiftForm|accountingOverviewHero|accountingOverviewFundSummary|accountingOverviewFundRank|renderAccountingOverview|accountingRegisterModel|accountingRegisterEntryForm|accountingRecurringPanel|accountingPledgeAccountSetting|submitAccountingSimpleIncome|submitAccountingInKindGift|renderAccountingTreasurerHome|openAccountingHomeReport|openAccountingHomeTransfer|openAccountingHomeBank|openAccountingGivingReconciliation|accountingPaidExpenseForm|renderAccountingCouncilDesk|prepareAccountingCouncilDesk|printAccountingCouncilDesk)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },
@@ -1719,7 +1719,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings|openAccountingSelectedPeriod)$',
+            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings|openAccountingSelectedPeriod|closeAccountingHomeTask)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },

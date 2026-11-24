@@ -164,6 +164,15 @@ export async function handleAccountingReconciliationCommerce(request: Request, e
     if (match) {
       const reconciliationId = decodeURIComponent(match[1]),
         action = match[2];
+      if (request.method === 'GET' && action === 'suggestions' && url.searchParams.get('review') === '1') {
+        const review = await suggestMatches(ctx.db, {
+          actor: ctx.actor,
+          entitlementTier: tier,
+          reconciliationId,
+          includeReview: true,
+        });
+        return reply({ ok: true, ...(review as Record<string, unknown>) });
+      }
       if (request.method === 'GET' && action === 'suggestions')
         return reply({
           ok: true,

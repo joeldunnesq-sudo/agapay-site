@@ -165,6 +165,11 @@ async function changeAccountingPin(event) {
   }
 }
 async function lockAccountingWorkspace() {
+  const pane = document.getElementById('accountingPane');
+  if (pane) pane.dataset.loaded = 'locked';
+  accountingHomeTask = '';
+  accountingView = 'overview';
+  syncAccountingHomeTask();
   const session = accountingStaffSession();
   if (session) await accountingAccessRequest('/logout', { profileId: session.profile.id }).catch(() => {});
   sessionStorage.removeItem(accountingStaffSessionKey());

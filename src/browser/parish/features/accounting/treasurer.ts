@@ -178,6 +178,259 @@ function accountingOverviewHero() {
     </section>`;
 }
 
+function renderAccountingTreasurerHome(pane: HTMLElement) {
+  const parishTier = accountingData.tier === 'advanced_operations';
+  const activities = accountingData.reports.activities;
+  const totals = activities?.totals;
+  const period = activities ? `${accountingDate(activities.startDate)} – ${accountingDate(activities.endDate)}` : '';
+  pane.innerHTML = `<section class="acct-command-hero acct-treasurer-start">
+    <h2>Record activity</h2>
+    <div class="acct-command-actions acct-command-actions-treasurer">
+      <button type="button" id="accountingHomeDeposit" onclick="openAccountingSimpleIncome(this.id)"><b aria-hidden="true">＋</b><span>Record a deposit<small>Cash and checks deposited at the bank</small></span></button>
+      <button type="button" id="accountingHomeExpense" onclick="openAccountingHomeTask('expense',this.id)"><b aria-hidden="true">−</b><span>Record a paid expense<small>A purchase already paid from a church account</small></span></button>
+      <button type="button" id="accountingHomeTransfer" onclick="openAccountingHomeTransfer(this.id)"><b aria-hidden="true">⇄</b><span>Record a transfer<small>Money already moved between church bank accounts</small></span></button>
+      ${parishTier ? '<button type="button" id="accountingHomeBill" onclick="openAccountingSimpleBill(this.id)"><b aria-hidden="true">◇</b><span>Enter a bill<small>Save a vendor invoice for approval</small></span></button>' : ''}
+      <button type="button" id="accountingHomeGift" onclick="openAccountingInKindGift(this.id)"><b aria-hidden="true">◆</b><span>Record a non-cash gift<small>Donated goods, equipment, or services</small></span></button>
+    </div>
+  </section>
+  <div class="acct-treasurer-home-grid">
+    <section class="acct-card acct-treasurer-card" aria-labelledby="accountingFollowUpTitle">
+      <h2 id="accountingFollowUpTitle">Review and follow up</h2>
+      <ul class="acct-treasurer-links">
+        ${parishTier ? '<li><button type="button" id="accountingHomeBills" onclick="openAccountingBills(this.id)"><strong>Bills &amp; payments</strong><span data-accounting-summary="bills" role="status">Checking bills…</span></button></li>' : ''}
+        <li><button type="button" id="accountingHomeBankAccounts" onclick="openAccountingHomeBankAccounts(this.id)"><strong>Manage bank accounts</strong><span>Add an account or update its details</span></button></li>
+        <li><button type="button" id="accountingHomeBank" onclick="openAccountingHomeBank(this.id)"><strong>Match bank statements</strong><span data-accounting-summary="bank" role="status">Checking bank statements…</span></button></li>
+        <li><button type="button" id="accountingHomeGiving" onclick="openAccountingGivingReconciliation(this.id)"><strong>Review online giving payouts</strong><span>Review Stripe deposits, fees, and refunds</span></button></li>
+        <li><button type="button" id="accountingHomeClose" onclick="openAccountingHomeTask('close',this.id)"><strong>Close the books</strong><span data-accounting-summary="close" role="status">Checking close progress…</span></button></li>
+      </ul>
+    </section>
+    <section class="acct-card acct-treasurer-card" aria-labelledby="accountingCouncilTitle">
+      <h2 id="accountingCouncilTitle">Reports for parish leadership</h2>
+      ${totals ? `<div class="acct-treasurer-totals"><p>${period}</p><dl><div><dt>Income</dt><dd>${accountingMoney(totals.revenue)}</dd></div><div><dt>Expenses</dt><dd>${accountingMoney(totals.expenses)}</dd></div></dl></div>` : '<p>Income and expense totals are unavailable.</p>'}
+      <ul class="acct-treasurer-links">
+        <li><button type="button" id="accountingHomeCouncil" onclick="openAccountingHomeTask('council',this.id)"><strong>Prepare a council packet</strong><span>Print income, expenses, and fund balances for one period</span></button></li>
+        <li><button type="button" id="accountingHomeIncomeReport" onclick="openAccountingHomeReport('activities',this.id)"><strong>Income and expenses</strong><span>See where money came from and how it was spent</span></button></li>
+        <li><button type="button" id="accountingHomeFunds" onclick="openAccountingHomeTask('funds',this.id)"><strong>Fund balances</strong><span>Review operating and designated funds</span></button></li>
+        ${parishTier ? '<li><button type="button" id="accountingHomeBudget" onclick="openAccountingHomeReport(\'budgetActual\',this.id)"><strong>Budget vs. actual</strong><span>Compare spending and income with the plan</span></button></li>' : ''}
+      </ul>
+    </section>
+  </div>`;
+
+  if (parishTier) {
+    loadAccountingHomeSummary<{ overview: AccountingPayablesOverview }>(
+      pane,
+      'bills',
+      '/payables/overview',
+      ({ overview }) => {
+        const { awaitingApproval, openPayables } = overview;
+        if (!Number.isFinite(awaitingApproval) || !Number.isFinite(openPayables))
+          throw new Error('Summary unavailable');
+        return `${awaitingApproval} awaiting approval · ${accountingMoney(openPayables)} unpaid on posted bills`;
+      }
+    );
+  }
+  loadAccountingHomeSummary<{ sessions: AccountingBankSession[] }>(
+    pane,
+    'bank',
+    '/bank/reconciliations',
+    ({ sessions }) => {
+      const open = sessions.filter(({ status }) => !['completed', 'voided'].includes(status)).length;
+      return open ? `${open} in progress` : 'No reconciliations in progress';
+    }
+  );
+  loadAccountingHomeSummary<{ sessions: { status: string }[] }>(pane, 'close', '/close/workspace', ({ sessions }) => {
+    const open = sessions.filter(({ status }) => !['completed', 'superseded'].includes(status)).length;
+    return open ? `${open} close ${open === 1 ? 'session' : 'sessions'} in progress` : 'No close in progress';
+  });
+}
+
+async function loadAccountingHomeSummary<T>(
+  pane: HTMLElement,
+  name: string,
+  path: string,
+  describe: (data: T) => string
+) {
+  const summary = pane.querySelector<HTMLElement>(`[data-accounting-summary="${name}"]`);
+  try {
+    const response = await fetch(accountingApi(path), { headers: authHeaders() });
+    if (!response.ok) throw new Error('Summary unavailable');
+    const payload = (await response.json()) as T;
+    if (summary?.isConnected) summary.textContent = describe(payload);
+  } catch {
+    if (summary?.isConnected) summary.textContent = 'Status unavailable';
+  }
+}
+
+function openAccountingHomeReport(report: string, trigger?: string) {
+  openAccountingHomeTask('reports', trigger);
+  if (accountingView === 'reports') openAccountingReport(report);
+}
+
+async function accountingDeskRead<T>(path: string) {
+  const response = await fetch(accountingApi(path), { headers: authHeaders() });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to load this information.');
+  return payload as T;
+}
+
+function openAccountingHomeBankAccounts(trigger?: string) {
+  accountingReconciliationView = 'accounts';
+  return openAccountingHomeTask('banking', trigger);
+}
+async function openAccountingHomeTransfer(trigger?: string) {
+  await openAccountingHomeBankAccounts(trigger);
+  if (accountingView === 'banking' && accountingReconciliationView === 'accounts') showAccountingBankTransferForm();
+}
+function openAccountingHomeBank(trigger?: string) {
+  accountingReconciliationView = 'bank';
+  return openAccountingHomeTask('banking', trigger);
+}
+function openAccountingGivingReconciliation(trigger?: string) {
+  accountingReconciliationView = 'giving';
+  return openAccountingHomeTask('banking', trigger);
+}
+interface AccountingCouncilBudgetReport {
+  budget: { name: string; versionNumber: number };
+  throughDate: string;
+  rows: { category: string; budget: number; actual: number }[];
+}
+const accountingExpenseReceipt = { text: '' };
+function accountingPaidExpenseForm() {
+  const banks = accountingData.bankAccounts.filter((bank) => bank.isActive !== false);
+  const expenses = accountingData.accounts.filter(
+    (account) => account.category === 'expense' && account.isActive !== false && !account.archivedAt
+  );
+  if (!banks.length || !expenses.length)
+    return accountingEmpty(
+      'Expense setup is needed',
+      'Add a bank account and an expense category to record a payment.'
+    );
+  const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
+  return `<section class="acct-card"><h2>Tell us what you paid for</h2><p>Use this for a purchase already paid directly. For an invoice already entered in AGAPAY, record its payment from Bills &amp; payments.</p><form class="acct-phase-form" onsubmit="submitAccountingRegisterEntry(event,'paid-expense')"><div class="acct-form-grid">
+    <label>Paid from<select name="registerAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}</option>`).join('')}</select></label>
+    <label>Paid to<input name="payee" required maxlength="120"></label><label>Payment date<input type="date" name="entryDate" required value="${new Date().toLocaleDateString('en-CA')}"></label>
+    <label>Amount<input type="number" name="payment" min="0.01" step="0.01" required></label>
+    <label>What was it for?<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose an expense category</option>${expenses.map((account) => `<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId || '')}">${escapeHtml(account.name)}</option>`).join('')}</select></label>
+    <label>Which fund?<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id || '')}</select></label><label>Memo <small>Optional</small><input name="comment" maxlength="100"></label>
+    </div><button type="submit" class="acct-primary">Record expense</button><p class="acct-form-status" role="status">${escapeHtml(accountingExpenseReceipt.text)}</p></form></section>`;
+}
+
+function renderAccountingCouncilDesk(pane: HTMLElement) {
+  const period = accountingReportPeriod();
+  const today = new Date();
+  const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0).toLocaleDateString('en-CA');
+  const end = lastMonth < period.end && lastMonth >= period.start ? lastMonth : period.end;
+  pane.innerHTML = `<section class="acct-card"><h2>Choose the reporting period</h2><form class="acct-phase-form" onsubmit="prepareAccountingCouncilDesk(event)">
+    <div class="acct-form-grid"><label>From<input type="date" name="start" required value="${escapeAttr(period.start)}"></label><label>Through<input type="date" name="end" required value="${escapeAttr(end)}"></label></div>
+    <button type="submit" class="acct-primary">Prepare packet</button><p role="status"></p></form><div id="accountingCouncilPreview"></div></section>`;
+}
+
+async function prepareAccountingCouncilDesk(event: AccountingFormEvent) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const { start, end } = Object.fromEntries(new FormData(form)) as Record<string, string>;
+  const status = form.querySelector<HTMLElement>('[role="status"]')!;
+  const button = form.querySelector<HTMLButtonElement>('button')!;
+  const preview = document.getElementById('accountingCouncilPreview')!;
+  if (start > end) {
+    status.textContent = 'Choose an end date on or after the start date.';
+    return;
+  }
+  button.disabled = true;
+  preview.replaceChildren();
+  status.textContent = 'Preparing the packet…';
+  try {
+    const query = new URLSearchParams({ from: start, to: end });
+    const [{ report: activity }, { report: funds }, budget] = await Promise.all([
+      accountingDeskRead<{ report: AccountingReport }>(`/reports/statement-of-activities?${query}`),
+      accountingDeskRead<{ report: AccountingReport }>(`/reports/fund-activity?${query}`),
+      accountingCouncilBudget(start, end).catch(() => ({
+        report: undefined,
+        note: 'The budget comparison is unavailable.',
+      })),
+    ]);
+    if (!form.isConnected) return;
+    if (!activity?.totals || !Array.isArray(funds?.rows))
+      throw new Error('The income statement or fund balances are unavailable.');
+    const table = (headings: string[], rows: string[]) =>
+      `<table><thead><tr>${headings.map((label) => `<th scope="col">${label}</th>`).join('')}</tr></thead><tbody>${rows.join('') || `<tr><td colspan="${headings.length}">No activity for this period.</td></tr>`}</tbody></table>`;
+    const comparison = budget?.report;
+    const budgetSection = comparison
+      ? `<h3>Budget compared with actual</h3><p>${escapeHtml(comparison.budget.name)} · Version ${escapeHtml(comparison.budget.versionNumber)}</p>${table(
+          ['Category', 'Budget', 'Actual'],
+          ['revenue', 'expense'].map((category) => {
+            const rows = comparison.rows.filter((row) => row.category === category);
+            return `<tr><td>${category === 'revenue' ? 'Income' : 'Expenses'}</td><td>${accountingMoney(rows.reduce((sum, row) => sum + Number(row.budget), 0))}</td><td>${accountingMoney(rows.reduce((sum, row) => sum + Number(row.actual), 0))}</td></tr>`;
+          })
+        )}`
+      : budget?.note
+        ? `<p>${escapeHtml(budget.note)}</p>`
+        : '';
+    preview.innerHTML = `<div class="acct-row-actions"><button type="button" class="acct-primary" onclick="printAccountingCouncilDesk()">Print packet</button></div><article id="accountingCouncilDocument" class="acct-council-document">
+      <h2>Parish council financial packet</h2><p>${escapeHtml(currentParish?.parishName || currentParish?.name || '')} · ${accountingDate(start)} – ${accountingDate(end)}</p>
+      <h3>Income and expenses</h3>${table(['Income', 'Expenses', 'Income less expenses'], [`<tr><td>${accountingMoney(activity.totals.revenue)}</td><td>${accountingMoney(activity.totals.expenses)}</td><td>${accountingMoney(activity.totals.changeInNetAssets)}</td></tr>`])}
+      <h3>Fund balances</h3>${table(
+        ['Fund', 'Restriction', 'Ending balance'],
+        funds.rows.map(
+          (fund) =>
+            `<tr><td>${escapeHtml(fund.name)}</td><td>${escapeHtml(restrictionLabel(String(fund.restrictionType || '')))}</td><td>${accountingMoney(fund.endingBalance)}</td></tr>`
+        )
+      )}${budgetSection}</article>`;
+    status.textContent = 'Packet ready.';
+  } catch (error) {
+    if (form.isConnected) status.textContent = error instanceof Error ? error.message : String(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function accountingCouncilBudget(
+  start: string,
+  end: string
+): Promise<{ report?: AccountingCouncilBudgetReport; note?: string } | null> {
+  if (accountingData.tier !== 'advanced_operations') return null;
+  const fiscal = accountingData.setup?.currentFiscalYear;
+  const endDate = new Date(`${end}T00:00:00Z`);
+  const monthEnd = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth() + 1, 0));
+  if (
+    !fiscal?.id ||
+    start !== fiscal.startDate ||
+    (fiscal.endDate && end > fiscal.endDate) ||
+    endDate.getTime() !== monthEnd.getTime()
+  )
+    return { note: 'To include a budget comparison, choose fiscal year-to-date through the end of a month.' };
+  const startDate = new Date(`${start}T00:00:00Z`);
+  const throughMonth =
+    (endDate.getUTCFullYear() - startDate.getUTCFullYear()) * 12 + endDate.getUTCMonth() - startDate.getUTCMonth() + 1;
+  const { budgets } = await accountingDeskRead<{ budgets: (AccountingBudgetSummary & { fiscalYearId: string })[] }>(
+    '/budgets'
+  );
+  const budget = (budgets || [])
+    .filter((item) => item.fiscalYearId === fiscal.id && ['approved', 'locked'].includes(item.status))
+    .sort((a, b) => Number(b.versionNumber) - Number(a.versionNumber))[0];
+  if (!budget) return { note: 'There is no approved budget for this fiscal year.' };
+  const { report } = await accountingDeskRead<{ report: AccountingCouncilBudgetReport }>(
+    `/budgets/${encodeURIComponent(budget.id)}/variance?throughMonth=${throughMonth}`
+  );
+  if (report?.throughDate !== end) return { note: 'The budget comparison uses a different end date.' };
+  return { report };
+}
+
+function printAccountingCouncilDesk() {
+  const documentBody = document.getElementById('accountingCouncilDocument');
+  if (!documentBody) return;
+  const win = window.open('about:blank', '_blank');
+  if (!win) {
+    alert('Allow pop-ups to print your council packet.');
+    return;
+  }
+  win.document.write(
+    `<!doctype html><html lang="en"><meta charset="utf-8"><title>Parish council financial packet</title><style>body{margin:2rem;color:#122333;font:14px system-ui}h2,h3{font-family:Georgia,serif}table{width:100%;border-collapse:collapse}th,td{padding:.5rem;text-align:left;border-bottom:1px solid #d9d5ca}tr{break-inside:avoid}@media print{button{display:none}}</style><button type="button" onclick="print()">Print or save PDF</button>${documentBody.outerHTML}</html>`
+  );
+  win.document.close();
+  win.focus();
+}
+
 function accountingOverviewFundSummary(fund: AccountingFund, fundActivity: AccountingReportRow[]) {
   const ledgerBalance = Number(
     fundActivity.find((row) => row.fundId === fund.id || row.code === fund.code)?.endingBalance || 0
@@ -460,7 +713,7 @@ async function submitAccountingSimpleIncome(event: AccountingFormEvent) {
   }
   accountingSimpleIncomeMessage = `${accountingMoney(amount)} was recorded successfully.`;
   await loadAccountingTab(true);
-  accountingView = 'ledger';
+  accountingView = 'income';
   renderAccountingPane();
 }
 
@@ -508,6 +761,6 @@ async function submitAccountingInKindGift(event: AccountingFormEvent) {
   accountingInKindGiftMessage = `${accountingMoney(amount)} for ${String(raw.itemDescription).trim()} posted as a balanced non-cash gift.`;
   await loadAccountingTab(true);
   accountingSimpleEntryMode = 'in-kind';
-  accountingView = 'ledger';
+  accountingView = 'income';
   renderAccountingPane();
 }

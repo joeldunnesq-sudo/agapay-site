@@ -6,8 +6,8 @@ async function submitAccountingRegisterEntry(event, kind) {
     status = form.querySelector('.acct-form-status'),
     button = form.querySelector('button[type="submit"],button.acct-primary');
   const data = Object.fromEntries(new FormData(form));
-  const register = accountingRegisterModel(),
-    registerAccountId = register.configuration?.id || register.account.id || '';
+  const register = kind === 'paid-expense' ? null : accountingRegisterModel(),
+    registerAccountId = register ? register.configuration?.id || register.account.id || '' : data.registerAccountId;
   const payment = Math.round(Number(data.payment || 0) * 100),
     deposit = Math.round(Number(data.deposit || 0) * 100);
   const amount = kind === 'contribution' ? deposit : payment || deposit;
@@ -79,7 +79,8 @@ async function submitAccountingRegisterEntry(event, kind) {
     });
     const posted = await postResponse.json().catch(() => ({}));
     if (!postResponse.ok) throw new Error(posted.message || posted.error || 'Unable to post this transaction.');
-    await loadAccountingTab(true);
+    if (kind === 'paid-expense') accountingExpenseReceipt.text = `${accountingMoney(amount)} expense recorded.`;
+    if (form.isConnected) await loadAccountingTab(true);
   } catch (error) {
     status.textContent = error.message || 'Unable to post this transaction.';
     status.className = 'acct-form-status error';

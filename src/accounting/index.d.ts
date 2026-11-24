@@ -47,7 +47,10 @@ export function reconciliationCsv(report: unknown): string;
 export function reopenReconciliation(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
 export function salesTaxLiabilityReport(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
 export function stripeClearingValidation(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
-export function suggestMatches(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
+export function suggestMatches(
+  db: AccountingHttpDatabase,
+  options: AccountingHttpOptions & { includeReview?: boolean }
+): Promise<unknown>;
 export function updateBankAccount(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
 export function updateIntegrationSettings(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;
 export function validateReconciliation(db: AccountingHttpDatabase, options: AccountingHttpOptions): Promise<unknown>;

@@ -233,6 +233,7 @@ const accounting = [
   'scripts/accounting-treasurer-mode-tests.mjs',
   'scripts/accounting-assets-tests.mjs',
   'scripts/accounting-assets-browser-tests.mjs',
+  'scripts/accounting-treasurer-home-browser-tests.mjs',
 ];
 
 const productUi = [

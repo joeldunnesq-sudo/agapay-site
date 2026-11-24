@@ -277,7 +277,7 @@ interface AccountingCloseSession {
 }
 interface AccountingCloseWorkspace {
   fiscalYears: { id: string; name: string; version: number }[];
-  periods: { id: string; name: string; status: string; fiscalYearId: string }[];
+  periods: { id: string; name: string; status: string; fiscalYearId: string; endDate?: string }[];
   sessions: AccountingCloseSession[];
 }
 interface AccountingAdjustments {

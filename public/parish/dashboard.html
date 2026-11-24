@@ -1431,17 +1431,17 @@ Generate Monthly Financial Report
 <div class="acct-suite-brand"><strong>AGAPAY</strong><span>Accounting Suite</span></div>
 <nav role="tablist" aria-label="Accounting views">
 <button type="button" class="active" data-accounting-view="overview" onclick="setAccountingView('overview')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 9v12"/></svg>Overview</button>
-<button type="button" data-accounting-view="funds" onclick="setAccountingView('funds')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 6l13-3v3m3 5h-6v4h6"/></svg>Funds</button>
-<button type="button" data-accounting-view="payables" onclick="setAccountingView('payables')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6m-6 4h6"/></svg>Payables</button>
-<button type="button" data-accounting-view="banking" onclick="setAccountingView('banking')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5zM5 20h14M7 10v7m5-7v7m5-7v7"/></svg>Banking</button>
-<button type="button" data-accounting-view="reports" onclick="setAccountingView('reports')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16M8 16v-4m4 4V9m4 7V6"/></svg>Reports</button>
-<button type="button" data-accounting-view="budgets" onclick="setAccountingView('budgets')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5H5v16h14V5h-3M8 3h8v4H8zM8 11h8m-8 5h8"/></svg>Budgets</button>
-<button type="button" class="acct-suite-advanced-toggle" data-accounting-advanced-toggle onclick="toggleAccountingAdvancedNav()" aria-expanded="false" aria-controls="accountingAdvancedLedger accountingAdvancedClose accountingAdvancedGovernance accountingAdvancedSetup accountingAdvancedSettings"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2M10 5v4m4-4v4m0 6v4m4-4v4"/></svg>Advanced</button>
-<button type="button" id="accountingAdvancedLedger" data-accounting-view="ledger" data-accounting-advanced onclick="setAccountingView('ledger')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM9 3v18m3-13h4m-4 4h4"/></svg>Ledger</button>
-<button type="button" id="accountingAdvancedClose" data-accounting-view="close" data-accounting-advanced onclick="setAccountingView('close')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v15H4zM7 3v6m10-6v6m-9 6 3 3 5-5"/></svg>Period Close</button>
-<button type="button" id="accountingAdvancedGovernance" data-accounting-view="governance" data-accounting-advanced onclick="setAccountingView('governance')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4"/></svg>Governance</button>
-<button type="button" id="accountingAdvancedSetup" data-accounting-view="setup" data-accounting-advanced onclick="setAccountingView('setup')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Setup</button>
-<button type="button" id="accountingAdvancedSettings" data-accounting-view="settings" data-accounting-advanced onclick="setAccountingView('settings')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14M9 4v4m6 2v4m-5 2v4"/></svg>Settings</button>
+<button type="button" id="accountingSecondaryfunds" hidden data-accounting-view="funds" onclick="setAccountingView('funds')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 6l13-3v3m3 5h-6v4h6"/></svg>Funds</button>
+<button type="button" id="accountingSecondarypayables" hidden data-accounting-view="payables" onclick="setAccountingView('payables')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6m-6 4h6"/></svg>Payables</button>
+<button type="button" id="accountingSecondarybanking" hidden data-accounting-view="banking" onclick="setAccountingView('banking')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5zM5 20h14M7 10v7m5-7v7m5-7v7"/></svg>Banking</button>
+<button type="button" id="accountingSecondaryreports" hidden data-accounting-view="reports" onclick="setAccountingView('reports')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4v16h16M8 16v-4m4 4V9m4 7V6"/></svg>Reports</button>
+<button type="button" id="accountingSecondarybudgets" hidden data-accounting-view="budgets" onclick="setAccountingView('budgets')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5H5v16h14V5h-3M8 3h8v4H8zM8 11h8m-8 5h8"/></svg>Budgets</button>
+<button type="button" class="acct-suite-advanced-toggle" data-accounting-advanced-toggle onclick="toggleAccountingAdvancedNav()" aria-expanded="false" aria-controls="accountingSecondaryfunds accountingSecondarypayables accountingSecondarybanking accountingSecondaryreports accountingSecondarybudgets accountingAdvancedLedger accountingAdvancedClose accountingAdvancedGovernance accountingAdvancedSetup accountingAdvancedSettings"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2M10 5v4m4-4v4m0 6v4m4-4v4"/></svg>More tools</button>
+<button type="button" id="accountingAdvancedLedger" hidden data-accounting-view="ledger" data-accounting-advanced onclick="setAccountingView('ledger')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM9 3v18m3-13h4m-4 4h4"/></svg>Ledger</button>
+<button type="button" id="accountingAdvancedClose" hidden data-accounting-view="close" data-accounting-advanced onclick="setAccountingView('close')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v15H4zM7 3v6m10-6v6m-9 6 3 3 5-5"/></svg>Period Close</button>
+<button type="button" id="accountingAdvancedGovernance" hidden data-accounting-view="governance" data-accounting-advanced onclick="setAccountingView('governance')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4"/></svg>Governance</button>
+<button type="button" id="accountingAdvancedSetup" hidden data-accounting-view="setup" data-accounting-advanced onclick="setAccountingView('setup')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Setup</button>
+<button type="button" id="accountingAdvancedSettings" hidden data-accounting-view="settings" data-accounting-advanced onclick="setAccountingView('settings')"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h14M9 4v4m6 2v4m-5 2v4"/></svg>Settings</button>
 </nav>
 <div class="acct-suite-tier"><i></i><div><strong id="accountingTierLabel">Accounting</strong><span id="accountingTierCopy">Core fund accounting</span></div></div>
 </header>
@@ -1454,7 +1454,14 @@ Generate Monthly Financial Report
 </div>
 <div class="acct-suite-header-meta"><span id="accountingParishName">Parish books</span><span id="accountingFiscalYear">Current fiscal year</span><button type="button" class="acct-refresh" onclick="loadAccountingTab(true)" aria-label="Refresh accounting data">Refresh</button></div>
 </header>
-<div id="accountingPane" class="acct-workspace"><p class="sw-tool-loading">Loading Accounting...</p></div>
+<div class="acct-workspace">
+              <div id="accountingHomeContext" hidden></div>
+              <section id="accountingHomeTaskBar" class="acct-home-task-bar" aria-labelledby="accountingHomeTaskTitle" hidden>
+                <h2 id="accountingHomeTaskTitle" tabindex="-1"></h2>
+                <button type="button" class="acct-link" onclick="closeAccountingHomeTask()">Back to overview</button>
+              </section>
+              <div id="accountingPane"><p class="sw-tool-loading">Loading Accounting...</p></div>
+            </div>
 </section>
 </div>
 </div>
@@ -1888,20 +1895,20 @@ Generate Monthly Financial Report
 <script src="/parish/features/sacraments.js?v=557ffeb7bc3dbe6d"></script>
 <script src="/parish/accounting-journey.js?v=8aea4d32b6874f07"></script>
 <script src="/parish/features/accounting/assets.js?v=a8f8810d458074a4"></script>
-<script src="/parish/features/accounting/workspace.js?v=0f9d269f8cd47159"></script>
-<script src="/parish/features/accounting/treasurer.js?v=4ee50614793a1e30"></script>
-<script src="/parish/features/accounting/ledger.js?v=cda12625d4044bc6"></script>
-<script src="/parish/features/accounting/payables.js?v=eb428268dd8f53d9"></script>
+<script src="/parish/features/accounting/workspace.js?v=7066aed7b6ca0c4b"></script>
+<script src="/parish/features/accounting/treasurer.js?v=02d80ffc141d0200"></script>
+<script src="/parish/features/accounting/ledger.js?v=44158e7653b144e6"></script>
+<script src="/parish/features/accounting/payables.js?v=e46e74189f7b63e8"></script>
   <link rel="stylesheet" href="/parish/accounting-reports.css?v=6041c130a35b0250">
 <script src="/parish/features/accounting/report-documents.js?v=fd8112a2f8862524"></script>
 <script src="/parish/features/accounting/report-loaders.js?v=b12de6791b015bf8"></script>
 <script src="/parish/features/accounting/reports.js?v=53c103400d358524"></script>
 <script src="/parish/features/accounting/funds.js?v=e66c6d88d7418903"></script>
-<script src="/parish/features/accounting/banking.js?v=213a18eff2b2a852"></script>
-<script src="/parish/features/accounting/close.js?v=b1a848d81376cd28"></script>
+<script src="/parish/features/accounting/banking.js?v=b37cfadc5afa304d"></script>
+<script src="/parish/features/accounting/close.js?v=8b144e55751aa678"></script>
 <script src="/parish/features/accounting/migration.js?v=b4a9922847685091"></script>
 <script src="/parish/features/accounting/activation.js?v=879fca12e6e60d31"></script>
-<script src="/parish/features/accounting.js?v=586cfe28cc35a0aa"></script>
+<script src="/parish/features/accounting.js?v=3e3c5bd672dc4e5a"></script>
 <script src="/parish/features/commerce/bookstore-catalog.js?v=c228ee90fc233fb6"></script>
 <script src="/parish/features/commerce/bookstore-checkout.js?v=408c0df8ac281d32"></script>
 <script src="/parish/features/commerce/bookstore-sales.js?v=bb593e2f23b2fae2"></script>

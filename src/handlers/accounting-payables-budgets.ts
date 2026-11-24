@@ -103,11 +103,23 @@ async function seedParishCheckPayer(ctx: AccountingHttpContext, tier: string, ba
   });
 }
 
-async function bills(db: AccountingHttpDatabase) {
-  return rows(
+async function bills(db: AccountingHttpDatabase, actor: AccountingHttpActor) {
+  const items = await rows(
     db,
-    `SELECT b.id,b.bill_number billNumber,b.vendor_id vendorId,v.display_name vendorName,b.vendor_invoice_number vendorInvoiceNumber,b.bill_date billDate,b.due_date dueDate,b.description,b.status,b.approval_status approvalStatus,b.payment_status paymentStatus,b.total_amount totalAmount,b.amount_paid amountPaid,b.amount_due amountDue,b.version FROM accounting_bills b JOIN accounting_vendors v ON v.id=b.vendor_id ORDER BY b.due_date DESC,b.created_at DESC`
+    `SELECT b.id,b.bill_number billNumber,b.vendor_id vendorId,v.display_name vendorName,b.vendor_invoice_number vendorInvoiceNumber,b.bill_date billDate,b.due_date dueDate,b.description,b.status,b.approval_status approvalStatus,b.payment_status paymentStatus,b.total_amount totalAmount,b.amount_paid amountPaid,b.amount_due amountDue,b.version,b.created_by_actor_id creatorId FROM accounting_bills b JOIN accounting_vendors v ON v.id=b.vendor_id ORDER BY b.due_date DESC,b.created_at DESC`
   );
+  const actions = {
+    enter: actor.capabilities.includes('ap.enter'),
+    approve: actor.capabilities.includes('ap.approve'),
+    pay: actor.capabilities.includes('ap.pay'),
+  };
+  return {
+    actions,
+    bills: items.map(({ creatorId, ...bill }) => ({
+      ...bill,
+      needsOtherApprover: creatorId === actor.id && bill.status === 'submitted',
+    })),
+  };
 }
 async function budgetDetail(db: AccountingHttpDatabase, budgetId: string) {
   const lines = await rows(
@@ -242,7 +254,8 @@ export async function handleAccountingPayablesBudgets(request: Request, env: Par
       if (request.method === 'POST' && action === 'unarchive')
         return reply({ ok: true, vendor: await unarchiveVendor(ctx.db, args) });
     }
-    if (request.method === 'GET' && path === '/payables/bills') return reply({ ok: true, bills: await bills(ctx.db) });
+    if (request.method === 'GET' && path === '/payables/bills')
+      return reply({ ok: true, ...(await bills(ctx.db, ctx.actor)) });
     if (request.method === 'POST' && path === '/payables/bills')
       return reply(
         { ok: true, bill: await createBillDraft(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) },

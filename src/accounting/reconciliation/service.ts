@@ -1,6 +1,7 @@
 import type { PortabilityDatabase } from '../../portability/contracts.js';
 import type { LedgerServiceActor } from '../ledger/service.js';
 interface ReconciliationSqlRow {
+  entryNumber?: string;
   entry_id: string;
   id: string;
   name: string;
@@ -539,7 +540,7 @@ export async function eligibleLedgerItems(
   return Object.freeze(
     await all(
       db,
-      `SELECT l.id journalLineId,e.id journalEntryId,e.entry_number entryNumber,COALESCE(e.posting_date,e.entry_date) postingDate,e.description,e.source_type sourceType,l.debit_amount debitAmount,l.credit_amount creditAmount,(l.debit_amount-l.credit_amount) netEffect FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND COALESCE(e.posting_date,e.entry_date)<=? ORDER BY postingDate,e.id`,
+      `SELECT l.id journalLineId,e.id journalEntryId,e.entry_number entryNumber,COALESCE(e.posting_date,e.entry_date) postingDate,e.description,e.source_type sourceType,l.debit_amount debitAmount,l.credit_amount creditAmount,(l.debit_amount-l.credit_amount) netEffect FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND COALESCE(e.posting_date,e.entry_date)<=? AND NOT EXISTS(SELECT 1 FROM accounting_reconciliation_items i WHERE i.journal_line_id=l.id AND i.status='confirmed') ORDER BY postingDate,e.id`,
       session.account_id,
       session.statement_end_date
     )
@@ -547,7 +548,12 @@ export async function eligibleLedgerItems(
 }
 export async function suggestMatches(
   db: PortabilityDatabase,
-  { actor, entitlementTier, reconciliationId }: ReconciliationOptions
+  {
+    actor,
+    entitlementTier,
+    reconciliationId,
+    includeReview = false,
+  }: ReconciliationOptions & { includeReview?: boolean }
 ) {
   requireCapability(actor, 'accounting.reconciliation.view');
   assertTier(entitlementTier);
@@ -555,8 +561,10 @@ export async function suggestMatches(
   if (!session) throw new ValidationError('Reconciliation was not found.');
   const bank = await all(
       db,
-      "SELECT * FROM accounting_bank_transactions WHERE bank_account_id=? AND status='imported' AND unmatched_amount>0",
-      session.bank_account_id
+      "SELECT * FROM accounting_bank_transactions WHERE bank_account_id=? AND status='imported' AND unmatched_amount>0 AND posted_date BETWEEN ? AND ?",
+      session.bank_account_id,
+      session.statement_start_date,
+      session.statement_end_date
     ),
     ledger = await eligibleLedgerItems(db, { actor, entitlementTier, reconciliationId });
   const suggestions = [];
@@ -573,11 +581,11 @@ export async function suggestMatches(
         confidence += 15;
         reasons.push('Same date');
       }
-      if (b.check_number && l.description.includes(b.check_number)) {
+      if (b.check_number && l.description?.includes(b.check_number)) {
         confidence += 15;
         reasons.push('Matching check number');
       }
-      if (b.reference_number && l.description.includes(b.reference_number)) {
+      if (b.reference_number && l.description?.includes(b.reference_number)) {
         confidence = 100;
         reasons.push('Matching reference');
       }
@@ -585,12 +593,29 @@ export async function suggestMatches(
         bankTransactionId: b.id,
         journalLineId: l.journalLineId,
         journalEntryId: l.journalEntryId,
+        bankDate: b.posted_date,
+        bankDescription: b.description,
+        ledgerDate: l.postingDate,
+        ledgerDescription: l.description,
+        entryNumber: l.entryNumber,
+        direction: b.direction,
         amount: b.unmatched_amount,
         confidence: Math.min(100, confidence),
         reasons,
       });
     }
-  return Object.freeze(suggestions.sort((a, b) => b.confidence - a.confidence));
+  const ranked = Object.freeze(suggestions.sort((a, b) => b.confidence - a.confidence));
+  if (!includeReview) return ranked;
+  return {
+    suggestions: ranked.slice(0, 40),
+    bankItems: bank.map((item) => ({
+      id: item.id,
+      date: item.posted_date,
+      description: item.description,
+      amount: item.direction === 'debit' ? -item.unmatched_amount : item.unmatched_amount,
+    })),
+    ledgerItems: ledger,
+  };
 }
 export async function confirmReconciliationMatch(
   db: PortabilityDatabase,
@@ -607,6 +632,13 @@ export async function confirmReconciliationMatch(
   assertTier(entitlementTier);
   if (!bankTransactionIds?.length || !journalLineIds?.length)
     throw new ValidationError('Bank and ledger match items are required.');
+  if (
+    !Array.isArray(bankTransactionIds) ||
+    !Array.isArray(journalLineIds) ||
+    new Set(bankTransactionIds).size !== bankTransactionIds.length ||
+    new Set(journalLineIds).size !== journalLineIds.length
+  )
+    throw new ValidationError('Choose each bank transaction and bookkeeping entry once.');
   const session = await first(
     db,
     'SELECT s.*,b.account_id FROM accounting_reconciliation_sessions s JOIN accounting_bank_accounts b ON b.id=s.bank_account_id WHERE s.id=?',
@@ -616,14 +648,17 @@ export async function confirmReconciliationMatch(
     throw new ValidationError('Reconciliation is not editable.');
   const banks = await all(
       db,
-      `SELECT * FROM accounting_bank_transactions WHERE bank_account_id=? AND unmatched_amount>0 AND id IN (${bankTransactionIds.map(() => '?').join(',')})`,
+      `SELECT * FROM accounting_bank_transactions WHERE bank_account_id=? AND status='imported' AND unmatched_amount>0 AND posted_date BETWEEN ? AND ? AND id IN (${bankTransactionIds.map(() => '?').join(',')})`,
       session.bank_account_id,
+      session.statement_start_date,
+      session.statement_end_date,
       ...bankTransactionIds
     ),
     lines = await all(
       db,
-      `SELECT l.*,e.id entry_id FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND l.id IN (${journalLineIds.map(() => '?').join(',')})`,
+      `SELECT l.*,e.id entry_id FROM accounting_journal_lines l JOIN accounting_journal_entries e ON e.id=l.journal_entry_id WHERE l.account_id=? AND e.status IN('posted','reversed') AND COALESCE(e.posting_date,e.entry_date)<=? AND NOT EXISTS(SELECT 1 FROM accounting_reconciliation_items i WHERE i.journal_line_id=l.id AND i.status='confirmed') AND l.id IN (${journalLineIds.map(() => '?').join(',')})`,
       session.account_id,
+      session.statement_end_date,
       ...journalLineIds
     );
   if (banks.length !== bankTransactionIds.length || lines.length !== journalLineIds.length)
@@ -631,6 +666,21 @@ export async function confirmReconciliationMatch(
   const bankTotal = banks.reduce((s, b) => s + (b.direction === 'credit' ? 1 : -1) * Number(b.unmatched_amount), 0),
     ledgerTotal = lines.reduce((s, l) => s + Number(l.debit_amount) - Number(l.credit_amount), 0);
   if (bankTotal !== ledgerTotal) throw new ValidationError('Bank and ledger match totals must be equal.');
+  // Abort the whole batch on a stale session or an entry matched by another request.
+  const statements = [
+    db
+      .prepare(
+        "UPDATE accounting_reconciliation_sessions SET version=CASE WHEN status IN('in_progress','reopened') THEN version ELSE NULL END WHERE id=?"
+      )
+      .bind(session.id),
+    ...lines.map((line) =>
+      db
+        .prepare(
+          "UPDATE accounting_reconciliation_sessions SET version=CASE WHEN EXISTS(SELECT 1 FROM accounting_reconciliation_items WHERE journal_line_id=? AND status='confirmed') THEN NULL ELSE version END WHERE id=?"
+        )
+        .bind(line.id, session.id)
+    ),
+  ];
   const group = id('match'),
     remainingLines = lines.map((line) => ({
       line,
@@ -644,28 +694,29 @@ export async function confirmReconciliationMatch(
       if (!remaining) break;
       if (target.sign !== sign || !target.remaining) continue;
       const amount = Math.min(remaining, target.remaining);
-      await run(
-        db,
-        `INSERT INTO accounting_reconciliation_items(id,reconciliation_session_id,bank_transaction_id,journal_entry_id,journal_line_id,match_group_id,matched_amount,match_type,status) VALUES(?,?,?,?,?,?,?,?,'confirmed')`,
-        id('reconitem'),
-        session.id,
-        bank.id,
-        target.line.entry_id,
-        target.line.id,
-        group,
-        amount,
-        matchType
+      statements.push(
+        db
+          .prepare(
+            `INSERT INTO accounting_reconciliation_items(id,reconciliation_session_id,bank_transaction_id,journal_entry_id,journal_line_id,match_group_id,matched_amount,match_type,status) VALUES(?,?,?,?,?,?,?,?,'confirmed')`
+          )
+          .bind(id('reconitem'), session.id, bank.id, target.line.entry_id, target.line.id, group, amount, matchType)
       );
       remaining -= amount;
       target.remaining -= amount;
     }
     if (remaining) throw new ValidationError('Grouped match cannot allocate all items by direction.');
-    await run(
-      db,
-      "UPDATE accounting_bank_transactions SET matched_amount=amount,unmatched_amount=0,match_status='matched',version=version+1,updated_at=datetime('now') WHERE id=?",
-      bank.id
+    statements.push(
+      db
+        .prepare(
+          "UPDATE accounting_bank_transactions SET matched_amount=amount,unmatched_amount=0,match_status='matched',version=CASE WHEN version=? THEN version+1 ELSE NULL END,updated_at=datetime('now') WHERE id=?"
+        )
+        .bind(bank.version, bank.id)
     );
   }
+  if (remainingLines.some(({ remaining }) => remaining))
+    throw new ValidationError('Choose bank and book entries with matching amounts and direction.');
+  if (!db.batch) throw new AccountingDatabaseError('Bank matching requires an atomic database batch.');
+  await db.batch(statements);
   return reconciliationSummary(db, session.id);
 }
 async function reconciliationSummary(db: PortabilityDatabase, sessionId: string) {

@@ -3,14 +3,17 @@
 // Parish dashboard accounting: ledger.
 // Classic script; preserve global names used by the dashboard and inline actions.
 
-async function submitAccountingRegisterEntry(event: AccountingFormEvent, kind: 'contribution' | 'transaction') {
+async function submitAccountingRegisterEntry(
+  event: AccountingFormEvent,
+  kind: 'contribution' | 'transaction' | 'paid-expense'
+) {
   event.preventDefault();
   const form = event.currentTarget,
     status = form.querySelector<HTMLElement>('.acct-form-status')!,
     button = form.querySelector<HTMLButtonElement>('button[type="submit"],button.acct-primary')!;
   const data = Object.fromEntries(new FormData(form)) as Record<string, string | number>;
-  const register = accountingRegisterModel(),
-    registerAccountId = register.configuration?.id || register.account.id || '';
+  const register = kind === 'paid-expense' ? null : accountingRegisterModel(),
+    registerAccountId = register ? register.configuration?.id || register.account.id || '' : data.registerAccountId;
   const payment = Math.round(Number(data.payment || 0) * 100),
     deposit = Math.round(Number(data.deposit || 0) * 100);
   const amount = kind === 'contribution' ? deposit : payment || deposit;
@@ -82,7 +85,8 @@ async function submitAccountingRegisterEntry(event: AccountingFormEvent, kind: '
     });
     const posted = await (postResponse.json().catch(() => ({})) as Promise<AccountingOperationsResponse>);
     if (!postResponse.ok) throw new Error(posted.message || posted.error || 'Unable to post this transaction.');
-    await loadAccountingTab(true);
+    if (kind === 'paid-expense') accountingExpenseReceipt.text = `${accountingMoney(amount)} expense recorded.`;
+    if (form.isConnected) await loadAccountingTab(true);
   } catch (error) {
     status.textContent = (error as Error).message || 'Unable to post this transaction.';
     status.className = 'acct-form-status error';

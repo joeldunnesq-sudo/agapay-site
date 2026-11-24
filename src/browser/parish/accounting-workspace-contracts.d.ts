@@ -31,7 +31,14 @@ interface AccountingPayablesOverview {
   overdueBills?: number;
   totalDue?: number;
 }
+interface AccountingBillActions {
+  enter?: boolean;
+  approve?: boolean;
+  pay?: boolean;
+}
 interface AccountingPayablesWorkspace {
+  actions?: AccountingBillActions;
+  homeOnly?: boolean;
   overview?: AccountingPayablesOverview;
   vendors: AccountingPayableItem[];
   bills: AccountingPayableItem[];
@@ -66,6 +73,7 @@ interface AccountingBudgetSummary {
   name?: string;
 }
 interface AccountingWorkspaceResponse {
+  actions?: AccountingBillActions;
   message?: string;
   error?: string;
   ok: boolean;

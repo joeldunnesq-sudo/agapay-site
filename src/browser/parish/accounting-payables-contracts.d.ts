@@ -1,4 +1,5 @@
 interface AccountingPayableItem {
+  needsOtherApprover?: boolean;
   status: string;
   id: string;
   version: number;
