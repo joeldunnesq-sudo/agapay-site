@@ -53,7 +53,7 @@ function populateGivingStatementsPanel(): void {
           )
           .join('')
       : '<option value="">No donors with gifts loaded yet</option>';
-    if ([...donorSel.options].some((option) => option.value === selected)) donorSel.value = selected;
+    if (givers.some((giver) => giver.email === selected)) donorSel.value = selected;
   }
   if (!gsJobHistoryLoaded) {
     gsJobHistoryLoaded = true;
