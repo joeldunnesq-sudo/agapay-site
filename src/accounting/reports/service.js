@@ -365,7 +365,8 @@ async function cashFlowPeriod(db, { actor, startDate, endDate, fundId }) {
       SELECT e.id, l.fund_id, l.debit_amount, l.credit_amount,
         CASE WHEN e.source_type='reversal' THEN -1 ELSE 1 END direction,
         CASE
-          WHEN t.category='asset' AND CAST(a.account_number AS REAL) BETWEEN 1000 AND 1099
+          WHEN t.category='asset' AND CAST(a.account_number AS REAL)>=1000
+            AND CAST(a.account_number AS REAL)<1100
             THEN 'cash'
           WHEN t.category='asset' AND a.cash_flow_classification='investing' THEN 'property'
           WHEN t.category='liability' AND a.cash_flow_classification='financing' THEN 'debt'
