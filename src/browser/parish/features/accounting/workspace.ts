@@ -205,7 +205,7 @@ function accountingViewTitle() {
     assets: 'Assets',
     payables: 'Payables',
     budgets: 'Budgets',
-    banking: 'Reconciliation',
+    banking: 'Banking',
     close: 'Period Close',
     governance: 'Governance',
     setup: 'Setup',
@@ -500,7 +500,7 @@ function setAccountingView(view: string) {
   )
     loadAccountingPhaseD();
   if (
-    ['banking', 'integrations'].includes(accountingView) &&
+    (accountingView === 'integrations' || (accountingView === 'banking' && accountingReconciliationView === 'bank')) &&
     !accountingData[accountingView as keyof AccountingWorkspaceData]
   )
     loadAccountingPhaseE();

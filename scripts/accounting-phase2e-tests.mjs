@@ -6,3 +6,29 @@ const bank=await createBankAccount(db,{actor,entitlementTier:"mission",input:{na
 const draft=await createJournalDraft(db,{actor,entryDate:"2026-07-20",description:"Stripe payout po_1",sourceType:"integration.stripe_payout_paid",sourceId:"payout_source",lines:[{accountId:"acct_1010",fundId:"fund_general",debitAmount:10000},{accountId:"acct_1110",fundId:"fund_general",creditAmount:10000}]});await postJournalEntry(db,{actor,journalEntryId:draft.id,idempotencyKey:"payout-post",requestHash:"h",expectedVersion:1});
 const csv="date,description,amount,reference\n2026-07-20,STRIPE PAYOUT PO_1,100.00,po_1\n";const preview=await previewBankCsv({actor,entitlementTier:"mission",filename:"statement.csv",csv});assert.equal(preview.totalCredits,10000);assert.equal(preview.validRows,1);assert.equal(s.prepare("SELECT COUNT(*) count FROM accounting_bank_transactions").get().count,0);const imported=await commitBankImport(db,{actor,entitlementTier:"mission",bankAccountId:bank.id,preview});assert.equal(imported.importedCount,1);assert.equal((await commitBankImport(db,{actor,entitlementTier:"parish",bankAccountId:bank.id,preview})).duplicateFile,true);
 const recon=await createReconciliation(db,{actor,entitlementTier:"mission",input:{bankAccountId:bank.id,startDate:"2026-07-01",endDate:"2026-07-31",beginningBalance:0,endingBalance:10000}});assert.equal(recon.difference,10000);const ledger=await eligibleLedgerItems(db,{actor,entitlementTier:"mission",reconciliationId:recon.id}),txn=s.prepare("SELECT id FROM accounting_bank_transactions").get();assert.equal(ledger.length,1);const suggestions=await suggestMatches(db,{actor,entitlementTier:"mission",reconciliationId:recon.id});assert.equal(suggestions[0].confidence,100);await confirmReconciliationMatch(db,{actor,entitlementTier:"mission",reconciliationId:recon.id,bankTransactionIds:[txn.id],journalLineIds:[ledger[0].journalLineId],matchType:"stripe_payout"});const validated=await validateReconciliation(db,{actor,entitlementTier:"parish",reconciliationId:recon.id});assert.equal(validated.difference,0);const complete=await completeReconciliation(db,{actor,entitlementTier:"mission",reconciliationId:recon.id,expectedVersion:1});assert.equal(complete.status,"completed");assert.match(reconciliationCsv(complete),/Difference/);assert.equal(s.prepare("SELECT COUNT(*) count FROM accounting_reconciliation_snapshots").get().count,1);const reopened=await reopenReconciliation(db,{actor,entitlementTier:"parish",reconciliationId:recon.id,expectedVersion:2,reason:"Statement correction"});assert.equal(reopened.status,"reopened");assert.equal(s.prepare("SELECT COUNT(*) count FROM accounting_reconciliation_snapshots").get().count,1);await assert.rejects(()=>listBankAccounts(db,{actor,entitlementTier:"core"}),/not included/);console.log("PASS - Phase 2E safe bank accounts, CSV preview/import dedupe, Stripe payout matching, zero-difference completion, snapshot, reopen, and tier parity");
+const savingsInput = { name: 'Parish Savings', ledgerAccountId: 'new', accountType: 'savings' };
+await assert.rejects(
+  () => createBankAccount(db, { actor, entitlementTier: 'mission', input: savingsInput }),
+  /accounting.accounts.manage|capability/i,
+);
+const savingsActor = { ...actor, capabilities: [...actor.capabilities, 'accounting.accounts.manage'] };
+const savingsBank = await createBankAccount(db, { actor: savingsActor, entitlementTier: 'mission', input: savingsInput });
+assert.equal(savingsBank.accountType, 'savings');
+assert.notEqual(savingsBank.ledgerAccountId, bank.ledgerAccountId);
+const savingsLedger = s.prepare('SELECT account_number, name, normal_balance FROM accounting_accounts WHERE id=?').get(savingsBank.ledgerAccountId);
+assert.equal(savingsLedger.name, 'Parish Savings');
+assert.equal(savingsLedger.normal_balance, 'debit');
+assert.match(savingsLedger.account_number, /^10[3-9]\d$/);
+const { recordSimpleDeposit } = await import('../src/accounting/index.js');
+await recordSimpleDeposit(db, {
+  actor: savingsActor, entryDate: '2026-07-22', description: 'Parish savings check deposit',
+  depositAccountId: savingsBank.ledgerAccountId, revenueAccountId: 'acct_4010', fundId: 'fund_general', amount: 2500,
+});
+const savingsSession = await createReconciliation(db, {
+  actor: savingsActor, entitlementTier: 'mission',
+  input: { bankAccountId: savingsBank.id, startDate: '2026-07-01', endDate: '2026-07-31', beginningBalance: 0, endingBalance: 2500 },
+});
+const savingsItems = await eligibleLedgerItems(db, { actor: savingsActor, entitlementTier: 'mission', reconciliationId: savingsSession.id });
+assert.equal(savingsItems.length, 1);
+assert.equal(savingsItems[0].netEffect, 2500);
+console.log('PASS - authorized savings setup creates a separate cash ledger and the deposited check appears in its reconciliation');

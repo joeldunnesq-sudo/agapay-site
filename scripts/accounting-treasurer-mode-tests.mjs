@@ -291,7 +291,7 @@ state.bankAccountsUnavailable = false;
 const setupHtml = depositUi.accountingSimpleIncomeForm();
 assert.match(setupHtml, /Set up your deposit account/);
 assert.match(setupHtml, /choose 1010 · Operating Checking/);
-assert.match(setupHtml, /<option value="">Choose the ledger account/);
+assert.match(setupHtml, /<option value="">Choose an existing ledger account/);
 const bankEvent = { preventDefault() {}, currentTarget: form };
 await Promise.all([depositUi.createAccountingBankAccount(bankEvent), depositUi.createAccountingBankAccount(bankEvent)]);
 assert.equal(postCount, 1);
