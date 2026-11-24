@@ -85,7 +85,7 @@ async function renderQrCode(): Promise<void> {
   const inputs = ['givingUrlInput', 'givingUrlHeroInput', 'qrGivingUrlInput']
     .map((id) => document.getElementById(id))
     .filter(Boolean) as HTMLInputElement[];
-  const editor = document.querySelector<HTMLButtonElement>('#editGivingQrDestination');
+  const editor = document.getElementById('editGivingQrDestination') as HTMLButtonElement | null;
   if (editor)
     editor.onclick = () => {
       void updateGivingQrDestination(editor);
