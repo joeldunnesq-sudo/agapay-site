@@ -37,7 +37,17 @@ function accountingSimpleIncomeForm() {
     return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Unable to load bank accounts</h2><p>Reload Accounting to check which accounts can receive this deposit.</p></div><button class="acct-primary" onclick="loadAccountingTab(true)">Retry</button></section>`;
   if (!banks.length)
     return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Set up your deposit account</h2><p>Add the parish bank account where the money was deposited. After you save it, you can record the deposit here.</p></div>${accountingBankAccountForm()}</section>`;
-  return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><button type="button" class="acct-link" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid acct-simple-income-details"><label>Where did the money go?<select name="depositAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`).join('')}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div><div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div><div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId: defaultFund?.id || '' }, false)}</div><div class="acct-income-split-actions" hidden><button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button><button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button></div><div class="acct-balance acct-income-split-balance" hidden></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div></form></section>`;
+  const bankOptions = banks
+    .map(
+      (bank) =>
+        `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}${bank.maskedLast4 ? ` · •••• ${escapeHtml(bank.maskedLast4)}` : ''}</option>`
+    )
+    .join('');
+  const bankSplitFields =
+    banks.length > 1
+      ? `<details class="acct-simple-income-details"><summary>Split this check between two bank accounts</summary><p>Use this if both bank statements show part of the check as a deposit. Enter the portion deposited into the second account. The rest goes to the first account. If you moved money later, record that movement as a transfer.</p><div class="acct-simple-income-grid"><label>Second bank account<select name="secondDepositAccountId"><option value="">Use one bank account</option>${bankOptions}</select></label><label>Amount deposited into the second account<input name="secondDepositAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></label></div></details>`
+      : '';
+  return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><button type="button" class="acct-link" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid acct-simple-income-details"><label>Where did the money go?<select name="depositAccountId" required>${bankOptions}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div>${bankSplitFields}<div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div><div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId: defaultFund?.id || '' }, false)}</div><div class="acct-income-split-actions" hidden><button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button><button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button></div><div class="acct-balance acct-income-split-balance" hidden></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div></form></section>`;
 }
 
 function accountingIncomeSplitRow(split: AccountingIncomeSplit = {}, removable = true) {
@@ -373,6 +383,7 @@ async function submitAccountingSimpleIncome(event: AccountingFormEvent) {
     button = form.querySelector<HTMLButtonElement>('button[type="submit"],button.acct-primary')!;
   const raw = Object.fromEntries(new FormData(form)) as Record<string, string | number>,
     splitEnabled = form.dataset.splitEnabled === '1';
+  if (button.disabled) return;
   const splits = collectAccountingIncomeSplits(form);
   const amount = splitEnabled
     ? Math.round(Number(form.querySelector<HTMLInputElement>('[data-income-total]')!.value) * 100)
@@ -392,15 +403,32 @@ async function submitAccountingSimpleIncome(event: AccountingFormEvent) {
     status.textContent = 'Complete every field and enter an amount greater than zero.';
     return;
   }
+  const secondDepositAccountId = String(raw.secondDepositAccountId || '');
+  const secondAmountEntered = String(raw.secondDepositAmount || '');
+  const splitBetweenBanks = Boolean(secondDepositAccountId || secondAmountEntered);
+  const secondDepositAmount = Math.round(Number(secondAmountEntered) * 100);
+  if (splitBetweenBanks) {
+    if (!secondDepositAccountId || secondDepositAccountId === raw.depositAccountId) {
+      status.textContent = 'Choose two different bank accounts.';
+      return;
+    }
+    if (!Number.isSafeInteger(secondDepositAmount) || secondDepositAmount <= 0 || secondDepositAmount >= amount) {
+      status.textContent =
+        'Enter an amount for the second account that is greater than zero and less than the check total.';
+      return;
+    }
+  }
   button.disabled = true;
   status.textContent = 'Recording income…';
-  const endpoint = splitEnabled && splits.length > 1 ? '/simple/split-deposits' : '/simple/deposits';
+  const endpoint =
+    splitBetweenBanks || (splitEnabled && splits.length > 1) ? '/simple/split-deposits' : '/simple/deposits';
   const body =
     endpoint === '/simple/split-deposits'
       ? {
           entryDate: raw.entryDate,
           description: String(raw.description).trim(),
           depositAccountId: raw.depositAccountId,
+          ...(splitBetweenBanks ? { secondDepositAccountId, secondDepositAmount } : {}),
           amount,
           splits,
           correlationId: `split-income-ui-${Date.now()}`,
@@ -418,7 +446,12 @@ async function submitAccountingSimpleIncome(event: AccountingFormEvent) {
     method: 'POST',
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  });
+  }).catch(() => null);
+  if (!response) {
+    status.textContent = 'Could not confirm the deposit. Check Recent Activity before retrying.';
+    button.disabled = false;
+    return;
+  }
   const payload = await (response.json().catch(() => ({})) as Promise<AccountingOperationsResponse>);
   if (!response.ok) {
     status.textContent = payload.message || payload.error || 'Unable to record this income.';

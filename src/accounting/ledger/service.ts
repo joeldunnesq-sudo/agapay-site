@@ -492,10 +492,12 @@ export async function recordSplitDeposit(
     entryDate,
     description,
     depositAccountId,
+    secondDepositAccountId,
+    secondDepositAmount,
     amount,
     splits,
     correlationId = '',
-  }: DepositOptions & { splits: Split[] }
+  }: DepositOptions & { splits: Split[]; secondDepositAccountId?: string; secondDepositAmount?: number }
 ) {
   if (!Array.isArray(splits) || splits.length === 0)
     throw new ValidationError('At least one deposit split is required.');
@@ -504,8 +506,35 @@ export async function recordSplitDeposit(
   const total = splits.reduce((sum, split) => sum + Number(split.amount), 0);
   if (!Number.isSafeInteger(Number(amount)) || Number(amount) <= 0 || Number(amount) !== total)
     throw new ValidationError('Deposit split amounts must equal the total deposit amount.');
+  const splitBetweenBanks = secondDepositAccountId !== undefined || secondDepositAmount !== undefined;
+  if (splitBetweenBanks) {
+    if (
+      typeof secondDepositAccountId !== 'string' ||
+      !secondDepositAccountId ||
+      depositAccountId === secondDepositAccountId
+    )
+      throw new ValidationError('Choose two different bank accounts.');
+    if (!Number.isSafeInteger(secondDepositAmount) || secondDepositAmount! <= 0 || secondDepositAmount! >= total)
+      throw new ValidationError(
+        'The amount for the second bank account must be greater than zero and less than the check total.'
+      );
+    const destinations = await first<{ count: number }>(
+      db,
+      `SELECT COUNT(*) AS count FROM accounting_bank_accounts b JOIN accounting_accounts a ON a.id=b.account_id
+         WHERE b.account_id IN (?,?) AND b.is_active=1 AND b.status='active' AND a.is_active=1
+         AND a.archived_at IS NULL AND a.is_posting_account=1`,
+      depositAccountId,
+      secondDepositAccountId
+    );
+    if (Number(destinations?.count) !== 2)
+      throw new ValidationError('Both destinations must be active bank accounts in this parish.');
+  }
+  const secondAmount = secondDepositAmount ?? 0;
   const lines = [
-    { accountId: depositAccountId, fundId: splits[0].fundId, debitAmount: total, description: null },
+    { accountId: depositAccountId, fundId: splits[0].fundId, debitAmount: total - secondAmount, description: null },
+    ...(secondDepositAccountId && secondAmount
+      ? [{ accountId: secondDepositAccountId, fundId: splits[0].fundId, debitAmount: secondAmount, description: null }]
+      : []),
     ...splits.map((split) => ({
       accountId: split.revenueAccountId,
       fundId: split.fundId,
@@ -525,7 +554,15 @@ export async function recordSplitDeposit(
     actor,
     journalEntryId: draft.id,
     idempotencyKey: `split_deposit:${draft.id}`,
-    requestHash: await hash({ entryDate, depositAccountId, amount: total, splits, description }),
+    requestHash: await hash({
+      entryDate,
+      depositAccountId,
+      secondDepositAccountId,
+      secondDepositAmount,
+      amount: total,
+      splits,
+      description,
+    }),
     expectedVersion: 1,
     correlationId,
   });

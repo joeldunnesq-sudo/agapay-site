@@ -32,3 +32,29 @@ const savingsItems = await eligibleLedgerItems(db, { actor: savingsActor, entitl
 assert.equal(savingsItems.length, 1);
 assert.equal(savingsItems[0].netEffect, 2500);
 console.log('PASS - authorized savings setup creates a separate cash ledger and the deposited check appears in its reconciliation');
+const { recordSplitDeposit } = await import('../src/accounting/index.js');
+const splitCheck = {
+  actor: savingsActor,
+  entryDate: '2026-07-23',
+  description: 'Check split between checking and savings',
+  depositAccountId: bank.ledgerAccountId,
+  secondDepositAccountId: savingsBank.ledgerAccountId,
+  secondDepositAmount: 4000,
+  amount: 10000,
+  splits: [{ revenueAccountId: 'acct_4010', fundId: 'fund_general', amount: 10000 }],
+};
+const entriesBefore = s.prepare('SELECT COUNT(*) AS count FROM accounting_journal_entries').get().count;
+await assert.rejects(() => recordSplitDeposit(db, { ...splitCheck, secondDepositAccountId: bank.ledgerAccountId }), /two different bank accounts/);
+await assert.rejects(() => recordSplitDeposit(db, { ...splitCheck, secondDepositAmount: 10000 }), /less than the check total/);
+await assert.rejects(() => recordSplitDeposit(db, { ...splitCheck, secondDepositAccountId: 'acct_1100' }), /active bank accounts/);
+assert.equal(s.prepare('SELECT COUNT(*) AS count FROM accounting_journal_entries').get().count, entriesBefore);
+const checkEntry = await recordSplitDeposit(db, splitCheck);
+assert.equal(checkEntry.status, 'posted');
+const lines = s.prepare('SELECT account_id, debit_amount, credit_amount FROM accounting_journal_lines WHERE journal_entry_id=? ORDER BY line_number')
+  .all(checkEntry.id).map((line) => [line.account_id, line.debit_amount, line.credit_amount]);
+assert.deepEqual(lines, [[bank.ledgerAccountId, 6000, 0], [savingsBank.ledgerAccountId, 4000, 0], ['acct_4010', 0, 10000]]);
+for (const [reconciliationId, netEffect] of [[reopened.id, 6000], [savingsSession.id, 4000]]) {
+  const entries = await eligibleLedgerItems(db, { actor: savingsActor, entitlementTier: 'mission', reconciliationId });
+  assert.equal(entries.find((entry) => entry.journalEntryId === checkEntry.id)?.netEffect, netEffect);
+}
+console.log('PASS - one check posts income once and exposes only each bank account’s portion for reconciliation');
