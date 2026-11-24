@@ -221,6 +221,10 @@ button, select { cursor: pointer; }
 .completion-state p, .unavailable-state p { max-width: 440px; margin: 10px auto 22px; color: var(--muted); font-size: 12px; line-height: 1.65; }
 .secondary-action { width: auto; min-height: 44px; display: inline-flex; padding: 0 22px; background: var(--navy); color: var(--ivory); box-shadow: none; }
 
+.giving-app-link { display: flex; justify-content: center; padding: 10px 16px; }
+.giving-app-link a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 8px; color: var(--navy); font-size: 13px; font-weight: 600; text-align: center; text-decoration: none; }
+.giving-app-link a:hover { text-decoration: underline; }
+.giving-app-link a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .giving-footer { display: flex; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid var(--line); padding: 11px 16px; background: var(--agapay-giving-surface, #f5f0e6); color: var(--muted); font-size: 8px; letter-spacing: 0.04em; }
 .giving-footer a { display: inline-flex; align-items: center; gap: 6px; color: var(--navy); text-decoration: none; }
 .giving-footer img { width: 19px; height: 19px; object-fit: contain; }
