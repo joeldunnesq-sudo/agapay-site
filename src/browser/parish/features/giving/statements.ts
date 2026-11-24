@@ -41,8 +41,9 @@ function populateGivingStatementsPanel(): void {
     yearSel.innerHTML = years.map((y, i) => `<option value="${y}" ${i === 0 ? 'selected' : ''}>${y}</option>`).join('');
     yearSel.dataset.populated = '1';
   }
-  const donorSel = document.getElementById('gsPreviewDonor');
+  const donorSel = document.getElementById('gsPreviewDonor') as HTMLSelectElement | null;
   if (donorSel) {
+    const selected = donorSel.value;
     const givers = (Array.isArray(window.pdxGiversAll) ? window.pdxGiversAll : []).filter((g) => g.email);
     donorSel.innerHTML = givers.length
       ? givers
@@ -52,6 +53,7 @@ function populateGivingStatementsPanel(): void {
           )
           .join('')
       : '<option value="">No donors with gifts loaded yet</option>';
+    if ([...donorSel.options].some((option) => option.value === selected)) donorSel.value = selected;
   }
   if (!gsJobHistoryLoaded) {
     gsJobHistoryLoaded = true;

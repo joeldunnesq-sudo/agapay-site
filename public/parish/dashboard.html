@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/parish/settings.css?v=20261123settings1" />
 <link rel="stylesheet" href="/parish/commerce-refresh.css?v=1" />
 <link rel="stylesheet" href="/parish/accounting-refresh.css?v=1" />
-<link rel="stylesheet" href="/parish/workspace-section-menus.css?v=3" />
+<link rel="stylesheet" href="/parish/workspace-section-menus.css?v=4" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -532,168 +532,178 @@
         </section>
       </div>
       <!-- Settings -->
-      <div class="tab-panel" id="tab-givers">
-        <!-- HERO — warm cream/gold pastoral treatment -->
-        <section class="pdx-gv-hero">
-          <div class="pdx-gv-hero-layout">
-            <div>
-              <div class="pdx-gv-eyebrow">Your Community</div>
-              <h1 class="pdx-gv-title" id="pdxGvTitle"><em>—</em> households have given<br>to your parish this year.</h1>
-              <p class="pdx-gv-subtitle">The leaderboard below shows supporters in the loaded giving records. The "Needs a nudge" list surfaces regular givers whose giving has quieted — a signal for pastoral outreach.</p>
-            </div>
-            <div class="pdx-gv-mini-donut">
-              <svg viewBox="0 0 200 200">
-                <circle cx="100" cy="100" r="82" fill="none" stroke="rgba(200,162,74,0.14)" stroke-width="18"/>
-                <circle id="pdxGvDonut" cx="100" cy="100" r="82" fill="none" stroke="url(#pdxGvGrad)" stroke-width="18" stroke-linecap="round"
-                  stroke-dasharray="515" stroke-dashoffset="515" style="transition: stroke-dashoffset 1.4s cubic-bezier(0.16,1,0.3,1) 0.3s;"/>
-                <defs>
-                  <linearGradient id="pdxGvGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#C8A24A"/>
-                    <stop offset="100%" stop-color="#E8C879"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div class="pdx-gv-mini-donut-center">
-                <div class="pdx-gv-mini-donut-pct" id="pdxGvRecurringPct">—</div>
-                <div class="pdx-gv-mini-donut-label">Recurring</div>
-                <div class="pdx-gv-mini-donut-sub" id="pdxGvRecurringSub">of households</div>
-              </div>
-            </div>
-          </div>
-        </section>
-        <!-- KPI BAND -->
-        <section class="pdx-kpi-band">
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Total givers</div>
-            <div class="pdx-kpi-value" id="giverStatCount">—</div>
-            <div class="pdx-kpi-meta" id="pdxGvKpiCountMeta">Distinct households</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-          </div>
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Total given</div>
-            <div class="pdx-kpi-value" id="giverStatTotal">—</div>
-            <div class="pdx-kpi-meta" id="pdxGvKpiTotalMeta">Across all gifts</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          </div>
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Median gift</div>
-            <div class="pdx-kpi-value" id="pdxGvKpiMedian">—</div>
-            <div class="pdx-kpi-meta">Half of gifts fall below</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg></div>
-          </div>
-          <div class="pdx-kpi-card">
-            <div class="pdx-kpi-label">Recurring donors</div>
-            <div class="pdx-kpi-value" id="giverStatRecurring">—</div>
-            <div class="pdx-kpi-meta" id="pdxGvKpiRecurringMeta">Ongoing pledges</div>
-            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.6-6.1"/><path d="M21 12a9 9 0 0 1-15.6 6.1"/><polyline points="18 2 18 6 22 6"/><polyline points="6 22 6 18 2 18"/></svg></div>
-          </div>
-        </section>
-        <!-- Preserved for legacy JS binding -->
-        <div id="giverStatLast" hidden></div>
-        <!-- LEADERBOARD + NUDGE LIST -->
-        <section class="pdx-gv-body">
-          <div class="pdx-panel">
-            <div class="pdx-panel-header">
-              <div class="pdx-panel-title">
-                <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 6 6.5.5-5 4.5 1.5 6.5L12 17l-5.5 3.5L8 14 3 9.5 9.5 9z"/></svg></div>
-                Top givers
-              </div>
-              <button class="pdx-link-btn" onclick="scrollToGiverDirectory()">See all →</button>
-            </div>
-            <div id="pdxGvLeaderboard">
-              <div class="pdx-recurring-empty">Load giving history to see top givers.</div>
-            </div>
-          </div>
-          <div class="pdx-panel">
-            <div class="pdx-panel-header">
-              <div class="pdx-panel-title">
-                <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-                Needs a nudge
-              </div>
-              <button class="sw-nudge-btn" id="nudgeBtn" type="button" disabled title="Checking pledge status…">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z"/>
-                  <circle cx="8" cy="6" r="1.5"/>
-                </svg>
-                Checking…
-              </button>
-            </div>
-            <div id="pdxGvNudgeList">
-              <div class="pdx-recurring-empty">Load giving history to see regular givers whose giving has quieted.</div>
-            </div>
-          </div>
-        </section>
-        <!-- DIRECTORY -->
-        <section class="pdx-panel" id="pdxGvDirectorySection">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-              Giver directory
-            </div>
-            <button class="pdx-link-btn" onclick="loadGivingHistory(this)">Refresh</button>
-          </div>
-          <div class="pdx-gv-dir-controls">
-            <div class="pdx-gv-search">
-              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input id="pdxGvSearch" placeholder="Search by name or email..." oninput="renderGiversDirectory()" />
-            </div>
-            <div class="pdx-gv-sort-chips" id="pdxGvSortChips">
-              <button class="active" data-sort="amount" onclick="setGiversSort('amount', this)">By amount</button>
-              <button data-sort="recency" onclick="setGiversSort('recency', this)">By recency</button>
-              <button data-sort="gifts" onclick="setGiversSort('gifts', this)">By gift count</button>
-              <button data-sort="name" onclick="setGiversSort('name', this)">A–Z</button>
-            </div>
-          </div>
-          <div id="giversPane">
-            <div class="pdx-gv-dir-empty">Load giving history to see donor households and gift patterns.</div>
-          </div>
-        </section>
-        <section class="giving-export-card" aria-labelledby="givingExportTitle">
-          <div class="giving-export-copy">
-            <span class="giving-export-eyebrow">Monthly giving export · every plan</span>
-            <h2 id="givingExportTitle">Monthly giving activity, ready for your books.</h2>
-            <p>Download every recorded online and outside gift for the month—not just the rows shown in the directory.</p>
-          </div>
-          <form class="giving-export-controls" onsubmit="exportGiversMonthlyCsv(event)">
-            <label for="givingExportMonth">Giving month<input id="givingExportMonth" type="month" required /></label>
-            <label for="givingExportGroup">Group by<select id="givingExportGroup"><option value="date">Giving date</option><option value="giver">Giver</option></select></label>
-            <button class="btn btn-gold giving-export-button" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" /></svg><span>Export giving CSV</span></button>
-          </form>
-          <p><button class="sw-action-btn" type="button" onclick="switchTab('reconcile')">Open Stripe payout reconciliation →</button></p>
-          <p class="giving-export-note">This export lists contributions by giving or received date. It includes funds, contribution amounts, sources, and references, but it does not verify Stripe fees, net payouts, or bank deposits.</p>
-          <p class="giving-export-status" id="givingExportStatus" role="status" aria-live="polite"></p>
-        </section>
-        <div id="outsideGivingMount"></div>
-        <!-- ANNUAL GIVING STATEMENTS -->
-        <section class="pdx-panel" id="pdxGsSection">
-          <div class="pdx-panel-header">
-            <div class="pdx-panel-title">
-              <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
-              Annual Giving Statements
-            </div>
-          </div>
-          <div class="section-body">
-            <p class="notice" style="margin-bottom:16px;">Generate IRS-compliant annual giving statements for every donor who gave this tax year, and email each one a PDF copy. Set your parish's legal name and Federal EIN in Settings first — statements use those for compliance.</p>
-            <div class="form-grid">
-              <div class="form-group"><label class="form-label" for="gsFiscalYear">Tax year</label><select id="gsFiscalYear"></select></div>
-              <div class="form-group full"><label class="form-label" for="gsPreviewDonor">Preview a single donor's statement</label>
-                <div style="display:flex;gap:8px;">
-                  <select id="gsPreviewDonor" style="flex:1;"></select>
-                  <button class="btn btn-ghost" onclick="previewGivingStatement(this)">Preview PDF</button>
-                </div>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn btn-gold" onclick="startGivingStatementJob(this)">Generate &amp; email all donors</button>
-            </div>
-            <div id="gsJobProgress" hidden style="margin-top:14px;">
-              <div class="pdx-recurring-empty" id="gsJobProgressText">Starting…</div>
-            </div>
-            <div class="section-divider"><span>Past batches</span></div>
-            <div id="gsJobHistory"><div class="pdx-recurring-empty">No giving-statement batches generated yet.</div></div>
-          </div>
-        </section>
-      </div>
+<div class="tab-panel" id="tab-givers">
+<div class="gv-section-layout"><nav class="gv-section-nav" aria-label="Givers sections">
+<button type="button" data-gv-view="records" aria-pressed="true">Donor Records</button>
+<button type="button" data-gv-view="statements" aria-pressed="false">Giving Statements</button>
+<button type="button" data-gv-view="outside" aria-pressed="false">Outside Gifts</button>
+<button type="button" data-gv-view="exports" aria-pressed="false">Monthly Export</button>
+</nav><div class="gv-section-content"><section data-gv-panel="records">
+<!-- HERO — warm cream/gold pastoral treatment -->
+<section class="pdx-gv-hero">
+<div class="pdx-gv-hero-layout">
+<div>
+<div class="pdx-gv-eyebrow">Your Community</div>
+<h1 class="pdx-gv-title" id="pdxGvTitle"><em>—</em> households have given<br>to your parish this year.</h1>
+<p class="pdx-gv-subtitle">The leaderboard below shows supporters in the loaded giving records. The "Needs a nudge" list surfaces regular givers whose giving has quieted — a signal for pastoral outreach.</p>
+</div>
+<div class="pdx-gv-mini-donut">
+<svg viewBox="0 0 200 200">
+<circle cx="100" cy="100" r="82" fill="none" stroke="rgba(200,162,74,0.14)" stroke-width="18"/>
+<circle id="pdxGvDonut" cx="100" cy="100" r="82" fill="none" stroke="url(#pdxGvGrad)" stroke-width="18" stroke-linecap="round"
+stroke-dasharray="515" stroke-dashoffset="515" style="transition: stroke-dashoffset 1.4s cubic-bezier(0.16,1,0.3,1) 0.3s;"/>
+<defs>
+<linearGradient id="pdxGvGrad" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#C8A24A"/>
+<stop offset="100%" stop-color="#E8C879"/>
+</linearGradient>
+</defs>
+</svg>
+<div class="pdx-gv-mini-donut-center">
+<div class="pdx-gv-mini-donut-pct" id="pdxGvRecurringPct">—</div>
+<div class="pdx-gv-mini-donut-label">Recurring</div>
+<div class="pdx-gv-mini-donut-sub" id="pdxGvRecurringSub">of households</div>
+</div>
+</div>
+</div>
+</section>
+<!-- KPI BAND -->
+<section class="pdx-kpi-band">
+<div class="pdx-kpi-card">
+<div class="pdx-kpi-label">Total givers</div>
+<div class="pdx-kpi-value" id="giverStatCount">—</div>
+<div class="pdx-kpi-meta" id="pdxGvKpiCountMeta">Distinct households</div>
+<div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+</div>
+<div class="pdx-kpi-card">
+<div class="pdx-kpi-label">Total given</div>
+<div class="pdx-kpi-value" id="giverStatTotal">—</div>
+<div class="pdx-kpi-meta" id="pdxGvKpiTotalMeta">Across all gifts</div>
+<div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+</div>
+<div class="pdx-kpi-card">
+<div class="pdx-kpi-label">Median gift</div>
+<div class="pdx-kpi-value" id="pdxGvKpiMedian">—</div>
+<div class="pdx-kpi-meta">Half of gifts fall below</div>
+<div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg></div>
+</div>
+<div class="pdx-kpi-card">
+<div class="pdx-kpi-label">Recurring donors</div>
+<div class="pdx-kpi-value" id="giverStatRecurring">—</div>
+<div class="pdx-kpi-meta" id="pdxGvKpiRecurringMeta">Ongoing pledges</div>
+<div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.6-6.1"/><path d="M21 12a9 9 0 0 1-15.6 6.1"/><polyline points="18 2 18 6 22 6"/><polyline points="6 22 6 18 2 18"/></svg></div>
+</div>
+</section>
+<!-- Preserved for legacy JS binding -->
+<div id="giverStatLast" hidden></div>
+<!-- LEADERBOARD + NUDGE LIST -->
+<section class="pdx-gv-body">
+<div class="pdx-panel">
+<div class="pdx-panel-header">
+<div class="pdx-panel-title">
+<div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 6 6.5.5-5 4.5 1.5 6.5L12 17l-5.5 3.5L8 14 3 9.5 9.5 9z"/></svg></div>
+Top givers
+</div>
+<button class="pdx-link-btn" onclick="scrollToGiverDirectory()">See all →</button>
+</div>
+<div id="pdxGvLeaderboard">
+<div class="pdx-recurring-empty">Load giving history to see top givers.</div>
+</div>
+</div>
+<div class="pdx-panel">
+<div class="pdx-panel-header">
+<div class="pdx-panel-title">
+<div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+Needs a nudge
+</div>
+<button class="sw-nudge-btn" id="nudgeBtn" type="button" disabled title="Checking pledge status…">
+<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+<path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z"/>
+<circle cx="8" cy="6" r="1.5"/>
+</svg>
+Checking…
+</button>
+</div>
+<div id="pdxGvNudgeList">
+<div class="pdx-recurring-empty">Load giving history to see regular givers whose giving has quieted.</div>
+</div>
+</div>
+</section>
+<!-- DIRECTORY -->
+<section class="pdx-panel" id="pdxGvDirectorySection">
+<div class="pdx-panel-header">
+<div class="pdx-panel-title">
+<div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+Giver directory
+</div>
+<button class="pdx-link-btn" onclick="loadGivingHistory(this)">Refresh</button>
+</div>
+<div class="pdx-gv-dir-controls">
+<div class="pdx-gv-search">
+<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+<input id="pdxGvSearch" placeholder="Search by name or email..." oninput="renderGiversDirectory()" />
+</div>
+<div class="pdx-gv-sort-chips" id="pdxGvSortChips">
+<button class="active" data-sort="amount" onclick="setGiversSort('amount', this)">By amount</button>
+<button data-sort="recency" onclick="setGiversSort('recency', this)">By recency</button>
+<button data-sort="gifts" onclick="setGiversSort('gifts', this)">By gift count</button>
+<button data-sort="name" onclick="setGiversSort('name', this)">A–Z</button>
+</div>
+</div>
+<div id="giversPane">
+<div class="pdx-gv-dir-empty">Load giving history to see donor households and gift patterns.</div>
+</div>
+</section>
+</section>
+<section data-gv-panel="exports" hidden>
+<section class="giving-export-card" aria-labelledby="givingExportTitle">
+<div class="giving-export-copy">
+<span class="giving-export-eyebrow">Monthly giving export · every plan</span>
+<h2 id="givingExportTitle">Monthly giving activity, ready for your books.</h2>
+<p>Download every recorded online and outside gift for the month—not just the rows shown in the directory.</p>
+</div>
+<form class="giving-export-controls" onsubmit="exportGiversMonthlyCsv(event)">
+<label for="givingExportMonth">Giving month<input id="givingExportMonth" type="month" required /></label>
+<label for="givingExportGroup">Group by<select id="givingExportGroup"><option value="date">Giving date</option><option value="giver">Giver</option></select></label>
+<button class="btn btn-gold giving-export-button" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" /></svg><span>Export giving CSV</span></button>
+</form>
+<p><button class="sw-action-btn" type="button" onclick="switchTab('reconcile')">Open Stripe payout reconciliation →</button></p>
+<p class="giving-export-note">This export lists contributions by giving or received date. It includes funds, contribution amounts, sources, and references, but it does not verify Stripe fees, net payouts, or bank deposits.</p>
+<p class="giving-export-status" id="givingExportStatus" role="status" aria-live="polite"></p>
+</section>
+</section>
+<section data-gv-panel="outside" hidden><div id="outsideGivingMount"></div></section>
+<section data-gv-panel="statements" hidden>
+<section class="pdx-panel" id="pdxGsSection">
+<div class="pdx-panel-header">
+<div class="pdx-panel-title">
+<div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
+Annual Giving Statements
+</div>
+</div>
+<div class="section-body">
+<p class="notice" style="margin-bottom:16px;">Generate IRS-compliant annual giving statements for every donor who gave this tax year, and email each one a PDF copy. Set your parish's legal name and Federal EIN in Settings first — statements use those for compliance.</p>
+<div class="form-grid">
+<div class="form-group"><label class="form-label" for="gsFiscalYear">Tax year</label><select id="gsFiscalYear"></select></div>
+<div class="form-group full"><label class="form-label" for="gsPreviewDonor">Preview a single donor's statement</label>
+<div style="display:flex;gap:8px;">
+<select id="gsPreviewDonor" style="flex:1;"></select>
+<button class="btn btn-ghost" onclick="previewGivingStatement(this)">Preview PDF</button>
+</div>
+</div>
+</div>
+<div class="btn-row">
+<button class="btn btn-gold" onclick="startGivingStatementJob(this)">Generate &amp; email all donors</button>
+</div>
+<div id="gsJobProgress" hidden style="margin-top:14px;">
+<div class="pdx-recurring-empty" id="gsJobProgressText">Starting…</div>
+</div>
+<div class="section-divider"><span>Past batches</span></div>
+<div id="gsJobHistory"><div class="pdx-recurring-empty">No giving-statement batches generated yet.</div></div>
+</div>
+</section>
+</section></div></div>
+</div>
       <div class="tab-panel" id="tab-settings">
 <header class="settings-page-heading"><span>PARISH ADMINISTRATION</span><h1>Settings</h1><p>A home for your parish details, people, and preferences.</p></header>
 <div class="settings-workspace"><nav class="settings-navigation" aria-label="Settings categories"><button type="button" data-settings-section="profile" aria-pressed="true" onclick="selectParishSettings('profile')">Parish profile</button><button type="button" data-settings-section="giving" aria-pressed="false" onclick="selectParishSettings('giving')">Giving preferences</button><button type="button" data-settings-section="team" aria-pressed="false" onclick="selectParishSettings('team')">Team & clergy</button><button type="button" data-settings-section="security" aria-pressed="false" onclick="selectParishSettings('security')">Security</button><button type="button" data-settings-section="billing" aria-pressed="false" onclick="selectParishSettings('billing')">Plan & billing</button><button type="button" data-settings-section="backup" aria-pressed="false" onclick="selectParishSettings('backup')">Backups</button><a class="settings-resource" href="/docs/AGAPAY-Stripe-Setup-Guide.pdf" target="_blank" rel="noopener"><strong>Need a hand?</strong><span>Open the parish setup guide</span></a></nav><div id="settingsPane"><div class="empty-state"><h3>Parish settings</h3><p>Load your parish to manage its settings.</p></div></div></div></div>
@@ -1904,7 +1914,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/stewardship.js?v=ab0b115a135ca529"></script>
 <script src="/parish/features/giving/commemorations.js?v=e3cd9e7d75da0d4e"></script>
 <script src="/parish/features/giving/feasts.js?v=cdfb463b67dd946d"></script>
-<script src="/parish/features/giving/givers.js?v=c0e3b7858346cc7e"></script>
+<script src="/parish/features/giving/givers.js?v=4dac75ec1cba4bcf"></script>
 <script src="/parish/features/giving/outside-gifts.js?v=bbe178e84e4f86cc"></script>
 <script src="/parish/features/giving/history.js?v=509b9fb5e9227b23"></script>
 <script src="/parish/features/giving/options.js?v=d29343ff510aaf06"></script>
@@ -1915,7 +1925,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving/recurring.js?v=56b68ececf1f6027"></script>
 <script src="/parish/features/giving/sharing.js?v=fa9d878390b23813"></script>
 <script src="/parish/features/giving/embed-theme.js?v=bc431b0c4c7afa7c"></script>
-<script src="/parish/features/giving/statements.js?v=d1ed9be505ad219f"></script>
+<script src="/parish/features/giving/statements.js?v=70cc11038ab160c5"></script>
 <script src="/parish/features/giving/transfers.js?v=c4c120c8886b8769"></script>
 <script src="/parish/features/giving/insights.js?v=46975b9e8339c4e0"></script>
 <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
@@ -1925,5 +1935,6 @@ Generate Monthly Financial Report
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
 <script src="/parish/app.js?v=54efeb4a3ac3b487"></script>
 <script src="/parish/stewardship-sections.js"></script>
+<script src="/parish/givers-sections.js"></script>
 </body>
 </html>
