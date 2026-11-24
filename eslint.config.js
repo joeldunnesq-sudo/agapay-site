@@ -499,6 +499,7 @@ export default [
     files: ['public/parish/features/giving/sharing.js'],
     languageOptions: {
       globals: {
+        authHeaders: 'readonly',
         currentParish: 'readonly',
         dedicatedGivingUrl: 'readonly',
         dedicatedGivingEmbedUrl: 'readonly',
