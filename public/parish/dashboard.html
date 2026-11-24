@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/parish/settings.css?v=20261123settings1" />
 <link rel="stylesheet" href="/parish/commerce-refresh.css?v=1" />
 <link rel="stylesheet" href="/parish/accounting-refresh.css?v=1" />
-<link rel="stylesheet" href="/parish/workspace-section-menus.css?v=2" />
+<link rel="stylesheet" href="/parish/workspace-section-menus.css?v=3" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -861,165 +861,189 @@
       <!-- / CAMPAIGNS TAB -->
       <!-- ── STEWARDSHIP TAB ──────────────────────────── -->
       <div class="tab-panel" id="tab-stewardship">
-        <div class="sw-suite-hero sw-intelligence-hero">
-          <div class="sw-suite-hero-copy">
-            <span class="sw-suite-eyebrow">Stewardship Health</span>
-            <h1 class="sw-suite-heading">Giving intelligence</h1>
-            <p class="sw-suite-subhead">The real shape of parish giving — not just the total.</p>
-          </div>
-          <div class="sw-suite-hero-status" id="stewardshipHeroStatus">
-            <span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
-          </div>
-        </div>
+<div class="sw-suite-hero sw-intelligence-hero">
+<div class="sw-suite-hero-copy">
+<span class="sw-suite-eyebrow">Parish stewardship</span>
+<h1 class="sw-suite-heading">Stewardship Health</h1>
+<p class="sw-suite-subhead">Review giving, record attendance, and prepare reports for parish leadership.</p>
+</div>
+<div class="sw-suite-hero-status" id="stewardshipHeroStatus">
+<span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
+</div>
+</div>
 
-        <div class="sw-suite-tool-grid sw-suite-tool-grid--health">
-          <div class="sw-suite-tool-card sw-tool-health-score">
-            <div class="sw-tool-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/><polyline points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"/></svg>
-            </div>
-            <strong class="sw-tool-card-title">Your stewardship at a glance</strong>
-            <div class="sw-tool-card-body" id="stewardshipHealthScorePane">
-              <p class="sw-tool-loading">Loading…</p>
-            </div>
-          </div>
-          <div class="sw-suite-tool-card sw-tool-distribution">
-            <div class="sw-tool-card-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h3v7H4zM10.5 8h3v13h-3zM17 3h3v18h-3z"/></svg>
-            </div>
-            <h2 class="sw-tool-card-title">Giving Distribution</h2>
-            <p class="sw-tool-card-desc">Every gift has a place. See how many donors give at each annual level.</p>
-            <div class="sw-tool-card-body" id="stewardshipDistributionPane" aria-live="polite">
-              <p class="sw-tool-loading">Loading…</p>
-            </div>
-          </div>
-          <div class="sw-suite-tool-card sw-tool-retention">
-            <div class="sw-tool-card-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0M16 8l4 4-4 4M13 12h7"/></svg>
-            </div>
-            <h2 class="sw-tool-card-title">Donor Retention</h2>
-            <p class="sw-tool-card-desc">The people behind the giving. Who returned, who is new, and who has yet to give again.</p>
-            <div class="sw-tool-card-body" id="stewardshipRetentionPane" aria-live="polite">
-              <p class="sw-tool-loading">Loading…</p>
-            </div>
-          </div>
-          <div class="sw-suite-tool-card sw-tool-concentration">
-            <div class="sw-tool-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>
-              </svg>
-            </div>
-            <h2 class="sw-tool-card-title">Giving Concentration Risk</h2>
-            <p class="sw-tool-card-desc">How much giving depends on your top households. Always anonymous.</p>
-            <div class="sw-tool-card-body" id="stewardshipConcentrationPane">
-              <p class="sw-tool-loading">Loading…</p>
-            </div>
-          </div>
-          <div class="sw-suite-tool-card sw-tool-recurring">
-            <div class="sw-tool-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17.5 6.5A6.5 6.5 0 1 0 21 12"/><polyline points="21 3 21 9 15 9"/>
-              </svg>
-            </div>
-            <h2 class="sw-tool-card-title">Recurring Gift Stability</h2>
-            <p class="sw-tool-card-desc">A foundation for planning. See how much giving arrives on a regular schedule.</p>
-            <div class="sw-tool-card-body" id="stewardshipRecurringPane">
-              <p class="sw-tool-loading">Loading…</p>
-            </div>
-          </div>
-        </div>
-        <p class="sw-intelligence-source">Donor charts use recorded AGAPAY gifts and never show individual identities. Outside giving is included in the reports and financial snapshots below.</p>
-        <div id="stewardshipOutsideGivingMount"></div>
-        <div id="stewardshipAttendanceMount"></div>
-        <!-- Stewardship Reports -->
-        <div class="sw-suite-tool-card sw-tool-giving sw-tool-financials-featured sw-reports-intelligence">
-          <div class="sw-tool-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
-            </svg>
-          </div>
-          <div class="sw-tool-card-header-row sw-report-card-header">
-            <strong class="sw-tool-card-title">Stewardship Reports</strong>
-            <label>Report month <input type="month" id="stewardshipReportMonth" min="2000-01" max="2100-12" onchange="setStewardshipReportMonth(this.value)"></label>
-            <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyReport()">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5.5 8.5h5M5.5 10.5h5M5.5 12h3"/></svg>
-              Generate Monthly Stewardship Report
-            </button>
-          </div>
-          <p class="sw-tool-card-desc">From giving to planning. See your progress, understand each fund, and bring a clearer picture to the parish council.</p>
-          <div class="sw-tool-card-body" id="givingMetricsPane">
-            <p class="sw-tool-loading">Loading…</p>
-          </div>
-        </div>
-        <div id="diocesanStatisticsMount"></div>
-        <!-- Financial Snapshots -->
-        <div class="sw-suite-tool-card sw-tool-financials sw-tool-financials-featured">
-          <div class="sw-tool-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-          </div>
-          <div class="sw-tool-card-header-row sw-report-card-header">
-            <strong class="sw-tool-card-title">Financial Snapshots</strong>
-            <label>Report month <input type="month" id="financialReportMonth" min="2000-01" max="2100-12" onchange="setStewardshipReportMonth(this.value)"></label>
-            <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyFinancialReport()">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5 11.5l2-2 1.5 1.5L11.5 8"/></svg>
-              Generate Monthly Financial Report
-            </button>
-          </div>
-          <div class="sw-tool-card-actions sw-financials-secondary-actions" id="financialsHeaderActions" hidden>
-            <button class="sw-action-btn" type="button" onclick="openFinancialsEditor()">Edit snapshot</button>
-            <select class="sw-year-select" id="financialsYearSelect" aria-label="Financial snapshot year" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
-          </div>
-          <p class="sw-tool-card-desc">One authoritative fiscal-year view. Contributions and restricted-fund inflows calculate automatically; fund deductions, expenses, other revenue, externally held assets, and notes remain editable until Accounting is active.</p>
-          <div class="sw-tool-card-body" id="stewardshipFinancialsPane">
-            <p class="sw-tool-loading">Loading…</p>
-          </div>
-        </div>
-        <!-- Annual Meeting Packets -->
-        <div class="sw-suite-tool-card sw-tool-financials-featured sw-tool-meeting-packets-featured">
-          <div class="sw-tool-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <div class="sw-tool-card-header-row sw-meeting-packets-header">
-            <div class="sw-meeting-packets-title-group">
-              <span class="sw-meeting-packets-kicker">Annual planning workspace</span>
-              <strong class="sw-tool-card-title">Annual Meeting Packets</strong>
-            </div>
-            <span class="pdx-pp-card-state soon" id="parishPlusPacketsState">—</span>
-          </div>
-          <p class="sw-tool-card-desc">Agenda, clergy reports, treasurer notes, nominees, resolutions, and a print-ready PDF packet.</p>
-          <div class="sw-tool-card-body" id="parishPlusMeetingsPane"><p class="sw-tool-loading">Loading…</p></div>
-        </div>
-        <!-- Subscription / plan pane — renders inside .sw-suite-plan-row -->
-        <div class="sw-suite-plan-row" id="stewardshipPlanPane"></div>
-        <!-- Financial snapshot editor — full-width, hidden until opened -->
-        <section class="section-card sw-suite-editor-card" id="stewardshipFinancialsEditorCard" hidden>
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <span id="financialsEditorTitle">Financial Snapshot</span>
-            </div>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="closeFinancialsEditor()">Close</button>
-          </div>
-          <div class="section-body" id="stewardshipFinancialsEditorPane"></div>
-        </section>
-        <!-- Packet editor — full-width card, hidden until opened -->
-        <section class="section-card sw-suite-editor-card" id="stewardshipEditorCard" hidden>
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </div>
-              <span id="stewardshipEditorTitle">Annual Meeting Packet</span>
-            </div>
-            <button class="btn btn-ghost btn-sm" type="button" onclick="closeStewardshipEditor()">Close</button>
-          </div>
-          <div class="section-body stewardship-editor-body" id="stewardshipEditorPane"></div>
-        </section>
-      </div>
-      </div>
+<div class="sw-section-layout">
+<nav class="sw-section-nav" aria-label="Stewardship Health sections">
+<button type="button" data-sw-view="overview" aria-pressed="true">Overview</button>
+<button type="button" data-sw-view="giving" aria-pressed="false">Giving intelligence</button>
+<button type="button" data-sw-view="recurring" aria-pressed="false">Recurring giving</button>
+<button type="button" data-sw-view="outside" aria-pressed="false">Outside giving</button>
+<button type="button" data-sw-view="attendance" aria-pressed="false">Attendance</button>
+<button type="button" data-sw-view="reports" aria-pressed="false">Reports &amp; financials</button>
+<button type="button" data-sw-view="meetings" aria-pressed="false">Meeting packets</button>
+<button type="button" data-sw-view="plan" aria-pressed="false">Plan</button>
+</nav>
+<div class="sw-section-content">
+<section data-sw-panel="overview" aria-label="Overview">
+<div class="sw-suite-tool-grid sw-suite-tool-grid--health">          <div class="sw-suite-tool-card sw-tool-health-score">
+<div class="sw-tool-card-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/><polyline points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"/></svg>
+</div>
+<strong class="sw-tool-card-title">Your stewardship at a glance</strong>
+<div class="sw-tool-card-body" id="stewardshipHealthScorePane">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div></div><div class="sw-section-shortcuts"><button type="button" class="btn btn-gold" data-sw-view="attendance">Record attendance</button><button type="button" class="btn btn-ghost" data-sw-view="reports">View reports</button></div>
+</section>
+<section data-sw-panel="giving" aria-label="Giving intelligence" hidden>
+<div class="sw-suite-tool-grid sw-suite-tool-grid--health">          <div class="sw-suite-tool-card sw-tool-distribution">
+<div class="sw-tool-card-icon" aria-hidden="true">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h3v7H4zM10.5 8h3v13h-3zM17 3h3v18h-3z"/></svg>
+</div>
+<h2 class="sw-tool-card-title">Giving Distribution</h2>
+<p class="sw-tool-card-desc">Every gift has a place. See how many donors give at each annual level.</p>
+<div class="sw-tool-card-body" id="stewardshipDistributionPane" aria-live="polite">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div>
+<div class="sw-suite-tool-card sw-tool-retention">
+<div class="sw-tool-card-icon" aria-hidden="true">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0M16 8l4 4-4 4M13 12h7"/></svg>
+</div>
+<h2 class="sw-tool-card-title">Donor Retention</h2>
+<p class="sw-tool-card-desc">The people behind the giving. Who returned, who is new, and who has yet to give again.</p>
+<div class="sw-tool-card-body" id="stewardshipRetentionPane" aria-live="polite">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div>
+<div class="sw-suite-tool-card sw-tool-concentration">
+<div class="sw-tool-card-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>
+</svg>
+</div>
+<h2 class="sw-tool-card-title">Giving Concentration Risk</h2>
+<p class="sw-tool-card-desc">How much giving depends on your top households. Always anonymous.</p>
+<div class="sw-tool-card-body" id="stewardshipConcentrationPane">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div></div>        <p class="sw-intelligence-source">Donor charts use recorded AGAPAY gifts and never show individual identities. Outside giving is included in the reports and financial snapshots.</p>
+</section>
+<section data-sw-panel="recurring" aria-label="Recurring giving" hidden>
+<div class="sw-suite-tool-grid sw-suite-tool-grid--health">          <div class="sw-suite-tool-card sw-tool-recurring">
+<div class="sw-tool-card-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<path d="M17.5 6.5A6.5 6.5 0 1 0 21 12"/><polyline points="21 3 21 9 15 9"/>
+</svg>
+</div>
+<h2 class="sw-tool-card-title">Recurring Gift Stability</h2>
+<p class="sw-tool-card-desc">A foundation for planning. See how much giving arrives on a regular schedule.</p>
+<div class="sw-tool-card-body" id="stewardshipRecurringPane">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div></div>
+</section>
+<section data-sw-panel="outside" aria-label="Outside giving" hidden>
+<div id="stewardshipOutsideGivingMount"></div>
+</section>
+<section data-sw-panel="attendance" aria-label="Attendance" hidden>
+<div id="stewardshipAttendanceMount"></div>
+</section>
+<section data-sw-panel="reports" aria-label="Reports &amp; financials" hidden>
+<!-- Stewardship Reports -->
+<div class="sw-suite-tool-card sw-tool-giving sw-tool-financials-featured sw-reports-intelligence">
+<div class="sw-tool-card-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+</svg>
+</div>
+<div class="sw-tool-card-header-row sw-report-card-header">
+<strong class="sw-tool-card-title">Stewardship Reports</strong>
+<label>Report month <input type="month" id="stewardshipReportMonth" min="2000-01" max="2100-12" onchange="setStewardshipReportMonth(this.value)"></label>
+<button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyReport()">
+<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5.5 8.5h5M5.5 10.5h5M5.5 12h3"/></svg>
+Generate Monthly Stewardship Report
+</button>
+</div>
+<p class="sw-tool-card-desc">From giving to planning. See your progress, understand each fund, and bring a clearer picture to the parish council.</p>
+<div class="sw-tool-card-body" id="givingMetricsPane">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div>
+<div id="diocesanStatisticsMount"></div>
+<!-- Financial Snapshots -->
+<div class="sw-suite-tool-card sw-tool-financials sw-tool-financials-featured">
+<div class="sw-tool-card-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+</svg>
+</div>
+<div class="sw-tool-card-header-row sw-report-card-header">
+<strong class="sw-tool-card-title">Financial Snapshots</strong>
+<label>Report month <input type="month" id="financialReportMonth" min="2000-01" max="2100-12" onchange="setStewardshipReportMonth(this.value)"></label>
+<button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyFinancialReport()">
+<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5 11.5l2-2 1.5 1.5L11.5 8"/></svg>
+Generate Monthly Financial Report
+</button>
+</div>
+<div class="sw-tool-card-actions sw-financials-secondary-actions" id="financialsHeaderActions" hidden>
+<button class="sw-action-btn" type="button" onclick="openFinancialsEditor()">Edit snapshot</button>
+<select class="sw-year-select" id="financialsYearSelect" aria-label="Financial snapshot year" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
+</div>
+<p class="sw-tool-card-desc">One authoritative fiscal-year view. Contributions and restricted-fund inflows calculate automatically; fund deductions, expenses, other revenue, externally held assets, and notes remain editable until Accounting is active.</p>
+<div class="sw-tool-card-body" id="stewardshipFinancialsPane">
+<p class="sw-tool-loading">Loading…</p>
+</div>
+</div>        <!-- Financial snapshot editor — full-width, hidden until opened -->
+<section class="section-card sw-suite-editor-card" id="stewardshipFinancialsEditorCard" hidden>
+<div class="section-header">
+<div class="section-title">
+<div class="section-title-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+</div>
+<span id="financialsEditorTitle">Financial Snapshot</span>
+</div>
+<button class="btn btn-ghost btn-sm" type="button" onclick="closeFinancialsEditor()">Close</button>
+</div>
+<div class="section-body" id="stewardshipFinancialsEditorPane"></div>
+</section>
+</section>
+<section data-sw-panel="meetings" aria-label="Meeting packets" hidden>
+<!-- Annual Meeting Packets -->
+<div class="sw-suite-tool-card sw-tool-financials-featured sw-tool-meeting-packets-featured">
+<div class="sw-tool-card-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+</div>
+<div class="sw-tool-card-header-row sw-meeting-packets-header">
+<div class="sw-meeting-packets-title-group">
+<span class="sw-meeting-packets-kicker">Annual planning workspace</span>
+<strong class="sw-tool-card-title">Annual Meeting Packets</strong>
+</div>
+<span class="pdx-pp-card-state soon" id="parishPlusPacketsState">—</span>
+</div>
+<p class="sw-tool-card-desc">Agenda, clergy reports, treasurer notes, nominees, resolutions, and a print-ready PDF packet.</p>
+<div class="sw-tool-card-body" id="parishPlusMeetingsPane"><p class="sw-tool-loading">Loading…</p></div>
+</div>        <!-- Packet editor — full-width card, hidden until opened -->
+<section class="section-card sw-suite-editor-card" id="stewardshipEditorCard" hidden>
+<div class="section-header">
+<div class="section-title">
+<div class="section-title-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+</div>
+<span id="stewardshipEditorTitle">Annual Meeting Packet</span>
+</div>
+<button class="btn btn-ghost btn-sm" type="button" onclick="closeStewardshipEditor()">Close</button>
+</div>
+<div class="section-body stewardship-editor-body" id="stewardshipEditorPane"></div>
+</section>
+</section>
+<section data-sw-panel="plan" aria-label="Plan" hidden>
+<div class="sw-suite-plan-row" id="stewardshipPlanPane"></div>
+</section>
+</div>
+</div>
+</div>
+</div>
       <!-- ── SACRAMENTS & SERVICES TAB ────────────────────── -->
 
       <div class="tab-panel parish-tier-panel" id="tab-sacraments">
@@ -1900,5 +1924,6 @@
 <script src="/parish/app-subscriptions-and-settlement.js?v=50c249e196063e22"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
 <script src="/parish/app.js?v=54efeb4a3ac3b487"></script>
+<script src="/parish/stewardship-sections.js"></script>
 </body>
 </html>

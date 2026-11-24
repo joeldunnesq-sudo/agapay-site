@@ -209,3 +209,76 @@
     gap: 6px;
   }
 }
+#tab-stewardship .sw-section-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+#tab-stewardship .sw-section-content {
+  min-width: 0;
+  container-type: inline-size;
+}
+#tab-stewardship [data-sw-panel][hidden] {
+  display: none;
+}
+#tab-stewardship .sw-section-nav {
+  display: grid;
+  gap: 5px;
+}
+#tab-stewardship .sw-section-nav button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #465864;
+  font: 600 14px/1.4 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+#tab-stewardship .sw-section-nav button:hover {
+  background: #ece5d8;
+}
+#tab-stewardship .sw-section-nav button[aria-pressed='true'] {
+  background: #0d1722;
+  color: #fff;
+  box-shadow: inset 3px 0 #d1ad5e;
+}
+#tab-stewardship .sw-section-nav svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: #9b7a36;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#tab-stewardship .sw-section-nav [aria-pressed='true'] svg {
+  stroke: #d1ad5e;
+}
+#tab-stewardship .sw-section-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 16px;
+}
+@container (max-width: 620px) {
+  #tab-stewardship .sw-suite-tool-grid--health {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  #tab-stewardship .sw-section-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  #tab-stewardship .sw-section-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+}
