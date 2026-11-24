@@ -250,3 +250,52 @@ assert.match(simpleFlow, /Which fund\?/);
 console.log("PASS - the Record Income and Pay a Bill forms expose no debit or credit vocabulary");
 
 console.log("accounting-treasurer-mode-tests.mjs OK");
+const checking = { id: 'acct_1010', accountNumber: '1010', name: 'Operating Checking', isActive: true, category: 'asset' };
+const savedBank = { id: 'bank1', name: 'Operating checking', ledgerAccountId: checking.id };
+const state = { bankAccounts: [], bankAccountsUnavailable: true, accounts: [checking], funds: [] };
+const status = {};
+const button = { disabled: false };
+const form = {
+  isConnected: true,
+  querySelector: (selector) => (selector === 'button' ? button : status),
+};
+let depositHtml;
+let postCount = 0;
+const depositUi = runInNewContext(
+  read('public/parish/features/accounting/banking.js') + '\n' +
+  read('public/parish/features/accounting/treasurer.js') + '\n' +
+  '({ accountingSimpleIncomeForm, createAccountingBankAccount })',
+  {
+    accountingData: state,
+    accountingView: 'ledger',
+    accountingSimpleIncomeMessage: '',
+    ACCOUNTING_SIMPLE_REVENUE_LABELS: {},
+    escapeHtml: String,
+    escapeAttr: String,
+    accountingApi: (path) => path,
+    authHeaders: () => ({}),
+    FormData: function () { return [['accountType', 'checking'], ['ledgerAccountId', checking.id]]; },
+    async fetch(path, options) {
+      postCount++;
+      assert.equal(path, '/bank/accounts');
+      assert.equal(options.method, 'POST');
+      assert.deepEqual(JSON.parse(options.body), { accountType: 'checking', ledgerAccountId: checking.id, isDefault: true });
+      return { ok: true, json: async () => ({ account: savedBank }) };
+    },
+    renderAccountingPane() { depositHtml = depositUi.accountingSimpleIncomeForm(); },
+  },
+);
+assert.match(depositUi.accountingSimpleIncomeForm(), /Unable to load bank accounts/);
+assert.doesNotMatch(depositUi.accountingSimpleIncomeForm(), /createAccountingBankAccount/);
+state.bankAccountsUnavailable = false;
+const setupHtml = depositUi.accountingSimpleIncomeForm();
+assert.match(setupHtml, /Set up your deposit account/);
+assert.match(setupHtml, /choose 1010 · Operating Checking/);
+assert.match(setupHtml, /<option value="">Choose the ledger account/);
+const bankEvent = { preventDefault() {}, currentTarget: form };
+await Promise.all([depositUi.createAccountingBankAccount(bankEvent), depositUi.createAccountingBankAccount(bankEvent)]);
+assert.equal(postCount, 1);
+assert.match(depositHtml, /Bank account saved/);
+assert.match(depositHtml, /value="acct_1010">Operating checking/);
+assert.match(depositHtml, /data-income-submit/);
+console.log('PASS - first deposit guides bank setup, handles a failed lookup, and resumes income entry after saving');

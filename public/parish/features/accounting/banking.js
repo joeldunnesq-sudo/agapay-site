@@ -112,6 +112,10 @@ async function loadAccountingPhaseE() {
     if (accountingData.tier === 'advanced_operations') paths.push('/commerce/overview');
     const responses = await Promise.all(paths.map((path) => fetch(accountingApi(path), { headers: authHeaders() })));
     const payloads = await Promise.all(responses.map((res) => res.json().catch(() => ({}))));
+    if (responses[0].ok && Array.isArray(payloads[0].accounts)) {
+      accountingData.bankAccounts = payloads[0].accounts;
+      accountingData.bankAccountsUnavailable = false;
+    }
     const failed = responses.findIndex((res) => !res.ok);
     if (failed >= 0)
       throw new Error(payloads[failed].message || payloads[failed].error || 'Connected accounting is unavailable.');
@@ -141,13 +145,22 @@ async function loadAccountingPhaseE() {
 function showAccountingBankAccountForm() {
   const holder = document.getElementById('accountingPhaseEForm');
   if (!holder) return;
+  holder.innerHTML = accountingBankAccountForm();
+}
+function accountingBankAccountForm() {
   const assets = accountingData.accounts
-    .filter((a) => a.category === 'asset')
+    .filter((a) => a.category === 'asset' && Boolean(a.isActive))
     .map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`)
     .join('');
-  holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingBankAccount(event)"><div class="acct-form-grid"><label>Account name<input name="name" required placeholder="Operating checking"></label><label>Institution<input name="institutionName"></label><label>Last four digits<input name="maskedLast4" maxlength="4" inputmode="numeric"></label><label>Ledger asset account<select name="ledgerAccountId" required>${assets}</select></label></div><button class="acct-primary">Add bank account</button><span class="acct-form-status"></span></form>`;
+  const operatingChecking = accountingData.accounts.find(
+    (account) => account.id === 'acct_1010' && Boolean(account.isActive)
+  );
+  const hint = operatingChecking
+    ? `<small>If this is your main checking account, choose ${escapeHtml(operatingChecking.accountNumber)} · ${escapeHtml(operatingChecking.name)}.</small>`
+    : '';
+  return `<form class="acct-phase-form" onsubmit="createAccountingBankAccount(event)"><div class="acct-form-grid"><label>Account name<input name="name" required placeholder="Operating checking"></label><label>Account type<select name="accountType"><option value="checking">Checking</option><option value="savings">Savings</option><option value="money_market">Money market</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>Institution (optional)<input name="institutionName"></label><label>Last four digits (optional)<input name="maskedLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"></label><label>Matching ledger account<select name="ledgerAccountId" required><option value="">Choose the ledger account for this bank account</option>${assets}</select>${hint}</label></div><button class="acct-primary">Save bank account</button><span class="acct-form-status" role="status"></span></form>`;
 }
-async function phaseEMutation(path, body, method = 'POST') {
+async function phaseEMutation(path, body, method = 'POST', form) {
   const res = await fetch(accountingApi(path), {
       method,
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
@@ -155,7 +168,7 @@ async function phaseEMutation(path, body, method = 'POST') {
     }),
     payload = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const status = document.querySelector('.acct-form-status');
+    const status = (form || document).querySelector('.acct-form-status');
     if (status) status.textContent = payload.message || payload.error;
     else alert(payload.message || payload.error);
     return null;
@@ -164,16 +177,37 @@ async function phaseEMutation(path, body, method = 'POST') {
 }
 async function createAccountingBankAccount(event) {
   event.preventDefault();
-  const raw = Object.fromEntries(new FormData(event.currentTarget));
-  if (
-    await phaseEMutation('/bank/accounts', {
-      ...raw,
-      accountType: 'checking',
-      isDefault: !accountingData.banking.accounts.length,
-    })
-  ) {
+  const form = event.currentTarget;
+  const button = form.querySelector('button');
+  const status = form.querySelector('.acct-form-status');
+  if (button.disabled) return;
+  button.disabled = true;
+  status.textContent = 'Saving bank account…';
+  try {
+    const payload = await phaseEMutation(
+      '/bank/accounts',
+      {
+        ...Object.fromEntries(new FormData(form)),
+        isDefault: !accountingData.bankAccounts.length,
+      },
+      'POST',
+      form
+    );
+    if (!payload) return;
+    if (!payload.account) throw new Error('Missing saved bank account');
+    accountingData.bankAccounts = [...accountingData.bankAccounts, payload.account];
+    accountingData.bankAccountsUnavailable = false;
     accountingData.banking = null;
-    await loadAccountingPhaseE();
+    if (!form.isConnected) return;
+    if (accountingView === 'banking') await loadAccountingPhaseE();
+    else {
+      accountingSimpleIncomeMessage = 'Bank account saved. Enter the deposit details below.';
+      renderAccountingPane();
+    }
+  } catch {
+    status.textContent = 'Could not confirm whether the account was saved. Refresh Accounting before trying again.';
+  } finally {
+    button.disabled = false;
   }
 }
 async function previewAccountingBankCsv(event) {

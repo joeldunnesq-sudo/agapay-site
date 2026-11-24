@@ -143,6 +143,7 @@ interface AccountingOperationsResponse {
   entry: AccountingJournalDraft;
   validation?: { ok?: boolean; issues?: string[] };
   preview?: AccountingBankPreview;
+  account?: AccountingBankAccount;
   accounts?: AccountingBankAccount[];
   sessions?: AccountingBankSession[];
   reconciliation?: AccountingBankSession;

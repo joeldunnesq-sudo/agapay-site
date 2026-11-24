@@ -116,6 +116,7 @@ interface AccountingWorkspaceData {
   accountCatalog: AccountingAccount[];
   funds: AccountingFund[];
   bankAccounts: AccountingBankAccount[];
+  bankAccountsUnavailable?: boolean;
   payables: AccountingPayablesWorkspace | null;
   budgets: { items: AccountingPayableItem[] } | null;
   banking: AccountingBanking | null;
