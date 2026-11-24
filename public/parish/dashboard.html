@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260901memorial1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260829fullscreen1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=council-overview1" />
   <link rel="stylesheet" href="/parish/library.css?v=20260829fullscreen1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -217,6 +217,10 @@
               <div class="pdx-hero-total-sub" id="pdxHeroSub">
                 <span style="opacity:0.7;">Load dashboard to view giving summary.</span>
               </div>
+              <div class="pdx-council-actions" id="pdxCouncilActions" hidden>
+                <span id="pdxCouncilProgress" aria-live="polite"></span>
+                <button type="button" class="pdx-link-btn" id="pdxCouncilOpen">View council report <span aria-hidden="true">→</span></button>
+              </div>
             </div>
             <div class="pdx-hero-spark">
               <svg id="pdxHeroSpark" viewBox="0 0 600 130" preserveAspectRatio="none"></svg>
@@ -228,6 +232,16 @@
             </p>
           </div>
         </section>
+        <dialog id="pdxCouncilReport" class="pdx-council-report" aria-labelledby="pdxCouncilTitle">
+          <h2 id="pdxCouncilTitle">Council report</h2>
+          <div class="pdx-council-period" role="group" aria-label="Report period">
+            <button type="button" class="btn btn-sm" id="pdxCouncilMonth" aria-pressed="true">This month</button>
+            <button type="button" class="btn btn-sm" id="pdxCouncilYear" aria-pressed="false">Year to date</button>
+          </div>
+          <div id="pdxCouncilBody" aria-live="polite"></div>
+          <button type="button" class="btn btn-sm" id="pdxCouncilRetry" hidden>Retry report</button>
+          <form method="dialog"><button class="btn btn-gold btn-sm" autofocus>Close report</button></form>
+        </dialog>
         <!-- KPI BAND -->
         <section class="pdx-kpi-band" id="pdxKpiBand">
           <div class="pdx-kpi-card">
@@ -1919,7 +1933,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving/outside-gifts.js?v=bbe178e84e4f86cc"></script>
 <script src="/parish/features/giving/history.js?v=509b9fb5e9227b23"></script>
 <script src="/parish/features/giving/options.js?v=d29343ff510aaf06"></script>
-<script src="/parish/features/giving/overview.js?v=a6f7d4b0806c3333"></script>
+<script src="/parish/features/giving/overview.js?v=814c9560033475e6"></script>
 <script src="/parish/features/giving/weekly-funds.js?v=291e00bd290eb9e8"></script>
 <script src="/parish/features/giving/reconciliation-reports.js?v=48e8f0e0a0149244"></script>
 <script src="/parish/features/giving/reconciliation.js?v=9e612d00025d704d"></script>

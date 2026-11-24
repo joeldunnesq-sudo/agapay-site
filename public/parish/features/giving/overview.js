@@ -4,6 +4,7 @@ async function loadGivingSummary(btn) {
   const pane = document.getElementById('givingSummaryPane');
   if (!currentParish || !pane) return;
   loadGivingOverviewInsights();
+  void loadGivingCouncilOverview();
   const status = document.getElementById('givingSummaryStatus');
   if (btn) {
     btn.classList.add('loading');
@@ -27,6 +28,88 @@ async function loadGivingSummary(btn) {
       btn.classList.remove('loading');
       btn.disabled = false;
     }
+  }
+}
+let givingCouncilRequest = 0;
+async function loadGivingCouncilOverview() {
+  const actions = document.getElementById('pdxCouncilActions');
+  if (!actions) return;
+  const request = ++givingCouncilRequest;
+  const parishId = currentParish?.parishId;
+  const dialog = document.getElementById('pdxCouncilReport');
+  const open = document.getElementById('pdxCouncilOpen');
+  const month = document.getElementById('pdxCouncilMonth');
+  const year = document.getElementById('pdxCouncilYear');
+  const progress = document.getElementById('pdxCouncilProgress');
+  const body = document.getElementById('pdxCouncilBody');
+  const retry = document.getElementById('pdxCouncilRetry');
+  actions.hidden = !parishId || (!isParishTier() && !isParishPlusActive());
+  if (actions.hidden || !parishId) {
+    if (dialog.open) dialog.close();
+    return;
+  }
+  let report;
+  let failed = false;
+  const render = (yearToDate = year.getAttribute('aria-pressed') === 'true') => {
+    month.setAttribute('aria-pressed', String(!yearToDate));
+    year.setAttribute('aria-pressed', String(yearToDate));
+    retry.hidden = !failed;
+    if (!report) {
+      body.textContent = failed ? 'The council report is temporarily unavailable.' : 'Loading giving totals…';
+      return;
+    }
+    const received = yearToDate ? report.yearGivingCents : report.monthGivingCents;
+    const target = yearToDate ? report.annualPledgeGoalCents : Math.round(report.annualPledgeGoalCents / 12);
+    const remaining = target > 0 ? moneyFull(Math.max(0, target - received)) : '—';
+    const percent = target > 0 ? Math.round((received / target) * 100) + '%' : '—';
+    body.innerHTML = `<dl>
+      <dt>Giving received</dt><dd>${moneyFull(received)}</dd>
+      <dt>${yearToDate ? 'Annual pledge goal' : 'Estimated monthly target'}</dt><dd>${target > 0 ? moneyFull(target) : 'Not set'}</dd>
+      <dt>Remaining to target</dt><dd>${remaining}</dd>
+      <dt>Target met</dt><dd>${percent}</dd>
+    </dl><p>Includes AGAPAY gifts and recorded outside contributions. The monthly target is one twelfth of the annual pledge goal.</p>`;
+  };
+  progress.textContent = 'Loading giving progress…';
+  month.textContent = 'This month';
+  open.onclick = () => {
+    render(false);
+    dialog.showModal();
+  };
+  month.onclick = () => render(false);
+  year.onclick = () => render(true);
+  retry.onclick = () => void loadGivingCouncilOverview();
+  render();
+  try {
+    const response = await fetch(
+      '/api/parish/dashboard/' + encodeURIComponent(parishId) + '/stewardship/giving/summary?view=council-overview',
+      { headers: authHeaders() }
+    );
+    if (!response.ok) throw new Error('Council report unavailable');
+    const data = await response.json();
+    if (
+      typeof data.monthLabel !== 'string' ||
+      !data.monthLabel ||
+      ![data.monthGivingCents, data.yearGivingCents, data.annualPledgeGoalCents].every(Number.isSafeInteger)
+    ) {
+      throw new Error('Council report incomplete');
+    }
+    if (request !== givingCouncilRequest || currentParish?.parishId !== parishId) return;
+    report = data;
+    month.textContent = data.monthLabel;
+    const target = Math.round(data.annualPledgeGoalCents / 12);
+    if (target > 0) {
+      const percent = document.createElement('strong');
+      percent.textContent = Math.round((data.monthGivingCents / target) * 100) + '%';
+      progress.replaceChildren(percent, ` of the ${data.monthLabel} giving target met`);
+    } else {
+      progress.textContent = 'No annual pledge goal set';
+    }
+    render();
+  } catch {
+    if (request !== givingCouncilRequest || currentParish?.parishId !== parishId) return;
+    failed = true;
+    progress.textContent = 'Giving progress unavailable';
+    render();
   }
 }
 function pdxAnimateCount(el, target, opts = {}) {

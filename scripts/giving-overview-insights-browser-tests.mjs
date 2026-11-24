@@ -5,6 +5,8 @@ import { openParishFixture, parish } from './lib/parish-browser-fixture.mjs';
 const browser = await chromium.launch({ headless: true });
 const year = new Date().getFullYear();
 let failSummary = false;
+let councilGoal = 24000000;
+let failCouncil = false;
 const fixture = await openParishFixture(
   browser,
   () => ({
@@ -15,10 +17,23 @@ const fixture = await openParishFixture(
     },
   }),
   {
-    '/stewardship/giving/summary': () =>
-      failSummary
+    '/stewardship/giving/summary': (request) => {
+      if (new URL(request.url()).searchParams.get('view') === 'council-overview') {
+        return failCouncil
+          ? { status: 503, body: { error: 'Unavailable' } }
+          : {
+              body: {
+                monthLabel: 'November 2026',
+                monthGivingCents: 1842000,
+                yearGivingCents: 22461000,
+                annualPledgeGoalCents: councilGoal,
+              },
+            };
+      }
+      return failSummary
         ? { status: 503, body: { error: 'Unavailable' } }
-        : { body: { total_actual_cents: 100000, manual_income_cents: 25000 } },
+        : { body: { total_actual_cents: 100000, manual_income_cents: 25000 } };
+    },
     '/stewardship/giving/health-score': (request) => {
       const reportYear = Number(new URL(request.url()).searchParams.get('year'));
       const totals = {
@@ -50,6 +65,25 @@ try {
   await page.setViewportSize({ width: 1280, height: 1000 });
   await fixture.open();
   await page.locator('#givingOverviewFees .sw-fees').waitFor();
+  await page.getByText('92% of the November 2026 giving target met').waitFor();
+  await page.getByRole('button', { name: 'View council report' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Council report' });
+  assert.match(await dialog.textContent(), /\$18,420\.00/);
+  await dialog.getByRole('button', { name: 'Year to date' }).click();
+  assert.match(await dialog.textContent(), /\$224,610\.00/);
+  await dialog.getByRole('button', { name: 'Close report' }).click();
+  councilGoal = 0;
+  await page.evaluate(() => loadGivingCouncilOverview());
+  await page.getByText('No annual pledge goal set').waitFor();
+  failCouncil = true;
+  await page.evaluate(() => loadGivingCouncilOverview());
+  await page.getByRole('button', { name: 'View council report' }).click();
+  await dialog.getByText('The council report is temporarily unavailable.').waitFor();
+  failCouncil = false;
+  councilGoal = 24000000;
+  await dialog.getByRole('button', { name: 'Retry report' }).click();
+  await dialog.getByText('$18,420.00', { exact: true }).waitFor();
+  await page.keyboard.press('Escape');
   assert.equal(await page.locator('#tab-giving .sw-giving-comparison').count(), 1);
   assert.match(await page.locator('#givingOverviewComparison').textContent(), /\$750\.00 · 75\.0%/);
   assert.equal(await page.locator('#tab-stewardship .sw-giving-comparison, #tab-stewardship .sw-fees').count(), 0);
