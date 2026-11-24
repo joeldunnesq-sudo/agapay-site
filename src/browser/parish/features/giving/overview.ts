@@ -20,6 +20,9 @@ interface ParishGivingSummaryResponse {
 }
 declare function loadStripeVolume(): void;
 declare function shortDate(value: string | number | Date | null | undefined): string;
+declare function isParishTier(): boolean;
+declare function isParishPlusActive(): boolean;
+declare function moneyFull(cents: unknown): string;
 
 // Giving overview; read shared identity and catalog state only when actions run.
 
