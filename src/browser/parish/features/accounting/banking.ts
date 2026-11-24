@@ -22,13 +22,25 @@ function renderAccountingBankStatements(pane: HTMLElement) {
       <div class="acct-list-head"><div><span class="acct-kicker">Statement history</span><h2>Reconciliation sessions</h2></div>${data.accounts.length ? '<button class="acct-refresh" onclick="showAccountingBankAccountForm()">Add bank account</button>' : ''}</div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${data.accounts.map((a) => `<article class="acct-budget-card"><div><span>Bank account</span><h3>${escapeHtml(a.name)}</h3><p>${escapeHtml(a.institutionName || 'Institution not set')} ${a.maskedLast4 ? `· •••• ${escapeHtml(a.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(a.id)}')">Edit bank account</button></div></article>`).join('')}${data.sessions.map((s) => `<article class="acct-budget-card"><div><span>${accountingDate(s.startDate)} – ${accountingDate(s.endDate)}</span><h3>${escapeHtml(s.bankAccountName)}</h3><p>Statement ending ${accountingMoney(s.endingBalance)} · Difference ${accountingMoney(s.difference)}</p></div><span class="acct-status ${escapeAttr(s.status)}">${escapeHtml(s.status)}</span><div class="acct-row-actions"><button onclick="downloadAccountingFile(accountingApi('/bank/reconciliations/${escapeAttr(s.id)}.csv'),'agapay-bank-reconciliation.csv')">Export</button><button onclick="showAccountingEligibleItems('${escapeAttr(s.id)}')">Eligible ledger items</button>${['in_progress', 'reopened'].includes(s.status) ? `<button onclick="showAccountingMatchSuggestions('${escapeAttr(s.id)}')">Review matches</button>` : ''}${['in_progress', 'reopened'].includes(s.status) ? `<button onclick="showAccountingReconciliationAdjustment('${escapeAttr(s.id)}')">Add adjustment</button>` : ''}${['in_progress', 'reopened'].includes(s.status) && Number(s.difference) === 0 ? `<button onclick="completeAccountingReconciliation('${escapeAttr(s.id)}',${s.version})">Complete</button>` : ''}</div></article>`).join('') || accountingEmpty('No reconciliations yet', 'Import a statement and begin the first period.')}</div>`;
 }
 
+function renderAccountingBankAccounts(pane: HTMLElement) {
+  if (accountingData.bankAccountsUnavailable) {
+    pane.innerHTML =
+      '<section class="acct-card"><h2>Unable to load bank accounts</h2><button class="acct-refresh" onclick="loadAccountingTab(true)">Retry</button></section>';
+    return;
+  }
+  const accounts = accountingData.bankAccounts;
+  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Bank accounts</h2><p>Add the checking or savings accounts your parish uses for deposits and statement reconciliation.</p></div><button type="button" class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button></div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${accounts.map((account) => `<article class="acct-budget-card"><div><span>${escapeHtml((account.accountType || 'Bank account').replaceAll('_', ' '))}</span><h3>${escapeHtml(account.name)}</h3><p>${escapeHtml(account.institutionName || '')}${account.maskedLast4 ? ` · •••• ${escapeHtml(account.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(account.id)}')">Edit bank account</button></div></article>`).join('')}</div></section>`;
+}
+
 function renderAccountingBanking(pane: HTMLElement) {
-  const tabs = `<div class="acct-reconcile-switch" role="tablist" aria-label="Reconciliation workspace">
+  const tabs = `<div class="acct-reconcile-switch" role="tablist" aria-label="Banking workspace">
+      <button type="button" class="${accountingReconciliationView === 'accounts' ? 'active' : ''}" onclick="setAccountingReconciliationView('accounts')">Bank accounts</button>
       <button type="button" class="${accountingReconciliationView === 'giving' ? 'active' : ''}" onclick="setAccountingReconciliationView('giving')">Stripe payouts &amp; funds</button>
       <button type="button" class="${accountingReconciliationView === 'bank' ? 'active' : ''}" onclick="setAccountingReconciliationView('bank')">Bank reconciliation</button>
     </div>`;
-  if (accountingReconciliationView === 'bank') {
-    renderAccountingBankStatements(pane);
+  if (accountingReconciliationView !== 'giving') {
+    if (accountingReconciliationView === 'accounts') renderAccountingBankAccounts(pane);
+    else renderAccountingBankStatements(pane);
     pane.insertAdjacentHTML('afterbegin', tabs);
     return;
   }
@@ -38,8 +50,9 @@ function renderAccountingBanking(pane: HTMLElement) {
 }
 
 function setAccountingReconciliationView(view: string) {
-  accountingReconciliationView = view === 'bank' ? 'bank' : 'giving';
+  accountingReconciliationView = view;
   renderAccountingPane();
+  if (view === 'bank' && !accountingData.banking) void loadAccountingPhaseE();
 }
 
 function renderAccountingIntegrationsBase(pane: HTMLElement) {
@@ -167,11 +180,17 @@ function showAccountingBankAccountForm() {
   const holder = document.getElementById('accountingPhaseEForm') as HTMLElement;
   if (!holder) return;
   holder.innerHTML = accountingBankAccountForm();
+  holder.querySelector<HTMLInputElement>('[name="name"]')?.focus();
 }
 
 function accountingBankAccountForm() {
   const assets = accountingData.accounts
-    .filter((a) => a.category === 'asset' && Boolean(a.isActive))
+    .filter(
+      (a) =>
+        a.category === 'asset' &&
+        Boolean(a.isActive) &&
+        !accountingData.bankAccounts.some((bank) => bank.ledgerAccountId === a.id)
+    )
     .map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`)
     .join('');
   const operatingChecking = accountingData.accounts.find(
@@ -180,7 +199,12 @@ function accountingBankAccountForm() {
   const hint = operatingChecking
     ? `<small>If this is your main checking account, choose ${escapeHtml(operatingChecking.accountNumber)} · ${escapeHtml(operatingChecking.name)}.</small>`
     : '';
-  return `<form class="acct-phase-form" onsubmit="createAccountingBankAccount(event)"><div class="acct-form-grid"><label>Account name<input name="name" required placeholder="Operating checking"></label><label>Account type<select name="accountType"><option value="checking">Checking</option><option value="savings">Savings</option><option value="money_market">Money market</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>Institution (optional)<input name="institutionName"></label><label>Last four digits (optional)<input name="maskedLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"></label><label>Matching ledger account<select name="ledgerAccountId" required><option value="">Choose the ledger account for this bank account</option>${assets}</select>${hint}</label></div><button class="acct-primary">Save bank account</button><span class="acct-form-status" role="status"></span></form>`;
+  return `<form class="acct-phase-form" onsubmit="createAccountingBankAccount(event)"><div class="acct-form-grid"><label>Account name<input name="name" required placeholder="Operating checking"></label><label>Account type<select name="accountType"><option value="checking">Checking</option><option value="savings">Savings</option><option value="money_market">Money market</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>Institution (optional)<input name="institutionName"></label><label>Last four digits (optional)<input name="maskedLast4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}"></label><label>Matching ledger account<select name="ledgerAccountId" required onchange="toggleAccountingNewBankLedger(this)"><option value="">Choose an existing ledger account</option>${assets}<option value="new">Create a ledger account for this bank account</option></select>${hint}</label></div><p data-new-bank-ledger hidden>AGAPAY will create a separate cash ledger account with this name. You can record deposits after saving.</p><button class="acct-primary">Save bank account</button><span class="acct-form-status" role="status"></span></form>`;
+}
+
+function toggleAccountingNewBankLedger(select: HTMLSelectElement) {
+  const details = select.form?.querySelector<HTMLElement>('[data-new-bank-ledger]');
+  if (details) details.hidden = select.value !== 'new';
 }
 
 async function phaseEMutation(path: string, body: unknown, method = 'POST', form?: HTMLFormElement) {
@@ -223,8 +247,13 @@ async function createAccountingBankAccount(event: AccountingFormEvent) {
     accountingData.bankAccountsUnavailable = false;
     accountingData.banking = null;
     if (!form.isConnected) return;
-    if (accountingView === 'banking') await loadAccountingPhaseE();
-    else {
+    if (accountingView === 'banking') {
+      if (accountingReconciliationView === 'accounts') {
+        renderAccountingPane();
+        const holder = document.getElementById('accountingPhaseEForm');
+        if (holder) holder.innerHTML = '<p role="status">Bank account saved.</p>';
+      } else await loadAccountingPhaseE();
+    } else {
       accountingSimpleIncomeMessage = 'Bank account saved. Enter the deposit details below.';
       renderAccountingPane();
     }
@@ -283,7 +312,7 @@ async function completeAccountingReconciliation(id: string, version: number) {
 }
 
 function editAccountingBankAccount(id: string) {
-  const a = accountingData.banking!.accounts.find((item) => item.id === id);
+  const a = accountingData.bankAccounts.find((item) => item.id === id);
   if (!a) return;
   const holder = document.getElementById('accountingPhaseEForm') as HTMLElement;
   holder.innerHTML = `<form class="acct-phase-form" onsubmit="updateAccountingBankAccount(event,'${escapeAttr(id)}',${a.version})"><div class="acct-form-grid"><label>Name<input name="name" value="${escapeAttr(a.name)}" required></label><label>Institution<input name="institutionName" value="${escapeAttr(a.institutionName || '')}"></label><label>Last four<input name="maskedLast4" maxlength="4" value="${escapeAttr(a.maskedLast4 || '')}"></label></div><button class="acct-primary">Save bank account</button><span class="acct-form-status"></span></form>`;
@@ -292,10 +321,18 @@ function editAccountingBankAccount(id: string) {
 async function updateAccountingBankAccount(event: AccountingFormEvent, id: string, expectedVersion: number) {
   event.preventDefault();
   const patch = Object.fromEntries(new FormData(event.currentTarget)) as Record<string, string | number>;
-  if (await phaseEMutation(`/bank/accounts/${encodeURIComponent(id)}`, { expectedVersion, patch }, 'PATCH')) {
-    accountingData.banking = null;
-    await loadAccountingPhaseE();
-  }
+  const payload = await phaseEMutation(
+    `/bank/accounts/${encodeURIComponent(id)}`,
+    { expectedVersion, patch },
+    'PATCH',
+    event.currentTarget
+  );
+  if (!payload?.account) return;
+  const account = payload.account;
+  accountingData.bankAccounts = accountingData.bankAccounts.map((item) => (item.id === id ? account : item));
+  accountingData.banking = null;
+  if (accountingReconciliationView === 'accounts') renderAccountingPane();
+  else await loadAccountingPhaseE();
 }
 
 async function showAccountingEligibleItems(id: string) {

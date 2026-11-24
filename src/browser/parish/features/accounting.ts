@@ -49,7 +49,7 @@ let accountingAccountLifecycleConfirm: AccountingLifecycleAction | null = null;
 
 let accountingLifecycleMessage: { type: string; id: string; text: string } | null = null;
 
-let accountingReconciliationView = 'giving';
+let accountingReconciliationView = 'accounts';
 
 let accountingCloseDetail: AccountingCloseSession | null = null;
 

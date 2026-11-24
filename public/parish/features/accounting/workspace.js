@@ -178,7 +178,7 @@ function accountingViewTitle() {
     assets: 'Assets',
     payables: 'Payables',
     budgets: 'Budgets',
-    banking: 'Reconciliation',
+    banking: 'Banking',
     close: 'Period Close',
     governance: 'Governance',
     setup: 'Setup',
@@ -457,7 +457,11 @@ function setAccountingView(view) {
     !accountingData[accountingView]
   )
     loadAccountingPhaseD();
-  if (['banking', 'integrations'].includes(accountingView) && !accountingData[accountingView]) loadAccountingPhaseE();
+  if (
+    (accountingView === 'integrations' || (accountingView === 'banking' && accountingReconciliationView === 'bank')) &&
+    !accountingData[accountingView]
+  )
+    loadAccountingPhaseE();
   if (accountingView === 'assets') loadAccountingAssets();
   if (accountingView === 'funds' && !accountingFundCatalog) loadAccountingFunds();
   if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();

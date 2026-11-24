@@ -162,33 +162,68 @@ export async function createBankAccount(
 ) {
   requireCapability(actor, 'accounting.bank_accounts.manage');
   assertTier(entitlementTier);
-  const account = await first(
-    db,
-    `SELECT a.id FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.id=? AND a.is_active=1 AND a.archived_at IS NULL AND a.is_posting_account=1 AND t.category='asset'`,
-    input?.ledgerAccountId
-  );
-  if (!account) throw new ValidationError('An active asset posting account is required.');
+  const name = text(input.name);
+  const institution = text(input.institutionName);
   const last4 = text(input.maskedLast4);
+  const accountType = text(input.accountType) || 'checking';
+  if (!name) throw new ValidationError('Enter a bank account name.');
+  if (!['checking', 'savings', 'money_market', 'cash', 'other'].includes(accountType))
+    throw new ValidationError('Choose a valid bank account type.');
   if (last4 && !/^\d{1,4}$/.test(last4)) throw new ValidationError('Only a masked last-four reference may be stored.');
-  if (/\d{5,}/.test(text(input.name) + text(input.institutionName)))
-    throw new ValidationError('Full bank account numbers must not be stored.');
+  if (/\d{5,}/.test(name + institution)) throw new ValidationError('Full bank account numbers must not be stored.');
+
+  const createLedger = input.ledgerAccountId === 'new';
   const accountId = id('bank');
+  const ledgerAccountId = createLedger ? id('acct') : text(input.ledgerAccountId);
+  const statements = [];
+  if (createLedger) {
+    requireCapability(actor, 'accounting.accounts.manage');
+    statements.push(
+      db
+        .prepare(
+          `WITH RECURSIVE candidates(number) AS (
+        SELECT 1030 UNION ALL SELECT number + 1 FROM candidates WHERE number < 1099
+      )
+      INSERT INTO accounting_accounts(id,account_number,name,account_type_id,normal_balance,cash_flow_classification)
+      SELECT ?,CAST(number AS TEXT),?,'type_asset','debit','operating' FROM candidates
+      WHERE NOT EXISTS (SELECT 1 FROM accounting_accounts WHERE CAST(account_number AS INTEGER)=number)
+      ORDER BY number LIMIT 1`
+        )
+        .bind(ledgerAccountId, name)
+    );
+  } else {
+    const account = await first(
+      db,
+      `SELECT a.id FROM accounting_accounts a JOIN accounting_account_types t ON t.id=a.account_type_id WHERE a.id=? AND a.is_active=1 AND a.archived_at IS NULL AND a.is_posting_account=1 AND t.category='asset'`,
+      ledgerAccountId
+    );
+    if (!account) throw new ValidationError('Choose an active asset account that can receive deposits.');
+    if (await first(db, 'SELECT id FROM accounting_bank_accounts WHERE account_id=?', ledgerAccountId))
+      throw new ValidationError('This ledger account is already linked to a bank account. Choose a different account.');
+  }
   if (input.isDefault)
-    await run(db, "UPDATE accounting_bank_accounts SET is_default=0,updated_at=datetime('now') WHERE is_default=1");
-  await run(
-    db,
-    `INSERT INTO accounting_bank_accounts(id,name,account_id,account_type,institution_name,masked_last4,currency,settlement_profile_id,stripe_external_account_id,is_default) VALUES(?,?,?,?,?,?,?,?,?,?)`,
-    accountId,
-    text(input.name),
-    input.ledgerAccountId,
-    input.accountType || 'checking',
-    text(input.institutionName) || null,
-    last4 || null,
-    text(input.currency || 'USD').toUpperCase(),
-    text(input.settlementProfileId) || null,
-    text(input.stripeExternalAccountId) || null,
-    Number(Boolean(input.isDefault))
+    statements.push(
+      db.prepare("UPDATE accounting_bank_accounts SET is_default=0,updated_at=datetime('now') WHERE is_default=1")
+    );
+  statements.push(
+    db
+      .prepare(
+        `INSERT INTO accounting_bank_accounts(id,name,account_id,account_type,institution_name,masked_last4,currency,settlement_profile_id,stripe_external_account_id,is_default) VALUES(?,?,?,?,?,?,?,?,?,?)`
+      )
+      .bind(
+        accountId,
+        name,
+        ledgerAccountId,
+        accountType,
+        institution || null,
+        last4 || null,
+        text(input.currency || 'USD').toUpperCase(),
+        text(input.settlementProfileId) || null,
+        text(input.stripeExternalAccountId) || null,
+        Number(Boolean(input.isDefault))
+      )
   );
+  await db.batch(statements);
   return bankDto(await first(db, 'SELECT * FROM accounting_bank_accounts WHERE id=?', accountId));
 }
 export async function updateBankAccount(
