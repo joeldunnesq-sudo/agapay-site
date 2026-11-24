@@ -29,7 +29,8 @@ function renderAccountingBankAccounts(pane: HTMLElement) {
     return;
   }
   const accounts = accountingData.bankAccounts;
-  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Bank accounts</h2><p>Add the checking or savings accounts your parish uses for deposits and statement reconciliation.</p></div><button type="button" class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button><button type="button" class="acct-refresh" onclick="showAccountingBankTransferForm()">Record a transfer</button></div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${accounts.map((account) => `<article class="acct-budget-card"><div><span>${escapeHtml((account.accountType || 'Bank account').replaceAll('_', ' '))}</span><h3>${escapeHtml(account.name)}</h3><p>${escapeHtml(account.institutionName || '')}${account.maskedLast4 ? ` · •••• ${escapeHtml(account.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(account.id)}')">Edit bank account</button></div></article>`).join('')}</div></section>`;
+  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Bank accounts</h2><p>Add the checking or savings accounts your parish uses for deposits and statement reconciliation.</p></div><button type="button" class="acct-primary" onclick="showAccountingBankAccountForm()">Add bank account</button><button type="button" class="acct-refresh" onclick="showAccountingBankTransferForm()">Record a transfer</button></div><div id="accountingPhaseEForm"></div><div class="acct-card-grid">${accounts.map((account) => `<article class="acct-budget-card"><div><span>${escapeHtml((account.accountType || 'Bank account').replaceAll('_', ' '))}</span><h3>${escapeHtml(account.name)}</h3><p>${escapeHtml(account.institutionName || '')}${account.maskedLast4 ? ` · •••• ${escapeHtml(account.maskedLast4)}` : ''}</p></div><div class="acct-row-actions"><button onclick="editAccountingBankAccount('${escapeAttr(account.id)}')">Edit bank account</button></div></article>`).join('')}</div></section><section class="acct-card"><h2>Transfer history</h2><div id="accountingTransferHistory"></div></section>`;
+  void loadAccountingTransferHistory();
 }
 
 function renderAccountingBanking(pane: HTMLElement) {
@@ -183,6 +184,53 @@ function showAccountingBankAccountForm() {
   holder.querySelector<HTMLInputElement>('[name="name"]')?.focus();
 }
 
+async function loadAccountingTransferHistory(offset = 0) {
+  const holder = document.getElementById('accountingTransferHistory');
+  if (!holder) return;
+  if (!offset) holder.replaceChildren();
+  holder.querySelector('[data-transfer-more]')?.remove();
+  let page = holder.querySelector<HTMLElement>('[data-transfer-offset="' + offset + '"]');
+  if (!page) {
+    page = document.createElement('div');
+    page.dataset.transferOffset = String(offset);
+    holder.append(page);
+  }
+  page.innerHTML = '<p role="status">Loading transfers…</p>';
+  try {
+    const response = await fetch(accountingApi('/bank/transfers?offset=' + offset), { headers: authHeaders() });
+    if (!response.ok) throw new Error('Transfer history unavailable');
+    const { transfers, nextOffset } = (await response.json()) as {
+      transfers: Array<{
+        date: string;
+        fromAccount: string;
+        toAccount: string;
+        amount: number;
+        fund: string;
+        description: string;
+        status: string;
+      }>;
+      nextOffset: number | null;
+    };
+    if (!page.isConnected) return;
+    const rows = transfers
+      .map(
+        (transfer) =>
+          `<tr><td>${accountingDate(transfer.date)}</td><td>${escapeHtml(transfer.fromAccount)}</td><td>${escapeHtml(transfer.toAccount)}</td><td>${accountingMoney(transfer.amount)}</td><td>${escapeHtml(transfer.fund || '')}</td><td>${escapeHtml(transfer.description)}${transfer.status === 'reversed' ? ' · Reversed' : ''}</td></tr>`
+      )
+      .join('');
+    page.innerHTML = rows
+      ? `<div class="acct-table-wrap"><table class="acct-table" aria-label="Bank transfers"><thead><tr><th>Date</th><th>From</th><th>To</th><th>Amount</th><th>Fund</th><th>Memo</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      : '<p>No transfers recorded in Banking yet.</p>';
+    if (nextOffset !== null)
+      page.insertAdjacentHTML(
+        'beforeend',
+        `<button type="button" class="acct-refresh" data-transfer-more onclick="loadAccountingTransferHistory(${Number(nextOffset)})">Show older transfers</button>`
+      );
+  } catch {
+    page.innerHTML = `<p role="status">Could not load transfer history.</p><button type="button" class="acct-refresh" data-transfer-more onclick="loadAccountingTransferHistory(${offset})">Retry</button>`;
+  }
+}
+
 function showAccountingBankTransferForm() {
   const holder = document.getElementById('accountingPhaseEForm');
   if (!holder) return;
@@ -249,6 +297,7 @@ async function submitAccountingBankTransfer(event: AccountingFormEvent) {
     if (holder)
       holder.innerHTML =
         '<p role="status">Transfer recorded. It will appear in both bank accounts for reconciliation.</p>';
+    void loadAccountingTransferHistory();
   } catch {
     status.textContent = 'Could not confirm the transfer. Submit these same details again to check or complete it.';
   } finally {

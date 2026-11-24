@@ -78,3 +78,14 @@ for (const [reconciliationId, netEffect] of [[reopened.id, -1300], [savingsSessi
 const transferAccounts = s.prepare('SELECT account_id, fund_id FROM accounting_journal_lines WHERE journal_entry_id=? ORDER BY line_number').all(transferEntry.id);
 assert.deepEqual(transferAccounts.map((line) => [line.account_id, line.fund_id]), [[savingsBank.ledgerAccountId, 'fund_general'], [bank.ledgerAccountId, 'fund_general']]);
 console.log('PASS - a later transfer moves cash without adding income, remains in its fund, and can be retried without double posting');
+
+const { listBankTransfers } = await import('../src/accounting/index.js');
+const history = await listBankTransfers(db, { ...actor, capabilities: ['accounting.bank_accounts.view'] }, 0);
+assert.deepEqual(history.transfers.map(({ id, date, fromAccount, toAccount, amount, status }) =>
+  [id, date, fromAccount, toAccount, amount, status]),
+  [[transferEntry.id, '2026-07-24', 'Operating Checking', 'Parish Savings', 1300, 'posted']]);
+assert.equal(history.nextOffset, null);
+assert.deepEqual((await listBankTransfers(db, actor, 25)).transfers, []);
+await assert.rejects(() => listBankTransfers(db, { ...actor, capabilities: [] }, 0), /capability/);
+await assert.rejects(() => listBankTransfers(db, actor, -1), /Invalid transfer history page/);
+console.log('PASS - Banking history shows each saved transfer once with its sending and receiving accounts');

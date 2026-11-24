@@ -499,6 +499,35 @@ async function activeBankDestinations(db: PortabilityDatabase, firstAccountId: s
   return accounts;
 }
 
+export async function listBankTransfers(db: PortabilityDatabase, actor: LedgerServiceActor, offset: number) {
+  requireCapability(actor, 'accounting.bank_accounts.view');
+  if (!Number.isSafeInteger(offset) || offset < 0) throw new ValidationError('Invalid transfer history page.');
+  const pageSize = 25;
+  const transfers = await all(
+    db,
+    `SELECT e.id,e.entry_date AS date,e.description,e.status,e.currency,
+       COALESCE(sender.name,senderLedger.name) AS fromAccount,
+       COALESCE(receiver.name,receiverLedger.name) AS toAccount,
+       outgoing.credit_amount AS amount,f.name AS fund
+     FROM accounting_journal_entries e
+     JOIN accounting_journal_lines outgoing ON outgoing.journal_entry_id=e.id AND outgoing.credit_amount>0
+     JOIN accounting_journal_lines incoming ON incoming.journal_entry_id=e.id AND incoming.debit_amount>0
+     JOIN accounting_accounts senderLedger ON senderLedger.id=outgoing.account_id
+     JOIN accounting_accounts receiverLedger ON receiverLedger.id=incoming.account_id
+     LEFT JOIN accounting_bank_accounts sender ON sender.account_id=outgoing.account_id
+     LEFT JOIN accounting_bank_accounts receiver ON receiver.account_id=incoming.account_id
+     LEFT JOIN accounting_funds f ON f.id=outgoing.fund_id
+     WHERE e.source_type='bank_transfer' AND e.status IN ('posted','reversed')
+     ORDER BY e.entry_date DESC,e.id DESC LIMIT ? OFFSET ?`,
+    pageSize + 1,
+    offset
+  );
+  return {
+    transfers: transfers.slice(0, pageSize),
+    nextOffset: transfers.length > pageSize ? offset + pageSize : null,
+  };
+}
+
 export async function recordBankTransfer(
   db: PortabilityDatabase,
   { actor, input }: { actor: LedgerServiceActor; input: Record<string, unknown> }
