@@ -74,6 +74,7 @@ try {
           }
           switchTab('stewardship');
         });
+        await page.locator('.sw-section-nav [data-sw-view="outside"]').click();
         await page.getByRole('button', { name: 'Record a donor’s gift', exact: true }).click();
       } else {
         await page.locator('.mobile-tab-link[data-nav-tab="givers"]').click();
@@ -110,6 +111,7 @@ try {
       await page.getByText('Revision 2 · corrected', { exact: true }).waitFor();
       if (width === 1280) {
         await page.locator('#nav-stewardship').click();
+        await page.locator('.sw-section-nav [data-sw-view="outside"]').click();
         await page.getByRole('button', { name: 'Record a collection total', exact: true }).click();
         const batch = page.locator('.sw-income-form');
         await batch.locator('[name="amountCents"]').fill('250.25');

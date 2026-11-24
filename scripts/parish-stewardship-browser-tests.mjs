@@ -153,11 +153,11 @@ async function scenario(name, run, overrides = {}, dashboardResponse = () => ({ 
 }
 
 async function settled(page) {
-  await page.locator('#stewardshipRecurringPane .sw-recurring-kpi-grid').waitFor();
-  await page.locator('#givingMetricsPane .sw-kpi-grid').waitFor();
-  await page.locator('#stewardshipFinancialsPane .sw-fin-kpi-grid').waitFor();
+  await page.locator('#stewardshipRecurringPane .sw-recurring-kpi-grid').waitFor({ state: 'attached' });
+  await page.locator('#givingMetricsPane .sw-kpi-grid').waitFor({ state: 'attached' });
+  await page.locator('#stewardshipFinancialsPane .sw-fin-kpi-grid').waitFor({ state: 'attached' });
   await page.locator('#swOutsideTitle').waitFor({ state: 'attached' });
-  await page.locator('#diocesanStatisticsPane .sw-report-overview').waitFor();
+  await page.locator('#diocesanStatisticsPane .sw-report-overview').waitFor({ state: 'attached' });
 }
 
 function body(request, method = 'POST') {
@@ -173,6 +173,7 @@ try {
     'annual statistical totals save, reload, clear, and stay scoped to the year',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       const card = page.locator('#diocesanStatisticsCard');
       await card.getByLabel('Baptisms', { exact: true }).fill('12');
       await card.getByLabel('Funerals', { exact: true }).fill('0');
@@ -224,6 +225,7 @@ try {
   await scenario('financial report Back preserves the open Stewardship Health dashboard', async (page) => {
     await settled(page);
     const month = `${year - 1}-07`;
+    await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
     await page.locator('#financialReportMonth').fill(month);
     await page.locator('#financialReportMonth').dispatchEvent('change');
     const dashboardUrl = page.url();
@@ -238,6 +240,7 @@ try {
       await route.fulfill({ contentType: 'text/html', body: await response.text() });
     });
     const opened = page.waitForEvent('popup');
+    await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
     await page.getByRole('button', { name: 'Generate Monthly Financial Report', exact: true }).click();
     const report = await opened;
     await report.getByRole('heading', { name: 'Monthly Financial Report', exact: true }).waitFor();
@@ -261,11 +264,13 @@ try {
     'weekly attendance trend, missing Sundays, staff correction, delegation, and responsive layout',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       const diocesanCard = page.locator('#diocesanStatisticsCard');
       await diocesanCard.getByText('Annual Statistical Report', { exact: true }).waitFor();
       assert.ok((await diocesanCard.textContent()).includes('No attendance reported'));
       assert.ok((await diocesanCard.textContent()).includes('6 catechumens made'));
       assert.ok((await diocesanCard.textContent()).includes('7'));
+      await page.locator('.sw-section-nav [data-sw-view="attendance"]').click();
       const card = page.locator('.sw-attendance-card');
       await card.getByRole('heading', { name: 'Weekly attendance', exact: true }).waitFor();
       assert.ok(
@@ -278,11 +283,7 @@ try {
       );
       assert.equal(await card.locator('.sw-attendance-latest').count(), 1);
       assert.ok((await card.textContent()).includes('45 of 52 Sundays'));
-      assert.ok(
-        (await card.boundingBox()).y <
-          (await page.locator('#tab-stewardship > .sw-reports-intelligence').boundingBox()).y,
-        'attendance belongs before annual reports'
-      );
+      assert.equal(await page.locator('[data-sw-panel="reports"]').isVisible(), false);
 
       await card.locator('#attendanceWeekOf').fill('2026-08-30');
       await card.locator('#attendanceHeadcount').fill('184');
@@ -347,6 +348,7 @@ try {
     'visual reports show budget pace, fund shares, and responsive charts',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       const reports = page.locator('#tab-stewardship .sw-reports-intelligence');
       assert.equal(await reports.locator('.sw-report-collected > strong').textContent(), '$162,000');
       assert.ok((await reports.locator('.sw-report-pace-note').textContent()).includes('$18,000'));
@@ -398,6 +400,7 @@ try {
     'missing goals and fund failures stay distinct from measured zero',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       const reports = page.locator('#tab-stewardship .sw-reports-intelligence');
       assert.ok((await reports.textContent()).includes('No annual pledge goal yet'));
       assert.ok((await reports.textContent()).includes('Fund breakdown is temporarily unavailable'));
@@ -423,7 +426,7 @@ try {
     'Giving intelligence charts, accessible values, health disclosure, and responsive layout',
     async (page) => {
       await settled(page);
-      await page.getByRole('heading', { name: 'Giving intelligence', exact: true }).waitFor();
+      await page.getByRole('heading', { name: 'Stewardship Health', exact: true }).waitFor();
       assert.equal(
         await page
           .locator('#stewardshipDistributionPane .sw-distribution-bar strong')
@@ -447,6 +450,7 @@ try {
       await page.locator('.sw-health-details summary').click();
       assert.equal(await page.locator('.sw-health-chips').isVisible(), true);
       await page.locator('.sw-health-details summary').click();
+      await page.locator('.sw-section-nav [data-sw-view="giving"]').click();
       await mkdir('artifacts/giving-intelligence', { recursive: true });
       for (const width of [1440, 768, 390]) {
         await page.setViewportSize({ width, height: 1100 });
@@ -455,17 +459,19 @@ try {
         if (width === 1440) assert.equal(distribution.y, retention.y, 'desktop charts should be side by side');
         if (width === 390) assert.ok(retention.y > distribution.y, 'mobile charts should stack');
         assert.equal(
-          await page.locator('.sw-suite-tool-grid--health').evaluate((el) => el.scrollWidth <= el.clientWidth),
+          await page
+            .locator('[data-sw-panel="giving"] .sw-suite-tool-grid--health')
+            .evaluate((el) => el.scrollWidth <= el.clientWidth),
           true,
           'chart grid must not overflow'
         );
         await page
-          .locator('.sw-suite-tool-grid--health')
+          .locator('[data-sw-panel="giving"] .sw-suite-tool-grid--health')
           .screenshot({ path: `artifacts/giving-intelligence/charts-${width}.png` });
         if (width === 1440) {
           await page.locator('.sw-intelligence-hero').scrollIntoViewIfNeeded();
           const hero = await page.locator('.sw-intelligence-hero').boundingBox();
-          const grid = await page.locator('.sw-suite-tool-grid--health').boundingBox();
+          const grid = await page.locator('[data-sw-panel="giving"] .sw-suite-tool-grid--health').boundingBox();
           await page.screenshot({
             path: 'artifacts/giving-intelligence/preview.png',
             fullPage: true,
@@ -526,8 +532,10 @@ try {
     'Giving intelligence failure retry and empty history do not imply zero retention',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="giving"]').click();
       await page.locator('#stewardshipDistributionPane').getByRole('button', { name: 'Try again' }).waitFor();
       failInsights = false;
+      await page.locator('.sw-section-nav [data-sw-view="giving"]').click();
       await page.locator('#stewardshipDistributionPane').getByRole('button', { name: 'Try again' }).click();
       await page
         .locator('#stewardshipDistributionPane')
@@ -587,6 +595,7 @@ try {
           'Manual financial snapshots remain available'
         )
       );
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       await page.locator('#financialsYearSelect').selectOption(String(year - 1));
       await page
         .locator('#stewardshipFinancialsPane')
@@ -630,6 +639,7 @@ try {
           notes: '',
         },
       ]);
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       await page.locator('#financialReportMonth').fill(`${year - 1}-12`);
       await page.locator('#financialReportMonth').dispatchEvent('change');
       assert.equal(await page.locator('#stewardshipReportMonth').inputValue(), `${year - 1}-12`);
@@ -655,6 +665,7 @@ try {
     'outside giving validation, retry, refreshed listing, and deletion',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="outside"]').click();
       await page.getByRole('button', { name: /Record a collection total/i }).click();
       const form = page.locator('.sw-income-form');
       assert.equal(await form.locator('[name="fundId"]').inputValue(), '');
@@ -712,6 +723,7 @@ try {
     'meeting defaults, repeaters, failed draft save, retry, edit, ready status, and preview links',
     async (page) => {
       await settled(page);
+      await page.locator('.sw-section-nav [data-sw-view="meetings"]').click();
       await page.getByRole('button', { name: 'New packet', exact: true }).click();
       const form = page.locator('#stewardshipMeetingForm');
       assert.equal(await form.locator('[name="jurisdiction"]').inputValue(), entitled.jurisdiction);
@@ -777,6 +789,7 @@ try {
       failMetrics = false;
       await page.evaluate((y) => loadGivingMetricsPanel(y), year - 1);
       assert.equal(await page.locator('#givingMetricsPane .sw-kpi-grid').count(), 1);
+      await page.locator('.sw-section-nav [data-sw-view="reports"]').click();
       await page.locator('#stewardshipReportMonth').fill(`${year - 1}-07`);
       await page.locator('#stewardshipReportMonth').dispatchEvent('change');
       assert.equal(await page.locator('#financialReportMonth').inputValue(), `${year - 1}-07`);
