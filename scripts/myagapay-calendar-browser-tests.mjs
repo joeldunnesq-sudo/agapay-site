@@ -39,12 +39,16 @@ try {
   let expireSession = false;
   let directoryEnabled = false;
   let blockedAccess = null;
+  const blockedMemberRequests = [];
   let submittedReply;
   // All traffic is fulfilled locally, including API and external resources.
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'agapay.test') return route.fulfill({ status: 204, body: '' });
     if (url.pathname.startsWith('/api/')) {
+      if (blockedAccess && ['/api/donor/feed', '/api/donor/groups'].includes(url.pathname)) {
+        blockedMemberRequests.push(url.pathname);
+      }
       let payload = {};
       if (url.pathname === '/api/donor/dashboard') {
         if (expireSession) return route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
@@ -233,6 +237,7 @@ try {
   await page.getByRole('button', { name: 'Send reply' }).click();
   await page.getByText(/Your request is in the parish’s Directory review queue/).waitFor();
   assert.deepEqual(submittedReply, { message: 'Last year.' });
+  assert.deepEqual(blockedMemberRequests, [], 'Member-only requests stay gated while the calendar loads');
 
   expireSession = true;
   await page.reload();
