@@ -3270,8 +3270,6 @@ const onboardingPhases = [
   ['subscription', 'Configure giving'],
 ];
 let activeTab = 'overview';
-let adminMfaStatus = null;
-let adminMfaBusy = false;
 let auditLogLoadedOnce = false;
 let auditLogCursor = '';
 let auditLogOptionsPopulated = false;

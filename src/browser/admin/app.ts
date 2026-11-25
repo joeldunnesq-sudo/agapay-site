@@ -111,7 +111,7 @@ declare const createSubscriptionCheckout: AdminAppPart7['createSubscriptionCheck
 declare const refreshStripeStatus: AdminAppPart7['refreshStripeStatus'];
 declare const toggleMobileMore: AdminAppPart7['toggleMobileMore'];
 declare const switchTab: AdminAppPart8['switchTab'];
-import type { AdminAppPart8, AdminMfaStatus } from './app-accounting-and-audit.js';
+import type { AdminAppPart8 } from './app-accounting-and-audit.js';
 declare const populateAdminAccountingParishes: AdminAppPart8['populateAdminAccountingParishes'];
 declare const loadAdminAccountingTargets: AdminAppPart8['loadAdminAccountingTargets'];
 declare const selectedAdminAccountingTarget: AdminAppPart8['selectedAdminAccountingTarget'];
@@ -264,8 +264,6 @@ const onboardingPhases = [
 // ── TAB NAVIGATION ────────────────────────────────────────────────────
 // eslint-disable-next-line prefer-const -- Preserve the writable classic binding used by composed helpers.
 let activeTab = 'overview';
-let adminMfaStatus: AdminMfaStatus | null = null;
-let adminMfaBusy = false;
 
 // ── AUDIT LOG (Phase 6) ──────────────────────────────────────────────
 // eslint-disable-next-line prefer-const -- Preserve the writable classic binding used by composed helpers.
@@ -480,8 +478,6 @@ export type AdminAppBindings = {
   isLoadingRegistrations: boolean;
   loadRegistrations: typeof loadRegistrations;
   activeTab: typeof activeTab;
-  adminMfaStatus: typeof adminMfaStatus;
-  adminMfaBusy: typeof adminMfaBusy;
   setStatus: typeof setStatus;
   switchTab: typeof switchTab;
   authHeaders: typeof authHeaders;
