@@ -128,8 +128,14 @@ try {
   assert.match(await page.locator('#koinoniaChurchDate').textContent(), /September 1.*Julian/);
   assert.equal(await page.locator('#koinoniaYearProgress').count(), 0);
   assert.equal(await page.locator('#donorSaintModal').isVisible(), false);
-  assert.equal(await page.locator('.parish-life-ministry-tile strong').evaluate(el => getComputedStyle(el).color), 'rgb(24, 53, 75)');
-  assert.equal(await page.locator('.parish-life-community-inbox').evaluate(el => getComputedStyle(el).borderTopWidth), '0px');
+  assert.equal(
+    await page.locator('.parish-life-ministry-tile strong').evaluate((el) => getComputedStyle(el).color),
+    'rgb(24, 53, 75)'
+  );
+  assert.equal(
+    await page.locator('.parish-life-community-inbox').evaluate((el) => getComputedStyle(el).borderTopWidth),
+    '0px'
+  );
   await page.getByRole('button', { name: /commemorated today/ }).click();
   await page.locator('#donorSaintModal[open]').waitFor();
   await page.keyboard.press('Escape');
@@ -150,7 +156,10 @@ try {
   }
   blocked = true;
   await page.reload();
-  await page.getByText('Verify your household.', { exact: true }).waitFor();
+  await page
+    .getByText('You need to be an approved member of this parish to access Koinonia.', { exact: true })
+    .waitFor();
+  await page.getByRole('button', { name: 'Request parish approval' }).waitFor();
   assert.equal(await page.locator('#koinoniaShortcuts').isVisible(), false);
   assert.deepEqual(errors, []);
   console.log(
