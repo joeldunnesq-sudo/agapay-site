@@ -216,7 +216,6 @@ assert.match(dashboard, /data-nav-tab="accounting"/, 'Accounting must be reachab
 for (const view of [
   'overview',
   'ledger',
-  'funds',
   'payables',
   'banking',
   'reports',
@@ -226,6 +225,9 @@ for (const view of [
   'settings',
 ])
   assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
+assert.doesNotMatch(dashboard, /data-accounting-view="funds"/, 'Funds should be part of Overview');
+assert.match(app, /renderAccountingOverviewDirectory\(pane,/);
+assert.match(app, /filterAccountingOverviewReports\(this\)/);
 for (const nestedView of ['journals', 'integrations'])
   assert.ok(app.includes(`'${nestedView}'`), `missing nested Accounting UI view ${nestedView}`);
 for (const canonicalFeature of [
@@ -481,17 +483,17 @@ const fundsRenderer = app.slice(
   app.indexOf('function filterAccountingFunds')
 );
 assert.ok(
-  fundsRenderer.indexOf('Fund balances at a glance') < fundsRenderer.indexOf('Fund directory'),
-  'fund balances at a glance should be the first Funds-tab section'
+  fundsRenderer.indexOf('Fund balances') < fundsRenderer.indexOf('Fund directory'),
+  'fund balances at a glance should lead the funds information'
 );
 assert.ok(
   fundsRenderer.indexOf('Chart of accounts') < fundsRenderer.indexOf('Fund directory'),
-  'fund directory should appear below the chart of accounts'
+  'fund renderer should provide both chart of accounts and fund directory sections'
 );
 assert.ok(
   fundsRenderer.includes('class="acct-fund-workspace"') &&
     fundsRenderer.indexOf('class="acct-fund-summary"') < fundsRenderer.indexOf('class="acct-fund-accounts"'),
-  'fund balances and chart of accounts should share one workspace card'
+  'fund renderer should provide fund balances and chart of accounts'
 );
 assert.ok(
   fundsRenderer.includes('directoryFunds = accountingShowInactiveFunds ? accountingFundCatalog : active') &&

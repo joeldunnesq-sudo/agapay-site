@@ -1226,7 +1226,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(loadAccountingFunds|toggleAccountingFundAccountSection|renderAccountingFunds|toggleAccountingInactiveFunds|filterAccountingFunds|showAccountingExpenseAccountForm|showAccountingAccountForm|saveAccountingExpenseAccount|beginAccountingAccountLifecycle|cancelAccountingLifecycle|changeAccountingAccountLifecycle)$',
+            '^(toggleAccountingFundAccountSection|renderAccountingFunds|toggleAccountingInactiveFunds|filterAccountingFunds|showAccountingExpenseAccountForm|showAccountingAccountForm|saveAccountingExpenseAccount|beginAccountingAccountLifecycle|cancelAccountingLifecycle|changeAccountingAccountLifecycle)$',
         },
       ],
       '@typescript-eslint/no-unused-expressions': [
@@ -1708,7 +1708,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(accountingSimpleRevenueOptions|accountingSimpleFundOptions|accountingSimpleIncomeForm|accountingIncomeSplitRow|enableAccountingIncomeSplits|disableAccountingIncomeSplits|addAccountingIncomeSplit|removeAccountingIncomeSplit|collectAccountingIncomeSplits|updateAccountingSplitDepositBalance|accountingSimpleActivityFeed|accountingInKindDebitOptions|accountingInKindGiftForm|accountingOverviewHero|accountingOverviewFundSummary|accountingOverviewFundRank|renderAccountingOverview|accountingRegisterModel|accountingRegisterEntryForm|accountingRecurringPanel|accountingPledgeAccountSetting|submitAccountingSimpleIncome|submitAccountingInKindGift|renderAccountingTreasurerHome|openAccountingHomeReport|openAccountingHomeTransfer|openAccountingHomeBank|openAccountingGivingReconciliation|accountingPaidExpenseForm|renderAccountingCouncilDesk|prepareAccountingCouncilDesk|printAccountingCouncilDesk)$',
+            '^(accountingSimpleRevenueOptions|accountingSimpleFundOptions|accountingSimpleIncomeForm|accountingIncomeSplitRow|enableAccountingIncomeSplits|disableAccountingIncomeSplits|addAccountingIncomeSplit|removeAccountingIncomeSplit|collectAccountingIncomeSplits|updateAccountingSplitDepositBalance|accountingSimpleActivityFeed|accountingInKindDebitOptions|accountingInKindGiftForm|accountingOverviewHero|accountingOverviewFundSummary|accountingOverviewFundRank|renderAccountingOverview|accountingRegisterModel|accountingRegisterEntryForm|accountingRecurringPanel|accountingPledgeAccountSetting|submitAccountingSimpleIncome|submitAccountingInKindGift|renderAccountingTreasurerHome|openAccountingHomeReport|openAccountingHomeReportLibrary|openAccountingHomeTransfer|openAccountingHomeBank|openAccountingGivingReconciliation|accountingPaidExpenseForm|renderAccountingCouncilDesk|prepareAccountingCouncilDesk|printAccountingCouncilDesk)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },
@@ -1752,7 +1752,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(accountingTransactionPage|accountingTransactionSearch|accountingTransactionJournal|accountingAvailableBudgets|ACCOUNTING_REPORT_LIBRARY|accountingReportDateRange|accountingReportPeriod|accountingReportLedgerRows|accountingTabularReport|renderAccountingReportLibrary|filterAccountingReportLibrary|openAccountingReport|loadAccountingDepthReport|toggleAccountingDepthComparative|loadAccountingBudgetLibraryReport|renderAccountingReports|openAccountingIncomeReport|accountingIncomeSummary|setAccountingReportView|downloadAccountingReport|printAccountingReport|downloadAccountingFile|downloadAccountingLedger|printAccountingLedger|accountingReportDateForm|applyAccountingReportDates|renderAccountingExpenses)$',
+            '^(accountingTransactionPage|accountingTransactionSearch|accountingTransactionJournal|accountingAvailableBudgets|ACCOUNTING_REPORT_LIBRARY|accountingReportDateRange|accountingReportPeriod|accountingReportLedgerRows|accountingTabularReport|renderAccountingOverviewReports|filterAccountingOverviewReports|renderAccountingReportLibrary|filterAccountingReportLibrary|openAccountingReport|loadAccountingDepthReport|toggleAccountingDepthComparative|loadAccountingBudgetLibraryReport|renderAccountingReports|openAccountingIncomeReport|accountingIncomeSummary|setAccountingReportView|downloadAccountingReport|printAccountingReport|downloadAccountingFile|downloadAccountingLedger|printAccountingLedger|accountingReportDateForm|applyAccountingReportDates|renderAccountingExpenses)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },

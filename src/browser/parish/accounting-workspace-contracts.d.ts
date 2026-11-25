@@ -83,6 +83,7 @@ interface AccountingWorkspaceResponse {
   status?: { operational?: boolean };
   accounts?: AccountingBankAccount[] & AccountingAccount[];
   accountCatalog?: AccountingAccount[];
+  fundCatalog?: AccountingFund[];
   funds?: AccountingFund[];
   entries?: AccountingJournalSummary[];
   rows?: AccountingLedgerEntry[];
