@@ -39,7 +39,12 @@ interface Window {
     isSupported(): boolean;
     runFlow(
       input: Record<string, unknown>,
-      options?: { displayName?: string; enrollmentMethod?: 'totp'; required?: boolean }
+      options?: {
+        displayName?: string;
+        enrollmentMethod?: 'totp' | 'passkey';
+        required?: boolean;
+        headers?: Record<string, string>;
+      }
     ): Promise<ParishMfaResult>;
   };
   addParishAuthenticator(button: HTMLButtonElement): Promise<void>;

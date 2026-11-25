@@ -25,7 +25,8 @@ interface ActiveMfaFlow extends MfaPayload {
   methods: string[];
   required: boolean;
   displayName: string;
-  enrollmentMethod?: 'totp';
+  enrollmentMethod?: 'totp' | 'passkey';
+  headers?: Record<string, string>;
   verifying?: boolean;
   resolve(payload: MfaPayload): void;
   reject(error: Error): void;
@@ -195,7 +196,7 @@ import type {} from '../native-contracts.js';
     const flow = activeFlow!;
     activeFlow = null;
     closeDialog();
-    flow?.reject(new Error('Authenticator setup cancelled.'));
+    flow?.reject(new Error('Setup canceled.'));
   }
 
   function methodButtons(flow: ActiveMfaFlow) {
@@ -204,7 +205,7 @@ import type {} from '../native-contracts.js';
       window.PublicKeyCredential &&
       navigator.credentials &&
       (flow.enrollmentRequired || flow.methods.includes('passkey'));
-    const totp = flow.enrollmentRequired || flow.methods.includes('totp');
+    const totp = flow.enrollmentMethod !== 'passkey' && (flow.enrollmentRequired || flow.methods.includes('totp'));
     return `<div class="agapay-mfa-methods">
       ${passkey ? '<button type="button" class="agapay-mfa-primary" data-mfa-action="passkey">Use a passkey<span>Face ID, fingerprint, device PIN, or security key</span></button>' : ''}
       ${totp ? '<button type="button" data-mfa-action="totp">Use an authenticator app<span>Enter a six-digit code</span></button>' : ''}
@@ -214,8 +215,8 @@ import type {} from '../native-contracts.js';
 
   function renderChoice(flow: ActiveMfaFlow) {
     setBody(`<div class="agapay-mfa-eyebrow">Protected administrator access</div>
-      <h2 id="agapayMfaTitle">${flow.enrollmentMethod === 'totp' ? 'Add an authenticator app' : flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
-      <p>${flow.enrollmentMethod === 'totp' ? 'Add a six-digit authenticator code while keeping your existing sign-in methods.' : flow.enrollmentRequired ? 'Administrator accounts require multi-factor authentication. A passkey is the fastest and strongest option.' : 'Use a registered second factor to finish signing in or approve this sensitive action.'}</p>
+      <h2 id="agapayMfaTitle">${flow.enrollmentMethod === 'passkey' ? 'Add a passkey' : flow.enrollmentMethod === 'totp' ? 'Add an authenticator app' : flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
+      <p>${flow.enrollmentMethod === 'passkey' ? 'Follow your device prompt to add another way to verify your identity.' : flow.enrollmentMethod === 'totp' ? 'Add a six-digit authenticator code while keeping your existing sign-in methods.' : flow.enrollmentRequired ? 'Administrator accounts require multi-factor authentication. A passkey is the fastest and strongest option.' : 'Use a registered second factor to finish signing in or approve this sensitive action.'}</p>
       ${methodButtons(flow)}
       ${!flow.required ? '<button type="button" id="agapayMfaCancel">Cancel setup</button>' : ''}
       <div id="agapayMfaMessage" class="agapay-mfa-message"></div>`);
@@ -227,7 +228,11 @@ import type {} from '../native-contracts.js';
   }
 
   async function chooseMethod(method: string | undefined) {
-    if (!activeFlow) return;
+    const flow = activeFlow;
+    if (!flow) return;
+    document.querySelectorAll<HTMLButtonElement>('[data-mfa-action]').forEach((button) => {
+      button.disabled = true;
+    });
     setMessage('Preparing secure verification…');
     try {
       if (method === 'passkey') {
@@ -242,26 +247,39 @@ import type {} from '../native-contracts.js';
       }
       renderCodeEntry('recovery');
     } catch (error) {
-      if (!activeFlow) return;
-      renderChoice(activeFlow!);
+      if (activeFlow !== flow) return;
+      flow.verifying = false;
+      renderChoice(flow);
       setMessage((error as Error).message, 'error');
     }
   }
 
   async function enrollPasskey() {
-    const started = await api('/api/mfa/enrollment/options', {
-      pendingToken: activeFlow!.pendingToken,
-      method: 'passkey',
-      displayName: activeFlow!.displayName || 'AGAPAY administrator',
-      credentialLabel: 'Primary passkey',
-    });
+    const flow = activeFlow!;
+    const started = await api(
+      '/api/mfa/enrollment/options',
+      {
+        pendingToken: activeFlow!.pendingToken,
+        method: 'passkey',
+        displayName: activeFlow!.displayName || 'AGAPAY administrator',
+        credentialLabel: flow.enrollmentMethod ? 'Passkey' : 'Primary passkey',
+      },
+      flow.headers
+    );
+    if (activeFlow !== flow) return;
     const credential = await navigator.credentials.create({ publicKey: creationOptionsFromJson(started.options!) });
+    if (activeFlow !== flow) return;
     if (!credential) throw new Error('Passkey setup was cancelled.');
-    const completed = await api('/api/mfa/enrollment/verify', {
-      pendingToken: activeFlow!.pendingToken,
-      method: 'passkey',
-      credential: registrationToJson(credential as RegistrationCredential),
-    });
+    flow.verifying = true;
+    const completed = await api(
+      '/api/mfa/enrollment/verify',
+      {
+        pendingToken: activeFlow!.pendingToken,
+        method: 'passkey',
+        credential: registrationToJson(credential as RegistrationCredential),
+      },
+      flow.headers
+    );
     finishFlow(completed);
   }
 
@@ -281,11 +299,15 @@ import type {} from '../native-contracts.js';
 
   async function beginTotpEnrollment() {
     const flow = activeFlow;
-    const started = await api('/api/mfa/enrollment/options', {
-      pendingToken: activeFlow!.pendingToken,
-      method: 'totp',
-      displayName: activeFlow!.displayName || 'AGAPAY administrator',
-    });
+    const started = await api(
+      '/api/mfa/enrollment/options',
+      {
+        pendingToken: activeFlow!.pendingToken,
+        method: 'totp',
+        displayName: activeFlow!.displayName || 'AGAPAY administrator',
+      },
+      flow?.headers
+    );
     if (activeFlow !== flow) return;
     setBody(`<div class="agapay-mfa-eyebrow">Authenticator app</div>
       <h2 id="agapayMfaTitle">Add AGAPAY to your app</h2>
@@ -344,11 +366,15 @@ import type {} from '../native-contracts.js';
     activeFlow!.verifying = true;
     setMessage('Verifying…');
     try {
-      const completed = await api(enrollment ? '/api/mfa/enrollment/verify' : '/api/mfa/verify', {
-        pendingToken: activeFlow!.pendingToken,
-        method,
-        code,
-      });
+      const completed = await api(
+        enrollment ? '/api/mfa/enrollment/verify' : '/api/mfa/verify',
+        {
+          pendingToken: activeFlow!.pendingToken,
+          method,
+          code,
+        },
+        activeFlow!.headers
+      );
       finishFlow(completed);
     } catch (error) {
       setMessage((error as Error).message, 'error');
@@ -399,7 +425,12 @@ import type {} from '../native-contracts.js';
 
   function runFlow(
     flow: Record<string, unknown>,
-    options: { displayName?: string; enrollmentMethod?: 'totp'; required?: boolean } = {}
+    options: {
+      displayName?: string;
+      enrollmentMethod?: 'totp' | 'passkey';
+      required?: boolean;
+      headers?: Record<string, string>;
+    } = {}
   ) {
     if (!flow?.mfaRequired) return Promise.resolve(flow);
     if (activeFlow) return Promise.reject(new Error('Another security verification is already open.'));
@@ -409,6 +440,7 @@ import type {} from '../native-contracts.js';
         displayName: options.displayName || '',
         required: options.required !== false,
         enrollmentMethod: options.enrollmentMethod,
+        headers: options.headers,
         resolve,
         reject,
       };

@@ -444,6 +444,71 @@ await test("adding an authenticator requires the primary parish's fresh MFA and 
   assert.equal((await handleParishAuthenticatorSetup(request(fresh), env)).status, 409);
 });
 
+await test('admin settings adds an authenticator alongside a passkey with a verified session', async () => {
+  const { env, db } = makeD1Env();
+  db.exec(`INSERT INTO privileged_mfa_profiles (principal_type, principal_id) VALUES ('platform_admin', 'platform');
+    INSERT INTO privileged_webauthn_credentials
+      (credential_id, principal_type, principal_id, credential_public_key)
+    VALUES ('dGVzdC1wYXNza2V5', 'platform_admin', 'platform', 'dGVzdA');`);
+  const post = (path, body, token) =>
+    worker.fetch(
+      new Request(`https://agapay.app${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(body),
+      }),
+      env
+    );
+  const management = '/api/admin/mfa/management';
+  const options = '/api/mfa/enrollment/options';
+  const verify = '/api/mfa/enrollment/verify';
+  const verifiedAt = new Date().toISOString();
+  const admin = await issueAdminSession(env, 'Test Admin', { mfaVerifiedAt: verifiedAt });
+  const other = await issueAdminSession(env, 'Other Session', { mfaVerifiedAt: verifiedAt });
+  const stale = await issueAdminSession(env, 'Stale Admin', {
+    mfaVerifiedAt: new Date(Date.now() - 16 * 60_000).toISOString(),
+  });
+
+  assert.equal((await post(management, {})).status, 401);
+  assert.equal((await post(management, { method: 'totp' }, stale.token)).status, 428);
+  const started = await post(management, { method: 'totp' }, admin.token);
+  assert.equal(started.status, 200);
+  const { pendingToken } = await started.json();
+
+  assert.equal((await post(options, { pendingToken, method: 'totp' })).status, 400);
+  const setupResponse = await post(options, { pendingToken, method: 'totp' }, admin.token);
+  assert.equal(setupResponse.status, 200);
+  const setup = await setupResponse.json();
+  assert.deepEqual((await mfaStatus(env, 'platform_admin', 'platform')).methods, ['passkey']);
+  const profile = db.prepare('SELECT totp_secret_ciphertext FROM privileged_mfa_profiles').get();
+  assert.equal(profile.totp_secret_ciphertext, null);
+  const confirmation = { pendingToken, method: 'totp', code: currentTotp(setup.secret) };
+  assert.equal((await post(verify, confirmation, other.token)).status, 400);
+  assert.equal((await post('/api/mfa/verify', confirmation, admin.token)).status, 400);
+
+  const added = await post(verify, confirmation, admin.token);
+  assert.equal(added.status, 200);
+  const payload = await added.json();
+  assert.equal(payload.token, undefined);
+  assert.deepEqual(payload.status.methods, ['passkey', 'totp']);
+  assert.equal(db.prepare('SELECT action FROM audit_log').get().action, 'mfa.method_added');
+  assert.equal((await post(verify, confirmation, admin.token)).status, 400);
+
+  assert.equal((await post(management, { method: 'totp' }, admin.token)).status, 409);
+  const next = await (await post(management, { method: 'passkey' }, admin.token)).json();
+  const passkeyOptions = await post(options, { ...next, method: 'passkey' }, admin.token);
+  assert.equal(passkeyOptions.status, 200);
+  assert.equal((await passkeyOptions.json()).options.excludeCredentials[0].id, 'dGVzdC1wYXNza2V5');
+  const request = new Request('https://agapay.app/api/admin/session');
+  const signIn = await beginMfaAuthentication(env, request, {
+    principalType: 'platform_admin',
+    principalId: 'platform',
+  });
+  assert.deepEqual(signIn.methods, ['passkey', 'totp']);
+  assert.ok(signIn.passkeyOptions.challenge);
+  await verifyMfaAuthentication(env, request, signIn.pendingToken, { method: 'totp', code: currentTotp(setup.secret) });
+});
+
 await test('the Worker gate rejects legacy privileged sessions and steps up stale ones', async () => {
   const { env } = makeD1Env();
   const legacy = await issueAdminSession(env, 'Legacy Admin');

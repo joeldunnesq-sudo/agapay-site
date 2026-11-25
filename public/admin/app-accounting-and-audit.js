@@ -543,6 +543,76 @@ async function loadAuditLog(reset, btn) {
     }
   }
 }
+function renderAdminMfaMethods() {
+  const count = adminMfaStatus?.passkeys.length || 0;
+  const totpEnabled = adminMfaStatus?.totpEnabled;
+  document.getElementById('adminMfaMethods').textContent = adminMfaStatus
+    ? `${count} ${count === 1 ? 'passkey' : 'passkeys'} registered · Authenticator app ${totpEnabled ? 'set up' : 'available to set up'}`
+    : '';
+  const canAdd = adminMfaStatus?.enrolled && !adminMfaBusy;
+  document.getElementById('adminMfaAddPasskey').disabled = !canAdd || !window.AgapayMfa?.isSupported();
+  document.getElementById('adminMfaAddTotp').disabled = !canAdd || Boolean(totpEnabled);
+}
+async function loadAdminMfaMethods() {
+  const message = document.getElementById('adminMfaMessage');
+  if (!message || adminMfaBusy) return;
+  adminMfaStatus = null;
+  renderAdminMfaMethods();
+  message.textContent = 'Loading sign-in methods…';
+  try {
+    const response = await fetch('/api/mfa/status', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ principalType: 'platform_admin', principalId: 'platform' }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || 'Unable to load sign-in methods.');
+    adminMfaStatus = payload.status;
+    message.textContent = payload.status.enrolled ? '' : 'Complete MFA setup at sign-in to add more methods here.';
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    renderAdminMfaMethods();
+  }
+}
+async function addAdminMfaMethod(method) {
+  if (adminMfaBusy || !adminMfaStatus?.enrolled) return;
+  const message = document.getElementById('adminMfaMessage');
+  if (!message) return;
+  adminMfaBusy = true;
+  renderAdminMfaMethods();
+  message.textContent = 'Preparing setup…';
+  try {
+    const headers = authHeaders();
+    const response = await fetch('/api/admin/mfa/management', {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method }),
+    });
+    const payload = await response.json();
+    if (handleAuthFailure(response, payload)) return;
+    if (!response.ok) throw new Error(payload.error || 'Unable to start setup.');
+    const completed = await window.AgapayMfa.runFlow(
+      { ...payload, mfaRequired: true, enrollmentRequired: true },
+      {
+        headers,
+        enrollmentMethod: method,
+        required: false,
+      }
+    );
+    if (completed) adminMfaStatus = completed.status;
+    message.textContent = completed
+      ? method === 'passkey'
+        ? 'Passkey added.'
+        : 'Authenticator app added.'
+      : 'Setup canceled.';
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    adminMfaBusy = false;
+    renderAdminMfaMethods();
+  }
+}
 function switchTab(tab) {
   if (tab === 'queue') tab = 'giving';
   document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
@@ -592,6 +662,7 @@ function switchTab(tab) {
   document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   if (tab === 'learn') loadLearnAdmin();
+  if (tab === 'settings') loadAdminMfaMethods();
   if (tab === 'support') loadParishSupportTickets();
   if (tab === 'taxexemptions') {
     loadTaxExemptionSummary();

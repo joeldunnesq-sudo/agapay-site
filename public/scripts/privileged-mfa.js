@@ -137,7 +137,7 @@
     const flow = activeFlow;
     activeFlow = null;
     closeDialog();
-    flow?.reject(new Error('Authenticator setup cancelled.'));
+    flow?.reject(new Error('Setup canceled.'));
   }
   function methodButtons(flow) {
     const passkey =
@@ -145,7 +145,7 @@
       window.PublicKeyCredential &&
       navigator.credentials &&
       (flow.enrollmentRequired || flow.methods.includes('passkey'));
-    const totp = flow.enrollmentRequired || flow.methods.includes('totp');
+    const totp = flow.enrollmentMethod !== 'passkey' && (flow.enrollmentRequired || flow.methods.includes('totp'));
     return `<div class="agapay-mfa-methods">
       ${passkey ? '<button type="button" class="agapay-mfa-primary" data-mfa-action="passkey">Use a passkey<span>Face ID, fingerprint, device PIN, or security key</span></button>' : ''}
       ${totp ? '<button type="button" data-mfa-action="totp">Use an authenticator app<span>Enter a six-digit code</span></button>' : ''}
@@ -154,8 +154,8 @@
   }
   function renderChoice(flow) {
     setBody(`<div class="agapay-mfa-eyebrow">Protected administrator access</div>
-      <h2 id="agapayMfaTitle">${flow.enrollmentMethod === 'totp' ? 'Add an authenticator app' : flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
-      <p>${flow.enrollmentMethod === 'totp' ? 'Add a six-digit authenticator code while keeping your existing sign-in methods.' : flow.enrollmentRequired ? 'Administrator accounts require multi-factor authentication. A passkey is the fastest and strongest option.' : 'Use a registered second factor to finish signing in or approve this sensitive action.'}</p>
+      <h2 id="agapayMfaTitle">${flow.enrollmentMethod === 'passkey' ? 'Add a passkey' : flow.enrollmentMethod === 'totp' ? 'Add an authenticator app' : flow.enrollmentRequired ? 'Secure this account' : 'Confirm it’s you'}</h2>
+      <p>${flow.enrollmentMethod === 'passkey' ? 'Follow your device prompt to add another way to verify your identity.' : flow.enrollmentMethod === 'totp' ? 'Add a six-digit authenticator code while keeping your existing sign-in methods.' : flow.enrollmentRequired ? 'Administrator accounts require multi-factor authentication. A passkey is the fastest and strongest option.' : 'Use a registered second factor to finish signing in or approve this sensitive action.'}</p>
       ${methodButtons(flow)}
       ${!flow.required ? '<button type="button" id="agapayMfaCancel">Cancel setup</button>' : ''}
       <div id="agapayMfaMessage" class="agapay-mfa-message"></div>`);
@@ -166,7 +166,11 @@
     });
   }
   async function chooseMethod(method) {
-    if (!activeFlow) return;
+    const flow = activeFlow;
+    if (!flow) return;
+    document.querySelectorAll('[data-mfa-action]').forEach((button) => {
+      button.disabled = true;
+    });
     setMessage('Preparing secure verification…');
     try {
       if (method === 'passkey') {
@@ -181,25 +185,38 @@
       }
       renderCodeEntry('recovery');
     } catch (error) {
-      if (!activeFlow) return;
-      renderChoice(activeFlow);
+      if (activeFlow !== flow) return;
+      flow.verifying = false;
+      renderChoice(flow);
       setMessage(error.message, 'error');
     }
   }
   async function enrollPasskey() {
-    const started = await api('/api/mfa/enrollment/options', {
-      pendingToken: activeFlow.pendingToken,
-      method: 'passkey',
-      displayName: activeFlow.displayName || 'AGAPAY administrator',
-      credentialLabel: 'Primary passkey',
-    });
+    const flow = activeFlow;
+    const started = await api(
+      '/api/mfa/enrollment/options',
+      {
+        pendingToken: activeFlow.pendingToken,
+        method: 'passkey',
+        displayName: activeFlow.displayName || 'AGAPAY administrator',
+        credentialLabel: flow.enrollmentMethod ? 'Passkey' : 'Primary passkey',
+      },
+      flow.headers
+    );
+    if (activeFlow !== flow) return;
     const credential = await navigator.credentials.create({ publicKey: creationOptionsFromJson(started.options) });
+    if (activeFlow !== flow) return;
     if (!credential) throw new Error('Passkey setup was cancelled.');
-    const completed = await api('/api/mfa/enrollment/verify', {
-      pendingToken: activeFlow.pendingToken,
-      method: 'passkey',
-      credential: registrationToJson(credential),
-    });
+    flow.verifying = true;
+    const completed = await api(
+      '/api/mfa/enrollment/verify',
+      {
+        pendingToken: activeFlow.pendingToken,
+        method: 'passkey',
+        credential: registrationToJson(credential),
+      },
+      flow.headers
+    );
     finishFlow(completed);
   }
   async function authenticatePasskey() {
@@ -217,11 +234,15 @@
   }
   async function beginTotpEnrollment() {
     const flow = activeFlow;
-    const started = await api('/api/mfa/enrollment/options', {
-      pendingToken: activeFlow.pendingToken,
-      method: 'totp',
-      displayName: activeFlow.displayName || 'AGAPAY administrator',
-    });
+    const started = await api(
+      '/api/mfa/enrollment/options',
+      {
+        pendingToken: activeFlow.pendingToken,
+        method: 'totp',
+        displayName: activeFlow.displayName || 'AGAPAY administrator',
+      },
+      flow?.headers
+    );
     if (activeFlow !== flow) return;
     setBody(`<div class="agapay-mfa-eyebrow">Authenticator app</div>
       <h2 id="agapayMfaTitle">Add AGAPAY to your app</h2>
@@ -277,11 +298,15 @@
     activeFlow.verifying = true;
     setMessage('Verifying…');
     try {
-      const completed = await api(enrollment ? '/api/mfa/enrollment/verify' : '/api/mfa/verify', {
-        pendingToken: activeFlow.pendingToken,
-        method,
-        code,
-      });
+      const completed = await api(
+        enrollment ? '/api/mfa/enrollment/verify' : '/api/mfa/verify',
+        {
+          pendingToken: activeFlow.pendingToken,
+          method,
+          code,
+        },
+        activeFlow.headers
+      );
       finishFlow(completed);
     } catch (error) {
       setMessage(error.message, 'error');
@@ -341,6 +366,7 @@ ${codes.join('\n')}
         displayName: options.displayName || '',
         required: options.required !== false,
         enrollmentMethod: options.enrollmentMethod,
+        headers: options.headers,
         resolve,
         reject,
       };
