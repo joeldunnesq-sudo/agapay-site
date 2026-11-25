@@ -115,7 +115,11 @@ export function permittedActions(
 export async function reviewRows(env: Partial<Env>, parishId: string) {
   const changeRequests = await d1All<DirectoryReviewSqlRow>(
     env,
-    `SELECT cr.parish_id, 'change_request' AS source_type, cr.id AS source_id, cr.request_type AS review_key,
+    `SELECT cr.parish_id, 'change_request' AS source_type, cr.id AS source_id,
+            CASE WHEN cr.request_type = 'person_profile_review'
+              AND json_valid(cr.requested_payload_json)
+              AND json_extract(cr.requested_payload_json, '$.source') = 'myagapay_koinonia_access'
+              THEN 'koinonia_membership' ELSE cr.request_type END AS review_key,
             cr.request_type AS review_type, cr.status AS source_status, cr.created_at AS submitted_at,
             cr.updated_at AS source_updated_at, cr.requester_user_id, cr.requester_person_id, cr.target_type,
             cr.target_id, cr.household_id, cr.summary AS safe_summary,

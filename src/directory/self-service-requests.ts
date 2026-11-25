@@ -56,6 +56,12 @@ export async function createDirectoryChangeRequest(
     correlationId?: string;
   }
 ) {
+  if (payload?.source === 'myagapay_koinonia_access') {
+    throw new DirectoryServiceError(
+      'validation_failed',
+      'Submit Koinonia access requests from the Koinonia tab in My AGAPAY.'
+    );
+  }
   if (!CHANGE_REQUEST_TYPES.includes(requestType as string))
     throw new DirectoryServiceError('validation_failed', 'Change request type is not supported.');
   if (targetType === 'person' && targetId !== context.currentPerson?.id && !householdId) {

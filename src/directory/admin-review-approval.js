@@ -1,4 +1,5 @@
 // Generated from src/directory/admin-review-approval.ts by npm run build:server. Do not edit.
+import { generateSecret } from '../lib/core.js';
 import '../lib/entitlements.js';
 import { actorDto } from './admin-actor.js';
 import '../lib/authorization.js';
@@ -117,6 +118,84 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
   const payload = JSON.parse(request.requested_payload_json || '{}');
   const additionalStatements = [];
   if (request.request_type === 'person_profile_review') {
+    if (payload.source === 'myagapay_koinonia_access') {
+      const person = await d1First(
+        env,
+        `
+        SELECT p.id, p.preferred_name, h.id AS household_id
+          FROM directory_people p
+          JOIN directory_person_links link ON link.person_id = p.id
+            AND link.link_type = 'platform_user' AND link.external_id = ?2 AND link.active = 1
+          LEFT JOIN directory_household_members hm ON hm.person_id = p.id AND hm.active = 1
+          LEFT JOIN directory_households h ON h.id = hm.household_id AND h.parish_id = ?3 AND h.active = 1
+         WHERE p.id = ?1 AND p.active = 1
+         ORDER BY h.id IS NULL, CASE hm.relationship WHEN 'head' THEN 0 WHEN 'spouse' THEN 1 ELSE 2 END, hm.created_at
+         LIMIT 1`,
+        request.target_id,
+        request.requester_user_id,
+        context.parishId
+      );
+      if (!person)
+        throw new DirectoryServiceError(
+          'invalid_transition',
+          'The requester’s parish profile is no longer connected.',
+          409
+        );
+      const timestamp = nowMs();
+      const householdId = person.household_id || generateSecret('dir_household');
+      if (!person.household_id) {
+        additionalStatements.push(
+          {
+            sql: 'INSERT INTO directory_households (id, parish_id, display_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+            params: [householdId, context.parishId, `${person.preferred_name} Household`, timestamp, timestamp],
+          },
+          {
+            sql: "INSERT INTO directory_household_members (id, household_id, person_id, relationship, created_at, updated_at) VALUES (?, ?, ?, 'head', ?, ?)",
+            params: [generateSecret('dir_hm'), householdId, person.id, timestamp, timestamp],
+          },
+          {
+            sql: 'INSERT INTO directory_household_admins (id, household_id, person_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+            params: [generateSecret('dir_ha'), householdId, person.id, timestamp, timestamp],
+          }
+        );
+      }
+      additionalStatements.push(
+        {
+          sql: `INSERT INTO directory_parish_affiliations
+                (id, person_id, parish_id, status, created_at, updated_at)
+              SELECT ?, ?, ?, 'member', ?, ?
+              WHERE NOT EXISTS (
+                SELECT 1 FROM directory_parish_affiliations
+                WHERE person_id = ? AND parish_id = ? AND active = 1 AND status != 'former_member'
+              )
+              ON CONFLICT(person_id, parish_id, status) DO UPDATE
+                SET active = 1, left_date = NULL, updated_at = excluded.updated_at`,
+          params: [
+            generateSecret('dir_affil'),
+            person.id,
+            context.parishId,
+            timestamp,
+            timestamp,
+            person.id,
+            context.parishId,
+          ],
+        },
+        await householdVerificationStatement(env, {
+          context,
+          householdId,
+          policyVersion: 'koinonia-membership-review-v1',
+        })
+      );
+      return markApproved(env, {
+        context,
+        row,
+        reasonCode,
+        reviewerNote,
+        requesterNote,
+        correlationId,
+        additionalStatements,
+      });
+    }
     await applyPersonAdminFields(env, {
       context,
       personId: request.target_id,

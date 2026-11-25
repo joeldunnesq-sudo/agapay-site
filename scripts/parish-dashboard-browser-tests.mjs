@@ -309,10 +309,19 @@ try {
   );
   await scenario(
     'typed Directory retains escaped household browsing, staff privacy labels and household access details',
-    () => ({ parish: { ...parish, subscriptionTier: 'parish', directoryEnabled: true } }),
+    () => ({
+      parish: { ...parish, subscriptionTier: 'parish', directoryEnabled: false },
+      featureRequests: [{ featureId: 'directory', count: 1 }],
+    }),
     async (fixture) => {
       await fixture.open();
       await ready(fixture.page);
+      const notice = fixture.page.locator('#parishFeatureRequestDialog');
+      await notice.waitFor({ state: 'visible' });
+      assert.match(await notice.innerText(), /One parishioner asked you to enable the parish Directory/);
+      await notice.getByRole('button', { name: 'Open Parish Directory' }).click();
+      await notice.waitFor({ state: 'hidden' });
+      await fixture.page.locator('#tab-directory.active').waitFor();
       await fixture.page.evaluate(() => loadDirectoryAdminTab(true));
       const rows = fixture.page.locator('#directoryBrowseList');
       assert.ok((await rows.innerText()).includes('<Fixture Family>'));

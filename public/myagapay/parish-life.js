@@ -754,6 +754,77 @@ function initializeParishLifeStructure() {
   applyParishLifeExperience(cachedExperience, null);
   return cachedExperience;
 }
+function showKoinoniaAccessRequest(status, headers, directoryEnabled, review) {
+  document.querySelectorAll('.parish-life-page-shell > :not(#parishLifeStatus)').forEach((element) => {
+    element.hidden = true;
+  });
+  status.hidden = false;
+  const message = document.createElement('p');
+  message.textContent = 'You need to be an approved member of this parish to access Koinonia.';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn btn-primary';
+  const feedback = document.createElement('p');
+  feedback.setAttribute('role', 'status');
+  const needsReply = directoryEnabled && review?.status === 'returned';
+  const replyLabel = document.createElement('label');
+  const reply = document.createElement('textarea');
+  if (needsReply) {
+    const question = document.createElement('p');
+    question.textContent = review?.question || '';
+    reply.maxLength = 1200;
+    replyLabel.textContent = 'Reply to your parish';
+    replyLabel.append(reply);
+    status.replaceChildren(message, question, replyLabel, button, feedback);
+  } else {
+    status.replaceChildren(message, button, feedback);
+  }
+  button.textContent = needsReply
+    ? 'Send reply'
+    : directoryEnabled
+      ? 'Request parish approval'
+      : 'Ask the parish to enable Directory';
+  if (directoryEnabled && review?.status === 'pending') {
+    button.disabled = true;
+    button.textContent = 'Approval requested';
+    feedback.textContent = 'Your request is in the parish’s Directory review queue.';
+  } else if (directoryEnabled && review?.status === 'denied') {
+    feedback.textContent = 'Your previous access request was declined by the parish.';
+  }
+  button.addEventListener('click', async () => {
+    if (needsReply && !reply.value.trim()) {
+      feedback.textContent = 'Enter a reply before sending.';
+      reply.focus();
+      return;
+    }
+    button.disabled = true;
+    feedback.textContent = 'Sending your request…';
+    try {
+      const options = { method: 'POST', headers: new Headers(headers) };
+      if (needsReply) {
+        options.headers.set('Content-Type', 'application/json');
+        options.body = JSON.stringify({ message: reply.value.trim() });
+      }
+      const response = await fetch('/api/donor/koinonia-access', options);
+      if (window.MyAgapayShell?.handleUnauthorized(response)) return;
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Unable to send your request. Please try again.');
+      if (result.action === 'already_approved') {
+        window.location.reload();
+        return;
+      }
+      if (needsReply) replyLabel.remove();
+      button.textContent = 'Request sent';
+      feedback.textContent =
+        result.action === 'directory_requested'
+          ? 'Your parish dashboard has been notified. Return here to request approval once Directory is enabled.'
+          : 'Your request is in the parish’s Directory review queue. Check back here for updates.';
+    } catch (error) {
+      feedback.textContent = error instanceof Error ? error.message : 'Unable to send your request.';
+      button.disabled = false;
+    }
+  });
+}
 async function loadParishLife() {
   const status = document.getElementById('parishLifeStatus');
   const headers = window.MyAgapayShell?.authHeaders() || {};
@@ -771,13 +842,12 @@ async function loadParishLife() {
       if (window.MyAgapayShell?.handleUnauthorized(accessResponse)) return;
       const access = await accessResponse.json().catch(() => ({}));
       if (!accessResponse.ok) {
-        if (accessResponse.status === 403 && access.code === 'household_verification_required') {
-          document.querySelectorAll('.parish-life-page-shell > :not(#parishLifeStatus)').forEach((element) => {
-            element.hidden = true;
-          });
-          status.dataset.state = 'household-verification-required';
-          status.hidden = false;
-          status.textContent = access.error;
+        if (
+          accessResponse.status === 403 &&
+          ['household_verification_required', 'parish_profile_required'].includes(access.code || '')
+        ) {
+          status.dataset.state = access.code.replaceAll('_', '-');
+          showKoinoniaAccessRequest(status, headers, parish?.directoryEnabled === true, access.review);
           return;
         }
         throw new Error(access.error || 'Unable to confirm Koinonia access.');
