@@ -348,7 +348,7 @@ function renderPlatformGrowth(summary: AdminAppSummary, givingLoading = false) {
   if (givingPane) {
     givingPane.setAttribute('aria-busy', String(givingLoading));
     givingPane.innerHTML = givingLoading
-      ? '<p class="growth-note" role="status">Loading giving totals…</p>'
+      ? '<p class="giving-impact-note" role="status">Loading giving totals…</p>'
       : renderGivingImpact(summary.givingImpact, escapeHtml, escapeAttr);
     bindGivingImpactDownloads(givingPane, summary.givingImpact, summary.generatedAt);
   }

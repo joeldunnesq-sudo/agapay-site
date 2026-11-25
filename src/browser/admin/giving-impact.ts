@@ -17,18 +17,30 @@ function renderGivingImpactCharts(
   escapeHtml: (value: string) => string,
   escapeAttr: (value: string) => string
 ) {
-  const monthlyMax = Math.max(1, ...impact.monthly.map((month) => month.cents));
+  const monthlyMax = Math.max(100, ...impact.monthly.map((month) => month.cents));
+  const axisCurrency = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  });
   const leaders = givingImpactLeaders(impact);
   const monthFormat = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' });
   return `
     <div class="giving-impact-charts">
       <section class="giving-impact-chart" aria-labelledby="givingImpactTrend">
         <div class="giving-impact-chart-header">
-          <h4 id="givingImpactTrend">Monthly giving</h4>
+          <h3 id="givingImpactTrend">Monthly giving</h3>
           ${givingImpactDownloadButton('monthly', 'monthly giving')}
         </div>
         <p>Last 12 calendar months · USD · UTC</p>
-        <div class="giving-impact-months">
+        <div class="giving-impact-plot">
+          <div class="giving-impact-axis" aria-hidden="true">
+            <span>${axisCurrency.format(monthlyMax / 100)}</span>
+            <span>${axisCurrency.format(monthlyMax / 200)}</span>
+            <span>$0</span>
+          </div>
+          <div class="giving-impact-months">
           ${impact.monthly
             .map(({ month, cents, giftCount }) => {
               const label = monthFormat.format(new Date(month + '-01T00:00:00Z'));
@@ -43,11 +55,12 @@ function renderGivingImpactCharts(
               </div>`;
             })
             .join('')}
+          </div>
         </div>
       </section>
       <section class="giving-impact-chart" aria-labelledby="givingImpactLeaders">
         <div class="giving-impact-chart-header">
-          <h4 id="givingImpactLeaders">Giving by church</h4>
+          <h3 id="givingImpactLeaders">Giving by church</h3>
           ${givingImpactDownloadButton('churches', 'giving by church', !leaders.length)}
         </div>
         <p>Top five churches by all-time giving</p>
@@ -67,7 +80,7 @@ function renderGivingImpactCharts(
         ${leaders.length ? '' : '<p>No gifts to rank yet.</p>'}
       </section>
     </div>
-    <div class="growth-note" data-giving-download-status role="status"></div>`;
+    <div class="giving-impact-note" data-giving-download-status role="status"></div>`;
 }
 
 function drawGivingImpactPng(
@@ -203,15 +216,14 @@ function renderGivingImpact(
   escapeAttr: (value: string) => string
 ) {
   if (!impact) {
-    return '<div class="growth-note">AGAPAY giving totals are unavailable.</div>';
+    return '<p class="giving-impact-note" role="status">AGAPAY giving totals are unavailable.</p>';
   }
   return `
-    <div class="giving-summary-grid">
-      <div class="giving-summary-stat"><strong>${formatGivingImpactCurrency(impact.cents)}</strong><span>Total given (USD)</span></div>
-      <div class="giving-summary-stat"><strong>${Number(impact.giftCount).toLocaleString()}</strong><span>Gifts</span></div>
-      <div class="giving-summary-stat"><strong>${Number(impact.giverCount).toLocaleString()}</strong><span>Unique givers platform-wide</span></div>
-    </div>
-    <p class="growth-note">All-time USD gifts recorded through AGAPAY, after refunds and before processing fees. Unique givers are estimated using distinct email addresses across churches, including guest donors with an email.</p>
+    <dl class="admin-metrics-grid giving-impact-metrics">
+      <div><dt>Total given</dt><dd>${formatGivingImpactCurrency(impact.cents)}</dd><small>After refunds, before processing fees</small></div>
+      <div><dt>Gifts</dt><dd>${Number(impact.giftCount).toLocaleString()}</dd><small>Online gifts across all churches</small></div>
+      <div><dt>Unique givers</dt><dd>${Number(impact.giverCount).toLocaleString()}</dd><small>Estimated by distinct email addresses across churches</small></div>
+    </dl>
     ${renderGivingImpactCharts(impact, escapeHtml, escapeAttr)}
     <details class="giving-impact-details">
     <summary>See all churches (${impact.parishes.length.toLocaleString()})</summary>

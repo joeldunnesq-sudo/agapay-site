@@ -1132,19 +1132,21 @@
       color: var(--ink);
       padding: 1rem;
     }
-    .giving-impact-card { grid-column: 1 / -1; }
+    .giving-impact-card .giving-impact-metrics { grid-template-columns: 1.2fr 1fr 1fr; }
+    .giving-impact-card .giving-impact-metrics > div:not(:last-child) { border-right: 1px solid #cbdce7; }
     .giving-impact-charts {
       display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
       gap: 1rem;
-      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #cbdce7;
     }
     .giving-impact-chart {
       min-width: 0;
-      padding: 1rem;
-      border: 1px solid rgba(110,104,96,0.18);
-      border-radius: 10px;
-      background: linear-gradient(155deg, #fff, #f7f4ee);
+      padding: clamp(0.8rem, 2vw, 1.2rem);
+      border: 1px solid #d5e2ea;
+      border-radius: 14px;
+      background: #fff;
       container-type: inline-size;
     }
     .giving-impact-chart-header {
@@ -1152,52 +1154,95 @@
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.4rem;
     }
-    .giving-impact-chart h4 { margin: 0; color: var(--deep); font: 700 22px/1.15 var(--serif); }
-    .giving-impact-chart p { margin: 0.3rem 0 0; color: var(--stone); font-size: 12px; }
+    .giving-impact-chart h3 { margin: 0; color: var(--deep); font: 600 22px/1.15 var(--serif); }
+    .giving-impact-chart p, .giving-impact-note {
+      margin: 0.4rem 0 0;
+      color: #505963;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .giving-impact-note:empty { display: none; }
+    .giving-impact-chart [data-giving-download] {
+      border-color: #d5e2ea;
+      background: #edf4f8;
+      color: #244c67;
+    }
+    .giving-impact-chart [data-giving-download]:hover:not(:disabled) { background: #dceaf2; }
+    .giving-impact-plot {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.45rem;
+      padding-top: 1.85rem;
+    }
+    .giving-impact-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 148px;
+      color: #505963;
+      text-align: right;
+      font: 500 9px/1 var(--sans);
+      font-variant-numeric: tabular-nums;
+    }
     .giving-impact-months {
       position: relative;
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: clamp(2px, 1cqw, 8px);
-      padding-top: 2rem;
+      gap: clamp(1px, 1cqw, 8px);
+    }
+    .giving-impact-months::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 148px;
+      border-block: 1px solid #dbe6ed;
+      background: linear-gradient(#dbe6ed, #dbe6ed) center / 100% 1px no-repeat;
+      pointer-events: none;
     }
     .giving-impact-month {
+      position: relative;
       text-align: center;
-      color: var(--deep);
-      font-size: clamp(8px, 3.2cqw, 11px);
-      font-weight: 700;
+      color: #505963;
+      font-size: clamp(7px, 2.8cqw, 10px);
+      font-weight: 600;
     }
     .giving-impact-column {
       display: flex;
       align-items: end;
-      height: 136px;
-      margin-bottom: 0.45rem;
-      background: repeating-linear-gradient(to top, #ddd6ca 0 1px, transparent 1px 25%);
+      justify-content: center;
+      height: 148px;
+      margin-bottom: 0.5rem;
     }
     .giving-impact-column span {
-      width: 100%;
+      width: min(100%, 28px);
       height: var(--giving-height);
-      background: linear-gradient(to top, #143650, #39718a);
-      border-radius: 4px 4px 0 0;
+      background: linear-gradient(to top, #244c67, #639cb2);
+      border-radius: 5px 5px 0 0;
     }
     .giving-impact-month:is(:hover, :focus) .giving-impact-column span {
-      background: linear-gradient(to top, #9a6b28, #cfaa5e);
+      background: linear-gradient(to top, #8c602b, #c3995f);
     }
     .giving-impact-month-value {
       display: none;
       position: absolute;
-      inset: 0 0 auto;
-      padding: 0.25rem;
-      color: var(--deep);
-      background: #f0e7d6;
-      border-radius: 4px;
-      font-size: 11px;
+      z-index: 1;
+      top: -1.6rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.2rem 0.4rem;
+      color: #fff;
+      background: #244c67;
+      border-radius: 5px;
+      font-size: 10px;
+      white-space: nowrap;
       pointer-events: none;
     }
+    .giving-impact-month:nth-child(-n+4) .giving-impact-month-value { left: 0; transform: none; }
+    .giving-impact-month:nth-last-child(-n+4) .giving-impact-month-value { right: 0; left: auto; transform: none; }
     .giving-impact-month:is(:hover, :focus) .giving-impact-month-value { display: block; }
-    .giving-impact-ranks { display: grid; gap: 0.75rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+    .giving-impact-ranks { display: grid; gap: 0.8rem; margin: 1rem 0 0; padding: 0; list-style: none; }
     .giving-impact-ranks li > div:first-child {
       display: flex;
       justify-content: space-between;
@@ -1207,20 +1252,34 @@
       font-size: 12px;
       overflow-wrap: anywhere;
     }
-    .giving-impact-ranks strong { white-space: nowrap; }
-    .giving-impact-track { height: 7px; margin-top: 0.3rem; background: #e9e1d3; border-radius: 99px; }
+    .giving-impact-ranks strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .giving-impact-track { height: 6px; margin-top: 0.35rem; background: #edf4f8; border-radius: 99px; }
     .giving-impact-track span {
       display: block;
       width: var(--giving-width);
       height: 100%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #9a6b28, #c49b50);
+      background: linear-gradient(90deg, #ab7c43, #cda772);
     }
-    .giving-impact-details { margin-top: 1rem; }
-    .giving-impact-details summary { color: var(--deep); cursor: pointer; font-weight: 700; font-size: 13px; }
-    .giving-impact-details .tex-table-wrap { margin-top: 0.5rem; }
-    @media (max-width: 800px) {
+    .giving-impact-details { margin-top: 0.9rem; padding-top: 0.75rem; border-top: 1px solid #cbdce7; }
+    .giving-impact-details summary { color: #244c67; cursor: pointer; font-weight: 700; font-size: 13px; }
+    .giving-impact-details .tex-table-wrap {
+      margin-top: 0.65rem;
+      border-radius: 9px;
+      background: #fff;
+    }
+    .giving-impact-details td { font-variant-numeric: tabular-nums; }
+    @media (max-width: 860px) {
       .giving-impact-charts { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 540px) {
+      .giving-impact-card .giving-impact-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .giving-impact-card .giving-impact-metrics > div:first-child {
+        grid-column: 1 / -1;
+        padding-bottom: 0.6rem;
+        border-right: 0;
+        border-bottom: 1px solid #cbdce7;
+      }
     }
     .growth-chart-title {
       display: flex;
