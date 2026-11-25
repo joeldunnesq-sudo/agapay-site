@@ -257,6 +257,8 @@ const depositUi = runInNewContext(
     accountingView: 'ledger',
     accountingSimpleIncomeMessage: '',
     ACCOUNTING_SIMPLE_REVENUE_LABELS: {},
+    accountingLocalDate: () => '2026-11-23',
+    accountingPostingPeriodForDate: () => null,
     escapeHtml: String,
     escapeAttr: String,
     accountingApi: (path) => path,

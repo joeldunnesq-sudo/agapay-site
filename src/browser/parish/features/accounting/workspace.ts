@@ -304,8 +304,14 @@ const ACCOUNTING_WORKSPACES = {
   },
   settings: {
     title: 'Setup & controls',
-    views: ['setup', 'settings', 'governance', 'journey'],
+    views: ['posting-periods', 'setup', 'settings', 'governance', 'journey'],
     tools: [
+      [
+        'Posting periods',
+        'See which months accept entries and open an unopened month.',
+        'showAccountingPostingPeriods()',
+        'posting-periods',
+      ],
       [
         'Accounting setup',
         'Review opening balances, migrations, and ledger readiness.',
@@ -336,6 +342,8 @@ function accountingWorkspaceDefinition(section: string) {
 
 function openAccountingWorkspace(section: string | undefined) {
   if (!section || !accountingWorkspaceDefinition(section)) return;
+  if (section === 'close') return setAccountingView('close');
+  accountingCloseTaskCode = '';
   accountingSelectedWorkspace = section;
   setAccountingView('workspace');
   if (accountingView === 'workspace') {
@@ -424,6 +432,7 @@ function accountingViewTitle() {
     banking: 'Banking',
     close: 'Period Close',
     governance: 'Governance',
+    'posting-periods': 'Posting periods',
     setup: 'Setup',
     settings: 'Settings',
     integrations: 'Settings',
@@ -451,11 +460,15 @@ function setAccountingExperienceMode(mode: string) {
 
 function syncAccountingWorkspaceNavigation() {
   const active =
-    accountingView === 'overview' || accountingHomeTask
-      ? 'overview'
-      : accountingView === 'workspace'
-        ? accountingSelectedWorkspace
-        : Object.entries(ACCOUNTING_WORKSPACES).find(([, workspace]) => workspace.views.includes(accountingView))?.[0];
+    accountingCloseTaskCode || accountingView === 'close'
+      ? 'close'
+      : accountingView === 'overview' || accountingHomeTask
+        ? 'overview'
+        : accountingView === 'workspace'
+          ? accountingSelectedWorkspace
+          : Object.entries(ACCOUNTING_WORKSPACES).find(([, workspace]) =>
+              workspace.views.includes(accountingView)
+            )?.[0];
   document.querySelectorAll<HTMLElement>('.acct-workspace-menu button').forEach((button) => {
     const selected = (button.dataset.accountingWorkspace || button.dataset.accountingView) === active;
     button.classList.toggle('active', selected);
@@ -465,7 +478,7 @@ function syncAccountingWorkspaceNavigation() {
   const back = document.getElementById('accountingBackToWorkspace') as HTMLButtonElement | null;
   if (!back) return;
   const workspace = active && accountingWorkspaceDefinition(active);
-  back.hidden = !workspace || accountingView === 'workspace';
+  back.hidden = !workspace || accountingView === 'workspace' || active === 'close';
   if (active && workspace && !back.hidden) {
     back.textContent = `← Back to ${workspace.title}`;
     back.dataset.workspace = active;
@@ -478,6 +491,7 @@ function renderAccountingPane() {
   syncAccountingExperienceChrome();
   syncAccountingHomeTask();
   syncAccountingWorkspaceNavigation();
+  syncAccountingCloseContext();
   const pageTitle = document.getElementById('accountingPageTitle') as HTMLElement;
   if (pageTitle) pageTitle.textContent = accountingHomeTask ? 'Accounting home' : accountingViewTitle();
   if (accountingView === 'journey') {
@@ -503,6 +517,10 @@ function renderAccountingPane() {
     if (typeof accountingJourneyEntry === 'function') pane.insertAdjacentHTML('afterbegin', accountingJourneyEntry());
     return;
   }
+  if (accountingView === 'posting-periods') {
+    renderAccountingPostingPeriods(pane);
+    return;
+  }
   if (accountingView === 'settings') {
     const settings = accountingData.setup?.settings;
     if (!settings) {
@@ -515,7 +533,7 @@ function renderAccountingPane() {
       return;
     }
     const staff = accountingStaffSession()?.profile;
-    pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Accounting configuration</span><h2>Settings</h2><p>Manage the fiscal calendar, staff access, connected accounting, and help resources.</p></div><button class="acct-refresh" onclick="lockAccountingWorkspace()">Lock Accounting</button></div><div class="acct-setup-grid"><section class="acct-card acct-guide-card"><div><span class="acct-kicker">Accounting Suite Guide</span><h2>See how the whole system works</h2><p>Open the updated guide for guided setup, daily entry, online giving, reports, budget comparisons, assets, council packages, close, staff access, and support.</p></div><div class="acct-guide-actions"><a class="primary" href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf?v=20261103guide2" target="_blank" rel="noopener">Open guide</a><a href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf?v=20261103guide2" download>Download PDF</a></div></section><section class="acct-card acct-settings"><span class="acct-kicker">Fiscal calendar</span><h2>Parish accounting year</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({ length: 12 }, (_, index) => `<option value="${index + 1}" ${Number(settings.fiscalYearStartMonth || 1) === index + 1 ? 'selected' : ''}>${new Date(2026, index, 1).toLocaleString('en-US', { month: 'long' })}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition === 'pending' ? 'selected' : ''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition === 'required' ? 'selected' : ''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition === 'deferred' ? 'selected' : ''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition === 'not_applicable' ? 'selected' : ''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition === 'posted' ? 'selected' : ''}>Posted</option></select></label>${accountingPledgeAccountSetting(settings)}<button type="button" class="acct-primary" onclick="saveAccountingSettings()">Save settings</button>${accountingPeriodOpeningControls()}</section><section class="acct-card acct-settings"><span class="acct-kicker">Current operator</span><h2>${escapeHtml(staff?.displayName || 'Accounting staff')}</h2><p>${escapeHtml((staff?.roleTemplate || '').replaceAll('_', ' '))} · Four-hour protected Accounting session.</p><form onsubmit="changeAccountingPin(event)"><label>New six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Change my PIN</button><span class="acct-form-status"></span></form></section><section class="acct-card acct-settings"><span class="acct-kicker">Staff access</span><h2>Add a named profile</h2><form onsubmit="addAccountingStaff(event)"><label>Name<input name="displayName" required maxlength="120"></label><label>Responsibility<select name="roleTemplate"><option value="bookkeeper">Bookkeeper</option><option value="treasurer">Treasurer</option><option value="rector">Rector</option><option value="council_member">Council member</option></select></label><label>Temporary six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Add profile</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Connected activity</span><h2>Give &amp; Commerce</h2><p>Manage automatic posting, Stripe clearing, fees, refunds, and all Parish Commerce accounting.</p><button class="acct-primary" onclick="setAccountingView('integrations')">Open integration settings</button></section></div>`;
+    pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Accounting configuration</span><h2>Settings</h2><p>Manage the fiscal calendar, staff access, connected accounting, and help resources.</p></div><button class="acct-refresh" onclick="lockAccountingWorkspace()">Lock Accounting</button></div><div class="acct-setup-grid"><section class="acct-card acct-guide-card"><div><span class="acct-kicker">Accounting Suite Guide</span><h2>See how the whole system works</h2><p>Open the updated guide for guided setup, daily entry, online giving, reports, budget comparisons, assets, council packages, close, staff access, and support.</p></div><div class="acct-guide-actions"><a class="primary" href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf?v=20261103guide2" target="_blank" rel="noopener">Open guide</a><a href="/docs/AGAPAY-Accounting-Suite-Guide-Comprehensive.pdf?v=20261103guide2" download>Download PDF</a></div></section><section class="acct-card acct-settings"><span class="acct-kicker">Fiscal calendar</span><h2>Parish accounting year</h2><label>Fiscal year starts<select id="accountingFiscalMonth">${Array.from({ length: 12 }, (_, index) => `<option value="${index + 1}" ${Number(settings.fiscalYearStartMonth || 1) === index + 1 ? 'selected' : ''}>${new Date(2026, index, 1).toLocaleString('en-US', { month: 'long' })}</option>`).join('')}</select></label><label>Opening balances<select id="accountingOpeningDisposition"><option value="pending" ${settings.openingBalancesDisposition === 'pending' ? 'selected' : ''}>Still to be entered</option><option value="required" ${settings.openingBalancesDisposition === 'required' ? 'selected' : ''}>Required</option><option value="deferred" ${settings.openingBalancesDisposition === 'deferred' ? 'selected' : ''}>Deferred</option><option value="not_applicable" ${settings.openingBalancesDisposition === 'not_applicable' ? 'selected' : ''}>Not applicable</option><option value="posted" ${settings.openingBalancesDisposition === 'posted' ? 'selected' : ''}>Posted</option></select></label>${accountingPledgeAccountSetting(settings)}<button type="button" class="acct-primary" onclick="saveAccountingSettings()">Save settings</button>${accountingPeriodOpeningControls()}</section><section class="acct-card acct-settings"><span class="acct-kicker">Current operator</span><h2>${escapeHtml(staff?.displayName || 'Accounting staff')}</h2><p>${escapeHtml((staff?.roleTemplate || '').replaceAll('_', ' '))} · Four-hour protected Accounting session.</p><form onsubmit="changeAccountingPin(event)"><label>New six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Change my PIN</button><span class="acct-form-status"></span></form></section><section class="acct-card acct-settings"><span class="acct-kicker">Staff access</span><h2>Add a named profile</h2><p>The PIN signs into this profile. The selected role controls who can post entries, open months, and close the books.</p><form onsubmit="addAccountingStaff(event)"><label>Name<input name="displayName" required maxlength="120"></label><label>Responsibility<select name="roleTemplate"><option value="bookkeeper">Bookkeeper</option><option value="treasurer">Treasurer</option><option value="rector">Rector</option><option value="council_member">Council member</option></select></label><label>Temporary six-digit PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required></label><button class="acct-primary">Add profile</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Connected activity</span><h2>Give &amp; Commerce</h2><p>Manage automatic posting, Stripe clearing, fees, refunds, and all Parish Commerce accounting.</p><button class="acct-primary" onclick="setAccountingView('integrations')">Open integration settings</button></section></div>`;
     return;
   }
   if (accountingView === 'setup') {
@@ -589,7 +607,23 @@ function renderAccountingPane() {
     return;
   }
   const register = accountingView === 'ledger' ? accountingRegisterModel() : null;
-  const rows = register ? register!.rows : accountingData.journals;
+  const closeJournals = accountingReviewingCloseJournals();
+  if (closeJournals && !accountingCloseJournalQueue.entries) {
+    const error = accountingCloseJournalQueue.error;
+    pane.innerHTML = error
+      ? `<div class="acct-empty error"><strong>Unable to load journal drafts</strong><span>${escapeHtml(error)}</span><button type="button" onclick="loadAccountingCloseJournalQueue()">Try again</button></div>`
+      : '<p class="sw-tool-loading">Loading journal drafts for the close...</p>';
+    return;
+  }
+  const rows = register
+    ? register!.rows
+    : closeJournals
+      ? accountingCloseJournalQueue.entries!
+      : accountingData.journals;
+  if (closeJournals && !rows.length) {
+    pane.innerHTML = accountingEmpty('No unposted entries', 'Run the close checks again to update the checklist.');
+    return;
+  }
   if (accountingView !== 'ledger' && !rows.length) {
     pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Manual ledger</span><h2>Journal entries</h2></div><button type="button" class="acct-primary" onclick="newAccountingJournal()">New journal entry</button></div>${accountingEmpty('No journal entries yet', 'Create a balanced debit and credit to begin.')}`;
     return;
@@ -625,7 +659,9 @@ function renderAccountingOverviewDirectory(
 ) {
   const overview = document.createElement('div');
   overview.className = 'acct-overview-directory';
-  overview.innerHTML = `<section class="acct-overview-funds" data-accounting-overview-section="funds" aria-labelledby="accountingOverviewFundsTitle"></section>
+  overview.innerHTML = `${accountingOverviewPostingPeriod()}
+    ${accountingOverviewRecentActivity()}
+    <section class="acct-overview-funds" data-accounting-overview-section="funds" aria-labelledby="accountingOverviewFundsTitle"></section>
     ${accountingMonthEndChecklist()}
     <section class="acct-overview-reports" data-accounting-overview-section="reports" aria-labelledby="accountingOverviewReportsTitle"></section>
     <details class="acct-overview-disclosure acct-overview-fund-detail" data-accounting-overview-section="directory" data-overview-details="directory"><summary>Fund directory</summary></details>
@@ -706,7 +742,11 @@ function setAccountingView(view: string, onHome = false) {
   }
   if (document.getElementById('accountingPane')?.dataset.loaded !== 'true') return;
   const previousView = accountingView;
-  if (view === 'close' && previousView !== 'close') accountingCloseDetail = null;
+  if (view === 'close') {
+    if (previousView !== 'close' && !accountingCloseTaskCode) accountingCloseDetail = null;
+    accountingCloseTaskCode = '';
+  }
+  if (view === 'overview') accountingCloseTaskCode = '';
   if (view === 'reports') accountingTransactionDetail = null;
   accountingView = [
     'overview',
@@ -715,6 +755,7 @@ function setAccountingView(view: string, onHome = false) {
     'expense',
     'council',
     'journey',
+    'posting-periods',
     'setup',
     'settings',
     'reports',
@@ -818,6 +859,7 @@ async function loadAccountingTab(force = false) {
       recurringRes,
       ledgerStatusRes,
       bankAccountsRes,
+      activityRes,
     ] = await Promise.all([
       fetch(accountingApi('/setup'), { headers: authHeaders() }),
       fetch(accountingApi('/workspace-reference'), { headers: authHeaders() }),
@@ -830,6 +872,7 @@ async function loadAccountingTab(force = false) {
       fetch(accountingApi('/recurring-transactions'), { headers: authHeaders() }),
       fetch(accountingApi('/ledger/status'), { headers: authHeaders() }),
       fetch(accountingApi('/bank/accounts'), { headers: authHeaders() }),
+      fetch(accountingApi('/journals?limit=5&sort=activity'), { headers: authHeaders() }).catch(() => null),
     ]);
     const setup = await (setupRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
     const reference = await (referenceRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
@@ -842,6 +885,9 @@ async function loadAccountingTab(force = false) {
     const recurring = await (recurringRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
     const ledgerStatus = await (ledgerStatusRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
     const bankAccounts = await (bankAccountsRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>);
+    const activity = activityRes?.ok
+      ? await (activityRes.json().catch(() => ({})) as Promise<AccountingWorkspaceResponse>)
+      : null;
     if (currentParish?.parishId !== requestParishId) return;
     if (setupRes.status === 401) {
       await renderAccountingAccess();
@@ -880,6 +926,7 @@ async function loadAccountingTab(force = false) {
       bankAccounts: bankAccountsRes.ok ? bankAccounts.accounts || [] : [],
       bankAccountsUnavailable: !bankAccountsRes.ok || !Array.isArray(bankAccounts.accounts),
       journals: journals.entries || [],
+      recentActivity: activity?.entries,
       ledger: ledger.rows || [],
       recurring: recurring.items || [],
       reports: {
@@ -912,6 +959,7 @@ async function loadAccountingTab(force = false) {
     const homeContext = document.getElementById('accountingHomeContext');
     if (accountingHomeTask && homeContext) homeContext.hidden = true;
     renderAccountingPane();
+    if (accountingReviewingCloseJournals()) void loadAccountingCloseJournalQueue();
     void loadAccountingOverviewSummaries(force);
   } catch (error) {
     pane.innerHTML = `<div class="acct-empty error"><strong>Accounting needs attention</strong><span>${escapeHtml((error as Error).message || 'Unable to load Accounting.')}</span><button type="button" onclick="loadAccountingTab(true)">Try again</button></div>`;
@@ -1047,6 +1095,27 @@ async function saveAccountingSettings(completeSetup = false) {
   loadAccountingTab(true);
 }
 
+function accountingPostingPeriodForDate(date: string) {
+  return accountingData.setup?.periods?.find((period) => period.startDate <= date && date <= period.endDate);
+}
+
+function accountingPostingPeriodLabel(period: AccountingPostingPeriod) {
+  return new Date(`${period.startDate}T12:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function accountingPostingPeriodStatus(period: AccountingPostingPeriod) {
+  if (period.status === 'locked') return 'Locked';
+  if (['soft_closed', 'closed'].includes(period.status) || ['closed', 'archived'].includes(period.fiscalStatus))
+    return 'Closed';
+  if (period.fiscalStatus !== 'open') return 'Fiscal year unavailable';
+  return period.status === 'open' ? 'Open' : 'Unopened';
+}
+
+function accountingOpenPostingPeriodButton(period: AccountingPostingPeriod) {
+  if (!accountingData.setup?.canOpenPeriods || period.status !== 'future' || period.fiscalStatus !== 'open') return '';
+  return `<button type="button" class="acct-action-button" data-period-id="${escapeAttr(period.id)}" onclick="openAccountingPostingPeriod(this)">Open ${escapeHtml(accountingPostingPeriodLabel(period))}</button>`;
+}
+
 function accountingPeriodOpeningControls() {
   const periods = (accountingData.setup?.periods || []).filter(
     (period) => period.status === 'future' && period.fiscalStatus === 'open'
@@ -1067,11 +1136,20 @@ function accountingPeriodOpeningControls() {
     '</select></label><p>Opening a period allows entries dated within it. Closed or locked books use the close workflow.</p><button type="button" class="acct-primary" onclick="openAccountingSelectedPeriod(this)">Open period</button>'
   );
 }
-async function openAccountingSelectedPeriod(button: HTMLButtonElement) {
-  const periodId = (document.getElementById('accountingPeriodToOpen') as HTMLSelectElement)?.value;
+function openAccountingSelectedPeriod(button: HTMLButtonElement) {
+  const select = document.querySelector<HTMLSelectElement>('#accountingPeriodToOpen');
+  return openAccountingPostingPeriod(button, select?.value);
+}
+
+async function openAccountingPostingPeriod(button: HTMLButtonElement, periodId = button.dataset.periodId) {
   const period = accountingData.setup?.periods?.find((item) => item.id === periodId);
-  if (!period || !confirm('Open ' + period.name + ' for accounting entries?')) return;
+  if (!period || !confirm('Open ' + accountingPostingPeriodLabel(period) + ' for accounting entries?')) return;
+  const form = button.form;
+  const notice = button
+    .closest('[data-accounting-deposit-period], [data-accounting-posting-periods]')
+    ?.querySelector<HTMLElement>('[data-accounting-period-error]');
   button.disabled = true;
+  if (notice) notice.textContent = '';
   try {
     const response = await fetch(accountingApi('/periods/open'), {
       method: 'POST',
@@ -1079,10 +1157,21 @@ async function openAccountingSelectedPeriod(button: HTMLButtonElement) {
       body: JSON.stringify({ periodId: period.id, expectedVersion: period.version }),
     });
     const payload = (await response.json()) as AccountingWorkspaceResponse;
-    if (!response.ok) throw new Error(payload.message || payload.error || 'Unable to open this period.');
-    await loadAccountingTab(true);
+    if (!response.ok || !payload.period)
+      throw new Error(payload.message || payload.error || 'Unable to open this period.');
+    Object.assign(period, payload.period);
+    if (form?.isConnected) {
+      const status = form.querySelector<HTMLElement>('.acct-form-status');
+      if (status) status.textContent = '';
+      updateAccountingDepositPeriod(form);
+      form.querySelector<HTMLInputElement>('[name="entryDate"]')?.focus();
+    } else if (button.isConnected) {
+      await loadAccountingTab(true);
+    }
   } catch (error) {
-    setStatus((error as Error).message, 'error');
+    const message = (error as Error).message;
+    if (notice) notice.textContent = message;
+    else setStatus(message, 'error');
     button.disabled = false;
   }
 }

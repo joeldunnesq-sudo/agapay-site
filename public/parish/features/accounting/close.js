@@ -1,5 +1,193 @@
 // Generated from src/browser/parish/features/accounting/close.ts by npm run build:browser. Do not edit.
 'use strict';
+let accountingCloseTaskCode = '';
+let accountingCloseToolsExpanded = false;
+let accountingCloseJournalQueue = {};
+const ACCOUNTING_CLOSE_TASKS = {
+  'bank.required_reconciliations': {
+    label: 'Match bank statements',
+    view: 'banking',
+    help: 'Match each bank statement to the books and finish the reconciliation at a zero difference.',
+  },
+  'journals.open_drafts': {
+    label: 'Review journal entries',
+    view: 'journals',
+    help: 'Review drafts for this period. Post valid entries and void duplicates or entries made in error.',
+  },
+  'ledger.trial_balance': {
+    label: 'Review trial balance',
+    view: 'reports',
+    help: 'Check the trial balance and investigate any difference before closing.',
+  },
+  'ledger.integrity': {
+    label: 'Review ledger health',
+    view: 'setup',
+    help: 'Use Validate foundation to check the books. Send an unresolved integrity issue to AGAPAY support.',
+  },
+  'integrations.exceptions': {
+    label: 'Review posting exceptions',
+    view: 'integrations',
+    help: 'Review connected giving and posting exceptions before finishing the close.',
+  },
+  'reports.validation': {
+    label: 'Review financial reports',
+    view: 'reports',
+    help: 'Open the Statement of Activities and Statement of Financial Position for the period you are closing.',
+  },
+  'payables.review': { label: 'Review open bills', view: 'payables', help: 'Review open and overdue vendor bills.' },
+  'budgets.review': {
+    label: 'Review budgets',
+    view: 'budgets',
+    help: 'Review approved budgets and budget-to-actual results.',
+  },
+  'commerce.review': {
+    label: 'Review commerce activity',
+    view: 'integrations',
+    help: 'Review Commerce activity and any unresolved posting exceptions.',
+  },
+};
+function accountingCloseTask(code) {
+  return Object.hasOwn(ACCOUNTING_CLOSE_TASKS, code) ? ACCOUNTING_CLOSE_TASKS[code] : null;
+}
+function accountingCloseMonth(session = accountingCloseDetail) {
+  return (
+    accountingData.close?.periods.find((period) => period.id === session?.accountingPeriodId)?.name ||
+    accountingData.close?.fiscalYears.find((year) => year.id === session?.fiscalYearId)?.name ||
+    ''
+  );
+}
+function accountingClosePeriod() {
+  return accountingData.setup?.periods?.find((period) => period.id === accountingCloseDetail?.accountingPeriodId);
+}
+function updateAccountingCloseSession(session) {
+  accountingCloseDetail = session;
+  if (accountingData.close)
+    accountingData.close.sessions = [session, ...accountingData.close.sessions.filter(({ id }) => id !== session.id)];
+}
+async function loadAccountingCloseJournalQueue() {
+  const sessionId = accountingCloseDetail?.id;
+  const parishId = currentParish?.parishId;
+  const period = accountingClosePeriod();
+  const params = new URLSearchParams({ status: 'unposted', limit: '100' });
+  if (period) {
+    params.set('from', period.startDate);
+    params.set('to', period.endDate);
+  }
+  const queue = {};
+  try {
+    queue.entries = (await accountingDeskRead('/journals?' + params)).entries || [];
+  } catch (error) {
+    queue.error = error.message;
+  }
+  if (
+    currentParish?.parishId !== parishId ||
+    accountingCloseDetail?.id !== sessionId ||
+    !accountingReviewingCloseJournals()
+  )
+    return;
+  accountingCloseJournalQueue = queue;
+  if (!accountingJournalEditor) renderAccountingPane();
+}
+function accountingReviewingCloseJournals() {
+  return accountingView === 'journals' && accountingCloseTaskCode === 'journals.open_drafts';
+}
+function openAccountingCloseTask(button) {
+  const code = button.dataset.closeTask || '';
+  const task = accountingCloseTask(code);
+  if (!task) return;
+  accountingCloseTaskCode = code;
+  if (task.view === 'banking') accountingReconciliationView = 'bank';
+  if (task.view === 'payables') accountingPayablesView = 'bills';
+  if (task.view === 'journals') {
+    accountingCloseJournalQueue = {};
+    accountingJournalEditor = null;
+  }
+  if (task.view === 'reports') {
+    accountingReportView = 'library';
+    accountingCustomReport = null;
+    const period = accountingClosePeriod();
+    if (period) accountingReportDateRange = { start: period.startDate, end: period.endDate };
+  }
+  setAccountingView(task.view);
+  document.getElementById('accountingCloseTaskTitle')?.focus();
+  if (accountingReviewingCloseJournals()) void loadAccountingCloseJournalQueue();
+  if (code === 'ledger.trial_balance' && accountingView === 'reports') void openAccountingReport('trialBalance');
+}
+async function returnToAccountingClose(recheckButton) {
+  const session = accountingCloseDetail;
+  if (recheckButton && session) {
+    const parishId = currentParish?.parishId;
+    const task = accountingCloseTaskCode;
+    recheckButton.disabled = true;
+    recheckButton.textContent = 'Running checks…';
+    try {
+      const payload = await phaseFMutation(`/close/sessions/${encodeURIComponent(session.id)}/validate`, {
+        expectedVersion: session.version,
+      });
+      if (
+        !payload ||
+        currentParish?.parishId !== parishId ||
+        task !== accountingCloseTaskCode ||
+        accountingCloseDetail?.id !== session.id
+      )
+        return;
+      updateAccountingCloseSession(payload.session);
+    } catch (error) {
+      alert(error.message || 'Unable to run close checks.');
+      return;
+    } finally {
+      recheckButton.disabled = false;
+      recheckButton.textContent = 'Recheck and return';
+    }
+  }
+  await setAccountingView('close');
+  document.getElementById('accountingCloseTitle')?.focus();
+}
+function syncAccountingCloseContext() {
+  const context = document.getElementById('accountingCloseContext');
+  if (!context) return;
+  const task = accountingCloseTask(accountingCloseTaskCode);
+  context.hidden = !task;
+  if (!task) {
+    context.replaceChildren();
+    return;
+  }
+  const session = accountingCloseDetail;
+  const month = accountingCloseMonth(session);
+  context.innerHTML = `<div><h2 id="accountingCloseTaskTitle" tabindex="-1">Close the books${month ? ` · ${escapeHtml(month)}` : ''}</h2>
+    <p><strong>${task.label}</strong> · ${task.help}</p></div>
+    <div class="acct-close-actions"><button type="button" class="acct-refresh" onclick="returnToAccountingClose()">Back to checklist</button>
+    ${session && !['completed', 'voided', 'superseded'].includes(session.status) ? '<button type="button" class="acct-action-button" onclick="returnToAccountingClose(this)">Recheck and return</button>' : ''}</div>
+    ${
+      session?.checks?.length
+        ? `<div class="acct-close-context-progress">
+      <p>${session.summary?.passed || 0} complete · ${session.summary?.warnings || 0} to review · ${session.summary?.blockers || 0} blocking</p>
+      <div class="acct-close-actions">${session.checks
+        .filter(
+          (check) => ['failed', 'warning', 'pending'].includes(check.status) && check.code !== accountingCloseTaskCode
+        )
+        .map((check) => accountingCloseTaskButton(check.code || ''))
+        .join('')}</div>
+    </div>`
+        : ''
+    }`;
+}
+function accountingCloseTaskButton(code) {
+  const task = accountingCloseTask(code);
+  return task
+    ? `<button type="button" class="acct-action-button" data-close-task="${escapeAttr(code)}" onclick="openAccountingCloseTask(this)">${task.label}</button>`
+    : '';
+}
+function accountingCloseCheckStatus(status) {
+  return (
+    {
+      passed: 'Complete',
+      failed: 'Needs attention',
+      warning: 'Review needed',
+      waived: 'Reviewed exception',
+    }[status] || 'To do'
+  );
+}
 function renderAccountingCloseBase(pane) {
   const data = accountingData.close;
   if (!data) {
@@ -9,7 +197,30 @@ function renderAccountingCloseBase(pane) {
   if (accountingCloseDetail) {
     const s = accountingCloseDetail,
       summary = s.summary || {};
-    pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">${escapeHtml((s.closeType || 'period').replaceAll('_', ' '))}</span><h2>Close checklist</h2><p>${summary.passed || 0} passed · ${summary.warnings || 0} warnings · ${summary.blockers || 0} blockers</p></div><button class="acct-refresh" onclick="accountingCloseDetail=null;renderAccountingPane()">Back to close history</button></div><div class="acct-checklist acct-close-checklist">${(s.checks || []).map((check) => `<div class="${check.status === 'passed' ? 'complete' : check.status === 'failed' ? 'failed' : ''}"><i>${check.status === 'passed' ? '✓' : check.status === 'failed' ? '!' : '○'}</i><span><strong>${escapeHtml(check.label)}</strong><small>${escapeHtml(check.category)} · ${escapeHtml(check.status)}${check.details?.count ? ` · ${check.details.count} item(s)` : ''}</small></span>${['warning', 'pending'].includes(check.status) && !check.blocking ? `<button onclick="waiveAccountingCloseCheck('${escapeAttr(s.id)}','${escapeAttr(check.id)}',${check.version})">Waive</button>` : ''}</div>`).join('')}</div><div class="acct-close-actions"><button class="acct-refresh" onclick="validateAccountingClose('${escapeAttr(s.id)}',${s.version})">Run checks again</button>${['ready_for_review', 'reviewed', 'approved'].includes(s.status) && !summary.blockers ? `<button class="acct-primary" onclick="completeAccountingClose('${escapeAttr(s.id)}',${s.version},'${escapeAttr(s.closeType)}')">${s.closeType === 'year_end' ? 'Execute year-end close' : 'Complete close'}</button>` : ''}${s.status === 'completed' ? `<button class="acct-refresh" onclick="printAccountingClosePacket('${escapeAttr(s.id)}')">Print close packet</button>` : ''}</div>`;
+    const month = accountingCloseMonth(s);
+    const finished = ['completed', 'voided', 'superseded'].includes(s.status);
+    pane.innerHTML = `<section class="acct-card acct-close-guide">
+      <div class="acct-list-head">
+        <div><h2 id="accountingCloseTitle" tabindex="-1">Close checklist${month ? ` · ${escapeHtml(month)}` : ''}</h2>
+          <p>${summary.passed || 0} complete · ${summary.warnings || 0} to review · ${summary.blockers || 0} blocking</p></div>
+        <button type="button" class="acct-refresh" onclick="accountingCloseDetail=null;renderAccountingPane()">Choose a month</button>
+      </div>
+      <ol class="acct-close-task-list">${(s.checks || [])
+        .map(
+          (check) => `
+        <li><div><h3>${escapeHtml(check.label)}</h3><p>${accountingCloseCheckStatus(check.status)}${check.details?.count ? ` · ${check.details.count} item(s)` : ''}</p></div>
+          <div class="acct-close-actions">
+            ${finished ? '' : accountingCloseTaskButton(check.code || '')}
+            ${!finished && check.status === 'warning' && !check.blocking ? `<button type="button" class="acct-refresh" onclick="waiveAccountingCloseCheck('${escapeAttr(s.id)}','${escapeAttr(check.id)}',${check.version})">Record reviewed exception</button>` : ''}
+          </div></li>`
+        )
+        .join('')}</ol>
+      <div class="acct-close-actions">
+        ${finished ? '' : `<button type="button" class="acct-action-button" onclick="validateAccountingClose('${escapeAttr(s.id)}',${s.version})">Run checks again</button>`}
+        ${['ready_for_review', 'reviewed', 'approved'].includes(s.status) && !summary.blockers ? `<button type="button" class="acct-primary" onclick="completeAccountingClose('${escapeAttr(s.id)}',${s.version},'${escapeAttr(s.closeType)}')">${s.closeType === 'year_end' ? 'Execute year-end close' : 'Complete close'}</button>` : ''}
+        ${s.status === 'completed' ? `<button type="button" class="acct-refresh" onclick="printAccountingClosePacket('${escapeAttr(s.id)}')">Print close packet</button>` : ''}
+      </div>
+    </section>`;
     return;
   }
   const fy = data.fiscalYears[0],
@@ -17,10 +228,6 @@ function renderAccountingCloseBase(pane) {
   pane.innerHTML = `<div class="acct-list-head"><div><span class="acct-kicker">Controlled accounting close</span><h2>Month-end & year-end</h2><p>Review every subsystem, resolve blockers, preserve a snapshot, and lock the period.</p></div>${fy ? `<button class="acct-refresh" onclick="downloadAccountingAuditTrail()">Export audit trail</button>` : ''}</div><div class="acct-kpis"><div><span>Open periods</span><strong>${openPeriods.length}</strong></div><div><span>Close in progress</span><strong>${data.sessions.filter((s) => !['completed', 'voided'].includes(s.status)).length}</strong></div><div><span>Completed closes</span><strong>${data.sessions.filter((s) => s.status === 'completed').length}</strong></div></div><div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Start month-end</span><h2>Close an accounting period</h2>${openPeriods.length ? `<form class="acct-phase-form" onsubmit="createAccountingClose(event)"><input type="hidden" name="closeType" value="month_end"><label>Fiscal year<select name="fiscalYearId">${data.fiscalYears.map((y) => `<option value="${escapeAttr(y.id)}">${escapeHtml(y.name)}</option>`).join('')}</select></label><label>Open period<select name="accountingPeriodId">${openPeriods.map((p) => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}</option>`).join('')}</select></label><button class="acct-primary">Begin month-end close</button><span class="acct-form-status"></span></form>` : '<p>No open accounting period is currently available.</p>'}</section><section class="acct-card"><span class="acct-kicker">Year-end</span><h2>Close revenue & expense accounts</h2><p>Preview the change in net assets and verify every prior period before creating the final closing entry.</p>${fy ? `<button class="acct-primary" onclick="createAccountingYearEnd('${escapeAttr(fy.id)}')">Begin year-end close</button><button class="acct-link" onclick="downloadAccountingAccountantExport('${escapeAttr(fy.id)}')">Prepare accountant handoff</button>` : ''}</section></div><div class="acct-list-head"><div><span class="acct-kicker">Close history</span><h2>Sessions & preserved snapshots</h2></div></div><div class="acct-card-grid">${data.sessions.map((s) => `<article class="acct-budget-card"><div><span>${escapeHtml((s.closeType || 'close').replaceAll('_', ' '))}</span><h3>${escapeHtml(data.periods.find((p) => p.id === s.accountingPeriodId)?.name || data.fiscalYears.find((y) => y.id === s.fiscalYearId)?.name || 'Accounting close')}</h3><p>${s.lastValidatedAt ? `Last checked ${accountingDate(s.lastValidatedAt)}` : 'Checks not yet run'}</p></div><span class="acct-status ${escapeAttr(s.status)}">${escapeHtml(s.status)}</span><div class="acct-row-actions"><button onclick="openAccountingClose('${escapeAttr(s.id)}')">Open checklist</button></div></article>`).join('') || accountingEmpty('No close sessions yet', 'Begin with the current open accounting period.')}</div>`;
 }
 function renderAccountingClose(pane) {
-  if (accountingHomeTask === 'close' && accountingData.close && !accountingCloseDetail) {
-    renderAccountingMonthEndDesk(pane);
-    return;
-  }
   renderAccountingCloseBase(pane);
   if (accountingCloseDetail || !accountingData.close) return;
   const adjustments = accountingData.adjustments || { items: [], templates: [] },
@@ -29,14 +236,26 @@ function renderAccountingClose(pane) {
     'beforeend',
     `<div class="acct-list-head"><div><span class="acct-kicker">Adjusting entries</span><h2>Period adjustments</h2><p>Create, review, and post accruals, deferrals, corrections, and recurring templates.</p></div></div><div class="acct-setup-grid"><section class="acct-card"><form class="acct-phase-form" onsubmit="createAccountingAdjustment(event)"><label>Type<select name="adjustmentType"><option value="accrual">Accrual</option><option value="deferral">Deferral</option><option value="reclassification">Reclassification</option><option value="correction">Correction</option><option value="other">Other</option></select></label><label>Effective date<input name="effectiveDate" type="date" required></label><label>Reason<input name="reason" required></label><label>Supporting memo<textarea name="supportingMemo" required></textarea></label><div class="acct-form-grid"><label>Debit account<select name="debitAccountId">${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Credit account<select name="creditAccountId">${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select><label>Fund<select name="fundId">${accountingData.funds.map((f) => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><label>Amount<input name="amount" type="number" min=".01" step=".01" required></label></div><button class="acct-primary">Create adjustment</button><span class="acct-form-status"></span></form></section><section class="acct-card"><form class="acct-phase-form" onsubmit="createAccountingAdjustmentTemplate(event)"><h2>New adjustment template</h2><label>Name<input name="name" required></label><label>Frequency<select name="frequency"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annually">Annually</option></select></label><button class="acct-primary">Create template from accounts above</button><span class="acct-form-status"></span></form><div class="acct-checklist">${adjustments.templates.map((t) => `<div><i>↻</i><span><strong>${escapeHtml(t.name)}</strong><small>${escapeHtml(t.frequency)}</small></span></div>`).join('') || '<p>No templates yet.</p>'}</div></section></div><div class="acct-card-grid">${adjustments.items.map((a) => `<article class="acct-budget-card"><div><span>${accountingDate(a.effectiveDate)}</span><h3>${escapeHtml(a.type)}</h3><p>${escapeHtml(a.reason)}</p></div><span class="acct-status ${escapeAttr(a.status)}">${escapeHtml(a.status)}</span>${a.status === 'draft' ? `<button onclick="postAccountingAdjustment('${escapeAttr(a.id)}',${a.version})">Post adjustment</button>` : ''}</article>`).join('') || accountingEmpty('No adjustments yet', 'Create an adjusting entry for the open period.')}</div>${fy ? `<section class="acct-card"><span class="acct-kicker">Fiscal-year governance</span><h2>${escapeHtml(fy.name)}</h2><div class="acct-row-actions"><button onclick="archiveAccountingFiscalYear('${escapeAttr(fy.id)}',${fy.version})">Archive fiscal year</button><button onclick="reopenAccountingFiscalYear('${escapeAttr(fy.id)}',${fy.version})">Reopen year-end close</button></div></section>` : ''}`
   );
+  const advanced = document.createElement('details');
+  advanced.className = 'acct-card acct-close-advanced';
+  advanced.open = accountingCloseToolsExpanded;
+  advanced.innerHTML = '<summary>Close history, year-end and adjustments</summary>';
+  const tools = document.createElement('div');
+  tools.append(...pane.children);
+  advanced.append(tools);
+  advanced.ontoggle = () => {
+    accountingCloseToolsExpanded = advanced.open;
+  };
+  renderAccountingMonthEndDesk(pane);
+  pane.append(advanced);
 }
 function renderAccountingMonthEndDesk(pane) {
   const { sessions, periods } = accountingData.close;
   const current = sessions.filter(
-    (session) => session.closeType === 'month_end' && !['completed', 'superseded'].includes(session.status)
+    (session) => session.closeType === 'month_end' && !['completed', 'voided', 'superseded'].includes(session.status)
   );
   const activePeriods = new Set(current.map((session) => session.accountingPeriodId));
-  const today = /* @__PURE__ */ new Date().toLocaleDateString('en-CA');
+  const today = accountingLocalDate();
   const available = periods.filter(
     (period) => period.status === 'open' && period.endDate && period.endDate < today && !activePeriods.has(period.id)
   );
@@ -44,9 +263,11 @@ function renderAccountingMonthEndDesk(pane) {
     (session) =>
       `<li><div><strong>${escapeHtml(periods.find((period) => period.id === session.accountingPeriodId)?.name || 'Monthly close')}</strong><small>${session.lastValidatedAt ? `Last checked ${accountingDate(session.lastValidatedAt)}` : 'Ready to run checks'}</small></div><button type="button" onclick="openAccountingClose('${escapeAttr(session.id)}')">Continue checklist</button></li>`
   );
-  pane.innerHTML = `<section class="acct-card"><h2>Finish a month</h2><p>Run the close checklist after recording activity and matching bank statements for the month. The checklist shows what still needs attention before you close the books.</p>
+  pane.innerHTML = `<section class="acct-card acct-close-guide"><h2 id="accountingCloseTitle" tabindex="-1">Finish a month</h2><p>Choose the month you want to close. Review the checklist, complete any remaining work here, then run the checks again before locking the month.</p>
     ${rows.length ? `<ul class="acct-work-queue">${rows.join('')}</ul>` : ''}
     ${available.length ? `<form class="acct-phase-form" onsubmit="beginAccountingMonthEnd(event)"><label>Month to review<select name="periodId" required>${available.map((period) => `<option value="${escapeAttr(period.id)}">${escapeHtml(period.name)}</option>`).join('')}</select></label><button type="submit" class="acct-primary">Start month-end checklist</button><span class="acct-form-status" role="status"></span></form>` : '<p>No additional finished months are open for review.</p>'}
+    <h3>Prepare for month-end</h3>
+    <div class="acct-close-actions">${['journals.open_drafts', 'bank.required_reconciliations', 'integrations.exceptions', 'reports.validation'].map(accountingCloseTaskButton).join('')}</div>
     </section>`;
 }
 async function beginAccountingMonthEnd(event) {
@@ -78,34 +299,23 @@ async function loadAccountingPhaseF() {
   const loading = pane?.firstElementChild;
   const workspace = accountingData;
   try {
-    if (accountingHomeTask === 'close') {
-      const payload2 = await accountingDeskRead('/close/workspace');
-      if (!loading?.isConnected || workspace !== accountingData) return;
-      workspace.close = {
-        fiscalYears: payload2.fiscalYears || [],
-        periods: payload2.periods || [],
-        sessions: payload2.sessions || [],
-      };
-      renderAccountingPane();
-      return;
-    }
-    const [res, adjustmentsRes, templatesRes] = await Promise.all(
-        ['/close/workspace', '/adjustments', '/adjustments/templates'].map((path) =>
-          fetch(accountingApi(path), { headers: authHeaders() })
-        )
-      ),
-      [payload, adjustments, templates] = await Promise.all(
-        [res, adjustmentsRes, templatesRes].map((response) => response.json().catch(() => ({})))
-      );
-    if (!res.ok) throw new Error(payload.message || payload.error);
-    if (!adjustmentsRes.ok) throw new Error(adjustments.message || adjustments.error);
-    if (!templatesRes.ok) throw new Error(templates.message || templates.error);
-    accountingData.close = {
+    const [close, adjustments, templates] = await Promise.allSettled(
+      ['/close/workspace', '/adjustments', '/adjustments/templates'].map((path) => accountingDeskRead(path))
+    );
+    if (!loading?.isConnected || workspace !== accountingData) return;
+    if (close.status === 'rejected') throw close.reason;
+    const payload = close.value;
+    workspace.close = {
       fiscalYears: payload.fiscalYears || [],
       periods: payload.periods || [],
       sessions: payload.sessions || [],
     };
-    accountingData.adjustments = { items: adjustments.adjustments || [], templates: templates.templates || [] };
+    workspace.adjustments = {
+      items:
+        adjustments.status === 'fulfilled' ? adjustments.value.adjustments || [] : workspace.adjustments?.items || [],
+      templates:
+        templates.status === 'fulfilled' ? templates.value.templates || [] : workspace.adjustments?.templates || [],
+    };
     renderAccountingPane();
   } catch (error) {
     if (loading?.isConnected)
@@ -145,20 +355,21 @@ async function openAccountingClose(id) {
     alert(payload.message || payload.error);
     return;
   }
-  accountingCloseDetail = payload.session;
+  updateAccountingCloseSession(payload.session);
   renderAccountingPane();
 }
 async function validateAccountingClose(id, version) {
+  const parishId = currentParish?.parishId;
   const payload = await phaseFMutation(`/close/sessions/${encodeURIComponent(id)}/validate`, {
     expectedVersion: version,
   });
-  if (payload) {
-    accountingCloseDetail = payload.session;
+  if (payload && currentParish?.parishId === parishId && accountingView === 'close') {
+    updateAccountingCloseSession(payload.session);
     renderAccountingPane();
   }
 }
 async function waiveAccountingCloseCheck(id, checkId, version) {
-  const reason = prompt('Reason for waiving this warning:');
+  const reason = prompt('What did you review, and why can this exception remain open?');
   if (!reason) return;
   const payload = await phaseFMutation(`/close/sessions/${encodeURIComponent(id)}/waive`, {
     checkId,
@@ -168,7 +379,7 @@ async function waiveAccountingCloseCheck(id, checkId, version) {
   if (payload) await openAccountingClose(id);
 }
 async function completeAccountingClose(id, version, type) {
-  if (accountingHomeTask === 'close' && !confirm('Close this month and lock it against new entries?')) return;
+  if (type === 'month_end' && !confirm('Close this month and lock it against new entries?')) return;
   const path =
     type === 'year_end'
       ? `/close/year-end/${encodeURIComponent(accountingCloseDetail.fiscalYearId)}/execute`

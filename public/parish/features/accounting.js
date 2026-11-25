@@ -91,6 +91,7 @@ async function renderAccountingAccess(message = '') {
   accountingData.payables = null;
   accountingData.close = null;
   accountingCloseDetail = null;
+  accountingCloseTaskCode = '';
   syncAccountingHomeTask();
   try {
     const response = await fetch(accountingAccessApi('/profiles'), { headers: authHeaders() });

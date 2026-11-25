@@ -855,6 +855,58 @@
 .acct-simple-income-grid input,.acct-simple-income-grid select,.acct-simple-income-grid textarea { width:100%; box-sizing:border-box; border:1px solid var(--line); border-radius:7px; padding:11px; background:#fff; color:var(--ink); font:500 12px var(--sans); }
 .acct-simple-income-grid textarea { resize:vertical; }
 .acct-simple-income-details { margin-bottom:14px; }
+.acct-action-button {
+  display:inline-flex; align-items:center; align-self:flex-start; gap:10px; min-height:44px;
+  max-width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid #b59b66;
+  border-radius:8px; background:#f4ead2; color:var(--ink); font:700 13px/1.4 var(--sans);
+  text-align:left; cursor:pointer;
+}
+.acct-action-button[hidden] { display:none; }
+.acct-action-button:hover,.acct-deposit-bank-split[open] > summary { background:#ebdcba; }
+.acct-action-button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.acct-action-button:disabled { opacity:.6; cursor:wait; }
+.acct-deposit-bank-split > summary::-webkit-details-marker { display:none; }
+.acct-deposit-bank-split > summary::after {
+  content:""; flex:0 0 7px; height:7px; border-right:2px solid; border-bottom:2px solid;
+  transform:translateY(-2px) rotate(45deg);
+}
+.acct-deposit-bank-split[open] > summary::after { transform:translateY(2px) rotate(225deg); }
+.acct-deposit-bank-split > p { margin:10px 0; color:var(--stone); font:500 13px/1.5 var(--sans); }
+.acct-deposit-period,.acct-posting-period-summary {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px 16px;
+  padding:14px 16px; border:1px solid var(--line); border-radius:9px; background:#f5f1e9;
+}
+.acct-deposit-period { margin-bottom:14px; }
+.acct-deposit-period strong,.acct-deposit-period span { display:block; }
+.acct-deposit-period strong { color:var(--ink); font:700 14px var(--sans); }
+.acct-deposit-period span,.acct-posting-period-summary p { margin:4px 0 0; color:var(--stone); font:500 13px/1.5 var(--sans); }
+.acct-posting-period-summary h2 { margin:0; color:var(--ink); font:600 21px var(--serif); }
+.acct-posting-period-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+p.acct-period-error { flex-basis:100%; margin:0; color:#873d31; font:700 13px/1.4 var(--sans); }
+.acct-period-error:empty { display:none; }
+.acct-posting-period-list { list-style:none; margin:0; padding:0; }
+.acct-posting-period-list li { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:10px 0; border-top:1px solid var(--line); }
+.acct-posting-period-list li > div { display:flex; align-items:center; gap:10px; color:var(--ink); }
+.acct-overview-recent ul,.acct-close-task-list { list-style:none; margin:0; padding:0; }
+.acct-overview-recent li,.acct-close-task-list li {
+  display:flex; align-items:center; flex-wrap:wrap; gap:10px 16px; padding:12px 0; border-top:1px solid var(--line);
+}
+.acct-overview-recent li > div,.acct-close-task-list li > div:first-child { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; }
+.acct-overview-recent li small { display:block; margin-top:4px; color:var(--stone); }
+.acct-close-context {
+  display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:12px 16px;
+  margin:0 0 14px; padding:16px; border:1px solid var(--line); border-radius:12px; background:#f5f1e9;
+}
+.acct-close-context[hidden] { display:none; }
+.acct-close-context h2 { margin:0 0 4px; color:var(--ink); font:600 22px var(--serif); }
+.acct-close-context p,.acct-close-task-list li p { margin:4px 0 0; color:var(--stone); font:500 13px/1.5 var(--sans); }
+.acct-close-context-progress { flex-basis:100%; padding-top:8px; border-top:1px solid var(--line); }
+.acct-close-context-progress p { margin-bottom:8px; }
+.acct-close-task-list h3,.acct-close-guide > h3 { margin:0; color:var(--ink); font:700 15px var(--sans); }
+.acct-close-guide > h3 { margin:14px 0 8px; }
+.acct-close-guide > .acct-close-actions,.acct-close-advanced { margin-top:14px; }
+.acct-close-advanced > summary { color:var(--ink); font-weight:700; cursor:pointer; }
+.acct-close-advanced[open] > summary { margin-bottom:14px; }
 .acct-income-splits { display:grid; gap:10px; }
 .acct-income-split-row { display:grid; grid-template-columns:minmax(180px,1.25fr) minmax(170px,1fr) minmax(120px,.65fr) minmax(180px,1fr) 32px; gap:10px; align-items:end; padding:12px; border:1px solid rgba(6,21,34,.08); border-radius:9px; background:#fff; }
 .acct-income-split-row label,.acct-income-split-total label { display:grid; gap:6px; color:var(--stone); font:700 10px var(--sans); }

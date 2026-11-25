@@ -32,6 +32,7 @@ function accountingSimpleIncomeForm() {
     return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Unable to load bank accounts</h2><p>Reload Accounting to check which accounts can receive this deposit.</p></div><button class="acct-primary" onclick="loadAccountingTab(true)">Retry</button></section>`;
   if (!banks.length)
     return `<section class="acct-simple-income"><div><span class="acct-kicker">Record Income</span><h2>Set up your deposit account</h2><p>Add the parish bank account where the money was deposited. After you save it, you can record the deposit here.</p></div>${accountingBankAccountForm()}</section>`;
+  const entryDate = accountingLocalDate();
   const bankOptions = banks
     .map(
       (bank) =>
@@ -40,9 +41,63 @@ function accountingSimpleIncomeForm() {
     .join('');
   const bankSplitFields =
     banks.length > 1
-      ? `<details class="acct-simple-income-details"><summary>Split this check between two bank accounts</summary><p>Use this if both bank statements show part of the check as a deposit. Enter the portion deposited into the second account. The rest goes to the first account. If you moved money later, record that movement as a transfer.</p><div class="acct-simple-income-grid"><label>Second bank account<select name="secondDepositAccountId"><option value="">Use one bank account</option>${bankOptions}</select></label><label>Amount deposited into the second account<input name="secondDepositAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></label></div></details>`
+      ? `<details class="acct-simple-income-details acct-deposit-bank-split">
+          <summary class="acct-action-button">Split this check between two bank accounts</summary>
+          <p>Use this if both bank statements show part of the check as a deposit. Enter the portion deposited into the second account. The rest goes to the first account. If you moved money later, record that movement as a transfer.</p>
+          <div class="acct-simple-income-grid">
+            <label>Second bank account<select name="secondDepositAccountId"><option value="">Use one bank account</option>${bankOptions}</select></label>
+            <label>Amount deposited into the second account<input name="secondDepositAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></label>
+          </div>
+        </details>`
       : '';
-  return `<section class="acct-simple-income"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div><button type="button" class="acct-link" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button></div><form onsubmit="submitAccountingSimpleIncome(event)"><div class="acct-simple-income-grid acct-simple-income-details"><label>Where did the money go?<select name="depositAccountId" required>${bankOptions}</select></label><label>Date<input name="entryDate" type="date" required value="${/* @__PURE__ */ new Date().toISOString().slice(0, 10)}"></label><label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label></div>${bankSplitFields}<div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div><div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId: defaultFund?.id || '' }, false)}</div><div class="acct-income-split-actions" hidden><button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button><button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button></div><div class="acct-balance acct-income-split-balance" hidden></div><div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div></form></section>`;
+  return `<section class="acct-simple-income">
+    <div class="acct-simple-income-head">
+      <div><span class="acct-kicker">Record Income</span><h2>Record a deposit</h2><p>Tell AGAPAY what happened. The complete ledger entry is created and posted for you.</p></div>
+      <button type="button" class="acct-action-button" data-enable-income-splits onclick="enableAccountingIncomeSplits(this)">Split this deposit across funds</button>
+    </div>
+    <form onsubmit="submitAccountingSimpleIncome(event)">
+      <div class="acct-simple-income-grid acct-simple-income-details">
+        <label>Where did the money go?<select name="depositAccountId" required>${bankOptions}</select></label>
+        <label>Date<input name="entryDate" type="date" required value="${entryDate}" aria-describedby="depositPostingPeriodStatus" onchange="updateAccountingDepositPeriod(this.form)"></label>
+        <label class="wide">Description<input name="description" maxlength="240" required placeholder="Sunday offering, fundraiser deposit, or other detail"></label>
+      </div>
+      <div class="acct-deposit-period" data-accounting-deposit-period>${accountingDepositPeriod(entryDate)}</div>
+      ${bankSplitFields}
+      <div class="acct-income-split-total" hidden><label>Total deposit amount<input data-income-total type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" oninput="updateAccountingSplitDepositBalance(this.form)"></label><small>This must equal all allocations below.</small></div>
+      <div class="acct-income-splits" data-income-splits>${accountingIncomeSplitRow({ fundId: defaultFund?.id || '' }, false)}</div>
+      <div class="acct-income-split-actions" hidden>
+        <button type="button" class="acct-add-line" onclick="addAccountingIncomeSplit(this)">+ Add another allocation</button>
+        <button type="button" class="acct-link" onclick="disableAccountingIncomeSplits(this)">Use one allocation</button>
+      </div>
+      <div class="acct-balance acct-income-split-balance" hidden></div>
+      <div class="acct-simple-income-foot"><span class="acct-form-status" role="status">${escapeHtml(accountingSimpleIncomeMessage)}</span><button class="acct-primary" data-income-submit>Record income</button></div>
+    </form>
+  </section>`;
+}
+function accountingDepositPeriod(date) {
+  const period = accountingPostingPeriodForDate(date);
+  const status = period ? accountingPostingPeriodStatus(period) : date ? 'Missing' : 'Choose date';
+  const button = period ? accountingOpenPostingPeriodButton(period) : '';
+  const title = period ? `${accountingPostingPeriodLabel(period)} · ${status}` : 'Posting period';
+  const messages = {
+    'Choose date': 'Choose the deposit date to see its posting period.',
+    Missing: 'No posting period covers this date. Ask your treasurer to check the fiscal calendar.',
+    'Fiscal year unavailable': 'Ask your treasurer to check the fiscal year before recording this deposit.',
+    Open: 'This deposit will post to this month.',
+    Unopened: button
+      ? 'Open this month before recording the deposit.'
+      : 'Ask your treasurer or rector to open this month before recording the deposit.',
+    Closed: 'Ask your treasurer to review this month in the month-end close workspace.',
+    Locked: 'Ask your treasurer to review this month in the month-end close workspace.',
+  };
+  return `<div id="depositPostingPeriodStatus" role="status"><strong>${escapeHtml(title)}</strong><span>${messages[status]}</span></div>
+    ${button}
+    <p class="acct-period-error" data-accounting-period-error role="alert"></p>`;
+}
+function updateAccountingDepositPeriod(form) {
+  const date = form.querySelector('[name="entryDate"]').value;
+  const panel = form.querySelector('[data-accounting-deposit-period]');
+  panel.innerHTML = accountingDepositPeriod(date);
 }
 function accountingIncomeSplitRow(split = {}, removable = true) {
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
@@ -57,11 +112,13 @@ function enableAccountingIncomeSplits(button) {
   form.querySelector('.acct-income-split-actions').hidden = false;
   form.querySelector('.acct-income-split-balance').hidden = false;
   const firstAmount = form.querySelector('[data-income-amount]');
-  form.querySelector('[data-income-total]').value = firstAmount.value;
+  const totalAmount = form.querySelector('[data-income-total]');
+  totalAmount.value = firstAmount.value;
   form.querySelectorAll('[data-split-amount-label]').forEach((label) => {
     label.textContent = 'Allocation amount';
   });
   addAccountingIncomeSplit(form.querySelector('.acct-add-line'));
+  totalAmount.focus();
 }
 function disableAccountingIncomeSplits(button) {
   const form = button.closest('form');
@@ -73,11 +130,13 @@ function disableAccountingIncomeSplits(button) {
   form.querySelector('.acct-income-split-total').hidden = true;
   form.querySelector('.acct-income-split-actions').hidden = true;
   form.querySelector('.acct-income-split-balance').hidden = true;
-  form.closest('.acct-simple-income').querySelector('[data-enable-income-splits]').hidden = false;
+  const splitButton = form.closest('.acct-simple-income').querySelector('[data-enable-income-splits]');
+  splitButton.hidden = false;
   form.querySelectorAll('[data-split-amount-label]').forEach((label) => {
     label.textContent = 'Amount';
   });
   form.querySelector('[data-income-submit]').disabled = false;
+  splitButton.focus();
 }
 function addAccountingIncomeSplit(button) {
   const form = button.closest('form');
@@ -119,6 +178,54 @@ function updateAccountingSplitDepositBalance(form) {
 function accountingSimpleActivityFeed() {
   const entries = accountingData.journals.filter((entry) => ['posted', 'reversed'].includes(entry.status)).slice(0, 8);
   return `<section class="acct-simple-feed"><div class="acct-suite-section-head"><div><span class="acct-kicker">Recent activity</span><h2>What has been recorded</h2></div></div>${entries.map((entry) => `<article><i>✓</i><p>You recorded <strong>${accountingMoney(entry.totalDebits ?? entry.total_debits ?? 0)}</strong> for ${escapeHtml(entry.description || 'parish activity')} on ${accountingDate(entry.postingDate || entry.entryDate)}.</p></article>`).join('') || accountingEmpty('No activity yet', 'Recorded income and posted parish activity will appear here.')}</section>`;
+}
+function accountingOverviewPostingPeriod() {
+  const period = accountingPostingPeriodForDate(accountingLocalDate());
+  const openButton = period ? accountingOpenPostingPeriodButton(period) : '';
+  return `<section class="acct-posting-period-summary" aria-label="Posting periods" data-accounting-posting-periods>
+    <div><h2>Posting periods</h2><p>${period ? `${escapeHtml(accountingPostingPeriodLabel(period))} · ${accountingPostingPeriodStatus(period)}` : 'Check which months are open for entries.'}</p>
+      ${openButton ? '<p>Open the month to record entries dated in it.</p>' : ''}</div>
+    <div class="acct-posting-period-actions">${openButton}<button type="button" class="${openButton ? 'acct-refresh' : 'acct-action-button'}" onclick="showAccountingPostingPeriods()">View posting periods</button></div>
+    <p class="acct-period-error" data-accounting-period-error role="alert"></p>
+  </section>`;
+}
+function showAccountingPostingPeriods() {
+  setAccountingView('posting-periods');
+  document.getElementById('accountingPostingPeriodsTitle')?.focus();
+}
+function renderAccountingPostingPeriods(pane) {
+  const periods = accountingData.setup?.periods || [];
+  pane.innerHTML = `<section class="acct-card acct-posting-periods" data-accounting-posting-periods>
+    <h2 id="accountingPostingPeriodsTitle" tabindex="-1">Posting periods</h2>
+    <p>An open month accepts transactions dated in that month. A treasurer or rector can open an unopened month. Use the month-end close workflow for closed or locked months.</p>
+    <p class="acct-period-error" data-accounting-period-error role="alert"></p>
+    ${
+      periods.length
+        ? `<ul class="acct-posting-period-list">${[...periods]
+            .reverse()
+            .map((period) => {
+              const status = accountingPostingPeriodStatus(period);
+              return `<li><div><strong>${escapeHtml(accountingPostingPeriodLabel(period))}</strong><span class="acct-status ${status === 'Open' ? 'posted' : ''}">${status}</span></div>${accountingOpenPostingPeriodButton(period)}</li>`;
+            })
+            .join('')}</ul>`
+        : accountingEmpty('No posting periods available', 'Check the fiscal year in Accounting setup.')
+    }
+  </section>`;
+}
+function accountingOverviewRecentActivity() {
+  const entries = accountingData.recentActivity;
+  const rows = (entries || []).map((entry) => {
+    const amount = entry.totalDebits ?? entry.total_debits ?? 0;
+    return `<li>
+      <div><strong>${escapeHtml(entry.description || entry.entryNumber || 'Journal entry')}</strong><small>${accountingDate(entry.updatedAt || entry.postingDate || entry.entryDate)}</small></div>
+      ${amount > 0 ? `<strong>${accountingMoney(amount)}</strong>` : ''}
+      <span class="acct-status ${entry.status === 'posted' ? 'posted' : ''}">${escapeHtml(entry.status)}</span>
+    </li>`;
+  });
+  return `<section class="acct-card acct-overview-recent" aria-labelledby="accountingRecentActivityTitle">
+    <div class="acct-list-head"><h2 id="accountingRecentActivityTitle">Recent activity</h2><button type="button" class="acct-action-button" onclick="setAccountingView('journals')">View journal entries</button></div>
+    ${rows.length ? `<ul>${rows.join('')}</ul>` : `<p>${entries ? 'New journal entries and updates will appear here.' : 'Recent activity is unavailable. Refresh Accounting to try again.'}</p>`}
+  </section>`;
 }
 function accountingInKindDebitOptions() {
   const cashIds = /* @__PURE__ */ new Set(['acct_1000', 'acct_1010', 'acct_1100']);
@@ -200,7 +307,7 @@ function renderAccountingTreasurerHome(pane) {
         <li><button type="button" id="accountingHomeBankAccounts" onclick="openAccountingHomeBankAccounts(this.id)"><strong>Manage bank accounts</strong><span>Add an account or update its details</span></button></li>
         <li><button type="button" id="accountingHomeBank" onclick="openAccountingHomeBank(this.id)"><strong>Match bank statements</strong><span data-accounting-summary="bank" role="status">Checking bank statements…</span></button></li>
         <li><button type="button" id="accountingHomeGiving" onclick="openAccountingGivingReconciliation(this.id)"><strong>Review online giving payouts</strong><span>Review Stripe deposits, fees, and refunds</span></button></li>
-        <li><button type="button" id="accountingHomeClose" onclick="openAccountingHomeTask('close',this.id)"><strong>Close the books</strong><span data-accounting-summary="close" role="status">Checking close progress…</span></button></li>
+        <li><button type="button" id="accountingHomeClose" onclick="openAccountingWorkspace('close')"><strong>Close the books</strong><span data-accounting-summary="close" role="status">Checking close progress…</span></button></li>
       </ul>
     </section>
   </div>`;
@@ -264,19 +371,24 @@ function openAccountingGivingReconciliation(trigger) {
   accountingReconciliationView = 'giving';
   return openAccountingHomeTask('banking', trigger);
 }
-async function openAccountingMonthEndChecks(trigger) {
+async function openAccountingMonthEndChecks() {
   const parishId = currentParish?.parishId;
   const sessionId = accountingOverviewSummaries.monthEnd?.session?.id;
-  await openAccountingHomeTask('close', trigger);
+  await setAccountingView('close');
   if (sessionId && accountingView === 'close' && currentParish?.parishId === parishId)
     await openAccountingClose(sessionId);
+}
+async function openAccountingMonthEndStep(button) {
+  const parishId = currentParish?.parishId;
+  await openAccountingMonthEndChecks();
+  if (currentParish?.parishId === parishId && accountingView === 'close') openAccountingCloseTask(button);
 }
 function accountingMonthEndChecklist() {
   const snapshot = accountingOverviewSummaries;
   const month = snapshot.monthEnd;
   const heading = '<h2 id="accountingMonthEndTitle">Month-end checklist</h2>';
   const footer =
-    '<button type="button" class="acct-link" id="accountingMonthEndChecks" onclick="openAccountingMonthEndChecks(this.id)">Open close checks →</button>';
+    '<button type="button" class="acct-link" id="accountingMonthEndChecks" onclick="openAccountingMonthEndChecks()">Open close checks →</button>';
   const shell = (content) =>
     `<section class="acct-month-end" data-accounting-overview-section="month-end" aria-labelledby="accountingMonthEndTitle">${heading}${content}</section>`;
   if (snapshot.loading) return shell('<p role="status">Checking month-end status…</p>');
@@ -290,16 +402,13 @@ function accountingMonthEndChecklist() {
   }
   const checks = month.session?.checks || [];
   const steps = [
-    { title: 'Review posted activity', code: 'journals.open_drafts', action: "setAccountingView('journals')" },
+    { title: 'Review unposted entries', code: 'journals.open_drafts' },
     {
       title: 'Review giving and posting exceptions',
       code: 'integrations.exceptions',
-      action: "setAccountingView('integrations')",
     },
-    ...(accountingData.tier === 'advanced_operations'
-      ? [{ title: 'Review open bills', code: 'payables.review', action: 'openAccountingBills()' }]
-      : []),
-    { title: 'Match bank statements', code: 'bank.required_reconciliations', action: 'openAccountingHomeBank()' },
+    ...(accountingData.tier === 'advanced_operations' ? [{ title: 'Review open bills', code: 'payables.review' }] : []),
+    { title: 'Match bank statements', code: 'bank.required_reconciliations' },
   ];
   const groups = steps.map((step) => ({
     ...step,
@@ -310,7 +419,7 @@ function accountingMonthEndChecklist() {
     ...groups,
     {
       title: 'Run close checks',
-      action: 'openAccountingMonthEndChecks(this.id)',
+      code: '',
       checks: checks.filter((check) => check.code && !stepCodes.has(check.code)),
     },
   ].map((step) => {
@@ -342,7 +451,7 @@ function accountingMonthEndChecklist() {
       : 'Checks haven’t been run';
   return shell(`<p>${escapeHtml(month.period.name)} · ${escapeHtml(validation)}</p>
     <div class="acct-month-end-progress"><progress aria-label="Month-end steps resolved" value="${completed}" max="${allSteps.length}"></progress><span>${completed} of ${allSteps.length} resolved</span></div>
-    <ol class="acct-workspace-tool-list">${allSteps.map((step, index) => `<li><button type="button" id="accountingMonthEndStep-${index}"${step === next ? ' class="acct-month-end-next"' : ''} onclick="${step.action}"><span><strong>${step.title}</strong>${step === next ? '<small>Next step</small>' : ''}</span><span class="acct-month-end-status${step.resolved ? ' resolved' : ''}">${step.status}</span></button></li>`).join('')}</ol>
+    <ol class="acct-workspace-tool-list">${allSteps.map((step, index) => `<li><button type="button" id="accountingMonthEndStep-${index}"${step === next ? ' class="acct-month-end-next"' : ''} data-close-task="${escapeAttr(step.code)}" onclick="${step.code ? 'openAccountingMonthEndStep(this)' : 'openAccountingMonthEndChecks()'}"><span><strong>${step.title}</strong>${step === next ? '<small>Next step</small>' : ''}</span><span class="acct-month-end-status${step.resolved ? ' resolved' : ''}">${step.status}</span></button></li>`).join('')}</ol>
     ${footer}`);
 }
 const accountingExpenseReceipt = { text: '' };

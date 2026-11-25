@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260901memorial1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=accounting-workspaces1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=deposit-split1" />
   <link rel="stylesheet" href="/parish/library.css?v=20260829fullscreen1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -1469,6 +1469,7 @@ Generate Monthly Financial Report
                 <h2 id="accountingHomeTaskTitle" tabindex="-1"></h2>
                 <button type="button" class="acct-link" onclick="closeAccountingHomeTask()">Back to overview</button>
               </section>
+              <section id="accountingCloseContext" class="acct-close-context" aria-label="Close the books" hidden></section>
               <div id="accountingPane"><p class="sw-tool-loading">Loading Accounting...</p></div>
             </div>
 </section>
@@ -1904,8 +1905,8 @@ Generate Monthly Financial Report
 <script src="/parish/features/sacraments.js?v=557ffeb7bc3dbe6d"></script>
 <script src="/parish/accounting-journey.js?v=8aea4d32b6874f07"></script>
 <script src="/parish/features/accounting/assets.js?v=96d3ef4a9818cd59"></script>
-<script src="/parish/features/accounting/workspace.js?v=f55ce808d829df67"></script>
-<script src="/parish/features/accounting/treasurer.js?v=0c16354cb80b811f"></script>
+<script src="/parish/features/accounting/workspace.js?v=c9634be3885ec17e"></script>
+<script src="/parish/features/accounting/treasurer.js?v=30bd85f26a2b262d"></script>
 <script src="/parish/features/accounting/ledger.js?v=44158e7653b144e6"></script>
 <script src="/parish/features/accounting/payables.js?v=e46e74189f7b63e8"></script>
   <link rel="stylesheet" href="/parish/accounting-reports.css?v=6041c130a35b0250">
@@ -1913,11 +1914,11 @@ Generate Monthly Financial Report
 <script src="/parish/features/accounting/report-loaders.js?v=b12de6791b015bf8"></script>
 <script src="/parish/features/accounting/reports.js?v=b71f6af1f7a5d6a5"></script>
 <script src="/parish/features/accounting/funds.js?v=c4151ae8e72976c5"></script>
-<script src="/parish/features/accounting/banking.js?v=b37cfadc5afa304d"></script>
-<script src="/parish/features/accounting/close.js?v=2069f7d50315d57e"></script>
+<script src="/parish/features/accounting/banking.js?v=566763a6ce875402"></script>
+<script src="/parish/features/accounting/close.js?v=e44a05281e8309c3"></script>
 <script src="/parish/features/accounting/migration.js?v=b4a9922847685091"></script>
 <script src="/parish/features/accounting/activation.js?v=879fca12e6e60d31"></script>
-<script src="/parish/features/accounting.js?v=010e7068d3cdae62"></script>
+<script src="/parish/features/accounting.js?v=52cd1a42dca7936e"></script>
 <script src="/parish/features/commerce/bookstore-catalog.js?v=c228ee90fc233fb6"></script>
 <script src="/parish/features/commerce/bookstore-checkout.js?v=408c0df8ac281d32"></script>
 <script src="/parish/features/commerce/bookstore-sales.js?v=bb593e2f23b2fae2"></script>

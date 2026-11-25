@@ -4,16 +4,18 @@ interface AccountingWorkspaceSettings extends AccountingIntegrationSettings {
   fiscalYearStartMonth?: number;
   openingBalancesDisposition?: string;
 }
+interface AccountingPostingPeriod {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  version: number;
+  fiscalStatus: string;
+}
 interface AccountingSetupOverview {
-  periods?: {
-    id: string;
-    name: string;
-    startDate: string;
-    endDate: string;
-    status: string;
-    version: number;
-    fiscalStatus: string;
-  }[];
+  periods?: AccountingPostingPeriod[];
+  canOpenPeriods?: boolean;
   activeAccountCount?: number;
   activeFundCount?: number;
   checklist?: { complete?: boolean; label: string }[];
@@ -79,6 +81,7 @@ interface AccountingWorkspaceResponse {
   ok: boolean;
   accounting?: AccountingReadiness;
   overview: AccountingSetupOverview & AccountingPayablesOverview;
+  period?: AccountingPostingPeriod;
   tier?: string;
   status?: { operational?: boolean };
   accounts?: AccountingBankAccount[] & AccountingAccount[];

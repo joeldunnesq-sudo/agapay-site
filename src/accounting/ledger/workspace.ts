@@ -18,6 +18,7 @@ type EntryRow = {
   currency: string;
   version: number;
   posted_at: string | null;
+  updated_at: string;
 };
 type LineRow = {
   line_number: number;
@@ -76,6 +77,7 @@ function entryDto(r: EntryRow) {
     currency: r.currency,
     version: Number(r.version),
     postedAt: r.posted_at || '',
+    updatedAt: r.updated_at,
   });
 }
 function lineDto(r: LineRow) {
@@ -248,6 +250,7 @@ export async function searchJournalEntries(
     dateTo = '',
     limit = 50,
     offset = 0,
+    sort = '',
   }: ActorOptions & {
     query?: string;
     status?: string;
@@ -256,6 +259,7 @@ export async function searchJournalEntries(
     dateTo?: string;
     limit?: number | string;
     offset?: number | string;
+    sort?: string;
   } = {}
 ) {
   capability(actor, 'accounting.view');
@@ -265,7 +269,9 @@ export async function searchJournalEntries(
     clauses.push('(e.entry_number LIKE ? OR e.description LIKE ? OR e.memo LIKE ?)');
     params.push(`%${query}%`, `%${query}%`, `%${query}%`);
   }
-  if (status) {
+  if (status === 'unposted') {
+    clauses.push("e.status IN ('draft','pending')");
+  } else if (status) {
     clauses.push('e.status=?');
     params.push(status);
   }
@@ -282,9 +288,11 @@ export async function searchJournalEntries(
     params.push(dateTo);
   }
   params.push(Math.min(100, Math.max(1, Number(limit) || 50)), Math.max(0, Number(offset) || 0));
+  const order =
+    sort === 'activity' ? 'e.updated_at DESC,e.created_at DESC,e.id DESC' : 'e.entry_date DESC,e.created_at DESC';
   const rows = await all(
     db,
-    `SELECT e.* FROM accounting_journal_entries e WHERE ${clauses.join(' AND ')} ORDER BY e.entry_date DESC,e.created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT e.* FROM accounting_journal_entries e WHERE ${clauses.join(' AND ')} ORDER BY ${order} LIMIT ? OFFSET ?`,
     ...params
   );
   return Object.freeze(rows.map(entryDto));

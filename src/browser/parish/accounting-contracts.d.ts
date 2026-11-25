@@ -110,6 +110,7 @@ interface AccountingLedgerEntry {
 interface AccountingWorkspaceData {
   setup: AccountingSetupOverview | null;
   journals: AccountingJournalSummary[];
+  recentActivity?: AccountingJournalSummary[];
   ledger: AccountingLedgerEntry[];
   reports: Record<string, AccountingReport>;
   accounts: AccountingAccount[];

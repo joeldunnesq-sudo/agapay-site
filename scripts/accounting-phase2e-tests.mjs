@@ -44,6 +44,10 @@ const splitCheck = {
   splits: [{ revenueAccountId: 'acct_4010', fundId: 'fund_general', amount: 10000 }],
 };
 const entriesBefore = s.prepare('SELECT COUNT(*) AS count FROM accounting_journal_entries').get().count;
+await assert.rejects(
+  () => recordSplitDeposit(db, { ...splitCheck, entryDate: '2026-11-23' }),
+  /No open accounting period covers 2026-11-23/
+);
 await assert.rejects(() => recordSplitDeposit(db, { ...splitCheck, secondDepositAccountId: bank.ledgerAccountId }), /two different bank accounts/);
 await assert.rejects(() => recordSplitDeposit(db, { ...splitCheck, secondDepositAmount: 10000 }), /less than the check total/);
 await assert.rejects(() => recordSplitDeposit(db, { ...splitCheck, secondDepositAccountId: 'acct_1100' }), /active bank accounts/);
@@ -58,6 +62,19 @@ for (const [reconciliationId, netEffect] of [[reopened.id, 6000], [savingsSessio
   assert.equal(entries.find((entry) => entry.journalEntryId === checkEntry.id)?.netEffect, netEffect);
 }
 console.log('PASS - one check posts income once and exposes only each bank account’s portion for reconciliation');
+const { listAccountingPeriods, openAccountingPeriod } = await import('../src/accounting/setup/periods.js');
+const november = (await listAccountingPeriods(db)).find((period) => period.startDate === '2026-11-01');
+assert.equal(november.status, 'future');
+await openAccountingPeriod(db, { actor, periodId: november.id, expectedVersion: november.version });
+const novemberDeposit = await recordSplitDeposit(db, { ...splitCheck, entryDate: '2026-11-23' });
+assert.equal(novemberDeposit.postingDate, '2026-11-23');
+assert.equal(
+  s.prepare('SELECT accounting_period_id FROM accounting_journal_entries WHERE id=?').get(novemberDeposit.id)
+    .accounting_period_id,
+  november.id
+);
+console.log('PASS - the deposit date selects November after the treasurer opens that period');
+
 const { recordBankTransfer } = await import('../src/accounting/index.js');
 const transfer = {
   fromAccountId: bank.ledgerAccountId, toAccountId: savingsBank.ledgerAccountId, fundId: 'fund_general',
@@ -89,3 +106,24 @@ assert.deepEqual((await listBankTransfers(db, actor, 25)).transfers, []);
 await assert.rejects(() => listBankTransfers(db, { ...actor, capabilities: [] }, 0), /capability/);
 await assert.rejects(() => listBankTransfers(db, actor, -1), /Invalid transfer history page/);
 console.log('PASS - Banking history shows each saved transfer once with its sending and receiving accounts');
+
+const { searchJournalEntries } = await import('../src/accounting/ledger/workspace.js');
+const recentActor = { ...actor, capabilities: [...actor.capabilities, 'accounting.view'] };
+const recentDraft = (entryDate) => createJournalDraft(db, {
+  actor: recentActor,
+  entryDate,
+  description: 'Recent activity sample',
+  lines: [
+    { accountId: bank.ledgerAccountId, fundId: 'fund_general', debitAmount: 100 },
+    { accountId: 'acct_4010', fundId: 'fund_general', creditAmount: 100 },
+  ],
+});
+const novemberDraft = await recentDraft('2026-11-23');
+const julyDraft = await recentDraft('2026-07-23');
+const setUpdatedAt = s.prepare('UPDATE accounting_journal_entries SET updated_at=? WHERE id=?');
+setUpdatedAt.run('2026-11-24 10:00:00', novemberDraft.id);
+setUpdatedAt.run('2026-11-24 10:01:00', julyDraft.id);
+const query = { actor: recentActor, query: 'Recent activity sample', limit: 1 };
+assert.equal((await searchJournalEntries(db, query))[0].id, novemberDraft.id);
+assert.equal((await searchJournalEntries(db, { ...query, sort: 'activity' }))[0].id, julyDraft.id);
+console.log('PASS - Recent activity shows the latest journal update, including backdated entries');

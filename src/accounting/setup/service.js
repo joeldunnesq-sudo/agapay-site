@@ -275,6 +275,7 @@ async function getAccountingSetupOverview(
     initialization,
     settings,
     periods: await listAccountingPeriods(db),
+    canOpenPeriods: Boolean(actor?.capabilities?.includes('accounting.configure')),
     currentFiscalYear: fiscalYear
       ? Object.freeze({
           name: fiscalYear.name,

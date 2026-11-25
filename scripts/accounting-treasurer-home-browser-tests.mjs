@@ -24,6 +24,23 @@ try {
     let completed = false;
     let expensePosted = false;
     const fiscal = { id: 'fy', startDate: '2026-01-01', endDate: '2026-12-31' };
+    const closePeriod = { id: 'close-period', name: 'October 2024', startDate: '2024-10-01', endDate: '2024-10-31', status: 'open', fiscalStatus: 'open', version: 1 };
+    const october = {
+      id: 'oct',
+      startDate: '2026-10-01',
+      endDate: '2026-10-31',
+      status: 'locked',
+      fiscalStatus: 'open',
+      version: 2,
+    };
+    const november = {
+      id: 'nov',
+      startDate: '2026-11-01',
+      endDate: '2026-11-30',
+      status: 'future',
+      fiscalStatus: 'open',
+      version: 1,
+    };
     const statement = {
       id: 'statement',
       bankAccountName: bank.name,
@@ -45,7 +62,10 @@ try {
       reasons: ['Exact amount'],
     };
     const accounting = {
-      '/setup': { tier, overview: { currentFiscalYear: fiscal } },
+      '/setup': {
+        tier,
+        overview: { currentFiscalYear: fiscal, periods: [closePeriod, october, november], canOpenPeriods: parishTier },
+      },
       '/workspace-reference': {
         funds: [fund],
         fundCatalog: [fund, { ...fund, id: 'retired', code: 'OLD', name: 'Retired building fund', isActive: false }],
@@ -159,13 +179,9 @@ try {
       },
     };
     if (parishTier) {
-      const october = {
-        id: 'october',
-        fiscalYearId: fiscal.id,
-        name: 'October',
-        endDate: '2024-10-31',
-        status: 'open',
-      };
+      const october = { ...closePeriod, fiscalYearId: fiscal.id };
+      api['/accounting/adjustments'] = { body: { adjustments: [] } };
+      api['/accounting/adjustments/templates'] = { body: { templates: [] } };
       let closeSession;
       api['/accounting/close/workspace'] = () => ({
         body: { fiscalYears: [fiscal], periods: [october], sessions: closeSession ? [closeSession] : [] },
@@ -251,13 +267,30 @@ try {
       };
     }
     api['/accounting/journals'] = (request) => {
-      if (request.method() === 'GET') return { body: { entries: [] } };
+      if (request.method() === 'GET') {
+        const params = new URL(request.url()).searchParams;
+        if (params.get('sort') === 'activity') {
+          assert.equal(params.get('limit'), '5');
+          return { body: { entries: [{ id: 'recent', description: 'Recent foundation deposit', status: 'posted', totalDebits: 100000, updatedAt: '2026-11-23T18:00:00Z' }] } };
+        }
+        if (params.get('status') === 'unposted') {
+          assert.equal(params.get('from'), closePeriod.startDate);
+          assert.equal(params.get('to'), closePeriod.endDate);
+        }
+        return { body: { entries: [] } };
+      }
       const { lines } = request.postDataJSON();
       assert.equal(lines[0].accountId, 'office');
       assert.equal(lines[0].debitAmount, 1645);
       assert.equal(lines[1].accountId, bank.ledgerAccountId);
       assert.equal(lines[1].creditAmount, 1645);
       return { body: { entry: { id: 'paid-expense', version: 1 } } };
+    };
+    api['/accounting/periods/open'] = (request) => {
+      assert.ok(parishTier);
+      assert.deepEqual(request.postDataJSON(), { periodId: 'nov', expectedVersion: 1 });
+      Object.assign(november, { status: 'open', version: 2 });
+      return { body: { ok: true, period: november } };
     };
     api['/accounting/journals/paid-expense/validate'] = { body: { validation: { ok: true } } };
     api['/accounting/journals/paid-expense/post'] = () => {
@@ -283,10 +316,14 @@ try {
           })
         );
       });
+      await page.clock.setFixedTime(new Date('2026-11-24T18:00:00Z'));
       await fixture.open();
       await page.locator('#nav-accounting').click();
       const pane = page.locator('#accountingPane');
       await pane.getByRole('heading', { name: 'Record activity' }).waitFor();
+      const postingPeriods = pane.getByRole('region', { name: 'Posting periods', exact: true });
+      await postingPeriods.getByText('November 2026 · Unopened', { exact: true }).waitFor();
+      assert.equal(await postingPeriods.getByRole('button', { name: 'Open November 2026', exact: true }).isVisible(), parishTier);
       assert.equal(await page.locator('[data-accounting-view]:visible').count(), 1);
       const workspaceNav = page.getByRole('navigation', { name: 'Accounting workspaces' });
       assert.equal(await workspaceNav.getByRole('button').count(), 8);
@@ -430,14 +467,26 @@ try {
         await pane.getByRole('button', { name: 'Start month-end checklist' }).click();
         await pane.getByText('Match all bank statements', { exact: true }).waitFor();
         assert.equal(await pane.getByRole('button', { name: 'Complete close', exact: true }).count(), 0);
-        await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
+        await page.getByRole('button', { name: 'Overview', exact: true }).click();
         const monthEnd = pane.getByRole('region', { name: 'Month-end checklist' });
         await monthEnd.getByText('2 of 5 resolved', { exact: true }).waitFor();
         await monthEnd.getByRole('button', { name: /Match bank statements.*Needs attention/ }).waitFor();
         await monthEnd.getByRole('button', { name: 'Open close checks' }).click();
         await pane.getByText('Match all bank statements', { exact: true }).waitFor();
-        await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
+        const closeContext = page.locator('#accountingCloseContext');
+        await pane.getByRole('button', { name: 'Match bank statements', exact: true }).click();
+        await pane.getByRole('heading', { name: 'Match a bank statement' }).waitFor();
+        assert.equal(await pane.locator('input[name="startDate"]').inputValue(), closePeriod.startDate);
+        assert.equal(await workspaceNav.getByRole('button', { name: 'Close the books' }).getAttribute('aria-current'), 'page');
+        await closeContext.getByRole('button', { name: 'Recheck and return' }).click();
+        await pane.getByText('Match all bank statements', { exact: true }).waitFor();
+        await pane.getByRole('button', { name: 'Review journal entries', exact: true }).click();
+        await pane.getByText('No unposted entries', { exact: true }).waitFor();
+        await closeContext.getByRole('button', { name: 'Back to checklist' }).click();
+        await pane.getByText('Match all bank statements', { exact: true }).waitFor();
+        await page.getByRole('button', { name: 'Overview', exact: true }).click();
       }
+      await pane.getByRole('region', { name: 'Recent activity' }).getByText('Recent foundation deposit', { exact: true }).waitFor();
       await pane.getByRole('button', { name: 'Record a paid expense' }).click();
       await pane.getByRole('heading', { name: 'Tell us what you paid for' }).waitFor();
       await pane.getByLabel('Paid to', { exact: true }).fill('Office store');
@@ -450,6 +499,49 @@ try {
       await pane.getByRole('button', { name: 'Record a deposit' }).click();
       await pane.getByRole('heading', { name: 'Record a deposit' }).waitFor();
       assert.equal(await pane.getByLabel('Where did the money go?').inputValue(), 'bank-ledger');
+      const depositDate = pane.locator('input[name="entryDate"]');
+      const postingStatus = pane.locator('#depositPostingPeriodStatus');
+      const openNovember = pane.getByRole('button', { name: 'Open November 2026', exact: true });
+      await depositDate.fill('2026-10-23');
+      await postingStatus.getByText('October 2026 · Locked', { exact: true }).waitFor();
+      await depositDate.fill('2026-11-23');
+      await postingStatus.getByText('November 2026 · Unopened', { exact: true }).waitFor();
+      assert.equal(await openNovember.isVisible(), parishTier);
+      if (parishTier) {
+        const description = pane.locator('input[name="description"]');
+        await description.fill('Foundation grant');
+        page.once('dialog', (dialog) => dialog.accept());
+        await openNovember.click();
+        await postingStatus.getByText('November 2026 · Open', { exact: true }).waitFor();
+        assert.equal(await depositDate.inputValue(), '2026-11-23');
+        assert.equal(await description.inputValue(), 'Foundation grant');
+      } else {
+        await postingStatus.getByText(/Ask your treasurer or rector/).waitFor();
+      }
+      const splitFunds = pane.getByRole('button', { name: 'Split this deposit across funds', exact: true });
+      const splitBank = pane.locator('summary').filter({ hasText: 'Split this check between two bank accounts' });
+      const secondBank = pane.getByLabel('Second bank account');
+      assert.ok(await splitFunds.isVisible());
+      assert.ok(await splitBank.isVisible());
+      assert.equal(await secondBank.isVisible(), false);
+      await splitBank.press('Enter');
+      await secondBank.waitFor();
+      await splitBank.press('Enter');
+      assert.equal(await secondBank.isVisible(), false);
+      await splitFunds.press('Enter');
+      const total = pane.getByLabel('Total deposit amount');
+      assert.ok(await total.evaluate((element) => element === document.activeElement));
+      assert.equal(await splitFunds.isVisible(), false);
+      await pane.getByRole('button', { name: 'Use one allocation', exact: true }).press('Enter');
+      assert.ok(await splitFunds.evaluate((element) => element === document.activeElement));
+      await page.getByRole('button', { name: 'Overview', exact: true }).click();
+      await pane.getByRole('button', { name: 'View posting periods', exact: true }).click();
+      await pane.getByRole('heading', { name: 'Posting periods', exact: true }).waitFor();
+      await pane
+        .getByRole('listitem')
+        .filter({ hasText: 'October 2026' })
+        .getByText('Locked', { exact: true })
+        .waitFor();
       await page.getByRole('button', { name: 'Overview', exact: true }).click();
       await pane.getByRole('button', { name: 'Income and expenses' }).click();
       await pane.locator('input[name="start"]').waitFor();
@@ -466,6 +558,13 @@ try {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.getByRole('button', { name: 'Treasurer view' }).click();
       assert.ok(await pane.evaluate((element) => element.scrollWidth <= element.clientWidth + 1));
+      await pane.getByRole('button', { name: 'Record a deposit' }).click();
+      await splitFunds.waitFor();
+      await splitBank.click();
+      await secondBank.waitFor();
+      assert.ok(
+        await pane.locator('.acct-simple-income').evaluate((element) => element.scrollWidth <= element.clientWidth + 1)
+      );
       fixture.assertClean();
     } finally {
       await fixture.close();
