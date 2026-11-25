@@ -37,6 +37,9 @@ try {
     serviceWorkers: 'block',
   });
   let expireSession = false;
+  let directoryEnabled = false;
+  let blockedAccess = null;
+  let submittedReply;
   // All traffic is fulfilled locally, including API and external resources.
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
@@ -45,7 +48,14 @@ try {
       let payload = {};
       if (url.pathname === '/api/donor/dashboard') {
         if (expireSession) return route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
-        payload = { donor, parish };
+        payload = { donor, parish: { ...parish, directoryEnabled } };
+      } else if (url.pathname === '/api/donor/koinonia-access') {
+        if (route.request().method() === 'POST') {
+          submittedReply = route.request().postDataJSON();
+          payload = { ok: true, action: directoryEnabled ? 'membership_requested' : 'directory_requested' };
+        } else if (blockedAccess) {
+          return route.fulfill({ status: 403, json: blockedAccess });
+        }
       } else if (url.pathname === '/api/donor/liturgical-day') payload = { today, date: '2026-09-11' };
       else if (url.pathname === '/api/donor/parish-calendar') payload = { connected: true, events: [] };
       return route.fulfill({ json: payload });
@@ -93,36 +103,58 @@ try {
   await page.goto('https://agapay.test/myagapay/parish-life');
   await assertReadings();
   assert.equal(await page.locator('#calendarChurchYear').count(), 0);
-  const heroColors = await page.locator('.parish-life-liturgical-hero').evaluate(element => ({
+  const heroColors = await page.locator('.parish-life-liturgical-hero').evaluate((element) => ({
     background: getComputedStyle(element).backgroundImage,
     title: getComputedStyle(element.querySelector('.cal-today-title')).color,
   }));
-  assert.match(heroColors.background, /linear-gradient.*rgb\(6, 21, 34\).*rgb\(11, 33, 48\)/, 'Koinonia must retain the dark calendar hero');
+  assert.match(
+    heroColors.background,
+    /linear-gradient.*rgb\(6, 21, 34\).*rgb\(11, 33, 48\)/,
+    'Koinonia must retain the dark calendar hero'
+  );
   assert.equal(heroColors.title, 'rgb(245, 242, 235)', 'The dark hero must retain its readable cream title');
   await page.locator('#saintPreviewCard').click();
   await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /A test saint life/);
   // Long saint lives must remain readable in portrait and short landscape views.
-  for (const viewport of [{ width: 412, height: 915 }, { width: 844, height: 390 }]) {
+  for (const viewport of [
+    { width: 412, height: 915 },
+    { width: 844, height: 390 },
+  ]) {
     await page.setViewportSize(viewport);
     await page.evaluate(() => {
-      const paragraphs = Array.from({ length: 40 }, (_, index) => '<p>Saint life paragraph ' + index + '. A life of prayer and service to the community.</p>').join('');
-      window.showDonorSaintModal('Life of the Saint', 'Today’s commemoration', '<article class="donor-saint-story">' + paragraphs + '<p id="saintLifeEnd">End of the saint life.</p></article>');
+      const paragraphs = Array.from(
+        { length: 40 },
+        (_, index) => '<p>Saint life paragraph ' + index + '. A life of prayer and service to the community.</p>'
+      ).join('');
+      window.showDonorSaintModal(
+        'Life of the Saint',
+        'Today’s commemoration',
+        '<article class="donor-saint-story">' + paragraphs + '<p id="saintLifeEnd">End of the saint life.</p></article>'
+      );
     });
     const body = page.locator('#donorSaintModalBody');
     await body.hover();
     await page.mouse.wheel(0, 400);
     await page.waitForFunction(() => document.getElementById('donorSaintModalBody').scrollTop > 0);
-    await body.evaluate((element) => { element.scrollTop = element.scrollHeight; });
-    assert.ok(await page.locator('#saintLifeEnd').evaluate((element) => {
-      const text = element.getBoundingClientRect();
-      const body = document.getElementById('donorSaintModalBody').getBoundingClientRect();
-      return text.top >= body.top && text.bottom <= body.bottom;
-    }), 'The final saint-life paragraph must be reachable');
-    assert.ok(await page.getByRole('button', { name: 'Close saint life', exact: true }).evaluate((element) => {
-      const bounds = element.getBoundingClientRect();
-      return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
-    }), 'The close control must remain within the viewport');
+    await body.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    assert.ok(
+      await page.locator('#saintLifeEnd').evaluate((element) => {
+        const text = element.getBoundingClientRect();
+        const body = document.getElementById('donorSaintModalBody').getBoundingClientRect();
+        return text.top >= body.top && text.bottom <= body.bottom;
+      }),
+      'The final saint-life paragraph must be reachable'
+    );
+    assert.ok(
+      await page.getByRole('button', { name: 'Close saint life', exact: true }).evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+      }),
+      'The close control must remain within the viewport'
+    );
   }
   await page.setViewportSize({ width: 412, height: 915 });
   await page.getByRole('button', { name: 'Close saint life', exact: true }).click();
@@ -160,8 +192,10 @@ try {
   await page.locator('#donorSaintModal').waitFor({ state: 'visible' });
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
   assert.equal(await page.locator('#donorSaintModalTitle').textContent(), 'Lives of the Saints');
-  assert.ok(await page.locator('.donor-saint-modal-head').evaluate(element => element.getBoundingClientRect().height < 150),
-    'The list of saints must not consume the fixed modal header');
+  assert.ok(
+    await page.locator('.donor-saint-modal-head').evaluate((element) => element.getBoundingClientRect().height < 150),
+    'The list of saints must not consume the fixed modal header'
+  );
   await page.goto('https://agapay.test/myagapay/calendar');
   await assertReadings();
   assert.equal(await page.locator('#todayFeastTitle').textContent(), fullTitle);
@@ -174,6 +208,24 @@ try {
   await page.goto('https://agapay.test/myagapay/parish-life');
   await assertReadings();
   assert.equal(await page.locator('#todayFeastTitle').textContent(), today.primarySaintTitle);
+
+  blockedAccess = { code: 'parish_profile_required' };
+  await page.goto('https://agapay.test/myagapay/parish-life');
+  await page.getByText('You need to be an approved member of this parish to access Koinonia.').waitFor();
+  assert.equal(await page.locator('#parishCalendarTitle').isVisible(), false);
+  await page.getByRole('button', { name: 'Ask the parish to enable Directory' }).click();
+  await page.getByText(/Return here to request approval once Directory is enabled/).waitFor();
+  directoryEnabled = true;
+  await page.reload();
+  await page.getByRole('button', { name: 'Request parish approval' }).click();
+  await page.getByText(/Your request is in the parish’s Directory review queue/).waitFor();
+  blockedAccess.review = { status: 'returned', question: 'When did you join the parish?' };
+  await page.reload();
+  await page.getByText(blockedAccess.review.question).waitFor();
+  await page.getByRole('textbox', { name: 'Reply to your parish' }).fill('Last year.');
+  await page.getByRole('button', { name: 'Send reply' }).click();
+  await page.getByText(/Your request is in the parish’s Directory review queue/).waitFor();
+  assert.deepEqual(submittedReply, { message: 'Last year.' });
 
   expireSession = true;
   await page.reload();

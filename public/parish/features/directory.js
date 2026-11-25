@@ -124,6 +124,7 @@ function directoryReviewTypeLabel(type = '') {
     child_publication_review: 'Child sharing request',
     publication_media: 'Photo sharing request',
     person_canonical_correction: 'Member record correction',
+    koinonia_membership: 'Koinonia membership',
   };
   return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
 }

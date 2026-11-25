@@ -7,14 +7,24 @@ interface HouseholdAccessRow {
   verification_policy_version: unknown;
 }
 import { currentUser } from '../lib/authorization.js';
-import { d1First, json, normalizeEmail } from '../lib/core.js';
+import { d1First, d1Run, generateSecret, json, normalizeEmail, rateLimit } from '../lib/core.js';
+import { communicationsEnabledFor, directoryEnabledFor } from '../lib/entitlements.js';
+import { recordParishFeatureRequest } from '../lib/parish-feature-requests.js';
+import { DirectoryServiceError } from '../directory/foundation.js';
+import {
+  directoryReviewMessageStatement,
+  listDirectoryReviewConversation,
+} from '../directory/review-correspondence.js';
+import { resolveDirectorySelfServiceContext, startSelfServiceProfile } from '../directory/self-service.js';
+import { getDirectorySettings } from '../directory/settings.js';
+import { runAtomic } from '../directory/shared.js';
 import {
   HOUSEHOLD_VERIFICATION_REQUIRED_CODE,
   HOUSEHOLD_VERIFICATION_REQUIRED_MESSAGE,
   householdVerificationStatus,
   isHouseholdVerificationCurrent,
 } from '../lib/household-verification.js';
-import { requireDonor } from './parish.js';
+import { findRegistrationByParishId, requireDonor } from './parish.js';
 
 export class KoinoniaAccessError extends Error {
   declare code: string;
@@ -139,8 +149,29 @@ export async function verifiedHouseholdAccess(request: Request, env: Partial<Env
 }
 
 export async function handleKoinoniaAccess(request: Request, env: Partial<Env>) {
+  if (request.method === 'POST') return requestKoinoniaAccess(request, env);
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { status: 405 });
   const access = await verifiedHouseholdAccess(request, env);
-  if (access.response) return access.response;
+  if (access.response) {
+    if (access.response.status !== 403) return access.response;
+    const donor = await requireDonor(request, env);
+    const user = await currentUser(request, env);
+    const parishId = String(donor?.defaultParishId || '').trim();
+    const review = user && (await findKoinoniaReview(env, parishId, user.id));
+    if (!review) return access.response;
+    const returned = review.queue_status === 'returned';
+    const conversation = returned
+      ? await listDirectoryReviewConversation(env, { parishId, sourceType: 'change_request', sourceId: review.id })
+      : [];
+    const question = conversation.reverse().find((message) => message.direction === 'staff_to_member');
+    return json(
+      {
+        ...((await access.response.json()) as { error: string; code: string }),
+        review: { status: returned ? 'returned' : review.status, question: question?.body || '' },
+      },
+      { status: 403 }
+    );
+  }
   return json({
     ok: true,
     parishId: access.context.parishId,
@@ -148,4 +179,138 @@ export async function handleKoinoniaAccess(request: Request, env: Partial<Env>) 
     verificationStatus: access.context.verificationStatus,
     verificationDueAt: Number(access.context.verification!.verification_due_at || 0),
   });
+}
+
+async function findKoinoniaReview(env: Partial<Env>, parishId: string, userId: string) {
+  return d1First<{ id: string; status: string; queue_status: string | null }>(
+    env,
+    `
+    SELECT request.id, request.status, metadata.queue_status
+    FROM directory_change_requests request
+    LEFT JOIN directory_review_metadata metadata ON metadata.parish_id = request.parish_id
+      AND metadata.source_type = 'change_request' AND metadata.source_id = request.id
+    WHERE request.parish_id = ?1 AND request.requester_user_id = ?2
+      AND request.request_type = 'person_profile_review' AND request.status IN ('pending', 'denied')
+      AND json_extract(request.requested_payload_json, '$.source')
+        IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access')
+    ORDER BY request.status = 'pending' DESC, request.updated_at DESC
+    LIMIT 1`,
+    parishId,
+    userId
+  );
+}
+
+async function requestKoinoniaAccess(request: Request, env: Partial<Env>) {
+  const access = await verifiedHouseholdAccess(request, env);
+  if (access.context) return json({ ok: true, action: 'already_approved' });
+  if (access.response.status !== 403) return access.response;
+
+  const donor = await requireDonor(request, env);
+  const parishId = String(donor?.defaultParishId || '').trim();
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found || !communicationsEnabledFor(found.registration)) {
+    return json({ error: 'Koinonia is unavailable for your home parish.' }, { status: 409 });
+  }
+  const limited = await rateLimit(request, env, 'donor-koinonia-access', { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+
+  if (!directoryEnabledFor(found.registration, await getDirectorySettings(env, parishId))) {
+    if (request.body)
+      return json(
+        { error: 'Your parish Directory is currently disabled. Try again when it is enabled.' },
+        { status: 409 }
+      );
+    await recordParishFeatureRequest(env as Env, { parishId, featureId: 'directory', donorEmail: donor!.email });
+    return json({ ok: true, action: 'directory_requested' });
+  }
+
+  try {
+    const context = await resolveDirectorySelfServiceContext(env, { request });
+    const review = await findKoinoniaReview(env, parishId, context.user.id);
+    if (request.body) {
+      const body = await request.json().catch(() => null);
+      if (!body || typeof body !== 'object' || !('message' in body) || typeof body.message !== 'string')
+        return json({ error: 'Enter a reply to your parish.' }, { status: 422 });
+      if (review?.queue_status !== 'returned')
+        return json(
+          { error: 'Your parish is no longer waiting for a reply. Refresh to check your request.' },
+          { status: 409 }
+        );
+      const timestamp = Date.now();
+      const message = directoryReviewMessageStatement({
+        parishId,
+        sourceType: 'change_request',
+        sourceId: review.id,
+        direction: 'member_to_staff',
+        body: body.message,
+        userId: context.user.id,
+        timestamp,
+      });
+      await runAtomic(env, [
+        {
+          sql: `INSERT INTO directory_review_correspondence
+                  (id, parish_id, source_type, source_id, direction, body, created_by_user_id, created_at)
+                SELECT ?, ?, ?, ?, ?, ?, ?, ?
+                WHERE EXISTS (SELECT 1 FROM directory_review_metadata WHERE parish_id = ?
+                  AND source_type = 'change_request' AND source_id = ? AND queue_status = 'returned')`,
+          params: [...message.params, parishId, review.id],
+        },
+        {
+          sql: `UPDATE directory_review_metadata SET queue_status = 'pending_review', returned_at = NULL,
+                  completed_at = NULL, updated_at = ? WHERE parish_id = ? AND source_type = 'change_request'
+                  AND source_id = ? AND queue_status = 'returned'`,
+          params: [timestamp, parishId, review.id],
+        },
+      ]);
+      return json({ ok: true, action: 'membership_requested' });
+    }
+    if (review?.status === 'pending') return json({ ok: true, action: 'membership_requested' });
+    if (!context.claimed) {
+      const priorLink = await d1First(
+        env,
+        `
+        SELECT 1 FROM directory_person_links WHERE link_type = 'platform_user' AND external_id = ?1`,
+        context.user.id
+      );
+      if (priorLink) {
+        return json({ error: 'Ask your parish office to reconnect your existing My AGAPAY profile.' }, { status: 409 });
+      }
+      try {
+        await startSelfServiceProfile(env, { context, data: { parishId, profileVisibility: 'private' } });
+      } catch (error) {
+        const concurrentReview = await findKoinoniaReview(env, parishId, context.user.id);
+        if (concurrentReview?.status !== 'pending') throw error;
+      }
+    } else {
+      // The existing onboarding submission already gives staff the same review actions.
+      const timestamp = Date.now();
+      await d1Run(
+        env,
+        `
+        INSERT OR IGNORE INTO directory_change_requests
+          (id, parish_id, requester_user_id, requester_person_id, target_type, target_id,
+           request_type, status, summary, requested_payload_json, created_at, updated_at)
+        SELECT ?1, ?2, ?3, ?4, 'person', ?4, 'person_profile_review', 'pending',
+               'Koinonia membership access requested', '{"source":"myagapay_koinonia_access"}', ?5, ?5
+        WHERE NOT EXISTS (
+          SELECT 1 FROM directory_change_requests
+          WHERE parish_id = ?2 AND requester_user_id = ?3 AND target_id = ?4
+            AND request_type = 'person_profile_review' AND status = 'pending'
+            AND json_extract(requested_payload_json, '$.source')
+              IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access')
+        )`,
+        generateSecret('dir_req'),
+        parishId,
+        context.user.id,
+        context.currentPerson!.id,
+        timestamp
+      );
+    }
+    return json({ ok: true, action: 'membership_requested' });
+  } catch (error) {
+    if (error instanceof DirectoryServiceError) {
+      return json({ error: error.message, code: error.code }, { status: error.status });
+    }
+    throw error;
+  }
 }

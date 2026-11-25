@@ -23,6 +23,10 @@ import {
 import { ensurePlatformUser } from '../src/lib/identity.js';
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 
+import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
+import { seedDirectoryEntitlement } from './lib/directory-entitlement-fixture.mjs';
+import { decideDirectoryReviewItem } from '../src/directory/admin.js';
+
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const migration = (name) => readFileSync(path.join(repoRoot, 'migrations', name), 'utf8');
 const BACKFILL_MIGRATION = '0083_koinonia_household_verification_backfill.sql';
@@ -34,11 +38,19 @@ function makeEnvironment() {
   sqlite.exec('PRAGMA foreign_keys = ON;');
   for (const name of [
     '0001_production_records.sql',
+    '0014_audit_log.sql',
     '0020_platform_identity.sql',
     '0022_directory_canonical_foundation.sql',
     '0023_directory_contact_privacy_publication.sql',
     '0025_directory_self_service_phase2a.sql',
+    '0026_directory_media_phase2b.sql',
+    '0027_directory_admin_phase3a.sql',
+    '0029_directory_duplicates_phase3b.sql',
+    '0030_directory_child_publication_phase4b.sql',
+    '0031_directory_ministries_phase5a.sql',
     '0032_directory_phase5b_skills_completion.sql',
+    '0059_parish_feature_requests.sql',
+    '0082_directory_review_correspondence.sql',
   ])
     sqlite.exec(migration(name));
 
@@ -77,7 +89,10 @@ function makeEnvironment() {
       }
     },
   };
-  return { sqlite, env: { AGAPAY_DB, DB: AGAPAY_DB, AGAPAY_ENVIRONMENT: 'test' } };
+  return {
+    sqlite,
+    env: { AGAPAY_DB, DB: AGAPAY_DB, AGAPAY_ENVIRONMENT: 'test', AGAPAY_RATE_LIMITER: memoryRateLimiter() },
+  };
 }
 
 async function seedMember({ sqlite, env, suffix, approved = true }) {
@@ -131,8 +146,9 @@ async function seedMember({ sqlite, env, suffix, approved = true }) {
   };
   await saveDonor(env, donor);
   const session = await issueDonorSession(env, donor);
-  const request = (pathname) =>
+  const request = (pathname, options = {}) =>
     new Request(`https://agapay.test${pathname}`, {
+      ...options,
       headers: {
         Authorization: `Bearer ${session.token}`,
         'X-AGAPAY-Donor-Email': email,
@@ -322,6 +338,63 @@ await assertVerificationDenial(
   await handleKoinoniaAccess(missing.request('/api/donor/koinonia-access'), env),
   'A non-current verification'
 );
+
+seedDirectoryEntitlement(sqlite);
+const accessPath = '/api/donor/koinonia-access';
+const sendRequest = (member, body) => handleKoinoniaAccess(member.request(accessPath, { method: 'POST', body }), env);
+const readAccess = async (member) => (await handleKoinoniaAccess(member.request(accessPath), env)).json();
+const requestRow = (member) =>
+  sqlite
+    .prepare(
+      `SELECT id FROM directory_change_requests
+  WHERE requester_user_id = ? AND status = 'pending'`
+    )
+    .all(member.userId);
+const reviewer = {
+  parishId: missing.parishId,
+  user: { id: 'test-admin' },
+  capabilities: ['directory.manage'],
+  permissions: { canAssign: true },
+};
+
+assert.deepEqual(await (await sendRequest(missing)).json(), { ok: true, action: 'directory_requested' });
+assert.deepEqual(await (await sendRequest(missing)).json(), { ok: true, action: 'directory_requested' });
+assert.equal(
+  sqlite.prepare("SELECT COUNT(*) AS count FROM parish_feature_requests WHERE feature_id = 'directory'").get().count,
+  1
+);
+assert.equal(requestRow(missing).length, 0);
+sqlite
+  .prepare(
+    'UPDATE directory_parish_settings SET directory_enabled = 1, ordinary_member_access_enabled = 1 WHERE parish_id = ?'
+  )
+  .run(missing.parishId);
+assert.deepEqual(await (await sendRequest(missing)).json(), { ok: true, action: 'membership_requested' });
+assert.deepEqual(await (await sendRequest(missing)).json(), { ok: true, action: 'membership_requested' });
+const [submission] = requestRow(missing);
+assert.equal(requestRow(missing).length, 1);
+const decision = { context: reviewer, sourceType: 'change_request', sourceId: submission.id };
+await decideDirectoryReviewItem(env, {
+  ...decision,
+  decision: 'return',
+  requesterNote: 'When did you join the parish?',
+});
+assert.deepEqual((await readAccess(missing)).review, { status: 'returned', question: 'When did you join the parish?' });
+assert.deepEqual(await (await sendRequest(missing, JSON.stringify({ message: 'I joined last year.' }))).json(), {
+  ok: true,
+  action: 'membership_requested',
+});
+assert.equal((await readAccess(missing)).review.status, 'pending');
+await decideDirectoryReviewItem(env, { ...decision, decision: 'approve' });
+assert.equal((await handleKoinoniaAccess(missing.request(accessPath), env)).status, 200);
+
+const newcomer = await seedMember({ sqlite, env, suffix: 'newcomer', approved: false });
+sqlite.prepare('DELETE FROM directory_person_links WHERE external_id = ?').run(newcomer.userId);
+assert.deepEqual(await (await sendRequest(newcomer)).json(), { ok: true, action: 'membership_requested' });
+const [newSubmission] = requestRow(newcomer);
+assert.equal((await readAccess(newcomer)).review.status, 'pending');
+await decideDirectoryReviewItem(env, { ...decision, sourceId: newSubmission.id, decision: 'deny' });
+assert.equal((await readAccess(newcomer)).review.status, 'denied');
 
 const [workerSource, feedSource, teachingSource, groupsSource, videoSource, landingSource, skillsSource] =
   await Promise.all([

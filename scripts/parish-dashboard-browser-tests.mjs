@@ -6,7 +6,7 @@ import { captureBrowserErrors } from './lib/browser-error-gate.mjs';
 // Globals read inside page.evaluate callbacks, provided by the actual dashboard.
 /* global currentParish, dashboardLoadPromise, loadDashboard, renderDashboard:writable,
   loadGivingSummary, loadRecurringHealth, renderQrCode, loadCommemorations,
-  loadGivingHistory, renderSetupWizard, loadDirectoryAdminTab, openDirectoryHousehold, loadSacramentsPanel, loadSacramentsAvailability, loadSacramentsGoogleStatus, setSacramentsDashboardTab */
+  loadGivingHistory, renderSetupWizard, openDirectoryHousehold, loadSacramentsPanel, loadSacramentsAvailability, loadSacramentsGoogleStatus, setSacramentsDashboardTab */
 
 const browser = await chromium.launch({ headless: true });
 async function ready(page) {
@@ -309,12 +309,26 @@ try {
   );
   await scenario(
     'typed Directory retains escaped household browsing, staff privacy labels and household access details',
-    () => ({ parish: { ...parish, subscriptionTier: 'parish', directoryEnabled: true } }),
+    () => ({
+      parish: {
+        ...parish,
+        subscriptionTier: 'parish',
+        directoryEnabled: false,
+        entitlements: { modules: { directory: { included: true } } },
+      },
+      featureRequests: [{ featureId: 'directory', count: 1 }],
+    }),
     async (fixture) => {
       await fixture.open();
       await ready(fixture.page);
-      await fixture.page.evaluate(() => loadDirectoryAdminTab(true));
+      const notice = fixture.page.locator('#parishFeatureRequestDialog');
+      await notice.waitFor({ state: 'visible' });
+      assert.match(await notice.innerText(), /One parishioner asked you to enable the parish Directory/);
+      await notice.getByRole('button', { name: 'Open Parish Directory' }).click();
+      await notice.waitFor({ state: 'hidden' });
+      await fixture.page.locator('#tab-directory.active').waitFor();
       const rows = fixture.page.locator('#directoryBrowseList');
+      await rows.getByText('<Fixture Family>', { exact: true }).waitFor();
       assert.ok((await rows.innerText()).includes('<Fixture Family>'));
       assert.equal(await rows.locator('script').count(), 0);
       assert.ok((await rows.innerText()).includes('staff@example.test'));
@@ -323,6 +337,7 @@ try {
       const detail = fixture.page.locator('#directoryRecordDetail');
       assert.ok((await detail.innerText()).includes('Account connected'));
       assert.ok((await detail.innerText()).includes('Koinonia allowed'));
+      await detail.getByText('Family directory information', { exact: true }).click();
       assert.ok((await detail.innerText()).includes('Street private'));
     },
     {

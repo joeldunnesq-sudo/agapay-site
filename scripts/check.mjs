@@ -404,7 +404,7 @@ assert.ok(
   donorHandler.includes('featureId: "giving-plus"')
     && hasWorkerRoute("/api/donor/giving-plus-feature-request")
     && parishDashboardApp.includes("item?.featureId === 'giving-plus'")
-    && parishHandler.includes('["pledge-tracker", "giving-plus", "ministry-service"].includes(featureId)'),
+    && parishHandler.includes('["pledge-tracker", "giving-plus", "ministry-service", "directory"].includes(featureId)'),
   "Give + donor requests should be stored, surfaced in the parish dashboard, and dismissible"
 );
 const myAgapayHistory = await readFile("public/myagapay/giving/history.html", "utf8");

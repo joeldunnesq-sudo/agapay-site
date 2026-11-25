@@ -371,6 +371,7 @@ async function handleParishDashboard(request, env, parishId) {
     const featureRequests = pendingFeatureRequests.filter(
       (item) =>
         item.featureId === 'ministry-service' ||
+        (item.featureId === 'directory' && !directoryEnabledFor(registration, directorySettings)) ||
         (item.featureId === 'pledge-tracker' && !stewardshipToolAccess(registration)) ||
         (item.featureId === 'giving-plus' && !givingFeatureAccess(registration, 'campaigns'))
     );
@@ -634,7 +635,7 @@ async function handleParishFeatureRequestDismiss(request, env, parishId, feature
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: 'Parish dashboard record not found' }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
-  if (!['pledge-tracker', 'giving-plus', 'ministry-service'].includes(featureId))
+  if (!['pledge-tracker', 'giving-plus', 'ministry-service', 'directory'].includes(featureId))
     return json({ error: 'Unknown feature request' }, { status: 404 });
   await dismissParishFeatureRequest(env, parishId, featureId);
   return json({ ok: true });

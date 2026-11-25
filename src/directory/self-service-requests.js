@@ -27,6 +27,12 @@ async function createDirectoryChangeRequest(
   env,
   { context, parishId, targetType, targetId, householdId = '', requestType, summary, payload = {}, correlationId = '' }
 ) {
+  if (payload?.source === 'myagapay_koinonia_access') {
+    throw new DirectoryServiceError(
+      'validation_failed',
+      'Submit Koinonia access requests from the Koinonia tab in My AGAPAY.'
+    );
+  }
   if (!CHANGE_REQUEST_TYPES.includes(requestType))
     throw new DirectoryServiceError('validation_failed', 'Change request type is not supported.');
   if (targetType === 'person' && targetId !== context.currentPerson?.id && !householdId) {

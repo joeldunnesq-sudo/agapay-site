@@ -174,6 +174,7 @@ function closeParishSupportTicket() {
 
 function showParishFeatureRequestPopup(featureRequests: ParishAppFeatureRequest[] = []) {
   const request =
+    featureRequests.find((item) => item?.featureId === 'directory') ||
     featureRequests.find((item) => item?.featureId === 'ministry-service') ||
     featureRequests.find((item) => item?.featureId === 'giving-plus') ||
     featureRequests.find((item) => item?.featureId === 'pledge-tracker');
@@ -189,6 +190,26 @@ function showParishFeatureRequestPopup(featureRequests: ParishAppFeatureRequest[
   const status = document.getElementById('parishFeatureRequestStatus');
   const givingPlus = request.featureId === 'giving-plus';
   const ministryService = request.featureId === 'ministry-service';
+  if (request.featureId === 'directory') {
+    if (heading) heading.textContent = 'Parishioners are requesting Koinonia access';
+    if (copy)
+      copy.textContent =
+        count === 1
+          ? 'One parishioner asked you to enable the parish Directory.'
+          : `${count} parishioners asked you to enable the parish Directory.`;
+    if (featureTitle) featureTitle.textContent = 'Parish Directory';
+    if (featureDescription)
+      featureDescription.textContent =
+        'Turn on Directory in the Parish Directory tab so parishioners can request membership approval.';
+    if (action) {
+      action.textContent = 'Open Parish Directory';
+      action.setAttribute('onclick', "dismissParishFeatureRequest('directory')");
+    }
+    if (status) status.textContent = 'Requests are counted privately.';
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+    return;
+  }
   if (heading)
     heading.textContent = ministryService ? 'A parishioner wants to serve' : 'Your donors want more AGAPAY features';
   if (copy)
@@ -224,11 +245,18 @@ function showParishFeatureRequestPopup(featureRequests: ParishAppFeatureRequest[
   else dialog.setAttribute('open', '');
 }
 
-async function dismissParishFeatureRequest(viewStewardship: boolean = false) {
+async function dismissParishFeatureRequest(viewStewardship: boolean | 'directory' = false) {
   const request = activeParishFeatureRequest;
   const dialog = document.getElementById('parishFeatureRequestDialog') as HTMLDialogElement | null;
   const status = document.getElementById('parishFeatureRequestStatus');
   if (!request || !currentParish?.parishId) return;
+  if (viewStewardship === 'directory') {
+    activeParishFeatureRequest = null;
+    if (typeof dialog?.close === 'function') dialog.close();
+    else dialog?.removeAttribute('open');
+    switchTab('directory');
+    return;
+  }
   if (status) status.textContent = 'Saving…';
   try {
     const response = await fetch(
