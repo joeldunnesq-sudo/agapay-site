@@ -901,15 +901,12 @@ function initializeParishLifeStructure() {
 }
 
 function showKoinoniaAccessRequest(
-  status: HTMLElement,
   headers: HeadersInit,
   directoryEnabled: boolean,
   review?: ParishLifePayload['review']
 ) {
-  document.querySelectorAll<HTMLElement>('.parish-life-page-shell > :not(#parishLifeStatus)').forEach((element) => {
-    element.hidden = true;
-  });
-  status.hidden = false;
+  const section = document.getElementById('koinoniaAccessRequest') as HTMLElement;
+  section.hidden = false;
   const message = document.createElement('p');
   message.textContent = 'You need to be an approved member of this parish to access Koinonia.';
   const button = document.createElement('button');
@@ -926,9 +923,9 @@ function showKoinoniaAccessRequest(
     reply.maxLength = 1200;
     replyLabel.textContent = 'Reply to your parish';
     replyLabel.append(reply);
-    status.replaceChildren(message, question, replyLabel, button, feedback);
+    section.replaceChildren(message, question, replyLabel, button, feedback);
   } else {
-    status.replaceChildren(message, button, feedback);
+    section.replaceChildren(message, button, feedback);
   }
   button.textContent = needsReply
     ? 'Send reply'
@@ -991,6 +988,7 @@ async function loadParishLife() {
     const parish = dashboard.parish || null;
     const experience = window.MyAgapayShell!.parishLifeExperience(parish);
     applyParishLifeExperience(experience, parish);
+    let hasKoinoniaAccess = experience.communicationsEnabled;
     if (experience.communicationsEnabled) {
       const accessResponse = await fetch('/api/donor/koinonia-access', { headers, cache: 'no-store' });
       if (window.MyAgapayShell?.handleUnauthorized(accessResponse)) return;
@@ -1000,11 +998,18 @@ async function loadParishLife() {
           accessResponse.status === 403 &&
           ['household_verification_required', 'parish_profile_required'].includes(access.code || '')
         ) {
-          status.dataset.state = access.code!.replaceAll('_', '-');
-          showKoinoniaAccessRequest(status, headers, parish?.directoryEnabled === true, access.review);
-          return;
+          hasKoinoniaAccess = false;
+          document
+            .querySelectorAll<HTMLElement>(
+              '#koinoniaShortcuts, #parishLifeInboxMount, #parishLifeTierSections, .parish-life-notification-bell'
+            )
+            .forEach((element) => {
+              element.hidden = true;
+            });
+          showKoinoniaAccessRequest(headers, parish?.directoryEnabled === true, access.review);
+        } else {
+          throw new Error(access.error || 'Unable to confirm Koinonia access.');
         }
-        throw new Error(access.error || 'Unable to confirm Koinonia access.');
       }
     }
     const liturgicalDayPromise =
@@ -1012,7 +1017,7 @@ async function loadParishLife() {
         ? loadDonorLiturgicalDay(parish).catch(() => loadDonorLiturgicalDay(null))
         : Promise.resolve();
     const signupPayloadPromise =
-      experience.communicationsEnabled && parish?.signupsEnabled
+      hasKoinoniaAccess && parish?.signupsEnabled
         ? parishLifeFetch('/api/donor/koinonia/signups/upcoming', headers)
         : Promise.resolve({ signups: [], actions: [] });
     const calendarPromise = Promise.all([
@@ -1034,7 +1039,7 @@ async function loadParishLife() {
       })
       .catch(() => renderDonorParishCalendar({}, parish));
 
-    if (!experience.communicationsEnabled) {
+    if (!hasKoinoniaAccess) {
       await Promise.all([liturgicalDayPromise, calendarPromise]);
       status.hidden = true;
       return;
