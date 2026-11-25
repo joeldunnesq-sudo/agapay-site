@@ -152,7 +152,10 @@ export default [
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { varsIgnorePattern: '^(renderAdminOverviewMetrics|renderAdminTierBreakdown|renderGivingImpact)$' },
+        {
+          varsIgnorePattern:
+            '^(renderAdminOverviewMetrics|renderAdminTierBreakdown|renderGivingImpact|bindGivingImpactDownloads)$',
+        },
       ],
     },
   },

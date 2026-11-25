@@ -89,6 +89,12 @@ try {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#adminToolFinder').evaluate((el) => el.open), false);
     await trigger.click();
+    await page.locator('#adminToolSearch').fill('giving impact');
+    await page.locator('#adminToolSearch').press('Enter');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'givingImpactCard');
+    assert.equal(await page.getByRole('heading', { name: 'AGAPAY Giving Impact' }).isVisible(), true);
+    assert.equal(await page.locator('.admin-secondary-workspace').evaluate((el) => el.open), false);
+    await trigger.click();
     await page.locator('#adminToolSearch').fill('contacts');
     await page.locator('#adminToolSearch').press('ArrowDown');
     await page.keyboard.press('Enter');
