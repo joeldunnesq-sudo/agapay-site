@@ -87,7 +87,8 @@ has(
   ],
   'admin accounting handler'
 );
-has(parishHtml, ['data-accounting-view="governance"', "setAccountingView('governance')"], 'parish Governance rail');
+has(parishHtml, ['data-accounting-workspace="settings"'], 'parish Setup & controls rail');
+has(parishApp, ["setAccountingView('governance')"], 'Governance workspace destination');
 has(
   parishApp,
   [

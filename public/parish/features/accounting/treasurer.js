@@ -264,6 +264,87 @@ function openAccountingGivingReconciliation(trigger) {
   accountingReconciliationView = 'giving';
   return openAccountingHomeTask('banking', trigger);
 }
+async function openAccountingMonthEndChecks(trigger) {
+  const parishId = currentParish?.parishId;
+  const sessionId = accountingOverviewSummaries.monthEnd?.session?.id;
+  await openAccountingHomeTask('close', trigger);
+  if (sessionId && accountingView === 'close' && currentParish?.parishId === parishId)
+    await openAccountingClose(sessionId);
+}
+function accountingMonthEndChecklist() {
+  const snapshot = accountingOverviewSummaries;
+  const month = snapshot.monthEnd;
+  const heading = '<h2 id="accountingMonthEndTitle">Month-end checklist</h2>';
+  const footer =
+    '<button type="button" class="acct-link" id="accountingMonthEndChecks" onclick="openAccountingMonthEndChecks(this.id)">Open close checks →</button>';
+  const shell = (content) =>
+    `<section class="acct-month-end" data-accounting-overview-section="month-end" aria-labelledby="accountingMonthEndTitle">${heading}${content}</section>`;
+  if (snapshot.loading) return shell('<p role="status">Checking month-end status…</p>');
+  if (!month || snapshot.errors.close) {
+    const status = snapshot.errors.close
+      ? 'Month-end status is unavailable.'
+      : snapshot.loadedAt
+        ? 'No finished month is open for review.'
+        : 'Checking month-end status…';
+    return shell(`<p role="status">${status}</p>${footer}`);
+  }
+  const checks = month.session?.checks || [];
+  const steps = [
+    { title: 'Review posted activity', code: 'journals.open_drafts', action: "setAccountingView('journals')" },
+    {
+      title: 'Review giving and posting exceptions',
+      code: 'integrations.exceptions',
+      action: "setAccountingView('integrations')",
+    },
+    ...(accountingData.tier === 'advanced_operations'
+      ? [{ title: 'Review open bills', code: 'payables.review', action: 'openAccountingBills()' }]
+      : []),
+    { title: 'Match bank statements', code: 'bank.required_reconciliations', action: 'openAccountingHomeBank()' },
+  ];
+  const groups = steps.map((step) => ({
+    ...step,
+    checks: checks.filter((check) => check.code === step.code),
+  }));
+  const stepCodes = new Set(steps.map((step) => step.code));
+  const allSteps = [
+    ...groups,
+    {
+      title: 'Run close checks',
+      action: 'openAccountingMonthEndChecks(this.id)',
+      checks: checks.filter((check) => check.code && !stepCodes.has(check.code)),
+    },
+  ].map((step) => {
+    const complete = step.checks.length > 0 && step.checks.every((check) => check.status === 'passed');
+    const waived =
+      step.checks.length > 0 && !complete && step.checks.every((check) => ['passed', 'waived'].includes(check.status));
+    const blocked = step.checks.some((check) => check.blocking && check.status === 'failed');
+    const needsReview = step.checks.some((check) => ['failed', 'warning'].includes(check.status));
+    return {
+      ...step,
+      resolved: complete || waived,
+      status: complete
+        ? 'Passed'
+        : waived
+          ? 'Waived'
+          : blocked
+            ? 'Needs attention'
+            : needsReview
+              ? 'Review needed'
+              : 'To do',
+    };
+  });
+  const completed = allSteps.filter((step) => step.resolved).length;
+  const next = allSteps.find((step) => !step.resolved);
+  const validation = snapshot.monthEndChecksUnavailable
+    ? 'Check results unavailable'
+    : checks.length && month.session?.lastValidatedAt
+      ? `Last checked ${accountingDate(month.session.lastValidatedAt)}`
+      : 'Checks haven’t been run';
+  return shell(`<p>${escapeHtml(month.period.name)} · ${escapeHtml(validation)}</p>
+    <div class="acct-month-end-progress"><progress aria-label="Month-end steps resolved" value="${completed}" max="${allSteps.length}"></progress><span>${completed} of ${allSteps.length} resolved</span></div>
+    <ol class="acct-workspace-tool-list">${allSteps.map((step, index) => `<li><button type="button" id="accountingMonthEndStep-${index}"${step === next ? ' class="acct-month-end-next"' : ''} onclick="${step.action}"><span><strong>${step.title}</strong>${step === next ? '<small>Next step</small>' : ''}</span><span class="acct-month-end-status${step.resolved ? ' resolved' : ''}">${step.status}</span></button></li>`).join('')}</ol>
+    ${footer}`);
+}
 const accountingExpenseReceipt = { text: '' };
 function accountingPaidExpenseForm() {
   const banks = accountingData.bankAccounts.filter((bank) => bank.isActive !== false);

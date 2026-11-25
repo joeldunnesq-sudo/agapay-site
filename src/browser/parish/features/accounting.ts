@@ -82,8 +82,6 @@ let accountingMigration: AccountingMigrationState = {
 
 let accountingExperienceMode = 'treasurer';
 
-let accountingAdvancedNavExpanded = false;
-
 let accountingSimpleIncomeMessage = '';
 
 let accountingSimpleEntryMode = 'income';

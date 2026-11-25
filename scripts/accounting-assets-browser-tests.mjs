@@ -132,20 +132,6 @@ try {
   for (const script of ['workspace', 'assets', 'report-documents', 'report-loaders', 'reports'])
     await page.addScriptTag({ url: '/parish/features/accounting/' + script + '.js' });
   await page.addScriptTag({ url: '/parish/features/accounting.js' });
-  assert.equal(await page.locator('[data-accounting-view=assets]').count(), 1);
-  await page.evaluate(() => installAccountingAssetsNavigation());
-  assert.equal(await page.locator('[data-accounting-view=assets]').count(), 1, 'Navigation installation is idempotent');
-  const navigationTarget = await page.evaluate(() => {
-    const original = setAccountingView;
-    let target = '';
-    setAccountingView = (view) => {
-      target = view;
-    };
-    document.querySelector('[data-accounting-view=assets]').click();
-    setAccountingView = original;
-    return target;
-  });
-  assert.equal(navigationTarget, 'assets');
   await page.evaluate((accounts) => {
     accountingData.accounts = accounts;
     accountingData.funds = [{ id: 'fund_general', name: 'General' }];

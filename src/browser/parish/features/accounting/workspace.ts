@@ -200,6 +200,176 @@ function renderAccountingReadiness(
 
 let accountingHomeTask = '';
 let accountingHomeTrigger = '';
+let accountingSelectedWorkspace = '';
+
+const ACCOUNTING_WORKSPACES = {
+  activity: {
+    title: 'Money in & out',
+    views: ['income', 'expense', 'ledger', 'journals'],
+    tools: [
+      [
+        'General ledger',
+        'Review transactions and recurring entries by account.',
+        "setAccountingView('ledger')",
+        'ledger',
+      ],
+      ['Journal entries', 'Review drafts, posted entries, and reversals.', "setAccountingView('journals')", 'journals'],
+    ],
+  },
+  bills: {
+    title: 'Bills & vendors',
+    views: ['payables'],
+    tools: [
+      [
+        'Bills & approvals',
+        'Review vendor invoices and their approval status.',
+        "accountingPayablesView='bills';setAccountingView('payables')",
+        'payables',
+      ],
+      [
+        'Bill payments',
+        'Review payments, payment runs, and check settings.',
+        "accountingPayablesView='payments';setAccountingView('payables')",
+      ],
+      [
+        'Vendors',
+        'Manage vendors and their payment details.',
+        "accountingPayablesView='vendors';setAccountingView('payables')",
+      ],
+      [
+        'Payables aging',
+        'See outstanding amounts by vendor and age.',
+        "accountingPayablesView='aging';setAccountingView('payables')",
+      ],
+    ],
+  },
+  bank: {
+    title: 'Banking & giving',
+    views: ['banking', 'integrations'],
+    tools: [
+      ['Bank accounts', 'Review accounts and record transfers.', 'openAccountingHomeBankAccounts()', 'banking'],
+      ['Bank reconciliation', 'Match statements to the books.', 'openAccountingHomeBank()'],
+      ['Giving payouts', 'Review deposits, funds, fees, and refunds.', 'openAccountingGivingReconciliation()'],
+      [
+        'Posting & integrations',
+        'Review source activity, posting exceptions, and connections.',
+        "setAccountingView('integrations')",
+        'integrations',
+      ],
+    ],
+  },
+  funds: {
+    title: 'Funds & assets',
+    views: ['assets'],
+    tools: [
+      [
+        'Fixed assets & depreciation',
+        'Manage property and review book value and depreciation.',
+        "setAccountingView('assets')",
+        'assets',
+      ],
+    ],
+  },
+  reports: {
+    title: 'Reports & budgets',
+    views: ['reports', 'budgets', 'council'],
+    tools: [
+      [
+        'Report library',
+        'Search financial statements, trial balances, and other reports.',
+        'openAccountingHomeReportLibrary()',
+        'reports',
+      ],
+      [
+        'Council packet',
+        'Prepare the statements and fund balances for a meeting.',
+        "setAccountingView('council')",
+        'council',
+      ],
+      ['Departments & projects', 'Review activity and prepare council report packages.', 'openAccountingReadiness()'],
+      ['Budgets', 'Review budget versions, approvals, and variances.', "setAccountingView('budgets')", 'budgets'],
+    ],
+  },
+  close: {
+    title: 'Close the books',
+    views: ['close'],
+    tools: [
+      [
+        'Close workspace',
+        'Run close checks, review adjustments, or prepare a year-end handoff.',
+        "setAccountingView('close')",
+        'close',
+      ],
+    ],
+  },
+  settings: {
+    title: 'Setup & controls',
+    views: ['setup', 'settings', 'governance', 'journey'],
+    tools: [
+      [
+        'Accounting setup',
+        'Review opening balances, migrations, and ledger readiness.',
+        "setAccountingView('setup')",
+        'setup',
+      ],
+      [
+        'Settings & staff access',
+        'Manage fiscal periods, staff profiles, and permissions.',
+        "setAccountingView('settings')",
+        'settings',
+      ],
+      [
+        'Governance & audit',
+        'Review accounting controls, retention, and integrity.',
+        "setAccountingView('governance')",
+        'governance',
+      ],
+    ],
+  },
+} satisfies Record<string, { title: string; views: string[]; tools: [string, string, string, string?][] }>;
+
+function accountingWorkspaceDefinition(section: string) {
+  return Object.hasOwn(ACCOUNTING_WORKSPACES, section)
+    ? ACCOUNTING_WORKSPACES[section as keyof typeof ACCOUNTING_WORKSPACES]
+    : null;
+}
+
+function openAccountingWorkspace(section: string | undefined) {
+  if (!section || !accountingWorkspaceDefinition(section)) return;
+  accountingSelectedWorkspace = section;
+  setAccountingView('workspace');
+  if (accountingView === 'workspace') {
+    const main = document.querySelector('.acct-suite-main');
+    main?.scrollTo({ top: 0 });
+    document.getElementById('accountingWorkspaceHeading')?.focus({ preventScroll: true });
+  }
+}
+
+function renderAccountingWorkspaceDirectory(pane: HTMLElement) {
+  const section = accountingWorkspaceDefinition(accountingSelectedWorkspace);
+  if (!section) return;
+  const parishTier = accountingData.tier === 'advanced_operations';
+  const tools = section.tools.filter((tool) => tool[3] !== 'budgets' || parishTier);
+  pane.innerHTML = `<section class="acct-workspace-directory"><h2 id="accountingWorkspaceHeading" tabindex="-1">${escapeHtml(section.title)}</h2>
+    ${accountingSelectedWorkspace === 'activity' ? `<div class="acct-command-actions acct-workspace-entry-actions">${accountingOverviewEntryActions()}</div>` : ''}
+    ${accountingSelectedWorkspace === 'close' ? accountingMonthEndChecklist() : ''}
+    ${
+      accountingSelectedWorkspace === 'bills' && !parishTier
+        ? '<p class="acct-workspace-plan">Vendor bills and approvals are available with Parish Accounting.</p>'
+        : `<ul class="acct-workspace-tool-list">${tools
+            .map(
+              ([title, description, action, view]) =>
+                `<li><button type="button"${view ? ` data-accounting-view="${view}"` : ''} onclick="${action}"><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(description)}</small></span><b aria-hidden="true">→</b></button></li>`
+            )
+            .join('')}</ul>`
+    }
+  </section>`;
+  if (accountingSelectedWorkspace === 'funds') {
+    const funds = document.createElement('div');
+    renderAccountingFunds(funds);
+    pane.append(funds);
+  }
+}
 
 function syncAccountingHomeTask() {
   const context = document.getElementById('accountingHomeContext');
@@ -219,8 +389,9 @@ function syncAccountingHomeTask() {
 
 async function openAccountingHomeTask(view: string, trigger?: string) {
   if (trigger) accountingHomeTrigger = trigger;
-  if (accountingExperienceMode === 'treasurer') accountingAdvancedNavExpanded = false;
-  const pending = setAccountingView(view, accountingExperienceMode === 'treasurer');
+  const onHome =
+    accountingExperienceMode === 'treasurer' && (accountingView === 'overview' || Boolean(accountingHomeTask));
+  const pending = setAccountingView(view, onHome);
   const heading = document.getElementById('accountingHomeTaskTitle');
   if (heading && !heading.parentElement?.hidden) heading.focus();
   await pending;
@@ -236,6 +407,8 @@ function closeAccountingHomeTask() {
 }
 
 function accountingViewTitle() {
+  if (accountingView === 'workspace')
+    return accountingWorkspaceDefinition(accountingSelectedWorkspace)?.title || 'Accounting';
   const titles = {
     overview: 'Overview',
     income: accountingSimpleEntryMode === 'in-kind' ? 'Non-cash gift' : 'Record a deposit',
@@ -266,77 +439,37 @@ function syncAccountingExperienceChrome() {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
-  const isTreasurer = accountingExperienceMode === 'treasurer';
-  const nav = document.querySelector<HTMLElement>('.acct-suite-rail nav')!;
-  const advancedToggle = document.querySelector<HTMLElement>('[data-accounting-advanced-toggle]')!;
-  const navOrder = isTreasurer
-    ? [
-        'overview',
-        'advanced',
-        'payables',
-        'banking',
-        'reports',
-        'assets',
-        'budgets',
-        'ledger',
-        'close',
-        'governance',
-        'setup',
-        'settings',
-      ]
-    : [
-        'overview',
-        'ledger',
-        'payables',
-        'banking',
-        'reports',
-        'assets',
-        'budgets',
-        'close',
-        'governance',
-        'setup',
-        'settings',
-      ];
-  if (nav && nav.dataset.accountingNavMode !== accountingExperienceMode) {
-    navOrder.forEach((view) => {
-      const button =
-        view === 'advanced' ? advancedToggle : nav.querySelector<HTMLElement>(`[data-accounting-view="${view}"]`)!;
-      if (button) nav.append(button);
-    });
-    nav.dataset.accountingNavMode = accountingExperienceMode;
-  }
-  nav?.querySelectorAll<HTMLElement>('[data-accounting-view]').forEach((button) => {
-    button.hidden = isTreasurer && button.dataset.accountingView !== 'overview' && !accountingAdvancedNavExpanded;
-  });
-  if (advancedToggle) {
-    const advancedViewActive = [
-      'ledger',
-      'journals',
-      'close',
-      'governance',
-      'setup',
-      'settings',
-      'integrations',
-    ].includes(accountingView);
-    advancedToggle.hidden = !isTreasurer;
-    advancedToggle.setAttribute('aria-expanded', String(accountingAdvancedNavExpanded));
-    advancedToggle.classList.toggle('active', advancedViewActive);
-  }
-  if (shell) shell.classList.toggle('acct-suite-shell--advanced-open', isTreasurer && accountingAdvancedNavExpanded);
 }
 
 function setAccountingExperienceMode(mode: string) {
   accountingExperienceMode = mode === 'accountant' ? 'accountant' : 'treasurer';
-  accountingAdvancedNavExpanded = false;
   try {
     sessionStorage.setItem('agapay.accountingExperienceMode', accountingExperienceMode);
   } catch {}
   renderAccountingPane();
 }
 
-function toggleAccountingAdvancedNav() {
-  accountingAdvancedNavExpanded = !accountingAdvancedNavExpanded;
-  syncAccountingExperienceChrome();
+function syncAccountingWorkspaceNavigation() {
+  const active =
+    accountingView === 'overview' || accountingHomeTask
+      ? 'overview'
+      : accountingView === 'workspace'
+        ? accountingSelectedWorkspace
+        : Object.entries(ACCOUNTING_WORKSPACES).find(([, workspace]) => workspace.views.includes(accountingView))?.[0];
+  document.querySelectorAll<HTMLElement>('.acct-workspace-menu button').forEach((button) => {
+    const selected = (button.dataset.accountingWorkspace || button.dataset.accountingView) === active;
+    button.classList.toggle('active', selected);
+    if (selected) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
+  const back = document.getElementById('accountingBackToWorkspace') as HTMLButtonElement | null;
+  if (!back) return;
+  const workspace = active && accountingWorkspaceDefinition(active);
+  back.hidden = !workspace || accountingView === 'workspace';
+  if (active && workspace && !back.hidden) {
+    back.textContent = `← Back to ${workspace.title}`;
+    back.dataset.workspace = active;
+  }
 }
 
 function renderAccountingPane() {
@@ -344,19 +477,15 @@ function renderAccountingPane() {
   if (!pane) return;
   syncAccountingExperienceChrome();
   syncAccountingHomeTask();
-  document.querySelectorAll<HTMLElement>('[data-accounting-view]').forEach((button) => {
-    const view = button.dataset.accountingView;
-    const active = accountingHomeTask
-      ? view === 'overview'
-      : view === accountingView || (view === 'ledger' && accountingView === 'journals');
-    button.classList.toggle('active', active);
-    if (active) button.setAttribute('aria-current', 'page');
-    else button.removeAttribute('aria-current');
-  });
+  syncAccountingWorkspaceNavigation();
   const pageTitle = document.getElementById('accountingPageTitle') as HTMLElement;
   if (pageTitle) pageTitle.textContent = accountingHomeTask ? 'Accounting home' : accountingViewTitle();
   if (accountingView === 'journey') {
     openAccountingJourney();
+    return;
+  }
+  if (accountingView === 'workspace') {
+    renderAccountingWorkspaceDirectory(pane);
     return;
   }
   if (accountingView === 'overview') {
@@ -497,6 +626,7 @@ function renderAccountingOverviewDirectory(
   const overview = document.createElement('div');
   overview.className = 'acct-overview-directory';
   overview.innerHTML = `<section class="acct-overview-funds" data-accounting-overview-section="funds" aria-labelledby="accountingOverviewFundsTitle"></section>
+    ${accountingMonthEndChecklist()}
     <section class="acct-overview-reports" data-accounting-overview-section="reports" aria-labelledby="accountingOverviewReportsTitle"></section>
     <details class="acct-overview-disclosure acct-overview-fund-detail" data-accounting-overview-section="directory" data-overview-details="directory"><summary>Fund directory</summary></details>
     <details class="acct-overview-disclosure acct-overview-fund-detail" data-accounting-overview-section="accounts" data-overview-details="accounts"><summary>Chart of accounts</summary></details>`;
@@ -575,9 +705,12 @@ function setAccountingView(view: string, onHome = false) {
     return;
   }
   if (document.getElementById('accountingPane')?.dataset.loaded !== 'true') return;
+  const previousView = accountingView;
+  if (view === 'close' && previousView !== 'close') accountingCloseDetail = null;
   if (view === 'reports') accountingTransactionDetail = null;
   accountingView = [
     'overview',
+    'workspace',
     'income',
     'expense',
     'council',
@@ -599,6 +732,8 @@ function setAccountingView(view: string, onHome = false) {
     : 'overview';
   accountingHomeTask = onHome && accountingView !== 'overview' ? accountingView : '';
   renderAccountingPane();
+  if (accountingView === 'overview' && ['banking', 'close', 'payables', 'integrations'].includes(previousView))
+    void loadAccountingOverviewSummaries(true);
   if (
     ['payables', 'budgets'].includes(accountingView) &&
     accountingData.tier === 'advanced_operations' &&
@@ -613,7 +748,7 @@ function setAccountingView(view: string, onHome = false) {
     loadAccountingPhaseE();
   if (accountingView === 'assets') loadAccountingAssets();
   if (accountingView === 'close' && (!accountingData.close || (!accountingHomeTask && !accountingData.adjustments)))
-    loadAccountingPhaseF();
+    return loadAccountingPhaseF();
   if (accountingView === 'governance' && !accountingData.governance) loadAccountingGovernance();
 }
 
