@@ -452,9 +452,48 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
         .first<{ adjustment: number }>()
     : null;
   const disposalReclassification = money(disposal?.adjustment) - money(reversed?.adjustment);
+  // Recognize a closing journal only when every line fits the purchase pattern:
+  // investing asset debits, financing liability credits, and optional cash credits.
+  // Use the original lines for reversals so the adjustment follows the reversal date.
+  const directFinancing = await db
+    .prepare(
+      `
+    WITH closing_lines AS (
+      SELECT e.id, l.fund_id, l.debit_amount, l.credit_amount,
+        CASE WHEN e.source_type='reversal' THEN -1 ELSE 1 END direction,
+        CASE
+          WHEN t.category='asset' AND CAST(a.account_number AS REAL)>=1000
+            AND CAST(a.account_number AS REAL)<1100
+            THEN 'cash'
+          WHEN t.category='asset' AND a.cash_flow_classification='investing' THEN 'property'
+          WHEN t.category='liability' AND a.cash_flow_classification='financing' THEN 'debt'
+        END kind
+      FROM accounting_journal_entries e
+      JOIN accounting_journal_entries original
+        ON original.id=CASE WHEN e.source_type='reversal' THEN e.source_id ELSE e.id END
+      JOIN accounting_journal_lines l ON l.journal_entry_id=original.id
+      JOIN accounting_accounts a ON a.id=l.account_id
+      JOIN accounting_account_types t ON t.id=a.account_type_id
+      WHERE e.status IN ('posted','reversed') AND original.source_type='manual'
+        AND COALESCE(e.posting_date,e.entry_date) BETWEEN ? AND ?
+    ), closings AS (
+      SELECT fund_id, direction*SUM(CASE WHEN kind='debt' THEN credit_amount ELSE 0 END) amount
+      FROM closing_lines
+      GROUP BY id, fund_id, direction
+      HAVING SUM(debit_amount-credit_amount)=0
+        AND SUM(CASE WHEN kind='property' AND debit_amount>0
+          OR kind IN ('cash','debt') AND credit_amount>0 THEN 0 ELSE 1 END)=0
+    )
+    SELECT COALESCE(SUM(amount),0) amount FROM closings WHERE (?='' OR fund_id=?)
+  `
+    )
+    .bind(startDate, endDate, fundId || '', fundId || '')
+    .first<{ amount: number }>();
+  const noncashFinancing = money(directFinancing?.amount);
   const operatingAdjustments = operating.reduce((sum, row) => sum + cashEffect(row), 0) + disposalReclassification;
-  const investingCashFlow = investing.reduce((sum, row) => sum + cashEffect(row), 0) - disposalReclassification;
-  const financingCashFlow = financing.reduce((sum, row) => sum + cashEffect(row), 0);
+  const investingCashFlow =
+    investing.reduce((sum, row) => sum + cashEffect(row), 0) - disposalReclassification + noncashFinancing;
+  const financingCashFlow = financing.reduce((sum, row) => sum + cashEffect(row), 0) - noncashFinancing;
   const netCashChange =
     activities.totals.changeInNetAssets + operatingAdjustments + investingCashFlow + financingCashFlow;
   const actualCashChange = changes.filter(isCash).reduce((sum, row) => sum + row.change, 0);
@@ -492,6 +531,16 @@ async function cashFlowPeriod(db: PortabilityDatabase, { actor, startDate, endDa
       accountId: row.accountId,
       amount: cashEffect(row),
     })),
+    ...(noncashFinancing
+      ? [
+          {
+            section: 'investing',
+            label: 'Exclude property acquired through direct financing',
+            amount: noncashFinancing,
+          },
+          { section: 'financing', label: 'Exclude financing paid directly to the seller', amount: -noncashFinancing },
+        ]
+      : []),
     { section: 'reconciliation', label: 'Net change in cash', amount: netCashChange },
     { section: 'reconciliation', label: 'Cash movement excluding imported opening balances', amount: actualCashChange },
     { section: 'reconciliation', label: 'Cash at beginning of period', amount: beginningCash },

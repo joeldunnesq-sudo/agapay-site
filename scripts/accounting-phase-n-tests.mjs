@@ -228,3 +228,31 @@ assert.match(reportCsv(comparativeCash), /current_amount,comparative_amount/);
 console.log(
   'Accounting Phase N reporting-depth checks passed; worked cash-flow reconciliation: $70.00 computed = $70.00 actual.'
 );
+
+const addAccount = sqlite.prepare(`INSERT INTO accounting_accounts
+  (id,account_number,name,account_type_id,normal_balance,cash_flow_classification)
+  VALUES(?,?,?,?,?,?)`);
+addAccount.run('land', '1510', 'Land', 'type_asset', 'debit', 'investing');
+addAccount.run('building', '1520', 'Building', 'type_asset', 'debit', 'investing');
+addAccount.run('mortgage', '2500', 'Mortgage payable', 'type_liability', 'credit', 'financing');
+insertEntry('property_closing', '2026-08-01', 'Property closing', [
+  { accountId: 'land', debit: 200000 },
+  { accountId: 'building', debit: 1800000 },
+  { accountId: 'acct_1010', credit: 500000 },
+  { accountId: 'mortgage', credit: 1500000 },
+]);
+insertEntry('mortgage_deposit', '2026-08-02', 'Loan proceeds deposited in checking', [
+  { accountId: 'acct_1010', debit: 40000 },
+  { accountId: 'mortgage', credit: 40000 },
+]);
+const propertyCash = await statementOfCashFlows(db, {
+  actor,
+  startDate: '2026-08-01',
+  endDate: '2026-08-31',
+  fundId: 'fund_general',
+});
+assert.equal(propertyCash.totals.investingCashFlow, -500000);
+assert.equal(propertyCash.totals.financingCashFlow, 40000);
+assert.equal(propertyCash.totals.actualCashChange, -460000);
+assert.equal(propertyCash.validation.status, 'validated');
+assert.match(reportCsv(propertyCash), /Exclude financing paid directly to the seller/);
