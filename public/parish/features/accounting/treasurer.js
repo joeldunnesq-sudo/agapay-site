@@ -162,7 +162,7 @@ function accountingOverviewHero() {
   const treasurer = accountingExperienceMode === 'treasurer';
   return `<section class="acct-command-hero acct-home-hero">
       <div><span class="acct-kicker">${treasurer ? 'Treasurer view' : 'Financial command center'}</span><h2>${treasurer ? 'Treasurer overview' : 'Accounting overview'}</h2><p>${treasurer ? 'Record income and expenses and review the parish books.' : 'Review funds, payables, bank activity, and financial reports.'}</p></div>
-      <section class="acct-home-actions" aria-labelledby="accountingEverydayActions"><h3 id="accountingEverydayActions">Everyday bookkeeping</h3><div class="acct-command-actions acct-command-actions-treasurer acct-home-action-grid">
+      <section class="acct-home-actions" data-accounting-overview-section="activity" aria-labelledby="accountingEverydayActions"><h3 id="accountingEverydayActions">Everyday bookkeeping</h3><div class="acct-command-actions acct-command-actions-treasurer acct-home-action-grid">
         ${accountingOverviewEntryActions()}
       </div></section>
       ${treasurer ? '' : `<div class="acct-command-actions"><button type="button" onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button type="button" onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button type="button" onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button type="button" onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>`}
@@ -177,13 +177,13 @@ function renderAccountingTreasurerHome(pane) {
     activities?.startDate && activities.endDate
       ? `${accountingDate(activities.startDate)} – ${accountingDate(activities.endDate)}`
       : '';
-  pane.innerHTML = `<section class="acct-command-hero acct-treasurer-start">
+  pane.innerHTML = `<section class="acct-command-hero acct-treasurer-start" data-accounting-overview-section="activity">
     <h2>Record activity</h2>
     <div class="acct-command-actions acct-command-actions-treasurer">
       ${accountingOverviewEntryActions()}
     </div>
   </section>
-  <section class="acct-overview-metrics" aria-label="Financial summary">
+  <section class="acct-overview-metrics" data-accounting-overview-section="summary" aria-label="Financial summary">
     <dl>
       <div><dt>Cash on hand</dt><dd>${position?.rows ? accountingMoney(accountingOverviewCash(position)) : '—'}</dd>${position?.endDate ? `<small>As of ${escapeHtml(accountingDate(position.endDate))}</small>` : ''}</div>
       <div><dt>Income</dt><dd>${totals?.revenue == null ? '—' : accountingMoney(totals.revenue)}</dd></div>
@@ -451,7 +451,7 @@ function renderAccountingOverview(pane) {
         accountingOverviewFundRank(a.fund) - accountingOverviewFundRank(b.fund) ||
         String(a.fund.name || '').localeCompare(String(b.fund.name || ''))
     );
-  pane.innerHTML = `${accountingOverviewHero()}<div class="acct-suite-stats">
+  pane.innerHTML = `${accountingOverviewHero()}<div class="acct-suite-stats" data-accounting-overview-section="summary" role="region" aria-label="Financial summary">
       <div class="acct-suite-stat featured"><span>Cash on hand</span><strong>${accountingMoney(cash)}</strong><small>Across active cash and bank accounts</small></div>
       <div class="acct-suite-stat"><span>Total net assets</span><strong>${accountingMoney(netAssets)}</strong><small>${position.validation?.status === 'validated' ? 'Financial position is balanced' : 'Review the financial position'}</small></div>
       <div class="acct-suite-stat"><span>Current activity</span><strong>${accountingMoney(activity)}</strong><small>${activities.startDate && activities.endDate ? `${escapeHtml(activities.startDate)} to ${escapeHtml(activities.endDate)} · ` : ''}${posted.length} recent posted entries · ${drafts} recent draft${drafts === 1 ? '' : 's'}</small></div>

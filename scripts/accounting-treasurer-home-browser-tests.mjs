@@ -289,15 +289,34 @@ try {
       assert.equal(await page.locator('[data-accounting-view="funds"]').count(), 0);
       await pane.getByRole('heading', { name: 'Fund balances' }).waitFor();
       await pane.locator('.acct-fund-bars').getByText('$940.00', { exact: true }).waitFor();
-      await pane.locator('summary').getByText('Chart of accounts', { exact: true }).click();
+      const jumpNav = page.getByRole('navigation', { name: 'On this page' });
+      if (!parishTier) await page.setViewportSize({ width: 390, height: 900 });
+      for (const [label, section] of [
+        ['Record activity', 'activity'],
+        ['Financial summary', 'summary'],
+        ['Fund balances', 'funds'],
+        ['Reports', 'reports'],
+        ['Fund directory', 'directory'],
+        ['Chart of accounts', 'accounts'],
+      ]) {
+        await jumpNav.getByRole('button', { name: label, exact: true }).click();
+        const destination = pane.locator(`[data-accounting-overview-section="${section}"]`);
+        assert.equal(await destination.evaluate((element) => element.contains(document.activeElement)), true);
+        assert.equal(await destination.evaluate((element) => !(element instanceof HTMLDetailsElement) || element.open), true);
+        const heading = destination.locator('summary, h2, h3').first();
+        const box = (await heading.count()) ? await heading.boundingBox() : await destination.boundingBox();
+        const header = await page.locator('.acct-suite-header').boundingBox();
+        assert.ok(box && header && box.y >= header.y + header.height - 1, `${label} must land below the sticky header`);
+      }
+      if (!parishTier) await page.setViewportSize({ width: 1280, height: 720 });
       await pane.getByRole('button', { name: 'Assets', exact: false }).click();
       await pane.locator('.acct-fund-account-group-body').getByText(bank.name, { exact: true }).waitFor();
       assert.equal(await pane.getByText('Retired building fund', { exact: true }).count(), 0);
-      await pane.locator('summary').getByText('Fund directory', { exact: true }).click();
       await pane.getByRole('button', { name: 'Show archived & unused' }).click();
       await pane.getByText('Retired building fund', { exact: true }).waitFor();
       await pane.getByRole('button', { name: 'Open fund report', exact: true }).click();
       await pane.getByRole('heading', { name: 'Balance Sheet by Fund', exact: true }).waitFor();
+      assert.equal(await jumpNav.isVisible(), false);
       await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
       await pane.getByRole('searchbox', { name: 'Find a report' }).fill('cash flows');
       await pane.getByRole('button', { name: /Statement of Cash Flows/ }).waitFor();

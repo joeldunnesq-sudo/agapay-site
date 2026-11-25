@@ -2643,6 +2643,45 @@ textarea {
 .acct-treasurer-start .acct-command-actions { grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr)); }
 .acct-treasurer-start .acct-command-actions small { color:rgba(246,241,232,.77); font-size:11px; white-space:normal; }
 .acct-treasurer-home-grid { display:grid; align-items:start; gap:18px; }
+.acct-overview-section-nav { display:none; }
+.acct-workspace:has(> #accountingPane > .acct-overview-directory) > .acct-overview-section-nav {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  align-self:start;
+  padding:10px;
+  margin-bottom:14px;
+  background:#fffefa;
+  border:1px solid var(--line);
+  border-radius:12px;
+}
+.acct-overview-section-nav h2 { width:100%; margin:0 0 4px; padding:3px 8px; color:var(--stone); font:700 11px var(--sans); }
+.acct-overview-section-nav button {
+  min-height:36px;
+  padding:6px 8px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:var(--ink);
+  font:600 12px var(--sans);
+  text-align:left;
+  cursor:pointer;
+}
+.acct-overview-section-nav button:hover,.acct-overview-section-nav button:focus-visible { background:#edf4f8; }
+@media(min-width:1150px) {
+  .acct-workspace:has(> #accountingPane > .acct-overview-directory) {
+    display:grid;
+    grid-template-columns:150px minmax(0,1fr);
+    align-items:start;
+    gap:18px;
+  }
+  .acct-workspace:has(> #accountingPane > .acct-overview-directory) > .acct-overview-section-nav {
+    position:sticky;
+    top:100px;
+    flex-direction:column;
+    margin-bottom:0;
+  }
+}
 .acct-overview-metrics { margin:18px 0; padding:16px 20px; border:1px solid #cbdce7; border-top:3px solid var(--gold); border-radius:14px; background:#edf4f8; }
 .acct-overview-metrics dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0; }
 .acct-overview-metrics dl > div { min-width:0; padding-left:14px; border-left:1px solid #cbdce7; }
