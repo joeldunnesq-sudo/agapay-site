@@ -1722,7 +1722,7 @@ export default [
         'error',
         {
           varsIgnorePattern:
-            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings|openAccountingSelectedPeriod|closeAccountingHomeTask)$',
+            '^(renderAccountingAttachments|accountingUpload|downloadAccountingAttachment|removeAccountingAttachment|accountingPreviewOnly|renderAccountingPaywall|renderAccountingReadiness|accountingViewTitle|syncAccountingExperienceChrome|setAccountingExperienceMode|toggleAccountingAdvancedNav|renderAccountingPane|jumpToAccountingOverviewSection|openAccountingJournalAttachments|toggleAccountingLedgerOrder|setAccountingLedgerAccount|searchAccountingLedger|clearAccountingLedgerSearch|setAccountingRegisterEntryMode|applyAccountingRegisterDefaultFund|setAccountingView|openAccountingSimpleIncome|openAccountingInKindGift|openAccountingSimpleBill|loadAccountingTab|loadAccountingPhaseD|saveAccountingSettings|openAccountingSelectedPeriod|closeAccountingHomeTask)$',
           argsIgnorePattern: '^(err|claim|registration|sync)$',
           caughtErrorsIgnorePattern: '^err$',
         },

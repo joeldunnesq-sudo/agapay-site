@@ -273,7 +273,6 @@ function syncAccountingExperienceChrome() {
     ? [
         'overview',
         'advanced',
-        'funds',
         'payables',
         'banking',
         'reports',
@@ -288,7 +287,6 @@ function syncAccountingExperienceChrome() {
     : [
         'overview',
         'ledger',
-        'funds',
         'payables',
         'banking',
         'reports',
@@ -475,6 +473,21 @@ function renderAccountingPane() {
       <div class="acct-list-head"><div><span class="acct-kicker">Manual ledger</span><h2>Journal entries</h2></div><button type="button" class="acct-primary" onclick="newAccountingJournal()">New journal entry</button></div><div class="acct-ledger-toggle"><button onclick="setAccountingView('ledger')">Register</button><button class="active" onclick="setAccountingView('journals')">Journal entries</button></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Date</th><th>Entry</th><th>Description</th><th>Source</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>${rows.map((row) => `<tr><td>${accountingDate(row.entryDate || row.entry_date || row.postingDate)}</td><td><strong>${escapeHtml(row.entryNumber || row.entry_number || row.id || '')}</strong></td><td>${escapeHtml(row.description || row.memo || '')}</td><td>${escapeHtml(row.sourceType || row.source_type || 'Manual')}</td><td><strong>${accountingMoney(row.totalDebits ?? row.total_debits ?? row.totalCredits ?? row.total_credits ?? 0)}</strong></td><td><span class="acct-status ${escapeAttr(row.status || 'draft')}">${escapeHtml(row.status || 'draft')}</span></td><td><button type="button" class="acct-link" onclick="openAccountingJournalAttachments('${escapeAttr(row.id)}')">Attachments</button>${row.status === 'draft' ? `<button type="button" class="acct-link" onclick="editAccountingJournal('${escapeAttr(row.id)}')">Continue</button><button type="button" class="acct-link" onclick="voidAccountingJournal('${escapeAttr(row.id)}')">Void</button>` : row.status === 'posted' ? `<button type="button" class="acct-link" onclick="reverseAccountingJournal('${escapeAttr(row.id)}')">Reverse</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
+function jumpToAccountingOverviewSection(section: string) {
+  if (accountingView !== 'overview') return;
+  const target = document.querySelector<HTMLElement>(
+    `#accountingPane [data-accounting-overview-section="${CSS.escape(section)}"]`
+  );
+  if (!target) return;
+  if (target instanceof HTMLDetailsElement) target.open = true;
+  const heading = target.querySelector<HTMLElement>('summary, h2, h3') || target;
+  if (heading.tagName !== 'SUMMARY') heading.tabIndex = -1;
+  heading.focus({ preventScroll: true });
+  const header = target.closest('.acct-suite-main')?.querySelector<HTMLElement>('.acct-suite-header');
+  target.style.scrollMarginTop = `${(header?.offsetHeight || 0) + 12}px`;
+  target.scrollIntoView({ block: 'start' });
+}
+
 function renderAccountingOverviewDirectory(
   pane: HTMLElement,
   expanded: Set<string | undefined>,
@@ -483,10 +496,10 @@ function renderAccountingOverviewDirectory(
 ) {
   const overview = document.createElement('div');
   overview.className = 'acct-overview-directory';
-  overview.innerHTML = `<section class="acct-overview-funds" aria-labelledby="accountingOverviewFundsTitle"></section>
-    <section class="acct-overview-reports" aria-labelledby="accountingOverviewReportsTitle"></section>
-    <details class="acct-overview-disclosure acct-overview-fund-detail" data-overview-details="directory"><summary>Fund directory</summary></details>
-    <details class="acct-overview-disclosure acct-overview-fund-detail" data-overview-details="accounts"><summary>Chart of accounts</summary></details>`;
+  overview.innerHTML = `<section class="acct-overview-funds" data-accounting-overview-section="funds" aria-labelledby="accountingOverviewFundsTitle"></section>
+    <section class="acct-overview-reports" data-accounting-overview-section="reports" aria-labelledby="accountingOverviewReportsTitle"></section>
+    <details class="acct-overview-disclosure acct-overview-fund-detail" data-accounting-overview-section="directory" data-overview-details="directory"><summary>Fund directory</summary></details>
+    <details class="acct-overview-disclosure acct-overview-fund-detail" data-accounting-overview-section="accounts" data-overview-details="accounts"><summary>Chart of accounts</summary></details>`;
   const funds = overview.querySelector<HTMLElement>('.acct-overview-funds')!;
   renderAccountingFunds(funds);
   const accountGroups = funds.querySelector('.acct-fund-accounts');
