@@ -422,6 +422,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/directory-invitation-next.ts',
 
   'src/lib/admin-overview-metrics.ts',
+  'src/lib/admin-giving-impact.ts',
   'src/lib/parish-relationships.ts',
   'src/lib/commerce-readiness.ts',
   'src/lib/tax-readiness.ts',

@@ -148,11 +148,11 @@ export default [
   },
   {
     // Public classic-script functions are called by the existing Admin app.
-    files: ['src/browser/admin/metrics.ts'],
+    files: ['src/browser/admin/metrics.ts', 'src/browser/admin/giving-impact.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { varsIgnorePattern: '^(renderAdminOverviewMetrics|renderAdminTierBreakdown)$' },
+        { varsIgnorePattern: '^(renderAdminOverviewMetrics|renderAdminTierBreakdown|renderGivingImpact)$' },
       ],
     },
   },

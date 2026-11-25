@@ -43,6 +43,7 @@ export interface StripeWebhookObject extends DonationInvoice {
   external_accounts?: { data?: { object?: string; bank_name?: string; last4?: string }[] };
 }
 export interface StripeWebhookEvent {
+  livemode?: boolean;
   id: string;
   type: string;
   account?: string;

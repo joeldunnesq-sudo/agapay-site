@@ -384,6 +384,7 @@ async function processStripeWebhookEvent(env, event) {
         stripePaymentIntentId: paymentIntentId,
         stripeSubscriptionId: invoiceSubscriptionId(object),
         stripeInvoiceId: object.id,
+        stripeLivemode: event.livemode,
         namesLiving: metadata.names_living || '',
         namesDeparted: metadata.names_departed || '',
         commemorationKind: metadata.commemoration_kind || 'proskomedia_liturgy',

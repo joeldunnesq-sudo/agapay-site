@@ -410,6 +410,7 @@ export async function processStripeWebhookEvent(env: StripeHandlerEnv, event: St
         stripePaymentIntentId: paymentIntentId,
         stripeSubscriptionId: invoiceSubscriptionId(object),
         stripeInvoiceId: object.id,
+        stripeLivemode: event.livemode,
         namesLiving: metadata.names_living || '',
         namesDeparted: metadata.names_departed || '',
         commemorationKind: metadata.commemoration_kind || 'proskomedia_liturgy',

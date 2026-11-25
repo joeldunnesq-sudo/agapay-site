@@ -118,6 +118,7 @@ export const pageAssets = Object.freeze([
   '/admin/presentation.js',
   '/admin/navigation.js',
   '/admin/metrics.js',
+  '/admin/giving-impact.js',
   '/admin/controllers/contact-leads.js',
 ]);
 
