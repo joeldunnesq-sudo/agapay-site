@@ -21,15 +21,9 @@
   workspace.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-sw-view]');
     if (!button) return;
-    const view = button.dataset.swView;
-    const selected = menu.find((item) => item.dataset.swView === view);
-    if (!selected) return;
-    sections.forEach((section) => {
-      section.hidden = section.dataset.swPanel !== view;
-    });
-    menu.forEach((item) => {
-      item.setAttribute('aria-pressed', String(item === selected));
-    });
-    if (selected !== button) selected.focus();
+    const section = sections.find((item) => item.dataset.swPanel === button.dataset.swView);
+    if (!section) return;
+    section.focus({ preventScroll: true });
+    section.scrollIntoView({ block: 'start' });
   });
 })();

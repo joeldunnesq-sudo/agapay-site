@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="/parish/settings.css?v=20261123settings1" />
 <link rel="stylesheet" href="/parish/commerce-refresh.css?v=1" />
 <link rel="stylesheet" href="/parish/accounting-refresh.css?v=1" />
-<link rel="stylesheet" href="/parish/workspace-section-menus.css?v=4" />
+<link rel="stylesheet" href="/parish/workspace-section-menus.css?v=5" />
 </head>
 <body class="dashboard-booting">
 <div class="dashboard-boot-screen" id="dashboardBootScreen" role="status" aria-live="polite" aria-label="Loading parish dashboard">
@@ -899,17 +899,17 @@ Annual Giving Statements
 
 <div class="sw-section-layout">
 <nav class="sw-section-nav" aria-label="Stewardship Health sections">
-<button type="button" data-sw-view="overview" aria-pressed="true">Overview</button>
-<button type="button" data-sw-view="giving" aria-pressed="false">Giving intelligence</button>
-<button type="button" data-sw-view="recurring" aria-pressed="false">Recurring giving</button>
-<button type="button" data-sw-view="outside" aria-pressed="false">Outside giving</button>
-<button type="button" data-sw-view="attendance" aria-pressed="false">Attendance</button>
-<button type="button" data-sw-view="reports" aria-pressed="false">Reports &amp; financials</button>
-<button type="button" data-sw-view="meetings" aria-pressed="false">Meeting packets</button>
-<button type="button" data-sw-view="plan" aria-pressed="false">Plan</button>
+<button type="button" data-sw-view="overview">Overview</button>
+<button type="button" data-sw-view="giving">Giving intelligence</button>
+<button type="button" data-sw-view="recurring">Recurring giving</button>
+<button type="button" data-sw-view="outside">Outside giving</button>
+<button type="button" data-sw-view="attendance">Attendance</button>
+<button type="button" data-sw-view="reports">Reports &amp; financials</button>
+<button type="button" data-sw-view="meetings">Meeting packets</button>
+<button type="button" data-sw-view="plan">Plan</button>
 </nav>
 <div class="sw-section-content">
-<section data-sw-panel="overview" aria-label="Overview">
+<section data-sw-panel="overview" aria-label="Overview" tabindex="-1">
 <div class="sw-suite-tool-grid sw-suite-tool-grid--health">          <div class="sw-suite-tool-card sw-tool-health-score">
 <div class="sw-tool-card-icon">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"/><polyline points="3.8 12 7.2 12 9.2 8.3 12.3 15.8 14.5 12 20.2 12"/></svg>
@@ -920,7 +920,7 @@ Annual Giving Statements
 </div>
 </div></div><div class="sw-section-shortcuts"><button type="button" class="btn btn-gold" data-sw-view="attendance">Record attendance</button><button type="button" class="btn btn-ghost" data-sw-view="reports">View reports</button></div>
 </section>
-<section data-sw-panel="giving" aria-label="Giving intelligence" hidden>
+<section data-sw-panel="giving" aria-label="Giving intelligence" tabindex="-1">
 <div class="sw-suite-tool-grid sw-suite-tool-grid--health">          <div class="sw-suite-tool-card sw-tool-distribution">
 <div class="sw-tool-card-icon" aria-hidden="true">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h3v7H4zM10.5 8h3v13h-3zM17 3h3v18h-3z"/></svg>
@@ -954,7 +954,7 @@ Annual Giving Statements
 </div>
 </div></div>        <p class="sw-intelligence-source">Donor charts use recorded AGAPAY gifts and never show individual identities. Outside giving is included in the reports and financial snapshots.</p>
 </section>
-<section data-sw-panel="recurring" aria-label="Recurring giving" hidden>
+<section data-sw-panel="recurring" aria-label="Recurring giving" tabindex="-1">
 <div class="sw-suite-tool-grid sw-suite-tool-grid--health">          <div class="sw-suite-tool-card sw-tool-recurring">
 <div class="sw-tool-card-icon">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -968,13 +968,13 @@ Annual Giving Statements
 </div>
 </div></div>
 </section>
-<section data-sw-panel="outside" aria-label="Outside giving" hidden>
+<section data-sw-panel="outside" aria-label="Outside giving" tabindex="-1">
 <div id="stewardshipOutsideGivingMount"></div>
 </section>
-<section data-sw-panel="attendance" aria-label="Attendance" hidden>
+<section data-sw-panel="attendance" aria-label="Attendance" tabindex="-1">
 <div id="stewardshipAttendanceMount"></div>
 </section>
-<section data-sw-panel="reports" aria-label="Reports &amp; financials" hidden>
+<section data-sw-panel="reports" aria-label="Reports &amp; financials" tabindex="-1">
 <!-- Stewardship Reports -->
 <div class="sw-suite-tool-card sw-tool-giving sw-tool-financials-featured sw-reports-intelligence">
 <div class="sw-tool-card-icon">
@@ -1033,7 +1033,7 @@ Generate Monthly Financial Report
 <div class="section-body" id="stewardshipFinancialsEditorPane"></div>
 </section>
 </section>
-<section data-sw-panel="meetings" aria-label="Meeting packets" hidden>
+<section data-sw-panel="meetings" aria-label="Meeting packets" tabindex="-1">
 <!-- Annual Meeting Packets -->
 <div class="sw-suite-tool-card sw-tool-financials-featured sw-tool-meeting-packets-featured">
 <div class="sw-tool-card-icon">
@@ -1062,7 +1062,7 @@ Generate Monthly Financial Report
 <div class="section-body stewardship-editor-body" id="stewardshipEditorPane"></div>
 </section>
 </section>
-<section data-sw-panel="plan" aria-label="Plan" hidden>
+<section data-sw-panel="plan" aria-label="Plan" tabindex="-1">
 <div class="sw-suite-plan-row" id="stewardshipPlanPane"></div>
 </section>
 </div>
@@ -1956,7 +1956,7 @@ Generate Monthly Financial Report
 <script src="/parish/app-subscriptions-and-settlement.js?v=50c249e196063e22"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
 <script src="/parish/app.js?v=54efeb4a3ac3b487"></script>
-<script src="/parish/stewardship-sections.js"></script>
+<script src="/parish/stewardship-sections.js?v=2"></script>
 <script src="/parish/givers-sections.js"></script>
 </body>
 </html>
