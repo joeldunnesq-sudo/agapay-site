@@ -185,28 +185,15 @@ assert.match(app, /sessionStorage\.setItem\('agapay\.accountingExperienceMode'/)
 assert.match(dashboard, />Treasurer view<\/button>/);
 assert.match(dashboard, />Accountant view<\/button>/);
 assert.match(app, /function renderAccountingJournalEditor/);
-assert.match(app, /accountingExperienceMode === 'treasurer' && accountingView === 'ledger'/);
-assert.match(app, /newAccountingJournal\(\)/);
-assert.match(app, /function accountingOverviewHero\(\)/);
-assert.match(app, /pane\.innerHTML = `\$\{accountingOverviewHero\(\)\}<div class="acct-suite-stats">[\s\S]*Needs attention[\s\S]*openAccountingIncomeReport\(\)/);
-assert.doesNotMatch(app, /renderAccountingTreasurerHome/);
-const overviewHero = app.slice(app.indexOf("function accountingOverviewHero"), app.indexOf("function accountingOverviewFundSummary"));
-for (const mode of ['treasurer', 'accountant']) {
-  const html = runInNewContext(overviewHero + ';accountingOverviewHero()', {accountingExperienceMode:mode});
-  assert.match(html, /Record Income/);
-  assert.match(html, /Pay a Bill/);
-  assert.match(html, /Record a Non-Cash Gift/);
-  assert.match(html, /Everyday bookkeeping/);
-  if(mode === 'treasurer') assert.doesNotMatch(html, /New journal|Manage funds|Reconcile|Run reports/);
-  else assert.match(html, /New journal/);
-}
+
+assert.match(app, /accountingView === 'income'/);
+assert.match(app, /renderAccountingTreasurerHome\(pane\)/);
+assert.match(app, /function newAccountingJournal/);
 assert.match(dashboard, /data-accounting-advanced-toggle/);
-assert.equal((dashboard.match(/data-accounting-advanced(?:\s|>)/g) || []).length, 5);
-assert.match(app, /button\.hidden = isTreasurer && !accountingAdvancedNavExpanded/);
-assert.match(app, /advancedToggle\.hidden = !isTreasurer/);
+assert.match(dashboard, />More tools<\/button>/);
+assert.match(app, /button\.hidden = isTreasurer && button\.dataset\.accountingView !== 'overview'/);
 assert.match(app, /function toggleAccountingAdvancedNav\(\)/);
-assert.doesNotMatch(app, /accountingExperienceMode === 'treasurer' && \[[^\]]+\]\.includes\(accountingView\)/);
-console.log("PASS - Treasurer view defaults to six routine modules plus Advanced, while Accountant view keeps all modules reachable");
+console.log("PASS - Treasurer view uses Overview and More tools, and Accountant view keeps the full navigation");
 
 const expectedLabels = {
   acct_4000:"Stewardship & Tithes",

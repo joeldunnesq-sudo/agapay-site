@@ -21,6 +21,10 @@ function renderAccountingCloseBase(pane: HTMLElement) {
 }
 
 function renderAccountingClose(pane: HTMLElement) {
+  if (accountingHomeTask === 'close' && accountingData.close && !accountingCloseDetail) {
+    renderAccountingMonthEndDesk(pane);
+    return;
+  }
   renderAccountingCloseBase(pane);
   if (accountingCloseDetail || !accountingData.close) return;
   const adjustments = accountingData.adjustments || { items: [], templates: [] },
@@ -31,10 +35,69 @@ function renderAccountingClose(pane: HTMLElement) {
   );
 }
 
+function renderAccountingMonthEndDesk(pane: HTMLElement) {
+  const { sessions, periods } = accountingData.close!;
+  const current = sessions.filter(
+    (session) => session.closeType === 'month_end' && !['completed', 'superseded'].includes(session.status)
+  );
+  const activePeriods = new Set(current.map((session) => session.accountingPeriodId));
+  const today = new Date().toLocaleDateString('en-CA');
+  const available = periods.filter(
+    (period) => period.status === 'open' && period.endDate && period.endDate < today && !activePeriods.has(period.id)
+  );
+  const rows = current.map(
+    (session) =>
+      `<li><div><strong>${escapeHtml(periods.find((period) => period.id === session.accountingPeriodId)?.name || 'Monthly close')}</strong><small>${session.lastValidatedAt ? `Last checked ${accountingDate(session.lastValidatedAt)}` : 'Ready to run checks'}</small></div><button type="button" onclick="openAccountingClose('${escapeAttr(session.id)}')">Continue checklist</button></li>`
+  );
+  pane.innerHTML = `<section class="acct-card"><h2>Finish a month</h2><p>Run the close checklist after recording activity and matching bank statements for the month. The checklist shows what still needs attention before you close the books.</p>
+    ${rows.length ? `<ul class="acct-work-queue">${rows.join('')}</ul>` : ''}
+    ${available.length ? `<form class="acct-phase-form" onsubmit="beginAccountingMonthEnd(event)"><label>Month to review<select name="periodId" required>${available.map((period) => `<option value="${escapeAttr(period.id)}">${escapeHtml(period.name)}</option>`).join('')}</select></label><button type="submit" class="acct-primary">Start month-end checklist</button><span class="acct-form-status" role="status"></span></form>` : '<p>No additional finished months are open for review.</p>'}
+    </section>`;
+}
+
+async function beginAccountingMonthEnd(event: AccountingFormEvent) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const period = accountingData.close?.periods.find(
+    ({ id }) => id === (form.elements.namedItem('periodId') as HTMLSelectElement).value
+  );
+  if (!period) return;
+  const button = form.querySelector<HTMLButtonElement>('button')!;
+  const status = form.querySelector<HTMLElement>('[role="status"]')!;
+  button.disabled = true;
+  status.textContent = 'Starting the checklist…';
+  try {
+    const payload = await phaseFMutation('/close/sessions', {
+      closeType: 'month_end',
+      fiscalYearId: period.fiscalYearId,
+      accountingPeriodId: period.id,
+    });
+    if (payload && form.isConnected) await validateAccountingClose(payload.session.id, payload.session.version);
+    if (form.isConnected) status.textContent = '';
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : String(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function loadAccountingPhaseF() {
   const pane = document.getElementById('accountingPane') as HTMLElement;
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Loading close workspace...</p>';
+  const loading = pane?.firstElementChild;
+  const workspace = accountingData;
   try {
+    if (accountingHomeTask === 'close') {
+      const payload = await accountingDeskRead<AccountingCloseResponse>('/close/workspace');
+      if (!loading?.isConnected || workspace !== accountingData) return;
+      workspace.close = {
+        fiscalYears: payload.fiscalYears || [],
+        periods: payload.periods || [],
+        sessions: payload.sessions || [],
+      };
+      renderAccountingPane();
+      return;
+    }
     const [res, adjustmentsRes, templatesRes] = await Promise.all(
         ['/close/workspace', '/adjustments', '/adjustments/templates'].map((path) =>
           fetch(accountingApi(path), { headers: authHeaders() })
@@ -56,7 +119,7 @@ async function loadAccountingPhaseF() {
     accountingData.adjustments = { items: adjustments.adjustments || [], templates: templates.templates || [] };
     renderAccountingPane();
   } catch (error) {
-    if (pane)
+    if (loading?.isConnected)
       pane.innerHTML = `<div class="acct-empty error"><strong>Unable to load close workspace</strong><span>${escapeHtml((error as Error).message)}</span><button onclick="loadAccountingPhaseF()">Try again</button></div>`;
   }
 }
@@ -124,6 +187,7 @@ async function waiveAccountingCloseCheck(id: string, checkId: string, version: n
 }
 
 async function completeAccountingClose(id: string, version: number, type: string) {
+  if (accountingHomeTask === 'close' && !confirm('Close this month and lock it against new entries?')) return;
   const path =
     type === 'year_end'
       ? `/close/year-end/${encodeURIComponent(accountingCloseDetail!.fiscalYearId)}/execute`

@@ -86,6 +86,13 @@ async function accountingAccessRequest(path, body) {
 async function renderAccountingAccess(message = '') {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
+  pane.dataset.loaded = 'locked';
+  accountingHomeTask = '';
+  accountingView = 'overview';
+  accountingData.payables = null;
+  accountingData.close = null;
+  accountingCloseDetail = null;
+  syncAccountingHomeTask();
   try {
     const response = await fetch(accountingAccessApi('/profiles'), { headers: authHeaders() });
     const payload = await response.json().catch(() => ({}));
@@ -165,6 +172,11 @@ async function changeAccountingPin(event) {
   }
 }
 async function lockAccountingWorkspace() {
+  const pane = document.getElementById('accountingPane');
+  if (pane) pane.dataset.loaded = 'locked';
+  accountingHomeTask = '';
+  accountingView = 'overview';
+  syncAccountingHomeTask();
   const session = accountingStaffSession();
   if (session) await accountingAccessRequest('/logout', { profileId: session.profile.id }).catch(() => {});
   sessionStorage.removeItem(accountingStaffSessionKey());

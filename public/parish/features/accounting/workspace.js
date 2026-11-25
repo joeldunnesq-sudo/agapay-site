@@ -84,6 +84,8 @@ function renderAccountingPaywall(pane = document.getElementById('accountingPane'
   document.getElementById('accountingParishName').textContent =
     currentParish?.name || currentParish?.parishName || 'Your parish';
   document.getElementById('accountingFiscalYear').textContent = 'Current fiscal year';
+  accountingHomeTask = '';
+  syncAccountingHomeTask();
   pane.dataset.loaded = 'preview';
   if (!included) {
     pane.innerHTML = `
@@ -162,14 +164,49 @@ function renderAccountingReadiness(accounting, pane = document.getElementById('a
     : disabled
       ? 'Accounting is included in your plan, but access has been disabled for this parish. Contact AGAPAY support for help.'
       : 'Accounting is included in your plan, but its books are not ready or did not pass their safety checks. Contact AGAPAY support before continuing.';
+  accountingHomeTask = '';
+  syncAccountingHomeTask();
   pane.dataset.loaded = 'pending';
   const copy = document.getElementById('accountingTierCopy');
   if (copy) copy.textContent = setup ? 'Included · Setup required' : 'Included · Needs attention';
   pane.innerHTML = `<section class="acct-access-card"><span class="acct-kicker">Accounting access</span><h2>${title}</h2><p>${message}</p><button class="acct-primary" type="button" onclick="loadAccountingTab(true)">Check again</button></section>`;
 }
+let accountingHomeTask = '';
+let accountingHomeTrigger = '';
+function syncAccountingHomeTask() {
+  const context = document.getElementById('accountingHomeContext');
+  const bar = document.getElementById('accountingHomeTaskBar');
+  if (!context || !bar) return;
+  const active = accountingExperienceMode === 'treasurer' && accountingHomeTask === accountingView;
+  if (active && context.hidden) {
+    const pane = document.getElementById('accountingPane');
+    if (pane?.firstElementChild?.classList.contains('acct-treasurer-start')) context.replaceChildren(...pane.children);
+    else renderAccountingTreasurerHome(context);
+  }
+  if (!active && !context.hidden) context.replaceChildren();
+  context.hidden = !active;
+  bar.hidden = !active;
+  if (active) document.getElementById('accountingHomeTaskTitle').textContent = accountingViewTitle();
+}
+async function openAccountingHomeTask(view, trigger) {
+  if (trigger) accountingHomeTrigger = trigger;
+  if (accountingExperienceMode === 'treasurer') accountingAdvancedNavExpanded = false;
+  const pending = setAccountingView(view, accountingExperienceMode === 'treasurer');
+  const heading = document.getElementById('accountingHomeTaskTitle');
+  if (heading && !heading.parentElement?.hidden) heading.focus();
+  await pending;
+}
+function closeAccountingHomeTask() {
+  setAccountingView('overview');
+  if (accountingHomeTrigger) document.getElementById(accountingHomeTrigger)?.focus();
+  accountingHomeTrigger = '';
+}
 function accountingViewTitle() {
   const titles = {
     overview: 'Overview',
+    income: accountingSimpleEntryMode === 'in-kind' ? 'Non-cash gift' : 'Record a deposit',
+    expense: 'Record a paid expense',
+    council: 'Council packet',
     journey: 'Guided setup',
     ledger: 'General Ledger',
     journals: 'Journal Entries',
@@ -201,13 +238,13 @@ function syncAccountingExperienceChrome() {
   const navOrder = isTreasurer
     ? [
         'overview',
+        'advanced',
         'funds',
         'payables',
         'banking',
         'reports',
         'assets',
         'budgets',
-        'advanced',
         'ledger',
         'close',
         'governance',
@@ -235,8 +272,8 @@ function syncAccountingExperienceChrome() {
     });
     nav.dataset.accountingNavMode = accountingExperienceMode;
   }
-  document.querySelectorAll('[data-accounting-advanced]').forEach((button) => {
-    button.hidden = isTreasurer && !accountingAdvancedNavExpanded;
+  nav?.querySelectorAll('[data-accounting-view]').forEach((button) => {
+    button.hidden = isTreasurer && button.dataset.accountingView !== 'overview' && !accountingAdvancedNavExpanded;
   });
   if (advancedToggle) {
     const advancedViewActive = [
@@ -270,23 +307,25 @@ function renderAccountingPane() {
   const pane = document.getElementById('accountingPane');
   if (!pane) return;
   syncAccountingExperienceChrome();
-  document
-    .querySelectorAll('[data-accounting-view]')
-    .forEach((button) =>
-      button.classList.toggle(
-        'active',
-        button.dataset.accountingView === accountingView ||
-          (button.dataset.accountingView === 'ledger' && accountingView === 'journals')
-      )
-    );
+  syncAccountingHomeTask();
+  document.querySelectorAll('[data-accounting-view]').forEach((button) => {
+    const view = button.dataset.accountingView;
+    const active = accountingHomeTask
+      ? view === 'overview'
+      : view === accountingView || (view === 'ledger' && accountingView === 'journals');
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
   const pageTitle = document.getElementById('accountingPageTitle');
-  if (pageTitle) pageTitle.textContent = accountingViewTitle();
+  if (pageTitle) pageTitle.textContent = accountingHomeTask ? 'Accounting home' : accountingViewTitle();
   if (accountingView === 'journey') {
     openAccountingJourney();
     return;
   }
   if (accountingView === 'overview') {
-    renderAccountingOverview(pane);
+    if (accountingExperienceMode === 'treasurer') renderAccountingTreasurerHome(pane);
+    else renderAccountingOverview(pane);
     if (typeof accountingJourneyEntry === 'function') pane.insertAdjacentHTML('afterbegin', accountingJourneyEntry());
     return;
   }
@@ -363,7 +402,15 @@ function renderAccountingPane() {
     renderAccountingGovernance(pane);
     return;
   }
-  if (accountingExperienceMode === 'treasurer' && accountingView === 'ledger') {
+  if (accountingView === 'council') {
+    renderAccountingCouncilDesk(pane);
+    return;
+  }
+  if (accountingView === 'expense') {
+    pane.innerHTML = accountingPaidExpenseForm();
+    return;
+  }
+  if (accountingView === 'income') {
     pane.innerHTML = `${accountingSimpleEntryMode === 'in-kind' ? accountingInKindGiftForm() : accountingSimpleIncomeForm()}${accountingSimpleActivityFeed()}`;
     return;
   }
@@ -425,14 +472,18 @@ function applyAccountingRegisterDefaultFund(accountSelect) {
   const fundSelect = accountSelect.form?.elements?.fundId;
   if (defaultFundId && fundSelect) fundSelect.value = defaultFundId;
 }
-function setAccountingView(view) {
+function setAccountingView(view, onHome = false) {
   if (accountingPreviewOnly()) {
     renderAccountingPaywall();
     return;
   }
+  if (document.getElementById('accountingPane')?.dataset.loaded !== 'true') return;
   if (view === 'reports') accountingTransactionDetail = null;
   accountingView = [
     'overview',
+    'income',
+    'expense',
+    'council',
     'journey',
     'setup',
     'settings',
@@ -450,13 +501,15 @@ function setAccountingView(view) {
   ].includes(view)
     ? view
     : 'overview';
+  accountingHomeTask = onHome && accountingView !== 'overview' ? accountingView : '';
   renderAccountingPane();
   if (
     ['payables', 'budgets'].includes(accountingView) &&
     accountingData.tier === 'advanced_operations' &&
-    !accountingData[accountingView]
+    (!accountingData[accountingView] ||
+      (accountingView === 'payables' && !accountingHomeTask && accountingData.payables?.homeOnly))
   )
-    loadAccountingPhaseD();
+    return loadAccountingPhaseD();
   if (
     (accountingView === 'integrations' || (accountingView === 'banking' && accountingReconciliationView === 'bank')) &&
     !accountingData[accountingView]
@@ -464,27 +517,27 @@ function setAccountingView(view) {
     loadAccountingPhaseE();
   if (accountingView === 'assets') loadAccountingAssets();
   if (accountingView === 'funds' && !accountingFundCatalog) loadAccountingFunds();
-  if (accountingView === 'close' && !accountingData.close) loadAccountingPhaseF();
+  if (accountingView === 'close' && (!accountingData.close || (!accountingHomeTask && !accountingData.adjustments)))
+    loadAccountingPhaseF();
   if (accountingView === 'governance' && !accountingData.governance) loadAccountingGovernance();
 }
-function openAccountingSimpleIncome() {
+function openAccountingSimpleIncome(trigger) {
   accountingSimpleIncomeMessage = '';
   accountingSimpleEntryMode = 'income';
-  accountingView = 'ledger';
-  renderAccountingPane();
+  openAccountingHomeTask('income', trigger);
 }
-function openAccountingInKindGift() {
+function openAccountingInKindGift(trigger) {
   accountingInKindGiftMessage = '';
   accountingSimpleEntryMode = 'in-kind';
-  accountingView = 'ledger';
-  renderAccountingPane();
+  openAccountingHomeTask('income', trigger);
 }
-async function openAccountingSimpleBill() {
+function openAccountingBills(trigger) {
   accountingPayablesView = 'bills';
-  accountingView = 'payables';
-  if (!accountingData.payables) await loadAccountingPhaseD();
-  else renderAccountingPane();
-  showAccountingBillForm();
+  return openAccountingHomeTask('payables', trigger);
+}
+async function openAccountingSimpleBill(trigger) {
+  await openAccountingBills(trigger);
+  if (accountingView === 'payables' && accountingPayablesView === 'bills') showAccountingBillForm();
 }
 async function loadAccountingTab(force = false) {
   const pane = document.getElementById('accountingPane');
@@ -494,8 +547,11 @@ async function loadAccountingTab(force = false) {
     return;
   }
   pane.closest('.acct-suite-shell')?.classList.remove('acct-suite-shell--tier-paywall');
-  if (!force && pane.dataset.loaded === 'true') return;
+  if (!force && pane.dataset.loaded === 'true' && accountingWorkspaceParishId === currentParish.parishId) return;
   if (accountingWorkspaceParishId !== currentParish.parishId) {
+    accountingHomeTask = '';
+    accountingView = 'overview';
+    syncAccountingHomeTask();
     accountingWorkspaceParishId = currentParish.parishId;
     resetAccountingAssets();
     accountingReportView = 'library';
@@ -612,6 +668,8 @@ async function loadAccountingTab(force = false) {
       : 'Current fiscal year';
     accountingOverviewFinancials = { position: position.report, activities: activities.report };
     pane.dataset.loaded = 'true';
+    const homeContext = document.getElementById('accountingHomeContext');
+    if (accountingHomeTask && homeContext) homeContext.hidden = true;
     renderAccountingPane();
     void loadAccountingOverviewSummaries(force);
   } catch (error) {
@@ -625,7 +683,29 @@ async function loadAccountingPhaseD() {
   }
   const pane = document.getElementById('accountingPane');
   if (pane) pane.innerHTML = '<p class="sw-tool-loading">Loading Parish Accounting...</p>';
+  const loading = pane?.firstElementChild;
+  const data = accountingData;
   try {
+    if (accountingHomeTask === 'payables') {
+      const [overview2, vendors2, bills2, payments2] = await Promise.all(
+        ['/payables/overview', '/payables/vendors', '/payables/bills', '/payables/payments'].map((path) =>
+          accountingDeskRead(path)
+        )
+      );
+      if (data !== accountingData || !loading?.isConnected) return;
+      data.payables = {
+        homeOnly: true,
+        overview: overview2.overview,
+        vendors: vendors2.vendors || [],
+        bills: bills2.bills || [],
+        actions: bills2.actions || {},
+        payments: payments2.payments || [],
+        bankAccounts: data.bankAccounts,
+        aging: { rows: [], totalDue: 0 },
+      };
+      renderAccountingPane();
+      return;
+    }
     const year = /* @__PURE__ */ new Date().getUTCFullYear();
     const [
       overviewRes,
@@ -684,6 +764,7 @@ async function loadAccountingPhaseD() {
       overview: overview.overview,
       vendors: vendors.vendors || [],
       bills: bills.bills || [],
+      actions: bills.actions,
       recurringBills: recurringBills.schedules || [],
       payments: payments.payments || [],
       paymentRuns: runs.paymentRuns || [],

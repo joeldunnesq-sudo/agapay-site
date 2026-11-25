@@ -17,6 +17,10 @@ function renderAccountingPayables(pane: HTMLElement) {
     pane.innerHTML = '<p class="sw-tool-loading">Loading payables...</p>';
     return;
   }
+  if (accountingHomeTask === 'payables' && accountingPayablesView === 'bills') {
+    renderAccountingBillQueue(pane, data);
+    return;
+  }
   if (accountingPayablesView === 'payments') {
     renderAccountingPayments(pane, data);
     return;
@@ -61,6 +65,40 @@ function renderAccountingPayables(pane: HTMLElement) {
   else
     body = `<div class="acct-list-head"><div><span class="acct-kicker">Bill workflow</span><h2>Vendor bills & approvals</h2></div><button class="acct-primary" type="button" onclick="showAccountingBillForm()">Enter bill</button></div><div id="accountingPhaseDForm"></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th>Due</th><th>Vendor</th><th>Invoice</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody>${data.bills.map((bill) => `<tr><td>${accountingDate(bill.dueDate)}</td><td><strong>${escapeHtml(bill.vendorName)}</strong></td><td>${escapeHtml(bill.vendorInvoiceNumber || bill.billNumber)}</td><td>${accountingMoney(bill.amountDue ?? bill.totalAmount)}</td><td><span class="acct-status ${escapeAttr(bill.status)}">${escapeHtml(bill.status)}</span></td><td><div class="acct-row-actions"><button onclick="openAccountingBillDetail('${escapeAttr(bill.id)}')">Details & attachments</button>${bill.status === 'draft' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','submit',${bill.version})">Submit</button>` : ''}${bill.status === 'submitted' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','approve',${bill.version})">Approve</button>` : ''}${bill.status === 'approved' ? `<button onclick="accountingBillAction('${escapeAttr(bill.id)}','post',${bill.version})">Post</button>` : ''}</div></td></tr>`).join('') || '<tr><td colspan="6">No bills entered.</td></tr>'}</tbody></table></div>`;
   pane.innerHTML = `<div class="acct-kpis"><div><span>Open payables</span><strong>${accountingMoney(overview.openPayables)}</strong></div><div><span>Awaiting approval</span><strong>${overview.awaitingApproval || 0}</strong></div><div><span>Overdue bills</span><strong>${overview.overdue || 0}</strong></div></div><div class="acct-subtabs">${tabs.map(([id, label]) => `<button class="${accountingPayablesView === id ? 'active' : ''}" onclick="setAccountingPayablesView('${id}')">${label}</button>`).join('')}</div>${body}`;
+}
+
+function renderAccountingBillQueue(pane: HTMLElement, data: AccountingPayablesWorkspace) {
+  const { actions = {}, bills } = data;
+  const next = (bill: AccountingPayableItem) => {
+    const id = escapeAttr(bill.id);
+    const version = Number(bill.version);
+    if (bill.status === 'draft' && actions.enter)
+      return `<button type="button" onclick="accountingBillAction('${id}','submit',${version})">Send for approval</button>`;
+    if (bill.status === 'submitted' && actions.approve && !bill.needsOtherApprover)
+      return `<button type="button" onclick="accountingBillAction('${id}','approve',${version})">Approve bill</button>`;
+    if (bill.status === 'approved' && actions.approve)
+      return `<button type="button" onclick="accountingBillAction('${id}','post',${version})">Post to books</button>`;
+    if (['posted', 'partially_paid'].includes(bill.status) && Number(bill.amountDue) > 0 && actions.pay)
+      return `<button type="button" onclick="showAccountingPaymentForm('${id}')">Record payment or print check</button>`;
+    return '';
+  };
+  const labels: Record<string, string> = {
+    draft: 'Draft',
+    submitted: 'Waiting for approval',
+    approved: 'Approved · ready to post',
+    posted: 'Unpaid',
+    partially_paid: 'Partly paid',
+    paid: 'Paid',
+    rejected: 'Rejected',
+    voided: 'Voided',
+  };
+  const card = (bill: AccountingPayableItem) =>
+    `<li><div><strong>${escapeHtml(bill.vendorName)}</strong><span>${escapeHtml(bill.description || bill.vendorInvoiceNumber || bill.billNumber)}</span><small>Due ${accountingDate(bill.dueDate)} · ${escapeHtml(bill.needsOtherApprover ? 'Another approver is needed' : labels[bill.status] || bill.status)}</small></div><div><strong>${accountingMoney(bill.amountDue ?? bill.totalAmount)}</strong><div class="acct-row-actions">${next(bill)}<button type="button" onclick="openAccountingBillDetail('${escapeAttr(bill.id)}')">Details</button></div></div></li>`;
+  const done = (bill: AccountingPayableItem) => ['paid', 'rejected', 'voided'].includes(bill.status);
+  const open = bills
+    .filter((bill: AccountingPayableItem) => !done(bill))
+    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)));
+  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Open bills</h2><p>Follow each bill from approval through payment.</p></div><div class="acct-row-actions">${actions.enter ? '<button class="acct-primary" type="button" onclick="showAccountingBillForm()">Enter bill</button>' : ''}<button type="button" onclick="setAccountingPayablesView('payments')">Payments &amp; checks</button></div></div><div id="accountingPhaseDForm"></div><ul class="acct-work-queue">${open.map(card).join('') || '<li>No open bills.</li>'}</ul><details><summary>Past bills</summary><ul class="acct-work-queue">${bills.filter(done).map(card).join('') || '<li>No past bills.</li>'}</ul></details></section>`;
 }
 
 function accountingPayablesTabs() {
@@ -255,6 +293,7 @@ function applyAccountingBillVendorDefaults(vendorSelect: HTMLSelectElement) {
 function showAccountingBillForm() {
   const holder = phaseDForm();
   if (!holder) return;
+  if (accountingHomeTask === 'payables' && !accountingData.payables?.actions?.enter) return;
   const vendors = accountingData
     .payables!.vendors.filter((vendor) => vendor.status === 'active')
     .map((vendor) => `<option value="${escapeAttr(vendor.id)}">${escapeHtml(vendor.displayName)}</option>`)
@@ -355,11 +394,11 @@ async function toggleAccountingRecurringBill(id: string, expectedVersion: number
   await loadAccountingPhaseD();
 }
 
-function showAccountingPaymentForm() {
+function showAccountingPaymentForm(billId = '') {
   const holder = phaseDForm();
   if (!holder) return;
   const bills = (accountingData.payables!.bills || []).filter(
-      (b) => ['posted', 'partially_paid'].includes(b.status) && Number(b.amountDue) > 0
+      (b) => (!billId || b.id === billId) && ['posted', 'partially_paid'].includes(b.status) && Number(b.amountDue) > 0
     ),
     banks = accountingData.payables!.bankAccounts || [];
   if (!bills.length || !banks.length) {
@@ -373,6 +412,11 @@ function showAccountingPaymentForm() {
   }
   holder.innerHTML = `<form class="acct-phase-form" onsubmit="createAccountingPayment(event)"><div class="acct-list-head"><div><span class="acct-kicker">Bill payment</span><h2>Select bills and how they were paid</h2><p>Online payments are recorded and posted immediately. Checks retain the print-then-post workflow.</p></div><button type="button" class="acct-link" onclick="phaseDForm().innerHTML=''">Cancel</button></div><div class="acct-form-grid"><label>Payment method<select name="paymentMethod" required onchange="syncAccountingPaymentMethod(this.form)"><option value="external">Online bill pay</option><option value="ach">ACH / bank transfer</option><option value="wire">Wire transfer</option><option value="debit_card">Debit card</option><option value="credit_card">Credit card</option><option value="check">Printed check</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>Paid from<select name="bankAccountId" required onchange="syncAccountingPaymentMethod(this.form)">${banks.map((b) => `<option value="${escapeAttr(b.id)}">${escapeHtml(b.name)}${b.maskedLast4 ? ` · •••• ${escapeHtml(b.maskedLast4)}` : ''}</option>`).join('')}</select></label><label data-payment-reference>Confirmation / reference number<input name="referenceNumber" autocomplete="off" required placeholder="Receipt or confirmation number"></label><label data-payment-check hidden>Check number<input id="accountingCheckNumber" name="checkNumber" inputmode="numeric"></label><label>Payment date<input name="paymentDate" type="date" value="${new Date().toISOString().slice(0, 10)}" required></label><label>Memo<input name="memo" placeholder="Optional payment memo"></label></div><div class="acct-table-wrap"><table class="acct-table"><thead><tr><th></th><th>Vendor</th><th>Invoice</th><th>Due</th><th>Amount due</th><th>Pay now</th></tr></thead><tbody>${bills.map((b) => `<tr><td><input type="checkbox" data-payment-bill value="${escapeAttr(b.id)}" data-vendor="${escapeAttr(b.vendorId)}" onchange="syncAccountingPaymentSelection(this)"></td><td>${escapeHtml(b.vendorName)}</td><td>${escapeHtml(b.vendorInvoiceNumber || b.billNumber)}</td><td>${accountingDate(b.dueDate)}</td><td>${accountingMoney(b.amountDue)}</td><td><input data-payment-amount type="number" min="0.01" max="${(Number(b.amountDue) / 100).toFixed(2)}" step="0.01" value="${(Number(b.amountDue) / 100).toFixed(2)}" disabled></td></tr>`).join('')}</tbody></table></div><div class="acct-phase-form-foot"><strong id="accountingPaymentTotal">Total $0.00</strong><button class="acct-primary" data-payment-submit>Record online payment</button><span class="acct-form-status"></span></div></form>`;
   syncAccountingPaymentMethod(holder.querySelector<AccountingPayablesForm>('form')!);
+  const selected = billId ? holder.querySelector<HTMLInputElement>('[data-payment-bill]') : null;
+  if (selected) {
+    selected.checked = true;
+    syncAccountingPaymentSelection(selected);
+  }
 }
 
 function syncAccountingPaymentMethod(form: AccountingPayablesForm) {
