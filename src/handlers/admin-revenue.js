@@ -11,6 +11,7 @@ import {
   unauthorized,
 } from '../lib/core.js';
 import '../lib/mfa.js';
+import { loadAdminGivingImpact } from '../lib/admin-giving-impact.js';
 import { buildAdminOverviewMetrics } from '../lib/admin-overview-metrics.js';
 import '../lib/registrations.js';
 import { monthLabel } from '../lib/format.js';
@@ -243,8 +244,13 @@ async function handleAdminPlatformSummary(request, env) {
   const ytdDonationsCents = monthly.reduce((sum, item) => sum + item.ytdDonationsCents, 0);
   const giftCount = monthly.reduce((sum, item) => sum + item.giftCount, 0);
   const subscriptionRevenue = buildSubscriptionRevenueSummary(revenueRegistrations);
+  const givingImpact = await loadAdminGivingImpact(env, now).catch((error) => {
+    console.error('Admin giving impact query failed', error);
+    return null;
+  });
   return json({
     summary: {
+      givingImpact,
       year,
       generatedAt: now.toISOString(),
       overviewMetrics: buildAdminOverviewMetrics(revenueRegistrations, now, totalRegistered),

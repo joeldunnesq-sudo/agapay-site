@@ -357,6 +357,10 @@ function renderPlatformGrowth(summary: AdminAppSummary) {
           : 'Donation volume needs admin Stripe reporting; registration growth is shown from AGAPAY records.';
 
   pane.innerHTML = `
+        <section class="growth-chart-card giving-impact-card" aria-labelledby="adminGivingImpactTitle">
+          <h3 class="growth-chart-title" id="adminGivingImpactTitle">AGAPAY Giving Impact</h3>
+          ${renderGivingImpact(summary.givingImpact, escapeHtml, escapeAttr)}
+        </section>
         <div class="growth-stats">
           <div class="growth-stat"><strong>${summary.totalRegistered || 0}</strong><span>Total registrations</span></div>
           <div class="growth-stat"><strong>${summary.totalVerified || 0}</strong><span>Verified parishes</span></div>

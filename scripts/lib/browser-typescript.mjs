@@ -490,6 +490,7 @@ export const browserTypeScriptEntries = Object.freeze([
   { source: 'src/browser/admin/controllers/contact-leads.ts', output: 'public/admin/controllers/contact-leads.js' },
   { source: 'src/browser/admin/navigation.ts', output: 'public/admin/navigation.js' },
   { source: 'src/browser/admin/metrics.ts', output: 'public/admin/metrics.js' },
+  { source: 'src/browser/admin/giving-impact.ts', output: 'public/admin/giving-impact.js' },
   { source: 'src/browser/admin/presentation.ts', output: 'public/admin/presentation.js' },
   { source: 'src/browser/donor/bookstore-presentation.ts', output: 'public/donor/bookstore-presentation.js' },
 ]);

@@ -95,6 +95,7 @@ export interface AdminAppMonth {
   monthlyRecurringCents?: number;
 }
 export interface AdminAppSummary extends Partial<Omit<AdminPlatformSummary, 'monthly'>> {
+  givingImpact?: import('../../lib/admin-giving-impact-contracts.js').AdminGivingImpact | null;
   monthly?: AdminAppMonth[];
   overviewMetrics?: AdminOverviewMetrics;
   donationError?: string;
