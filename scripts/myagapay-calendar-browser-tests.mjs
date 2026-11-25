@@ -39,12 +39,16 @@ try {
   let expireSession = false;
   let directoryEnabled = false;
   let blockedAccess = null;
+  const blockedMemberRequests = [];
   let submittedReply;
   // All traffic is fulfilled locally, including API and external resources.
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'agapay.test') return route.fulfill({ status: 204, body: '' });
     if (url.pathname.startsWith('/api/')) {
+      if (blockedAccess && ['/api/donor/feed', '/api/donor/groups'].includes(url.pathname)) {
+        blockedMemberRequests.push(url.pathname);
+      }
       let payload = {};
       if (url.pathname === '/api/donor/dashboard') {
         if (expireSession) return route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
@@ -57,7 +61,8 @@ try {
           return route.fulfill({ status: 403, json: blockedAccess });
         }
       } else if (url.pathname === '/api/donor/liturgical-day') payload = { today, date: '2026-09-11' };
-      else if (url.pathname === '/api/donor/parish-calendar') payload = { connected: true, events: [] };
+      else if (url.pathname === '/api/donor/parish-calendar')
+        payload = { connected: true, subscriptionUrl: 'https://calendar.example.test/parish.ics', events: [] };
       return route.fulfill({ json: payload });
     }
     let filename = url.pathname;
@@ -212,7 +217,13 @@ try {
   blockedAccess = { code: 'parish_profile_required' };
   await page.goto('https://agapay.test/myagapay/parish-life');
   await page.getByText('You need to be an approved member of this parish to access Koinonia.').waitFor();
-  assert.equal(await page.locator('#parishCalendarTitle').isVisible(), false);
+  await assertReadings();
+  await page.getByRole('link', { name: 'Full Calendar' }).waitFor();
+  await page.locator('#parishCalendarMonth').waitFor({ state: 'visible' });
+  const calendar = await page.locator('.parish-life-week-calendar').boundingBox();
+  const request = await page.locator('#koinoniaAccessRequest').boundingBox();
+  assert.ok(request.y >= calendar.y + calendar.height, 'Access request should sit below the calendar');
+  assert.equal(await page.locator('#parishLifeTierSections').isVisible(), false);
   await page.getByRole('button', { name: 'Ask the parish to enable Directory' }).click();
   await page.getByText(/Return here to request approval once Directory is enabled/).waitFor();
   directoryEnabled = true;
@@ -226,6 +237,7 @@ try {
   await page.getByRole('button', { name: 'Send reply' }).click();
   await page.getByText(/Your request is in the parish’s Directory review queue/).waitFor();
   assert.deepEqual(submittedReply, { message: 'Last year.' });
+  assert.deepEqual(blockedMemberRequests, [], 'Member-only requests stay gated while the calendar loads');
 
   expireSession = true;
   await page.reload();

@@ -115,7 +115,7 @@ assert.doesNotMatch(
 );
 assert.match(hubScript, /parishLifeFetch\(['"]\/api\/donor\/feed['"]/);
 assert.match(hubScript, /parishLifeFetch\(['"]\/api\/donor\/groups['"]/);
-assert.match(hubScript, /if \(!experience\.communicationsEnabled\)[\s\S]*return;/);
+assert.match(hubScript, /if \(!hasKoinoniaAccess\)[\s\S]*return;/);
 assert.match(
   groupHandler,
   /export async function listGroupActivity[\s\S]*getReadContentIds[\s\S]*messages\.slice\(0, 10\)/

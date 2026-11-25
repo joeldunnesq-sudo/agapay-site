@@ -111,3 +111,23 @@
 .koinonia-landing-page .parish-life-ministry-tile small { color:#536773; }
 .koinonia-landing-page .parish-life-ministry-mark { color:#8a6b30; }
 .koinonia-landing-page .parish-life-ministry-tile:hover { background:#eee8db; border-color:#b89958; }
+
+.koinonia-access-request {
+  display: grid;
+  justify-items: start;
+  margin-top: 1rem;
+}
+.koinonia-access-request p {
+  margin: 0;
+}
+.koinonia-access-request > :not(:empty) + :not(:empty) {
+  margin-top: 0.65rem;
+}
+.koinonia-access-request label {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+}
+.koinonia-access-request textarea {
+  width: 100%;
+}

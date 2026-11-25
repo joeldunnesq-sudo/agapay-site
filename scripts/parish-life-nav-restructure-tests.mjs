@@ -290,7 +290,7 @@ assert.match(landingScript, /parishLifeFetch\(['"]\/api\/donor\/videos['"]/);
 assert.match(landingScript, /href=['"]\/myagapay\/media\/watch\?video=/);
 assert.match(
   landingScript,
-  /if \(!experience\.communicationsEnabled\)[\s\S]*return;[\s\S]*parishLifeFetch\(['"]\/api\/donor\/feed['"]/
+  /if \(!hasKoinoniaAccess\)[\s\S]*return;[\s\S]*parishLifeFetch\(['"]\/api\/donor\/feed['"]/
 );
 assert.match(
   landingScript,
