@@ -26,5 +26,5 @@ has(budgets,["updateBudgetLine","/budgets\\/([^/]+)\\/lines\\/([^/]+)","budgets.
 has(worker,["import { handleAccountingAdjustments }","actions.handleAccountingAdjustments"],"worker");
 assert.ok(worker.indexOf("actions.handleAccountingAdjustments")<worker.indexOf("actions.handleAccountingLedger"),"adjustments must dispatch before the ledger fallback");
 has(app,["reverseAccountingJournal","voidAccountingJournal","/ledger/opening-balances","/ledger/validate","createAccountingAdjustment","/adjustments/templates","editAccountingBankAccount","eligible-items","postAccountingReconciliationAdjustment","configureAccountingCommerceItem","previewAccountingCommerceBackfill","updateAccountingBudgetLine","archiveAccountingFiscalYear","reopenAccountingFiscalYear"],"Accounting UI");
-has(dashboard,["data-accounting-view=\"banking\"","data-accounting-view=\"budgets\"","data-accounting-view=\"close\"","data-accounting-view=\"setup\""],"Accounting dashboard navigation");
+has(dashboard,["data-accounting-workspace=\"bank\"","data-accounting-workspace=\"reports\"","data-accounting-workspace=\"close\"","data-accounting-workspace=\"settings\""],"Accounting dashboard navigation");
 console.log("Accounting Phase I route exposure checks passed.");

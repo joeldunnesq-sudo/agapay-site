@@ -53,7 +53,6 @@ let accountingMigration = {
   advanced: false,
 };
 let accountingExperienceMode = 'treasurer';
-let accountingAdvancedNavExpanded = false;
 let accountingSimpleIncomeMessage = '';
 let accountingSimpleEntryMode = 'income';
 let accountingInKindGiftMessage = '';

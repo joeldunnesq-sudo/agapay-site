@@ -137,8 +137,10 @@ async function createAccountingYearEnd(fiscalYearId) {
   if (payload) await validateAccountingClose(payload.session.id, payload.session.version);
 }
 async function openAccountingClose(id) {
+  const parishId = currentParish?.parishId;
   const res = await fetch(accountingApi(`/close/sessions/${encodeURIComponent(id)}`), { headers: authHeaders() }),
     payload = await res.json().catch(() => ({}));
+  if (currentParish?.parishId !== parishId || accountingView !== 'close') return;
   if (!res.ok) {
     alert(payload.message || payload.error);
     return;

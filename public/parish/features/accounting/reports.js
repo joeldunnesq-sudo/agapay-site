@@ -70,6 +70,7 @@ async function loadAccountingOverviewSummaries(force = false) {
   const snapshot = accountingOverviewSummaries;
   snapshot.loading = true;
   snapshot.errors = {};
+  delete snapshot.monthEndChecksUnavailable;
   if (accountingView === 'overview') renderAccountingPane();
   const requests = [
     ['banking', '/bank/reconciliations'],
@@ -105,6 +106,30 @@ async function loadAccountingOverviewSummaries(force = false) {
             (s) => !['completed', 'voided'].includes(s.status)
           ).length;
           snapshot.completedCloses = (payload.sessions || []).filter((s) => s.status === 'completed').length;
+          const today = accountingLocalDate();
+          const period = (payload.periods || [])
+            .filter((item) => item.status === 'open' && item.endDate && item.endDate < today)
+            .sort((a, b) => String(a.endDate).localeCompare(String(b.endDate)))[0];
+          const session =
+            period &&
+            (payload.sessions || []).find(
+              (item) =>
+                item.closeType === 'month_end' &&
+                item.accountingPeriodId === period.id &&
+                !['completed', 'voided', 'superseded'].includes(item.status)
+            );
+          snapshot.monthEnd = period ? { period, session } : void 0;
+          if (session?.lastValidatedAt) {
+            try {
+              const detail = await accountingDeskRead(`/close/sessions/${encodeURIComponent(session.id)}`);
+              if (detail.session?.id !== session.id) throw new Error('Close session details unavailable');
+              if (currentParish?.parishId === parishId && snapshot === accountingOverviewSummaries && snapshot.monthEnd)
+                snapshot.monthEnd.session = detail.session;
+            } catch {
+              if (currentParish?.parishId === parishId && snapshot === accountingOverviewSummaries)
+                snapshot.monthEndChecksUnavailable = true;
+            }
+          }
         }
       } catch (error) {
         if (snapshot === accountingOverviewSummaries) {
@@ -115,6 +140,7 @@ async function loadAccountingOverviewSummaries(force = false) {
           if (key === 'close') {
             delete snapshot.activeCloses;
             delete snapshot.completedCloses;
+            delete snapshot.monthEnd;
           }
         }
       }
@@ -123,7 +149,8 @@ async function loadAccountingOverviewSummaries(force = false) {
   if (currentParish?.parishId !== parishId || snapshot !== accountingOverviewSummaries) return;
   snapshot.loading = false;
   snapshot.loadedAt = /* @__PURE__ */ new Date().toISOString();
-  if (accountingView === 'overview') renderAccountingPane();
+  if (accountingView === 'overview' || (accountingView === 'workspace' && accountingSelectedWorkspace === 'close'))
+    renderAccountingPane();
 }
 function accountingOverviewSummaryLabel(key) {
   return accountingOverviewSummaries.errors[key]

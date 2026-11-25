@@ -185,16 +185,23 @@ try {
         };
         return { body: { session: closeSession } };
       };
-      api['/accounting/close/sessions/monthly-close/validate'] = () => ({
-        body: {
-          session: {
-            ...closeSession,
-            status: 'blocked',
-            summary: { blockers: 1 },
-            checks: [{ label: 'Match all bank statements', status: 'failed', blocking: true }],
-          },
-        },
-      });
+      api['/accounting/close/sessions/monthly-close/validate'] = () => {
+        closeSession = {
+          ...closeSession,
+          status: 'blocked',
+          lastValidatedAt: '2026-10-31T16:00:00Z',
+          summary: { blockers: 1 },
+          checks: [
+            { code: 'journals.open_drafts', label: 'Journal drafts reviewed', status: 'passed' },
+            { code: 'integrations.exceptions', label: 'Integration exceptions reviewed', status: 'passed' },
+            { code: 'payables.review', label: 'Payables reviewed', status: 'warning' },
+            { code: 'bank.required_reconciliations', label: 'Match all bank statements', status: 'failed', blocking: true },
+            { code: 'ledger.trial_balance', label: 'Trial balance balances', status: 'pending', blocking: true },
+          ],
+        };
+        return { body: { session: closeSession } };
+      };
+      api['/accounting/close/sessions/monthly-close'] = () => ({ body: { session: closeSession } });
       api['/accounting/payables/overview'] = async () => {
         await releaseBills;
         return { body: { overview: { awaitingApproval: 2, openPayables: 34500 } } };
@@ -281,6 +288,9 @@ try {
       const pane = page.locator('#accountingPane');
       await pane.getByRole('heading', { name: 'Record activity' }).waitFor();
       assert.equal(await page.locator('[data-accounting-view]:visible').count(), 1);
+      const workspaceNav = page.getByRole('navigation', { name: 'Accounting workspaces' });
+      assert.equal(await workspaceNav.getByRole('button').count(), 8);
+      assert.equal(await workspaceNav.getByRole('button', { name: 'More tools' }).count(), 0);
       await pane.getByText('1 in progress', { exact: true }).waitFor();
       await pane.getByText(parishTier ? 'No close in progress' : 'Status unavailable', { exact: true }).waitFor();
       await pane.getByText('$1,560.00', { exact: true }).waitFor();
@@ -295,6 +305,7 @@ try {
         ['Record activity', 'activity'],
         ['Financial summary', 'summary'],
         ['Fund balances', 'funds'],
+        ['Month-end checklist', 'month-end'],
         ['Reports', 'reports'],
         ['Fund directory', 'directory'],
         ['Chart of accounts', 'accounts'],
@@ -420,6 +431,12 @@ try {
         await pane.getByText('Match all bank statements', { exact: true }).waitFor();
         assert.equal(await pane.getByRole('button', { name: 'Complete close', exact: true }).count(), 0);
         await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
+        const monthEnd = pane.getByRole('region', { name: 'Month-end checklist' });
+        await monthEnd.getByText('2 of 5 resolved', { exact: true }).waitFor();
+        await monthEnd.getByRole('button', { name: /Match bank statements.*Needs attention/ }).waitFor();
+        await monthEnd.getByRole('button', { name: 'Open close checks' }).click();
+        await pane.getByText('Match all bank statements', { exact: true }).waitFor();
+        await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
       }
       await pane.getByRole('button', { name: 'Record a paid expense' }).click();
       await pane.getByRole('heading', { name: 'Tell us what you paid for' }).waitFor();
@@ -437,7 +454,9 @@ try {
       await pane.getByRole('button', { name: 'Income and expenses' }).click();
       await pane.locator('input[name="start"]').waitFor();
 
-      await page.getByRole('button', { name: 'More tools' }).click();
+      await workspaceNav.getByRole('button', { name: 'Funds & assets' }).click();
+      await pane.getByRole('button', { name: 'Fixed assets & depreciation' }).waitFor();
+      await workspaceNav.getByRole('button', { name: 'Money in & out' }).click();
       await page.locator('[data-accounting-view="ledger"]').click();
       await pane.locator('.acct-register-hero').waitFor();
       await page.getByRole('button', { name: 'Accountant view' }).click();

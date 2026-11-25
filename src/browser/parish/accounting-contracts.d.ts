@@ -267,6 +267,7 @@ interface AccountingCloseSession {
   summary?: { passed?: number; warnings?: number; blockers?: number };
   checks?: {
     id: string;
+    code?: string;
     label: string;
     category: string;
     status: string;
@@ -332,4 +333,6 @@ interface AccountingOverviewSummaries {
   openReconciliations?: number;
   activeCloses?: number;
   completedCloses?: number;
+  monthEnd?: { period: AccountingCloseWorkspace['periods'][number]; session?: AccountingCloseSession };
+  monthEndChecksUnavailable?: boolean;
 }

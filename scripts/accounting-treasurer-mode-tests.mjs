@@ -189,11 +189,11 @@ assert.match(app, /function renderAccountingJournalEditor/);
 assert.match(app, /accountingView === 'income'/);
 assert.match(app, /renderAccountingTreasurerHome\(pane\)/);
 assert.match(app, /function newAccountingJournal/);
-assert.match(dashboard, /data-accounting-advanced-toggle/);
-assert.match(dashboard, />More tools<\/button>/);
-assert.match(app, /button\.hidden = isTreasurer && button\.dataset\.accountingView !== 'overview'/);
-assert.match(app, /function toggleAccountingAdvancedNav\(\)/);
-console.log("PASS - Treasurer view uses Overview and More tools, and Accountant view keeps the full navigation");
+assert.doesNotMatch(dashboard, /data-accounting-advanced-toggle/);
+assert.match(dashboard, /aria-label="Accounting workspaces"/);
+assert.match(app, /function openAccountingWorkspace\(/);
+assert.match(app, /function accountingMonthEndChecklist\(/);
+console.log("PASS - Both accounting modes use visible workspaces and the Overview month-end checklist");
 
 const expectedLabels = {
   acct_4000:"Stewardship & Tithes",

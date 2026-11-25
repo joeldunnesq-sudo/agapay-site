@@ -86,6 +86,7 @@ try {
   assert.ok(currentPeriod, 'A fiscal period for today is required.');
   if (currentPeriod.status === 'future') {
     await page.locator('[data-accounting-experience="accountant"]').click();
+    await page.locator('[data-accounting-workspace="settings"]').click();
     await page.locator('[data-accounting-view="settings"]').click();
     if (await page.getByRole('button', { name: 'Complete Accounting setup', exact: true }).count()) {
       const initialization = page.waitForResponse(
@@ -151,6 +152,7 @@ try {
     evidence.bankFixtureCreated = false;
   }
 
+  await page.locator('[data-accounting-workspace="bills"]').click();
   await page.locator('[data-accounting-view="payables"]').click();
   await page.getByRole('button', { name: 'Vendors', exact: true }).click();
   await page.getByRole('button', { name: 'New vendor', exact: true }).click();

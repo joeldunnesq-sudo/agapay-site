@@ -100,7 +100,7 @@ for (const asset of featureAssetVersions) {
 }
 assert.ok(
   dashboard.includes('/parish/style.css?v=20260901memorial1') &&
-    dashboard.includes('/parish/redesign.css?v=accounting-overview-jumps1') &&
+    dashboard.includes('/parish/redesign.css?v=accounting-workspaces1') &&
     dashboard.includes('/parish/library.css?v=20260829fullscreen1') &&
     dashboard.includes('/styles/stewardship.css?v=20260902access1'),
   'the loading-state assets must use current, synchronized cache versions'

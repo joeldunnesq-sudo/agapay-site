@@ -213,18 +213,11 @@ for (const capability of [
 assert.match(dashboard, /id="nav-accounting"/);
 assert.match(dashboard, /id="tab-accounting"/);
 assert.match(dashboard, /data-nav-tab="accounting"/, 'Accounting must be reachable from the mobile parish navigation');
-for (const view of [
-  'overview',
-  'ledger',
-  'payables',
-  'banking',
-  'reports',
-  'budgets',
-  'close',
-  'setup',
-  'settings',
-])
-  assert.ok(dashboard.includes(`data-accounting-view="${view}"`), `missing Accounting UI view ${view}`);
+assert.match(dashboard, /data-accounting-view="overview"/);
+for (const workspace of ['activity', 'bills', 'bank', 'funds', 'reports', 'close', 'settings'])
+  assert.ok(dashboard.includes(`data-accounting-workspace="${workspace}"`), `missing Accounting workspace ${workspace}`);
+for (const view of ['ledger', 'payables', 'assets', 'budgets', 'close', 'setup', 'settings', 'governance'])
+  assert.ok(app.includes(`setAccountingView('${view}')`), `missing Accounting destination ${view}`);
 assert.doesNotMatch(dashboard, /data-accounting-view="funds"/, 'Funds should be part of Overview');
 assert.match(app, /renderAccountingOverviewDirectory\(pane,/);
 assert.match(app, /filterAccountingOverviewReports\(this\)/);
@@ -238,23 +231,16 @@ for (const canonicalFeature of [
   'accountingFiscalYear',
 ])
   assert.ok(dashboard.includes(canonicalFeature), `missing canonical Accounting shell feature ${canonicalFeature}`);
-assert.match(css, /purpose-built top bar/, 'Accounting module navigation should use the dedicated top bar');
-assert.doesNotMatch(
+assert.match(
   css,
-  /grid-template-columns:repeat\(10,minmax\(0,1fr\)\)/,
-  'Accounting navigation must not retain the stale ten-column layout'
+  /\.acct-suite-rail \.acct-workspace-menu\s*\{[^}]*flex-direction:column/,
+  'Accounting workspaces should be visible in the desktop sidebar'
 );
 assert.match(
   css,
-  /@media\(min-width:761px\)\s*\{\s*\.acct-suite-rail nav\s*\{\s*grid-template-columns:repeat\(11,minmax\(0,1fr\)\)/s,
-  'Accountant view should keep all eleven tabs on one desktop row'
-);
-assert.match(
-  css,
-  /\.acct-suite-rail nav button\s*\{[^}]*min-height:44px/s,
+  /\.acct-suite-rail \.acct-workspace-menu button\s*\{[^}]*min-height:44px/s,
   'Accounting navigation needs a 44px desktop touch target'
 );
-assert.match(css, /flex:0 0 auto/, 'Accounting navigation must retain its full height above the cream workspace');
 assert.match(
   app,
   /acct-table-wrap acct-overview-activity-table/,
