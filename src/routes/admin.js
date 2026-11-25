@@ -2,6 +2,7 @@
 const SIMPLE_ROUTES = /* @__PURE__ */ new Map([
   ['/api/admin/relationships', 'handleAdminRelationships'],
   ['/api/admin/session', 'handleAdminSession'],
+  ['/api/admin/mfa/management', 'handleAdminMfaManagement'],
   ['/api/mfa/enrollment/options', 'handleMfaEnrollmentOptions'],
   ['/api/mfa/enrollment/verify', 'handleMfaEnrollmentVerify'],
   ['/api/mfa/verify', 'handleMfaVerify'],

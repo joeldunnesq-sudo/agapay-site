@@ -615,6 +615,83 @@ declare let activeTab: AdminAppBindings['activeTab'];
 declare const loadLearnAdmin: AdminAppBindings['loadLearnAdmin'];
 declare const loadParishSupportTickets: AdminAppBindings['loadParishSupportTickets'];
 
+interface AdminMfaStatus {
+  enrolled: boolean;
+  passkeys: unknown[];
+  totpEnabled: boolean;
+}
+
+async function loadAdminMfaMethods() {
+  const message = document.getElementById('adminMfaMessage');
+  const methods = document.getElementById('adminMfaMethods');
+  const passkey = document.querySelector<HTMLButtonElement>('#adminMfaAddPasskey');
+  const totp = document.querySelector<HTMLButtonElement>('#adminMfaAddTotp');
+  if (!message || !methods || !passkey || !totp || message.getAttribute('aria-busy') === 'true') return;
+  const setBusy = () => {
+    message.setAttribute('aria-busy', 'true');
+    passkey.disabled = true;
+    totp.disabled = true;
+  };
+  const showMethods = (status: AdminMfaStatus) => {
+    const count = status.passkeys.length;
+    methods.textContent = `${count} ${count === 1 ? 'passkey' : 'passkeys'} registered · Authenticator app ${status.totpEnabled ? 'set up' : 'available to set up'}`;
+    passkey.disabled = !status.enrolled || !window.AgapayMfa?.isSupported();
+    totp.disabled = !status.enrolled || status.totpEnabled;
+    passkey.onclick = () => addAdminMfaMethod('passkey', status);
+    totp.onclick = () => addAdminMfaMethod('totp', status);
+  };
+  async function addAdminMfaMethod(method: 'passkey' | 'totp', status: AdminMfaStatus) {
+    setBusy();
+    message!.textContent = 'Preparing setup…';
+    try {
+      const headers = authHeaders();
+      const response = await fetch('/api/admin/mfa/management', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method }),
+      });
+      const payload = await response.json();
+      if (handleAuthFailure(response, payload)) return;
+      if (!response.ok) throw new Error(payload.error || 'Unable to start setup.');
+      const completed = await window.AgapayMfa.runFlow(
+        { ...payload, mfaRequired: true, enrollmentRequired: true },
+        {
+          headers,
+          enrollmentMethod: method,
+          required: false,
+        }
+      );
+      status = completed.status as AdminMfaStatus;
+      message!.textContent = method === 'passkey' ? 'Passkey added.' : 'Authenticator app added.';
+    } catch (error) {
+      message!.textContent = (error as Error).message;
+    } finally {
+      showMethods(status);
+      message!.removeAttribute('aria-busy');
+    }
+  }
+
+  setBusy();
+  methods.textContent = '';
+  message.textContent = 'Loading sign-in methods…';
+  try {
+    const response = await fetch('/api/mfa/status', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ principalType: 'platform_admin', principalId: 'platform' }),
+    });
+    const payload = await response.json();
+    if (handleAuthFailure(response, payload)) return;
+    if (!response.ok) throw new Error(payload.error || 'Unable to load sign-in methods.');
+    showMethods(payload.status);
+    message.textContent = payload.status.enrolled ? '' : 'Complete MFA setup at sign-in to add more methods here.';
+  } catch (error) {
+    message.textContent = (error as Error).message;
+  } finally {
+    message.removeAttribute('aria-busy');
+  }
+}
+
 function switchTab(tab: string) {
   if (tab === 'queue') tab = 'giving';
   document.querySelectorAll<HTMLElement>('.tab-panel').forEach((p) => p.classList.remove('active'));
@@ -666,6 +743,7 @@ function switchTab(tab: string) {
   document.querySelector<HTMLElement>('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   if (tab === 'learn') loadLearnAdmin();
+  if (tab === 'settings') loadAdminMfaMethods();
   if (tab === 'support') loadParishSupportTickets();
   if (tab === 'taxexemptions') {
     loadTaxExemptionSummary();

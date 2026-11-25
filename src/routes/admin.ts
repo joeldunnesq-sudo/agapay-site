@@ -68,6 +68,7 @@ export interface AdminActions<TEnv> {
   handleIdentitySession(request: Request, env: TEnv): AwaitableResult;
   handleMfaEnrollmentOptions(request: Request, env: TEnv): AwaitableResult;
   handleMfaEnrollmentVerify(request: Request, env: TEnv): AwaitableResult;
+  handleAdminMfaManagement(request: Request, env: TEnv): AwaitableResult;
   handleMfaStatus(request: Request, env: TEnv): AwaitableResult;
   handleMfaStepUp(request: Request, env: TEnv): AwaitableResult;
   handleMfaVerify(request: Request, env: TEnv): AwaitableResult;
@@ -91,6 +92,7 @@ const SIMPLE_ROUTES = new Map<
   | 'handleMfaEnrollmentVerify'
   | 'handleMfaVerify'
   | 'handleMfaStepUp'
+  | 'handleAdminMfaManagement'
   | 'handleMfaStatus'
   | 'handleParishAuthenticatorSetup'
   | 'handleIdentityLogin'
@@ -115,6 +117,7 @@ const SIMPLE_ROUTES = new Map<
 >([
   ['/api/admin/relationships', 'handleAdminRelationships'],
   ['/api/admin/session', 'handleAdminSession'],
+  ['/api/admin/mfa/management', 'handleAdminMfaManagement'],
   ['/api/mfa/enrollment/options', 'handleMfaEnrollmentOptions'],
   ['/api/mfa/enrollment/verify', 'handleMfaEnrollmentVerify'],
   ['/api/mfa/verify', 'handleMfaVerify'],

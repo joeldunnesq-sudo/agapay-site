@@ -20,6 +20,7 @@ const EXPECTED_ERRORS = /* @__PURE__ */ new Map([
   ['Verify an existing MFA method before adding another one.', 'existing_factor_required'],
   ['Unsupported MFA method.', 'unsupported_method'],
   ['That authenticator code is not valid.', 'totp_code_invalid'],
+  ['Authenticator setup was not started.', 'totp_setup_missing'],
   ['That recovery code is invalid or has already been used.', 'recovery_code_invalid'],
   ['Passkey setup was not started.', 'passkey_setup_missing'],
   ['Passkey verification was not started.', 'passkey_verification_missing'],

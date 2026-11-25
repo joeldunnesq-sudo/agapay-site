@@ -462,8 +462,17 @@ try {
         await page.setViewportSize({ width, height: 1100 });
         const distribution = await page.locator('.sw-tool-distribution').boundingBox();
         const retention = await page.locator('.sw-tool-retention').boundingBox();
-        if (width === 1440) assert.equal(distribution.y, retention.y, 'desktop charts should be side by side');
-        if (width === 390) assert.ok(retention.y > distribution.y, 'mobile charts should stack');
+        const concentration = await page.locator('.sw-tool-concentration').boundingBox();
+        const recurring = await page.locator('.sw-tool-recurring').boundingBox();
+        if (width === 1440) {
+          assert.equal(distribution.y, retention.y, 'desktop charts should be side by side');
+          assert.equal(concentration.y, recurring.y, 'desktop giving risk and stability should share a row');
+          assert.ok(recurring.x > concentration.x);
+        }
+        if (width === 390) {
+          assert.ok(retention.y > distribution.y, 'mobile charts should stack');
+          assert.ok(recurring.y > concentration.y, 'mobile giving risk and stability should stack');
+        }
         assert.equal(
           await page
             .locator('[data-sw-panel="giving"] .sw-suite-tool-grid--health')

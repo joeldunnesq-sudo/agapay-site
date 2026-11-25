@@ -14,6 +14,7 @@ import {
   unauthorized,
 } from '../lib/core.js';
 import {
+  beginAdminMfaManagement,
   beginMfaAuthentication,
   beginMfaEnrollment,
   freshMfaAt,
@@ -42,7 +43,10 @@ async function finalizeMfa(env, request, result) {
   const { transaction, verifiedAt, recoveryCodes = [] } = result;
   const metadata = transaction.metadata || {};
   let payload = { ok: true, mfaVerifiedAt: verifiedAt, recoveryCodes };
-  if (transaction.purpose === 'step_up' || transaction.purpose === 'manage') {
+  const adminManagement = transaction.purpose === 'manage' && transaction.principal_type === 'platform_admin';
+  if (adminManagement) {
+    payload = { ok: true, status: await mfaStatus(env, 'platform_admin', 'platform') };
+  } else if (transaction.purpose === 'step_up' || transaction.purpose === 'manage') {
     if (transaction.principal_type === 'platform_admin') {
       if (!(await markAdminSessionMfaVerified(env, metadata.sessionId, verifiedAt)))
         throw new Error('Admin session expired during verification.');
@@ -100,7 +104,11 @@ async function finalizeMfa(env, request, result) {
     }
   }
   await recordAuditEvent(env, request, {
-    action: transaction.purpose === 'step_up' ? 'mfa.step_up_succeeded' : 'mfa.authentication_succeeded',
+    action: adminManagement
+      ? 'mfa.method_added'
+      : transaction.purpose === 'step_up'
+        ? 'mfa.step_up_succeeded'
+        : 'mfa.authentication_succeeded',
     actorUserId: transaction.principal_id,
     actorType:
       transaction.principal_type === 'platform_admin'
@@ -124,6 +132,7 @@ async function handleMfaEnrollmentOptions(request, env) {
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
   try {
     const result = await beginMfaEnrollment(env, request, body.pendingToken, {
+      adminSessionId: (await platformAdminMfaContext(request, env))?.sessionId,
       method: body.method,
       displayName: String(body.displayName || 'AGAPAY administrator').slice(0, 160),
       credentialLabel: String(body.credentialLabel || 'Passkey').slice(0, 80),
@@ -140,7 +149,10 @@ async function handleMfaEnrollmentVerify(request, env) {
   const body = await bodyJson(request);
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
   try {
-    const result = await verifyMfaEnrollment(env, request, body.pendingToken, body);
+    const result = await verifyMfaEnrollment(env, request, body.pendingToken, {
+      ...body,
+      adminSessionId: (await platformAdminMfaContext(request, env))?.sessionId,
+    });
     return json(await finalizeMfa(env, request, result));
   } catch (error) {
     return mfaError(error, 'enrollment_verify');
@@ -159,14 +171,18 @@ async function handleMfaVerify(request, env) {
     return mfaError(error, 'authentication_verify');
   }
 }
+async function platformAdminMfaContext(request, env) {
+  const token = getBearerToken(request);
+  if (!token) return null;
+  const session = await resolveAdminSession(env, token);
+  if (typeof session?.id !== 'string') return null;
+  return { sessionId: session.id, actor: session.actor, mfaVerifiedAt: session.mfaVerifiedAt };
+}
 async function rawStepUpContext(request, env, principalType, principalId) {
   const token = getBearerToken(request);
   if (!token) return null;
   if (principalType === 'platform_admin') {
-    const session = await resolveAdminSession(env, token);
-    return session && principalId === 'platform'
-      ? { sessionId: session.id, actor: session.actor, mfaVerifiedAt: session.mfaVerifiedAt }
-      : null;
+    return principalId === 'platform' ? platformAdminMfaContext(request, env) : null;
   }
   if (principalType === 'parish_admin') {
     const found = await findRegistrationByParishId(env, principalId);
@@ -179,6 +195,26 @@ async function rawStepUpContext(request, env, principalType, principalId) {
     return user?.id === principalId ? { sessionId: user.id, mfaVerifiedAt: user.mfaVerifiedAt } : null;
   }
   return null;
+}
+async function handleAdminMfaManagement(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+  const context = await platformAdminMfaContext(request, env);
+  if (!context?.sessionId) return unauthorized();
+  if (!context.mfaVerifiedAt) return mfaReloginRequired();
+  if (!freshMfaAt(context.mfaVerifiedAt)) return stepUpRequired('platform_admin', 'platform');
+  const limited = await rateLimit(request, env, 'admin-mfa-management', { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  const method = (await bodyJson(request))?.method;
+  if (method !== 'passkey' && method !== 'totp') return json({ error: 'Choose a sign-in method.' }, { status: 400 });
+  try {
+    const status = await mfaStatus(env, 'platform_admin', 'platform');
+    if (!status.enrolled) return json({ error: 'Set up MFA at sign-in first.' }, { status: 409 });
+    if (method === 'totp' && status.totpEnabled)
+      return json({ error: 'An authenticator app is already set up.' }, { status: 409 });
+    return json(await beginAdminMfaManagement(env, context.sessionId, method));
+  } catch (error) {
+    return mfaError(error, 'admin_management');
+  }
 }
 async function handleMfaStepUp(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
@@ -354,6 +390,7 @@ export {
   beginInvitationMfa,
   beginRequiredMfaLogin,
   enforcePrivilegedMfa,
+  handleAdminMfaManagement,
   handleMfaEnrollmentOptions,
   handleMfaEnrollmentVerify,
   handleMfaStatus,

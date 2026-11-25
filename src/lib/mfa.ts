@@ -368,6 +368,22 @@ export async function beginMfaAuthentication(
   };
 }
 
+export async function beginAdminMfaManagement(env: MfaEnvironment, sessionId: string, enrollmentMethod: string) {
+  return saveTransaction(env, {
+    principalType: 'platform_admin',
+    principalId: 'platform',
+    purpose: 'manage',
+    metadata: { sessionId, enrollmentMethod },
+  });
+}
+
+function isAdminManagement(transaction: MfaTransaction, adminSessionId: unknown) {
+  const managing = transaction.purpose === 'manage' && transaction.principal_type === 'platform_admin';
+  if (managing && (!adminSessionId || transaction.metadata?.sessionId !== adminSessionId))
+    throw new Error('MFA setup expired. Please sign in again.');
+  return managing;
+}
+
 async function upsertProfile(
   env: MfaEnvironment,
   principalType: string,
@@ -411,12 +427,14 @@ export async function beginMfaEnrollment(
   pendingToken: unknown,
   {
     method,
+    adminSessionId,
     displayName = 'AGAPAY administrator',
     credentialLabel = 'Passkey',
-  }: { method?: unknown; displayName?: string; credentialLabel?: string }
+  }: { method?: unknown; adminSessionId?: string; displayName?: string; credentialLabel?: string }
 ) {
   const transaction = await loadMfaTransaction(env, pendingToken);
   if (!transaction) throw new Error('MFA setup expired. Please sign in again.');
+  const adminManagement = isAdminManagement(transaction, adminSessionId);
   if (!['login', 'invitation', 'manage'].includes(transaction.purpose))
     throw new Error('This MFA transaction cannot enroll a new method.');
   const currentStatus = await mfaStatus(env, transaction.principal_type, transaction.principal_id);
@@ -432,16 +450,17 @@ export async function beginMfaEnrollment(
     const secret = base32Encode(randomBytes(20));
     const encrypted = await encryptTotpSecret(env, secret);
     try {
-      await upsertProfile(env, transaction.principal_type, transaction.principal_id, {
-        totpSecretCiphertext: encrypted.ciphertext,
-        totpSecretIv: encrypted.iv,
-        totpConfirmedAt: null,
-      });
+      if (!adminManagement)
+        await upsertProfile(env, transaction.principal_type, transaction.principal_id, {
+          totpSecretCiphertext: encrypted.ciphertext,
+          totpSecretIv: encrypted.iv,
+          totpConfirmedAt: null,
+        });
     } catch {
       throw new MfaServiceError('totp_profile_write_failed');
     }
     try {
-      await updateTransactionChallenge(env, transaction.id, '', 'totp');
+      await updateTransactionChallenge(env, transaction.id, adminManagement ? JSON.stringify(encrypted) : '', 'totp');
     } catch {
       throw new MfaServiceError('totp_transaction_write_failed');
     }
@@ -542,10 +561,13 @@ export async function verifyMfaEnrollment(
   env: MfaEnvironment,
   request: Request,
   pendingToken: unknown,
-  { method, code, credential }: MfaBody = {}
+  { method, code, credential, adminSessionId }: MfaBody = {}
 ) {
   const transaction = await loadMfaTransaction(env, pendingToken, { consumeAttempt: true });
   if (!transaction) throw new Error('MFA setup expired. Please sign in again.');
+  const adminManagement = isAdminManagement(transaction, adminSessionId);
+  if (!['login', 'invitation', 'manage'].includes(transaction.purpose))
+    throw new Error('This MFA transaction cannot enroll a new method.');
   if (transaction.purpose === 'manage' && transaction.metadata?.enrollmentMethod !== method)
     throw new Error('This setup cannot add a different method.');
   const currentStatus = await mfaStatus(env, transaction.principal_type, transaction.principal_id);
@@ -555,15 +577,36 @@ export async function verifyMfaEnrollment(
     throw new Error('Verify an existing MFA method before adding another one.');
   }
   if (method === 'totp') {
-    const profile = await loadMfaProfile(env, transaction.principal_type, transaction.principal_id);
+    if (transaction.selected_method !== 'totp') throw new Error('Authenticator setup was not started.');
+    const pending = safeJson(transaction.webauthn_challenge, {}) as { ciphertext?: string; iv?: string };
+    const profile = adminManagement
+      ? { totp_secret_ciphertext: pending.ciphertext, totp_secret_iv: pending.iv }
+      : await loadMfaProfile(env, transaction.principal_type, transaction.principal_id);
     const secret = await decryptTotpSecret(env, profile);
     if (!secret || !(await verifyTotpCode(secret, code))) throw new Error('That authenticator code is not valid.');
-    await upsertProfile(env, transaction.principal_type, transaction.principal_id, {
-      totpConfirmedAt: nowIso(),
-      requiredAt: nowIso(),
-    });
+    if (adminManagement) {
+      const result = await d1Run(
+        env,
+        `UPDATE privileged_mfa_profiles
+        SET totp_secret_ciphertext = ?3, totp_secret_iv = ?4, totp_confirmed_at = ?5, updated_at = ?5
+        WHERE principal_type = ?1 AND principal_id = ?2 AND totp_confirmed_at IS NULL`,
+        transaction.principal_type,
+        transaction.principal_id,
+        pending.ciphertext,
+        pending.iv,
+        nowIso()
+      );
+      if (Number(result?.meta?.changes || 0) !== 1)
+        throw new Error('This setup cannot replace an existing authenticator.');
+    } else {
+      await upsertProfile(env, transaction.principal_type, transaction.principal_id, {
+        totpConfirmedAt: nowIso(),
+        requiredAt: nowIso(),
+      });
+    }
   } else if (method === 'passkey') {
-    if (!transaction.webauthn_challenge || !credential) throw new Error('Passkey setup was not started.');
+    if (!transaction.selected_method?.startsWith('passkey:') || !transaction.webauthn_challenge || !credential)
+      throw new Error('Passkey setup was not started.');
     const { origin, rpID } = webauthnRpContext(request, env);
     const verification = await verifyRegistrationResponse({
       response: credential as RegistrationResponseJSON,
@@ -594,11 +637,14 @@ export async function verifyMfaEnrollment(
       label.slice(0, 80),
       nowIso()
     );
-    await upsertProfile(env, transaction.principal_type, transaction.principal_id, { requiredAt: nowIso() });
+    if (!adminManagement)
+      await upsertProfile(env, transaction.principal_type, transaction.principal_id, { requiredAt: nowIso() });
   } else {
     throw new Error('Unsupported MFA method.');
   }
-  const recoveryCodes = await ensureRecoveryCodes(env, transaction.principal_type, transaction.principal_id);
+  const recoveryCodes = adminManagement
+    ? []
+    : await ensureRecoveryCodes(env, transaction.principal_type, transaction.principal_id);
   await consumeMfaTransaction(env, transaction.id);
   return { transaction, recoveryCodes, verifiedAt: nowIso() };
 }
@@ -628,7 +674,8 @@ export async function verifyMfaAuthentication(
   { method, code, credential }: MfaBody = {}
 ) {
   const transaction = await loadMfaTransaction(env, pendingToken, { consumeAttempt: true });
-  if (!transaction) throw new Error('MFA verification expired. Please sign in again.');
+  if (!transaction || (transaction.purpose === 'manage' && transaction.principal_type === 'platform_admin'))
+    throw new Error('MFA verification expired. Please sign in again.');
   if (method === 'totp') {
     const profile = await loadMfaProfile(env, transaction.principal_type, transaction.principal_id);
     if (!profile?.totp_confirmed_at || !(await verifyTotpCode(await decryptTotpSecret(env, profile), code))) {
