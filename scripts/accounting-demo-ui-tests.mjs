@@ -10,6 +10,7 @@ const context = vm.createContext({
   URLSearchParams,
   accountingBankPreview: null,
   accountingHomeTask: '',
+  accountingCloseTaskCode: '',
   accountingData: { tier: 'mission', banking: null },
   document: { getElementById: () => holder, querySelector: () => holder },
   accountingApi: (path) => path,

@@ -190,7 +190,7 @@ try {
       );
     window.escapeAttr = window.escapeHtml;
   });
-  for (const name of ['assets', 'workspace', 'treasurer', 'report-documents', 'report-loaders', 'reports'])
+  for (const name of ['assets', 'workspace', 'treasurer', 'report-documents', 'report-loaders', 'reports', 'close'])
     await page.addScriptTag({ url: `/parish/features/accounting/${name}.js` });
   await page.addScriptTag({ url: '/parish/features/accounting.js' });
   await page.evaluate(() => {
