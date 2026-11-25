@@ -4,7 +4,14 @@ import { openParishFixture, parish } from './lib/parish-browser-fixture.mjs';
 
 const bank = { id: 'checking', name: 'Operating checking', ledgerAccountId: 'bank-ledger' };
 const savings = { id: 'savings', name: 'Savings', ledgerAccountId: 'savings-ledger' };
-const fund = { id: 'general', code: 'GEN', name: 'General Operating Fund', isDefault: true };
+const fund = {
+  id: 'general',
+  code: 'GEN',
+  name: 'General Operating Fund',
+  isDefault: true,
+  isActive: true,
+  restrictionType: 'unrestricted',
+};
 const { promise: releaseBills, resolve: finishBills } = Promise.withResolvers();
 const browser = await chromium.launch({ headless: true });
 
@@ -41,6 +48,7 @@ try {
       '/setup': { tier, overview: { currentFiscalYear: fiscal } },
       '/workspace-reference': {
         funds: [fund],
+        fundCatalog: [fund, { ...fund, id: 'retired', code: 'OLD', name: 'Retired building fund', isActive: false }],
         accounts: [
           { id: 'office', name: 'Office supplies', category: 'expense' },
           {
@@ -73,7 +81,7 @@ try {
       },
       '/reports/statement-of-financial-position': { report: {} },
       '/reports/fund-activity': {
-        report: { rows: [{ name: fund.name, restrictionType: 'unrestricted', endingBalance: 94000 }] },
+        report: { rows: [{ fundId: fund.id, name: fund.name, restrictionType: 'unrestricted', endingBalance: 94000 }] },
       },
       '/recurring-transactions': { items: [] },
       '/ledger/status': { status: { operational: true } },
@@ -278,6 +286,26 @@ try {
       await pane.getByText('$1,560.00', { exact: true }).waitFor();
       assert.equal(await pane.getByRole('button', { name: 'Enter a bill' }).count(), parishTier ? 1 : 0);
       assert.equal(await pane.getByRole('button', { name: 'Budget vs. actual' }).count(), parishTier ? 1 : 0);
+      assert.equal(await page.locator('[data-accounting-view="funds"]').count(), 0);
+      await pane.getByRole('heading', { name: 'Fund balances' }).waitFor();
+      await pane.locator('.acct-fund-bars').getByText('$940.00', { exact: true }).waitFor();
+      await pane.locator('summary').getByText('Chart of accounts', { exact: true }).click();
+      await pane.getByRole('button', { name: 'Assets', exact: false }).click();
+      await pane.locator('.acct-fund-account-group-body').getByText(bank.name, { exact: true }).waitFor();
+      assert.equal(await pane.getByText('Retired building fund', { exact: true }).count(), 0);
+      await pane.locator('summary').getByText('Fund directory', { exact: true }).click();
+      await pane.getByRole('button', { name: 'Show archived & unused' }).click();
+      await pane.getByText('Retired building fund', { exact: true }).waitFor();
+      await pane.getByRole('button', { name: 'Open fund report', exact: true }).click();
+      await pane.getByRole('heading', { name: 'Balance Sheet by Fund', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
+      await pane.getByRole('searchbox', { name: 'Find a report' }).fill('cash flows');
+      await pane.getByRole('button', { name: /Statement of Cash Flows/ }).waitFor();
+      assert.equal(await pane.getByRole('heading', { name: 'Record activity' }).isVisible(), true);
+      await pane.getByRole('searchbox', { name: 'Find a report' }).fill('');
+      await pane.getByRole('button', { name: 'Record a non-cash gift' }).click();
+      await pane.getByRole('heading', { name: 'Put a donated item on the books' }).waitFor();
+      await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
       if (parishTier) await pane.getByText('Checking bills…').waitFor();
 
       if (!parishTier) {

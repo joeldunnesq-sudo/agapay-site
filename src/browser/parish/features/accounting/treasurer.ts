@@ -165,14 +165,23 @@ function accountingInKindGiftForm() {
   return `<section class="acct-simple-income acct-in-kind-gift"><div class="acct-simple-income-head"><div><span class="acct-kicker">Record a Non-Cash Gift</span><h2>Put a donated item on the books</h2><p>No money moved. AGAPAY will debit the account receiving the value and credit In-Kind Contributions.</p></div><button type="button" class="acct-link" onclick="openAccountingSimpleIncome()">Record cash income instead</button></div><form onsubmit="submitAccountingInKindGift(event)"><div class="acct-simple-income-grid"><label>What was received?<input name="itemDescription" maxlength="240" required placeholder="Processional cross, vehicle, building materials, or donated services"></label><label>Who gave it? <small>Optional</small><input name="donorName" maxlength="160" placeholder="Donor name for parish records"></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required placeholder="Fair value"></label><label class="wide">How was the value determined?<textarea name="valuationBasis" maxlength="500" rows="3" required placeholder="Independent appraisal, comparable retail listing, or donor's stated value"></textarea></label><label>Which account should reflect it?<select name="debitAccountId" required><option value="">Choose an asset or expense account</option>${debitOptions}</select></label><label>Which fund?<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id || '')}</select></label><label>Date<input name="entryDate" type="date" required value="${new Date().toISOString().slice(0, 10)}"></label></div>${debitOptions ? '' : '<p class="acct-form-status">Add an eligible expense or non-cash asset account before recording this gift.</p>'}<div class="acct-simple-income-foot"><span class="acct-form-status">${escapeHtml(accountingInKindGiftMessage)}</span><button class="acct-primary" ${debitOptions ? '' : 'disabled'}>Post non-cash gift</button></div></form></section>`;
 }
 
+function accountingOverviewEntryActions() {
+  const parishTier = accountingData.tier === 'advanced_operations';
+  return `
+      <button type="button" id="accountingHomeDeposit" onclick="openAccountingSimpleIncome(this.id)"><b aria-hidden="true">＋</b><span>Record a deposit<small>Cash and checks deposited at the bank</small></span></button>
+      <button type="button" id="accountingHomeExpense" onclick="openAccountingHomeTask('expense',this.id)"><b aria-hidden="true">−</b><span>Record a paid expense<small>A purchase already paid from a church account</small></span></button>
+      <button type="button" id="accountingHomeTransfer" onclick="openAccountingHomeTransfer(this.id)"><b aria-hidden="true">⇄</b><span>Record a transfer<small>Money already moved between church bank accounts</small></span></button>
+      ${parishTier ? '<button type="button" id="accountingHomeBill" onclick="openAccountingSimpleBill(this.id)"><b aria-hidden="true">◇</b><span>Enter a bill<small>Save a vendor invoice for approval</small></span></button>' : ''}
+      <button type="button" id="accountingHomeGift" onclick="openAccountingInKindGift(this.id)"><b aria-hidden="true">◆</b><span>Record a non-cash gift<small>Donated goods, equipment, or services</small></span></button>
+  `;
+}
+
 function accountingOverviewHero() {
   const treasurer = accountingExperienceMode === 'treasurer';
   return `<section class="acct-command-hero acct-home-hero">
       <div><span class="acct-kicker">${treasurer ? 'Treasurer view' : 'Financial command center'}</span><h2>${treasurer ? 'Treasurer overview' : 'Accounting overview'}</h2><p>${treasurer ? 'Record income and expenses and review the parish books.' : 'Review funds, payables, bank activity, and financial reports.'}</p></div>
       <section class="acct-home-actions" aria-labelledby="accountingEverydayActions"><h3 id="accountingEverydayActions">Everyday bookkeeping</h3><div class="acct-command-actions acct-command-actions-treasurer acct-home-action-grid">
-        <button type="button" class="acct-home-action-income" onclick="openAccountingSimpleIncome()"><b aria-hidden="true">＋</b><span>Record Income<small>Cash, checks, and deposits</small></span><i aria-hidden="true">→</i></button>
-        <button type="button" onclick="openAccountingSimpleBill()"><b aria-hidden="true">◇</b><span>Pay a Bill<small>Enter a vendor expense</small></span><i aria-hidden="true">→</i></button>
-        <button type="button" onclick="openAccountingInKindGift()"><b aria-hidden="true">◆</b><span>Record a Non-Cash Gift<small>Donated goods, equipment, or services</small></span><i aria-hidden="true">→</i></button>
+        ${accountingOverviewEntryActions()}
       </div></section>
       ${treasurer ? '' : `<div class="acct-command-actions"><button type="button" onclick="accountingView='journals';newAccountingJournal()"><b>＋</b><span>New journal<small>Record an entry</small></span></button><button type="button" onclick="switchTab('options')"><b>◫</b><span>Manage funds<small>Open Funds &amp; Alms</small></span></button><button type="button" onclick="setAccountingView('banking')"><b>⇄</b><span>Reconcile<small>Match the bank</small></span></button><button type="button" onclick="setAccountingView('reports')"><b>▤</b><span>Run reports<small>Review results</small></span></button></div>`}
     </section>`;
@@ -182,16 +191,25 @@ function renderAccountingTreasurerHome(pane: HTMLElement) {
   const parishTier = accountingData.tier === 'advanced_operations';
   const activities = accountingData.reports.activities;
   const totals = activities?.totals;
-  const period = activities ? `${accountingDate(activities.startDate)} – ${accountingDate(activities.endDate)}` : '';
+  const position = accountingOverviewFinancials.position || accountingData.reports.position;
+  const period =
+    activities?.startDate && activities.endDate
+      ? `${accountingDate(activities.startDate)} – ${accountingDate(activities.endDate)}`
+      : '';
   pane.innerHTML = `<section class="acct-command-hero acct-treasurer-start">
     <h2>Record activity</h2>
     <div class="acct-command-actions acct-command-actions-treasurer">
-      <button type="button" id="accountingHomeDeposit" onclick="openAccountingSimpleIncome(this.id)"><b aria-hidden="true">＋</b><span>Record a deposit<small>Cash and checks deposited at the bank</small></span></button>
-      <button type="button" id="accountingHomeExpense" onclick="openAccountingHomeTask('expense',this.id)"><b aria-hidden="true">−</b><span>Record a paid expense<small>A purchase already paid from a church account</small></span></button>
-      <button type="button" id="accountingHomeTransfer" onclick="openAccountingHomeTransfer(this.id)"><b aria-hidden="true">⇄</b><span>Record a transfer<small>Money already moved between church bank accounts</small></span></button>
-      ${parishTier ? '<button type="button" id="accountingHomeBill" onclick="openAccountingSimpleBill(this.id)"><b aria-hidden="true">◇</b><span>Enter a bill<small>Save a vendor invoice for approval</small></span></button>' : ''}
-      <button type="button" id="accountingHomeGift" onclick="openAccountingInKindGift(this.id)"><b aria-hidden="true">◆</b><span>Record a non-cash gift<small>Donated goods, equipment, or services</small></span></button>
+      ${accountingOverviewEntryActions()}
     </div>
+  </section>
+  <section class="acct-overview-metrics" aria-label="Financial summary">
+    <dl>
+      <div><dt>Cash on hand</dt><dd>${position?.rows ? accountingMoney(accountingOverviewCash(position)) : '—'}</dd>${position?.endDate ? `<small>As of ${escapeHtml(accountingDate(position.endDate))}</small>` : ''}</div>
+      <div><dt>Income</dt><dd>${totals?.revenue == null ? '—' : accountingMoney(totals.revenue)}</dd></div>
+      <div><dt>Expenses</dt><dd>${totals?.expenses == null ? '—' : accountingMoney(totals.expenses)}</dd></div>
+      <div><dt>Net activity</dt><dd>${totals?.changeInNetAssets == null ? '—' : accountingMoney(totals.changeInNetAssets)}</dd></div>
+    </dl>
+    ${period ? `<p>Income, expenses, and net activity · ${escapeHtml(period)}</p>` : ''}
   </section>
   <div class="acct-treasurer-home-grid">
     <section class="acct-card acct-treasurer-card" aria-labelledby="accountingFollowUpTitle">
@@ -202,16 +220,6 @@ function renderAccountingTreasurerHome(pane: HTMLElement) {
         <li><button type="button" id="accountingHomeBank" onclick="openAccountingHomeBank(this.id)"><strong>Match bank statements</strong><span data-accounting-summary="bank" role="status">Checking bank statements…</span></button></li>
         <li><button type="button" id="accountingHomeGiving" onclick="openAccountingGivingReconciliation(this.id)"><strong>Review online giving payouts</strong><span>Review Stripe deposits, fees, and refunds</span></button></li>
         <li><button type="button" id="accountingHomeClose" onclick="openAccountingHomeTask('close',this.id)"><strong>Close the books</strong><span data-accounting-summary="close" role="status">Checking close progress…</span></button></li>
-      </ul>
-    </section>
-    <section class="acct-card acct-treasurer-card" aria-labelledby="accountingCouncilTitle">
-      <h2 id="accountingCouncilTitle">Reports for parish leadership</h2>
-      ${totals ? `<div class="acct-treasurer-totals"><p>${period}</p><dl><div><dt>Income</dt><dd>${accountingMoney(totals.revenue)}</dd></div><div><dt>Expenses</dt><dd>${accountingMoney(totals.expenses)}</dd></div></dl></div>` : '<p>Income and expense totals are unavailable.</p>'}
-      <ul class="acct-treasurer-links">
-        <li><button type="button" id="accountingHomeCouncil" onclick="openAccountingHomeTask('council',this.id)"><strong>Prepare a council packet</strong><span>Print income, expenses, and fund balances for one period</span></button></li>
-        <li><button type="button" id="accountingHomeIncomeReport" onclick="openAccountingHomeReport('activities',this.id)"><strong>Income and expenses</strong><span>See where money came from and how it was spent</span></button></li>
-        <li><button type="button" id="accountingHomeFunds" onclick="openAccountingHomeTask('funds',this.id)"><strong>Fund balances</strong><span>Review operating and designated funds</span></button></li>
-        ${parishTier ? '<li><button type="button" id="accountingHomeBudget" onclick="openAccountingHomeReport(\'budgetActual\',this.id)"><strong>Budget vs. actual</strong><span>Compare spending and income with the plan</span></button></li>' : ''}
       </ul>
     </section>
   </div>`;
@@ -262,8 +270,16 @@ async function loadAccountingHomeSummary<T>(
 }
 
 function openAccountingHomeReport(report: string, trigger?: string) {
+  if (accountingReportLoading) return;
   openAccountingHomeTask('reports', trigger);
   if (accountingView === 'reports') openAccountingReport(report);
+}
+
+function openAccountingHomeReportLibrary(trigger?: string) {
+  if (accountingReportLoading) return;
+  accountingReportView = 'library';
+  accountingCustomReport = null;
+  return openAccountingHomeTask('reports', trigger);
 }
 
 async function accountingDeskRead<T>(path: string) {
@@ -457,12 +473,16 @@ function accountingOverviewFundRank(fund: AccountingFund) {
   return 3;
 }
 
+function accountingOverviewCash(position: AccountingReport) {
+  return (position.rows || [])
+    .filter((row) => row.category === 'asset' && /cash|checking|bank|undeposited/i.test(`${row.accountName || ''}`))
+    .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+}
+
 function renderAccountingOverview(pane: HTMLElement) {
   const position = accountingOverviewFinancials.position || accountingData.reports.position || {},
     activities = accountingOverviewFinancials.activities || accountingData.reports.activities || {};
-  const cash = (position.rows || [])
-    .filter((row) => row.category === 'asset' && /cash|checking|bank|undeposited/i.test(`${row.accountName || ''}`))
-    .reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const cash = accountingOverviewCash(position);
   const netAssets = Number(position.totals?.netAssets || 0),
     activity = Number(activities.totals?.changeInNetAssets || 0);
   const posted = accountingData.journals.filter((entry) => ['posted', 'reversed'].includes(entry.status));
@@ -501,7 +521,7 @@ function renderAccountingOverview(pane: HTMLElement) {
       <button class="acct-suite-module" onclick="setAccountingView('close')"><span>Period Close</span><strong>${closeLoaded ? `${accountingOverviewSummaries.activeCloses ?? (close.sessions || []).filter((item) => !['completed', 'voided'].includes(item.status)).length} active` : accountingOverviewSummaryLabel('close')}</strong><small>${closeLoaded ? `${accountingOverviewSummaries.completedCloses ?? (close.sessions || []).filter((item) => item.status === 'completed').length} completed closes` : accountingOverviewSummaries.errors.close || 'Loading period-close status automatically'}</small></button>
       <button class="acct-suite-module" onclick="setAccountingView('budgets')"><span>Budget vs actual</span><strong>${accountingData.tier !== 'advanced_operations' ? 'Parish plan' : budgetsLoaded ? `${accountingOverviewSummaries.budgetCount ?? accountingData.budgets?.items.length} plans` : accountingOverviewSummaryLabel('budgets')}</strong><small>${accountingData.tier !== 'advanced_operations' ? 'Budgets are available with Advanced Operations' : budgetsLoaded ? 'Open budget versions and variance' : accountingOverviewSummaries.errors.budgets || 'Loading budget versions automatically'}</small></button>
       <button class="acct-suite-module" onclick="setAccountingView('integrations')"><span>Giving → Ledger</span><strong>Review postings</strong><small>Inspect source events and posting exceptions</small></button>
-      <button class="acct-suite-module" onclick="setAccountingView('reports')"><span>Financial reports</span><strong>${position.validation?.status === 'validated' ? 'Balanced' : 'Review'}</strong><small>Statements and trial balance</small></button>
+      <button class="acct-suite-module" onclick="openAccountingHomeReportLibrary()"><span>Financial reports</span><strong>Browse all reports</strong><small>Search statements, fund reports, and accounting detail</small></button>
     </div><div class="acct-report-quick"><span>Month-end and council reports</span><button type="button" onclick="openAccountingIncomeReport()">Income and expenses</button><button type="button" onclick="openAccountingTreasurerReport('budgetActual')">Budget vs actual YTD</button><button type="button" onclick="openAccountingTreasurerReport('position')">Balance Sheet</button></div><div class="acct-suite-activity"><div class="acct-suite-section-head"><h2>Recent posted activity</h2><button class="acct-link" onclick="setAccountingView('ledger')">View ledger →</button></div><div class="acct-table-wrap acct-overview-activity-table"><table class="acct-table"><colgroup><col class="date"><col class="entry"><col class="memo"><col class="amount"></colgroup><thead><tr><th>Date</th><th>Entry</th><th>Memo</th><th>Amount</th></tr></thead><tbody>${
       posted
         .slice(0, 5)

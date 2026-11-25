@@ -2640,9 +2640,47 @@ textarea {
 
 .acct-command-hero.acct-treasurer-start { grid-template-columns:1fr; gap:13px; padding:20px; }
 .acct-treasurer-start h2 { margin:0; font-size:26px; }
-.acct-treasurer-start .acct-command-actions { grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr)); }
+.acct-treasurer-start .acct-command-actions { grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr)); }
 .acct-treasurer-start .acct-command-actions small { color:rgba(246,241,232,.77); font-size:11px; white-space:normal; }
-.acct-treasurer-home-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:18px; }
+.acct-treasurer-home-grid { display:grid; align-items:start; gap:18px; }
+.acct-overview-metrics { margin:18px 0; padding:16px 20px; border:1px solid #cbdce7; border-top:3px solid var(--gold); border-radius:14px; background:#edf4f8; }
+.acct-overview-metrics dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0; }
+.acct-overview-metrics dl > div { min-width:0; padding-left:14px; border-left:1px solid #cbdce7; }
+.acct-overview-metrics dl > div:first-child { padding-left:0; border-left:0; }
+.acct-overview-metrics dt,.acct-overview-metrics p,.acct-overview-metrics small { color:#506476; font-size:12px; }
+.acct-overview-metrics dd { margin:3px 0 0; color:var(--deep); font:600 clamp(19px,2.5vw,30px)/1.25 var(--sans); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.acct-overview-metrics p { margin:12px 0 0; }
+.acct-overview-directory { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,1fr); align-items:start; gap:14px; margin:18px 0; }
+.acct-overview-directory > * { min-width:0; }
+.acct-overview-funds .acct-fund-workspace,.acct-overview-reports,.acct-overview-fund-detail { margin:0; border:1px solid var(--line); border-radius:14px; background:#fffefa; box-shadow:0 8px 24px rgba(6,21,34,.05); }
+.acct-overview-funds .acct-fund-summary { background:#fffefa; }
+.acct-overview-funds .acct-fund-bar-row { grid-template-columns:minmax(0,1fr) auto; gap:5px 12px; }
+.acct-overview-funds .acct-fund-bar-track { grid-row:2; grid-column:1/-1; }
+.acct-overview-funds .acct-fund-bar-label { min-width:0; overflow-wrap:anywhere; }
+.acct-overview-reports { padding:20px; }
+.acct-overview-panel-head h2 { margin:0 0 8px; color:var(--deep); font:600 27px/1.15 var(--serif); }
+.acct-overview-report-search { display:block; margin:10px 0 6px; color:#506476; font-size:12px; }
+.acct-overview-report-search input { display:block; width:100%; min-height:44px; margin-top:4px; padding:8px 10px; border:1px solid #cbdce7; border-radius:8px; background:#fff; color:var(--deep); font:inherit; font-size:16px; }
+.acct-overview-report-list { margin:0; padding:0; list-style:none; }
+.acct-overview-report-list li { border-bottom:1px solid var(--line); }
+.acct-overview-report-list button { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:44px; gap:8px; padding:7px 8px; text-align:left; color:var(--deep); background:transparent; border:0; border-radius:6px; }
+.acct-overview-report-list button:hover { background:#edf4f8; }
+.acct-overview-report-list small { display:block; margin-top:2px; color:#506476; font-size:11px; }
+.acct-overview-report-list b { color:#85612e; }
+.acct-overview-disclosure summary { color:var(--deep); font-weight:700; cursor:pointer; }
+.acct-overview-reports .acct-overview-disclosure { margin:12px 0 5px; }
+.acct-overview-reports > .acct-link { margin-top:8px; }
+.acct-overview-fund-detail { grid-column:1/-1; overflow:hidden; }
+.acct-overview-fund-detail > summary { padding:12px 18px; }
+.acct-overview-fund-detail .acct-funds-directory { margin:0; border:0; box-shadow:none; }
+@media(max-width:1020px) {
+  .acct-overview-directory { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:620px) {
+  .acct-overview-metrics dl { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .acct-overview-metrics dl > div:nth-child(3) { padding-left:0; border-left:0; }
+  .acct-overview-reports,.acct-overview-funds .acct-fund-summary { padding:15px; }
+}
 .acct-treasurer-card h2 { margin:0 0 12px; }
 .acct-treasurer-links { margin:0; padding:0; list-style:none; }
 .acct-treasurer-links li + li { border-top:1px solid var(--line); }

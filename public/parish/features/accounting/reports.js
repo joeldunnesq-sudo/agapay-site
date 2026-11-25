@@ -517,6 +517,51 @@ function accountingTabularReport(id) {
   }
   return null;
 }
+function renderAccountingOverviewReports(pane) {
+  const primary = ['activities', 'balanceByFund', 'budgetActual'];
+  const available = ACCOUNTING_REPORT_LIBRARY.filter(
+    (report) => !report.parishOnly || accountingData.tier === 'advanced_operations'
+  );
+  const reportRow = (report) => {
+    const title =
+      report.id === 'activities'
+        ? 'Income and expenses'
+        : report.id === 'budgetActual'
+          ? 'Budget vs. actual'
+          : report.title;
+    return `<li data-overview-report-row="${escapeAttr(`${title} ${report.title} ${report.copy} ${report.group}`.toLowerCase())}"><button type="button" id="accountingOverviewReport-${report.id}" onclick="openAccountingHomeReport('${report.id}',this.id)"><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(report.copy)}</small></span><b aria-hidden="true">→</b></button></li>`;
+  };
+  pane.innerHTML = `<div class="acct-overview-panel-head"><h2 id="accountingOverviewReportsTitle">Reports</h2></div>
+    <label class="acct-overview-report-search">Find a report<input type="search" placeholder="Try cash flows or funds" oninput="filterAccountingOverviewReports(this)"></label>
+    <ul class="acct-overview-report-list">
+      ${primary
+        .map((id) => available.find((report) => report.id === id))
+        .filter((report) => report != null)
+        .map(reportRow)
+        .join('')}
+      <li data-overview-report-row="prepare a council packet financial statements leadership"><button type="button" id="accountingHomeCouncil" onclick="openAccountingHomeTask('council',this.id)"><span><strong>Prepare a council packet</strong><small>Print income, expenses, and fund balances for one period.</small></span><b aria-hidden="true">→</b></button></li>
+    </ul>
+    <details class="acct-overview-disclosure" data-overview-details="reports">
+      <summary>Browse more reports</summary>
+      <ul class="acct-overview-report-list">${available
+        .filter((report) => !primary.includes(report.id))
+        .map(reportRow)
+        .join('')}</ul>
+    </details>
+    <p class="acct-overview-report-empty" role="status" hidden>No matching reports.</p>
+    <button type="button" class="acct-link" id="accountingHomeReportLibrary" onclick="openAccountingHomeReportLibrary(this.id)">Open full report library →</button>`;
+}
+function filterAccountingOverviewReports(input, openMatches = true) {
+  const panel = input.closest('.acct-overview-reports');
+  if (!panel) return;
+  const terms = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const rows = [...panel.querySelectorAll('[data-overview-report-row]')];
+  for (const row of rows) row.hidden = !terms.every((term) => row.dataset.overviewReportRow.includes(term));
+  const more = panel.querySelector('details');
+  more.hidden = rows.every((row) => !more.contains(row) || row.hidden);
+  if (openMatches) more.open = terms.length > 0 && !more.hidden;
+  panel.querySelector('[role="status"]').hidden = rows.some((row) => !row.hidden);
+}
 function renderAccountingReportLibrary(pane) {
   const groups = [...new Set(ACCOUNTING_REPORT_LIBRARY.map((report) => report.group))];
   pane.innerHTML = `<section class="acct-report-library-head"><div><span class="acct-kicker">Parish financial reporting</span><h2>What would you like to understand?</h2><p>Start with a treasurer report, or explore the full library below.</p></div><label>Find a report<input type="search" placeholder="Try budget, tithes, cash or expenses" oninput="filterAccountingReportLibrary(this.value)"></label></section>${accountingReportDateForm()}${accountingReportShortcuts()}${accountingReadinessLink()}<p class="acct-library-result" role="status" id="accountingReportSearchStatus"></p><div class="acct-report-library">${groups

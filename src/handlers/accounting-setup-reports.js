@@ -32,13 +32,14 @@ async function listFunds(db) {
   return results(
     db,
     `SELECT id,code,name,description,restriction_type restrictionType,purpose,
-    is_default isDefault,is_active isActive,is_system isSystem,version,
+    is_default isDefault,is_active isActive,is_system isSystem,version,archived_at archivedAt,
+    giving_source_type givingSourceType,giving_source_id givingSourceId,
     CASE WHEN description LIKE 'Synced from AGAPAY %' THEN 1 ELSE 0 END isGivingSynced
     FROM accounting_funds ORDER BY is_active DESC,is_default DESC,code`
   );
 }
 async function workspaceReference(db) {
-  const [accountCatalog, funds] = await Promise.all([
+  const [accountCatalog, fundCatalog] = await Promise.all([
     results(
       db,
       `SELECT a.id,a.account_number accountNumber,a.name,a.description,a.normal_balance normalBalance,
@@ -48,14 +49,14 @@ async function workspaceReference(db) {
       LEFT JOIN accounting_account_presentations p ON p.account_id=a.id
       WHERE a.is_posting_account=1 ORDER BY a.is_active DESC,a.account_number`
     ),
-    results(
-      db,
-      `SELECT id,code,name,restriction_type restrictionType,is_default isDefault,
-      giving_source_type givingSourceType,giving_source_id givingSourceId
-      FROM accounting_funds WHERE is_active=1 AND archived_at IS NULL ORDER BY is_default DESC,code`
-    ),
+    listFunds(db),
   ]);
-  return { accounts: accountCatalog.filter((account) => Number(account.isActive)), accountCatalog, funds };
+  return {
+    accounts: accountCatalog.filter((account) => Number(account.isActive)),
+    accountCatalog,
+    funds: fundCatalog.filter((fund) => Number(fund.isActive) && !fund.archivedAt),
+    fundCatalog,
+  };
 }
 function reportRequest(path, url, db, actor) {
   const startDate = url.searchParams.get('from') || yearStart();
