@@ -6,7 +6,7 @@ import { captureBrowserErrors } from './lib/browser-error-gate.mjs';
 // Globals read inside page.evaluate callbacks, provided by the actual dashboard.
 /* global currentParish, dashboardLoadPromise, loadDashboard, renderDashboard:writable,
   loadGivingSummary, loadRecurringHealth, renderQrCode, loadCommemorations,
-  loadGivingHistory, renderSetupWizard, loadDirectoryAdminTab, openDirectoryHousehold, loadSacramentsPanel, loadSacramentsAvailability, loadSacramentsGoogleStatus, setSacramentsDashboardTab */
+  loadGivingHistory, renderSetupWizard, openDirectoryHousehold, loadSacramentsPanel, loadSacramentsAvailability, loadSacramentsGoogleStatus, setSacramentsDashboardTab */
 
 const browser = await chromium.launch({ headless: true });
 async function ready(page) {
