@@ -142,7 +142,7 @@ async function handleKoinoniaAccess(request, env) {
     const conversation = returned
       ? await listDirectoryReviewConversation(env, { parishId, sourceType: 'change_request', sourceId: review.id })
       : [];
-    const question = conversation.findLast((message) => message.direction === 'staff_to_member');
+    const question = conversation.reverse().find((message) => message.direction === 'staff_to_member');
     return json(
       {
         ...(await access.response.json()),
@@ -203,7 +203,7 @@ async function requestKoinoniaAccess(request, env) {
     const review = await findKoinoniaReview(env, parishId, context.user.id);
     if (request.body) {
       const body = await request.json().catch(() => null);
-      if (!body || typeof body.message !== 'string')
+      if (!body || typeof body !== 'object' || !('message' in body) || typeof body.message !== 'string')
         return json({ error: 'Enter a reply to your parish.' }, { status: 422 });
       if (review?.queue_status !== 'returned')
         return json(

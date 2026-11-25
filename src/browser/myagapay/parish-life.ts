@@ -67,7 +67,7 @@ interface ParishLifePayload {
   error?: string;
   code?: string;
   review?: { status: string; question: string };
-  parish?: AppHeaderParish;
+  parish?: AppHeaderParish & { directoryEnabled?: boolean };
   events?: ParishLifeItem[];
   signups?: ParishLifeItem[];
   requests?: DonorSacramentRequest[];
