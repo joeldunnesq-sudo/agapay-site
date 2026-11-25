@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260901memorial1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=accounting-overview-funds1" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=accounting-overview-jumps1" />
   <link rel="stylesheet" href="/parish/library.css?v=20260829fullscreen1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -1435,7 +1435,7 @@ Generate Monthly Financial Report
 <button type="button" id="accountingSecondarybanking" hidden data-accounting-view="banking" onclick="setAccountingView('banking')">Banking</button>
 <button type="button" id="accountingSecondaryreports" hidden data-accounting-view="reports" onclick="setAccountingView('reports')">Reports</button>
 <button type="button" id="accountingSecondarybudgets" hidden data-accounting-view="budgets" onclick="setAccountingView('budgets')">Budgets</button>
-<button type="button" class="acct-suite-advanced-toggle" data-accounting-advanced-toggle onclick="toggleAccountingAdvancedNav()" aria-expanded="false" aria-controls="accountingSecondaryfunds accountingSecondarypayables accountingSecondarybanking accountingSecondaryreports accountingSecondarybudgets accountingAdvancedLedger accountingAdvancedClose accountingAdvancedGovernance accountingAdvancedSetup accountingAdvancedSettings"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2M10 5v4m4-4v4m0 6v4m4-4v4"/></svg>More tools</button>
+<button type="button" class="acct-suite-advanced-toggle" data-accounting-advanced-toggle onclick="toggleAccountingAdvancedNav()" aria-expanded="false" aria-controls="accountingSecondarypayables accountingSecondarybanking accountingSecondaryreports accountingSecondarybudgets accountingAdvancedLedger accountingAdvancedClose accountingAdvancedGovernance accountingAdvancedSetup accountingAdvancedSettings"><svg class="acct-nav-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h6m4 0h6M4 17h10m4 0h2M10 5v4m4-4v4m0 6v4m4-4v4"/></svg>More tools</button>
 <button type="button" id="accountingAdvancedLedger" hidden data-accounting-view="ledger" data-accounting-advanced onclick="setAccountingView('ledger')">Ledger</button>
 <button type="button" id="accountingAdvancedClose" hidden data-accounting-view="close" data-accounting-advanced onclick="setAccountingView('close')">Period Close</button>
 <button type="button" id="accountingAdvancedGovernance" hidden data-accounting-view="governance" data-accounting-advanced onclick="setAccountingView('governance')">Governance</button>
@@ -1454,6 +1454,15 @@ Generate Monthly Financial Report
 <div class="acct-suite-header-meta"><span id="accountingParishName">Parish books</span><span id="accountingFiscalYear">Current fiscal year</span><button type="button" class="acct-refresh" onclick="loadAccountingTab(true)" aria-label="Refresh accounting data">Refresh</button></div>
 </header>
 <div class="acct-workspace">
+              <nav class="acct-overview-section-nav" aria-labelledby="accountingOverviewNavTitle">
+                <h2 id="accountingOverviewNavTitle">On this page</h2>
+                <button type="button" onclick="jumpToAccountingOverviewSection('activity')">Record activity</button>
+                <button type="button" onclick="jumpToAccountingOverviewSection('summary')">Financial summary</button>
+                <button type="button" onclick="jumpToAccountingOverviewSection('funds')">Fund balances</button>
+                <button type="button" onclick="jumpToAccountingOverviewSection('reports')">Reports</button>
+                <button type="button" onclick="jumpToAccountingOverviewSection('directory')">Fund directory</button>
+                <button type="button" onclick="jumpToAccountingOverviewSection('accounts')">Chart of accounts</button>
+              </nav>
               <div id="accountingHomeContext" hidden></div>
               <section id="accountingHomeTaskBar" class="acct-home-task-bar" aria-labelledby="accountingHomeTaskTitle" hidden>
                 <h2 id="accountingHomeTaskTitle" tabindex="-1"></h2>
@@ -1894,8 +1903,8 @@ Generate Monthly Financial Report
 <script src="/parish/features/sacraments.js?v=557ffeb7bc3dbe6d"></script>
 <script src="/parish/accounting-journey.js?v=8aea4d32b6874f07"></script>
 <script src="/parish/features/accounting/assets.js?v=a8f8810d458074a4"></script>
-<script src="/parish/features/accounting/workspace.js?v=966bdb0f6aa97f48"></script>
-<script src="/parish/features/accounting/treasurer.js?v=9d552e3f6d80d074"></script>
+<script src="/parish/features/accounting/workspace.js?v=fd4b9f0fac4893bb"></script>
+<script src="/parish/features/accounting/treasurer.js?v=accde3c145f3d2d3"></script>
 <script src="/parish/features/accounting/ledger.js?v=44158e7653b144e6"></script>
 <script src="/parish/features/accounting/payables.js?v=e46e74189f7b63e8"></script>
   <link rel="stylesheet" href="/parish/accounting-reports.css?v=6041c130a35b0250">
