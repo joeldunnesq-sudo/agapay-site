@@ -43,6 +43,7 @@ function entryDto(r) {
     currency: r.currency,
     version: Number(r.version),
     postedAt: r.posted_at || '',
+    updatedAt: r.updated_at,
   });
 }
 function lineDto(r) {
@@ -195,7 +196,17 @@ async function deleteJournalDraft(db, { actor, journalEntryId, expectedVersion }
 }
 async function searchJournalEntries(
   db,
-  { actor, query = '', status = '', sourceType = '', dateFrom = '', dateTo = '', limit = 50, offset = 0 } = {}
+  {
+    actor,
+    query = '',
+    status = '',
+    sourceType = '',
+    dateFrom = '',
+    dateTo = '',
+    limit = 50,
+    offset = 0,
+    sort = '',
+  } = {}
 ) {
   capability(actor, 'accounting.view');
   const clauses = ['1=1'],
@@ -204,7 +215,9 @@ async function searchJournalEntries(
     clauses.push('(e.entry_number LIKE ? OR e.description LIKE ? OR e.memo LIKE ?)');
     params.push(`%${query}%`, `%${query}%`, `%${query}%`);
   }
-  if (status) {
+  if (status === 'unposted') {
+    clauses.push("e.status IN ('draft','pending')");
+  } else if (status) {
     clauses.push('e.status=?');
     params.push(status);
   }
@@ -221,9 +234,11 @@ async function searchJournalEntries(
     params.push(dateTo);
   }
   params.push(Math.min(100, Math.max(1, Number(limit) || 50)), Math.max(0, Number(offset) || 0));
+  const order =
+    sort === 'activity' ? 'e.updated_at DESC,e.created_at DESC,e.id DESC' : 'e.entry_date DESC,e.created_at DESC';
   const rows = await all(
     db,
-    `SELECT e.* FROM accounting_journal_entries e WHERE ${clauses.join(' AND ')} ORDER BY e.entry_date DESC,e.created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT e.* FROM accounting_journal_entries e WHERE ${clauses.join(' AND ')} ORDER BY ${order} LIMIT ? OFFSET ?`,
     ...params
   );
   return Object.freeze(rows.map(entryDto));

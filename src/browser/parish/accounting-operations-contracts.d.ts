@@ -16,6 +16,7 @@ interface AccountingJournalDraft {
 }
 interface AccountingJournalSummary {
   entryNumber?: string;
+  updatedAt?: string;
   memo?: string;
   id: string;
   status: string;

@@ -204,6 +204,7 @@ export async function handleAccountingLedger(request: Request, env: Partial<Env>
             dateTo: url.searchParams.get('to') || '',
             limit: url.searchParams.get('limit') || 50,
             offset: url.searchParams.get('offset') || 0,
+            sort: url.searchParams.get('sort') || '',
           }),
         });
       if (request.method === 'POST' && !id)

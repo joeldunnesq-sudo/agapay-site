@@ -254,6 +254,24 @@ async function createJournalDraft(
   ]);
   return safeEntry(await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', entryId));
 }
+async function journalPostingPeriod(db, entryDate) {
+  const period = await first(
+    db,
+    `SELECT p.*,f.status fiscal_status FROM accounting_periods p JOIN accounting_fiscal_years f ON f.id=p.fiscal_year_id WHERE ? BETWEEN p.start_date AND p.end_date`,
+    entryDate
+  );
+  const issues = [];
+  if (!period || period.status !== 'open' || period.fiscal_status !== 'open') issues.push('period_not_open');
+  const lock =
+    period &&
+    (await first(
+      db,
+      'SELECT id FROM accounting_period_locks WHERE accounting_period_id=? AND unlocked_at IS NULL',
+      period.id
+    ));
+  if (lock) issues.push('period_locked');
+  return { period, issues };
+}
 async function validateJournalEntryForPosting(db, { journalEntryId, expectedVersion }) {
   const entry = await first(db, 'SELECT * FROM accounting_journal_entries WHERE id=?', journalEntryId);
   const issues = [];
@@ -273,20 +291,8 @@ async function validateJournalEntryForPosting(db, { journalEntryId, expectedVers
     credits = lines.reduce((sum, l) => sum + Number(l.credit_amount), 0);
   if (!Number.isSafeInteger(debits) || !Number.isSafeInteger(credits)) issues.push('unsafe_totals');
   if (debits <= 0 || debits !== credits) issues.push('entry_unbalanced');
-  const period = await first(
-    db,
-    `SELECT p.*,f.status fiscal_status FROM accounting_periods p JOIN accounting_fiscal_years f ON f.id=p.fiscal_year_id WHERE ? BETWEEN p.start_date AND p.end_date`,
-    entry.entry_date
-  );
-  if (!period || period.status !== 'open' || period.fiscal_status !== 'open') issues.push('period_not_open');
-  const lock =
-    period &&
-    (await first(
-      db,
-      'SELECT id FROM accounting_period_locks WHERE accounting_period_id=? AND unlocked_at IS NULL',
-      period.id
-    ));
-  if (lock) issues.push('period_locked');
+  const { period, issues: periodIssues } = await journalPostingPeriod(db, entry.entry_date);
+  issues.push(...periodIssues);
   try {
     const protection = await first(db, "SELECT state FROM accounting_protective_state WHERE id='primary'");
     if (protection && protection.state !== 'normal')
@@ -527,6 +533,15 @@ async function recordSplitDeposit(
       description: split.description || null,
     })),
   ];
+  requireCapability(actor, 'accounting.journals.post');
+  validateJournalDraftInput({ entryDate, description, lines });
+  const { issues } = await journalPostingPeriod(db, entryDate);
+  if (issues.length) {
+    const message = issues.includes('period_locked')
+      ? `The accounting period for ${entryDate} is locked. Ask the treasurer to review it in the close workspace.`
+      : `No open accounting period covers ${entryDate}. In Posting periods, check whether that month can be opened before recording the deposit.`;
+    throw new ValidationError(message, { details: { reasonCodes: issues } });
+  }
   const draft = await createJournalDraft(db, {
     actor,
     entryDate,

@@ -8,6 +8,7 @@ import { repoRoot } from './browser-composed-source.mjs';
 // Admin keeps its network-only service-worker policy while using content versions.
 export const pageAssets = Object.freeze([
   '/parish/accounting-journey.js',
+  '/parish/redesign.css',
   '/myagapay/bookstore-concept/app.js',
   '/myagapay/bookstore-concept/style.css',
   '/learn/dashboard-shell.js',

@@ -20,6 +20,8 @@ assert.equal(missionOverview.entitlement.advancedOperationsIncluded,false);
 assert.equal("databaseIdentifier" in missionOverview,false);
 assert.equal(missionOverview.activeAccountCount>0,true);
 assert.equal(missionOverview.activeFundCount,1);
+assert.equal(missionOverview.canOpenPeriods,false);
+assert.equal((await getAccountingSetupOverview(db,{actor:admin})).canOpenPeriods,true);
 const parishOverview=await getAccountingSetupOverview(db,{actor:viewer,entitlementTier:"advanced_operations"});
 assert.equal(parishOverview.entitlement.coreAccountingIncluded,true);
 assert.equal(parishOverview.entitlement.advancedOperationsIncluded,true);
