@@ -132,7 +132,7 @@ async function handleMfaEnrollmentOptions(request, env) {
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
   try {
     const result = await beginMfaEnrollment(env, request, body.pendingToken, {
-      adminSessionId: (await rawStepUpContext(request, env, 'platform_admin', 'platform'))?.sessionId,
+      adminSessionId: (await platformAdminMfaContext(request, env))?.sessionId,
       method: body.method,
       displayName: String(body.displayName || 'AGAPAY administrator').slice(0, 160),
       credentialLabel: String(body.credentialLabel || 'Passkey').slice(0, 80),
@@ -151,7 +151,7 @@ async function handleMfaEnrollmentVerify(request, env) {
   try {
     const result = await verifyMfaEnrollment(env, request, body.pendingToken, {
       ...body,
-      adminSessionId: (await rawStepUpContext(request, env, 'platform_admin', 'platform'))?.sessionId,
+      adminSessionId: (await platformAdminMfaContext(request, env))?.sessionId,
     });
     return json(await finalizeMfa(env, request, result));
   } catch (error) {
@@ -171,14 +171,18 @@ async function handleMfaVerify(request, env) {
     return mfaError(error, 'authentication_verify');
   }
 }
+async function platformAdminMfaContext(request, env) {
+  const token = getBearerToken(request);
+  if (!token) return null;
+  const session = await resolveAdminSession(env, token);
+  if (typeof session?.id !== 'string') return null;
+  return { sessionId: session.id, actor: session.actor, mfaVerifiedAt: session.mfaVerifiedAt };
+}
 async function rawStepUpContext(request, env, principalType, principalId) {
   const token = getBearerToken(request);
   if (!token) return null;
   if (principalType === 'platform_admin') {
-    const session = await resolveAdminSession(env, token);
-    return session && principalId === 'platform'
-      ? { sessionId: session.id, actor: session.actor, mfaVerifiedAt: session.mfaVerifiedAt }
-      : null;
+    return principalId === 'platform' ? platformAdminMfaContext(request, env) : null;
   }
   if (principalType === 'parish_admin') {
     const found = await findRegistrationByParishId(env, principalId);
@@ -194,7 +198,7 @@ async function rawStepUpContext(request, env, principalType, principalId) {
 }
 async function handleAdminMfaManagement(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
-  const context = await rawStepUpContext(request, env, 'platform_admin', 'platform');
+  const context = await platformAdminMfaContext(request, env);
   if (!context?.sessionId) return unauthorized();
   if (!context.mfaVerifiedAt) return mfaReloginRequired();
   if (!freshMfaAt(context.mfaVerifiedAt)) return stepUpRequired('platform_admin', 'platform');
