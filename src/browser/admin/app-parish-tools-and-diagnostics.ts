@@ -396,7 +396,7 @@ async function loadPlatformSummary(btn?: HTMLButtonElement | null) {
     btn.disabled = true;
   }
   document.getElementById('adminMetricsCard')?.setAttribute('aria-busy', 'true');
-  renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));
+  renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache), true);
   try {
     const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
     const result = (await response.json()) as AdminAppPayload;

@@ -1081,6 +1081,7 @@
       z-index: 1;
     }
     .growth-title {
+      margin: 0;
       font-family: var(--serif);
       color: var(--cream);
       font-size: 20px;
@@ -1145,6 +1146,13 @@
       border-radius: 10px;
       background: linear-gradient(155deg, #fff, #f7f4ee);
       container-type: inline-size;
+    }
+    .giving-impact-chart-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.45rem;
     }
     .giving-impact-chart h4 { margin: 0; color: var(--deep); font: 700 22px/1.15 var(--serif); }
     .giving-impact-chart p { margin: 0.3rem 0 0; color: var(--stone); font-size: 12px; }

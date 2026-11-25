@@ -101,6 +101,14 @@
     ],
     [
       'overview',
+      'AGAPAY Giving Impact',
+      'See online giving and unique givers, compare churches, and download charts.',
+      'Insights',
+      'giving donations donors marketing png export',
+      'givingImpactCard',
+    ],
+    [
+      'overview',
       'Growth and revenue',
       'See registrations, giving volume, and platform revenue.',
       'Insights',

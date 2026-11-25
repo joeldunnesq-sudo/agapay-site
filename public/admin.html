@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/admin/style.css?v=20261124-giving-impact" />
+  <link rel="stylesheet" href="/admin/style.css?v=20261124-giving-overview" />
   <link rel="stylesheet" href="/admin/relationships.css?v=20260930-care1" />
   <link rel="stylesheet" href="/admin/navigation.css?v=20260930-tiers1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
@@ -140,6 +140,21 @@
             <div class="admin-focus-score" aria-label="Admin queue health">
               <div class="admin-focus-score-ring"><strong id="overviewHealthScore">—</strong></div>
               <div><span>Queue health</span><small id="overviewHealthNote">Load platform data to calculate current status.</small></div>
+            </div>
+          </section>
+
+          <section class="growth-card" id="givingImpactCard" aria-labelledby="adminGivingImpactTitle">
+            <div class="growth-header">
+              <div>
+                <h2 class="growth-title" id="adminGivingImpactTitle">AGAPAY Giving Impact</h2>
+                <div class="growth-subtitle">Platform giving, unique givers, and church totals.</div>
+              </div>
+              <button class="secondary btn-sm" type="button" onclick="loadPlatformSummary(this)">Refresh giving</button>
+            </div>
+            <div class="growth-body">
+              <div class="growth-chart-card giving-impact-card" id="givingImpactPane" aria-busy="true">
+                <p class="growth-note" role="status">Loading giving totals…</p>
+              </div>
             </div>
           </section>
 
@@ -1025,12 +1040,12 @@
   <script src="/admin/presentation.js?v=3fab636db05161dd"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=3d75b8f03a0729fd"></script>
   <script src="/admin/controllers/contact-leads.js?v=f6b278f668dd6ab2"></script>
-  <script src="/admin/giving-impact.js?v=b4ec0619f9cf1fc6"></script>
+  <script src="/admin/giving-impact.js?v=a58319b13a51d4c3"></script>
   <script src="/admin/metrics.js?v=6db326f37adbe052"></script>
   <script src="/admin/relationships.js?v=1d05a38cad659d4a"></script>
   <script src="/admin/app-accounting-and-audit.js?v=2e152ac856823a56"></script>
-<script src="/admin/app.js?v=74f53712f261c551"></script>
-  <script src="/admin/navigation.js?v=746807ebd13d7d94"></script>
+<script src="/admin/app.js?v=714a33177b7e851f"></script>
+  <script src="/admin/navigation.js?v=d4f8800051dd8bb6"></script>
   <script src="/admin/pwa.js?v=290054144a23a185"></script>
 </body>
 </html>

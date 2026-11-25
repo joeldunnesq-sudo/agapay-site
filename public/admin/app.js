@@ -280,10 +280,18 @@ function renderGrowthBars(summary, mode) {
     })
     .join('');
 }
-function renderPlatformGrowth(summary) {
+function renderPlatformGrowth(summary, givingLoading = false) {
   if (summary?.overviewMetrics) renderAdminOverviewMetrics(summary.overviewMetrics);
   latestPlatformSummary = summary || null;
   renderProductOverview();
+  const givingPane = document.getElementById('givingImpactPane');
+  if (givingPane) {
+    givingPane.setAttribute('aria-busy', String(givingLoading));
+    givingPane.innerHTML = givingLoading
+      ? '<p class="growth-note" role="status">Loading giving totals…</p>'
+      : renderGivingImpact(summary.givingImpact, escapeHtml, escapeAttr);
+    bindGivingImpactDownloads(givingPane, summary.givingImpact, summary.generatedAt);
+  }
   const pane = document.getElementById('platformGrowthPane');
   if (!pane) return;
   const donationSource = summary.donationDataSource || 'local_only';
@@ -296,10 +304,6 @@ function renderPlatformGrowth(summary) {
           ? 'Donation volume will appear after parishes connect Stripe and receive gifts.'
           : 'Donation volume needs admin Stripe reporting; registration growth is shown from AGAPAY records.';
   pane.innerHTML = `
-        <section class="growth-chart-card giving-impact-card" aria-labelledby="adminGivingImpactTitle">
-          <h3 class="growth-chart-title" id="adminGivingImpactTitle">AGAPAY Giving Impact</h3>
-          ${renderGivingImpact(summary.givingImpact, escapeHtml, escapeAttr)}
-        </section>
         <div class="growth-stats">
           <div class="growth-stat"><strong>${summary.totalRegistered || 0}</strong><span>Total registrations</span></div>
           <div class="growth-stat"><strong>${summary.totalVerified || 0}</strong><span>Verified parishes</span></div>
@@ -1315,7 +1319,7 @@ async function loadPlatformSummary(btn) {
     btn.disabled = true;
   }
   document.getElementById('adminMetricsCard')?.setAttribute('aria-busy', 'true');
-  renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));
+  renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache), true);
   try {
     const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
     const result = await response.json();

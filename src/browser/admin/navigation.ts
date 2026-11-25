@@ -14,7 +14,12 @@ type AdminNavigationTab =
   | 'developer';
 type AdminNavigationGroup = 'Your work' | 'Reviews' | 'Products' | 'System' | 'Insights';
 type AdminNavigationSection =
-  'contactLeadsCard' | 'deploymentHealthCard' | 'parishCare' | 'overviewEmailLogCard' | 'platformGrowthCard';
+  | 'contactLeadsCard'
+  | 'deploymentHealthCard'
+  | 'parishCare'
+  | 'overviewEmailLogCard'
+  | 'platformGrowthCard'
+  | 'givingImpactCard';
 type AdminNavigationTool = readonly [
   tab: AdminNavigationTab,
   title: string,
@@ -124,6 +129,14 @@ declare function switchTab(tab: AdminNavigationTab): void;
       'Insights',
       'notifications history sent',
       'overviewEmailLogCard',
+    ],
+    [
+      'overview',
+      'AGAPAY Giving Impact',
+      'See online giving and unique givers, compare churches, and download charts.',
+      'Insights',
+      'giving donations donors marketing png export',
+      'givingImpactCard',
     ],
     [
       'overview',
