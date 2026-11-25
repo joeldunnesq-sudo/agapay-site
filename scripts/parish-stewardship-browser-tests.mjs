@@ -283,7 +283,13 @@ try {
       );
       assert.equal(await card.locator('.sw-attendance-latest').count(), 1);
       assert.ok((await card.textContent()).includes('45 of 52 Sundays'));
-      assert.equal(await page.locator('[data-sw-panel="reports"]').isVisible(), false);
+      assert.equal(await page.locator('[data-sw-panel="reports"]').isVisible(), true);
+      assert.equal(
+        await card.evaluate((element) => element.closest('[data-sw-panel]') === document.activeElement),
+        true
+      );
+      const attendance = await card.boundingBox();
+      assert.ok(attendance.y >= 0 && attendance.y < page.viewportSize().height);
 
       await card.locator('#attendanceWeekOf').fill('2026-08-30');
       await card.locator('#attendanceHeadcount').fill('184');
