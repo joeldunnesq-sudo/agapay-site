@@ -32,16 +32,18 @@ jobs:
       matrix:
         group:
           [
-            accounting-1,
-            accounting-2,
+            accounting,
             browser-1,
             browser-2,
             browser-3,
             browser-4,
+            browser-5,
+            browser-6,
             payments,
             directory,
             core-1,
             core-2,
+            core-3,
             other,
           ]
     steps:
@@ -53,6 +55,8 @@ jobs:
       - run: npm ci
       - name: Install Chromium
         if: startsWith(matrix.group, 'browser-')
-        run: npx playwright install chromium --with-deps
+        # All browser suites use the default headless shell. Avoid downloading
+        # headed Chromium as well; keep OS dependencies and the tested binary.
+        run: npx playwright install chromium --with-deps --only-shell
       - name: Run test partition
         run: node scripts/run-tests.mjs --ci-group ${{ matrix.group }}
