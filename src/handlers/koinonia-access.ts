@@ -1,3 +1,4 @@
+import { DONOR_MEMBERSHIP_SOURCE } from '../directory/donor-membership.js';
 interface HouseholdAccessRow {
   person_id: string;
   household_id: string | null;
@@ -192,7 +193,7 @@ async function findKoinoniaReview(env: Partial<Env>, parishId: string, userId: s
     WHERE request.parish_id = ?1 AND request.requester_user_id = ?2
       AND request.request_type = 'person_profile_review' AND request.status IN ('pending', 'denied')
       AND json_extract(request.requested_payload_json, '$.source')
-        IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access')
+        IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access', '${DONOR_MEMBERSHIP_SOURCE}')
     ORDER BY request.status = 'pending' DESC, request.updated_at DESC
     LIMIT 1`,
     parishId,
@@ -297,7 +298,7 @@ async function requestKoinoniaAccess(request: Request, env: Partial<Env>) {
           WHERE parish_id = ?2 AND requester_user_id = ?3 AND target_id = ?4
             AND request_type = 'person_profile_review' AND status = 'pending'
             AND json_extract(requested_payload_json, '$.source')
-              IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access')
+              IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access', '${DONOR_MEMBERSHIP_SOURCE}')
         )`,
         generateSecret('dir_req'),
         parishId,

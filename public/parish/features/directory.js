@@ -17,12 +17,6 @@ function directoryHouseholdInitials(name) {
 function directoryEmptyState(title, subtitle) {
   return `<div class="pdx-dir-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>`;
 }
-function directoryPriorityBadgeClass(priority) {
-  const value = String(priority || '').toLowerCase();
-  if (value === 'urgent') return 'urgent';
-  if (value === 'high') return 'high';
-  return '';
-}
 function directoryPhotoPlaceholderElement(label) {
   const span = document.createElement('span');
   span.className = 'pdx-dir-thumb pdx-dir-thumb-placeholder';
@@ -124,16 +118,10 @@ function directoryReviewTypeLabel(type = '') {
     child_publication_review: 'Child sharing request',
     publication_media: 'Photo sharing request',
     person_canonical_correction: 'Member record correction',
+    donor_membership: 'Parish membership',
     koinonia_membership: 'Koinonia membership',
   };
   return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
-}
-function directoryMetric(label, value, iconPath) {
-  return `<div class="pdx-kpi-card">
-      <div class="pdx-kpi-label">${escapeHtml(label)}</div>
-      <div class="pdx-kpi-value">${escapeHtml(value ?? 0)}</div>
-      <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24">${iconPath || ''}</svg></div>
-    </div>`;
 }
 function directoryAdminApi(path = '') {
   if (!currentParish?.parishId) return '';
@@ -155,6 +143,12 @@ async function loadDirectoryAdminTab(force = false) {
   }
   if (!force && pane.dataset.loaded === 'true') return;
   pane.innerHTML = '<p class="sw-tool-loading">Loading directory operations...</p>';
+  const parishId = currentParish.parishId;
+  const request = ++directoryAdminLoadRequest;
+  const isCurrent = () => request === directoryAdminLoadRequest && currentParish?.parishId === parishId;
+  delete pane.dataset.loaded;
+  ++directoryBrowseRequest;
+  clearTimeout(directoryBrowseSearchTimer);
   const headers = authHeaders();
   try {
     const [settingsRes, dashboardRes, queueRes, peopleRes, householdsRes, skillsRes, maintenanceRes, printRes] =
@@ -168,6 +162,7 @@ async function loadDirectoryAdminTab(force = false) {
         fetch(directoryAdminApi('/maintenance'), { headers }),
         fetch(directoryAdminApi('/print/directory'), { headers }),
       ]);
+    if (!isCurrent()) return;
     if (dashboardRes.status === 401 || dashboardRes.status === 403) {
       const errorPayload = await dashboardRes.json().catch(() => ({}));
       pane.dataset.loaded = 'true';
@@ -185,6 +180,9 @@ async function loadDirectoryAdminTab(force = false) {
     const skills = await skillsRes.json().catch(() => ({ skills: { listings: [] } }));
     const maintenance = await maintenanceRes.json().catch(() => ({ maintenance: {} }));
     const print = await printRes.json().catch(() => ({ print: {} }));
+    if (!isCurrent()) return;
+    if (!dashboardRes.ok || !queueRes.ok || !householdsRes.ok)
+      throw new Error('Unable to load the directory and review queue.');
     renderDirectoryAdminPanel(
       dashboard.dashboard || {},
       queue.items || [],
@@ -201,26 +199,56 @@ async function loadDirectoryAdminTab(force = false) {
   }
 }
 let directoryAdminTab = 'directory';
-let directoryBrowseType = 'household';
+let directoryAdminLoadRequest = 0;
+let directoryReviewOpenRequest = 0;
+let directoryBrowseRequest = 0;
+let directoryBrowseRecords = [];
+let directoryBrowseOffset = 0;
+let directoryBrowseSearchTimer;
+const DIRECTORY_BROWSE_PAGE_SIZE = 100;
 let directoryLastData = null;
 function switchDirectoryAdminTab(tab) {
   directoryAdminTab = tab;
   const pane = document.getElementById('directoryAdminPane');
   if (!pane) return;
-  pane
-    .querySelectorAll('[data-dir-tab]')
-    .forEach((btn) => btn.setAttribute('aria-selected', String(btn.dataset.dirTab === tab)));
+  pane.querySelectorAll('[data-dir-tab]').forEach((button) => {
+    const selected = button.dataset.dirTab === tab;
+    button.setAttribute('aria-selected', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
   pane.querySelectorAll('[data-dir-panel]').forEach((panel) => {
     panel.hidden = panel.dataset.dirPanel !== tab;
   });
 }
-function directoryBrowseRow(record) {
-  return directoryBrowseType === 'household' ? directoryHouseholdRow(record) : directoryPersonRow(record);
+function navigateDirectoryTabs(event) {
+  const buttons = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+  const index = buttons.indexOf(event.target);
+  if (index === -1) return;
+  const next = {
+    ArrowLeft: (index - 1 + buttons.length) % buttons.length,
+    ArrowRight: (index + 1) % buttons.length,
+    Home: 0,
+    End: buttons.length - 1,
+  }[event.key];
+  if (next === void 0) return;
+  event.preventDefault();
+  switchDirectoryAdminTab(buttons[next].dataset.dirTab || 'directory');
+  buttons[next].focus();
 }
-function renderDirectoryBrowseList(records) {
+function clearDirectoryBrowseFilters() {
+  const search = document.querySelector('#directoryBrowseSearch');
+  const hadQuery = Boolean(search.value);
+  search.value = '';
+  document.querySelector('#directoryNamedayFilter').value = '';
+  document.querySelector('#directorySkillFilter').value = '';
+  filterCanonicalDirectoryRows();
+  if (hadQuery) searchDirectoryBrowse('');
+  search.focus();
+}
+function renderDirectoryBrowseList() {
   const list = document.getElementById('directoryBrowseList');
   if (!list) return;
-  const sortedRecords = [...records].sort((a, b) =>
+  const sortedRecords = [...directoryBrowseRecords].sort((a, b) =>
     directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName))
   );
   list.innerHTML = sortedRecords.length
@@ -234,44 +262,53 @@ function renderDirectoryBrowseList(records) {
         )
         .join('')
     : `<tr><td colspan="4">${directoryEmptyState('No matches', 'No households match your search.')}</td></tr>`;
+  filterCanonicalDirectoryRows();
   hydrateDirectoryAdminImages(list);
 }
-function switchDirectoryBrowseType(type) {
-  directoryBrowseType = type;
-  const pane = document.getElementById('directoryAdminPane');
-  pane
-    ?.querySelectorAll('[data-browse-type]')
-    .forEach((btn) => btn.classList.toggle('active', btn.dataset.browseType === type));
-  const input = document.getElementById('directoryBrowseSearch');
-  if (input) input.placeholder = type === 'household' ? 'Search by family name' : 'Search by person name';
-  renderDirectoryBrowseList(
-    type === 'household' ? directoryLastData?.households || [] : directoryLastData?.people || []
-  );
-}
-let directoryBrowseSearchTimer = null;
 function searchDirectoryBrowse(value) {
   clearTimeout(directoryBrowseSearchTimer);
-  directoryBrowseSearchTimer = setTimeout(() => runDirectoryBrowseSearch(String(value || '').trim()), 250);
+  ++directoryBrowseRequest;
+  const more = document.querySelector('#directoryBrowseMore');
+  if (more) more.hidden = true;
+  directoryBrowseSearchTimer = setTimeout(() => runDirectoryBrowseSearch(value.trim()), 250);
 }
-async function runDirectoryBrowseSearch(query) {
+async function runDirectoryBrowseSearch(query, append = false) {
   const list = document.getElementById('directoryBrowseList');
-  if (!list) return;
-  if (!query) {
-    renderDirectoryBrowseList(
-      directoryBrowseType === 'household' ? directoryLastData?.households || [] : directoryLastData?.people || []
-    );
-    return;
-  }
-  list.innerHTML = '<p class="sw-tool-loading">Searching…</p>';
+  const more = document.querySelector('#directoryBrowseMore');
+  const status = document.getElementById('directoryBrowseStatus');
+  if (!list || !more || !status || (append && more.disabled)) return;
+  const request = ++directoryBrowseRequest;
+  const offset = append ? directoryBrowseOffset : 0;
+  const params = new URLSearchParams({ limit: String(DIRECTORY_BROWSE_PAGE_SIZE), q: query, offset: String(offset) });
+  more.disabled = true;
+  status.textContent = append ? 'Loading more households…' : 'Searching households…';
   try {
-    const res = await fetch(directoryAdminApi('/households?limit=100&q=' + encodeURIComponent(query)), {
-      headers: authHeaders(),
-    });
-    const payload = await res.json().catch(() => ({}));
-    if (!res.ok || payload.ok === false) throw new Error(payload.message || payload.error || 'Search failed.');
-    renderDirectoryBrowseList(payload.households || []);
-  } catch (err) {
-    list.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to search.')}</p>`;
+    const res = await fetch(directoryAdminApi('/households?' + params), { headers: authHeaders() });
+    const payload = await res.json();
+    if (request !== directoryBrowseRequest) return;
+    if (!res.ok || !Array.isArray(payload.households)) throw new Error('Unable to load households. Please try again.');
+    directoryBrowseOffset = offset + payload.households.length;
+    directoryBrowseRecords = append
+      ? [...new Map([...directoryBrowseRecords, ...payload.households].map((record) => [record.id, record])).values()]
+      : payload.households;
+    renderDirectoryBrowseList();
+    more.hidden = payload.households.length < DIRECTORY_BROWSE_PAGE_SIZE;
+    status.textContent = '';
+  } catch {
+    if (request !== directoryBrowseRequest) return;
+    status.textContent = append
+      ? 'Unable to load more households. Try again.'
+      : 'Search failed. Previous results are still shown.';
+    if (!append) {
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'pdx-link-btn';
+      retry.textContent = 'Retry search';
+      retry.addEventListener('click', () => runDirectoryBrowseSearch(query), { once: true });
+      status.append(' ', retry);
+    }
+  } finally {
+    if (request === directoryBrowseRequest) more.disabled = false;
   }
 }
 function renderDirectoryAdminPanel(dashboard, queue, people, households, skills, maintenance, print, settings = {}) {
@@ -280,6 +317,8 @@ function renderDirectoryAdminPanel(dashboard, queue, people, households, skills,
   const sortedHouseholds = [...households].sort((a, b) =>
     directoryHouseholdSortKey(a.displayName).localeCompare(directoryHouseholdSortKey(b.displayName))
   );
+  directoryBrowseRecords = sortedHouseholds;
+  directoryBrowseOffset = households.length;
   const managementQueue = queue.map((item) => ({ ...item, queueKind: 'submission' }));
   directoryLastData = {
     dashboard,
@@ -293,7 +332,6 @@ function renderDirectoryAdminPanel(dashboard, queue, people, households, skills,
   };
   const parishName = currentParish?.parishName || currentParish?.name || 'Your parish';
   const publishedMembers = Array.isArray(print?.households) ? print.households : [];
-  const publishedMemberCount = publishedMembers.length || people.length;
   const skillOptions = [
     ...new Set((skills.listings || []).map((item) => item.displayLabel || item.skill?.name).filter(Boolean)),
   ].sort();
@@ -315,82 +353,87 @@ function renderDirectoryAdminPanel(dashboard, queue, people, households, skills,
       <div class="pdx-dir-print-sheet">
       <section class="pdx-dir-canonical-head sw-suite-hero">
         <div class="sw-suite-hero-copy">
-          <span class="pdx-dir-canonical-kicker sw-suite-eyebrow">Parish member records</span>
           <h1 class="sw-suite-heading">Parish Directory</h1>
-          <p class="sw-suite-subhead">Find families, member contact information, namedays, and ways parishioners can help. <strong>${households.length}</strong> households <i></i> <strong>${publishedMemberCount}</strong> members</p>
+          <p class="sw-suite-subhead">${escapeHtml(parishName)}</p>
         </div>
         <div class="pdx-dir-canonical-actions sw-suite-hero-status agapay-feature-actions">
-          <button class="pdx-dir-export-btn" type="button" onclick="openDirectoryImport()">Import directory</button>
+          <span class="pdx-dir-visibility-label">My AGAPAY visibility</span>
           ${renderDirectoryFeatureToggle(settings)}
-          <button class="pdx-dir-export-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Export CSV</button>
-          <button class="pdx-dir-print-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Download PDF</button>
         </div>
       </section>
-      <div class="pdx-dir-tabs pdx-dir-view-switcher" role="tablist" aria-label="Parish directory views">
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" onclick="switchDirectoryAdminTab('directory')">
-          <span class="pdx-dir-tab-mark" aria-hidden="true">1</span>
-          <span><strong>Families &amp; Members</strong><small>Search and review parish household records</small></span>
-        </button>
-        <button class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" onclick="switchDirectoryAdminTab('tools')">
-          <span class="pdx-dir-tab-mark" aria-hidden="true">2</span>
-          <span><strong>Directory Management</strong><small>${managementQueue.length} submission${managementQueue.length === 1 ? '' : 's'} awaiting review</small></span>
-        </button>
+      <div class="pdx-dir-tabs pdx-dir-view-switcher" role="tablist" aria-label="Parish directory views" onkeydown="navigateDirectoryTabs(event)">
+        <button id="directoryTabHouseholds" class="pdx-dir-tab" type="button" role="tab" data-dir-tab="directory" aria-selected="true" aria-controls="directoryPanelHouseholds" onclick="switchDirectoryAdminTab('directory')">Households</button>
+        <button id="directoryTabReviews" class="pdx-dir-tab" type="button" role="tab" data-dir-tab="tools" aria-selected="false" aria-controls="directoryPanelReviews" onclick="switchDirectoryAdminTab('tools')">Review queue${managementQueue.length ? ` <span class="pdx-dir-tab-count" aria-label="${managementQueue.length} awaiting review">${managementQueue.length}</span>` : ''}</button>
+        <button id="directoryTabTools" class="pdx-dir-tab" type="button" role="tab" data-dir-tab="settings" aria-selected="false" aria-controls="directoryPanelTools" onclick="switchDirectoryAdminTab('settings')">Directory tools</button>
       </div>
-      <div class="pdx-dir-tab-panel" data-dir-panel="directory">
+      <div id="directoryPanelHouseholds" class="pdx-dir-tab-panel" role="tabpanel" aria-labelledby="directoryTabHouseholds" data-dir-panel="directory">
+        <div class="pdx-dir-workspace-heading"><h2>Find a household</h2><button class="pdx-dir-action-btn" type="button" onclick="openDirectoryImport()">Import directory</button></div>
+        <section class="pdx-dir-canonical-controls">
+          <label><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="search" id="directoryBrowseSearch" aria-label="Search by family or member name" placeholder="Search by family or member name" oninput="searchDirectoryBrowse(this.value)" /></label>
+          <select id="directoryNamedayFilter" aria-label="Filter loaded households by nameday month" onchange="filterCanonicalDirectoryRows()"><option value="">All namedays</option>${months.map((month) => `<option value="${month}">${month}</option>`).join('')}</select>
+          <select id="directorySkillFilter" aria-label="Filter loaded households by skill" onchange="filterCanonicalDirectoryRows()"><option value="">All skills</option>${skillOptions.map((skill) => `<option value="${escapeAttr(skill)}">${escapeHtml(skill)}</option>`).join('')}</select>
+          <button class="pdx-link-btn pdx-dir-clear" type="button" onclick="clearDirectoryBrowseFilters()">Clear filters</button>
+        </section>
         <section class="pdx-dir-privacy-bar">
           <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span>Authorized parish staff always see the complete contact record.</span>
+          <span>Contact sharing</span>
           <div class="pdx-dir-contact-mode" aria-label="Directory sharing legend">
-            <span class="pdx-dir-contact-visibility is-shared" aria-hidden="true">●</span><b>Visible in My AGAPAY directory</b>
+            <span class="pdx-dir-contact-visibility is-shared" aria-hidden="true">●</span><b>Family chose to share</b>
             <span class="pdx-dir-contact-visibility is-private" aria-hidden="true">●</span><b>Private from parishioners</b>
           </div>
-          <small>The eye reports the family’s sharing choice. A street address is never shown to parishioners; only city and state can be shared.</small>
+          <small>A street address is never shown to parishioners. Shared fields appear after publication is approved.</small>
         </section>
-        <section class="pdx-dir-canonical-controls">
-          <label><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="search" id="directoryBrowseSearch" placeholder="Search by family or member name" oninput="searchDirectoryBrowse(this.value)" /></label>
-          <select id="directoryNamedayFilter" onchange="filterCanonicalDirectoryRows()"><option value="">All namedays</option>${months.map((month) => `<option value="${month}">${month}</option>`).join('')}</select>
-          <select id="directorySkillFilter" onchange="filterCanonicalDirectoryRows()"><option value="">All skills</option>${skillOptions.map((skill) => `<option value="${escapeAttr(skill)}">${escapeHtml(skill)}</option>`).join('')}</select>
-        </section>
+        <p id="directoryBrowseStatus" class="pdx-dir-browse-status" role="status"></p>
+        <div id="directoryRecordDetail" class="pdx-dir-review-detail pdx-dir-inline-detail" tabindex="-1"></div>
         <div class="pdx-dir-table-wrap">
           <table class="pdx-dir-table">
             <thead><tr><th>Household</th><th>Members &amp; Namedays</th><th>Contact &amp; Parishioner Visibility</th><th>Skills to Serve</th></tr></thead>
             <tbody id="directoryBrowseList">${sortedHouseholds.length ? sortedHouseholds.map((household) => directoryCanonicalHouseholdRow(household, publishedMembers, skills.listings || [])).join('') : `<tr><td colspan="4">${directoryEmptyState('No households yet', 'Households appear here after families join the parish directory.')}</td></tr>`}</tbody>
           </table>
         </div>
-        <div id="directoryRecordDetail" class="pdx-dir-review-detail pdx-dir-inline-detail" aria-live="polite"></div>
+        <p id="directoryBrowseFilterNote" role="status" hidden></p>
+        <button id="directoryBrowseMore" class="pdx-dir-action-btn" type="button" ${households.length < DIRECTORY_BROWSE_PAGE_SIZE ? 'hidden' : ''} onclick="runDirectoryBrowseSearch(document.getElementById('directoryBrowseSearch').value.trim(), true)">Load more households</button>
         <p class="pdx-dir-canonical-note"><strong>Where do these records come from?</strong> Families enter and maintain their information in My AGAPAY, or parish staff import existing contacts. Imported contacts remain private until the normal sharing and approval steps are complete. Parish staff can review information without changing a family’s privacy choices.</p>
       </div>
 
-      <div class="pdx-dir-tab-panel" data-dir-panel="tools" hidden>
-        <section class="pdx-dir-management-intro">
-          <span>Directory Management</span>
-          <h2>Review completed directory submissions</h2>
-          <p>A parishioner appears here only after creating a My AGAPAY account, choosing this parish, completing directory information, and submitting it for review. Guest donors and unfinished profiles do not create parish follow-up.</p>
-        </section>
-        ${directoryHealthOverview(dashboard.metrics || {}, maintenance, managementQueue.length)}
+      <div id="directoryPanelReviews" class="pdx-dir-tab-panel" role="tabpanel" aria-labelledby="directoryTabReviews" data-dir-panel="tools" hidden>
+        <div id="directoryReviewRecordDetail" class="pdx-dir-review-detail pdx-dir-queue-detail" tabindex="-1"></div>
+        <div id="directoryManagementDetail" class="pdx-dir-review-detail pdx-dir-queue-detail" tabindex="-1"></div>
         <section class="pdx-panel pdx-dir-review-queue-panel">
           <div class="pdx-panel-header">
-            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Submission Review Queue</div>
+            <div class="pdx-panel-title"><div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Submissions awaiting review</div>
             <button class="pdx-link-btn" type="button" onclick="loadDirectoryAdminTab(true)">Refresh</button>
           </div>
           <div class="pdx-dir-review-queue" id="directoryReviewQueue">${directoryReviewQueueRows(managementQueue)}</div>
         </section>
-        <div id="directoryManagementDetail" class="pdx-dir-review-detail pdx-dir-queue-detail" aria-live="polite"></div>
-        <details class="pdx-dir-utilities">
-          <summary><span><strong>Skills and exports</strong><small>Open these less-frequent management tools</small></span><b>Show tools</b></summary>
-          <div class="pdx-dir-utilities-body">
-            <div class="pdx-dir-row-list">${directorySkillsAdminRows(skills.listings || [])}</div>
-            <div class="pdx-dir-actions">
-              <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
-              <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published Adults CSV</button>
-              <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print Skills</button>
-              <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')">Directory PDF</button>
-            </div>
+      </div>
+      <div id="directoryPanelTools" class="pdx-dir-tab-panel pdx-dir-tools-panel" role="tabpanel" aria-labelledby="directoryTabTools" data-dir-panel="settings" hidden>
+        <section class="pdx-dir-tool-card">
+          <h2>Import and export</h2>
+          <p>Import existing household records or download the published directory.</p>
+          <div class="pdx-dir-actions">
+            <button class="pdx-dir-action-btn" type="button" onclick="openDirectoryImport()">Import directory</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/published-adults.csv')">Published adults CSV</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/directory.pdf')">Download directory PDF</button>
           </div>
-        </details>
+        </section>
+        <section class="pdx-dir-tool-card">
+          <h2>Skills and service</h2>
+          <div class="pdx-dir-row-list">${directorySkillsAdminRows(skills.listings || [])}</div>
+          <div class="pdx-dir-actions">
+            <button class="pdx-dir-action-btn" type="button" onclick="downloadDirectoryAdminExport('/exports/skills.csv')">Skills CSV</button>
+            <button class="pdx-dir-action-btn" type="button" onclick="previewDirectoryAdminPrint('/print/skills')">Print skills</button>
+          </div>
+        </section>
+        ${directoryHealthOverview(dashboard.metrics || {}, maintenance, managementQueue.length)}
       </div>
       </div>`;
   switchDirectoryAdminTab(directoryAdminTab);
+  if (directoryQueueFocusRequested) {
+    directoryQueueFocusRequested = false;
+    if (activeTab === 'directory' && directoryAdminTab === 'tools')
+      document.getElementById('directoryTabReviews')?.focus();
+  }
   hydrateDirectoryAdminImages(pane);
 }
 function renderDirectoryFeatureToggle(settings = {}) {
@@ -506,8 +549,8 @@ function directoryCanonicalHouseholdRow(household, publishedMembers = [], skillL
       );
     })
     .join(' ');
-  return `<tr class="pdx-dir-table-row" data-namedays="${escapeAttr(namedaySearch)}" data-skills="${escapeAttr(householdSkills.join(' '))}">
-      <td><div class="pdx-dir-table-household"><span class="pdx-dir-table-avatar">${escapeHtml(initials)}</span><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(city || `${count} member${count === 1 ? '' : 's'}`)}</span><button class="pdx-dir-table-manage" type="button" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')">Manage accounts</button></div></div></td>
+  return `<tr class="pdx-dir-table-row" data-namedays="${escapeAttr(namedaySearch)}" data-skills="${escapeAttr(JSON.stringify(householdSkills))}">
+      <td><div class="pdx-dir-table-household"><span class="pdx-dir-table-avatar">${escapeHtml(initials)}</span><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(city || `${count} member${count === 1 ? '' : 's'}`)}</span><button class="pdx-dir-table-manage" type="button" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')">Open household</button></div></div></td>
       <td><div class="pdx-dir-table-members">${memberMarkup}</div></td>
       <td><div class="pdx-dir-table-contacts">${contactField('Email', email, staffContact.email?.visibility)}${contactField('Phone', phone, staffContact.phone?.visibility)}${contactField('Address', fullAddress || city, address.visibility, true)}</div></td>
       <td><div class="pdx-dir-table-skills">${
@@ -529,21 +572,6 @@ function filterCanonicalDirectoryRows() {
     );
   });
 }
-function directoryQueueRow(item) {
-  const actions = Array.isArray(item.permittedActions) ? item.permittedActions : [];
-  const sourceType = escapeAttr(item.sourceType);
-  const sourceId = escapeAttr(item.sourceId);
-  return `<div class="pdx-dir-row pdx-dir-queue-row" onclick="openDirectoryReview('${sourceType}','${sourceId}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryReview('${sourceType}','${sourceId}');}">
-      <div class="pdx-dir-row-copy">
-        <div class="pdx-dir-row-title">${escapeHtml(item.summary || item.reviewType)}</div>
-        <div class="pdx-dir-row-meta">${escapeHtml(item.targetLabel || 'Directory record')} · ${escapeHtml(item.requesterLabel || 'Directory user')}</div>
-      </div>
-      <div class="pdx-dir-row-side">
-        <span class="pdx-dir-badge ${directoryPriorityBadgeClass(item.priority)}">${escapeHtml(item.priority || 'normal')}</span>
-        <button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryReview('${sourceType}','${sourceId}')">${actions.includes('approve') ? 'Review' : 'Open'}</button>
-      </div>
-    </div>`;
-}
 function directoryDetailList(items, emptyTitle, emptyCopy, mapFn) {
   if (!Array.isArray(items) || !items.length) return directoryEmptyState(emptyTitle, emptyCopy);
   return `<div class="pdx-dir-detail-list">${items.map(mapFn).join('')}</div>`;
@@ -551,7 +579,7 @@ function directoryDetailList(items, emptyTitle, emptyCopy, mapFn) {
 function directoryDetailTarget() {
   const tools = document.querySelector('[data-dir-panel="tools"]');
   return tools && !tools.hidden
-    ? document.getElementById('directoryManagementDetail')
+    ? document.getElementById('directoryReviewRecordDetail')
     : document.getElementById('directoryRecordDetail');
 }
 function directoryRecordDetailShell(kicker, title, subtitle, body, targetId = 'directoryRecordDetail') {
@@ -714,7 +742,7 @@ async function openDirectoryPerson(personId) {
         </div>`,
       detail.id
     );
-    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (detail.offsetParent !== null) detail.focus();
   } catch (err) {
     detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this person record.')}</p>`;
   }
@@ -806,7 +834,7 @@ async function openDirectoryHousehold(householdId) {
       detail.id
     );
     hydrateDirectoryAdminImages(detail);
-    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (detail.offsetParent !== null) detail.focus();
   } catch (err) {
     detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this household record.')}</p>`;
   }
@@ -814,6 +842,8 @@ async function openDirectoryHousehold(householdId) {
 async function openDirectoryReview(sourceType, sourceId) {
   const detail = document.getElementById('directoryManagementDetail');
   if (!detail || !sourceType || !sourceId) return;
+  const request = ++directoryReviewOpenRequest;
+  const isCurrent = () => detail.isConnected && request === directoryReviewOpenRequest;
   detail.innerHTML = '<p class="sw-tool-loading">Opening review item...</p>';
   try {
     const res = await fetch(
@@ -823,6 +853,7 @@ async function openDirectoryReview(sourceType, sourceId) {
     const payload = await res.json().catch(() => ({}));
     if (!res.ok || payload.ok === false)
       throw new Error(payload.message || payload.error || 'Unable to open review item.');
+    if (!isCurrent()) return;
     let review = payload.review || {};
     const beginRes = await fetch(
       directoryAdminApi('/reviews/' + encodeURIComponent(sourceType) + '/' + encodeURIComponent(sourceId) + '/begin'),
@@ -832,6 +863,7 @@ async function openDirectoryReview(sourceType, sourceId) {
       const beginPayload = await beginRes.json().catch(() => ({}));
       if (beginPayload.ok !== false && beginPayload.review) review = beginPayload.review;
     }
+    if (!isCurrent()) return;
     const item = review.item || {};
     const proposed = review.proposed || {};
     const submittedPhoto = review.media || proposed.photo || null;
@@ -847,7 +879,7 @@ async function openDirectoryReview(sourceType, sourceId) {
             </div>
             <div class="pdx-dir-review-top-actions">
               ${['person', 'household'].includes(item.targetType) && item.targetId ? `<button class="pdx-dir-action-btn" type="button" onclick="${item.targetType === 'household' ? 'openDirectoryHousehold' : 'openDirectoryPerson'}('${escapeAttr(item.targetId)}')">View full record</button>` : ''}
-              <button class="pdx-dir-close-btn" type="button" onclick="document.getElementById('directoryManagementDetail').innerHTML=''">Close</button>
+              <button class="pdx-dir-close-btn" type="button" onclick="closeDirectoryReview()">Close</button>
             </div>
           </div>
           ${directoryReviewPrefs(proposed.publicationPreferences)}
@@ -872,11 +904,16 @@ async function openDirectoryReview(sourceType, sourceId) {
               : `<p class="section-note">This account can view the item, but it cannot approve it. Use a parish dashboard session or another staff reviewer with directory review permissions.</p>`
           }
         </article>`;
-    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (detail.offsetParent !== null) detail.focus();
     hydrateDirectoryAdminImages(detail);
   } catch (err) {
     detail.innerHTML = `<p class="muted">${escapeHtml(err.message || 'Unable to open this review item.')}</p>`;
   }
+}
+function closeDirectoryReview() {
+  ++directoryReviewOpenRequest;
+  document.getElementById('directoryManagementDetail')?.replaceChildren();
+  document.getElementById('directoryReviewRecordDetail')?.replaceChildren();
 }
 async function decideDirectoryReview(sourceType, sourceId, decision, button, version = '') {
   const note = document.getElementById('directoryReviewNote')?.value.trim() || '';
@@ -1005,46 +1042,6 @@ async function revokeDirectoryAccountInvitation(invitationId, personId, househol
   } catch (error) {
     setStatus(error.message || 'Unable to revoke invitation.', 'error');
   }
-}
-function directoryPersonRow(person) {
-  const pending = person.pendingRequestCount || 0;
-  const accessLabel = person.child
-    ? 'Managed through family account'
-    : person.claimed
-      ? 'Family account manager'
-      : 'Adult account not linked';
-  return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryPerson('${escapeAttr(person.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryPerson('${escapeAttr(person.id)}');}">
-      <div class="pdx-dir-row-media">
-        ${directoryAdminPhotoImg(person.photo, 'pdx-dir-thumb pdx-dir-thumb-round', 'Photo of ' + (person.displayName || 'person'))}
-        <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(person.displayName)}</div><div class="pdx-dir-row-meta">${escapeHtml(accessLabel)} · ${person.child ? 'Child' : 'Adult'}${person.householdCount ? ' · ' + person.householdCount + ' household link' + (person.householdCount === 1 ? '' : 's') : ''}</div></div>
-      </div>
-      <div class="pdx-dir-row-side">${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}<button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryPerson('${escapeAttr(person.id)}')">Open</button></div>
-    </div>`;
-}
-function directoryHouseholdRow(household) {
-  const count = household.memberCount || 0;
-  const admins = household.administratorCount || household.adminCount || 0;
-  const pending = household.pendingRequestCount || 0;
-  return `<div class="pdx-dir-row pdx-dir-record-row" onclick="openDirectoryHousehold('${escapeAttr(household.id)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDirectoryHousehold('${escapeAttr(household.id)}');}">
-      <div class="pdx-dir-row-media">
-        ${directoryAdminPhotoImg(household.photo, 'pdx-dir-thumb', 'Family photo for ' + (household.displayName || 'household'))}
-        <div class="pdx-dir-row-copy">
-          <div class="pdx-dir-row-title">${escapeHtml(household.displayName)}</div>
-          <div class="pdx-dir-row-meta">${escapeHtml(count + ' member' + (count === 1 ? '' : 's'))} · ${escapeHtml(admins + ' household admin' + (admins === 1 ? '' : 's'))}${household.photo ? ' · family photo ' + escapeHtml((household.photo.lifecycleStatus || '').replace(/_/g, ' ')) : ''}</div>
-        </div>
-      </div>
-      <div class="pdx-dir-row-side">
-        ${pending ? `<span class="pdx-dir-badge high">${pending} pending</span>` : `<span class="pdx-dir-badge count">Current</span>`}
-        <button class="pdx-dir-action-btn" type="button" onclick="event.stopPropagation();openDirectoryHousehold('${escapeAttr(household.id)}')">Open</button>
-      </div>
-    </div>`;
-}
-function directoryMaintenanceRow(label, value, alertIfPositive = false, help = '') {
-  const numeric = Number(value ?? 0);
-  return `<div class="pdx-dir-row">
-      <div class="pdx-dir-row-copy"><div class="pdx-dir-row-title">${escapeHtml(label)}</div>${help ? `<div class="pdx-dir-row-meta">${escapeHtml(help)}</div>` : ''}</div>
-      <div class="pdx-dir-row-side"><span class="pdx-dir-badge ${alertIfPositive && numeric > 0 ? 'urgent' : 'count'}">${escapeHtml(numeric)}</span></div>
-    </div>`;
 }
 function directoryHealthOverview(metrics = {}, maintenance = {}, actionCount = 0) {
   const current = Number(maintenance.householdsCurrent || 0);
@@ -1184,6 +1181,8 @@ function printableSkillsHtml(print = {}) {
     .join('');
   return `<!doctype html><html><head><meta charset="utf-8"><title>Skills &amp; Service</title><style>body{font:14px/1.5 Arial;margin:32px;color:#171715}h1,h2{font-family:Georgia,serif}button{float:right;padding:9px 14px}article{break-inside:avoid;border-bottom:1px solid #ddd;padding:12px 0}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print</button><h1>Skills &amp; Service</h1><p>${escapeHtml(print.disclaimer || '')}</p>${rows || '<p>No active listings.</p>'}</body></html>`;
 }
+let directoryQueueFocusRequested = false;
+Object.assign(window, { navigateDirectoryTabs, clearDirectoryBrowseFilters, closeDirectoryReview });
 window.ParishFeatureRegistry.register('directory', {
   load: loadDirectoryAdminTab,
   refresh: () => loadDirectoryAdminTab(true),

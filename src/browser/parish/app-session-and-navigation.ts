@@ -136,17 +136,19 @@ function switchTab(tab: string) {
   document.getElementById('topbarTitle')!.textContent =
     isMobile && currentParish ? currentParish.parishName || 'Parish Dashboard' : titles[tab] || 'Parish Dashboard';
   syncTopbarTabIcon(tab);
+  if (tab === 'giving') refreshParishAttention();
   if (['history', 'givers', 'options', 'reconcile'].includes(tab)) loadRegisteredParishFeature('giving', tab);
   if (tab === 'campaigns' && currentParish) loadRegisteredParishFeature('campaigns');
   if (tab === 'stewardship') loadRegisteredParishFeature('stewardship');
-  if (tab === 'sacraments') loadRegisteredParishFeature('sacraments');
+  const sacramentsLoad = tab === 'sacraments' ? loadRegisteredParishFeature('sacraments') : null;
   if (tab === 'directory' && moduleIncluded('directory')) loadRegisteredParishFeature('directory');
   if (tab === 'library') loadRegisteredParishFeature('library');
   if (tab === 'communications') loadRegisteredParishFeature('koinonia');
-  if (tab === 'accounting') loadRegisteredParishFeature('accounting');
+  const accountingLoad = tab === 'accounting' ? loadRegisteredParishFeature('accounting') : null;
   if (tab === 'bookstore') loadRegisteredParishFeature('commerce');
   content?.scrollTo({ top: 0, behavior: 'smooth' });
   if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
+  return accountingLoad || sacramentsLoad;
 }
 
 function syncTopbarTabIcon(tab: string) {

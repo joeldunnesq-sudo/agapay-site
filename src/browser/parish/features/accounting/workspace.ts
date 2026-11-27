@@ -736,6 +736,7 @@ function applyAccountingRegisterDefaultFund(accountSelect: HTMLSelectElement) {
 }
 
 function setAccountingView(view: string, onHome = false) {
+  if (view !== 'payables') accountingOverviewBillFilter = '';
   if (accountingPreviewOnly()) {
     renderAccountingPaywall();
     return;

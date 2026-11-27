@@ -254,8 +254,24 @@ export async function handleAccountingPayablesBudgets(request: Request, env: Par
       if (request.method === 'POST' && action === 'unarchive')
         return reply({ ok: true, vendor: await unarchiveVendor(ctx.db, args) });
     }
-    if (request.method === 'GET' && path === '/payables/bills')
+    if (request.method === 'GET' && path === '/payables/bills') {
+      if (url.searchParams.get('summary') === '1') {
+        const [counts] = await rows(
+          ctx.db,
+          `SELECT
+          COUNT(CASE WHEN status = 'submitted' AND created_by_actor_id IS NOT ? THEN 1 END) AS approvals,
+          COUNT(CASE WHEN status IN ('posted','partially_paid') AND due_date < ? AND amount_due > 0 THEN 1 END) AS overdue
+          FROM accounting_bills`,
+          ctx.actor.id,
+          today()
+        );
+        return reply({
+          approvals: ctx.actor.capabilities.includes('ap.approve') ? counts.approvals : 0,
+          overdue: ctx.actor.capabilities.includes('ap.pay') ? counts.overdue : 0,
+        });
+      }
       return reply({ ok: true, ...(await bills(ctx.db, ctx.actor)) });
+    }
     if (request.method === 'POST' && path === '/payables/bills')
       return reply(
         { ok: true, bill: await createBillDraft(ctx.db, { actor: ctx.actor, entitlementTier: tier, input: body }) },

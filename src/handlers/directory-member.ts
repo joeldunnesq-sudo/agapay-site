@@ -157,6 +157,8 @@ export async function handleDirectoryMember(request: Request, env: Partial<Env>)
         ok: true,
         results: await searchMemberDirectory(env, {
           context,
+          letter: url.searchParams.get('letter') || '',
+          sort: url.searchParams.get('sort') || 'az',
           q: url.searchParams.get('q') || '',
           type: url.searchParams.get('type') || 'all',
           ministryId: url.searchParams.get('ministryId') || '',

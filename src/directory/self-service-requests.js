@@ -1,4 +1,5 @@
 // Generated from src/directory/self-service-requests.ts by npm run build:server. Do not edit.
+import { DONOR_MEMBERSHIP_SOURCE } from './donor-membership.js';
 import { d1First, generateSecret } from '../lib/core.js';
 import '../lib/authorization.js';
 import { addHouseholdMember, createPerson, DirectoryServiceError } from './foundation.js';
@@ -27,6 +28,8 @@ async function createDirectoryChangeRequest(
   env,
   { context, parishId, targetType, targetId, householdId = '', requestType, summary, payload = {}, correlationId = '' }
 ) {
+  if (payload?.source === DONOR_MEMBERSHIP_SOURCE)
+    throw new DirectoryServiceError('validation_failed', 'Home parish membership reviews are submitted automatically.');
   if (payload?.source === 'myagapay_koinonia_access') {
     throw new DirectoryServiceError(
       'validation_failed',
