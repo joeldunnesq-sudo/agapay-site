@@ -202,8 +202,8 @@ async function saveParishBlogSettings(event) {
     await loadCommunicationsTab(true);
     setStatus(
       data.blog?.enabled
-        ? 'The priest’s newest blog posts will appear in Koinonia.'
-        : 'The priest’s blog is hidden from Koinonia.',
+        ? 'The priest’s newest blog posts will appear in Parish Life.'
+        : 'The priest’s blog is hidden from Parish Life.',
       'success'
     );
   } catch (error) {
@@ -227,14 +227,14 @@ async function toggleCommunicationsFeature(input) {
       body: JSON.stringify({ communicationsEnabled: enabled }),
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || payload.detail || 'Unable to update Koinonia.');
+    if (!response.ok) throw new Error(payload.error || payload.detail || 'Unable to update Parish Life.');
     currentParish = { ...currentParish, ...(payload.parish || {}) };
     currentParish.communicationsEnabled = Boolean(payload.parish?.communicationsEnabled ?? enabled);
     communicationsState.loaded = false;
     setStatus(
       currentParish.communicationsEnabled
-        ? 'Parish publishing is live in Koinonia.'
-        : 'Parish publishing is hidden; the Koinonia calendar remains available.',
+        ? 'Parish publishing is live in Parish Life.'
+        : 'Parish publishing is hidden; the Parish Life calendar remains available.',
       'success'
     );
     await loadCommunicationsTab(true);
@@ -259,7 +259,7 @@ async function toggleKoinoniaSubfeature(feature, input) {
   const previous = Boolean(currentParish[field]);
   if (!currentParish.communicationsEnabled) {
     if (input) input.checked = previous;
-    setStatus(`Turn on Koinonia before enabling ${labels[feature]}.`, 'error');
+    setStatus(`Turn on Parish Life before enabling ${labels[feature]}.`, 'error');
     return;
   }
   const enabled = Boolean(input?.checked);
@@ -277,7 +277,7 @@ async function toggleKoinoniaSubfeature(feature, input) {
       ...(payload.parish || {}),
       [field]: Boolean(payload.parish?.[field] ?? enabled),
     };
-    setStatus(`${labels[feature]} ${currentParish[field] ? 'is available' : 'is hidden'} in Koinonia.`, 'success');
+    setStatus(`${labels[feature]} ${currentParish[field] ? 'is available' : 'is hidden'} in Parish Life.`, 'success');
     await loadCommunicationsTab();
   } catch (error) {
     currentParish[field] = previous;

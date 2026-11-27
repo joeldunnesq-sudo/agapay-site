@@ -201,14 +201,14 @@ const checks = [
       adminService.includes('directory.person.removed_from_parish'),
   ],
   [
-    'Koinonia requires a live parish affiliation after removal',
+    'Parish Life requires a live parish affiliation after removal',
     koinoniaAccess.includes('JOIN directory_parish_affiliations affiliation') &&
       koinoniaAccess.includes("affiliation.status != 'former_member'"),
   ],
   [
-    'linked accounts are only allowed into Koinonia when household confirmation is current',
+    'linked accounts are only allowed into Parish Life when household confirmation is current',
     app.includes("const ready = verificationStatus === 'current'") &&
-      app.includes('Koinonia blocked · household confirmation required'),
+      app.includes('Parish Life blocked · household confirmation required'),
   ],
   [
     'member and family cards receive only consented member-visible skill previews',

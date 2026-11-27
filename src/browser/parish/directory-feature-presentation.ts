@@ -129,7 +129,7 @@ function directoryReviewTypeLabel(type: string = '') {
     publication_media: 'Photo sharing request',
     person_canonical_correction: 'Member record correction',
     donor_membership: 'Parish membership',
-    koinonia_membership: 'Koinonia membership',
+    koinonia_membership: 'Parish Life membership',
   };
   return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
 }

@@ -44,7 +44,7 @@ function onboardingSignoffMarkup(workflow) {
     library: 'Parish Library',
     bookstore: 'Bookstore',
     commerceSuite: 'Commerce',
-    communications: 'Koinonia',
+    communications: 'Parish Life',
     textToGive: 'Text-to-Give',
     accounting: 'Accounting',
   };

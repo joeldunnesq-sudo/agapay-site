@@ -148,16 +148,19 @@ assert.match(worker, /['"]\/api\/donor\/custom-news-feeds['"][\s\S]*handleDonorC
 assert.match(dashboard, /id="parishBlogEnabled"[\s\S]*id="parishBlogSourceUrl"/);
 assert.match(parishApp, /saveParishBlogSettings[\s\S]*communicationsApi\('\/blog'\)/);
 assert.ok(
-  includesJavaScriptFragment(dashboard, '<span class="nav-label">Koinonia</span>'),
-  'the parish navigation should use the donor-facing Koinonia name'
+  includesJavaScriptFragment(dashboard, '<span class="nav-label">Parish Life</span>'),
+  'the parish dashboard sidebar should show Parish Life'
 );
+assert.ok(dashboard.includes('<h1>Parish Life</h1>'));
+assert.match(dashboard, /class="mobile-tab-link"[^>]*data-nav-tab="communications"[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*<span>Parish Life<\/span>/);
+assert.match(dashboard, /aria-label="Parish Life workspace"/);
 assert.match(
   dashboard,
   /data-koinonia-view="overview"[\s\S]*data-koinonia-view="content"[\s\S]*data-koinonia-view="bulletins"[\s\S]*data-koinonia-view="ministries"[\s\S]*data-koinonia-view="prayers"[\s\S]*data-koinonia-view="connections"/,
-  'Koinonia should give content, bulletins, ministries, prayer requests, and configuration distinct navigation entries'
+  'Parish Life should give content, bulletins, ministries, prayer requests, and configuration distinct navigation entries'
 );
 const contentWorkspace = dashboard.match(/<section[^>]*data-koinonia-panel="content"[\s\S]*?<\/section>/)?.[0];
-assert.ok(contentWorkspace, 'Koinonia should retain a dedicated content library');
+assert.ok(contentWorkspace, 'Parish Life should retain a dedicated content library');
 for (const channel of ['announcements', 'audio', 'video']) {
   assert.ok(
     contentWorkspace.includes(`openKoinoniaComposer('${channel}')`),
