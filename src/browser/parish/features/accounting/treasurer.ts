@@ -312,6 +312,7 @@ function accountingOverviewEntryActions() {
   return `
       <button type="button" id="accountingHomeDeposit" onclick="openAccountingSimpleIncome(this.id)"><b aria-hidden="true">＋</b><span>Record a deposit<small>Cash and checks deposited at the bank</small></span></button>
       <button type="button" id="accountingHomeExpense" onclick="openAccountingHomeTask('expense',this.id)"><b aria-hidden="true">−</b><span>Record a paid expense<small>A purchase already paid from a church account</small></span></button>
+      <button type="button" id="accountingHomeAssetPurchase" onclick="openAccountingHomeTask('asset-purchase',this.id)"><b aria-hidden="true">＋</b><span>Record an asset purchase<small>Equipment or property your parish will track as a fixed asset</small></span></button>
       <button type="button" id="accountingHomeTransfer" onclick="openAccountingHomeTransfer(this.id)"><b aria-hidden="true">⇄</b><span>Record a transfer<small>Money already moved between church bank accounts</small></span></button>
       ${parishTier ? '<button type="button" id="accountingHomeBill" onclick="openAccountingSimpleBill(this.id)"><b aria-hidden="true">◇</b><span>Enter a bill<small>Save a vendor invoice for approval</small></span></button>' : ''}
       <button type="button" id="accountingHomeGift" onclick="openAccountingInKindGift(this.id)"><b aria-hidden="true">◆</b><span>Record a non-cash gift<small>Donated goods, equipment, or services</small></span></button>
@@ -540,24 +541,36 @@ interface AccountingCouncilBudgetReport {
   rows: { category: string; budget: number; actual: number }[];
 }
 const accountingExpenseReceipt = { text: '' };
-function accountingPaidExpenseForm() {
+function accountingPaidExpenseForm(assetPurchase = false) {
   const banks = accountingData.bankAccounts.filter((bank) => bank.isActive !== false);
-  const expenses = accountingData.accounts.filter(
-    (account) => account.category === 'expense' && account.isActive !== false && !account.archivedAt
+  const accounts = accountingData.accounts.filter(
+    (account) =>
+      account.isActive !== false &&
+      !account.archivedAt &&
+      (assetPurchase
+        ? account.category === 'asset' &&
+          account.normalBalance === 'debit' &&
+          account.cashFlowClassification === 'investing' &&
+          !(Number(account.accountNumber) < 1100)
+        : account.category === 'expense')
   );
-  if (!banks.length || !expenses.length)
+  if (assetPurchase && !accounts.length)
+    return '<section class="acct-card"><h2>Set up a fixed-asset account</h2><p>Choose or create an asset cost account before recording a purchase.</p><button type="button" class="acct-primary" onclick="setAccountingView(\'assets\')">Open asset register</button></section>';
+  if (assetPurchase && !banks.length)
+    return accountingEmpty('Bank account setup is needed', 'Add a bank account to record an asset purchase.');
+  if (!banks.length || !accounts.length)
     return accountingEmpty(
       'Expense setup is needed',
       'Add a bank account and an expense category to record a payment.'
     );
   const defaultFund = accountingData.funds.find((fund) => Number(fund.isDefault)) || accountingData.funds[0];
-  return `<section class="acct-card"><h2>Tell us what you paid for</h2><p>Use this for a purchase already paid directly. For an invoice already entered in AGAPAY, record its payment from Bills &amp; payments.</p><form class="acct-phase-form" onsubmit="submitAccountingRegisterEntry(event,'paid-expense')"><div class="acct-form-grid">
+  return `<section class="acct-card"><h2>${assetPurchase ? 'Record an asset purchase' : 'Tell us what you paid for'}</h2><p>${assetPurchase ? 'Use this for equipment or property already paid for. After posting, you can register the asset from the same entry.' : 'Use this for a purchase already paid directly. For an invoice already entered in AGAPAY, record its payment from Bills &amp; payments.'}</p><form class="acct-phase-form" onsubmit="submitAccountingRegisterEntry(event,'${assetPurchase ? 'asset-purchase' : 'paid-expense'}')"><div class="acct-form-grid">
     <label>Paid from<select name="registerAccountId" required>${banks.map((bank) => `<option value="${escapeAttr(bank.ledgerAccountId)}">${escapeHtml(bank.name)}</option>`).join('')}</select></label>
     <label>Paid to<input name="payee" required maxlength="120"></label><label>Payment date<input type="date" name="entryDate" required value="${new Date().toLocaleDateString('en-CA')}"></label>
     <label>Amount<input type="number" name="payment" min="0.01" step="0.01" required></label>
-    <label>What was it for?<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">Choose an expense category</option>${expenses.map((account) => `<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId || '')}">${escapeHtml(account.name)}</option>`).join('')}</select></label>
+    <label>${assetPurchase ? 'Fixed-asset account' : 'What was it for?'}<select name="offsetAccountId" required onchange="applyAccountingRegisterDefaultFund(this)"><option value="">${assetPurchase ? 'Choose a fixed-asset account' : 'Choose an expense category'}</option>${accounts.map((account) => `<option value="${escapeAttr(account.id)}" data-default-fund="${escapeAttr(account.defaultFundId || '')}">${escapeHtml(account.name)}</option>`).join('')}</select></label>
     <label>Which fund?<select name="fundId" required>${accountingSimpleFundOptions(defaultFund?.id || '')}</select></label><label>Memo <small>Optional</small><input name="comment" maxlength="100"></label>
-    </div><button type="submit" class="acct-primary">Record expense</button><p class="acct-form-status" role="status">${escapeHtml(accountingExpenseReceipt.text)}</p></form></section>`;
+    </div><button type="submit" class="acct-primary">${assetPurchase ? 'Post asset purchase' : 'Record expense'}</button><p class="acct-form-status" role="status">${assetPurchase ? '' : escapeHtml(accountingExpenseReceipt.text)}</p></form></section>`;
 }
 
 function renderAccountingCouncilDesk(pane: HTMLElement) {
