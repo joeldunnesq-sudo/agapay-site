@@ -67,7 +67,7 @@
       "name": "Give",
       "short_name": "Give",
       "description": "Open the My AGAPAY giving dashboard.",
-      "url": "/myagapay",
+      "url": "/myagapay/giving",
       "icons": [
         {
           "src": "/images/app/shortcuts/give-v2.png",

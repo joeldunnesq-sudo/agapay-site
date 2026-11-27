@@ -3,7 +3,7 @@ export function shellProducts(parishLife: { label: string; short: string }) {
   const items: ShellProduct[] = [
     {
       id: 'parish-life',
-      href: '/myagapay',
+      href: '/myagapay/',
       label: parishLife.label,
       short: parishLife.short,
       icon: icons.home,

@@ -131,7 +131,7 @@ assert.ok(includesJavaScriptFragment(backendSources,"AGAPAY does not collect an 
 assert.ok(includesJavaScriptFragment(backendSources,"Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts"), "worker should document that Parish Commerce checkout has no AGAPAY application fee");
 assert.ok(includesJavaScriptFragment(worker,"/api/checkout-session-status"), "worker should expose checkout return reconciliation");
 assert.ok(includesJavaScriptFragment(backendSources,"session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
-assert.ok(includesJavaScriptFragment(backendSources,"/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");
+assert.ok(includesJavaScriptFragment(backendSources,"/myagapay/giving?gift_success=1"), "authenticated donor checkouts should return to the Giving dashboard");
 assert.ok(!includesJavaScriptFragment(worker,"const parishes = ["), "worker should not hardcode demo parishes");
 assert.ok(hasWorkerRoute("/donor/verify"), "worker should route donor verification links before assets");
 assert.ok(includesJavaScriptFragment(worker,"handleDonorVerifyPage"), "worker should handle donor verification links server-side");

@@ -20,7 +20,7 @@ function stripeRecurringSchedule(frequency) {
 function givingCheckoutReturnUrls({ appUrl, parishId, source, returnPath, donorDashboardReturn, campaign }) {
   if (donorDashboardReturn) {
     return {
-      successUrl: `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`,
+      successUrl: `${appUrl}/myagapay/giving?gift_success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${appUrl}/myagapay/giving/give?checkout_canceled=1`,
     };
   }

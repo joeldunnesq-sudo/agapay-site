@@ -295,7 +295,7 @@ function renderDonorTodayInChurch(parish, payload) {
     window.KoinoniaExperience?.compactFasting(chips, fastingRule);
   }
   const give = document.getElementById('todayGiveLink');
-  if (give) give.href = giveHref;
+  if (give && !window.KoinoniaExperience) give.href = giveHref;
   if (dedicatedSaintCard) {
     dedicatedSaintCard.dataset.date = date;
     dedicatedSaintCard.dataset.calendar = calendar;

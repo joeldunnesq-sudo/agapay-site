@@ -25,7 +25,7 @@ interface WindowEventMap {
 
   const titles: Readonly<Record<string, string>> = {
     account: 'Account',
-    bookstore: 'Bookstore',
+    bookstore: 'Parish Bookstore',
     directory: 'Directory',
     events: 'Meals & Events',
     exchange: 'Parish Exchange',
@@ -46,13 +46,10 @@ interface WindowEventMap {
   };
   const descriptions: Readonly<Record<string, string>> = {
     account: 'Manage your profile and preferences.',
-    bookstore: 'Books, icons, and gifts from your parish.',
-    directory: 'Connect with your parish community.',
     events: 'Gather for meals and parish events.',
     exchange: 'Share useful items with your parish community.',
     feed: 'Updates and announcements from your parish.',
     groups: 'Find fellowship in your parish groups.',
-    library: 'Resources chosen for your parish community.',
     media: 'Explore videos shared by your parish.',
     news: 'Stay connected with news from your parish.',
     'parish-life': 'Prayer, fellowship, and parish life together.',
@@ -211,7 +208,7 @@ interface WindowEventMap {
     document.body.classList.add('app-shared-header-page');
     header = document.createElement('header');
     header.className = 'app-page-header';
-    header.innerHTML = `<div class="app-header-bar koinonia-mobile-appbar"><a class="app-header-brand" href="/myagapay"><img src="/images/app/icon-192.png" alt=""><span>MY AGAPAY<small data-app-church-name>Loading your church…</small></span></a><div class="app-header-tools"><div class="app-header-switch"><button type="button" data-app-switch-church aria-label="Switch churches">${switchIcon}</button></div><button class="app-header-menu-button" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation">${window.MyAgapayShell!.icons.menu}</button></div></div><nav id="appHeaderNavigation" class="koinonia-mobile-menu" data-myagapay-app-menu aria-label="My AGAPAY navigation" hidden></nav><div class="app-header-body"><div class="app-header-title-row"><h1 data-app-page-title></h1><div class="app-header-actions"></div></div></div>`;
+    header.innerHTML = `<div class="app-header-bar koinonia-mobile-appbar"><a class="app-header-brand" href="/myagapay/"><img src="/images/app/icon-192.png" alt=""><span>MY AGAPAY<small data-app-church-name>Loading your church…</small></span></a><div class="app-header-tools"><div class="app-header-switch"><button type="button" data-app-switch-church aria-label="Switch churches">${switchIcon}</button></div><button class="app-header-menu-button" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation">${window.MyAgapayShell!.icons.menu}</button></div></div><nav id="appHeaderNavigation" class="koinonia-mobile-menu" data-myagapay-app-menu aria-label="My AGAPAY navigation" hidden></nav><div class="app-header-body"><div class="app-header-title-row"><h1 data-app-page-title></h1><div class="app-header-actions"></div></div></div>`;
     header.querySelector<HTMLElement>('[data-app-page-title]')!.textContent = titles[key];
     main.prepend(header);
     if (key === 'parish-life') header.classList.add('app-home-header');
@@ -219,7 +216,6 @@ interface WindowEventMap {
     const description = document.createElement('p');
     description.className = 'app-header-description';
     description.textContent = descriptions[key];
-    header.querySelector<HTMLElement>('.app-header-body')!.append(description);
     if (
       [
         'feed',
@@ -234,11 +230,12 @@ interface WindowEventMap {
         'prayer-requests',
         'events',
         'giving/calendar',
+        'library',
       ].includes(key)
     ) {
       const back = document.createElement('a');
       back.className = 'app-header-back';
-      back.href = '/myagapay/parish-life';
+      back.href = '/myagapay/';
       back.textContent = '← Home';
       back.setAttribute('data-parish-life-back', '');
       header.querySelector<HTMLElement>('.app-header-title-row')!.before(back);
@@ -272,6 +269,7 @@ interface WindowEventMap {
         copy.classList.add('app-header-replaced');
       });
     });
+    if (description.textContent) header.querySelector<HTMLElement>('.app-header-body')!.append(description);
     window.MyAgapayShell!.initializeMobileAppMenus(header);
     const menu = header.querySelector<HTMLElement>('[data-myagapay-app-menu]')!;
     menu?.addEventListener('click', (event) => {

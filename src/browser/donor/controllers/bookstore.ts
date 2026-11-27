@@ -524,6 +524,7 @@ let bookstoreScannerStream: MediaStream | null = null;
 let bookstoreScannerRAF: number | null = null;
 let bookstoreZXingReader: DonorZxingReader | null = null;
 let bookstoreScannerTorchOn = false;
+let bookstoreScannerRevision = 0;
 
 function resetBookstoreScannerTorchControl() {
   const button = document.getElementById('bookstoreScannerTorch') as HTMLButtonElement;
@@ -576,92 +577,104 @@ async function toggleBookstoreScannerTorch() {
 }
 
 async function startBookstoreBookScan() {
+  const scanning = openBookstoreScanner();
   await loadBookstoreItemFieldsSchema();
   const category = document.getElementById('bookstoreCategory') as HTMLInputElement;
   if (category) category.value = 'book';
   renderBookstoreItemFields();
   const manualPanel = document.querySelector<HTMLDetailsElement>('details.bookstore-manual-panel')!;
   if (manualPanel) manualPanel.open = true;
-  await openBookstoreScanner();
+  await scanning;
 }
 
 async function openBookstoreScanner() {
   const overlay = document.getElementById('bookstoreScannerOverlay') as HTMLElement;
   const video = document.getElementById('bookstoreScannerVideo') as HTMLVideoElement;
   const status = document.getElementById('bookstoreScannerStatus') as HTMLElement;
-  if (!overlay || !video) return;
+  if (!overlay?.hidden || !video) return;
+  const revision = ++bookstoreScannerRevision;
   resetBookstoreScannerTorchControl();
   overlay.hidden = false;
   if (status) status.textContent = 'Point your camera at the barcode on the back of the book.';
 
   try {
-    bookstoreScannerStream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment' },
     });
+    if (revision !== bookstoreScannerRevision) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    bookstoreScannerStream = stream;
   } catch {
-    if (status) status.textContent = "Couldn't access your camera. You can still enter the title and author below.";
-    setTimeout(closeBookstoreScanner, 1800);
+    if (revision === bookstoreScannerRevision && status)
+      status.textContent = 'Camera access is unavailable. Close the scanner to enter the title and author.';
     return;
   }
   video.srcObject = bookstoreScannerStream;
   await video.play().catch(() => {});
+  if (revision !== bookstoreScannerRevision) return;
   enableBookstoreScannerTorchControl(bookstoreScannerStream.getVideoTracks()[0]);
 
   if ('BarcodeDetector' in window) {
     try {
       const supported = await window.BarcodeDetector!.getSupportedFormats();
+      if (revision !== bookstoreScannerRevision) return;
       if (supported.includes('ean_13')) {
         const detector = new window.BarcodeDetector!({ formats: ['ean_13'] });
-        scanWithBarcodeDetector(detector, video);
+        scanWithBarcodeDetector(detector, video, revision);
         return;
       }
     } catch {
       /* fall through to ZXing */
     }
   }
-  scanWithZXing(video, status);
+  if (revision === bookstoreScannerRevision) await scanWithZXing(video, status, revision);
 }
 
-function scanWithBarcodeDetector(detector: DonorBarcodeDetector, video: HTMLVideoElement) {
+function scanWithBarcodeDetector(detector: DonorBarcodeDetector, video: HTMLVideoElement, revision: number) {
   const tick = async () => {
-    if (!bookstoreScannerStream) return;
+    if (revision !== bookstoreScannerRevision) return;
     try {
       const codes = await detector.detect(video);
-      if (codes.length) {
-        handleBarcodeDetected(codes[0].rawValue);
+      if (revision !== bookstoreScannerRevision) return;
+      const isbn = codes.map(({ rawValue }) => scannedBookIsbn(rawValue)).find(Boolean);
+      if (isbn) {
+        void handleBarcodeDetected(isbn);
         return;
       }
     } catch {
       /* keep trying */
     }
-    bookstoreScannerRAF = requestAnimationFrame(tick);
+    if (revision === bookstoreScannerRevision) bookstoreScannerRAF = requestAnimationFrame(tick);
   };
   bookstoreScannerRAF = requestAnimationFrame(tick);
 }
 
-function scanWithZXing(video: HTMLVideoElement, status: HTMLElement | null) {
-  if (typeof ZXing === 'undefined') {
-    if (status)
-      status.textContent = "Barcode scanning isn't available on this device. Enter the title and author below.";
-    setTimeout(closeBookstoreScanner, 2200);
-    return;
-  }
+async function scanWithZXing(video: HTMLVideoElement, status: HTMLElement | null, revision: number) {
   try {
     bookstoreZXingReader = new ZXing.BrowserMultiFormatReader();
-    bookstoreZXingReader.decodeFromVideoElement(video, (result, err) => {
-      if (result?.text) handleBarcodeDetected(result.text);
+    await bookstoreZXingReader.decodeFromVideoElementContinuously(video, (result) => {
+      if (revision !== bookstoreScannerRevision) return;
+      const isbn = scannedBookIsbn(result?.getText());
+      if (isbn) void handleBarcodeDetected(isbn);
     });
   } catch {
-    if (status)
-      status.textContent = "Barcode scanning isn't available on this device. Enter the title and author below.";
-    setTimeout(closeBookstoreScanner, 2200);
+    if (revision !== bookstoreScannerRevision) return;
+    bookstoreScannerStream?.getTracks().forEach((track) => track.stop());
+    bookstoreScannerStream = null;
+    video.srcObject = null;
+    resetBookstoreScannerTorchControl();
+    if (status) status.textContent = 'Scanning is unavailable. Close the scanner to enter the title and author.';
   }
 }
 
-async function handleBarcodeDetected(rawValue: unknown) {
-  const isbn = String(rawValue || '').replace(/[^0-9Xx]/g, '');
-  if (isbn.length !== 10 && isbn.length !== 13) return; // not a book ISBN, keep scanning
+function scannedBookIsbn(rawValue?: string) {
+  const isbn = (rawValue || '').replace(/[\s-]/g, '');
+  return /^(?:97[89]\d{10}|\d{9}[\dXx])$/.test(isbn) ? isbn.toUpperCase() : '';
+}
 
+async function handleBarcodeDetected(isbn: string) {
   const status = document.getElementById('bookstoreScannerStatus') as HTMLElement;
   if (status) status.textContent = 'Found it — looking up the title...';
   closeBookstoreScanner();
@@ -704,6 +717,7 @@ async function handleBarcodeDetected(rawValue: unknown) {
 }
 
 function closeBookstoreScanner() {
+  bookstoreScannerRevision++;
   const overlay = document.getElementById('bookstoreScannerOverlay') as HTMLElement;
   const video = document.getElementById('bookstoreScannerVideo') as HTMLVideoElement;
   if (overlay) overlay.hidden = true;

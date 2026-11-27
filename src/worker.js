@@ -568,6 +568,14 @@ var stdin_default = withRequestDiagnostics({
       url.pathname = '/';
       return Response.redirect(url.toString(), 301);
     }
+    if (
+      request.method === 'GET' &&
+      ['/myagapay', '/myagapay/'].includes(url.pathname) &&
+      url.searchParams.get('gift_success') === '1'
+    ) {
+      url.pathname = '/myagapay/giving';
+      return Response.redirect(url.toString(), 302);
+    }
     const canonicalDashboard =
       request.method === 'GET' || request.method === 'HEAD' ? canonicalDashboardPath(url.pathname) : '';
     if (canonicalDashboard) {

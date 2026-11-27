@@ -10,20 +10,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" defer></script>
-  <link rel="stylesheet" href="/donor/style.css?v=556edc390f21a861" />
+  <link rel="stylesheet" href="/donor/style.css?v=6c25e1f1147e0902" />
   <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260915spacing1" />
   <script src="/security.js?v=75eba12e9a4d5837"></script>
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
-  <script src="/myagapay-shell.js?v=77716ac18b23cb9f"></script>
+  <script src="/myagapay-shell.js?v=3cf10e7a99c544b7"></script>
   <script src="/donor/bookstore-presentation.js?v=d76ce3754db2ef2b" defer></script>
-  <script src="/donor/controllers/bookstore.js?v=7356a0e0a802f463" defer></script>
-  <script src="/donor/controllers/calendar.js?v=2edc15b643149352" defer></script>
+  <script src="/donor/controllers/bookstore.js?v=465337b50f6be00f" defer></script>
+  <script src="/donor/controllers/calendar.js?v=b96d03dfd73235f2" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0563aa47128c1c3b" defer></script>
-  <script src="/donor/app.js?v=976b56a006c9a980" defer></script>
+  <script src="/donor/app.js?v=c33b43d9c1a71e7f" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=1bb4749c7f0943ad" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -505,10 +505,10 @@
       .bookstore-product-card,.bookstore-cart-card { transition:none; }
     }
   </style>
-  <link rel="stylesheet" href="/donor/bookstore-experience.css?v=54497d02319ea55d" />
+  <link rel="stylesheet" href="/donor/bookstore-experience.css?v=e5b7f79fd6495580" />
   <script src="/donor/bookstore-experience.js?v=ce30cc01faccc22d" defer></script>
-<link rel="stylesheet" href="/myagapay/app-header.css?v=6a81fc1fe52117b4" />
-<script src="/myagapay/app-header.js?v=8055cdd968e83a58" defer></script>
+<link rel="stylesheet" href="/myagapay/app-header.css?v=3a983e6a779622b4" />
+<script src="/myagapay/app-header.js?v=276855b0cdf71e80" defer></script>
 </head>
 <body class="bookstore-boutique donor-mobile-page donor-bookstore-page app-inner-page app-main-feature-page">
   <div class="app">
@@ -522,7 +522,7 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Add offering</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Bookstore</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
+      <header class="koinonia-mobile-appbar"><a class="koinonia-mobile-brand" href="/myagapay/" aria-label="Open My AGAPAY"><span class="koinonia-mobile-mark" aria-hidden="true"><img src="/mark.png" alt="" /></span><span><strong>MY AGAPAY</strong><small>Bookstore</small></span></a><button class="koinonia-mobile-menu-toggle" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation"><span class="koinonia-mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button></header>
       <div class="topbar"><div class="topbar-title">Parish Bookstore</div></div>
       <div class="page koinonia-inner-shell">
         <div class="notice bookstore-toast" id="donorStatus" role="status" aria-live="polite" hidden></div>
@@ -621,7 +621,7 @@
     <div class="bookstore-scanner-panel">
       <h3 style="margin:0 0 10px;font-family:var(--serif, serif);">Scan a book's barcode</h3>
       <video id="bookstoreScannerVideo" playsinline muted></video>
-      <div class="bookstore-scanner-status" id="bookstoreScannerStatus">Point your camera at the barcode on the back of the book.</div>
+      <div class="bookstore-scanner-status" id="bookstoreScannerStatus" role="status">Point your camera at the barcode on the back of the book.</div>
       <div class="bookstore-scanner-actions">
         <button type="button" class="btn btn-ghost btn-sm bookstore-scanner-torch" id="bookstoreScannerTorch" aria-pressed="false" onclick="toggleBookstoreScannerTorch()" hidden><span aria-hidden="true">☀</span> <span data-bookstore-torch-label>Turn on flashlight</span></button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="closeBookstoreScanner()">Cancel</button>

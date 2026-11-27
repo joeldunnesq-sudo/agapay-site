@@ -410,6 +410,38 @@
 .app-header-description { margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #ded6c6; color:#536773; font-size:.875rem; }
 .app-home-header .app-header-body { display:none; }
 .app-shared-header-page.koinonia-landing-page main > .parish-life-page-shell { padding-top:16px !important; }
+.app-shared-header-page:is(.donor-bookstore-page,.donor-library-page,.donor-directory-page) .app-header-title-row {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7dfd1;
+}
+.app-shared-header-page.donor-library-page .app-header-body { max-width: 960px; padding-inline: 26px; }
+.app-shared-header-page.donor-directory-page .directory-view-switcher {
+  padding:4px;
+  border:1px solid #e7dfd1;
+  border-radius:12px;
+  background:#fffcf6;
+  box-shadow:none;
+}
+.app-shared-header-page.donor-directory-page .directory-view-switcher button { border-radius:8px; }
+.app-shared-header-page.donor-directory-page .directory-filter-card {
+  border:1px solid #e7dfd1;
+  border-radius:12px;
+  background:#fffcf6;
+  box-shadow:none;
+}
+.app-shared-header-page.donor-directory-page .directory-filter-icon {
+  background:#f0e8d7;
+  color:#806027;
+  box-shadow:none;
+}
+@media (max-width: 700px) {
+  .app-shared-header-page.donor-library-page .app-header-body { padding-inline: 20px; }
+  .app-shared-header-page.donor-directory-page .member-card { border-color:#ddd7cb; }
+  .app-shared-header-page.donor-directory-page .member-card .member-card-ministry-pill:not(.is-council) {
+    border-color:transparent;
+    font-weight:600;
+  }
+}
 @media (max-width: 360px) {
   .app-shared-header-page .app-header-bar { padding-inline:12px; }
 }

@@ -159,7 +159,11 @@ try {
     await toggle.click();
     await page.locator('.app-page-header [data-myagapay-app-menu]').waitFor({ state: 'visible' });
     assert.ok((await page.locator('.app-page-header [data-myagapay-app-menu] a').count()) >= 4, route);
-    assert.equal(await page.locator('.app-page-header [data-myagapay-app-menu] a[href="/myagapay/learn"]').count(), 0, route);
+    assert.equal(
+      await page.locator('.app-page-header [data-myagapay-app-menu] a[href="/myagapay/learn"]').count(),
+      0,
+      route
+    );
     await page.keyboard.press('Escape');
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false', route);
     const headerFits = await page.locator('.app-page-header').evaluate((el) => el.scrollWidth <= innerWidth);
@@ -179,7 +183,10 @@ try {
   await page.waitForFunction(
     () => document.querySelector('[data-app-church-name]')?.textContent === 'Saints Peter and Paul Orthodox Church'
   );
-  assert.equal(await page.locator('[data-app-church-name]').getAttribute('title'), 'Saints Peter and Paul Orthodox Church, Madison, WI');
+  assert.equal(
+    await page.locator('[data-app-church-name]').getAttribute('title'),
+    'Saints Peter and Paul Orthodox Church, Madison, WI'
+  );
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 1000 });
     const name = page.locator('[data-app-church-name]');
@@ -192,15 +199,35 @@ try {
   await page.locator('.refined-liturgical-hero').waitFor();
   const tabs = page.locator('nav.my-agapay-tabbar a');
   await page.getByRole('link', { name: 'Directory', exact: true }).last().waitFor();
-  assert.deepEqual(await tabs.locator('span').allTextContents(), ['Home', 'Giving', 'Bookstore', 'Directory', 'Sacraments']);
+  assert.deepEqual(await tabs.locator('span').allTextContents(), [
+    'Home',
+    'Giving',
+    'Bookstore',
+    'Directory',
+    'Sacraments',
+  ]);
   assert.equal(await tabs.first().getAttribute('aria-current'), 'page');
   assert.equal(await tabs.first().locator('path').first().getAttribute('d'), 'M3 11l9-8 9 8');
   assert.equal(await tabs.nth(1).locator('path').first().getAttribute('d'), 'M7 13V7.5a1.5 1.5 0 0 1 3 0V13');
-  assert.match(await page.locator('.refined-liturgical-hero').evaluate((el) => getComputedStyle(el).backgroundImage), /fresco-vault/);
-  await tabs.nth(1).click();
+  assert.match(
+    await page.locator('.refined-liturgical-hero').evaluate((el) => getComputedStyle(el).backgroundImage),
+    /fresco-vault/
+  );
+  const homeGive = page.locator('.refined-liturgical-hero #todayGiveLink');
+  assert.equal(await homeGive.getAttribute('href'), '/myagapay/giving');
+  await homeGive.click();
   await page.waitForURL('**/myagapay/giving');
   await page.locator('#greeting').waitFor();
   assert.equal(await page.locator('.app-page-header').count(), 0, 'Give homepage is excluded');
+  const manifest = JSON.parse(
+    await readFile(new URL('../public/myagapay/manifest.webmanifest', import.meta.url), 'utf8')
+  );
+  const homeTab = page.locator('nav.my-agapay-tabbar a').filter({ hasText: /^Home$/ });
+  assert.ok((await homeTab.getAttribute('href')).startsWith(manifest.scope));
+  assert.ok(manifest.shortcuts.every(({ url }) => url.startsWith(manifest.scope)));
+  await homeTab.click();
+  await page.waitForURL('**/myagapay/');
+  await page.locator('.app-home-header').waitFor();
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();
   await page.locator('.app-page-header [data-app-support]').click();

@@ -789,49 +789,23 @@ function renderActiveFunds(parish, { confirmed = false } = {}) {
     truthyDonor
   );
   if (!targets.length) return;
-  if (parish && !parishHasGivingPlus(parish)) {
-    const starterFunds =
-      Array.isArray(parish.funds) && parish.funds.length
-        ? parish.funds.slice(0, 2)
-        : [{ name: 'General Operating Fund', description: "Support your parish's day-to-day mission." }];
-    const html2 = starterFunds
-      .map((starterFund) => {
-        const general = isGeneralDonorFund(starterFund);
-        return `
-      <article class="active-funds-card">
-        <div>
-          <span class="campaign-pill">${general ? 'General fund' : 'Designated fund'}</span>
-          <h3>${escapeHtml(fundLabel(starterFund))}</h3>
-          <p>${escapeHtml(starterFund.description || "Support your parish's day-to-day mission.")}</p>
-        </div>
-        <div class="starter-fund-actions">
-          <a href="${escapeHtml(quickDonorGiftUrl(general ? 'stewardship' : 'fund', parish, general ? { frequency: 'once' } : { fund: starterFund.id || starterFund.name }))}">${general ? 'One-time' : 'Give'}</a>
-          ${general ? `<a href="${escapeHtml(quickDonorGiftUrl('stewardship', parish, { frequency: 'monthly' }))}">Recurring</a>` : ''}
-        </div>
-      </article>`;
-      })
-      .join('');
-    targets.forEach((target) => {
-      target.innerHTML = html2;
-    });
-    return;
-  }
-  const funds = (Array.isArray(parish?.funds) ? parish.funds : [])
-    .filter(
-      (fund) =>
-        fund &&
-        !isCandleDonorFund(fund) &&
-        fund.active !== false &&
-        String(fund.status || 'active').toLowerCase() !== 'archived'
-    )
-    .slice(0, 4);
+  const starter = Boolean(parish && !parishHasGivingPlus(parish));
+  const canGiveToFunds = parishCanUseGiftType(parish, 'fund');
+  const availableFunds = (Array.isArray(parish?.funds) ? parish.funds : []).filter(
+    (fund) =>
+      fund &&
+      !isCandleDonorFund(fund) &&
+      fund.active !== false &&
+      String(fund.status || 'active').toLowerCase() !== 'archived' &&
+      (isGeneralDonorFund(fund) || (canGiveToFunds && Boolean(fund.id || fund.name)))
+  );
+  const funds = starter ? availableFunds.slice(0, 2) : availableFunds;
+  if (starter && !funds.length) funds.push({ name: 'General Operating Fund' });
   if (!funds.length) {
     if (!confirmed) return;
     const empty = `
       <article class="active-funds-card active-funds-empty">
-        <span class="campaign-pill">Funds</span>
-        <h3>No Active Funds</h3>
-        <p>${parish?.name ? 'This church has not listed designated funds yet.' : 'Sign in and select a church to see its active giving funds.'}</p>
+        <p>${parish?.name ? 'This church has not listed active giving funds yet.' : 'Select a church to see its active giving funds.'}</p>
       </article>
     `;
     targets.forEach((target) => {
@@ -842,16 +816,22 @@ function renderActiveFunds(parish, { confirmed = false } = {}) {
   const html = funds
     .map((fund) => {
       const label = fundLabel(fund);
-      const description = fund.description || fund.note || 'Give directly to this parish fund.';
-      const link = quickDonorGiftUrl('fund', parish, { fund: fund.id || fund.name || label });
+      const general = isGeneralDonorFund(fund);
+      const description = fund.description || fund.note;
+      const link = general
+        ? quickDonorGiftUrl('stewardship', parish, { frequency: 'once' })
+        : quickDonorGiftUrl('fund', parish, { fund: fund.id || fund.name });
       return `
       <article class="active-funds-card">
-        <div>
-          <span class="campaign-pill">Fund</span>
+        <span class="active-fund-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V11l7-5 7 5v10M12 2v4M10 4h4M9 21v-6h6v6"/></svg></span>
+        <div class="active-fund-copy">
           <h3>${escapeHtml(label)}</h3>
-          <p>${escapeHtml(description)}</p>
+          ${description ? `<p>${escapeHtml(description)}</p>` : ''}
         </div>
-        <a href="${escapeHtml(link)}">Donate</a>
+        <div class="starter-fund-actions">
+          <a href="${escapeHtml(link)}" aria-label="${escapeHtml('Give to ' + label)}">${starter && general ? 'One-time' : 'Give'}</a>
+          ${starter && general ? `<a href="${escapeHtml(quickDonorGiftUrl('stewardship', parish, { frequency: 'monthly' }))}">Recurring</a>` : ''}
+        </div>
       </article>
     `;
     })
@@ -1215,7 +1195,7 @@ async function verifyDonorEmail() {
     saveDonorSession(data);
     setDonorStatus('Email verified. Opening My AGAPAY...', 'success');
     setTimeout(() => {
-      window.location.href = '/myagapay';
+      window.location.href = '/myagapay/';
     }, 900);
   } catch (err) {
     clearDonorSession();
@@ -2171,7 +2151,7 @@ async function handleDonorCheckoutReturn() {
   const sessionId = params.get('session_id');
   if (!sessionId) {
     setDonorStatus("Your payment was successful. We are still waiting for Stripe's final confirmation.", 'success');
-    window.history.replaceState(null, '', '/myagapay');
+    window.history.replaceState(null, '', window.location.pathname);
     return true;
   }
   setDonorStatus('Confirming your offering...');
@@ -2191,7 +2171,7 @@ async function handleDonorCheckoutReturn() {
     );
     console.warn('AGAPAY donor checkout confirmation warning:', err);
   }
-  window.history.replaceState(null, '', '/myagapay');
+  window.history.replaceState(null, '', window.location.pathname);
   return true;
 }
 function renderPledgeTracker(donor, summary, parish) {
