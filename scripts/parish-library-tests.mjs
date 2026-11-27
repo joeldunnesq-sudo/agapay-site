@@ -181,9 +181,7 @@ const [handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminS
 );
 assert.match(worker, /handleDonorParishLibrary/);
 assert.match(worker, /handleParishLibrary/);
-assert.match(shell, /const parishTabs = \["bookstore", "directory", "library"\]/);
-assert.match(shell, /const middleTabs = \[\.\.\.parishTabs, byId.get\("history"\)\]\.slice\(0, 2\)/);
-assert.match(shell, /\.\.\.middleTabs,\s*byId.get\("account"\)/);
+assert.match(shell, /\["parish-life", "giving", "bookstore", "directory", "account"\]/);
 assert.match(shell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts\(\)/);
 assert.match(shell, /function mobileAppMenuLinks\(\)[\s\S]*const links = hamburgerProducts\(\)/);
 assert.match(shell, /mobileLabel: "Library"/);

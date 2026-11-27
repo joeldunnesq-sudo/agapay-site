@@ -355,22 +355,15 @@ function renderGivingFeastIcon(element: HTMLElement | null, feastId: string | un
 }
 
 function renderNextFeast(parish: DonorAppParish | null | undefined, { confirmed = false }: DonorAppOptions = {}) {
-  const targets = [
-    {
-      name: document.getElementById('nextFeastName'),
-      date: document.getElementById('nextFeastDate'),
-      calendar: document.getElementById('nextFeastCalendar'),
-      icon: document.getElementById('nextFeastIcon'),
-      link: document.getElementById('nextFeastLink') as HTMLAnchorElement | null,
-    },
-    {
-      name: document.getElementById('desktopNextFeastName'),
-      date: document.getElementById('desktopNextFeastDate'),
-      calendar: document.getElementById('desktopNextFeastCalendar'),
-      icon: document.getElementById('desktopNextFeastIcon'),
-      link: document.getElementById('desktopNextFeastLink') as HTMLAnchorElement | null,
-    },
-  ].filter((target) => target.name && target.date && target.calendar);
+  const targets = ['nextFeast', 'desktopNextFeast']
+    .map((prefix) => ({
+      name: document.getElementById(`${prefix}Name`),
+      date: document.getElementById(`${prefix}Date`),
+      calendar: document.getElementById(`${prefix}Calendar`),
+      icon: document.getElementById(`${prefix}Icon`),
+      link: document.getElementById(`${prefix}Link`) as HTMLAnchorElement | null,
+    }))
+    .filter((target) => target.name && target.date && target.calendar);
   if (!targets.length) return;
   if (!parish) {
     if (!confirmed) return;

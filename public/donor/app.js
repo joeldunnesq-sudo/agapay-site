@@ -870,22 +870,15 @@ function renderGivingFeastIcon(element, feastId) {
   element.setAttribute('aria-label', `${name} icon`);
 }
 function renderNextFeast(parish, { confirmed = false } = {}) {
-  const targets = [
-    {
-      name: document.getElementById('nextFeastName'),
-      date: document.getElementById('nextFeastDate'),
-      calendar: document.getElementById('nextFeastCalendar'),
-      icon: document.getElementById('nextFeastIcon'),
-      link: document.getElementById('nextFeastLink'),
-    },
-    {
-      name: document.getElementById('desktopNextFeastName'),
-      date: document.getElementById('desktopNextFeastDate'),
-      calendar: document.getElementById('desktopNextFeastCalendar'),
-      icon: document.getElementById('desktopNextFeastIcon'),
-      link: document.getElementById('desktopNextFeastLink'),
-    },
-  ].filter((target) => target.name && target.date && target.calendar);
+  const targets = ['nextFeast', 'desktopNextFeast']
+    .map((prefix) => ({
+      name: document.getElementById(`${prefix}Name`),
+      date: document.getElementById(`${prefix}Date`),
+      calendar: document.getElementById(`${prefix}Calendar`),
+      icon: document.getElementById(`${prefix}Icon`),
+      link: document.getElementById(`${prefix}Link`),
+    }))
+    .filter((target) => target.name && target.date && target.calendar);
   if (!targets.length) return;
   if (!parish) {
     if (!confirmed) return;
