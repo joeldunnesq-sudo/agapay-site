@@ -31,6 +31,7 @@ interface WindowEventMap {
     exchange: 'Parish Exchange',
     feed: 'Announcements',
     groups: 'Ministries',
+    giving: 'Giving',
     library: 'Parish Library',
     media: 'Video Library',
     news: 'Parish News',
@@ -75,7 +76,9 @@ interface WindowEventMap {
           ? 'sacraments'
           : route === 'media/watch'
             ? 'watch'
-            : route;
+            : route === 'dashboard' || route === 'index'
+              ? 'giving'
+              : route;
   if (!titles[key]) return;
 
   const switchIcon =
@@ -246,7 +249,9 @@ interface WindowEventMap {
     const actionSelectors =
       key === 'bookstore'
         ? ['.boutique-bag']
-        : ['.topbar-actions > #todayGiveLink', '.koinonia-page-action', '.prayer-new-request'];
+        : key === 'giving'
+          ? ['.topbar-actions > .donor-home-quick-action', '.topbar-actions > [data-auth-guest]']
+          : ['.topbar-actions > #todayGiveLink', '.koinonia-page-action', '.prayer-new-request'];
     actionSelectors.forEach((selector) => main.querySelectorAll(selector).forEach((action) => actions.append(action)));
     if (key === 'bookstore') {
       const nativePicker = main.querySelector('.bookstore-parish-switcher');

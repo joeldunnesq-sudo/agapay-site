@@ -9,6 +9,7 @@
     exchange: 'Parish Exchange',
     feed: 'Announcements',
     groups: 'Ministries',
+    giving: 'Giving',
     library: 'Parish Library',
     media: 'Video Library',
     news: 'Parish News',
@@ -53,7 +54,9 @@
           ? 'sacraments'
           : route === 'media/watch'
             ? 'watch'
-            : route;
+            : route === 'dashboard' || route === 'index'
+              ? 'giving'
+              : route;
   if (!titles[key]) return;
   const switchIcon =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h11l-3-3M16 17H5l3 3M19 7l-3 3M5 17l3-3"/></svg>';
@@ -211,7 +214,9 @@
     const actionSelectors =
       key === 'bookstore'
         ? ['.boutique-bag']
-        : ['.topbar-actions > #todayGiveLink', '.koinonia-page-action', '.prayer-new-request'];
+        : key === 'giving'
+          ? ['.topbar-actions > .donor-home-quick-action', '.topbar-actions > [data-auth-guest]']
+          : ['.topbar-actions > #todayGiveLink', '.koinonia-page-action', '.prayer-new-request'];
     actionSelectors.forEach((selector) => main.querySelectorAll(selector).forEach((action) => actions.append(action)));
     if (key === 'bookstore') {
       const nativePicker = main.querySelector('.bookstore-parish-switcher');
