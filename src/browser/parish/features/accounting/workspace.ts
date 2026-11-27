@@ -205,7 +205,7 @@ let accountingSelectedWorkspace = '';
 const ACCOUNTING_WORKSPACES = {
   activity: {
     title: 'Money in & out',
-    views: ['income', 'expense', 'ledger', 'journals'],
+    views: ['income', 'expense', 'asset-purchase', 'ledger', 'journals'],
     tools: [
       [
         'General ledger',
@@ -421,6 +421,7 @@ function accountingViewTitle() {
     overview: 'Overview',
     income: accountingSimpleEntryMode === 'in-kind' ? 'Non-cash gift' : 'Record a deposit',
     expense: 'Record a paid expense',
+    'asset-purchase': 'Record an asset purchase',
     council: 'Council packet',
     journey: 'Guided setup',
     ledger: 'General Ledger',
@@ -594,8 +595,8 @@ function renderAccountingPane() {
     renderAccountingCouncilDesk(pane);
     return;
   }
-  if (accountingView === 'expense') {
-    pane.innerHTML = accountingPaidExpenseForm();
+  if (accountingView === 'expense' || accountingView === 'asset-purchase') {
+    pane.innerHTML = accountingPaidExpenseForm(accountingView === 'asset-purchase');
     return;
   }
   if (accountingView === 'income') {
@@ -753,6 +754,7 @@ function setAccountingView(view: string, onHome = false) {
     'workspace',
     'income',
     'expense',
+    'asset-purchase',
     'council',
     'journey',
     'posting-periods',
@@ -787,7 +789,7 @@ function setAccountingView(view: string, onHome = false) {
     !accountingData[accountingView as keyof AccountingWorkspaceData]
   )
     loadAccountingPhaseE();
-  if (accountingView === 'assets') loadAccountingAssets();
+  if (accountingView === 'assets') return loadAccountingAssets();
   if (accountingView === 'close' && (!accountingData.close || (!accountingHomeTask && !accountingData.adjustments)))
     return loadAccountingPhaseF();
   if (accountingView === 'governance' && !accountingData.governance) loadAccountingGovernance();

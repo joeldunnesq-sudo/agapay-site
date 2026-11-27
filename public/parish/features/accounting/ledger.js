@@ -5,21 +5,24 @@ async function submitAccountingRegisterEntry(event, kind) {
   const form = event.currentTarget,
     status = form.querySelector('.acct-form-status'),
     button = form.querySelector('button[type="submit"],button.acct-primary');
+  if (button.disabled) return;
   const data = Object.fromEntries(new FormData(form));
-  const register = kind === 'paid-expense' ? null : accountingRegisterModel(),
+  const assetPurchase = kind === 'asset-purchase';
+  const register = kind === 'paid-expense' || assetPurchase ? null : accountingRegisterModel(),
     registerAccountId = register ? register.configuration?.id || register.account.id || '' : data.registerAccountId;
   const payment = Math.round(Number(data.payment || 0) * 100),
     deposit = Math.round(Number(data.deposit || 0) * 100);
   const amount = kind === 'contribution' ? deposit : payment || deposit;
   if (
-    !registerAccountId ||
-    !data.offsetAccountId ||
-    !data.fundId ||
-    !data.entryDate ||
-    !data.payee ||
-    !Number.isSafeInteger(amount) ||
-    amount <= 0 ||
-    (kind === 'transaction' && payment > 0 && deposit > 0)
+    !form.dataset.purchaseEntryId &&
+    (!registerAccountId ||
+      !data.offsetAccountId ||
+      !data.fundId ||
+      !data.entryDate ||
+      !data.payee ||
+      !Number.isSafeInteger(amount) ||
+      amount <= 0 ||
+      (kind === 'transaction' && payment > 0 && deposit > 0))
   ) {
     status.textContent =
       kind === 'contribution'
@@ -43,48 +46,77 @@ async function submitAccountingRegisterEntry(event, kind) {
   status.className = 'acct-form-status';
   status.textContent = 'Creating the balanced entry…';
   try {
-    const createResponse = await fetch(accountingApi('/journals'), {
-      method: 'POST',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entryDate: data.entryDate,
-        description: detail,
-        sourceType: kind === 'contribution' ? 'manual_register_contribution' : 'manual_register_transaction',
-        lines,
-      }),
-    });
-    const created = await createResponse.json().catch(() => ({}));
-    if (!createResponse.ok) throw new Error(created.message || created.error || 'Unable to create this transaction.');
-    const validationResponse = await fetch(
-      accountingApi(`/journals/${encodeURIComponent(created.entry.id)}/validate`),
-      {
+    let entry;
+    if (assetPurchase && form.dataset.purchaseEntryId) {
+      entry = { id: form.dataset.purchaseEntryId, version: Number(form.dataset.purchaseEntryVersion) };
+    } else {
+      const createResponse = await fetch(accountingApi('/journals'), {
         method: 'POST',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expectedVersion: created.entry.version }),
+        body: JSON.stringify({
+          entryDate: data.entryDate,
+          description: detail,
+          sourceType: kind === 'contribution' ? 'manual_register_contribution' : 'manual_register_transaction',
+          lines,
+        }),
+      });
+      const created = await createResponse.json().catch(() => ({}));
+      if (!createResponse.ok) throw new Error(created.message || created.error || 'Unable to create this transaction.');
+      entry = created.entry;
+      if (assetPurchase) {
+        form.dataset.purchaseEntryId = entry.id;
+        form.dataset.purchaseEntryVersion = String(entry.version);
+        form.querySelectorAll('input, select').forEach((field) => {
+          field.disabled = true;
+        });
       }
-    );
-    const validation = await validationResponse.json().catch(() => ({}));
-    if (!validationResponse.ok || !validation.validation?.ok)
-      throw new Error(
-        (validation.validation?.issues || [validation.message || 'The entry could not be validated.'])
-          .join(' · ')
-          .replaceAll('_', ' ')
-      );
+    }
+    if (!assetPurchase || form.dataset.purchaseValidated !== '1') {
+      const validationResponse = await fetch(accountingApi(`/journals/${encodeURIComponent(entry.id)}/validate`), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expectedVersion: entry.version }),
+      });
+      const validation = await validationResponse.json().catch(() => ({}));
+      if (!validationResponse.ok || !validation.validation?.ok)
+        throw new Error(
+          (validation.validation?.issues || [validation.message || 'The entry could not be validated.'])
+            .join(' · ')
+            .replaceAll('_', ' ')
+        );
+      if (assetPurchase) form.dataset.purchaseValidated = '1';
+    }
     status.textContent = 'Posting to the ledger…';
-    const key = `register-ui-${created.entry.id}-${created.entry.version}`;
-    const postResponse = await fetch(accountingApi(`/journals/${encodeURIComponent(created.entry.id)}/post`), {
+    const key = `register-ui-${entry.id}-${entry.version}`;
+    const postResponse = await fetch(accountingApi(`/journals/${encodeURIComponent(entry.id)}/post`), {
       method: 'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ expectedVersion: created.entry.version, idempotencyKey: key, requestHash: key }),
+      body: JSON.stringify({ expectedVersion: entry.version, idempotencyKey: key, requestHash: key }),
     });
     const posted = await postResponse.json().catch(() => ({}));
     if (!postResponse.ok) throw new Error(posted.message || posted.error || 'Unable to post this transaction.');
+    if (assetPurchase) {
+      if (!form.isConnected) return;
+      const registerButton = document.createElement('button');
+      registerButton.type = 'button';
+      registerButton.className = 'acct-primary';
+      registerButton.textContent = 'Register this asset';
+      registerButton.addEventListener('click', async () => {
+        await setAccountingView('assets');
+        if (accountingView === 'assets') await newAccountingAsset(entry.id);
+      });
+      status.textContent = 'Purchase posted. Register the asset from this entry.';
+      form.replaceChildren(status, registerButton);
+      registerButton.focus();
+      return;
+    }
     if (kind === 'paid-expense') accountingExpenseReceipt.text = `${accountingMoney(amount)} expense recorded.`;
     if (form.isConnected) await loadAccountingTab(true);
   } catch (error) {
     status.textContent = error.message || 'Unable to post this transaction.';
     status.className = 'acct-form-status error';
     button.disabled = false;
+    if (assetPurchase && form.dataset.purchaseEntryId) button.textContent = 'Retry posting purchase';
   }
 }
 function editAccountingRecurring(id) {

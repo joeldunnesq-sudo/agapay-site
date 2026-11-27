@@ -143,13 +143,16 @@ function closeAccountingAsset() {
   accountingAssetPreview = null;
   loadAccountingAssets();
 }
-async function newAccountingAsset() {
+async function newAccountingAsset(journalId = '') {
   const pane = document.getElementById('accountingPane')!,
     tenant = currentParish?.parishId,
     request = ++accountingAssetsRequest;
   pane.innerHTML = '<p role="status">Finding posted acquisitions…</p>';
   try {
-    const response = await fetch(accountingApi('/assets/acquisition-lines'), { headers: authHeaders() });
+    const response = await fetch(
+      accountingApi('/assets/acquisition-lines' + (journalId ? '?journalId=' + encodeURIComponent(journalId) : '')),
+      { headers: authHeaders() }
+    );
     const data = (await response.json()) as {
       latestMovementId?: string;
       error?: string;
@@ -158,18 +161,27 @@ async function newAccountingAsset() {
     if (!response.ok) throw new Error(data.error || 'Unable to load acquisitions.');
     if (tenant !== currentParish?.parishId || request !== accountingAssetsRequest || accountingView !== 'assets')
       return;
+    const acquisitions = data.rows.filter((row) => row.available > 0);
+    if (journalId && !acquisitions.length) {
+      pane.innerHTML = accountingEmpty(
+        'No unregistered cost on this entry',
+        'This purchase may already be registered. Use the asset register to find it.'
+      );
+      return;
+    }
+    const selectedAcquisition = journalId && acquisitions.length === 1 ? acquisitions[0] : null;
     const opening = await accountingAssetFetch('/opening-lines');
-    if (tenant !== currentParish?.parishId) return;
+    if (tenant !== currentParish?.parishId || request !== accountingAssetsRequest || accountingView !== 'assets')
+      return;
     pane.innerHTML = `<button class="acct-link" onclick="closeAccountingAsset()">← Asset register</button><section class="acct-card"><span class="acct-kicker">Add to the register</span><h2>Register a parish asset</h2><button class="acct-link" type="button" onclick="showAccountingAssetAccountSetup()">Set up asset accounts</button><p>Record the purchase, opening balance, or in-kind gift in the ledger first. Select its asset debit below. Registration does not book the cost again.</p><p>Cost account: debit asset, investing classification. Accumulated depreciation: credit asset, operating classification. Use Set up asset accounts to create or select these accounts before registering.</p><form class="acct-phase-form" onsubmit="saveAccountingAsset(event)"><div class="acct-form-grid">
- <label>Acquisition entry<select name="acquisitionLineId" required><option value="">Choose posted asset debit</option>${data.rows
-   .filter((r) => r.available > 0)
+ <label>Acquisition entry<select name="acquisitionLineId" required><option value="">Choose posted asset debit</option>${acquisitions
    .map(
      (r) =>
-       `<option value="${escapeAttr(r.id)}">${escapeHtml(r.entry_date)} · ${escapeHtml(r.account_name)} · ${accountingMoney(r.available)} available · ${escapeHtml(r.description)}</option>`
+       `<option value="${escapeAttr(r.id)}" ${r.id === selectedAcquisition?.id ? 'selected' : ''}>${escapeHtml(r.entry_date)} · ${escapeHtml(r.account_name)} · ${accountingMoney(r.available)} available · ${escapeHtml(r.description)}</option>`
    )
    .join('')}</select></label>
- <label>Asset tag<input name="tag" required maxlength="80" placeholder="EQ-001"></label><label>Asset name<input name="name" required maxlength="160"></label><label>In-service date<input name="inServiceDate" type="date" required></label>
- <label>Cost allocated to this asset<input name="cost" type="number" min="0.01" step="0.01" required></label><label>Salvage value<input name="salvage" type="number" min="0" step="0.01" value="0" required></label><label>Useful life / remaining life for imported assets (months)<input name="lifeMonths" type="number" min="1" max="1200" value="60" required></label><label>Depreciation method<select name="method"><option value="straight_line">Monthly straight-line</option><option value="none">Nondepreciable (e.g. land)</option></select></label>
+ <label>Asset tag<input name="tag" required maxlength="80" placeholder="EQ-001"></label><label>Asset name<input name="name" required maxlength="160"></label><label>In-service date<input name="inServiceDate" type="date" value="${escapeAttr(selectedAcquisition?.entry_date || '')}" required></label>
+ <label>Cost allocated to this asset<input name="cost" type="number" min="0.01" step="0.01" value="${selectedAcquisition ? (selectedAcquisition.available / 100).toFixed(2) : ''}" required></label><label>Salvage value<input name="salvage" type="number" min="0" step="0.01" value="0" required></label><label>Useful life / remaining life for imported assets (months)<input name="lifeMonths" type="number" min="1" max="1200" value="60" required></label><label>Depreciation method<select name="method"><option value="straight_line">Monthly straight-line</option><option value="none">Nondepreciable (e.g. land)</option></select></label>
  <label>Accumulated depreciation<select name="accumulatedAccountId">${accountingAssetAccountOptions('asset', 'credit')}</select></label><label>Depreciation expense<select name="expenseAccountId">${accountingAssetAccountOptions('expense', 'debit')}</select></label><label>Location<input name="location" maxlength="160"></label><label>Serial number<input name="serialNumber" maxlength="160"></label><label>Insurance value<input name="insuranceValue" type="number" min="0" step="0.01" value="0"></label><label>Notes<textarea name="notes" maxlength="4000"></textarea></label></div>
  <details><summary>Import an older asset with opening depreciation</summary><p>Link existing posted opening balances. No new cost or depreciation is booked. Enter remaining useful life above. Opening through must be a month-end in the ledger recognition month or the month immediately before it.</p><div class="acct-form-grid"><label>Original acquisition date<input name="originalAcquisitionDate" type="date"></label><label>Opening depreciation through<input name="openingThrough" type="date"></label><label>Opening accumulated depreciation<input name="openingAmount" type="number" min="0" step="0.01" value="0"></label><label>Existing accumulated-depreciation credit<select name="openingLine"><option value="">None (zero opening depreciation)</option>${opening.rows.map((l) => `<option value="${escapeAttr(l.id)}">${escapeHtml(String(l.entryNumber) + ' · ' + String(l.accountName) + ' · ' + String(l.fundName))} · ${accountingMoney(Number(l.amount))}</option>`).join('')}</select></label></div></details><p>Monthly straight-line includes full months. Financial terms are fixed when registered; corrections preserve the earlier registration and journal history.</p><button class="acct-primary">Register asset</button><span class="acct-form-status" role="status"></span></form></section>`;
   } catch (error) {

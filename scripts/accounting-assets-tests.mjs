@@ -8,7 +8,13 @@ import {
   reverseJournalEntry,
   statementOfCashFlows,
 } from '../src/accounting/index.js';
-import { registerAsset, assetRegister, assetDetail, updateAssetMetadata } from '../src/accounting/assets/service.js';
+import {
+  acquisitionLines,
+  registerAsset,
+  assetRegister,
+  assetDetail,
+  updateAssetMetadata,
+} from '../src/accounting/assets/service.js';
 import { previewAssetOperation, postAssetOperation } from '../src/accounting/assets/posting.js';
 import { depreciationSchedule } from '../src/accounting/assets/schedule.js';
 import { setupAssetAccounts } from '../src/accounting/assets/setup.js';
@@ -119,7 +125,14 @@ const input = {
   location: 'Parish hall',
   insuranceValue: 12000,
 };
+const entryCount = db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounting_journal_entries').get().n;
+assert.deepEqual(
+  (await acquisitionLines(db, actor, acquisition.id)).map((line) => line.id),
+  [source]
+);
+assert.deepEqual(await acquisitionLines(db, actor, 'another-journal'), []);
 const asset = await registerAsset(db, actor, input);
+assert.equal(db.sqlite.prepare('SELECT COUNT(*) AS n FROM accounting_journal_entries').get().n, entryCount);
 assert.equal((await registerAsset(db, actor, input)).id, asset.id);
 await assert.rejects(() => registerAsset(db, actor, { ...input, cost: 9999 }), /different/);
 await assert.rejects(
