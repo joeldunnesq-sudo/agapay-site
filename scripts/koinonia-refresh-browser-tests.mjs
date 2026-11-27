@@ -139,7 +139,14 @@ try {
   assert.equal(await page.locator('#parishLifeListenItems img').count(), 1);
   await page.evaluate(() => renderCommunityToolBadges({ counts: { signups: 2, exchange: 1, prayers: 3 } }));
   assert.equal(await page.locator('#koinoniaShortcuts [data-community-tool-badge="prayers"]').textContent(), '3');
-  assert.equal(await page.locator('#koinoniaShortcuts a').count(), 5);
+  const shortcuts = page.locator('#koinoniaShortcuts');
+  assert.equal(await shortcuts.locator('a').count(), 6);
+  const sacramentsShortcut = shortcuts.getByRole('link', { name: 'Sacraments & Services' });
+  assert.equal(await sacramentsShortcut.getAttribute('href'), '/myagapay/sacraments');
+  assert.equal(
+    await sacramentsShortcut.locator('svg path').getAttribute('d'),
+    await page.getByRole('link', { name: 'Sacraments', exact: true }).locator('svg path').getAttribute('d')
+  );
   assert.equal(await page.locator('.app-home-header [data-app-church-name]').textContent(), parish.name);
   const hero = page.locator('.refined-liturgical-hero');
   assert.equal(await hero.getByRole('link', { name: 'Give now' }).getAttribute('href'), '/myagapay/giving');
@@ -170,6 +177,10 @@ try {
   await mkdir('output', { recursive: true });
   for (const width of [320, 390, 1024]) {
     await page.setViewportSize({ width, height: 844 });
+    assert.equal(
+      await shortcuts.locator('a').evaluateAll((items) => new Set(items.map((item) => item.offsetTop)).size),
+      1
+    );
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,

@@ -33,9 +33,9 @@ try {
   assert.equal(await churchName.locator('img').count(), 0);
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('myagapay:parish-context', { detail: null })));
   assert.equal(await churchName.textContent(), 'Choose a church');
-  const keys = ['signupsEnabled', 'exchangeEnabled', 'prayerRequestsEnabled', 'directoryEnabled'];
-  const paths = ['signups', 'exchange', 'prayer-requests', 'directory'];
-  for (let mask = 0; mask < 16; mask++) {
+  const keys = ['signupsEnabled', 'exchangeEnabled', 'prayerRequestsEnabled', 'directoryEnabled', 'sacramentsEnabled'];
+  const paths = ['signups', 'exchange', 'prayer-requests', 'directory', 'sacraments'];
+  for (let mask = 0; mask < 2 ** keys.length; mask++) {
     for (const communications of [false, true]) {
       const parish = {
         id: 'p',
@@ -46,13 +46,9 @@ try {
         ({ parish, communications }) => window.KoinoniaExperience.parishContext(parish, communications),
         { parish, communications }
       );
-      const expected = paths.filter((_, i) => mask & (1 << i));
-      if (communications)
-        expected.splice(
-          expected.indexOf('directory') < 0 ? expected.length : expected.indexOf('directory'),
-          0,
-          'groups'
-        );
+      const expected = paths.slice(0, 3).filter((_, i) => mask & (1 << i));
+      if (communications) expected.push('groups');
+      expected.push(...paths.slice(3).filter((_, i) => mask & (1 << (i + 3))));
       assert.deepEqual(
         await page
           .locator('#koinoniaShortcuts a')
