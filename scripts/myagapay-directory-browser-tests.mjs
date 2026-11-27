@@ -76,6 +76,15 @@ try {
       if (path === '/api/directory/self/statement-sharing') {
         return route.fulfill({
           json: {
+            linkedChoices:
+              !directoryEnabled && claimed
+                ? ['First Parish', 'Second Parish'].map((parishName, index) => ({
+                    id: `earlier-${index}`,
+                    parishName,
+                    optedIn: true,
+                    bothOptedIn: false,
+                  }))
+                : [],
             globalChoices:
               !directoryEnabled && claimed
                 ? [
@@ -192,10 +201,14 @@ try {
     assert.equal(await page.locator('#memberDirectory').isVisible(), false);
     assert.equal(await page.locator('[data-go-to-step="3"]').isVisible(), false);
     await page.getByText('First Household · All shared parishes').waitFor();
+    assert.equal(await page.getByRole('button', { name: /Withdraw consent for/ }).count(), 0);
     await page.getByRole('button', { name: 'Opt in at all shared parishes' }).click();
     await page.getByText('Waiting for the other adult').waitFor();
-    await page.getByRole('button', { name: 'Withdraw my consent' }).click();
+    await page.getByRole('button', { name: 'Withdraw all-parishes consent' }).click();
     await page.getByText('Your consent is needed').waitFor();
+    await page.getByText('Earlier parish-only choices', { exact: true }).click();
+    await page.getByRole('button', { name: 'Withdraw consent for First Parish' }).waitFor();
+    await page.getByRole('button', { name: 'Withdraw consent for Second Parish' }).waitFor();
 
     claimed = false;
     await page.goto('https://agapay.test/myagapay/directory?view=household');
