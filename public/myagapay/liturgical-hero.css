@@ -94,8 +94,27 @@
 .cal-readings-trigger::after { content:''; width:6px; height:6px; flex:none; border-top:1px solid #f1d39d; border-right:1px solid #f1d39d; transform:rotate(45deg); }
 .refined-liturgical-hero :is(.cal-readings-trigger,.home-give-button):focus-visible { outline:2px solid #f8e3b3; outline-offset:3px; }
 .cal-readings-trigger:hover .cal-reading-line:not(.is-heading) { text-decoration:underline; text-underline-offset:3px; }
-#todayReadingsDialog:not([open]) { display:none; }
-#todayReadingsDialog .donor-saint-modal-card { height:auto; }
+#todayReadingsDialog {
+  position:fixed;
+  inset:0;
+  width:min(540px, calc(100% - 28px));
+  max-height:calc(100dvh - 32px);
+  margin:auto;
+  padding:0;
+  overflow:hidden;
+  border:1px solid #d9d0c0;
+  border-radius:16px;
+  background:#fffdf8;
+  color:#18354b;
+  box-shadow:0 16px 48px #06152238;
+}
+#todayReadingsDialog::backdrop { background:#06152299; }
+#todayReadingsDialog .donor-saint-modal-card {
+  height:auto;
+  max-height:calc(100dvh - 34px);
+}
+#todayReadingsBody { flex:0 1 auto; }
+#todayReadingsBody:focus-visible { outline:2px solid #8a6a2c; outline-offset:-3px; }
 #todayReadingsBody strong { color:#18354b; }
 #todayReadingsBody h3 { color:#806532; font-size:14px; }
 #todayReadingsBody p { margin:5px 0 0; font-size:14px; line-height:1.6; }

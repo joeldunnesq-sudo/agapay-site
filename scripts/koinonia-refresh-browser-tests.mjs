@@ -57,7 +57,7 @@ try {
               {
                 type: 'epistle',
                 ref: '1 Timothy 2:1–7',
-                preview: '2:1 I exhort therefore, that, first of all, supplications, prayers …',
+                preview: '2:1 I exhort therefore, that, first of all, supplications, prayers … '.repeat(32),
               },
               { type: 'gospel', ref: 'Luke 4:16–22' },
             ],
@@ -123,17 +123,30 @@ try {
   assert.match(await page.locator('#todayFeastNote').textContent(), /Luke 4:16–22/);
   const readingButton = page.getByRole('button', { name: /Epistle: 1 Timothy.*Gospel: Luke/s });
   const readingDialog = page.getByRole('dialog', { name: 'Today’s Scripture readings' });
+  const readings = readingDialog.getByRole('region', { name: 'Readings' });
+  await page.setViewportSize({ width: 390, height: 520 });
   assert.equal(await readingDialog.isVisible(), false);
   await readingButton.press('Enter');
   await readingDialog.waitFor();
   assert.match(await readingDialog.textContent(), /I exhort therefore/);
   assert.match(await readingDialog.textContent(), /Luke 4:16–22/);
+  const dialogBounds = await readingDialog.boundingBox();
+  const readingBounds = await readings.boundingBox();
+  assert.ok(dialogBounds.y >= 12 && dialogBounds.y + dialogBounds.height <= 508);
+  assert.ok(readingBounds.y - dialogBounds.y < 130 && readingBounds.height > 220);
+  assert.equal(await readings.evaluate((region) => region.scrollTop), 0);
+  await readings.hover();
+  await page.mouse.wheel(0, 640);
+  await page.waitForFunction(() => document.getElementById('todayReadingsBody').scrollTop > 100);
+  assert.equal((await readingDialog.boundingBox()).y, dialogBounds.y);
   await page.keyboard.press('Escape');
   await readingDialog.waitFor({ state: 'hidden' });
   assert.equal(await readingButton.evaluate((el) => document.activeElement === el), true);
   await readingButton.click();
+  assert.equal(await readings.evaluate((region) => region.scrollTop), 0, 'Reopening starts at the first reading');
   await readingDialog.getByRole('button', { name: 'Close Scripture readings' }).click();
   await readingDialog.waitFor({ state: 'hidden' });
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() =>
     renderRecentPodcastEpisodes(
       [{}],
