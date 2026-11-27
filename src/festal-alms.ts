@@ -143,7 +143,8 @@ export function nextFestalOffering(
 ) {
   const today = isoDate(referenceDate);
   const nextYear = addDaysToIso(today, 366);
-  const candidates = (Array.isArray(campaigns) ? campaigns : [])
+  const configured: readonly FestalAlmsCampaign[] = Array.isArray(campaigns) ? campaigns : [];
+  const candidates = configured
     .filter((campaign) => campaign && !campaign.patronal && campaignIsEnabled(campaign))
     .flatMap((campaign) =>
       [today, nextYear].flatMap((date) => {

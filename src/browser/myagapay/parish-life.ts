@@ -272,6 +272,9 @@ function parishLifeApprovedServiceEvents(payload: ParishLifePayload = {}) {
 }
 
 function parishLifeTierSectionsHtml(communicationsEnabled: boolean) {
+  const listenHeader = communicationsEnabled
+    ? '<h3 id="listenHeading">Latest audio</h3><a href="/myagapay/teaching">Open Library</a>'
+    : '<h3 id="listenHeading">Listen</h3><a href="/myagapay/teaching?mode=podcasts">Open Podcasts</a>';
   return `
     ${
       communicationsEnabled
@@ -286,7 +289,7 @@ function parishLifeTierSectionsHtml(communicationsEnabled: boolean) {
       <h2 id="parishLifeExploreHeading">${communicationsEnabled ? 'Explore your parish' : 'Explore'}</h2>
       <div class="${communicationsEnabled ? 'parish-life-media-grid' : ''}">
     <section class="parish-life-home-section parish-life-listen-section" aria-labelledby="listenHeading">
-      <div class="parish-life-section-head"><h3 id="listenHeading">${communicationsEnabled ? 'Latest audio' : 'Listen'}</h3><a href="/myagapay/teaching${communicationsEnabled ? '' : '?mode=podcasts'}">${communicationsEnabled ? 'Open Library' : 'Open Podcasts'}</a></div>
+      <div class="parish-life-section-head">${listenHeader}</div>
       <section class="parish-life-listen-resume" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
         <div class="parish-life-listen-subhead"><h3 id="continueListeningHeading">Continue listening</h3></div>
         <div id="parishLifeContinueListening"></div>

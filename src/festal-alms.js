@@ -95,7 +95,8 @@ function activeFestalAlmsCampaigns(campaigns, calendar = 'julian', referenceDate
 function nextFestalOffering(campaigns, calendar = 'julian', referenceDate = /* @__PURE__ */ new Date()) {
   const today = isoDate(referenceDate);
   const nextYear = addDaysToIso(today, 366);
-  const candidates = (Array.isArray(campaigns) ? campaigns : [])
+  const configured = Array.isArray(campaigns) ? campaigns : [];
+  const candidates = configured
     .filter((campaign) => campaign && !campaign.patronal && campaignIsEnabled(campaign))
     .flatMap((campaign) =>
       [today, nextYear].flatMap((date) => {
