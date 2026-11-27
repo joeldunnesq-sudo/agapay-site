@@ -1708,23 +1708,29 @@
     async function loadHouseholdStatementSharing() {
       const section = document.getElementById("householdStatementSharing");
       const list = document.getElementById("householdStatementChoices");
+      const earlierChoicesOpen = Boolean(list.querySelector("#earlierStatementChoices")?.open);
       try {
         const { choices = [], linkedChoices = [], globalChoices = [] } = await api("/api/directory/self/statement-sharing");
-        const settings = [...globalChoices.map((choice) => ({ ...choice, allParishes: true })), ...linkedChoices.filter((choice) => choice.optedIn)];
-        section.hidden = choices.length === 0 && settings.length === 0;
-        list.innerHTML = settings.map((choice) => {
+        const earlierChoices = linkedChoices.filter((choice) => choice.optedIn);
+        section.hidden = globalChoices.length === 0 && earlierChoices.length === 0 && choices.length === 0;
+        const mainChoices = globalChoices.map((choice) => {
           const status = choice.bothOptedIn ? "Both adults opted in" : choice.optedIn ? "Waiting for the other adult" : "Your consent is needed";
-          const scope = choice.allParishes ? "All shared parishes" : choice.parishName;
-          const description = choice.allParishes
-            ? "Applies to every parish where you share a household, including after a move. Each parish generates its own combined statement, including both adults’ itemized gifts, and sends it to"
-            : "Your existing consent applies to this parish. Its combined statement goes to";
-          return `<div class="mini-card"><strong>${esc(choice.householdName)} · ${esc(scope)}</strong>
+          const recipient = choice.receivesStatement ? "your account" : choice.recipientName;
+          return `<div class="mini-card"><strong>${esc(choice.householdName)} · All shared parishes</strong>
             <small>${esc(status)}</small>
-            <small>${esc(description)} ${esc(choice.receivesStatement ? "your account" : choice.recipientName)}.</small>
-            <button class="btn secondary" type="button" data-linked-statement-consent="${esc(choice.id)}" data-all-parishes="${Boolean(choice.allParishes)}" data-enabled="${choice.optedIn ? "false" : "true"}">${choice.optedIn ? "Withdraw my consent" : "Opt in at all shared parishes"}</button></div>`;
-        }).join("") + choices.map((choice) => `<div class="mini-card"><strong>${esc(choice.householdName)}</strong>
-          <small>${choice.receivesStatement ? `Statement sharing with ${esc(choice.memberName)}` : "Statement sharing with your inviter"}</small>
-          <button class="btn secondary" type="button" data-stop-statement-sharing="${esc(choice.id)}">Stop statement sharing</button></div>`).join("");
+            <small>Opt in once per adult, including after a move. Each shared parish can send its own statement to ${esc(recipient)} with both adults’ itemized gifts to that parish.</small>
+            <button class="btn ${choice.optedIn ? "secondary" : "primary"}" type="button" data-linked-statement-consent="${esc(choice.id)}" data-all-parishes="true" data-enabled="${choice.optedIn ? "false" : "true"}">${choice.optedIn ? "Withdraw all-parishes consent" : "Opt in at all shared parishes"}</button></div>`;
+        }).join("");
+        const savedChoices = earlierChoices.map((choice) => `<div class="mini-card"><strong>${esc(choice.parishName)}</strong>
+          <small>${choice.bothOptedIn ? "Both adults opted in at this parish" : "Your consent is saved at this parish"}</small>
+          <button class="btn secondary" type="button" data-linked-statement-consent="${esc(choice.id)}" data-all-parishes="false" data-enabled="false">Withdraw consent for ${esc(choice.parishName)}</button></div>`).join("")
+          + choices.map((choice) => `<div class="mini-card"><strong>${esc(choice.householdName)}</strong>
+            <small>${choice.receivesStatement ? `Statement sharing with ${esc(choice.memberName)}` : "Statement sharing with your inviter"}</small>
+            <button class="btn secondary" type="button" data-stop-statement-sharing="${esc(choice.id)}">Stop sharing from this invitation</button></div>`).join("");
+        list.innerHTML = mainChoices + (savedChoices ? `<details id="earlierStatementChoices"${earlierChoicesOpen ? " open" : ""}>
+          <summary>Earlier parish-only choices</summary>
+          <p>These choices still apply at their original parish. They are separate from the all-parishes choice above.</p>
+          ${savedChoices}</details>` : "");
       } catch (error) {
         showNotice(error.message || "Unable to load statement sharing.", true);
       }
