@@ -125,7 +125,7 @@ function tableScope(name, alias = 't') {
   return null;
 }
 function classification(name) {
-  if (name === 'operational_job_heartbeats') return 'independent';
+  if (name === 'operational_job_heartbeats' || name === 'directory_global_giving_consent') return 'independent';
   if (name === 'app_settings') return 'parish';
   if (name.startsWith('learn_') || INDEPENDENT.has(name)) return 'independent';
   if (SECRET_TABLES.has(name)) return 'credentials';

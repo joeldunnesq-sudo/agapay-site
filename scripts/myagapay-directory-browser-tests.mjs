@@ -76,7 +76,7 @@ try {
       if (path === '/api/directory/self/statement-sharing') {
         return route.fulfill({
           json: {
-            linkedChoices:
+            globalChoices:
               !directoryEnabled && claimed
                 ? [
                     {
@@ -94,12 +94,14 @@ try {
       }
       if (path === '/api/directory/self/statement-sharing/first') {
         assert.equal(route.request().method(), 'PUT');
-        optedIn = route.request().postDataJSON().enabled;
+        const request = route.request().postDataJSON();
+        assert.equal(request.allParishes, true);
+        optedIn = request.enabled;
         return route.fulfill({ json: { ok: true } });
       }
       if (path === '/api/directory/households/first/self/members/spouse/share-link') {
         assert.equal(route.request().method(), 'POST');
-        assert.deepEqual(route.request().postDataJSON(), { combineGiving: true });
+        assert.deepEqual(route.request().postDataJSON(), {});
         return route.fulfill({ json: { invitation: { sharePath: invitePath } } });
       }
       if (path === `/api/directory/household-share/${inviteToken}`) {
@@ -149,7 +151,6 @@ try {
     const starter = page.locator('#startProfileForm');
     await starter.locator('[name="preferredName"]').fill(person.preferredName);
     await starter.getByRole('button', { name: 'Create my private profile' }).click();
-    await page.getByRole('checkbox', { name: /Offer a combined annual statement/ }).check();
     await page.getByRole('button', { name: 'Invite Test Spouse' }).click();
     const copiedLink = await page.getByLabel('Household review link for Test Spouse').inputValue();
     assert.equal(copiedLink, `https://agapay.test${invitePath}`);
@@ -190,7 +191,8 @@ try {
     await page.getByRole('button', { name: 'Invite Test Spouse' }).waitFor();
     assert.equal(await page.locator('#memberDirectory').isVisible(), false);
     assert.equal(await page.locator('[data-go-to-step="3"]').isVisible(), false);
-    await page.getByRole('button', { name: 'Opt in to a combined statement' }).click();
+    await page.getByText('First Household · All shared parishes').waitFor();
+    await page.getByRole('button', { name: 'Opt in at all shared parishes' }).click();
     await page.getByText('Waiting for the other adult').waitFor();
     await page.getByRole('button', { name: 'Withdraw my consent' }).click();
     await page.getByText('Your consent is needed').waitFor();

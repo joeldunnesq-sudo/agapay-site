@@ -49,9 +49,11 @@ import {
   createHouseholdShareInvitation,
   inspectHouseholdShareInvitation,
   listHouseholdStatementSharing,
+  listGlobalHouseholdStatementChoices,
   listLinkedHouseholdStatementChoices,
   prepareLinkedHouseholdAtHomeParish,
   updateLinkedHouseholdStatementConsent,
+  updateGlobalHouseholdStatementConsent,
   stopHouseholdStatementSharing,
 } from '../directory/household-share-invitations.js';
 async function body(request) {
@@ -80,22 +82,20 @@ async function handleDirectorySelfService(request, env) {
     if (!context) return unauthorized();
     if (request.method === 'GET' && path === '/api/directory/self/statement-sharing') {
       await prepareLinkedHouseholdAtHomeParish(env, context.user.id);
-      const [choices, linkedChoices] = await Promise.all([
+      const [choices, linkedChoices, globalChoices] = await Promise.all([
         listHouseholdStatementSharing(env, context.user.id),
         listLinkedHouseholdStatementChoices(env, context.user.id),
+        listGlobalHouseholdStatementChoices(env, context.user.id),
       ]);
-      return json({ ok: true, choices, linkedChoices });
+      return json({ ok: true, choices, linkedChoices, globalChoices });
     }
     const statementSharingMatch = path.match(/^\/api\/directory\/self\/statement-sharing\/([^/]+)$/);
     if (request.method === 'PUT' && statementSharingMatch) {
-      const { enabled } = await body(request);
+      const { enabled, allParishes } = await body(request);
       if (typeof enabled !== 'boolean') return json({ error: 'Choose whether to combine giving.' }, { status: 400 });
-      await updateLinkedHouseholdStatementConsent(
-        env,
-        context.user.id,
-        decodeURIComponent(statementSharingMatch[1]),
-        enabled
-      );
+      const update =
+        allParishes === true ? updateGlobalHouseholdStatementConsent : updateLinkedHouseholdStatementConsent;
+      await update(env, context.user.id, decodeURIComponent(statementSharingMatch[1]), enabled);
       return json({ ok: true });
     }
     if (request.method === 'DELETE' && statementSharingMatch) {
