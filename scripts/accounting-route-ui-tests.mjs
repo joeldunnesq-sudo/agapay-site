@@ -409,8 +409,8 @@ for (const action of [
 assert.match(app, /\/journals\/\$\{encodeURIComponent\(draft\.id\)\}\/validate/);
 assert.match(app, /\/journals\/\$\{encodeURIComponent\(draft\.id\)\}\/post/);
 assert.ok(
-  app.includes('<th>Source</th><th>Amount</th><th>Status</th>'),
-  'journal entry list should show an amount column'
+  app.includes('<th>Source</th><th>Amount</th><th>Ledger status</th><th>Bank match</th>'),
+  'journal entry list should show the amount, ledger status, and bank match in separate columns'
 );
 assert.ok(
   app.includes('row.totalDebits ?? row.total_debits ?? row.totalCredits'),
