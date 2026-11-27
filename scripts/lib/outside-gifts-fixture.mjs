@@ -6,6 +6,13 @@ export async function createOutsideGiftsFixture() {
   fixture.db.exec('PRAGMA foreign_keys=ON');
   for (const file of [
     '0016_manual_income_entries.sql',
+    '0017_giving_statements.sql',
+    '0020_platform_identity.sql',
+    '0022_directory_canonical_foundation.sql',
+    '0024_directory_invitations_claims.sql',
+    '0025_directory_self_service_phase2a.sql',
+    '0084_directory_household_share_invitations.sql',
+    '0131_household_statement_consent.sql',
     '0049_authoritative_stewardship_financial_snapshots.sql',
     '0115_outside_giver_contributions.sql',
   ])

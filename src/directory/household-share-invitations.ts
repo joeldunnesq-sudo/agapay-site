@@ -1,10 +1,45 @@
 import type { DirectoryEnvironment, DirectorySelfContext, DirectoryShareInvitationRow } from './contracts.js';
-import { d1First, generateSecret, randomHex, sha256Hex } from '../lib/core.js';
+import { d1All, d1First, generateSecret, randomHex, sha256Hex } from '../lib/core.js';
 import { DirectoryServiceError } from './foundation.js';
 import { auditStatement, cleanText, isActiveHouseholdAdmin, runAtomic, safeJson } from './shared.js';
 
 const TOKEN_LIFETIME_MS = 14 * 24 * 60 * 60 * 1000;
 const TOKEN_DOMAIN = 'directory_household_share:';
+
+export async function listHouseholdStatementSharing(env: DirectoryEnvironment, userId: string) {
+  return d1All(
+    env,
+    `
+    SELECT i.id, h.display_name AS householdName, p.preferred_name AS memberName,
+           i.created_by_user_id = ?1 AS receivesStatement
+      FROM directory_household_invitations i
+      JOIN directory_households h ON h.id = i.household_id AND h.active = 1
+      JOIN directory_people p ON p.id = i.person_id AND p.active = 1
+     WHERE i.combine_giving = 1 AND (i.created_by_user_id = ?1 OR i.claimed_by_user_id = ?1)
+       AND ((i.status = 'pending' AND julianday(i.expires_at) > julianday('now'))
+         OR (i.status = 'claimed' AND EXISTS (
+           SELECT 1 FROM directory_change_requests r
+            WHERE json_extract(r.requested_payload_json, '$.shareToLink.invitationId') = i.id
+              AND json_extract(r.requested_payload_json, '$.shareToLink.combineGiving') = 1
+              AND r.status IN ('pending', 'under_review', 'returned', 'completed')
+         )))
+     ORDER BY h.display_name, p.preferred_name`,
+    userId
+  );
+}
+
+export async function stopHouseholdStatementSharing(env: DirectoryEnvironment, userId: string, invitationId: string) {
+  const updated = await d1First(
+    env,
+    `
+    UPDATE directory_household_invitations SET combine_giving = 0
+     WHERE id = ?1 AND (created_by_user_id = ?2 OR claimed_by_user_id = ?2)
+     RETURNING id`,
+    invitationId,
+    userId
+  );
+  if (!updated) throw new DirectoryServiceError('not_found', 'Statement sharing was not found.', 404);
+}
 
 async function tokenDigest(token: unknown) {
   const cleaned = cleanText(token, { required: true, max: 256, field: 'token' });
@@ -79,8 +114,15 @@ export async function createHouseholdShareInvitation(
     context,
     householdId,
     personId,
+    combineGiving,
     correlationId = '',
-  }: { context: DirectorySelfContext; householdId: string; personId: string; correlationId?: string }
+  }: {
+    context: DirectorySelfContext;
+    householdId: string;
+    personId: string;
+    combineGiving?: unknown;
+    correlationId?: string;
+  }
 ) {
   const managed = context.manageableHouseholds?.find((household) => household.id === householdId);
   if (!managed || !context.currentPerson?.id) {
@@ -139,9 +181,19 @@ export async function createHouseholdShareInvitation(
     {
       sql: `INSERT INTO directory_household_invitations
               (id, parish_id, household_id, person_id, token, created_by_user_id,
-               status, created_at, expires_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
-      params: [id, managed.parishId, householdId, personId, digest, context.user.id, createdAt, expiresAt],
+               status, created_at, expires_at, combine_giving)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+      params: [
+        id,
+        managed.parishId,
+        householdId,
+        personId,
+        digest,
+        context.user.id,
+        createdAt,
+        expiresAt,
+        combineGiving === true ? 1 : 0,
+      ],
     },
     auditStatement({
       action: 'directory.household_share.created',
@@ -171,6 +223,7 @@ export async function inspectHouseholdShareInvitation(env: DirectoryEnvironment,
     personName: row.person_name,
     householdName: row.household_name,
     expiresAt: row.expires_at,
+    combineGivingOffered: row.combine_giving === 1,
     status: row.status,
   };
 }
@@ -227,7 +280,12 @@ export function householdShareApprovalStatement({
 
 export async function claimHouseholdShareInvitation(
   env: DirectoryEnvironment,
-  { context, token, correlationId = '' }: { context: DirectorySelfContext; token: unknown; correlationId?: string }
+  {
+    context,
+    token,
+    combineGiving,
+    correlationId = '',
+  }: { context: DirectorySelfContext; token: unknown; combineGiving?: unknown; correlationId?: string }
 ) {
   if (!context.user?.id)
     throw new DirectoryServiceError('unauthorized', 'Sign in before using this household link.', 401);
@@ -296,6 +354,7 @@ export async function claimHouseholdShareInvitation(
     shareToLink: {
       invitationId: row.id,
       claimantUserId: context.user.id,
+      combineGiving: row.combine_giving === 1 && combineGiving === true,
       existingHouseholdConflict: hasConflict,
       conflictMessage,
     },

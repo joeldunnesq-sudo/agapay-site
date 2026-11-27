@@ -101,9 +101,6 @@
     .setup-panel { display:grid; gap:14px; border:1px solid #d8e6dd; background:linear-gradient(160deg, var(--green-tint), #fff 70%); border-radius:var(--r-md); padding:18px; }
     .setup-panel h3 { margin:0; font-size:18px; font-family:var(--font-display); font-weight:600; }
     .setup-panel p { margin:0; color:#4a5560; line-height:1.5; }
-    .setup-steps { display:grid; gap:9px; margin:0; padding:0; list-style:none; }
-    .setup-steps li { display:flex; gap:9px; align-items:flex-start; color:#4a5560; font-size:13.5px; line-height:1.4; }
-    .setup-steps li::before { content:""; flex:0 0 7px; width:7px; height:7px; border-radius:999px; background:var(--green); margin-top:6px; }
     .onboarding-list { display:grid; gap:8px; margin-top:12px; }
     .onboarding-item { display:flex; justify-content:space-between; gap:10px; border:1px solid var(--line-soft); border-radius:var(--r-sm); padding:11px; background:#fbfcfa; }
     .onboarding-item span { color:#53606a; }
@@ -180,18 +177,16 @@
     .personal-settings > summary strong { display:block; font-size:18px; font-family:var(--font-display); }
     .personal-settings > summary span { display:block; margin-top:3px; color:var(--muted); font-size:13px; font-weight:400; }
     .personal-settings > summary::after { content:"Close"; flex:0 0 auto; border:1px solid rgba(184,138,61,.42); border-radius:999px; padding:9px 14px; background:#fff; color:var(--gold-ink); font-size:12px; font-weight:800; }
-    .edit-wizard-head { padding:0 26px 20px; border-bottom:1px solid var(--line); }
+    .edit-wizard-head { padding:20px 26px; border-bottom:1px solid var(--line); }
     .edit-wizard-title { display:flex; justify-content:space-between; gap:16px; align-items:baseline; margin-bottom:14px; }
     .edit-wizard-title h2 { margin:0; font-family:var(--font-display); font-size:26px; color:var(--navy); }
     .edit-wizard-title span { color:var(--gold-deep); font-size:12px; font-weight:800; letter-spacing:.04em; }
-    .edit-wizard-progress { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-    .edit-wizard-progress span { height:6px; border-radius:999px; background:#e2e5e2; }
-    .edit-wizard-progress span.complete { background:var(--gold); }
-    .edit-wizard-steps { display:none; }
+    .edit-wizard-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; }
+    #directoryHouseholdPicker { margin-top:14px; }
+    .household-member-row { flex-wrap:wrap; }
     .edit-wizard-step { border:1px solid var(--line); border-radius:9px; padding:9px 8px; background:#fff; color:var(--muted); font:700 11px/1.25 var(--font-body); cursor:pointer; text-align:left; }
     .edit-wizard-step span { display:block; margin-bottom:3px; color:var(--gold-deep); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
     .edit-wizard-step[aria-current="step"] { border-color:var(--gold); background:var(--gold-tint); color:var(--navy); box-shadow:0 0 0 2px rgba(200,162,74,.12); }
-    .edit-wizard-step.complete::after { content:"Saved"; display:block; margin-top:4px; color:var(--green); font-size:10px; }
     .edit-wizard-help { margin:12px 0 0; color:var(--muted); font-size:12.5px; line-height:1.45; }
     .edit-wizard-status { margin:12px 0 0; padding:10px 12px; border:1px solid rgba(21,58,91,.2); border-radius:10px; background:var(--blue-tint); color:var(--blue); font-size:12.5px; font-weight:700; line-height:1.4; }
     .edit-wizard-status.error { border-color:#ffd1c8; background:var(--danger-bg); color:var(--danger-ink); }
@@ -203,7 +198,7 @@
     .personal-settings [data-wizard-container] { display:none !important; }
     .personal-settings [data-wizard-step].wizard-step-active,
     .personal-settings [data-wizard-container].wizard-step-active { display:block !important; }
-    .edit-wizard-footer { position:sticky; bottom:0; z-index:3; display:flex; gap:10px; justify-content:flex-end; padding:16px 26px; border-top:1px solid var(--line); border-radius:0 0 var(--r-xl) var(--r-xl); box-shadow:0 -8px 22px rgba(6,21,34,.07); }
+    .edit-wizard-footer { flex-wrap:wrap; position:sticky; bottom:0; z-index:3; display:flex; gap:10px; justify-content:flex-end; padding:16px 26px; border-top:1px solid var(--line); border-radius:0 0 var(--r-xl) var(--r-xl); box-shadow:0 -8px 22px rgba(6,21,34,.07); }
     .edit-wizard-footer .btn { min-width:120px; }
     .about-you-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     .about-you-form .field-wide { grid-column:1/-1; }
@@ -332,10 +327,6 @@
     .directory-modal { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(6,21,34,.5); backdrop-filter:blur(2px); }
     .directory-modal[hidden] { display:none !important; }
     .directory-modal-card { width:min(460px, 100%); max-height:min(86vh, 720px); overflow:auto; background:#fff; border-radius:var(--r-xl); border:1px solid rgba(16,24,32,.1); box-shadow:0 24px 70px rgba(6,21,34,.26); padding:18px; }
-    .directory-modal-card.setup-wizard-card { width:min(720px, 100%); padding:26px; }
-    .setup-wizard-progress { display:flex; gap:8px; margin:6px 0 20px; }
-    .setup-wizard-progress span { height:5px; flex:1; border-radius:999px; background:#e7ece8; }
-    .setup-wizard-progress span:first-child { background:var(--gold); }
     .directory-modal-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
     .directory-modal-head h2 { margin:0; font-size:21px; line-height:1.2; font-family:var(--font-display); color:var(--navy); }
     .directory-modal-head p { margin:5px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
@@ -414,6 +405,9 @@
     body[data-directory-availability="unavailable"] :is(.directory-command, .directory-guide, .member-directory) { display:none; }
     .directory-availability { margin-bottom:16px; }
     .directory-availability h2 { margin:0 0 5px; }
+    body[data-household-only] .directory-view-switcher,
+    body[data-household-only] #householdPublicationActions,
+    body[data-household-only] #householdPublicationSummary { display:none !important; }
     body[data-directory-view="family"] .personal-settings[open] {
       position:static;
       inset:auto;
@@ -817,7 +811,7 @@
         max-width:100%;
       }
       .donor-directory-page .edit-wizard-steps {
-        grid-template-columns:minmax(0,1fr);
+        grid-template-columns:repeat(2,minmax(0,1fr));
       }
       .donor-directory-page .about-you-form,
       .donor-directory-page .about-you-form .field-pair,
@@ -923,6 +917,10 @@
         </div>
       </section>
       <div id="directoryNotice" class="notice" hidden></div>
+      <section class="panel" id="householdStatementSharing" hidden>
+        <h2>Combined giving statements</h2>
+        <div id="householdStatementChoices" aria-live="polite"></div>
+      </section>
       <section id="directoryInvitationCard" class="panel directory-invitation-card" hidden aria-live="polite">
         <div class="panel-kicker">Parish invitation</div>
         <h2 id="directoryInvitationTitle">Connect your directory record</h2>
@@ -946,16 +944,17 @@
       <section class="directory-guide" id="directoryGuide" aria-label="Directory next steps"></section>
 
       <details class="personal-settings" id="personalDirectorySettings">
-        <summary><span><strong>Edit household</strong><span>Four simple steps for your family directory entry.</span></span></summary>
+        <summary><span><strong>Edit household</strong><span>Manage your profile, family, and sharing choices.</span></span></summary>
         <div class="edit-wizard-head">
-          <div class="edit-wizard-title"><h2 id="editWizardTitle">Your information</h2><span id="editWizardCount">Step 1 of 4</span></div>
-          <div class="edit-wizard-progress" id="editWizardProgress" aria-label="Editing progress"><span></span><span></span><span></span><span></span></div>
+          <div class="edit-wizard-title"><h2 id="editWizardTitle" tabindex="-1">Your information</h2><span id="editWizardCount">Step 1 of 5</span></div>
           <nav class="edit-wizard-steps" id="editWizardSteps" aria-label="Directory setup steps">
             <button class="edit-wizard-step" type="button" data-go-to-step="1"><span>Step 1</span>Your information</button>
             <button class="edit-wizard-step" type="button" data-go-to-step="2"><span>Step 2</span>Your family</button>
             <button class="edit-wizard-step" type="button" data-go-to-step="3"><span>Step 3</span>Privacy choices</button>
-            <button class="edit-wizard-step" type="button" data-go-to-step="4"><span>Step 4</span>Ways to help</button>
+            <button class="edit-wizard-step" type="button" data-go-to-step="4"><span>Step 4</span>Review &amp; submit</button>
+            <button class="edit-wizard-step" type="button" data-go-to-step="5"><span>Optional</span>Ways to help</button>
           </nav>
+          <label id="directoryHouseholdPicker" for="directoryHouseholdSelect" hidden>Household<select id="directoryHouseholdSelect"></select></label>
           <p class="edit-wizard-help" id="editWizardHelp">Start with your name. Everything else is optional and can be added later.</p>
           <p class="edit-wizard-status" id="editWizardStatus" role="status" aria-live="polite" hidden></p>
         </div>
@@ -964,16 +963,21 @@
           <article class="panel" data-wizard-step="1" data-mobile-section="household setup">
             <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span><div><div class="panel-kicker">About you</div><h2>The essentials</h2><p class="panel-intro">The simple details your parish family may need. You decide what is shared in step three.</p></div></div></div>
             <div class="summary-list" id="profileSummary" hidden></div>
+            <div class="setup-panel" id="directorySetupChoice" hidden>
+              <h3>Does your household already have a directory profile?</h3>
+              <p>Ask the person who set it up at your parish to invite you from <strong>Your family</strong>. Open their private link or paste it below to request a connection.</p>
+              <form id="joinExistingHouseholdForm">
+                <label>Household invitation link<input name="invitation" type="url" autocomplete="off" required /></label>
+                <div class="actions"><button class="btn primary" type="submit">Open household invitation</button></div>
+                <p class="notice error" id="joinExistingHouseholdError" role="alert" hidden></p>
+              </form>
+              <div class="actions"><button class="btn secondary" id="chooseNewDirectoryProfile" type="button">Create a new household</button></div>
+            </div>
             <form class="setup-panel" id="startProfileForm" hidden>
               <div>
                 <h3>Start your directory profile</h3>
-                <p>Build your family directory entry in four simple steps. You control which contact details other directory members may see.</p>
+                <p>Create a private draft. You can add family members and choose what to share after saving.</p>
               </div>
-              <ul class="setup-steps">
-                <li>Add your family name and your own basic information.</li>
-                <li>Add household members and their namedays.</li>
-                <li>Choose contact sharing, then add optional skills to serve.</li>
-              </ul>
               <div class="form-grid">
                 <fieldset class="field-group">
                   <legend class="group-legend">Basic info</legend>
@@ -990,6 +994,7 @@
                 </fieldset>
               </div>
               <div class="actions"><button class="btn primary" type="submit">Create my private profile</button></div>
+              <button class="btn secondary" id="backToHouseholdChoice" type="button">Connect to an existing household instead</button>
             </form>
             <form class="about-you-form" id="profileForm" hidden>
               <p class="wizard-form-note">Only your name is required. Leave anything else blank if you do not want to add it yet; all new details start private.</p>
@@ -1029,14 +1034,14 @@
                 <label class="sharing-row"><span><strong>Phone</strong><small id="sharePhoneValue">No phone entered</small></span><select name="sharePhoneVisibility" aria-label="Who can see your phone?"><option value="private">Only me</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
                 <label class="sharing-row"><span><strong>City and state</strong><small id="shareLocationValue">No location entered</small></span><select name="shareLocationVisibility" aria-label="Who can see your city and state?"><option value="private">Only me</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
                 <label class="sharing-row"><span><strong>Family photo</strong><small id="sharePhotoValue">No family photo uploaded</small></span><select name="sharePhotoVisibility" aria-label="Who can see your family photo?"><option value="private">Only me</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
-                <label class="sharing-row sharing-row-toggle"><span><strong>Show children in the directory</strong><small id="shareChildrenValue">No children entered</small></span><input name="shareChildren" type="checkbox" aria-label="Show children in the parish directory" /><span class="sharing-switch" aria-hidden="true"></span></label>
+                <label class="sharing-row sharing-row-toggle"><span><strong>Share children’s names and relationships</strong><small id="shareChildrenValue">No children entered</small></span><input name="shareChildren" type="checkbox" aria-label="Show children in the parish directory" /><span class="sharing-switch" aria-hidden="true"></span></label>
                 <div id="namedaySharingRows"></div>
               </div>
               <div class="actions"><button class="btn primary" type="submit">Save privacy choices</button></div>
             </form>
           </article>
 
-          <article class="panel" data-wizard-step="4" data-mobile-section="household serve">
+          <article class="panel" data-wizard-step="5" data-mobile-section="household serve">
             <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.4-7-11a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 6.6-7 11-7 11Z"/></svg></span><div><div class="panel-kicker">Optional</div><h2>How can you help?</h2><p class="panel-intro">Choose a skill and how comfortable you are helping. That’s all you need.</p></div></div></div>
             <div class="skill-list" id="mySkillList"></div>
             <form class="form-grid skills-simple-form" id="skillForm" hidden>
@@ -1070,38 +1075,10 @@
           <article class="panel household-hub" data-wizard-container="2" data-mobile-section="household family setup photos">
             <div class="panel-header"><div class="panel-header-row"><span class="panel-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1a4 4 0 0 1 4 4v2"/><circle cx="8.5" cy="8" r="3"/><path d="M15 21v-1.5a3.5 3.5 0 0 0-2.5-3.36"/><circle cx="17" cy="7.5" r="2.5"/></svg></span><div><div class="panel-kicker">Directory</div><h2>Family</h2><p class="panel-intro">Add your spouse, children, family name, photo, and namedays here. Choose who can see them in step three.</p></div></div></div>
 
-            <div class="household-hub-identity" data-wizard-step="2">
-              <div class="household-hub-photo" hidden>
-                <div class="summary-list" id="householdPhotoSummary"></div>
-                <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
-                  <label>Change family photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
-                  <input name="visibility" type="hidden" value="private" />
-                  <div class="actions"><button class="btn secondary" type="submit">Upload</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove</button></div>
-                </form>
-              </div>
-              <div class="household-hub-name">
-                <div class="household-list" id="householdList"></div>
-                <form class="household-hub-name-form" id="householdDetailsForm" hidden>
-                  <label>Family or household name<input name="displayName" maxlength="200" autocomplete="organization" placeholder="The Dunne Family" aria-describedby="familyNameHelp" required /></label>
-                  <p class="household-hub-namedays-note" id="familyNameHelp">This is the family name shown on your household entry, such as “The Dunne Family.”</p>
-                  <label>City<input name="city" maxlength="120" placeholder="Wheaton" required /></label>
-                  <label>State or province<input name="region" maxlength="120" placeholder="Illinois" required /></label>
-                  <label>Wedding anniversary (optional)<input name="anniversaryDate" type="date" /></label>
-                  <label>Who can see the anniversary?<select name="anniversaryVisibility"><option value="private">Only me</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
-                  <input type="hidden" name="householdId" />
-                  <input type="hidden" name="expectedVersion" />
-                  <div class="actions"><button class="btn secondary" type="submit">Save family information</button></div>
-                </form>
-                <div class="summary-list" id="householdPublicationSummary"></div>
-                <div class="actions" id="householdPublicationActions" hidden>
-                  <button class="btn primary" type="button" data-household-publication="pending_approval">Share Family in Directory</button>
-                </div>
-              </div>
-            </div>
-
             <div class="household-hub-namedays" data-wizard-step="2">
               <h3>Your household</h3>
               <p class="household-hub-namedays-note">Keep each family member’s birthday and nameday together in one place.</p>
+              <p class="household-hub-namedays-note">To connect your spouse’s My AGAPAY account, choose <strong>Invite</strong> next to their name. If they’re missing, add them as your spouse below first.</p>
               <div class="household-member-manager" id="householdMemberList"></div>
               <form class="form-grid member-edit-form" id="memberEditForm" hidden>
                 <label>Family member’s name<input name="preferredName" required /></label>
@@ -1125,7 +1102,7 @@
               </form>
               <div id="adultAddSection" hidden>
                 <h3>Spouse or other adult</h3>
-                <p class="household-hub-namedays-note">Add another adult’s name and relationship. Their personal contact details remain theirs to manage.</p>
+                <p class="household-hub-namedays-note">Add your spouse or another adult. Once they appear in the family list, you can send them a private invitation link.</p>
                 <form class="form-grid" id="adultAddForm">
                   <label>Name<input name="preferredName" required placeholder="Maria Dunne" /></label>
                   <label>Relationship<select name="relationship"><option value="spouse">Spouse</option><option value="adult_child">Adult child</option><option value="other">Other adult</option></select></label>
@@ -1137,8 +1114,37 @@
                   <p class="notice" id="adultAddStatus" role="status" aria-live="polite" hidden></p>
                 </form>
               </div>
-              <div class="actions"><button class="btn secondary" id="openChildAddModal" type="button">Add a Child</button></div>
+              <div class="actions"><button class="btn secondary" id="openChildAddModal" type="button" hidden>Add a Child</button></div>
             </div>
+            <div class="household-hub-identity" data-wizard-step="2">
+              <div class="household-hub-photo" hidden>
+                <div class="summary-list" id="householdPhotoSummary"></div>
+                <form class="household-hub-photo-form" id="householdPhotoForm" hidden>
+                  <label>Change family photo<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required /></label>
+                  <input name="visibility" type="hidden" value="private" />
+                  <div class="actions"><button class="btn secondary" type="submit">Upload</button><button class="btn warn" type="button" id="removeHouseholdPhoto" hidden>Remove</button></div>
+                </form>
+              </div>
+              <div class="household-hub-name">
+                <div class="household-list" id="householdList"></div>
+                <form class="household-hub-name-form" id="householdDetailsForm" hidden>
+                  <label>Family or household name<input name="displayName" maxlength="200" autocomplete="organization" placeholder="The Dunne Family" aria-describedby="familyNameHelp" required /></label>
+                  <p class="household-hub-namedays-note" id="familyNameHelp">This is the family name shown on your household entry, such as “The Dunne Family.”</p>
+                  <label>City (optional)<input name="city" maxlength="120" placeholder="Wheaton" /></label>
+                  <label>State or province (optional)<input name="region" maxlength="120" placeholder="Illinois" /></label>
+                  <label>Wedding anniversary (optional)<input name="anniversaryDate" type="date" /></label>
+                  <label>Who can see the anniversary?<select name="anniversaryVisibility"><option value="private">Only me</option><option value="staff">Parish staff</option><option value="directory_members">Parish directory</option></select></label>
+                  <input type="hidden" name="householdId" />
+                  <input type="hidden" name="expectedVersion" />
+                  <div class="actions"><button class="btn secondary" type="submit">Save family information</button></div>
+                </form>
+                <div class="summary-list" id="householdPublicationSummary"></div>
+                <div class="actions" id="householdPublicationActions" hidden>
+                  <button class="btn primary" type="button" data-household-publication="pending_approval">Share Family in Directory</button>
+                </div>
+              </div>
+            </div>
+
           </article>
 
           <div id="requestList" hidden aria-hidden="true"></div>
@@ -1148,11 +1154,14 @@
             <div class="stack" id="childrenList" aria-live="polite"></div>
           </article>
 
-          <article class="panel review-submit-panel" data-wizard-step="3" data-mobile-section="household privacy">
-            <div class="panel-kicker">Ready when you are</div>
-            <h2>Publish your choices</h2>
-            <p class="panel-intro">Only the items you switched on will appear. Your parish confirms the household the first time.</p>
+          <article class="panel review-submit-panel" data-wizard-step="4" data-mobile-section="household privacy">
+            <h2>Review your directory listing</h2>
+            <p class="panel-intro">Review your saved audiences and submit your listing when you are ready. Your parish verifies the household the first time.</p>
             <div class="summary-list" id="combinedPublicationSummary"></div>
+            <details id="directoryReviewChoices">
+              <summary>Saved sharing choices</summary>
+              <div class="summary-list" id="directoryReviewAudience"></div>
+            </details>
             <div class="actions">
               <button class="btn primary" id="submitDirectoryListing" type="button">Publish Chosen Details</button>
             </div>
@@ -1162,7 +1171,7 @@
       <footer class="edit-wizard-footer">
         <button class="btn secondary" id="editWizardBack" type="button" hidden>Back</button>
         <button class="btn primary" id="editWizardNext" type="button">Continue</button>
-        <button class="btn secondary" id="editWizardDone" type="button" hidden>Close</button>
+        <button class="btn secondary" id="editWizardDone" type="button">Back to directory</button>
       </footer>
       </details>
 
@@ -1236,21 +1245,6 @@
         </div>
       </div>
 
-      <div class="directory-modal" id="setupWizardModal" role="dialog" aria-modal="true" aria-labelledby="setupWizardTitle" hidden>
-        <div class="directory-modal-card setup-wizard-card">
-          <div class="directory-modal-head">
-            <div>
-              <div class="panel-kicker">Directory setup</div>
-              <h2 id="setupWizardTitle">Create your parish directory profile</h2>
-              <p>Start with the essentials. Everything stays private until you choose what to submit for the household’s one-time parish verification.</p>
-            </div>
-            <button class="directory-modal-close" id="closeFamilySetup" type="button" aria-label="Close family setup" hidden>×</button>
-          </div>
-          <div class="setup-wizard-progress" aria-label="Setup progress"><span></span><span></span><span></span></div>
-          <div id="setupWizardFormHost"></div>
-        </div>
-      </div>
-
     </main>
     <nav class="mobile-tabbar" aria-label="My AGAPAY navigation"></nav>
   </div>
@@ -1317,11 +1311,12 @@
       if (document.getElementById("personalDirectorySettings")?.open) showWizardStatus(message, isError);
     }
     function directoryHomeTitle() {
-      return "Parish Directory";
+      return householdOnly ? "Your Household" : "Parish Directory";
     }
     function renderDirectoryIdentity() {
       const title = directoryHomeTitle();
       document.getElementById("directoryHeroTitle").textContent = title;
+      document.querySelector(".directory-nav-identity .topbar-title").textContent = title;
       document.title = `${title} | My AGAPAY`;
     }
     function donorProfile() {
@@ -1356,9 +1351,6 @@
       document.getElementById("openFamilyInformation").hidden = !canPrepare;
       document.getElementById("chooseFamilyParish").hidden = canPrepare;
       document.getElementById("personalDirectorySettings").hidden = unavailable && familyView && !canPrepare;
-      document.getElementById("setupWizardModal").hidden = !profileState || profileState.claimed || !canPrepare
-        || (!familyView && homeParish?.directoryEnabled !== true);
-      document.getElementById("closeFamilySetup").hidden = !unavailable;
     }
     window.addEventListener("myagapay:parish-context", (event) => {
       homeParish = event.detail;
@@ -1708,8 +1700,38 @@
         document.querySelector(".directory-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
+    const householdOnly = new URLSearchParams(window.location.search).get("view") === "household";
+    if (householdOnly) {
+      document.body.dataset.householdOnly = "";
+      document.getElementById("editWizardDone").textContent = "Back to account";
+    }
+    async function loadHouseholdStatementSharing() {
+      const section = document.getElementById("householdStatementSharing");
+      const list = document.getElementById("householdStatementChoices");
+      try {
+        const { choices = [] } = await api("/api/directory/self/statement-sharing");
+        section.hidden = choices.length === 0;
+        list.innerHTML = choices.map((choice) => `<div class="mini-card"><strong>${esc(choice.householdName)}</strong>
+          <small>${choice.receivesStatement ? `Statement sharing with ${esc(choice.memberName)}` : "Statement sharing with your inviter"}</small>
+          <button class="btn secondary" type="button" data-stop-statement-sharing="${esc(choice.id)}">Stop statement sharing</button></div>`).join("");
+      } catch (error) {
+        showNotice(error.message || "Unable to load statement sharing.", true);
+      }
+    }
+    document.getElementById("householdStatementChoices").addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-stop-statement-sharing]");
+      if (!button || !window.confirm("Stop combining giving on newly generated statements?")) return;
+      button.disabled = true;
+      try {
+        await api("/api/directory/self/statement-sharing/" + encodeURIComponent(button.dataset.stopStatementSharing), { method: "DELETE" });
+        await loadHouseholdStatementSharing();
+      } catch (error) {
+        showNotice(error.message || "Unable to stop statement sharing.", true);
+        button.disabled = false;
+      }
+    });
     function setDirectoryView(view = "directory", { scroll = true } = {}) {
-      const next = view === "family" ? "family" : "directory";
+      const next = householdOnly || view === "family" ? "family" : "directory";
       const settings = document.getElementById("personalDirectorySettings");
       document.body.dataset.directoryView = next;
       document.body.classList.remove("directory-profile-open");
@@ -2172,11 +2194,12 @@
       const publication = profileState.profile?.publication || {};
       const startForm = document.getElementById("startProfileForm");
       document.getElementById("directoryStatus").textContent = profileState.claimed ? "Connected" : "Setup needed";
-      startForm.hidden = Boolean(profileState.claimed);
+      startForm.hidden = true;
+      document.getElementById("directorySetupChoice").hidden = Boolean(profileState.claimed);
+      renderHouseholdPicker();
+      setWizardStep(profileState.claimed ? (householdOnly ? 2 : editWizardStep) : 1);
       syncDirectoryAvailability();
       if (!profileState.claimed) {
-        const wizardHost = document.getElementById("setupWizardFormHost");
-        if (startForm.parentElement !== wizardHost) wizardHost.appendChild(startForm);
         const form = startForm;
         const profile = donorProfile();
         form.preferredName.value = profile.displayName || profile.name || email.split("@")[0] || "";
@@ -2233,8 +2256,17 @@
       renderMobileHome();
       if (!document.body.dataset.mobileView) setMobileView("home");
     }
+    let selectedHouseholdId = "";
     function firstHousehold() {
-      return (profileState?.manageableHouseholds || [])[0] || null;
+      const households = profileState?.manageableHouseholds || [];
+      return households.find((household) => household.id === selectedHouseholdId) || households[0] || null;
+    }
+    function renderHouseholdPicker() {
+      const households = profileState?.manageableHouseholds || [];
+      document.getElementById("directoryHouseholdPicker").hidden = households.length < 2;
+      const select = document.getElementById("directoryHouseholdSelect");
+      select.innerHTML = households.map((household) => `<option value="${esc(household.id)}">${esc(household.displayName)}</option>`).join("");
+      select.value = firstHousehold()?.id || "";
     }
     function hydrateAboutYou() {
       if (!profileState?.claimed) return;
@@ -2263,15 +2295,19 @@
         form.elements.expectedVersion.value = person.version || "";
       }
       const sharing = document.getElementById("contactForm");
-      if (!sharing) return;
+      if (!sharing || sharing.dataset.dirty === "true") return;
       const sharingVisibility = (value, fallback = "private") => ["private", "staff", "directory_members"].includes(value) ? value : fallback;
       sharing.elements.shareNameVisibility.value = sharingVisibility(profileState?.profile?.sharing?.name?.visibility, "directory_members");
       sharing.elements.shareEmailVisibility.value = sharingVisibility(emailContact?.visibility);
       sharing.elements.sharePhoneVisibility.value = sharingVisibility(phoneContact?.visibility);
       sharing.elements.shareLocationVisibility.value = sharingVisibility(address?.visibility);
       sharing.elements.sharePhotoVisibility.value = sharingVisibility(window.currentDirectoryHouseholdPhoto?.visibility);
-      sharing.elements.shareChildren.checked = directoryChildSharing.length > 0
-        && directoryChildSharing.every((item) => item.request?.status === "approved");
+      const sharedChildren = directoryChildSharing.filter(({ request }) =>
+        ["approved", "submitted", "under_review"].includes(request?.status)
+      ).length;
+      sharing.elements.shareChildren.checked = directoryChildSharing.length > 0 && sharedChildren === directoryChildSharing.length;
+      sharing.elements.shareChildren.defaultChecked = sharing.elements.shareChildren.checked;
+      sharing.elements.shareChildren.indeterminate = sharedChildren > 0 && sharedChildren < directoryChildSharing.length;
       sharing.elements.shareEmailVisibility.disabled = !emailContact && !defaults.email;
       sharing.elements.sharePhoneVisibility.disabled = !phoneContact && !defaults.phone;
       sharing.elements.shareLocationVisibility.disabled = !firstHousehold() || !location?.city || !location?.region;
@@ -2284,13 +2320,23 @@
       document.getElementById("sharePhotoValue").textContent = window.currentDirectoryHouseholdPhoto ? "Current family photo" : "No family photo uploaded";
       document.getElementById("shareChildrenValue").textContent = directoryChildSharing.length
         ? `${directoryChildSharing.length} ${directoryChildSharing.length === 1 ? "child" : "children"}`
-        : "No children entered";
+        : householdDetailState?.members.some((member) => member.child)
+          ? "No children available to share"
+          : "No children entered";
       document.getElementById("namedaySharingRows").innerHTML = householdNamedays.length
         ? householdNamedays.map((nameday) => {
           const namedayVisibility = sharingVisibility(nameday.visibility);
           return `<label class="sharing-row"><span><strong>${esc(nameday.displayName || "Family member")}’s name day</strong><small>${esc(nameday.saintName || nameday.feastMonthDay || "Name day")}</small></span><select name="namedayVisibility" data-nameday-id="${esc(nameday.id)}" aria-label="Who can see ${esc(nameday.displayName || "this family member")}’s name day?"><option value="private"${namedayVisibility === "private" ? " selected" : ""}>Only me</option><option value="staff"${namedayVisibility === "staff" ? " selected" : ""}>Parish staff</option><option value="directory_members"${namedayVisibility === "directory_members" ? " selected" : ""}>Parish directory</option></select></label>`;
         }).join("")
         : '<div class="sharing-row"><span><strong>Namedays</strong><small>No namedays entered</small></span></div>';
+      const audiences = Array.from(sharing.querySelectorAll(".sharing-row select:not(:disabled)"), (select) => [
+        select.closest(".sharing-row").querySelector("strong").textContent,
+        select.selectedOptions[0]?.textContent || ""
+      ]);
+      if (directoryChildSharing.length) audiences.push(["Children included in sharing", `${sharedChildren} of ${directoryChildSharing.length}`]);
+      document.getElementById("directoryReviewAudience").innerHTML = audiences.map(([label, audience]) =>
+        `<div class="summary-row"><span>${esc(label)}</span><strong>${esc(audience)}</strong></div>`
+      ).join("");
     }
     function publicationIsLive(publication = {}) {
       return publication.status === "approved" && publication.approvalStatus === "approved";
@@ -2397,7 +2443,7 @@
     async function renderHouseholdDetails() {
       const households = profileState.manageableHouseholds || [];
       const memberOnly = (profileState.memberHouseholds || []).filter((member) => !households.some((household) => household.id === member.id));
-      const navHousehold = households[0] || memberOnly[0] || null;
+      const household = firstHousehold();
       const form = document.getElementById("householdDetailsForm");
       document.getElementById("householdList").innerHTML = [
         ...households.map((household) => `<div class="mini-card"><strong>${esc(household.displayName)}</strong><small>Your editable family.</small></div>`),
@@ -2415,8 +2461,9 @@
         renderCombinedPublicationSummary();
         return;
       }
-      const household = households[0];
-      form.hidden = false;
+      form.hidden = true;
+      document.getElementById("openChildAddModal").hidden = true;
+      document.getElementById("householdMemberList").innerHTML = '<p class="empty" role="status">Loading family members…</p>';
       form.elements.householdId.value = household.id;
       form.elements.displayName.value = household.displayName || donorProfile().householdName || "";
       let detail;
@@ -2427,12 +2474,14 @@
         householdDetailState = null;
         householdDetailLoaded = true;
         householdDetailError = error.message || "Your family listing status could not be loaded.";
+        document.getElementById("householdMemberList").innerHTML = `<div class="empty" role="alert">${esc(householdDetailError)} <button class="btn secondary" type="button" data-retry-household>Try again</button></div>`;
         document.getElementById("householdPublicationSummary").innerHTML = '<div class="summary-row"><span>Family directory status</span><strong>Unavailable</strong></div>';
         document.getElementById("householdPublicationActions").hidden = true;
         renderOwnDirectoryPreview();
         renderCombinedPublicationSummary();
         return;
       }
+      form.hidden = false;
       const current = detail?.household?.household || detail?.household || null;
       const publication = detail?.household?.publication || detail?.publication || null;
       if (current) {
@@ -2467,7 +2516,9 @@
       const spouseRelationships = new Set(["spouse", "wife", "husband"]);
       const hasSpouse = members.some((member) => spouseRelationships.has(String(member.relationship || "").trim().toLowerCase()));
       const spousePending = (profileState?.pendingRequests || []).some((request) =>
-        request.requestType === "household_membership_add" && /\bspouse\b/i.test(request.summary || "")
+        request.householdId === firstHousehold()?.id
+          && request.requestType === "household_membership_add"
+          && /\bspouse\b/i.test(request.summary || "")
       );
       document.getElementById("adultAddSection").hidden = !firstHousehold() || hasSpouse || spousePending;
     }
@@ -2492,14 +2543,17 @@
           <div><strong>${esc(member.preferredName)}</strong><small>${isSelf ? "You" : esc(relationshipLabel(member.relationship))}</small><small>${esc([birthdaySummary, contactSummary, namedaySummary].filter(Boolean).join(" · "))}</small></div>
           <div class="actions">
             <button class="btn secondary" type="button" data-edit-household-member="${esc(member.personId)}">Edit</button>
-            ${isSelf || member.child || member.accountLinked ? "" : `
-            <button class="btn secondary" type="button" data-share-household-member="${esc(member.personId)}">Share with ${esc(member.preferredName)}</button>
+            ${isSelf || member.child || member.protectedPerson || member.accountLinked ? "" : `
+            <button class="btn secondary" type="button" data-share-household-member="${esc(member.personId)}">Invite ${esc(member.preferredName)}</button>
             `}
             ${isSelf ? "" : `
             <button class="btn warn" type="button" data-delete-household-member="${esc(member.personId)}">Delete</button>
             `}
           </div>
           <div class="notice" data-household-share-result="${esc(member.personId)}" hidden></div>
+          ${isSelf || member.child || member.protectedPerson || member.accountLinked ? "" : `
+            <label><input type="checkbox" data-invite-combine-giving /> Offer a combined annual statement delivered to my account</label>
+          `}
         </div>`;
       }).join("") : '<div class="empty"><strong>No family members found.</strong>Add an adult or child below.</div>';
     }
@@ -2521,7 +2575,7 @@
     }
     async function loadNamedays() {
       const household = firstHousehold();
-      if (!household) {
+      if (!household || !householdDetailState) {
         householdNamedays = [];
         return;
       }
@@ -2587,8 +2641,8 @@
         container.innerHTML = '<div class="empty"><strong>Start your profile first.</strong>Child publication tools appear after your profile is created and family details are connected.</div>';
         return;
       }
-      const households = profileState?.manageableHouseholds || [];
-      if (!households.length) {
+      const household = firstHousehold();
+      if (!household || !householdDetailState) {
         directoryChildSharing = [];
         childAddButton.hidden = true;
         container.innerHTML = '<div class="empty"><strong>No family connected yet.</strong>Parish staff must link you to a family as an administrator before you can manage child publication requests.</div>';
@@ -2597,24 +2651,16 @@
       childAddButton.hidden = false;
       container.innerHTML = '<div class="empty">Loading children…</div>';
       try {
-        const cards = [];
-        directoryChildSharing = [];
-        for (const household of households) {
-          const cachedMembers = household.id === firstHousehold()?.id ? householdDetailState?.members : null;
-          const profile = cachedMembers ? null : await api(`/api/directory/households/${encodeURIComponent(household.id)}/self`).catch(() => null);
-          const children = (cachedMembers || profile?.household?.members || profile?.members || [])
-            .filter((member) => member.child && !member.protectedPerson);
-          const childRecords = await Promise.all(children.map(async (child) => ({
-            child,
-            householdId: household.id,
-            request: (await api(`/api/directory/children/${encodeURIComponent(child.personId)}/publication?householdId=${encodeURIComponent(household.id)}`).catch(() => ({ request: null }))).request || null
-          })));
-          directoryChildSharing.push(...childRecords);
-          for (const { child, request } of childRecords) {
-            const shared = ["submitted", "under_review", "approved"].includes(request?.status);
-            cards.push(`<div class="child-card"><div><h3>${esc(child.preferredName || "Child")}</h3><small>${shared ? "Included in family sharing" : "Private household member"}</small></div></div>`);
-          }
-        }
+        const children = householdDetailState.members.filter((member) => member.child && !member.protectedPerson);
+        directoryChildSharing = await Promise.all(children.map(async (child) => ({
+          child,
+          householdId: household.id,
+          request: (await api(`/api/directory/children/${encodeURIComponent(child.personId)}/publication?householdId=${encodeURIComponent(household.id)}`)).request || null
+        })));
+        const cards = directoryChildSharing.map(({ child, request }) => {
+          const shared = ["submitted", "under_review", "approved"].includes(request?.status);
+          return `<div class="child-card"><div><h3>${esc(child.preferredName || "Child")}</h3><small>${shared ? "Included in family sharing" : "Private household member"}</small></div></div>`;
+        });
         container.innerHTML = cards.length ? cards.join("") : '<div class="empty"><strong>No children are attached yet.</strong>Use “Add a Child” to add one to your family.</div>';
         hydrateAboutYou();
       } catch (error) {
@@ -2673,11 +2719,48 @@
       renderProfile(payload.profile);
       // The profile paints the usable shell immediately. Independent directory
       // data then hydrates concurrently instead of blocking the first render.
-      const householdData = profileState?.claimed
-        ? renderHouseholdDetails().then(() => Promise.allSettled([loadNamedays(), loadChildrenPanel()]))
-        : Promise.resolve();
-      void Promise.allSettled([loadMemberHome(), loadMySkills(), loadDirectoryReviewRequests(), householdData.then(loadHouseholdVerification)]);
+      void loadHouseholdStatementSharing();
+      if (householdOnly) setDirectoryView("family", { scroll: false });
+      else void Promise.allSettled([loadMemberHome(), loadMySkills(), loadDirectoryReviewRequests()]);
+      if (profileState?.claimed) await refreshSelectedHousehold();
     }
+    async function refreshSelectedHousehold() {
+      const select = document.getElementById("directoryHouseholdSelect");
+      const sharing = document.getElementById("contactForm");
+      const review = document.getElementById("directoryReviewChoices");
+      select.disabled = true;
+      sharing.hidden = true;
+      review.hidden = true;
+      householdNamedays = [];
+      directoryChildSharing = [];
+      window.currentDirectoryHouseholdPhoto = null;
+      try {
+        await renderHouseholdDetails();
+        await Promise.allSettled([loadNamedays(), loadChildrenPanel(), renderHouseholdPhoto(), loadHouseholdVerification()]);
+      } finally {
+        sharing.hidden = Boolean(householdDetailError);
+        review.hidden = Boolean(householdDetailError);
+        select.disabled = false;
+      }
+    }
+    document.querySelector("#householdMemberList").addEventListener("click", (event) => {
+      if (event.target.closest("[data-retry-household]")) void refreshSelectedHousehold();
+    });
+    document.getElementById("directoryHouseholdSelect").addEventListener("change", async (event) => {
+      const select = event.currentTarget;
+      if (!canLeaveWizardStep()) {
+        select.value = firstHousehold()?.id || "";
+        return;
+      }
+      selectedHouseholdId = select.value;
+      const editor = document.getElementById("memberEditForm");
+      editor.hidden = true;
+      householdDetailLoaded = false;
+      householdDetailState = null;
+      householdDetailError = "";
+      renderCombinedPublicationSummary();
+      await refreshSelectedHousehold();
+    });
     async function loadDirectoryReviewRequests() {
       const container = document.getElementById("directoryReviewRequests");
       if (!container || !profileState?.claimed) return;
@@ -2751,25 +2834,20 @@
       }
     }
     document.getElementById("skillSearchButton").addEventListener("click", loadSkillSearch);
-    const EDIT_WIZARD_TITLES = ["Your information", "Your family", "Privacy choices", "Ways to help"];
+    const EDIT_WIZARD_TITLES = ["Your information", "Your family", "Privacy choices", "Review & submit", "Ways to help"];
     const EDIT_WIZARD_HELP = [
       "Start with your name. Everything else is optional and can be added later.",
       "Add the people in your household, important dates, and an optional family photo.",
       "Choose Only me, Parish staff, or Parish directory for each saved detail.",
+      "Check the listing status and submit your saved choices when you are ready.",
       "Optional: add one or more ways you would be happy to help your parish."
     ];
     let editWizardStep = 1;
-    function wizardStepComplete(step) {
-      const person = profileState?.profile?.person || profileState?.currentPerson || {};
-      if (step === 1) return Boolean(profileState?.claimed && person.preferredName && firstHousehold()?.displayName);
-      if (step === 2) return Boolean(profileState?.claimed && firstHousehold());
-      if (step === 3) return Boolean(profileState?.claimed);
-      return true;
-    }
     function setWizardStep(step = 1) {
-      editWizardStep = Math.max(1, Math.min(4, Number(step) || 1));
+      const lastStep = householdOnly ? 2 : EDIT_WIZARD_TITLES.length;
+      editWizardStep = Math.max(1, Math.min(profileState?.claimed ? lastStep : 1, Number(step) || 1));
       document.getElementById("editWizardTitle").textContent = EDIT_WIZARD_TITLES[editWizardStep - 1];
-      document.getElementById("editWizardCount").textContent = `Step ${editWizardStep} of 4`;
+      document.getElementById("editWizardCount").textContent = `Step ${editWizardStep} of ${lastStep}`;
       document.getElementById("editWizardHelp").textContent = EDIT_WIZARD_HELP[editWizardStep - 1];
       document.querySelectorAll("[data-wizard-step]").forEach((section) => {
         const active = Number(section.dataset.wizardStep) === editWizardStep;
@@ -2781,41 +2859,64 @@
         section.hidden = !active;
         section.classList.toggle("wizard-step-active", active);
       });
-      document.querySelectorAll("#editWizardProgress span").forEach((dot, index) => {
-        dot.classList.toggle("complete", index < editWizardStep);
-      });
       document.querySelectorAll("[data-go-to-step]").forEach((button) => {
         const stepNumber = Number(button.dataset.goToStep);
         button.setAttribute("aria-current", stepNumber === editWizardStep ? "step" : "false");
-        button.classList.toggle("complete", wizardStepComplete(stepNumber));
+        button.disabled = !profileState?.claimed && stepNumber !== 1;
+        button.hidden = stepNumber > lastStep;
       });
       document.getElementById("editWizardBack").hidden = editWizardStep === 1;
-      document.getElementById("editWizardNext").hidden = editWizardStep === 4;
-      document.getElementById("editWizardDone").hidden = editWizardStep !== 4;
+      document.getElementById("editWizardNext").hidden = !profileState?.claimed || editWizardStep === lastStep;
       renderCombinedPublicationSummary();
       const settings = document.getElementById("personalDirectorySettings");
       settings.scrollTop = 0;
     }
-    function openPersonalDirectorySettings() {
-      setWizardStep(1);
+    function openPersonalDirectorySettings(step = 1) {
+      setWizardStep(step);
       showWizardStatus("");
       setDirectoryView("family");
       document.getElementById("personalDirectorySettings").scrollTop = 0;
     }
-    document.getElementById("closeFamilySetup").addEventListener("click", () => setDirectoryView("directory"));
+    function canLeaveWizardStep() {
+      const dirty = Array.from(document.querySelectorAll('#personalDirectorySettings form[data-dirty="true"]'))
+        .find((form) => form.getClientRects().length);
+      if (!dirty) return true;
+      if (dirty.querySelector('button[type="submit"]:disabled')) {
+        showWizardStatus("Wait for the save to finish before leaving this step.", true);
+        return false;
+      }
+      if (window.confirm("Discard your unsaved changes?")) {
+        dirty.reset();
+        delete dirty.dataset.dirty;
+        if (dirty.id === "memberEditForm") dirty.hidden = true;
+        if (dirty.id === "contactForm") delete dirty.elements.shareChildren.dataset.changed;
+        hydrateAboutYou();
+        return true;
+      }
+      showWizardStatus("Save your changes to keep them.", true);
+      dirty.querySelector('button[type="submit"]')?.focus();
+      return false;
+    }
+    function navigateWizard(step) {
+      if (!canLeaveWizardStep()) return;
+      showWizardStatus("");
+      setWizardStep(step);
+      document.querySelector("#editWizardTitle").focus();
+    }
     document.getElementById("editWizardBack").addEventListener("click", () => {
-      setWizardStep(editWizardStep - 1);
+      navigateWizard(editWizardStep - 1);
     });
     document.getElementById("editWizardNext").addEventListener("click", () => {
-      showWizardStatus("");
-      setWizardStep(editWizardStep + 1);
+      navigateWizard(editWizardStep + 1);
     });
     document.getElementById("editWizardSteps").addEventListener("click", (event) => {
       const button = event.target.closest("[data-go-to-step]");
-      if (button) setWizardStep(button.dataset.goToStep);
+      if (button && Number(button.dataset.goToStep) !== editWizardStep) navigateWizard(button.dataset.goToStep);
     });
     document.getElementById("editWizardDone").addEventListener("click", () => {
-      setDirectoryView("directory");
+      if (!canLeaveWizardStep()) return;
+      if (householdOnly) window.location.assign("/myagapay/account");
+      else setDirectoryView("directory");
     });
     document.getElementById("personalDirectorySettings").addEventListener("toggle", (event) => {
       document.body.style.overflow = "";
@@ -2875,7 +2976,7 @@
         showNotice("Your personal and family listings were submitted to the parish. Your private preview remains visible here while approval is pending.");
       }
       await loadDirectory();
-      setWizardStep(3);
+      setWizardStep(4);
     });
     document.getElementById("skillSearch").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); loadSkillSearch(); } });
     document.getElementById("skillCategory").addEventListener("change", loadSkillSearch);
@@ -3056,6 +3157,35 @@
         button.textContent = "Save my information";
       }
     });
+    document.getElementById("joinExistingHouseholdForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const error = document.getElementById("joinExistingHouseholdError");
+      const value = event.currentTarget.elements.invitation.value.trim();
+      try {
+        const link = new URL(value);
+        const token = link.searchParams.get("token");
+        if (link.origin === window.location.origin && /^\/myagapay\/join-household(?:\.html)?$/.test(link.pathname)
+            && /^[a-f0-9]{64}$/.test(token || "")) {
+          window.location.assign("/myagapay/join-household?token=" + token);
+          return;
+        }
+      } catch {
+        // Show the same guidance for malformed and unrelated URLs.
+      }
+      error.textContent = "Paste the full My AGAPAY household invitation link. If you need a link, ask the person who set up your household.";
+      error.hidden = false;
+    });
+    document.getElementById("chooseNewDirectoryProfile").addEventListener("click", () => {
+      document.getElementById("directorySetupChoice").hidden = true;
+      const form = document.getElementById("startProfileForm");
+      form.hidden = false;
+      form.elements.preferredName.focus();
+    });
+    document.getElementById("backToHouseholdChoice").addEventListener("click", () => {
+      document.getElementById("startProfileForm").hidden = true;
+      document.getElementById("directorySetupChoice").hidden = false;
+      document.getElementById("joinExistingHouseholdForm").elements.invitation.focus();
+    });
     document.getElementById("startProfileForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = event.currentTarget;
@@ -3072,10 +3202,10 @@
         form.reset();
         form.dataset.dirty = "";
         await loadDirectory();
-        openPersonalDirectorySettings();
-        showNotice("Your private profile is ready. You can now add household details for parish review.");
+        openPersonalDirectorySettings(2);
+        showNotice("Your private draft is ready. You can now review your household and add family members.");
       } catch (error) {
-        showNotice(error.message || "Unable to save your family profile.", true);
+        showNotice(error.message || "Unable to create your directory draft.", true);
       } finally {
         button.disabled = false;
       }
@@ -3095,44 +3225,54 @@
         showNotice("Family details are still loading. Please try again in a moment.", true);
         return;
       }
-      if (!displayName || !city || !region) {
-        showNotice("Enter your family name, city, and state before saving.", true);
+      if (!displayName || Boolean(city) !== Boolean(region)) {
+        showNotice("Enter your family name. If you add a location, enter both city and state.", true);
         return;
       }
-      await api(`/api/directory/households/${encodeURIComponent(householdId)}/self`, {
-        method: "PATCH",
-        body: JSON.stringify({ displayName, anniversaryDate, anniversaryVisibility, expectedVersion })
-      });
-      const locationChanged = city !== (form.dataset.savedCity || "")
-        || region !== (form.dataset.savedRegion || "");
-      if (locationChanged) {
-        const savedAddress = householdDetailState?.primaryAddress || {};
-        await api(`/api/directory/households/${encodeURIComponent(householdId)}/self/addresses`, {
-          method: "POST",
-          body: JSON.stringify({
-            addressType: "residential",
-            line1: savedAddress.line1 || `${city}, ${region}`,
-            line2: savedAddress.line2 || "",
-            city,
-            region,
-            postalCode: savedAddress.postalCode || "",
-            country: "US",
-            primary: true,
-            protectedAddress: false,
-            visibility: locationVisibility
-          })
+      const submit = event.submitter || form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      try {
+        await api(`/api/directory/households/${encodeURIComponent(householdId)}/self`, {
+          method: "PATCH",
+          body: JSON.stringify({ displayName, anniversaryDate, anniversaryVisibility, expectedVersion })
         });
+        const locationChanged = city !== (form.dataset.savedCity || "")
+          || region !== (form.dataset.savedRegion || "");
+        if (locationChanged && city && region) {
+          const savedAddress = householdDetailState?.primaryAddress || {};
+          await api(`/api/directory/households/${encodeURIComponent(householdId)}/self/addresses`, {
+            method: "POST",
+            body: JSON.stringify({
+              addressType: "residential",
+              line1: savedAddress.line1 || `${city}, ${region}`,
+              line2: savedAddress.line2 || "",
+              city,
+              region,
+              postalCode: savedAddress.postalCode || "",
+              country: "US",
+              primary: true,
+              protectedAddress: false,
+              visibility: locationVisibility
+            })
+          });
+        }
+        if (householdId === profileState.manageableHouseholds?.[0]?.id) {
+          await api("/api/donor/dashboard", {
+            method: "PATCH",
+            body: JSON.stringify({ householdName: displayName })
+          }).then((payload) => {
+            if (payload.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(payload.donor));
+          }).catch(() => null);
+        }
+        form.dataset.dirty = "";
+        showNotice("Household details saved. Next, add any family members or namedays.");
+        await loadDirectory();
+        setWizardStep(2);
+      } catch (error) {
+        showNotice(error.message || "Unable to save your family information.", true);
+      } finally {
+        submit.disabled = false;
       }
-      await api("/api/donor/dashboard", {
-        method: "PATCH",
-        body: JSON.stringify({ householdName: displayName })
-      }).then((payload) => {
-        if (payload.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(payload.donor));
-      }).catch(() => null);
-      form.dataset.dirty = "";
-      showNotice("Household details saved. Next, add any family members or namedays.");
-      await loadDirectory();
-      setWizardStep(2);
     });
     async function setDirectoryChildrenSharing(enabled) {
       const withdrawableStatuses = new Set(["draft", "returned", "submitted", "under_review", "approved"]);
@@ -3165,6 +3305,9 @@
         }
       }
     }
+    document.querySelector('#contactForm [name="shareChildren"]').addEventListener("change", (event) => {
+      event.currentTarget.dataset.changed = "true";
+    });
     document.getElementById("contactForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = event.currentTarget;
@@ -3294,7 +3437,7 @@
           await api(`/api/directory/media/${encodeURIComponent(result.asset.id)}/submit`, { method: "POST" });
         }
       });
-      if (directoryChildSharing.length) jobs.push(() => setDirectoryChildrenSharing(form.elements.shareChildren.checked));
+      if (directoryChildSharing.length && form.elements.shareChildren.dataset.changed === "true") jobs.push(() => setDirectoryChildrenSharing(form.elements.shareChildren.checked));
       if (household) householdNamedays.forEach((nameday) => jobs.push(
         () => api(`/api/directory/households/${encodeURIComponent(household.id)}/self/namedays/${encodeURIComponent(nameday.id)}`, {
           method: "PATCH",
@@ -3307,6 +3450,8 @@
           })
         })
       ));
+      const submit = event.submitter || form.querySelector('button[type="submit"]');
+      submit.disabled = true;
       try {
         // Persist the explicit opt-ins first. Contact and address enforcement
         // reads these preferences, so racing both requests can reject a valid
@@ -3314,11 +3459,14 @@
         await Promise.all(preferenceJobs.map((savePreference) => savePreference()));
         await Promise.all(jobs.map((saveSharedField) => saveSharedField()));
         form.dataset.dirty = "";
+        delete form.elements.shareChildren.dataset.changed;
         showNotice("Directory sharing choices saved.");
         await loadDirectory();
         setWizardStep(3);
       } catch (error) {
         showNotice(error.message || "Unable to save sharing choices.", true);
+      } finally {
+        submit.disabled = false;
       }
     });
     document.getElementById("householdMemberList").addEventListener("click", async (event) => {
@@ -3350,13 +3498,13 @@
           shareButton.textContent = "Creating link…";
           const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/members/${encodeURIComponent(member.personId)}/share-link`, {
             method: "POST",
-            body: "{}"
+            body: JSON.stringify({ combineGiving: Boolean(shareButton.closest(".household-member-row").querySelector("[data-invite-combine-giving]")?.checked) })
           });
           const shareUrl = new URL(payload.invitation.sharePath, window.location.origin).href;
           const inputId = `householdShare${member.personId.replace(/[^a-z0-9_-]/gi, "")}`;
           result.hidden = false;
           result.innerHTML = `<strong>Send this private link to ${esc(member.preferredName)}.</strong>
-            <span>It expires in 14 days. Signing in and using it submits a parish review request; it does not connect the account automatically.</span>
+            <span>They can open it while signed in to their own My AGAPAY account. Your parish reviews the connection request. The link expires in 14 days.</span>
             <div class="actions"><input id="${esc(inputId)}" value="${esc(shareUrl)}" readonly aria-label="Household review link for ${esc(member.preferredName)}" />
             <button class="btn secondary" type="button" data-copy-household-share="${esc(inputId)}">Copy link</button></div>`;
           try {
@@ -3365,6 +3513,7 @@
           } catch {
             showNotice(`Review link for ${member.preferredName} is ready below.`);
           }
+          void loadHouseholdStatementSharing();
         } catch (error) {
           if (result) {
             result.hidden = false;
@@ -3373,11 +3522,12 @@
           }
         } finally {
           shareButton.disabled = false;
-          shareButton.textContent = `Share with ${member.preferredName}`;
+          shareButton.textContent = `Invite ${member.preferredName}`;
         }
         return;
       }
       if (editButton) {
+        if (!canLeaveWizardStep()) return;
         const member = (householdDetailState?.members || []).find((item) => item.personId === editButton.dataset.editHouseholdMember);
         if (!member) {
           showNotice("That household member is no longer available. Refresh and try again.", true);
@@ -3415,6 +3565,7 @@
         form.dataset.isSelf = isSelf ? "true" : "false";
         form.dataset.dirty = "";
         form.hidden = false;
+        form.elements.preferredName.focus({ preventScroll: true });
         form.scrollIntoView({ behavior: "smooth", block: "center" });
         showWizardStatus(`Editing ${member.preferredName}’s birthday, contact information, and name day.`);
         return;
@@ -3599,7 +3750,12 @@
       const viewTab = event.target.closest("[data-directory-view-target]");
       if (viewTab) {
         event.preventDefault();
-        setDirectoryView(viewTab.dataset.directoryViewTarget);
+        if (viewTab.dataset.directoryViewTarget === "family" && document.body.dataset.directoryView !== "family") openPersonalDirectorySettings(2);
+        else if (viewTab.dataset.directoryViewTarget === "directory" && canLeaveWizardStep()) setDirectoryView("directory");
+        return;
+      }
+      if (event.target.closest("[data-open-directory-review]")) {
+        openPersonalDirectorySettings(4);
         return;
       }
       const target = event.target.closest("[data-mobile-target]");
@@ -3661,7 +3817,7 @@
         formEl.reset();
         formEl.dataset.dirty = "";
         const successMessage = adultResult.request?.direct
-          ? `${payload.preferredName} was added to your family and is managed through this family’s My AGAPAY account.${namedayWarning}`
+          ? `${payload.preferredName} was added to your family. Use Invite next to their name to connect their My AGAPAY account.${namedayWarning}`
           : "Adult family member sent to the parish for first-time household confirmation." + namedayWarning;
         status.textContent = successMessage;
         status.className = "notice" + (namedayWarning ? " error" : "");

@@ -10,10 +10,10 @@ const donorApp = readDonorAppSource();
 const myAgapayShell = readBrowserContractSourceSync('public/myagapay-shell.js');
 const worker = readWorkerCompositionSource();
 
-assert.match(page, /Four simple steps for your family directory entry/);
+assert.match(page, /Manage your profile, family, and sharing choices/);
 assert.match(
   page,
-  /const EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/
+  /const EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Review & submit", "Ways to help"\]/
 );
 assert.match(page, /Share Family in Directory/);
 assert.doesNotMatch(page, />Pending Changes</);
@@ -51,7 +51,7 @@ assert.match(page, /class="[^"]*app-main-feature-page/);
 assert.doesNotMatch(page, /class="koinonia-page-heading directory-app-heading"/);
 assert.doesNotMatch(page, /class="directory-top cal-hero myagapay-page-hero"/);
 assert.doesNotMatch(page, /mobileDirectory(?:Title|Location|Count)|directoryHeroLocation/);
-assert.match(page, /function directoryHomeTitle\(\) \{[\s\S]*return "Parish Directory";/);
+assert.match(page, /return householdOnly \? "Your Household" : "Parish Directory";/);
 assert.match(page, /directoryParish = \{[\s\S]*name: parish\.name[\s\S]*city: parish\.city[\s\S]*state: parish\.state/);
 assert.match(page, /data-mobile-target="browse"/);
 assert.doesNotMatch(page, /class="directory-mobile-nav"/);
@@ -73,7 +73,7 @@ assert.match(page, /function setDirectoryView\(view = "directory"/);
 assert.match(page, /settings\.open = next === "family"/);
 assert.match(page, /body\[data-directory-view="family"\] \.member-directory \{ display:none; \}/);
 assert.match(page, /body\[data-directory-view="family"\] \.personal-settings\[open\] \{[\s\S]*?position:static;/);
-assert.match(accountPage, /id="directorySettingsCard">[\s\S]*href="\/myagapay\/directory\?view=family"/);
+assert.match(accountPage, /id="directorySettingsCard">[\s\S]*href="\/myagapay\/directory\?view=household"/);
 assert.doesNotMatch(donorApp, /directorySettingsCard\.hidden/);
 assert.doesNotMatch(myAgapayShell, /activeProduct\(\) === "directory" && !parishCapabilities\.directoryEnabled/);
 assert.match(page, /id="directoryAvailability"[\s\S]*>Directory is unavailable</);
@@ -150,14 +150,14 @@ assert.match(
   page,
   /\.directory-tab\[aria-selected="true"\] \{ background:var\(--gold\); color:#241a04; border-color:var\(--gold\); \}/
 );
-assert.match(page, /class="edit-wizard-progress"/);
+assert.match(page, /id="editWizardCount"/);
 assert.match(page, /id="adultAddStatus" role="status" aria-live="polite"/);
 assert.match(page, /button\.textContent = "Sending\.\.\."/);
 assert.match(page, /skillListingsById = new Map/);
 assert.match(page, /event\.target\.closest\("\[data-edit-skill\]"\)/);
 assert.match(page, /form\.elements\.listingId\.value = listing\.id/);
 assert.match(page, /id="cancelSkillEdit" hidden/);
-assert.match(page, /EDIT_WIZARD_TITLES = \["Your information", "Your family", "Privacy choices", "Ways to help"\]/);
+assert.match(page, /id="directoryHouseholdSelect"/);
 assert.doesNotMatch(page, /id="ownDirectoryPreview"/);
 assert.match(
   page,
@@ -181,12 +181,12 @@ assert.match(page, /householdNamedays\.forEach\(\(nameday\) => jobs\.push/);
 assert.doesNotMatch(page, /Note to parish staff/);
 assert.doesNotMatch(page, /Send Add Child Request/);
 assert.doesNotMatch(page, /An account invitation is ready\./);
-assert.match(page, /managed through this family’s My AGAPAY account/);
+assert.match(page, /Use Invite next to their name to connect their My AGAPAY account/);
 assert.match(page, /Review your sharing choices when you are ready to appear in the directory\./);
 assert.doesNotMatch(page, /Save the changes in this step before continuing\./);
 assert.match(page, /id="editWizardStatus" role="status" aria-live="polite"/);
 assert.match(page, /showNotice\("Your information was saved\. Continue when you are ready\."\)/);
-assert.match(page, /\.edit-wizard-steps \{ display:none; \}/);
+assert.match(page, /\.edit-wizard-steps \{ display:grid;/);
 assert.match(page, /id="householdMemberList"/);
 assert.match(page, /id="adultAddSection" hidden/);
 assert.match(page, /function syncAdultAddSection\(members = \[\]\)/);
@@ -230,6 +230,7 @@ assert.match(page, /data-wizard-step="1"/);
 assert.match(page, /data-wizard-step="2"/);
 assert.match(page, /data-wizard-step="3"/);
 assert.match(page, /data-wizard-step="4"/);
+assert.match(page, /data-wizard-step="5"/);
 assert.doesNotMatch(page, /data-settings-section=/);
 assert.match(page, /Family member, birthday, and nameday saved\./);
 assert.match(
@@ -250,7 +251,7 @@ assert.match(page, /function accountDirectoryDefaults\(\)/);
 assert.match(page, /directory\.households\?\.items/);
 assert.match(
   page,
-  /void Promise\.allSettled\(\[loadMemberHome\(\), loadMySkills\(\), loadDirectoryReviewRequests\(\), householdData\.then\(loadHouseholdVerification\)\]\)/
+  /void Promise\.allSettled\(\[loadMemberHome\(\), loadMySkills\(\), loadDirectoryReviewRequests\(\)\]\)/
 );
 assert.match(page, /function renderFamilyContact\(member, contact\)/);
 assert.match(page, /const memberContacts = \(profile\.members \|\| \[\]\)\.flatMap/);

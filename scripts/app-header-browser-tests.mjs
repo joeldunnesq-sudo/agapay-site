@@ -164,12 +164,6 @@ try {
     await page.waitForFunction(() => document.querySelector('[data-app-church-name]')?.textContent === 'Test Parish');
     assert.equal(await page.locator('.app-page-header').count(), 1, route);
     assert.equal(await page.locator('[data-app-church-name]').getAttribute('title'), 'Test Parish, Chicago, IL', route);
-    // This fixture has no directory household; dismiss its first-run wizard before testing navigation.
-    if (route === 'directory')
-      await page.evaluate(() => {
-        const modal = document.getElementById('setupWizardModal');
-        if (modal) modal.style.display = 'none';
-      });
     const toggle = page.locator('.app-header-menu-button');
     await toggle.click();
     await page.locator('.app-page-header [data-myagapay-app-menu]').waitFor({ state: 'visible' });
@@ -297,20 +291,21 @@ try {
   await page.getByRole('heading', { name: 'Directory is unavailable' }).waitFor();
   assert.equal(await page.locator('#memberDirectory').isVisible(), false);
   await page.getByRole('button', { name: 'Set up family information' }).click();
-  const setup = page.getByRole('dialog', { name: 'Create your parish directory profile' });
+  await page.getByRole('button', { name: 'Create a new household' }).click();
+  const setup = page.locator('#startProfileForm');
   await setup.getByLabel('Name you go by').fill('New Member');
   await setup.getByLabel('Family or household name').fill('New Member Household');
   await setup.getByRole('button', { name: 'Create my private profile' }).click();
   await page
     .locator('#directoryNotice')
-    .getByText(/private profile is ready/)
+    .getByText(/private draft is ready/)
     .waitFor();
   assert.equal(startedFamily.parishId, secondParish.id);
   assert.equal(startedFamily.householdName, 'New Member Household');
   await fixedTabs.getByRole('link', { name: 'Account' }).click();
-  await page.getByRole('link', { name: 'Edit family information' }).click();
-  await page.waitForURL('**/myagapay/directory?view=family');
-  assert.equal(await page.getByRole('tab', { name: 'Family Information' }).getAttribute('aria-selected'), 'true');
+  await page.getByRole('link', { name: 'Manage household' }).click();
+  await page.waitForURL('**/myagapay/directory?view=household');
+  await page.locator('#personalDirectorySettings[open]').waitFor();
   activeParish = secondParish;
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();
