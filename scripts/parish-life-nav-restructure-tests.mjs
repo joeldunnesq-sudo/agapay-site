@@ -162,7 +162,7 @@ assert.match(landing, /class="cal-date-heading-row"/);
 assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
-assert.match(landing, /id="todayGiveLink"[^>]*>Give</);
+assert.match(landing, /id="todayGiveLink" href="\/myagapay\/giving"[^>]*>[\s\S]*?<span>Give now<\/span>/);
 assert.doesNotMatch(
   landing,
   /class="cal-hero parish-life-saint-card"/,

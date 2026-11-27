@@ -19,6 +19,7 @@ const browser = await chromium.launch();
 try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
   let blocked = false;
+  let readingsConnected = true;
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'agapay.test') return route.fulfill({ status: 204, body: '' });
@@ -40,8 +41,13 @@ try {
             tone: 4,
             saints: ['Saint Symeon'],
             saintStories: [{ title: 'Saint Symeon', story: 'A life of prayer.' }],
+            sourceConnected: readingsConnected,
             readingAppointments: [
-              { type: 'epistle', ref: '1 Timothy 2:1–7' },
+              {
+                type: 'epistle',
+                ref: '1 Timothy 2:1–7',
+                preview: '2:1 I exhort therefore, that, first of all, supplications, prayers …',
+              },
               { type: 'gospel', ref: 'Luke 4:16–22' },
             ],
           },
@@ -102,6 +108,19 @@ try {
   assert.equal(await page.locator('#parishLifeVideos a').count(), 1);
   assert.match(await page.locator('#todayFeastNote').textContent(), /1 Timothy 2:1–7/);
   assert.match(await page.locator('#todayFeastNote').textContent(), /Luke 4:16–22/);
+  const readingButton = page.getByRole('button', { name: /Epistle: 1 Timothy.*Gospel: Luke/s });
+  const readingDialog = page.getByRole('dialog', { name: 'Today’s Scripture readings' });
+  assert.equal(await readingDialog.isVisible(), false);
+  await readingButton.press('Enter');
+  await readingDialog.waitFor();
+  assert.match(await readingDialog.textContent(), /I exhort therefore/);
+  assert.match(await readingDialog.textContent(), /Luke 4:16–22/);
+  await page.keyboard.press('Escape');
+  await readingDialog.waitFor({ state: 'hidden' });
+  assert.equal(await readingButton.evaluate((el) => document.activeElement === el), true);
+  await readingButton.click();
+  await readingDialog.getByRole('button', { name: 'Close Scripture readings' }).click();
+  await readingDialog.waitFor({ state: 'hidden' });
   await page.evaluate(() =>
     renderRecentPodcastEpisodes(
       [{}],
@@ -122,7 +141,10 @@ try {
   assert.equal(await page.locator('#koinoniaShortcuts [data-community-tool-badge="prayers"]').textContent(), '3');
   assert.equal(await page.locator('#koinoniaShortcuts a').count(), 5);
   assert.equal(await page.locator('.app-home-header [data-app-church-name]').textContent(), parish.name);
-  assert.equal(await page.locator('.refined-liturgical-hero #todayGiveLink').textContent(), 'Give');
+  const hero = page.locator('.refined-liturgical-hero');
+  assert.equal(await hero.getByRole('link', { name: 'Give now' }).getAttribute('href'), '/myagapay/giving');
+  assert.equal(await hero.locator('a[href="/myagapay/calendar"]').count(), 0);
+  assert.equal(await page.getByRole('link', { name: 'Full Calendar', exact: true }).isVisible(), true);
   assert.equal(await page.locator('.koinonia-fasting-pill').textContent(), 'No fast');
   assert.equal(await page.locator('.koinonia-fasting-pill').getAttribute('aria-label'), 'No Fast (Bright Week)');
   assert.equal(await page.locator('#parishLifeNewsMount .parish-life-blog-card').count(), 4);
@@ -156,12 +178,18 @@ try {
     await page.screenshot({ path: `output/koinonia-refresh-${width}.png`, fullPage: true });
   }
   blocked = true;
+  readingsConnected = false;
   await page.reload();
   await page
     .getByText('You need to be an approved member of this parish to access Koinonia.', { exact: true })
     .waitFor();
   await page.getByRole('button', { name: 'Request parish approval' }).waitFor();
   assert.equal(await page.locator('#koinoniaShortcuts').isVisible(), false);
+  await page
+    .locator('#todayFeastNote')
+    .filter({ hasText: /Daily readings.*temporarily unavailable/ })
+    .waitFor();
+  assert.equal(await readingButton.count(), 0);
   assert.deepEqual(errors, []);
   console.log(
     'PASS - Koinonia calendar dates, compact responsive layout, latest video, subscribed news, memberships, saint modal and household gate'

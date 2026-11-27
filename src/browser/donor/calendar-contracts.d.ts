@@ -15,9 +15,11 @@ interface DonorLiturgicalDay {
   saintStories?: DonorSaintStory[];
   saints?: string[];
   primarySaintTitle?: string;
-  readingAppointments?: { type: string; ref: string; appointment?: string }[];
+  readingAppointments?: { type: string; ref: string; appointment?: string; preview?: string }[];
   epistleRef?: string;
   gospelRef?: string;
+  epistlePreview?: string;
+  gospelPreview?: string;
   feastTitle?: string;
   fastingRule?: string;
   nameDays?: { displayName: string; saintName: string }[];

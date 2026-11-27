@@ -647,7 +647,7 @@ import { icons } from './myagapay/shell-icons.js';
       })
       .join('');
     const sharedExtras = document.body.classList.contains('app-shared-header-page')
-      ? `<a href="/myagapay/giving/calendar">${icons.history}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>`
+      ? `<a href="/myagapay/calendar">${icons.calendar}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>`
       : '';
     return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === 'account' ? ' aria-current="page"' : ''}>${icons.account}<span>Account Settings</span></a>${sharedExtras}`;
   }

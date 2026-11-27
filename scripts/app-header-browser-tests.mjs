@@ -228,6 +228,16 @@ try {
   await homeTab.click();
   await page.waitForURL('**/myagapay/');
   await page.locator('.app-home-header').waitFor();
+  await page.locator('.app-header-menu-button').click();
+  const homeMenu = page.locator('.app-home-header [data-myagapay-app-menu]');
+  const historyLink = homeMenu.getByRole('link', { name: 'Giving History', exact: true });
+  assert.equal(
+    await historyLink.locator('svg path').first().getAttribute('d'),
+    'M5 3l2 1.5L9 3l3 1.5L15 3l2 1.5L19 3v18l-2-1.5L15 21l-3-1.5L9 21l-2-1.5L5 21z'
+  );
+  const calendarLink = homeMenu.getByRole('link', { name: 'Calendar', exact: true });
+  assert.equal(await calendarLink.getAttribute('href'), '/myagapay/calendar');
+  assert.equal(await calendarLink.locator('svg rect').count(), 1);
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();
   await page.locator('.app-page-header [data-app-support]').click();

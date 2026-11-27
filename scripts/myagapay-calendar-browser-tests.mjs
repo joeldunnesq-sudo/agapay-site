@@ -198,7 +198,9 @@ try {
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
   assert.equal(await page.locator('#donorSaintModalTitle').textContent(), 'Lives of the Saints');
   assert.ok(
-    await page.locator('.donor-saint-modal-head').evaluate((element) => element.getBoundingClientRect().height < 150),
+    await page
+      .locator('#donorSaintModal .donor-saint-modal-head')
+      .evaluate((element) => element.getBoundingClientRect().height < 150),
     'The list of saints must not consume the fixed modal header'
   );
   await page.goto('https://agapay.test/myagapay/calendar');
