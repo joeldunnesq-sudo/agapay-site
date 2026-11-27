@@ -184,7 +184,7 @@ function liturgicalReadingRows(today = {}) {
           rows.push({
             text: `${type === 'epistle' ? 'Epistle' : 'Gospel'}: ${reading.ref}`,
             className: 'cal-reading-line',
-            preview: reading.preview,
+            reading,
           })
         );
     });
@@ -217,20 +217,18 @@ function renderLiturgicalReadingLines(note, rows) {
   trigger.innerHTML =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 5c4-1 7 0 9 2 2-2 5-3 9-2v14c-4-1-7 0-9 2-2-2-5-3-9-2z"/></svg>';
   const references = document.createElement('span');
-  let summary;
-  for (const line of lines) {
-    if (line.classList.contains('is-heading')) {
-      references.append(line);
-      summary = void 0;
-      continue;
-    }
-    if (!summary) {
-      summary = document.createElement('span');
-      summary.className = 'cal-reading-line cal-reading-summary';
-      references.append(summary);
-    }
-    if (summary.firstChild) summary.append(', ');
-    summary.append(line.textContent || '');
+  for (const [type, label] of [
+    ['epistle', 'Epistle'],
+    ['gospel', 'Gospel'],
+  ]) {
+    const refs = rows.flatMap(({ reading }) => (reading?.type === type ? [reading.ref] : []));
+    if (!refs.length) continue;
+    const summary = document.createElement('span');
+    summary.className = 'cal-reading-line cal-reading-summary';
+    const heading = document.createElement('strong');
+    heading.textContent = `${label}:`;
+    summary.append(heading, ` ${refs.join(', ')}`);
+    references.append(summary);
   }
   trigger.append(references);
   trigger.addEventListener('click', () => dialog.showModal());
@@ -241,9 +239,9 @@ function renderLiturgicalReadingLines(note, rows) {
       const title = document.createElement(row.className.includes('is-heading') ? 'h3' : 'strong');
       title.textContent = row.text;
       section.append(title);
-      if (row.preview) {
+      if (row.reading?.preview) {
         const excerpt = document.createElement('p');
-        excerpt.textContent = row.preview;
+        excerpt.textContent = row.reading.preview;
         section.append(excerpt);
       }
       return section;

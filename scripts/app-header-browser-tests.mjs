@@ -204,14 +204,14 @@ try {
     'Giving',
     'Bookstore',
     'Directory',
-    'Sacraments',
+    'Account',
   ]);
   assert.equal(await tabs.first().getAttribute('aria-current'), 'page');
   assert.equal(await tabs.first().locator('path').first().getAttribute('d'), 'M3 11l9-8 9 8');
   assert.equal(await tabs.nth(1).locator('svg circle').getAttribute('r'), '9');
   assert.match(
     await page.locator('.refined-liturgical-hero').evaluate((el) => getComputedStyle(el).backgroundImage),
-    /fresco-vault/
+    /parish-chandelier/
   );
   const homeGive = page.locator('.refined-liturgical-hero #todayGiveLink');
   assert.equal(await homeGive.getAttribute('href'), '/myagapay/giving');
@@ -236,7 +236,11 @@ try {
   const sacramentsLink = homeMenu.getByRole('link', { name: 'Sacraments & Services', exact: true });
   const chalice = await sacramentsLink.locator('svg path').getAttribute('d');
   assert.equal(chalice, 'M5 4h14v3a7 7 0 0 1-14 0V4Zm7 10v6m-5 1h10M6 7h12');
-  assert.equal(await tabs.nth(4).locator('svg path').getAttribute('d'), chalice);
+  assert.equal(
+    await page.locator('#koinoniaShortcuts a[href="/myagapay/sacraments"] svg path').getAttribute('d'),
+    chalice
+  );
+  assert.equal(await tabs.locator('[href="/myagapay/sacraments"]').count(), 0);
   const historyLink = homeMenu.getByRole('link', { name: 'Giving History', exact: true });
   assert.equal(
     await historyLink.locator('svg path').first().getAttribute('d'),
@@ -245,6 +249,15 @@ try {
   const calendarLink = homeMenu.getByRole('link', { name: 'Calendar', exact: true });
   assert.equal(await calendarLink.getAttribute('href'), '/myagapay/calendar');
   assert.equal(await calendarLink.locator('svg rect').count(), 1);
+  await page.keyboard.press('Escape');
+  await tabs.last().click();
+  await page.waitForURL('**/myagapay/account');
+  assert.equal(await tabs.last().getAttribute('aria-current'), 'page');
+  activeParish = { ...secondParish, bookstoreEnabled: false, directoryEnabled: false, libraryEnabled: false };
+  await page.goto('https://agapay.test/myagapay/');
+  await tabs.getByText('History', { exact: true }).waitFor();
+  assert.deepEqual(await tabs.locator('span').allTextContents(), ['Home', 'Giving', 'History', 'Account']);
+  activeParish = secondParish;
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();
   await page.locator('.app-page-header [data-app-support]').click();

@@ -97,7 +97,6 @@
         label: 'History',
         short: 'Giving history',
         icon: icons.history,
-        mobileFallbackFor: 'sacramentsEnabled',
         desktopHidden: true,
       },
       {
@@ -125,12 +124,11 @@
         parishFeature: 'prayerRequestsEnabled',
       },
       {
-        id: 'settings',
+        id: 'account',
         href: '/myagapay/account',
-        label: 'Settings',
+        label: 'Account',
         short: 'Account settings',
         icon: icons.account,
-        mobileFallbackFor: 'bookstoreEnabled',
         desktopHidden: true,
       },
     ];
@@ -244,23 +242,11 @@
     function mobileProducts() {
       const byId = new Map(products().map((item) => [item.id, item]));
       const active = activeProduct();
-      const featureOrFallback = (featureId, fallbackId) => {
-        const feature = byId.get(featureId);
-        return parishCapabilities[feature?.parishFeature] === true || active === featureId
-          ? feature
-          : byId.get(fallbackId);
-      };
-      const libraryOrHistory = featureOrFallback('library', 'history');
-      const directory = byId.get('directory');
-      const directoryOrFallback =
-        parishCapabilities.directoryEnabled || active === 'directory' ? directory : libraryOrHistory;
-      return [
-        byId.get('parish-life'),
-        byId.get('giving'),
-        featureOrFallback('bookstore', 'settings'),
-        directoryOrFallback,
-        byId.get('commemorations'),
-      ].filter(Boolean);
+      const parishTabs = ['bookstore', 'directory', 'library']
+        .map((id) => byId.get(id))
+        .filter((item) => active === item.id || (item.parishFeature && parishCapabilities[item.parishFeature]));
+      const middleTabs = [...parishTabs, byId.get('history')].slice(0, 2);
+      return [byId.get('parish-life'), byId.get('giving'), ...middleTabs, byId.get('account')].filter(Boolean);
     }
     function hamburgerProducts() {
       return visibleProducts();
@@ -668,7 +654,7 @@
         .map((item) => {
           const current =
             item.id === active ||
-            (item.id === 'settings' && active === 'account') ||
+            (item.id === 'parish-life' && active === 'commemorations' && !isDesktopSideNav) ||
             (item.id === 'giving' && active === 'history' && !navProducts.some((product) => product.id === 'history'));
           const activeClass = current ? (isLearnNav ? 'is-active' : 'active') : '';
           if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) {

@@ -25,6 +25,5 @@ interface ShellProduct {
   icon: string;
   deferUntilCapabilitiesLoaded?: boolean;
   parishFeature?: keyof ShellParishCapabilities;
-  mobileFallbackFor?: keyof ShellParishCapabilities;
   desktopHidden?: boolean;
 }

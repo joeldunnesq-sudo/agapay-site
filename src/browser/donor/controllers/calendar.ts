@@ -165,7 +165,8 @@ function koinoniaHeroTitle(title: string, saintCount: number) {
     : first;
 }
 
-type LiturgicalReadingRow = { text: string; className: string; preview?: string };
+type LiturgicalReading = { type: 'epistle' | 'gospel'; ref: string; preview?: string };
+type LiturgicalReadingRow = { text: string; className: string; reading?: LiturgicalReading };
 
 function liturgicalReadingRows(today: DonorLiturgicalDay = {}) {
   const appointments: NonNullable<DonorLiturgicalDay['readingAppointments']> =
@@ -175,7 +176,7 @@ function liturgicalReadingRows(today: DonorLiturgicalDay = {}) {
           today.epistleRef && { type: 'epistle', ref: today.epistleRef, preview: today.epistlePreview },
           today.gospelRef && { type: 'gospel', ref: today.gospelRef, preview: today.gospelPreview },
         ].filter(Boolean) as NonNullable<DonorLiturgicalDay['readingAppointments']>);
-  const groups = new Map<string, { type: string; ref: string; preview?: string }[]>();
+  const groups = new Map<string, LiturgicalReading[]>();
   appointments.forEach((reading) => {
     const type = String(reading?.type || '').toLowerCase();
     const ref = String(reading?.ref || '').trim();
@@ -204,7 +205,7 @@ function liturgicalReadingRows(today: DonorLiturgicalDay = {}) {
           rows.push({
             text: `${type === 'epistle' ? 'Epistle' : 'Gospel'}: ${reading.ref}`,
             className: 'cal-reading-line',
-            preview: reading.preview,
+            reading,
           })
         );
     });
@@ -239,20 +240,18 @@ function renderLiturgicalReadingLines(note: HTMLElement, rows: LiturgicalReading
   trigger.innerHTML =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 5c4-1 7 0 9 2 2-2 5-3 9-2v14c-4-1-7 0-9 2-2-2-5-3-9-2z"/></svg>';
   const references = document.createElement('span');
-  let summary: HTMLSpanElement | undefined;
-  for (const line of lines) {
-    if (line.classList.contains('is-heading')) {
-      references.append(line);
-      summary = undefined;
-      continue;
-    }
-    if (!summary) {
-      summary = document.createElement('span');
-      summary.className = 'cal-reading-line cal-reading-summary';
-      references.append(summary);
-    }
-    if (summary.firstChild) summary.append(', ');
-    summary.append(line.textContent || '');
+  for (const [type, label] of [
+    ['epistle', 'Epistle'],
+    ['gospel', 'Gospel'],
+  ] as const) {
+    const refs = rows.flatMap(({ reading }) => (reading?.type === type ? [reading.ref] : []));
+    if (!refs.length) continue;
+    const summary = document.createElement('span');
+    summary.className = 'cal-reading-line cal-reading-summary';
+    const heading = document.createElement('strong');
+    heading.textContent = `${label}:`;
+    summary.append(heading, ` ${refs.join(', ')}`);
+    references.append(summary);
   }
   trigger.append(references);
   trigger.addEventListener('click', () => dialog.showModal());
@@ -264,9 +263,9 @@ function renderLiturgicalReadingLines(note: HTMLElement, rows: LiturgicalReading
       const title = document.createElement(row.className.includes('is-heading') ? 'h3' : 'strong');
       title.textContent = row.text;
       section.append(title);
-      if (row.preview) {
+      if (row.reading?.preview) {
         const excerpt = document.createElement('p');
-        excerpt.textContent = row.preview;
+        excerpt.textContent = row.reading.preview;
         section.append(excerpt);
       }
       return section;

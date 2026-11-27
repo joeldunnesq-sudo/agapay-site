@@ -53,8 +53,8 @@
   border: 0;
   border-radius: 18px;
   background:
-    linear-gradient(90deg, #0e2635 10%, #0e2635 33%, #0e2635f2 45%, #10242d77 65%, #10242d22 93%),
-    url('/images/vision/fresco-vault.jpg') right center / 66% auto no-repeat,
+    linear-gradient(90deg, #0e2635 8%, #0e2635 34%, #0e2635f0 48%, #10242d87 71%, #10242d30 100%),
+    url('/images/vision/parish-chandelier.jpg') right 43% / 60% auto no-repeat,
     #0e2635;
 }
 .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-hero-inner { padding:24px clamp(17px,3vw,37px); }
@@ -90,7 +90,7 @@
 }
 .cal-readings-trigger svg { color:#f1d39d; }
 .cal-readings-trigger .cal-reading-summary { line-height:1.55; }
-.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-readings-trigger .is-heading:not(:first-child) { margin-top:6px; }
+.cal-readings-trigger .cal-reading-summary strong { color:#f1d39d; font-weight:600; }
 .cal-readings-trigger::after { content:''; width:6px; height:6px; flex:none; border-top:1px solid #f1d39d; border-right:1px solid #f1d39d; transform:rotate(45deg); }
 .refined-liturgical-hero :is(.cal-readings-trigger,.home-give-button):focus-visible { outline:2px solid #f8e3b3; outline-offset:3px; }
 .cal-readings-trigger:hover .cal-reading-line:not(.is-heading) { text-decoration:underline; text-underline-offset:3px; }
@@ -102,9 +102,9 @@
 @media (max-width: 580px) {
   .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero {
     background:
-      linear-gradient(90deg, #0e2635f7, #0e2635cd 62%, #0e263577),
-      linear-gradient(0deg, #0e2635 12%, transparent 78%),
-      url('/images/vision/fresco-vault.jpg') 58% 39% / cover no-repeat,
+      linear-gradient(90deg, #0e2635eb, #0e2635c7 52%, #0e263571),
+      linear-gradient(0deg, #0e2635 6%, #0e263583 30%, transparent 70%),
+      url('/images/vision/parish-chandelier.jpg') center 44% / cover no-repeat,
       #0e2635;
   }
 }

@@ -128,29 +128,17 @@ import { icons } from './myagapay/shell-icons.js';
   function mobileProducts() {
     const byId = new Map(products().map((item) => [item.id, item]));
     const active = activeProduct();
-    const featureOrFallback = (featureId: string, fallbackId: string) => {
-      const feature = byId.get(featureId);
-      return parishCapabilities[feature?.parishFeature as keyof ShellParishCapabilities] === true ||
-        active === featureId
-        ? feature
-        : byId.get(fallbackId);
-    };
-    const libraryOrHistory = featureOrFallback('library', 'history');
-    const directory = byId.get('directory');
-    const directoryOrFallback =
-      parishCapabilities.directoryEnabled || active === 'directory' ? directory : libraryOrHistory;
-    return [
-      byId.get('parish-life'),
-      byId.get('giving'),
-      featureOrFallback('bookstore', 'settings'),
-      directoryOrFallback,
-      byId.get('commemorations'),
-    ].filter(Boolean) as ShellProduct[];
+    const parishTabs = ['bookstore', 'directory', 'library']
+      .map((id) => byId.get(id)!)
+      .filter((item) => active === item.id || (item.parishFeature && parishCapabilities[item.parishFeature]));
+    const middleTabs = [...parishTabs, byId.get('history')].slice(0, 2);
+    return [byId.get('parish-life'), byId.get('giving'), ...middleTabs, byId.get('account')].filter(
+      Boolean
+    ) as ShellProduct[];
   }
 
   function hamburgerProducts() {
-    // The hamburger shows every enabled product, independent of the five-slot
-    // bottom bar. This keeps Library reachable when Sacraments owns its slot.
+    // The menu includes all enabled parish tools, including those outside the tab bar.
     return visibleProducts();
   }
 
@@ -581,10 +569,7 @@ import { icons } from './myagapay/shell-icons.js';
   function productNav(active = activeProduct(), className = 'my-agapay-tabbar') {
     const isLearnNav = className === 'learn-product-tabbar';
     const isDesktopSideNav = className.includes('unified-product-nav');
-    // Every bottom tabbar variant is a fixed 5-column grid -- drop
-    // mobileTabHidden items there so a 6th product
-    // never wraps onto an ugly second row. The full list still appears in
-    // the desktop sidebar, which has room.
+    // Size the mobile grid to the tabs available for this parish.
     const navProducts = isDesktopSideNav ? visibleProducts() : mobileProducts();
     const navAttrs = isDesktopSideNav
       ? ' hx-boost="false"'
@@ -593,7 +578,7 @@ import { icons } from './myagapay/shell-icons.js';
       .map((item) => {
         const current =
           item.id === active ||
-          (item.id === 'settings' && active === 'account') ||
+          (item.id === 'parish-life' && active === 'commemorations' && !isDesktopSideNav) ||
           (item.id === 'giving' && active === 'history' && !navProducts.some((product) => product.id === 'history'));
         const activeClass = current ? (isLearnNav ? 'is-active' : 'active') : '';
         if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) {

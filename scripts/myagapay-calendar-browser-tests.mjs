@@ -98,8 +98,11 @@ try {
     { donor }
   );
   const assertReadings = async () => {
-    await page.waitForFunction(() => document.querySelectorAll('#todayFeastNote .is-heading').length === 2);
-    assert.deepEqual(await page.locator('#todayFeastNote .is-heading').allTextContents(), [
+    const headingSelector = (await page.locator('#todayReadingsBody').count())
+      ? '#todayReadingsBody h3'
+      : '#todayFeastNote .is-heading';
+    await page.waitForFunction((selector) => document.querySelectorAll(selector).length === 2, headingSelector);
+    assert.deepEqual(await page.locator(headingSelector).allTextContents(), [
       'Readings of the day',
       'Feast — Forerunner',
     ]);
@@ -109,8 +112,8 @@ try {
   await assertReadings();
   const summary = page.locator('#todayFeastNote .cal-reading-summary');
   assert.deepEqual(await summary.allTextContents(), [
-    'Epistle: Galatians 4.8-21, Gospel: Mark 6.45-53',
-    'Epistle: Acts 13.25-33, Gospel: Mark 6.14-30',
+    'Epistle: Galatians 4.8-21, Acts 13.25-33',
+    'Gospel: Mark 6.45-53, Mark 6.14-30',
   ]);
   await page.locator('.cal-readings-trigger').click();
   const readingDialog = page.getByRole('dialog', { name: 'Today’s Scripture readings' });
@@ -128,8 +131,8 @@ try {
   }));
   assert.match(
     heroColors.background,
-    /linear-gradient.*fresco-vault\.jpg/,
-    'Home must use the preview’s photo with a dark gradient'
+    /linear-gradient.*parish-chandelier\.jpg/,
+    'Home must use the selected chandelier photo with a dark gradient'
   );
   assert.equal(heroColors.title, 'rgb(245, 242, 235)', 'The dark hero must retain its readable cream title');
   await page.locator('#saintPreviewCard').click();

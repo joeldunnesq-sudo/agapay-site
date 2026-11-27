@@ -291,8 +291,8 @@ assert.ok(myAgapayShell.includes('parishFeature: "directoryEnabled"'), "shared M
 assert.ok(includesJavaScriptFragment(worker,"sacramentsEnabled: true") && includesJavaScriptFragment(worker,"ordinary_member_access_enabled = 1"), "the full St. Fiacre demo reseed should keep Sacraments and Directory visible to donors");
 assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && includesJavaScriptFragment(worker,'/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
 assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.includes("ready to serve"), "the parish dashboard should notify leaders about donor service interest");
-assert.ok(myAgapayShell.includes('mobileFallbackFor: "sacramentsEnabled"') && myAgapayShell.includes('label: "History"'), "Giving History should replace unavailable Sacraments & Services in the bottom nav");
-assert.ok(myAgapayShell.includes('featureOrFallback("library", "history")') && myAgapayShell.includes('label: "History"'), "History should replace unavailable Library in the bottom nav");
+assert.match(myAgapayShell, /\.\.\.middleTabs,\s*byId.get\("account"\)/, "Account should be the last bottom tab");
+assert.match(myAgapayShell, /\[\.\.\.parishTabs, byId.get\("history"\)\]\.slice\(0, 2\)/, "History should fill one slot when fewer parish tools are available");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard?view=context"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(includesJavaScriptFragment(siteChrome, "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");

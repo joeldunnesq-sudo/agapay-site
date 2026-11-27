@@ -94,7 +94,12 @@ try {
   assert.equal(await fundList.locator('.active-funds-card').count(), 5);
   assert.match(await link.getAttribute('href'), /quick=1/);
   assert.match(await link.getAttribute('href'), /fund=building/);
-  await link.click();
+  assert.equal(await link.getByText('Building needs', { exact: true }).isVisible(), false);
+  assert.equal(
+    await link.evaluate((row) => Math.round(row.getBoundingClientRect().width)),
+    await fundList.evaluate((list) => list.clientWidth - 34)
+  );
+  await link.getByText('Building Fund', { exact: true }).click();
   await page.waitForFunction(() => document.body.classList.contains('quick-give-mode'));
   assert.equal(await page.locator('#fund').inputValue(), 'building');
   assert.equal(await page.locator('#fundFields').isVisible(), false);

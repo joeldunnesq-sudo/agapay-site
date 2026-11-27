@@ -9,15 +9,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=6c25e1f1147e0902" />
+  <link rel="stylesheet" href="/donor/style.css?v=32d58dad6fb5fed2" />
   <script src="/security.js?v=75eba12e9a4d5837"></script>
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
-  <script src="/myagapay-shell.js?v=fd09a74fcd7db5ba"></script>
-  <script src="/donor/controllers/calendar.js?v=6225a60dc6a41573" defer></script>
+  <script src="/myagapay-shell.js?v=a5dec07d8a858eca"></script>
+  <script src="/donor/controllers/calendar.js?v=2f0610b471545ef3" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0563aa47128c1c3b" defer></script>
-  <script src="/donor/app.js?v=c33b43d9c1a71e7f" defer></script>
+  <script src="/donor/app.js?v=3bf9375708613ce7" defer></script>
   <script src="/donor/pwa-install.js?v=7702a89df6bc6199" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
@@ -191,10 +191,11 @@
         </div>
       </div>
       <nav class="my-agapay-tabbar" aria-label="My AGAPAY navigation">
-        <a href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>My AGAPAY</span></a>
-        <a class="active" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9h-3.75a1.5 1.5 0 0 0 0 3h2.5a1.5 1.5 0 0 1 0 3H9.5"/></svg><span>Giving</span></a>
+        <a href="/myagapay/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
+        <a class="active" href="/myagapay/giving"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9h-3.75a1.5 1.5 0 0 0 0 3h2.5a1.5 1.5 0 0 1 0 3H9.5"/></svg><span>Giving</span></a>
         <a href="/myagapay/bookstore"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Bookstore</span></a>
-        <a href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
+        <a href="/myagapay/directory"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg><span>Directory</span></a>
+        <a href="/myagapay/account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
       </nav>
     </main>
   </div>
