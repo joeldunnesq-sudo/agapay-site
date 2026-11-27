@@ -272,23 +272,18 @@ assert.ok(!parishDashboardApp.includes("directoryAdminHeaders") && !parishDashbo
 assert.ok(!parishDashboardApp.includes("agapayPlatformToken") && !parishDashboardApp.includes("agapayUserToken"), "Parish Dashboard Directory should not read My AGAPAY tokens from localStorage");
 assert.ok(listenManifest.includes('"scope": "/listen/"') && listenManifest.includes('"name": "AGAPAY Listen"'), "AGAPAY Listen PWA manifest should exist with its own scope and identity");
 assert.ok(listenIndex.includes('/listen/manifest.webmanifest'), "AGAPAY Listen page should link its own manifest, not the root or admin one");
-assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
+assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Giving"'), "shared My AGAPAY shell should define the canonical Give product tab");
 assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Sacraments & Services"'), "shared My AGAPAY shell should define the merged Sacraments & Services product tab");
-assert.ok(myAgapayShell.includes('id: "parish-life"') && myAgapayShell.includes('communicationsEnabled ? "Koinonia" : "Today"'), "shared My AGAPAY shell should define one tier-aware parish landing product tab");
+assert.ok(myAgapayShell.includes('id: "parish-life"') && myAgapayShell.includes('label: "Home"'), "shared My AGAPAY shell should define one tier-aware parish landing product tab");
 assert.ok(myAgapayShell.includes('id: "directory"') && myAgapayShell.includes('label: "Directory"'), "shared My AGAPAY shell should define Directory as a standard product tab");
 assert.ok(myAgapayShell.includes('id: "library"') && myAgapayShell.includes('label: "Parish Library"') && myAgapayShell.includes("visibleProducts()"), "shared My AGAPAY shell should keep Parish Library available in the desktop product nav");
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should define the canonical Bookstore product tab");
 assert.ok(
-  myAgapayShell.indexOf('id: "giving"') < myAgapayShell.indexOf('id: "parish-life"') &&
-  myAgapayShell.indexOf('id: "parish-life"') < myAgapayShell.indexOf('id: "commemorations"') &&
-  myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "directory"') &&
-  myAgapayShell.indexOf('id: "directory"') < myAgapayShell.indexOf('id: "bookstore"') &&
-  myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "library"') &&
-  myAgapayShell.indexOf('id: "library"') < myAgapayShell.indexOf('id: "directory"'),
-  "shared My AGAPAY shell should order the main products as Give, parish landing, Services, Library, Directory, and Bookstore"
+  ["parish-life", "giving", "bookstore", "directory", "commemorations"].every((id, index, ids) =>
+    index === 0 || myAgapayShell.indexOf('id: "' + ids[index - 1] + '"') < myAgapayShell.indexOf('id: "' + id + '"')),
+  "shared My AGAPAY shell should order the main products as Home, Giving, Bookstore, Directory, and Sacraments"
 );
-assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
-assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
+assert.match(myAgapayShell, /pathname === "\/myagapay"[^\n]*return "parish-life"/, "My AGAPAY should open on Home");
 assert.ok(myAgapayShell.includes('pathname.startsWith("/myagapay/directory")') && myAgapayShell.includes('return "directory"'), "shared My AGAPAY shell should make /myagapay/directory resolve to the Directory product");
 assert.ok(!myAgapayShell.includes('data-myagapay-launch-gated') && !myAgapayShell.includes('release-flags'), "shared My AGAPAY shell should not gate Marketplace or Directory behind launch controls");
 assert.ok(myAgapayShell.includes('parishFeature: "sacramentsEnabled"'), "shared My AGAPAY shell should gate Sacraments & Services on the parish capability");
@@ -359,7 +354,7 @@ assert.ok(
   ["Accounting", "Directory", "Commerce", "Parish Life", "Sacraments", "verified household member"].every((feature) => publicGivePage.includes(feature)),
   "the /give page should present every parish platform pillar and explain Koinonia's verified-household boundary"
 );
-assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "My AGAPAY root should open the Give dashboard directly without a product picker");
+assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "The Giving destination should open the giving dashboard without a product picker");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(!donorHome.includes("Counts parish offerings (tithes) only"), "mobile Annual Pledge tracker should not include the tracking explanation copy");
 assert.ok(

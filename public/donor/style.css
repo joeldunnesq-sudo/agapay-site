@@ -2491,16 +2491,17 @@ body.donor-home {
   z-index: 30;
   display: grid;
   width: min(100%, 480px);
-  min-height: 78px;
+  min-height: 64px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.2rem;
   transform: translateX(-50%);
-  border: 1px solid rgba(201, 162, 91, 0.24);
+  border: 0;
+  border-top: 1px solid #e7dfd1;
   border-bottom: 0;
-  border-radius: 24px 24px 0 0;
-  padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+  border-radius: 0;
+  padding: 5px 7px calc(5px + env(safe-area-inset-bottom));
   background: rgba(255, 252, 246, 0.95);
-  box-shadow: 0 -16px 36px rgba(6, 21, 34, 0.14);
+  box-shadow: 0 -6px 24px rgba(21,39,35,.07);
   backdrop-filter: blur(16px);
 }
 
@@ -2510,11 +2511,11 @@ body.donor-home {
   place-items: center;
   align-content: center;
   gap: 0.18rem;
-  border-radius: 16px;
+  border-radius: 10px;
   color: rgba(6, 21, 34, 0.62);
   font-family: var(--sans);
   font-size: 0.66rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.05;
   text-align: center;
   text-decoration: none;
@@ -6569,8 +6570,8 @@ body.donor-home {
 
 .my-agapay-tabbar {
   width: min(100%, 520px);
-  min-height: 76px;
-  border-radius: 20px 20px 0 0;
+  min-height: 64px;
+  border-radius: 0;
 }
 
 @media (min-width: 901px) {
@@ -10044,7 +10045,7 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
 .signup-action-primary:disabled { cursor:wait; opacity:.68; }
 @media (max-width:900px) {
   .signups-page .donor-mobile-content { padding-bottom:calc(96px + env(safe-area-inset-bottom)); }
-  .signups-page .my-agapay-tabbar { width:min(100%,520px); min-height:76px; border-radius:20px 20px 0 0; }
+  .signups-page .my-agapay-tabbar { width:min(100%,520px); min-height:64px; border-radius:0; }
 }
 .signup-slot-full { color:#68737c; font-size:11px; font-weight:700; }
 .signup-slot-form { display:grid; grid-template-columns:2fr .8fr 1.3fr 2fr auto; gap:10px; align-items:end; border-top:1px solid #e4dfd4; padding-top:18px; }

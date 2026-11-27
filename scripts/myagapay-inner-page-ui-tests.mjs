@@ -49,7 +49,7 @@ for (const pageName of koinoniaPages) {
     /class="koinonia-page-back"[^>]*data-parish-life-back/,
     `${pageName} must prevent the shared shell from injecting a duplicate back control`
   );
-  assert.match(html, /class="koinonia-page-back"[^>]*>[\s\S]*?Koinonia<\/a>/, `${pageName} must return to Koinonia`);
+  assert.match(html, /class="koinonia-page-back"[^>]*>[\s\S]*?Home<\/a>/, `${pageName} must return to Home`);
   assert.doesNotMatch(
     html,
     /koinonia-feature-hero|koinonia-screen-head/,
@@ -85,8 +85,8 @@ assert.doesNotMatch(
 const prayerPage = await read('public/myagapay/prayer-requests.html');
 assert.match(
   prayerPage,
-  /class="prayer-page-back"[^>]*>[\s\S]*?Koinonia<\/a>/,
-  'Prayer Requests back label must say Koinonia'
+  /class="prayer-page-back"[^>]*>[\s\S]*?Home<\/a>/,
+  'Prayer Requests back label must say Home'
 );
 assert.match(
   prayerPage,
@@ -95,7 +95,7 @@ assert.match(
 );
 assert.match(
   prayerPage,
-  /<strong>MY AGAPAY<\/strong><small>Koinonia<\/small>/,
+  /<strong>MY AGAPAY<\/strong><small>Parish Life<\/small>/,
   'Prayer Requests must use the Koinonia app-bar label'
 );
 assert.doesNotMatch(
@@ -117,7 +117,7 @@ assert.match(
 );
 assert.match(
   koinoniaLanding,
-  /<strong>MY AGAPAY<\/strong><small>Koinonia<\/small>/,
+  /<strong>MY AGAPAY<\/strong><small>Home<\/small>/,
   'Koinonia must identify itself in the compact app bar'
 );
 assert.match(koinoniaLanding, /data-myagapay-app-menu-toggle/, 'Koinonia must use the capability-aware hamburger menu');

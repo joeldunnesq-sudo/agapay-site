@@ -8,11 +8,11 @@
     events: 'Meals & Events',
     exchange: 'Parish Exchange',
     feed: 'Announcements',
-    groups: 'Groups',
+    groups: 'Ministries',
     library: 'Parish Library',
     media: 'Video Library',
     news: 'Parish News',
-    'parish-life': 'Koinonia',
+    'parish-life': 'Home',
     'prayer-requests': 'Prayer Requests',
     sacraments: 'Sacraments & Services',
     signups: 'Parish Signups',
@@ -47,12 +47,19 @@
     .replace(/^\/myagapay\/?/, '')
     .replace(/\.html$/, '')
     .replace(/\/$/, '');
-  const key = route === 'calendar' ? 'giving/calendar' : route === 'services' ? 'sacraments' : route;
+  const key =
+    route === ''
+      ? 'parish-life'
+      : route === 'calendar'
+        ? 'giving/calendar'
+        : route === 'services'
+          ? 'sacraments'
+          : route === 'media/watch'
+            ? 'watch'
+            : route;
   if (!titles[key]) return;
   const switchIcon =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h11l-3-3M16 17H5l3 3M19 7l-3 3M5 17l3-3"/></svg>';
-  const churchIcon =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v5M9.5 4.5h5M5 21V11l7-5 7 5v10H5ZM2 21h20M10 21v-6h4v6M3 13v8M21 13v8"/></svg>';
   let parish = null;
   let header;
   let dialog;
@@ -63,13 +70,7 @@
     parish = value || null;
     const name = header.querySelector('[data-app-church-name]');
     name.textContent = value?.name || 'Choose a church';
-    name.title = value?.name || 'Choose a church';
-    const locationLabel = header.querySelector('[data-app-church-location]');
-    locationLabel.textContent = [value?.city, value?.state].filter(Boolean).join(', ');
-    locationLabel.hidden = !locationLabel.textContent;
-    if (key === 'parish-life')
-      header.querySelector('[data-app-page-title]').textContent =
-        value?.communicationsEnabled === false ? 'Today' : 'Koinonia';
+    name.title = [value?.name, value?.city, value?.state].filter(Boolean).join(', ') || 'Choose a church';
   }
   async function request(url, options = {}) {
     const response = await fetch(url, {
@@ -177,9 +178,10 @@
     document.body.classList.add('app-shared-header-page');
     header = document.createElement('header');
     header.className = 'app-page-header';
-    header.innerHTML = `<div class="app-header-bar koinonia-mobile-appbar"><a class="app-header-brand" href="/myagapay"><img src="/mark.png" alt=""><span>MY AGAPAY</span></a><button class="app-header-menu-button" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation">${window.MyAgapayShell.icons.menu}</button></div><nav id="appHeaderNavigation" class="koinonia-mobile-menu" data-myagapay-app-menu aria-label="My AGAPAY navigation" hidden></nav><div class="app-header-body"><div class="app-header-parish">${churchIcon}<div class="app-header-parish-copy"><div data-app-church-name>Loading your church…</div><div data-app-church-location hidden></div></div><div class="app-header-switch"><button type="button" data-app-switch-church aria-label="Switch churches">${switchIcon}</button></div></div><div class="app-header-title-row"><h1 data-app-page-title></h1><div class="app-header-actions"></div></div></div>`;
+    header.innerHTML = `<div class="app-header-bar koinonia-mobile-appbar"><a class="app-header-brand" href="/myagapay"><img src="/images/app/icon-192.png" alt=""><span>MY AGAPAY<small data-app-church-name>Loading your church…</small></span></a><div class="app-header-tools"><div class="app-header-switch"><button type="button" data-app-switch-church aria-label="Switch churches">${switchIcon}</button></div><button class="app-header-menu-button" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation">${window.MyAgapayShell.icons.menu}</button></div></div><nav id="appHeaderNavigation" class="koinonia-mobile-menu" data-myagapay-app-menu aria-label="My AGAPAY navigation" hidden></nav><div class="app-header-body"><div class="app-header-title-row"><h1 data-app-page-title></h1><div class="app-header-actions"></div></div></div>`;
     header.querySelector('[data-app-page-title]').textContent = titles[key];
     main.prepend(header);
+    if (key === 'parish-life') header.classList.add('app-home-header');
     const description = document.createElement('p');
     description.className = 'app-header-description';
     description.textContent = descriptions[key];
@@ -203,7 +205,7 @@
       const back = document.createElement('a');
       back.className = 'app-header-back';
       back.href = '/myagapay/parish-life';
-      back.textContent = '← Back to Koinonia';
+      back.textContent = '← Home';
       back.setAttribute('data-parish-life-back', '');
       header.querySelector('.app-header-title-row').before(back);
     }
@@ -212,12 +214,7 @@
     const actionSelectors =
       key === 'bookstore'
         ? ['.boutique-bag']
-        : [
-            '.koinonia-parish-context #todayGiveLink',
-            '.topbar-actions > #todayGiveLink',
-            '.koinonia-page-action',
-            '.prayer-new-request',
-          ];
+        : ['.topbar-actions > #todayGiveLink', '.koinonia-page-action', '.prayer-new-request'];
     actionSelectors.forEach((selector) => main.querySelectorAll(selector).forEach((action) => actions.append(action)));
     if (key === 'bookstore') {
       const nativePicker = main.querySelector('.bookstore-parish-switcher');

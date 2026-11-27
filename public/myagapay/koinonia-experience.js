@@ -29,8 +29,6 @@
       .join('');
   }
   function parishContext(parish, communicationsEnabled) {
-    const name = document.getElementById('koinoniaParishName');
-    if (name) name.textContent = parish?.name || 'Your church calendar';
     const offering = document.getElementById('todayGiveLink');
     if (offering) offering.hidden = !parish?.id;
     shortcuts(parish, communicationsEnabled);
