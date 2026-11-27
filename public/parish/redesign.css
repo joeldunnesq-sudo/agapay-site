@@ -2681,10 +2681,6 @@ textarea {
 .acct-treasurer-start h2 { margin:0; font-size:26px; }
 .acct-treasurer-start .acct-command-actions { grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr)); }
 .acct-treasurer-start .acct-command-actions small { color:rgba(246,241,232,.77); font-size:11px; white-space:normal; }
-@container (min-width:680px) {
-  .acct-treasurer-start .acct-command-actions { grid-template-columns:repeat(5,minmax(0,1fr)); }
-  .acct-treasurer-start .acct-command-actions button { align-items:flex-start; flex-direction:column; gap:6px; }
-}
 .acct-treasurer-home-grid { display:grid; align-items:start; gap:18px; }
 .acct-overview-section-nav { display:none; }
 .acct-workspace:has(> #accountingPane > .acct-overview-directory) > .acct-overview-section-nav {
