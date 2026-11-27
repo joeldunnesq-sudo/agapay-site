@@ -1709,9 +1709,15 @@
       const section = document.getElementById("householdStatementSharing");
       const list = document.getElementById("householdStatementChoices");
       try {
-        const { choices = [] } = await api("/api/directory/self/statement-sharing");
-        section.hidden = choices.length === 0;
-        list.innerHTML = choices.map((choice) => `<div class="mini-card"><strong>${esc(choice.householdName)}</strong>
+        const { choices = [], linkedChoices = [] } = await api("/api/directory/self/statement-sharing");
+        section.hidden = choices.length === 0 && linkedChoices.length === 0;
+        list.innerHTML = linkedChoices.map((choice) => {
+          const status = choice.bothOptedIn ? "Both adults opted in" : choice.optedIn ? "Waiting for the other adult" : "Your consent is needed";
+          return `<div class="mini-card"><strong>${esc(choice.householdName)} · ${esc(choice.parishName)}</strong>
+            <small>${esc(status)}</small>
+            <small>The combined statement includes both adults’ itemized gifts to this parish and goes to ${esc(choice.receivesStatement ? "your account" : choice.recipientName)}.</small>
+            <button class="btn secondary" type="button" data-linked-statement-consent="${esc(choice.id)}" data-enabled="${choice.optedIn ? "false" : "true"}">${choice.optedIn ? "Withdraw my consent" : "Opt in to a combined statement"}</button></div>`;
+        }).join("") + choices.map((choice) => `<div class="mini-card"><strong>${esc(choice.householdName)}</strong>
           <small>${choice.receivesStatement ? `Statement sharing with ${esc(choice.memberName)}` : "Statement sharing with your inviter"}</small>
           <button class="btn secondary" type="button" data-stop-statement-sharing="${esc(choice.id)}">Stop statement sharing</button></div>`).join("");
       } catch (error) {
@@ -1719,6 +1725,21 @@
       }
     }
     document.getElementById("householdStatementChoices").addEventListener("click", async (event) => {
+      const linked = event.target.closest("[data-linked-statement-consent]");
+      if (linked) {
+        linked.disabled = true;
+        try {
+          await api("/api/directory/self/statement-sharing/" + encodeURIComponent(linked.dataset.linkedStatementConsent), {
+            method: "PUT",
+            body: JSON.stringify({ enabled: linked.dataset.enabled === "true" })
+          });
+          await loadHouseholdStatementSharing();
+        } catch (error) {
+          showNotice(error.message || "Unable to update statement sharing.", true);
+          linked.disabled = false;
+        }
+        return;
+      }
       const button = event.target.closest("[data-stop-statement-sharing]");
       if (!button || !window.confirm("Stop combining giving on newly generated statements?")) return;
       button.disabled = true;
@@ -2259,7 +2280,9 @@
     let selectedHouseholdId = "";
     function firstHousehold() {
       const households = profileState?.manageableHouseholds || [];
-      return households.find((household) => household.id === selectedHouseholdId) || households[0] || null;
+      return households.find((household) => household.id === selectedHouseholdId)
+        || (householdOnly ? households.find((household) => household.parishId === starterParishId()) : null)
+        || households[0] || null;
     }
     function renderHouseholdPicker() {
       const households = profileState?.manageableHouseholds || [];

@@ -51,6 +51,7 @@ import { submitParishSupportTicket } from '../lib/parish-support-tickets.js';
 import '../lib/safe-external-url.js';
 
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from '../directory/self-service.js';
+import { prepareLinkedHouseholdAtHomeParish } from '../directory/household-share-invitations.js';
 
 import { migrateConsumerPasskeyEmail } from '../lib/consumer-passkeys.js';
 
@@ -209,6 +210,9 @@ export async function handleDonorDashboard(request: Request, env: DonorEnvironme
       await deleteDonor(env, donor.email);
     }
     await saveDonor(env, updated);
+    if (directoryContext?.claimed && updated.defaultParishId !== donor.defaultParishId) {
+      await prepareLinkedHouseholdAtHomeParish(env, directoryContext.user.id).catch(() => null);
+    }
     if (directoryContext?.claimed) {
       await syncSelfServiceContactsFromDonor(env, {
         context: directoryContext,

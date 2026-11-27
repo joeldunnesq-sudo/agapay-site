@@ -4,6 +4,139 @@ import { DirectoryServiceError } from './foundation.js';
 import { auditStatement, cleanText, isActiveHouseholdAdmin, runAtomic, safeJson } from './shared.js';
 const TOKEN_LIFETIME_MS = 14 * 24 * 60 * 60 * 1e3;
 const TOKEN_DOMAIN = 'directory_household_share:';
+const LINKED_STATEMENT_PAIRS_SQL = `
+  SELECT h.id AS household_id, h.parish_id, h.display_name AS household_name,
+         recipient.id AS recipient_id, head.person_id AS recipient_person_id,
+         head_person.preferred_name AS recipient_name, recipient.email AS recipient_email,
+         spouse.id AS spouse_id, partner.person_id AS spouse_person_id,
+         spouse_person.preferred_name AS spouse_name, spouse.email AS spouse_email
+    FROM directory_households h
+    JOIN directory_household_members head ON head.household_id=h.id AND head.active=1 AND head.relationship='head'
+    JOIN directory_household_admins admin ON admin.household_id=h.id AND admin.person_id=head.person_id AND admin.active=1
+    JOIN directory_household_members partner ON partner.household_id=h.id AND partner.active=1 AND partner.relationship='spouse'
+    JOIN directory_people head_person ON head_person.id=head.person_id AND head_person.active=1
+    JOIN directory_people spouse_person ON spouse_person.id=partner.person_id AND spouse_person.active=1
+    JOIN directory_person_links head_link ON head_link.person_id=head.person_id AND head_link.link_type='platform_user' AND head_link.active=1
+    JOIN directory_person_links spouse_link ON spouse_link.person_id=partner.person_id AND spouse_link.link_type='platform_user' AND spouse_link.active=1
+    JOIN platform_users recipient ON recipient.id=head_link.external_id AND recipient.status='active' AND recipient.email_verified_at IS NOT NULL
+    JOIN platform_users spouse ON spouse.id=spouse_link.external_id AND spouse.status='active' AND spouse.email_verified_at IS NOT NULL
+   WHERE h.active=1 AND recipient.id<>spouse.id
+     AND (SELECT COUNT(*) FROM directory_household_members m WHERE m.household_id=h.id
+       AND m.active=1 AND m.relationship IN ('head','spouse'))=2
+     AND NOT EXISTS (SELECT 1 FROM directory_person_privacy_flags f
+       WHERE f.parish_id=h.parish_id AND f.person_id IN (head.person_id,partner.person_id)
+         AND f.active=1 AND (f.is_child=1 OR f.protected_person=1))
+`;
+async function listLinkedHouseholdStatementChoices(env, userId) {
+  return d1All(
+    env,
+    `
+    SELECT p.household_id AS id, p.household_name AS householdName, p.parish_id AS parishId,
+           COALESCE(reg.parish_name,p.parish_id) AS parishName, p.recipient_name AS recipientName,
+           p.recipient_id=?1 AS receivesStatement,
+           MAX(CASE WHEN c.consenting_user_id=?1 THEN 1 ELSE 0 END) AS optedIn,
+           COUNT(c.consenting_user_id)=2 AS bothOptedIn
+      FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+      LEFT JOIN registrations reg ON reg.parish_id=p.parish_id
+      LEFT JOIN directory_household_giving_consent c ON c.household_id=p.household_id
+        AND c.parish_id=p.parish_id AND c.recipient_user_id=p.recipient_id AND c.spouse_user_id=p.spouse_id
+     WHERE ?1 IN (p.recipient_id,p.spouse_id)
+       AND NOT EXISTS (SELECT 1 FROM directory_household_invitations i WHERE i.household_id=p.household_id
+         AND i.combine_giving=1 AND i.status IN ('pending','claimed'))
+     GROUP BY p.household_id, p.recipient_id, p.spouse_id
+     ORDER BY parishName, householdName
+  `,
+    userId
+  );
+}
+async function updateLinkedHouseholdStatementConsent(env, userId, householdId, enabled) {
+  const updated = enabled
+    ? await d1First(
+        env,
+        `INSERT INTO directory_household_giving_consent
+        (household_id,parish_id,recipient_user_id,spouse_user_id,consenting_user_id,created_at)
+        SELECT p.household_id,p.parish_id,p.recipient_id,p.spouse_id,?1,?3
+          FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+         WHERE p.household_id=?2 AND ?1 IN (p.recipient_id,p.spouse_id)
+           AND NOT EXISTS (SELECT 1 FROM directory_household_invitations i WHERE i.household_id=p.household_id
+             AND i.combine_giving=1 AND i.status IN ('pending','claimed'))
+        ON CONFLICT DO UPDATE SET created_at=excluded.created_at RETURNING household_id`,
+        userId,
+        householdId,
+        Date.now()
+      )
+    : await d1First(
+        env,
+        `DELETE FROM directory_household_giving_consent
+         WHERE consenting_user_id=?1 AND household_id=?2 RETURNING household_id`,
+        userId,
+        householdId
+      );
+  if (!updated) throw new DirectoryServiceError('not_found', 'Household statement sharing was not found.', 404);
+}
+async function prepareLinkedHouseholdAtHomeParish(env, userId) {
+  const candidates = await d1All(
+    env,
+    `
+     SELECT p.recipient_id,p.recipient_person_id,p.spouse_id,p.spouse_person_id,
+            home.default_parish_id AS home_parish_id, MIN(p.household_name) AS household_name
+       FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+       JOIN donors home ON home.email=p.recipient_email
+       JOIN donors spouse_home ON spouse_home.email=p.spouse_email
+       JOIN registrations reg ON reg.parish_id=home.default_parish_id
+      WHERE ?1 IN (p.recipient_id,p.spouse_id)
+        AND home.default_parish_id=spouse_home.default_parish_id AND home.default_parish_id<>p.parish_id
+        AND NOT EXISTS (
+          SELECT 1 FROM directory_household_members m
+          JOIN directory_households h ON h.id=m.household_id AND h.active=1
+          WHERE h.parish_id=home.default_parish_id AND m.active=1
+            AND m.person_id IN (p.recipient_person_id,p.spouse_person_id))
+      GROUP BY p.recipient_id,p.recipient_person_id,p.spouse_id,p.spouse_person_id,home.default_parish_id
+      LIMIT 2
+  `,
+    userId
+  );
+  if (candidates.length !== 1) return;
+  const pair = candidates[0];
+  const parishId = pair.home_parish_id;
+  const householdId =
+    'dir_household_transfer_' +
+    (await sha256Hex(JSON.stringify([parishId, pair.recipient_person_id, pair.spouse_person_id])));
+  const now = Date.now();
+  await runAtomic(env, [
+    {
+      sql: `INSERT INTO directory_households (id,parish_id,display_name,created_at,updated_at)
+       SELECT ?1,?2,?3,?4,?4
+       WHERE NOT EXISTS (
+         SELECT 1 FROM directory_household_members m JOIN directory_households h ON h.id=m.household_id
+         WHERE h.parish_id=?2 AND h.active=1 AND m.active=1 AND m.person_id IN (?5,?6))
+       ON CONFLICT(id) DO NOTHING`,
+      params: [householdId, parishId, pair.household_name, now, pair.recipient_person_id, pair.spouse_person_id],
+    },
+    ...[
+      [pair.recipient_person_id, 'head'],
+      [pair.spouse_person_id, 'spouse'],
+    ].map(([personId, relationship]) => ({
+      sql: `INSERT OR IGNORE INTO directory_household_members (id,household_id,person_id,relationship,created_at,updated_at)
+       SELECT ?1,id,?3,?4,?5,?5 FROM directory_households WHERE id=?2 AND active=1`,
+      params: [householdId + '_' + relationship, householdId, personId, relationship, now],
+    })),
+    {
+      sql: `INSERT OR IGNORE INTO directory_household_admins (id,household_id,person_id,created_at,updated_at)
+       SELECT ?1,id,?3,?4,?4 FROM directory_households WHERE id=?2 AND active=1`,
+      params: [householdId + '_admin', householdId, pair.recipient_person_id, now],
+    },
+    auditStatement({
+      action: 'directory.household_home_parish_connected',
+      actor: { userId, parishId },
+      parishId,
+      targetType: 'directory_household',
+      targetId: householdId,
+      householdId,
+      after: { homeParishId: parishId },
+    }),
+  ]);
+}
 async function listHouseholdStatementSharing(env, userId) {
   return d1All(
     env,
@@ -367,10 +500,14 @@ async function claimHouseholdShareInvitation(env, { context, token, combineGivin
   };
 }
 export {
+  LINKED_STATEMENT_PAIRS_SQL,
   claimHouseholdShareInvitation,
   createHouseholdShareInvitation,
   householdShareApprovalStatement,
   inspectHouseholdShareInvitation,
   listHouseholdStatementSharing,
+  listLinkedHouseholdStatementChoices,
+  prepareLinkedHouseholdAtHomeParish,
   stopHouseholdStatementSharing,
+  updateLinkedHouseholdStatementConsent,
 };

@@ -10,7 +10,10 @@ import {
   createHouseholdShareInvitation,
   inspectHouseholdShareInvitation,
   listHouseholdStatementSharing,
+  listLinkedHouseholdStatementChoices,
+  prepareLinkedHouseholdAtHomeParish,
   stopHouseholdStatementSharing,
+  updateLinkedHouseholdStatementConsent,
 } from '../src/directory/household-share-invitations.js';
 import { DirectoryServiceError } from '../src/directory/foundation.js';
 import { decideDirectoryReviewItem } from '../src/directory/admin.js';
@@ -38,6 +41,7 @@ function makeEnv() {
     '0031_directory_ministries_phase5a.sql',
     '0084_directory_household_share_invitations.sql',
     '0131_household_statement_consent.sql',
+    '0132_linked_household_giving_consent.sql',
   ])
     db.exec(migration(name));
   db.exec(`CREATE TABLE directory_household_verifications (
@@ -351,6 +355,43 @@ await test('separate gifts combine only after both adults consent and the parish
   await assert.rejects(stopHouseholdStatementSharing(env, 'another_user', choice.id), { code: 'not_found' });
   await stopHouseholdStatementSharing(env, claimantContext.user.id, choice.id);
   assert.deepEqual(await totals(), separate);
+});
+
+await test('a shared parish move keeps the old household and asks each spouse for new consent', async () => {
+  const { env, db } = seed();
+  db.exec(`UPDATE platform_users SET email_verified_at=datetime('now');
+    INSERT INTO directory_person_links (id,person_id,link_type,external_id,source,active,created_at,updated_at)
+      VALUES ('existing_spouse','person_target','platform_user','user_claimant','manual',1,1,1);
+    CREATE TABLE donors (email TEXT PRIMARY KEY, default_parish_id TEXT);
+    INSERT INTO donors VALUES ('anna@example.org','parish_2'),('john@example.org','parish_1');
+    CREATE TABLE registrations (parish_id TEXT PRIMARY KEY, parish_name TEXT);
+    INSERT INTO registrations VALUES ('parish_1','First parish'),('parish_2','New parish');
+    CREATE TABLE donor_offerings (parish_id TEXT, donor_email TEXT, created_at TEXT, payment_status TEXT, data TEXT);`);
+  await prepareLinkedHouseholdAtHomeParish(env, 'user_inviter');
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM directory_households WHERE parish_id='parish_2'").get().n, 0);
+  db.exec("UPDATE donors SET default_parish_id='parish_2' WHERE email='john@example.org'");
+  await prepareLinkedHouseholdAtHomeParish(env, 'user_claimant');
+  await prepareLinkedHouseholdAtHomeParish(env, 'user_inviter');
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM directory_households').get().n, 2);
+  const [choice] = (await listLinkedHouseholdStatementChoices(env, 'user_claimant')).filter(
+    (row) => row.parishId === 'parish_2'
+  );
+  assert.ok(choice);
+  assert.equal(choice.optedIn, 0);
+  await assert.rejects(updateLinkedHouseholdStatementConsent(env, 'unrelated', choice.id, true), { code: 'not_found' });
+  const insert = db.prepare("INSERT INTO donor_offerings VALUES (?, ?, '2026-05-01', 'paid', ?)");
+  for (const parish of ['parish_1', 'parish_2']) {
+    insert.run(parish, 'anna@example.org', JSON.stringify({ giftAmountCents: 400 }));
+    insert.run(parish, 'john@example.org', JSON.stringify({ giftAmountCents: 600 }));
+  }
+  const totals = async (parish) => (await computeParishDonorYearGiving(env, parish, 2026)).map((row) => row.totalCents);
+  await updateLinkedHouseholdStatementConsent(env, 'user_inviter', choice.id, true);
+  assert.deepEqual(await totals('parish_2'), [400, 600]);
+  await updateLinkedHouseholdStatementConsent(env, 'user_claimant', choice.id, true);
+  assert.deepEqual(await totals('parish_2'), [1000]);
+  assert.deepEqual(await totals('parish_1'), [400, 600]);
+  await updateLinkedHouseholdStatementConsent(env, 'user_claimant', choice.id, false);
+  assert.deepEqual(await totals('parish_2'), [400, 600]);
 });
 
 await test('donor and recipient UI explain proposal-only behavior and expose the exact route', async () => {

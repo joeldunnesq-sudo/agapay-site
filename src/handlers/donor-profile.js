@@ -30,6 +30,7 @@ import { recordParishFeatureRequest } from '../lib/parish-feature-requests.js';
 import { submitParishSupportTicket } from '../lib/parish-support-tickets.js';
 import '../lib/safe-external-url.js';
 import { resolveDirectorySelfServiceContext, syncSelfServiceContactsFromDonor } from '../directory/self-service.js';
+import { prepareLinkedHouseholdAtHomeParish } from '../directory/household-share-invitations.js';
 import { migrateConsumerPasskeyEmail } from '../lib/consumer-passkeys.js';
 import '../lib/email.js';
 import '../lib/format.js';
@@ -171,6 +172,9 @@ async function handleDonorDashboard(request, env) {
       await deleteDonor(env, donor.email);
     }
     await saveDonor(env, updated);
+    if (directoryContext?.claimed && updated.defaultParishId !== donor.defaultParishId) {
+      await prepareLinkedHouseholdAtHomeParish(env, directoryContext.user.id).catch(() => null);
+    }
     if (directoryContext?.claimed) {
       await syncSelfServiceContactsFromDonor(env, {
         context: directoryContext,
