@@ -678,7 +678,7 @@ function renderParishLifeContinueListening(item: ParishLifeItem | null = null) {
   const duration = Math.max(0, Number(item.durationSeconds) || 0);
   const position = Math.max(0, Number(item.positionSeconds) || 0);
   const percent = duration ? Math.min(100, Math.round((position / duration) * 100)) : 0;
-  const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(item.feedUrl!)}&episode=${encodeURIComponent(item.episodeKey!)}`;
+  const href = `/myagapay/teaching?mode=podcasts&feed=${encodeURIComponent(item.feedUrl!)}&episode=${encodeURIComponent(item.episodeKey!)}&player=full`;
   target.innerHTML = `<a class="parish-life-continue-card" href="${href}">
     <span class="parish-life-continue-art" aria-hidden="true">${item.artwork ? `<img src="${parishLifeEscape(item.artwork)}" alt="" loading="lazy" decoding="async" />` : '♫'}</span>
     <span class="parish-life-continue-copy">

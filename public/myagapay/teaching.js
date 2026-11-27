@@ -79,7 +79,7 @@ async function openRequestedKoinoniaPodcastEpisode() {
     const parsed = parseKoinoniaPodcastFeed(await response.text(), feedUrl);
     const episode = parsed.episodes.find((item) => item.episodeKey === episodeKey);
     if (!episode) throw new Error('That episode is no longer present in the podcast feed.');
-    await playKoinoniaPodcast(episode);
+    await playKoinoniaPodcast(episode, parameters.get('player') === 'full');
     return true;
   } catch (error) {
     if (status) status.textContent = error.message || 'Unable to open that episode.';
@@ -416,7 +416,7 @@ function waitForPodcastMetadata(audio) {
     audio.addEventListener('error', finish, { once: true });
   });
 }
-async function playKoinoniaPodcast(episode) {
+async function playKoinoniaPodcast(episode, expandPlayer = false) {
   const player = document.getElementById('koinoniaPodcastPlayer');
   const audio = document.getElementById('koinoniaPodcastAudio');
   if (!episode || !player || !audio) return;
@@ -440,6 +440,7 @@ async function playKoinoniaPodcast(episode) {
   fullImage.src = image.src;
   fullImage.alt = image.alt;
   player.hidden = false;
+  if (expandPlayer) toggleKoinoniaPodcastPlayerExpanded(true);
   if (koinoniaPodcastState.offlineObjectUrl) {
     URL.revokeObjectURL(koinoniaPodcastState.offlineObjectUrl);
     koinoniaPodcastState.offlineObjectUrl = '';

@@ -567,6 +567,15 @@ try {
         return route.fulfill({ contentType: 'audio/mpeg', body: Buffer.from([1, 2, 3, 4]) });
       throw Error('Unexpected Teaching fixture API ' + url.pathname);
     });
+    const resumeUrl =
+      '/myagapay/teaching.html?mode=podcasts&feed=' + encodeURIComponent(feedUrl) + '&episode=episode-one';
+    await teachingPage.goto(origin + resumeUrl + '&player=full');
+    await teachingPage.locator('#koinoniaPodcastPlayer.is-expanded').waitFor();
+    await teachingPage.waitForFunction(() => navigator.mediaSession.metadata?.title === '<Episode>');
+    assert.equal(await teachingPage.locator('#koinoniaPodcastAudio').evaluate((audio) => audio.currentTime), 42);
+    await teachingPage.goto(origin + resumeUrl);
+    await teachingPage.waitForFunction(() => navigator.mediaSession.metadata?.title === '<Episode>');
+    assert.equal(await teachingPage.locator('#koinoniaPodcastPlayer.is-expanded').count(), 0);
     await teachingPage.goto(origin + '/myagapay/teaching.html');
     await teachingPage.locator('[data-teaching-id="reflection"] .feed-card-summary').click();
     await teachingPage.waitForFunction(() => document.querySelector('#teachingUnreadSummary')?.hidden);
