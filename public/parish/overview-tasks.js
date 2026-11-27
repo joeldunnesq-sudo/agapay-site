@@ -148,6 +148,29 @@ async function openParishOverviewTask(action) {
 }
 
 function refreshParishAttention() {
+  if (!document.getElementById('parishAttentionBanner')) {
+    document.getElementById('pdxHero')?.insertAdjacentHTML(
+      'beforebegin',
+      `<details class="pdx-directory-reminder pdx-attention-banner" id="parishAttentionBanner" aria-labelledby="parishAttentionTitle" hidden>
+          <summary class="pdx-attention-heading">
+            <div class="pdx-directory-reminder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></div>
+            <span id="parishAttentionTitle">Needs attention</span>
+            <span class="pdx-directory-reminder-badge" id="parishAttentionCount" hidden></span>
+            <svg class="pdx-attention-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg>
+          </summary>
+          <div class="pdx-attention-list">
+            <section class="pdx-attention-row" id="directoryReviewReminder" aria-labelledby="directoryReviewReminderTitle" hidden>
+              <h3 id="directoryReviewReminderTitle">Directory</h3>
+              <ul><li><button type="button" onclick="openDirectoryReviewQueue()">
+                <span class="pdx-directory-reminder-badge" id="directoryReviewReminderBadge" aria-hidden="true" hidden></span>
+                <span id="directoryReviewReminderCount" aria-live="polite"></span><span aria-hidden="true">→</span>
+              </button></li></ul>
+            </section>
+            <div id="parishOverviewTasks" aria-live="polite"></div>
+          </div>
+        </details>`
+    );
+  }
   void refreshDirectoryReviewReminder();
   void refreshParishOverviewTasks();
 }
