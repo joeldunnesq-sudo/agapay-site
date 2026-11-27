@@ -356,7 +356,7 @@ assert.ok(donorHome.includes('/myagapay/learn') && myAgapayGiveHome.includes('/m
 const myAgapayHomeHamburger = myAgapayGiveHome.match(/<div class="donor-home-account-dropdown"[\s\S]*?<\/div>/)?.[0] || "";
 assert.ok(!myAgapayHomeHamburger.includes("/myagapay/parish-life"), "the My AGAPAY dashboard hamburger should not duplicate Koinonia navigation");
 assert.ok(
-  ["Accounting", "Directory", "Commerce", "Koinonia", "Sacraments", "verified household member"].every((feature) => publicGivePage.includes(feature)),
+  ["Accounting", "Directory", "Commerce", "Parish Life", "Sacraments", "verified household member"].every((feature) => publicGivePage.includes(feature)),
   "the /give page should present every parish platform pillar and explain Koinonia's verified-household boundary"
 );
 assert.ok(donorHome.includes('showing-giving-dashboard') && !donorHome.includes('my-agapay-live-grid') && !donorHome.includes('my-agapay-coming-grid'), "My AGAPAY root should open the Give dashboard directly without a product picker");
@@ -552,8 +552,8 @@ assert.ok(
 );
 assert.ok(
   givingPlusPricingCard.includes("Parish Directory, Bookstore, and Parish Library")
-    && givingPlusPricingCard.includes("Koinonia parish community and media")
-    && givePricingHtml.includes("Koinonia is included in Give +"),
+    && givingPlusPricingCard.includes("Parish Life community tools and media")
+    && givePricingHtml.includes("Parish Life is included in Give +"),
   "Koinonia and Parish Library should be included in Give + and inherited by Parish"
 );
 assert.ok(givingPlusPricingCard.includes("Stewardship Health analytics and annual statements"), "Give + should include advanced Stewardship Health reporting");
@@ -800,7 +800,7 @@ assert.ok(givingOverview.includes("Custom-Built Orthodox Church Management Softw
 assert.ok(givingOverview.includes('"SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes('"@type": "WebSite"') && givingOverview.includes('"@type": "WebPage"'), "Giving overview should connect WebSite and WebPage structured data to the app");
 assert.ok(givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>") && givingOverview.includes("One system, not six"), "Giving overview should present one connected Orthodox platform");
-for (const pillar of ["Giving &amp; Stewardship", "Koinonia", "Directory &amp; Households", "Sacraments &amp; Services", "Bookstore &amp; Church Commerce", "Accounting"]) {
+for (const pillar of ["Giving &amp; Stewardship", "Parish Life", "Directory &amp; Households", "Sacraments &amp; Services", "Bookstore &amp; Church Commerce", "Accounting"]) {
   assert.ok(givingOverview.includes(pillar), `Giving overview should include the live ${pillar} pillar`);
 }
 assert.ok(givingOverview.includes("Stripe-hosted Checkout") && givingOverview.includes("parish's connected Stripe account") && givingOverview.includes("$0 AGAPAY donation fee"), "Giving overview should emphasize Stripe payment boundaries and no AGAPAY donation fee");
@@ -822,8 +822,8 @@ const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.includes('rel="canonical" href="https://agapay.app/"') && platformHome.includes('property="og:url" content="https://agapay.app/"'), "platform homepage should publish the site root as its canonical and social URL");
 assert.ok(platformHome.includes("One platform for all of") && platformHome.includes("Orthodox parish life.") && platformHome.includes("One parish. One connected system."), "homepage should lead with the complete AGAPAY Orthodox parish platform and explain its shared system");
 assert.ok(platformHome.includes("Orthodox Tithing App") && platformHome.includes("custom-built Orthodox church management software platform"), "homepage SEO should position AGAPAY as the Orthodox tithing app and custom-built parish platform");
-assert.ok(platformHome.includes("giving-dashboard.jpg?v=afdbcab9659a") && platformHome.includes("data-src=\"/images/app/screenshots/parish-bookstore.jpg?v=6e64e98eb164\"") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
-assert.ok(platformHome.includes("Koinonia") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
+assert.ok(platformHome.includes("preview/home.jpg?v=") && platformHome.includes("data-src=\"/images/app/screenshots/preview/bookstore.jpg?v=") && platformHome.includes('width="720" height="1560"'), "homepage should use right-sized screenshots and defer inactive app rooms");
+assert.ok(platformHome.includes("Parish Life") && platformHome.includes("Sacraments") && platformHome.includes("Accounting"), "platform homepage should surface community, pastoral, and financial operations");
 assert.ok(platformHome.includes('src="' + appAssetUrl('/site-chrome.js') + '"'), "platform homepage should render the canonical navigation that routes giving-focused visitors to /give");
 assert.ok(givingOverview.includes('rel="canonical" href="https://agapay.app/give"') && givingOverview.includes("The Orthodox Giving App <em>for all of parish life.</em>"), "the consolidated Give page should publish one canonical URL and the approved Orthodox giving headline");
 assert.ok(

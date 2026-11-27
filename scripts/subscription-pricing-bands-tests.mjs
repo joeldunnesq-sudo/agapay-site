@@ -116,7 +116,7 @@ assert.doesNotMatch(pricingPage, /Koinonia · \$49\/mo/);
 assert.match(pricingPage, /Sacraments &amp; Services<\/span><strong>\$9\/mo/);
 assert.match(pricingPage, /Full Commerce<\/span><strong>\$29\/mo/);
 assert.match(pricingPage, /Accounting Suite<\/span><strong>\$129\/mo/);
-assert.match(pricingPage, /Koinonia parish community and media/);
+assert.match(pricingPage, /Parish Life community tools and media/);
 assert.match(pricingPage, /Full Commerce adds Events, Meals, tax, and connected orders/);
 assert.match(registerPage, /id="parishHouseholdBand"/);
 assert.match(registerPage, /parishHouseholdBand: document\.getElementById\('parishHouseholdBand'\)\.value/);

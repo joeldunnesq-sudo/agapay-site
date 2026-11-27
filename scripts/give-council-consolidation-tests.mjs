@@ -77,7 +77,7 @@ for (const copy of [
   "Sacraments &amp; Services</span><strong>$9/mo",
   "Full Commerce</span><strong>$29/mo",
   "Accounting Suite</span><strong>$129/mo",
-  "Koinonia is included in Give +"
+  "Parish Life is included in Give +"
 ]) assert.ok(overview.includes(copy), `the proposal-aligned page must include ${copy}`);
 
 for (const securityBoundary of [
@@ -108,10 +108,10 @@ for (const retiredFile of ["features", "how-it-works", "pricing", "security", "g
 assert.ok(sitemap.includes("<loc>https://agapay.app/give</loc>"), "the sitemap must retain the one canonical Give page");
 assert.equal(existsSync(path.join(root, "public/downloads/agapay-parish-council-overview.pdf")), true, "the council proposal download must remain public");
 
-for (const index of [1, 2, 3]) {
-  const assetPath = path.join(root, `public/images/app/screenshots/koinonia-give-${index}.jpg`);
-  assert.equal(existsSync(assetPath), true, `Koinonia screenshot ${index} must remain available`);
-  assert.ok(statSync(assetPath).size < 200_000, `Koinonia screenshot ${index} must remain optimized`);
+for (const screen of ["home", "community", "media"]) {
+  const assetPath = path.join(root, `public/images/app/screenshots/preview/${screen}.jpg`);
+  assert.equal(existsSync(assetPath), true, `Parish Life screenshot ${screen} must remain available`);
+  assert.ok(statSync(assetPath).size < 200_000, `Parish Life screenshot ${screen} must remain optimized`);
 }
 
 function filesUnder(directory) {
