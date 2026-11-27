@@ -855,7 +855,8 @@ function renderGivingFeastIcon(element, feastId) {
     'exaltation-cross': ['Exaltation of the Cross', 1368, 1688, 336, 417],
     pascha: ['Resurrection of Christ', 695, 825, 601, 785],
   };
-  const panel = feastId && Object.hasOwn(panels, feastId) ? panels[feastId] : null;
+  const iconId = feastId?.startsWith('nativity-fast-') ? 'nativity-christ' : feastId;
+  const panel = iconId && Object.hasOwn(panels, iconId) ? panels[iconId] : null;
   element.hidden = !panel;
   if (!panel) return;
   const [name, x, y, width, height] = panel;
@@ -1614,8 +1615,6 @@ async function loadDonorSettingsPage() {
     setValue('settingsCountry', donor.country || 'US');
     const parishName = document.getElementById('settingsParishName');
     if (parishName) parishName.textContent = data.parish?.name || 'Choose a parish below';
-    const directorySettingsCard = document.getElementById('directorySettingsCard');
-    if (directorySettingsCard) directorySettingsCard.hidden = data.parish?.directoryEnabled !== true;
     await loadLearnSubscriptionSettings();
     await loadGivingStatements();
   } catch (err) {

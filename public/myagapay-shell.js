@@ -667,9 +667,6 @@
           const label = isDesktopSideNav
             ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}`
             : `<span>${item.mobileLabel || item.label}</span>${badge}`;
-          if (!isDesktopSideNav && item.parishFeature && !parishCapabilities[item.parishFeature] && !current) {
-            return `<span class="myagapay-tab-disabled" role="link" aria-disabled="true">${item.icon}${label}</span>`;
-          }
           return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.icon}${label}</a>`;
         })
         .join('');
@@ -816,10 +813,6 @@
         element.textContent = parishLife.label;
         element.classList?.remove('sw-tool-loading');
       });
-      if (authoritative && activeProduct() === 'directory' && !parishCapabilities.directoryEnabled) {
-        window.location.replace('/myagapay/dashboard');
-        return;
-      }
       if (
         authoritative &&
         window.location.pathname.startsWith('/myagapay/signups') &&

@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/donor/style.css?v=913214f4e3440b00" />
+  <link rel="stylesheet" href="/donor/style.css?v=6e4afa18e40fd5a5" />
   <link rel="stylesheet" href="/myagapay/koinonia-inner.css?v=20260915spacing1" />
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
-  <script src="/myagapay-shell.js?v=fa121135a6fd25b8"></script>
+  <script src="/myagapay-shell.js?v=cc175c8d4e172fad"></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -411,6 +411,9 @@
     body[data-directory-view="family"] .directory-command,
     body[data-directory-view="family"] .directory-guide,
     body[data-directory-view="family"] .member-directory { display:none; }
+    body[data-directory-availability="unavailable"] :is(.directory-command, .directory-guide, .member-directory) { display:none; }
+    .directory-availability { margin-bottom:16px; }
+    .directory-availability h2 { margin:0 0 5px; }
     body[data-directory-view="family"] .personal-settings[open] {
       position:static;
       inset:auto;
@@ -911,6 +914,14 @@
         <button id="familyInformationTab" type="button" role="tab" aria-selected="false" aria-controls="personalDirectorySettings" data-directory-view-target="family" tabindex="-1">Family Information</button>
       </nav>
 
+      <section class="panel directory-availability" id="directoryAvailability" aria-labelledby="directoryAvailabilityTitle" hidden>
+        <h2 id="directoryAvailabilityTitle">Directory is unavailable</h2>
+        <p class="panel-intro" id="directoryAvailabilityMessage"></p>
+        <div class="actions">
+          <button class="btn primary" id="openFamilyInformation" type="button" onclick="openPersonalDirectorySettings()">Set up family information</button>
+          <a class="btn primary" id="chooseFamilyParish" href="/myagapay/account#defaultParishId" hidden>Choose your home parish</a>
+        </div>
+      </section>
       <div id="directoryNotice" class="notice" hidden></div>
       <section id="directoryInvitationCard" class="panel directory-invitation-card" hidden aria-live="polite">
         <div class="panel-kicker">Parish invitation</div>
@@ -970,7 +981,6 @@
                   <label>Legal name (optional)<input name="legalName" autocomplete="name" /></label>
                   <label>Family or household name<input name="householdName" placeholder="The Dunne Family" /></label>
                   <label>Birthday (optional)<input name="dateOfBirth" type="date" /></label>
-                  <label id="starterParishField">Parish ID<input name="parishId" placeholder="st-fiacre" required /></label>
                 </fieldset>
                 <fieldset class="field-group">
                   <legend class="group-legend">Contact details</legend>
@@ -1234,6 +1244,7 @@
               <h2 id="setupWizardTitle">Create your parish directory profile</h2>
               <p>Start with the essentials. Everything stays private until you choose what to submit for the household’s one-time parish verification.</p>
             </div>
+            <button class="directory-modal-close" id="closeFamilySetup" type="button" aria-label="Close family setup" hidden>×</button>
           </div>
           <div class="setup-wizard-progress" aria-label="Setup progress"><span></span><span></span><span></span></div>
           <div id="setupWizardFormHost"></div>
@@ -1249,6 +1260,7 @@
     const email = localStorage.getItem("agapayDonorEmail") || localStorage.getItem("agapayUserEmail") || localStorage.getItem("agapayPlatformEmail") || "";
     const donorEmail = localStorage.getItem("agapayDonorEmail") || email;
     let profileState = null;
+    let homeParish;
     let householdDetailState = null;
     let householdDetailLoaded = false;
     let householdDetailError = "";
@@ -1326,9 +1338,32 @@
       };
     }
     function starterParishId() {
-      const profile = donorProfile();
-      return profile.defaultParishId || localStorage.getItem("agapayDefaultParishId") || "st-fiacre";
+      return homeParish === undefined ? donorProfile().defaultParishId || "" : homeParish?.id || "";
     }
+    function directoryBrowseUnavailable() {
+      return homeParish !== undefined && homeParish?.directoryEnabled !== true;
+    }
+    function syncDirectoryAvailability() {
+      const unavailable = directoryBrowseUnavailable();
+      const familyView = document.body.dataset.directoryView === "family";
+      const canPrepare = Boolean(starterParishId() || profileState?.claimed);
+      const notice = document.getElementById("directoryAvailability");
+      document.body.dataset.directoryAvailability = unavailable ? "unavailable" : "";
+      notice.hidden = !unavailable || (familyView && canPrepare);
+      document.getElementById("directoryAvailabilityMessage").textContent = canPrepare
+        ? "Your parish hasn’t activated its directory. You can prepare your family information now for parish review."
+        : "Choose your home parish in Account to set up your family information and check Directory availability.";
+      document.getElementById("openFamilyInformation").hidden = !canPrepare;
+      document.getElementById("chooseFamilyParish").hidden = canPrepare;
+      document.getElementById("personalDirectorySettings").hidden = unavailable && familyView && !canPrepare;
+      document.getElementById("setupWizardModal").hidden = !profileState || profileState.claimed || !canPrepare
+        || (!familyView && homeParish?.directoryEnabled !== true);
+      document.getElementById("closeFamilySetup").hidden = !unavailable;
+    }
+    window.addEventListener("myagapay:parish-context", (event) => {
+      homeParish = event.detail;
+      syncDirectoryAvailability();
+    });
     function clearSelfServicePanels(message = "Start your directory profile first. Nothing is published until your parish reviews it.") {
       document.getElementById("profileForm").hidden = true;
       document.getElementById("contactForm").hidden = true;
@@ -1686,6 +1721,7 @@
         button.setAttribute("aria-selected", selected ? "true" : "false");
         button.tabIndex = selected ? 0 : -1;
       });
+      syncDirectoryAvailability();
       renderDirectoryIdentity();
       if (scroll) document.querySelector(".directory-view-switcher")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -1889,7 +1925,7 @@
       document.getElementById("clearDirectoryFilters").hidden = activeFilters === 0;
     }
     async function loadMemberDirectory({ append = false } = {}) {
-      if (!token || !email || (append && (memberState.loading || !memberState.cursor))) return;
+      if (!token || !email || directoryBrowseUnavailable() || (append && (memberState.loading || !memberState.cursor))) return;
       const request = ++memberBrowseRequest;
       const loadMore = document.getElementById("memberLoadMore");
       memberState.loading = true;
@@ -1933,7 +1969,7 @@
       }
     }
     async function loadMemberHome() {
-      if (!token || !email) return;
+      if (!token || !email || directoryBrowseUnavailable()) return;
       const request = memberBrowseRequest;
       try {
         const payload = await api("/api/directory/member");
@@ -2137,7 +2173,7 @@
       const startForm = document.getElementById("startProfileForm");
       document.getElementById("directoryStatus").textContent = profileState.claimed ? "Connected" : "Setup needed";
       startForm.hidden = Boolean(profileState.claimed);
-      document.getElementById("setupWizardModal").hidden = Boolean(profileState.claimed);
+      syncDirectoryAvailability();
       if (!profileState.claimed) {
         const wizardHost = document.getElementById("setupWizardFormHost");
         if (startForm.parentElement !== wizardHost) wizardHost.appendChild(startForm);
@@ -2145,8 +2181,6 @@
         const profile = donorProfile();
         form.preferredName.value = profile.displayName || profile.name || email.split("@")[0] || "";
         form.email.value = email || donorEmail || profile.email || "";
-        form.parishId.value = starterParishId();
-        document.getElementById("starterParishField").hidden = Boolean(form.parishId.value);
         document.getElementById("profileSummary").innerHTML = `
           <div class="setup-panel">
             <h3>Your directory profile is ready to set up</h3>
@@ -2768,6 +2802,7 @@
       setDirectoryView("family");
       document.getElementById("personalDirectorySettings").scrollTop = 0;
     }
+    document.getElementById("closeFamilySetup").addEventListener("click", () => setDirectoryView("directory"));
     document.getElementById("editWizardBack").addEventListener("click", () => {
       setWizardStep(editWizardStep - 1);
     });
@@ -3025,14 +3060,25 @@
       event.preventDefault();
       const form = event.currentTarget;
       const payload = Object.fromEntries(new FormData(form).entries());
-      if (!payload.parishId) payload.parishId = starterParishId();
-      await api("/api/directory/self/start-profile", { method: "POST", body: JSON.stringify(payload) });
-      form.reset();
-      form.dataset.dirty = "";
-      showNotice("Your private directory draft is ready. Next, confirm your household details.");
-      await loadDirectory();
-      openPersonalDirectorySettings();
-      setWizardStep(1);
+      payload.parishId = starterParishId();
+      if (!payload.parishId) {
+        showNotice("Choose your home parish in Account before starting your family profile.", true);
+        return;
+      }
+      const button = event.submitter || form.querySelector('button[type="submit"]');
+      try {
+        button.disabled = true;
+        await api("/api/directory/self/start-profile", { method: "POST", body: JSON.stringify(payload) });
+        form.reset();
+        form.dataset.dirty = "";
+        await loadDirectory();
+        openPersonalDirectorySettings();
+        showNotice("Your private profile is ready. You can now add household details for parish review.");
+      } catch (error) {
+        showNotice(error.message || "Unable to save your family profile.", true);
+      } finally {
+        button.disabled = false;
+      }
     });
     document.getElementById("householdDetailsForm").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -3733,6 +3779,7 @@
       document.getElementById("personalDirectorySettings").open = false;
     }
     setWizardStep(1);
+    if (new URLSearchParams(location.search).get("view") === "family") setDirectoryView("family", { scroll: false });
     loadDirectoryInvitation().catch(() => {});
     loadDirectory().catch((error) => {
       document.getElementById("directoryStatus").textContent = "Unavailable";

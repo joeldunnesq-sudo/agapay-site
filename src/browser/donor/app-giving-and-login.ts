@@ -339,7 +339,8 @@ function renderGivingFeastIcon(element: HTMLElement | null, feastId: string | un
     'exaltation-cross': ['Exaltation of the Cross', 1368, 1688, 336, 417],
     pascha: ['Resurrection of Christ', 695, 825, 601, 785],
   };
-  const panel = feastId && Object.hasOwn(panels, feastId) ? panels[feastId] : null;
+  const iconId = feastId?.startsWith('nativity-fast-') ? 'nativity-christ' : feastId;
+  const panel = iconId && Object.hasOwn(panels, iconId) ? panels[iconId] : null;
   element.hidden = !panel;
   if (!panel) return;
   const [name, x, y, width, height] = panel;

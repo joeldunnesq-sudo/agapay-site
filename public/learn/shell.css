@@ -2317,7 +2317,7 @@ body {
     backdrop-filter: blur(16px);
   }
 
-  .learn-product-tabbar :is(a, .myagapay-tab-disabled) {
+  .learn-product-tabbar a {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2331,8 +2331,6 @@ body {
     font-size: 0.68rem;
     font-weight: 800;
   }
-
-  .learn-product-tabbar .myagapay-tab-disabled { color: #68625c; opacity: 0.76; }
 
   .learn-product-tabbar a.is-active {
     color: #061522;

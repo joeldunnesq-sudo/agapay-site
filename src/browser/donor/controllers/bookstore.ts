@@ -944,7 +944,14 @@ async function loadDonorBookstorePage() {
 
   if (!parishId) {
     renderBookstoreProducts([]);
-    if (list) list.innerHTML = '<div class="notice">Choose a church above to open its bookstore.</div>';
+    const notice = document.getElementById('bookstoreUnavailableNotice');
+    const form = document.getElementById('bookstoreForm');
+    if (notice) {
+      notice.style.display = 'block';
+      notice.textContent = 'Choose a church to see whether its bookstore is available.';
+    }
+    if (form) form.style.display = 'none';
+    if (list) list.innerHTML = '';
     return;
   }
 

@@ -292,7 +292,7 @@ assert.ok(includesJavaScriptFragment(worker,"sacramentsEnabled: true") && includ
 assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && includesJavaScriptFragment(worker,'/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
 assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.includes("ready to serve"), "the parish dashboard should notify leaders about donor service interest");
 assert.match(myAgapayShell, /\["parish-life", "giving", "bookstore", "directory", "account"\]/, "The five app tabs should keep the same order");
-assert.ok(myAgapayShell.includes('myagapay-tab-disabled'), "Unavailable parish features should keep their tab positions");
+assert.ok(!myAgapayShell.includes('myagapay-tab-disabled'), "All five bottom tabs should open their feature pages");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard?view=context"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(includesJavaScriptFragment(siteChrome, "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
