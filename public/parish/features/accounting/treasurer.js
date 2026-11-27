@@ -179,16 +179,6 @@ function accountingSimpleActivityFeed() {
   const entries = accountingData.journals.filter((entry) => ['posted', 'reversed'].includes(entry.status)).slice(0, 8);
   return `<section class="acct-simple-feed"><div class="acct-suite-section-head"><div><span class="acct-kicker">Recent activity</span><h2>What has been recorded</h2></div></div>${entries.map((entry) => `<article><i>✓</i><p>You recorded <strong>${accountingMoney(entry.totalDebits ?? entry.total_debits ?? 0)}</strong> for ${escapeHtml(entry.description || 'parish activity')} on ${accountingDate(entry.postingDate || entry.entryDate)}.</p></article>`).join('') || accountingEmpty('No activity yet', 'Recorded income and posted parish activity will appear here.')}</section>`;
 }
-function accountingOverviewPostingPeriod() {
-  const period = accountingPostingPeriodForDate(accountingLocalDate());
-  const openButton = period ? accountingOpenPostingPeriodButton(period) : '';
-  return `<section class="acct-posting-period-summary" aria-label="Posting periods" data-accounting-posting-periods>
-    <div><h2>Posting periods</h2><p>${period ? `${escapeHtml(accountingPostingPeriodLabel(period))} · ${accountingPostingPeriodStatus(period)}` : 'Check which months are open for entries.'}</p>
-      ${openButton ? '<p>Open the month to record entries dated in it.</p>' : ''}</div>
-    <div class="acct-posting-period-actions">${openButton}<button type="button" class="${openButton ? 'acct-refresh' : 'acct-action-button'}" onclick="showAccountingPostingPeriods()">View posting periods</button></div>
-    <p class="acct-period-error" data-accounting-period-error role="alert"></p>
-  </section>`;
-}
 function showAccountingPostingPeriods() {
   setAccountingView('posting-periods');
   document.getElementById('accountingPostingPeriodsTitle')?.focus();
