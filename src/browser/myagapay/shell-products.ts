@@ -55,7 +55,6 @@ export function shellProducts(parishLife: { label: string; short: string }) {
       label: 'History',
       short: 'Giving history',
       icon: icons.history,
-      mobileFallbackFor: 'sacramentsEnabled',
       desktopHidden: true,
     },
     {
@@ -83,12 +82,11 @@ export function shellProducts(parishLife: { label: string; short: string }) {
       parishFeature: 'prayerRequestsEnabled',
     },
     {
-      id: 'settings',
+      id: 'account',
       href: '/myagapay/account',
-      label: 'Settings',
+      label: 'Account',
       short: 'Account settings',
       icon: icons.account,
-      mobileFallbackFor: 'bookstoreEnabled',
       desktopHidden: true,
     },
   ];

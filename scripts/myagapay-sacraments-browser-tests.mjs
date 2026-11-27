@@ -103,6 +103,9 @@ try {
     .getByText(/Confession/)
     .first()
     .waitFor();
+  await page.goto('https://agapay.test/myagapay/sacraments#commemorations');
+  await page.reload();
+  await modal.locator('#commemorationForm').waitFor();
   errors.assertClean();
   console.log(
     'PASS - mobile sacraments preserve parish offerings, slot validation, booking payloads, modal controls, and reloads'

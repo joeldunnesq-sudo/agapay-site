@@ -181,9 +181,7 @@ const [handler, shell, donorPage, donorScript, parishLifePage, adminPage, adminS
 );
 assert.match(worker, /handleDonorParishLibrary/);
 assert.match(worker, /handleParishLibrary/);
-assert.match(shell, /const libraryOrHistory = featureOrFallback/);
-assert.match(shell, /directoryEnabled \|\| active === "directory" \? directory : libraryOrHistory/);
-assert.match(shell, /directoryOrFallback,\s*byId.get\("commemorations"\)/);
+assert.match(shell, /\["parish-life", "giving", "bookstore", "directory", "account"\]/);
 assert.match(shell, /function hamburgerProducts\(\)[\s\S]*return visibleProducts\(\)/);
 assert.match(shell, /function mobileAppMenuLinks\(\)[\s\S]*const links = hamburgerProducts\(\)/);
 assert.match(shell, /mobileLabel: "Library"/);

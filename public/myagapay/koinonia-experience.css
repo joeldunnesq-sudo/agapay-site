@@ -48,9 +48,14 @@
 .koinonia-landing-page #todayChips > .cal-saint-chip:hover { background: #294e67; }
 .koinonia-landing-page :is(a,button):focus-visible { outline: 2px solid #9a7837; outline-offset: 3px; }
 .koinonia-shortcuts { display: grid; grid-template-columns: repeat(var(--shortcut-count,5),minmax(0,1fr)); gap: 4px; border-bottom: 1px solid #e1d9cb; margin: 0 0 22px; }
-.koinonia-shortcuts a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 2px; font-size: 11px; color: #18354b; text-decoration: none; min-width: 0; }
+.koinonia-shortcut { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 2px; font-size: 11px; color: #18354b; text-decoration: none; min-width: 0; }
+.koinonia-shortcut[aria-disabled="true"] { color: #625c54; }
 .koinonia-shortcuts svg { width: 20px; height: 20px; fill: none; stroke: #9a7837; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .koinonia-shortcut-badge { position: absolute; right: 12%; top: 8px; border-radius: 999px; background: #18354b; color: #fffdf8; font-size: 9px; min-width: 16px; padding: 1px 4px; text-align: center; }
+@media (max-width: 375px) {
+  .koinonia-shortcuts:has(> :nth-child(6)) { gap: 2px; }
+  .koinonia-shortcuts:has(> :nth-child(6)) .koinonia-shortcut { font-size: 9px; padding-inline: 0; }
+}
 .koinonia-landing-page .parish-life-home-section { display: block; padding: 21px 23px; margin: 0 0 22px; background: #fffdf8; border: 1px solid #e1d9cb; border-radius: 12px; }
 .koinonia-landing-page .parish-life-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
 .koinonia-landing-page .parish-life-section-head h2 { margin: 0; color: #18354b; font: 500 28px/1.1 'Cormorant Garamond',Georgia,serif; }
@@ -85,7 +90,7 @@
   .koinonia-landing-page .parish-life-liturgical-hero .cal-today-note { font-size: 11px; }
   .koinonia-parish-context { font-size: 11px; }
   .koinonia-parish-context #todayGiveLink { font-size: 10px; padding: 9px 11px; }
-  .koinonia-shortcuts a { font-size: 10px; }
+  .koinonia-shortcut { font-size: 10px; }
   .koinonia-landing-page .parish-life-home-section { padding: 18px 16px; margin-bottom: 18px; }
   .koinonia-landing-page .parish-life-section-head h2 { font-size: 26px; }
   .koinonia-landing-page .parish-life-ministry-grid { grid-template-columns: 1fr; }

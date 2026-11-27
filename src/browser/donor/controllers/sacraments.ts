@@ -851,6 +851,7 @@ async function loadDonorSacramentsPage() {
   }
 
   const cached = readDonorCache<SacPayload>('sacraments');
+  if (window.location.hash === '#commemorations') sacAccordionState.openId = 'commemorations';
   if (cached) renderSacramentsPayload(cached);
 
   try {

@@ -34,7 +34,10 @@ const checkoutReturn = await worker.fetch(
   { waitUntil() {} }
 );
 assert.equal(checkoutReturn.status, 302);
-assert.equal(checkoutReturn.headers.get('location'), 'https://agapay.test/myagapay/giving?gift_success=1&session_id=example');
+assert.equal(
+  checkoutReturn.headers.get('location'),
+  'https://agapay.test/myagapay/giving?gift_success=1&session_id=example'
+);
 
 let canonicalCalendarAssetPath = '';
 const canonicalCalendar = await worker.fetch(
@@ -65,10 +68,14 @@ for (const [route, expected] of [
   let assetPath = '';
   const response = await worker.fetch(
     new Request('https://agapay.test' + route),
-    { ASSETS: { async fetch(request) {
-      assetPath = new URL(request.url).pathname;
-      return new Response('app shell');
-    } } },
+    {
+      ASSETS: {
+        async fetch(request) {
+          assetPath = new URL(request.url).pathname;
+          return new Response('app shell');
+        },
+      },
+    },
     { waitUntil() {} }
   );
   assert.equal(response.status, 200, route);
@@ -162,7 +169,7 @@ assert.match(landing, /class="cal-date-heading-row"/);
 assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
-assert.match(landing, /id="todayGiveLink"[^>]*>Give</);
+assert.match(landing, /id="todayGiveLink" href="\/myagapay\/giving"[^>]*>[\s\S]*?<span>Give now<\/span>/);
 assert.doesNotMatch(
   landing,
   /class="cal-hero parish-life-saint-card"/,
@@ -256,7 +263,9 @@ assert.ok(
 );
 assert.match(landingScript, /Feast associated with this fast/);
 const lowerTierMarkup = sandbox.window.parishLifeTierSectionsHtml(false);
-assert.equal(lowerTierMarkup, '', 'lower tiers must receive no communications section DOM');
+assert.match(lowerTierMarkup, /id="listenHeading">Listen<.*mode=podcasts/);
+assert.match(lowerTierMarkup, /id="recentNewsHeading">Recent news/);
+assert.doesNotMatch(lowerTierMarkup, /Recent video/);
 assert.doesNotMatch(lowerTierMarkup, /Announcements|Recordings|Ministries/);
 const parishTierMarkup = sandbox.window.parishLifeTierSectionsHtml(true, {
   signupsEnabled: true,
@@ -377,7 +386,8 @@ assert.equal(tierLabel.textContent, 'Koinonia');
 
 sandbox.window.MyAgapayShell.parishLifeExperience = () => ({ communicationsEnabled: false, label: 'Today' });
 sandbox.window.initializeParishLifeStructure();
-assert.equal(tierMount.innerHTML, '', 'a cached lower-tier decision must never render Koinonia section shells');
+assert.match(tierMount.innerHTML, /id="listenHeading">Listen/);
+assert.doesNotMatch(tierMount.innerHTML, /Your Ministries|Recent video/);
 assert.equal(inboxMount.innerHTML, '', 'a cached lower-tier decision must never render the Community Inbox shell');
 
 sandbox.window.MyAgapayShell.capabilitiesLoaded = () => false;

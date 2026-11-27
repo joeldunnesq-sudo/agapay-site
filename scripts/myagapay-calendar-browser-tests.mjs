@@ -98,15 +98,32 @@ try {
     { donor }
   );
   const assertReadings = async () => {
-    await page.waitForFunction(() => document.querySelectorAll('#todayFeastNote .is-heading').length === 2);
-    assert.deepEqual(await page.locator('#todayFeastNote .is-heading').allTextContents(), [
-      'Feast — Forerunner',
+    const headingSelector = (await page.locator('#todayReadingsBody').count())
+      ? '#todayReadingsBody h3'
+      : '#todayFeastNote .is-heading';
+    await page.waitForFunction((selector) => document.querySelectorAll(selector).length === 2, headingSelector);
+    assert.deepEqual(await page.locator(headingSelector).allTextContents(), [
       'Readings of the day',
+      'Feast — Forerunner',
     ]);
     assert.match(await page.locator('#todayFeastNote').textContent(), /Galatians 4\.8-21/);
   };
   await page.goto('https://agapay.test/myagapay/parish-life');
   await assertReadings();
+  const summary = page.locator('#todayFeastNote .cal-reading-summary');
+  assert.deepEqual(await summary.allTextContents(), [
+    'Epistle: Galatians 4.8-21, Acts 13.25-33',
+    'Gospel: Mark 6.45-53, Mark 6.14-30',
+  ]);
+  await page.locator('.cal-readings-trigger').click();
+  const readingDialog = page.getByRole('dialog', { name: 'Today’s Scripture readings' });
+  await readingDialog.waitFor();
+  assert.deepEqual(await readingDialog.getByRole('heading', { level: 3 }).allTextContents(), [
+    'Readings of the day',
+    'Feast — Forerunner',
+  ]);
+  await page.keyboard.press('Escape');
+  await readingDialog.waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#calendarChurchYear').count(), 0);
   const heroColors = await page.locator('.parish-life-liturgical-hero').evaluate((element) => ({
     background: getComputedStyle(element).backgroundImage,
@@ -114,8 +131,8 @@ try {
   }));
   assert.match(
     heroColors.background,
-    /linear-gradient.*fresco-vault\.jpg/,
-    'Home must use the preview’s photo with a dark gradient'
+    /linear-gradient.*parish-chandelier\.jpg/,
+    'Home must use the selected chandelier photo with a dark gradient'
   );
   assert.equal(heroColors.title, 'rgb(245, 242, 235)', 'The dark hero must retain its readable cream title');
   await page.locator('#saintPreviewCard').click();
@@ -198,7 +215,9 @@ try {
   assert.match(await page.locator('#donorSaintModalBody').textContent(), /The second saint life/);
   assert.equal(await page.locator('#donorSaintModalTitle').textContent(), 'Lives of the Saints');
   assert.ok(
-    await page.locator('.donor-saint-modal-head').evaluate((element) => element.getBoundingClientRect().height < 150),
+    await page
+      .locator('#donorSaintModal .donor-saint-modal-head')
+      .evaluate((element) => element.getBoundingClientRect().height < 150),
     'The list of saints must not consume the fixed modal header'
   );
   await page.goto('https://agapay.test/myagapay/calendar');
@@ -223,7 +242,11 @@ try {
   const calendar = await page.locator('.parish-life-week-calendar').boundingBox();
   const request = await page.locator('#koinoniaAccessRequest').boundingBox();
   assert.ok(request.y >= calendar.y + calendar.height, 'Access request should sit below the calendar');
-  assert.equal(await page.locator('#parishLifeTierSections').isVisible(), false);
+  assert.equal(
+    await page.locator('#parishLifeTierSections').getByRole('link', { name: 'Open Podcasts' }).isVisible(),
+    true
+  );
+  assert.equal(await page.locator('#parishLifeTierSections #parishLifeVideos, #parishLifeMinistries').count(), 0);
   await page.getByRole('button', { name: 'Ask the parish to enable Directory' }).click();
   await page.getByText(/Return here to request approval once Directory is enabled/).waitFor();
   directoryEnabled = true;

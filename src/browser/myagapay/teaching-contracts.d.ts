@@ -60,6 +60,8 @@ export interface TeachingProgress {
 }
 export interface TeachingApiPayload {
   error?: string;
+  code?: string;
+  available?: boolean;
   items?: TeachingProgress[];
   playbackRate?: number;
   subscriptions?: TeachingSubscription[];

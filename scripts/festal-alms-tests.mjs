@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import {
   activeFestalAlmsCampaigns,
-  festalAlmsVisibilityWindow
+  festalAlmsVisibilityWindow,
+  nextFestalOffering
 } from "../src/festal-alms.js";
 
 const campaign = (id) => ({ id, name: id, enabled: true });
@@ -68,5 +69,25 @@ const patronalAndSeasonal = activeFestalAlmsCampaigns(
 );
 assert.equal(patronalAndSeasonal.length, 2);
 assert.equal(patronalAndSeasonal[0].patronal, true);
+
+const seasonalOfferings = [
+  campaign('nativity-christ'),
+  campaign('dormition'),
+  patronalCampaign,
+  { ...campaign('apostles-peter-paul'), enabled: false },
+];
+assert.deepEqual(nextFestalOffering(seasonalOfferings, 'julian', '2026-07-01'), {
+  campaignId: 'dormition',
+  feastId: 'dormition',
+  name: 'dormition',
+  feastDate: '2026-08-28',
+  startsAt: '2026-08-14',
+  endsAt: '2026-09-04',
+  fastStartId: 'dormition-fast-begins',
+});
+assert.equal(nextFestalOffering(seasonalOfferings, 'julian', '2026-09-04').campaignId, 'dormition');
+assert.equal(nextFestalOffering(seasonalOfferings, 'julian', '2026-09-05').startsAt, '2026-11-28');
+assert.equal(nextFestalOffering([campaign('dormition')], 'julian', '2026-09-05').feastDate, '2027-08-28');
+assert.equal(nextFestalOffering([patronalCampaign], 'julian', '2026-12-19'), null);
 
 console.log("festal alms visibility tests passed");

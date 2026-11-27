@@ -126,31 +126,13 @@ import { icons } from './myagapay/shell-icons.js';
   }
 
   function mobileProducts() {
-    const byId = new Map(products().map((item) => [item.id, item]));
-    const active = activeProduct();
-    const featureOrFallback = (featureId: string, fallbackId: string) => {
-      const feature = byId.get(featureId);
-      return parishCapabilities[feature?.parishFeature as keyof ShellParishCapabilities] === true ||
-        active === featureId
-        ? feature
-        : byId.get(fallbackId);
-    };
-    const libraryOrHistory = featureOrFallback('library', 'history');
-    const directory = byId.get('directory');
-    const directoryOrFallback =
-      parishCapabilities.directoryEnabled || active === 'directory' ? directory : libraryOrHistory;
-    return [
-      byId.get('parish-life'),
-      byId.get('giving'),
-      featureOrFallback('bookstore', 'settings'),
-      directoryOrFallback,
-      byId.get('commemorations'),
-    ].filter(Boolean) as ShellProduct[];
+    return products().filter((item) =>
+      ['parish-life', 'giving', 'bookstore', 'directory', 'account'].includes(item.id)
+    );
   }
 
   function hamburgerProducts() {
-    // The hamburger shows every enabled product, independent of the five-slot
-    // bottom bar. This keeps Library reachable when Sacraments owns its slot.
+    // The menu includes all enabled parish tools, including those outside the tab bar.
     return visibleProducts();
   }
 
@@ -581,10 +563,7 @@ import { icons } from './myagapay/shell-icons.js';
   function productNav(active = activeProduct(), className = 'my-agapay-tabbar') {
     const isLearnNav = className === 'learn-product-tabbar';
     const isDesktopSideNav = className.includes('unified-product-nav');
-    // Every bottom tabbar variant is a fixed 5-column grid -- drop
-    // mobileTabHidden items there so a 6th product
-    // never wraps onto an ugly second row. The full list still appears in
-    // the desktop sidebar, which has room.
+    // The bottom navigation stays in the same order across parishes.
     const navProducts = isDesktopSideNav ? visibleProducts() : mobileProducts();
     const navAttrs = isDesktopSideNav
       ? ' hx-boost="false"'
@@ -593,8 +572,8 @@ import { icons } from './myagapay/shell-icons.js';
       .map((item) => {
         const current =
           item.id === active ||
-          (item.id === 'settings' && active === 'account') ||
-          (item.id === 'giving' && active === 'history' && !navProducts.some((product) => product.id === 'history'));
+          (item.id === 'parish-life' && ['commemorations', 'library'].includes(active) && !isDesktopSideNav) ||
+          (item.id === 'giving' && active === 'history');
         const activeClass = current ? (isLearnNav ? 'is-active' : 'active') : '';
         if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) {
           const loadingLabel = isDesktopSideNav
@@ -610,6 +589,9 @@ import { icons } from './myagapay/shell-icons.js';
         const label = isDesktopSideNav
           ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}`
           : `<span>${item.mobileLabel || item.label}</span>${badge}`;
+        if (!isDesktopSideNav && item.parishFeature && !parishCapabilities[item.parishFeature] && !current) {
+          return `<span class="myagapay-tab-disabled" role="link" aria-disabled="true">${item.icon}${label}</span>`;
+        }
         return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.icon}${label}</a>`;
       })
       .join('');
@@ -647,7 +629,7 @@ import { icons } from './myagapay/shell-icons.js';
       })
       .join('');
     const sharedExtras = document.body.classList.contains('app-shared-header-page')
-      ? `<a href="/myagapay/giving/calendar">${icons.history}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>`
+      ? `<a href="/myagapay/calendar">${icons.calendar}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>`
       : '';
     return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === 'account' ? ' aria-current="page"' : ''}>${icons.account}<span>Account Settings</span></a>${sharedExtras}`;
   }

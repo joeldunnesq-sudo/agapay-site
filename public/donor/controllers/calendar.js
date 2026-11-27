@@ -153,20 +153,23 @@ function liturgicalReadingRows(today = {}) {
     Array.isArray(today.readingAppointments) && today.readingAppointments.length
       ? today.readingAppointments
       : [
-          today.epistleRef && { type: 'epistle', ref: today.epistleRef, appointment: '' },
-          today.gospelRef && { type: 'gospel', ref: today.gospelRef, appointment: '' },
+          today.epistleRef && { type: 'epistle', ref: today.epistleRef, preview: today.epistlePreview },
+          today.gospelRef && { type: 'gospel', ref: today.gospelRef, preview: today.gospelPreview },
         ].filter(Boolean);
   const groups = /* @__PURE__ */ new Map();
   appointments.forEach((reading) => {
     const type = String(reading?.type || '').toLowerCase();
     const ref = String(reading?.ref || '').trim();
-    if (!ref || (type !== 'epistle' && type !== 'gospel')) return;
-    const appointment = String(reading?.appointment || '').trim();
+    if (!ref || ref === 'Not listed' || (type !== 'epistle' && type !== 'gospel')) return;
+    const appointment = String(reading?.appointment || '')
+      .trim()
+      .replace(/^(?:readings? )?of the day$/i, '');
     if (!groups.has(appointment)) groups.set(appointment, []);
-    groups.get(appointment).push({ type, ref });
+    groups.get(appointment).push({ type, ref, preview: reading.preview });
   });
   const rows = [];
-  groups.forEach((readings, appointment) => {
+  const orderedGroups = [...groups].sort(([left], [right]) => Number(Boolean(left)) - Number(Boolean(right)));
+  orderedGroups.forEach(([appointment, readings]) => {
     if (groups.size > 1)
       rows.push({
         text: appointment
@@ -181,11 +184,69 @@ function liturgicalReadingRows(today = {}) {
           rows.push({
             text: `${type === 'epistle' ? 'Epistle' : 'Gospel'}: ${reading.ref}`,
             className: 'cal-reading-line',
+            reading,
           })
         );
     });
   });
   return rows;
+}
+function renderLiturgicalReadingLines(note, rows) {
+  const lines = rows.map((row) => {
+    const line = document.createElement('span');
+    line.className = row.className;
+    line.textContent = row.text;
+    return line;
+  });
+  const dialog = document.querySelector('#todayReadingsDialog');
+  const body = dialog?.querySelector('#todayReadingsBody');
+  if (
+    !body ||
+    !dialog ||
+    typeof dialog.showModal !== 'function' ||
+    !rows.some((row) => row.className === 'cal-reading-line')
+  ) {
+    note.replaceChildren(...lines);
+    return;
+  }
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'cal-readings-trigger';
+  trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-controls', dialog.id);
+  trigger.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 5c4-1 7 0 9 2 2-2 5-3 9-2v14c-4-1-7 0-9 2-2-2-5-3-9-2z"/></svg>';
+  const references = document.createElement('span');
+  for (const [type, label] of [
+    ['epistle', 'Epistle'],
+    ['gospel', 'Gospel'],
+  ]) {
+    const refs = rows.flatMap(({ reading }) => (reading?.type === type ? [reading.ref] : []));
+    if (!refs.length) continue;
+    const summary = document.createElement('span');
+    summary.className = 'cal-reading-line cal-reading-summary';
+    const heading = document.createElement('strong');
+    heading.textContent = `${label}:`;
+    summary.append(heading, ` ${refs.join(', ')}`);
+    references.append(summary);
+  }
+  trigger.append(references);
+  trigger.addEventListener('click', () => dialog.showModal());
+  note.replaceChildren(trigger);
+  body.replaceChildren(
+    ...rows.map((row) => {
+      const section = document.createElement('div');
+      const title = document.createElement(row.className.includes('is-heading') ? 'h3' : 'strong');
+      title.textContent = row.text;
+      section.append(title);
+      if (row.reading?.preview) {
+        const excerpt = document.createElement('p');
+        excerpt.textContent = row.reading.preview;
+        section.append(excerpt);
+      }
+      return section;
+    })
+  );
 }
 function renderDonorTodayInChurch(parish, payload) {
   const calendar =
@@ -241,21 +302,19 @@ function renderDonorTodayInChurch(parish, payload) {
     const unavailableNote =
       'Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar.';
     const readingLines = liturgicalReadingRows(today);
-    if (nameDayText) readingLines.push({ text: nameDayText, className: 'cal-reading-line is-guidance' });
-    if (today.sourceConnected === false || !readingLines.length) {
+    if (today.sourceConnected === false || (!readingLines.length && !nameDayText)) {
       feastNote.textContent =
         today.sourceConnected === false
           ? unavailableNote
           : 'Daily readings, saints, and fasting notes follow the Orthodox calendar.';
     } else {
-      feastNote.replaceChildren(
-        ...readingLines.map((reading) => {
-          const line = document.createElement('span');
-          line.className = reading.className;
-          line.textContent = reading.text;
-          return line;
-        })
-      );
+      renderLiturgicalReadingLines(feastNote, readingLines);
+      if (nameDayText) {
+        const nameDaysLine = document.createElement('span');
+        nameDaysLine.className = 'cal-reading-line is-guidance';
+        nameDaysLine.textContent = nameDayText;
+        feastNote.append(nameDaysLine);
+      }
     }
   }
   const existingSaintCard = document.getElementById('saintPreviewCard');

@@ -78,6 +78,7 @@ import {
 import './parish-commemorations.js';
 
 import { enrichParishGivingOptions } from './parish-giving-catalog.js';
+import { nextFestalOffering } from '../festal-alms.js';
 import './donor-authentication.js';
 import './donor-password-recovery.js';
 import './donor.js';
@@ -254,7 +255,10 @@ export async function handleDonorDashboard(request: Request, env: DonorEnvironme
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   const summary = await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations));
   let parish = await loadDonorParishContext(env, donor);
-  if (parish) parish = await enrichParishGivingOptions(env, parish);
+  if (parish) {
+    const offering = nextFestalOffering(parish.feastCampaigns, parish.liturgicalCalendar);
+    parish = { ...(await enrichParishGivingOptions(env, parish)), nextFestalOffering: offering };
+  }
   if (parish) parish = attachDonorCampaignGiving(parish, offerings);
 
   return json({

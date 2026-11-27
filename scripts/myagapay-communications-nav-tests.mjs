@@ -38,7 +38,7 @@ assert.doesNotMatch(desktopNav, /href="\/myagapay\/(?:feed|groups|giving\/calend
 assert.equal((shell.match(/id: "parish-life"/g) || []).length, 1, 'there must be one global parish landing product');
 assert.doesNotMatch(shell, /id: "today"/);
 assert.match(shell, /label: "Home"/);
-assert.match(shell, /byId\.get\("parish-life"\)/);
+assert.match(shell, /\["parish-life", "giving", "bookstore", "directory", "account"\]/);
 assert.match(shell, /pathname\.startsWith\("\/myagapay\/calendar"\)[\s\S]*return "parish-life"/);
 assert.match(shell, /function ensureParishLifeBackLink[\s\S]*href = "\/myagapay\/parish-life"/);
 assert.doesNotMatch(shell.match(/function products\(\) \{[\s\S]*?return items;/)?.[0] || '', /id: "(?:feed|groups)"/);
