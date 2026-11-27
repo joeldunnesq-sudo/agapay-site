@@ -199,7 +199,7 @@ assert.ok(
 );
 assert.match(landing, /Choose your news sources[\s\S]*Nothing appears until you follow/);
 assert.ok(
-  landing.indexOf('Your Ministries') < landing.indexOf('id="listenHeading"'),
+  landing.indexOf('aria-labelledby="yourMinistriesHeading"') < landing.indexOf('aria-labelledby="listenHeading"'),
   'ministries should appear above the unified listening section and video on Koinonia home'
 );
 assert.match(newsPage, /News Feeds[\s\S]*Choose your sources[\s\S]*Follow another RSS feed/);
