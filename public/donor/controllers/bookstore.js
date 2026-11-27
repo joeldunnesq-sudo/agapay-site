@@ -547,35 +547,36 @@ async function openBookstoreScanner() {
   overlay.hidden = false;
   if (status) status.textContent = 'Point your camera at the barcode on the back of the book.';
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    const stream2 = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment' },
     });
     if (revision !== bookstoreScannerRevision) {
-      stream.getTracks().forEach((track) => track.stop());
+      stream2.getTracks().forEach((track) => track.stop());
       return;
     }
-    bookstoreScannerStream = stream;
+    bookstoreScannerStream = stream2;
   } catch {
     if (revision === bookstoreScannerRevision && status)
       status.textContent = 'Camera access is unavailable. Close the scanner to enter the title and author.';
     return;
   }
-  video.srcObject = bookstoreScannerStream;
-  await video.play().catch(() => {});
-  if (revision !== bookstoreScannerRevision) return;
-  enableBookstoreScannerTorchControl(bookstoreScannerStream.getVideoTracks()[0]);
+  const stream = bookstoreScannerStream;
+  enableBookstoreScannerTorchControl(stream.getVideoTracks()[0]);
   if ('BarcodeDetector' in window) {
     try {
       const supported = await window.BarcodeDetector.getSupportedFormats();
       if (revision !== bookstoreScannerRevision) return;
       if (supported.includes('ean_13')) {
         const detector = new window.BarcodeDetector({ formats: ['ean_13'] });
+        video.srcObject = stream;
+        await video.play();
+        if (revision !== bookstoreScannerRevision) return;
         scanWithBarcodeDetector(detector, video, revision);
         return;
       }
     } catch {}
   }
-  if (revision === bookstoreScannerRevision) await scanWithZXing(video, status, revision);
+  if (revision === bookstoreScannerRevision) await scanWithZXing(stream, video, status, revision);
 }
 function scanWithBarcodeDetector(detector, video, revision) {
   const tick = async () => {
@@ -593,10 +594,10 @@ function scanWithBarcodeDetector(detector, video, revision) {
   };
   bookstoreScannerRAF = requestAnimationFrame(tick);
 }
-async function scanWithZXing(video, status, revision) {
+async function scanWithZXing(stream, video, status, revision) {
   try {
     bookstoreZXingReader = new ZXing.BrowserMultiFormatReader();
-    await bookstoreZXingReader.decodeFromVideoElementContinuously(video, (result) => {
+    await bookstoreZXingReader.decodeFromStream(stream, video, (result) => {
       if (revision !== bookstoreScannerRevision) return;
       const isbn = scannedBookIsbn(result?.getText());
       if (isbn) void handleBarcodeDetected(isbn);

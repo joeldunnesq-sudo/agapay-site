@@ -205,8 +205,9 @@ try {
     HTMLMediaElement.prototype.play = async () => {};
     window.ZXing = {
       BrowserMultiFormatReader: class {
-        async decodeFromVideoElementContinuously(video, callback) {
-          if (!video.srcObject?.active) throw new Error('Expected an active scanner stream');
+        async decodeFromStream(stream, video, callback) {
+          if (!stream.active) throw new Error('Expected an active scanner stream');
+          video.srcObject = stream;
           callback({ getText: () => '0123456789012' });
           callback({ getText: () => '9780140449136' });
         }

@@ -611,10 +611,8 @@ async function openBookstoreScanner() {
       status.textContent = 'Camera access is unavailable. Close the scanner to enter the title and author.';
     return;
   }
-  video.srcObject = bookstoreScannerStream;
-  await video.play().catch(() => {});
-  if (revision !== bookstoreScannerRevision) return;
-  enableBookstoreScannerTorchControl(bookstoreScannerStream.getVideoTracks()[0]);
+  const stream = bookstoreScannerStream;
+  enableBookstoreScannerTorchControl(stream.getVideoTracks()[0]);
 
   if ('BarcodeDetector' in window) {
     try {
@@ -622,6 +620,9 @@ async function openBookstoreScanner() {
       if (revision !== bookstoreScannerRevision) return;
       if (supported.includes('ean_13')) {
         const detector = new window.BarcodeDetector!({ formats: ['ean_13'] });
+        video.srcObject = stream;
+        await video.play();
+        if (revision !== bookstoreScannerRevision) return;
         scanWithBarcodeDetector(detector, video, revision);
         return;
       }
@@ -629,7 +630,7 @@ async function openBookstoreScanner() {
       /* fall through to ZXing */
     }
   }
-  if (revision === bookstoreScannerRevision) await scanWithZXing(video, status, revision);
+  if (revision === bookstoreScannerRevision) await scanWithZXing(stream, video, status, revision);
 }
 
 function scanWithBarcodeDetector(detector: DonorBarcodeDetector, video: HTMLVideoElement, revision: number) {
@@ -651,10 +652,15 @@ function scanWithBarcodeDetector(detector: DonorBarcodeDetector, video: HTMLVide
   bookstoreScannerRAF = requestAnimationFrame(tick);
 }
 
-async function scanWithZXing(video: HTMLVideoElement, status: HTMLElement | null, revision: number) {
+async function scanWithZXing(
+  stream: MediaStream,
+  video: HTMLVideoElement,
+  status: HTMLElement | null,
+  revision: number
+) {
   try {
     bookstoreZXingReader = new ZXing.BrowserMultiFormatReader();
-    await bookstoreZXingReader.decodeFromVideoElementContinuously(video, (result) => {
+    await bookstoreZXingReader.decodeFromStream(stream, video, (result) => {
       if (revision !== bookstoreScannerRevision) return;
       const isbn = scannedBookIsbn(result?.getText());
       if (isbn) void handleBarcodeDetected(isbn);

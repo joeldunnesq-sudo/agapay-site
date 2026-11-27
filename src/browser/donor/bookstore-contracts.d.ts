@@ -61,7 +61,8 @@ interface DonorBarcodeDetector {
   detect(video: HTMLVideoElement): Promise<{ rawValue: string }[]>;
 }
 interface DonorZxingReader {
-  decodeFromVideoElementContinuously(
+  decodeFromStream(
+    stream: MediaStream,
     video: HTMLVideoElement,
     callback: (result: { getText(): string } | null, err?: unknown) => void
   ): Promise<void>;
