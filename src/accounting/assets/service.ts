@@ -42,7 +42,7 @@ export async function assetAccount(db: PortabilityDatabase, id: string, category
     throw new ValidationError(`Choose an active ${normalBalance || ''} ${category} posting account.`);
   return account;
 }
-export async function acquisitionLines(db: PortabilityDatabase, actor: LedgerServiceActor) {
+export async function acquisitionLines(db: PortabilityDatabase, actor: LedgerServiceActor, journalId = '') {
   permitted(actor);
   return (
     (
@@ -54,8 +54,10 @@ export async function acquisitionLines(db: PortabilityDatabase, actor: LedgerSer
  JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id
  JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status='posted' AND l.debit_amount>0
  AND t.category='asset' AND a.normal_balance='debit' AND a.cash_flow_classification='investing'
+ AND (?1 = '' OR e.id = ?1)
  ORDER BY e.entry_date DESC,l.id LIMIT 500`
         )
+        .bind(journalId)
         .all()
     ).results || []
   );

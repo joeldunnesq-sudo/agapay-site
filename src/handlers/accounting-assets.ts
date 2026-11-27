@@ -59,7 +59,7 @@ export async function handleAccountingAssets(request: Request, env: Partial<Env>
       return reply({ ok: true, rows });
     }
     if (request.method === 'GET' && path === '/acquisition-lines')
-      return reply({ ok: true, rows: await acquisitionLines(db, actor) });
+      return reply({ ok: true, rows: await acquisitionLines(db, actor, url.searchParams.get('journalId') || '') });
     if (request.method === 'POST' && !path)
       return reply({ ok: true, asset: await registerAsset(db, actor, (await request.json()) as RegisterInput) }, 201);
     if (match) {

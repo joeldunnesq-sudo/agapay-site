@@ -28,6 +28,9 @@ try {
     let matchAttempts = 0;
     let completed = false;
     let expensePosted = false;
+    let purchaseDrafts = 0;
+    let purchasePosts = 0;
+    let registrations = 0;
     const fiscal = { id: 'fy', startDate: '2026-01-01', endDate: '2026-12-31' };
     const closePeriod = { id: 'close-period', name: 'October 2024', startDate: '2024-10-01', endDate: '2024-10-31', status: 'open', fiscalStatus: 'open', version: 1 };
     const october = {
@@ -76,6 +79,15 @@ try {
         fundCatalog: [fund, { ...fund, id: 'retired', code: 'OLD', name: 'Retired building fund', isActive: false }],
         accounts: [
           { id: 'office', name: 'Office supplies', category: 'expense' },
+          {
+            id: 'equipment',
+            name: 'Equipment',
+            accountNumber: '1500',
+            category: 'asset',
+            normalBalance: 'debit',
+            cashFlowClassification: 'investing',
+            isActive: true,
+          },
           {
             id: bank.ledgerAccountId,
             accountNumber: '1010',
@@ -289,6 +301,13 @@ try {
         return { body: { entries } };
       }
       const { lines } = request.postDataJSON();
+      if (lines[0].accountId === 'equipment') {
+        ++purchaseDrafts;
+        assert.equal(lines[0].debitAmount, 6400);
+        assert.equal(lines[1].accountId, bank.ledgerAccountId);
+        assert.equal(lines[1].creditAmount, 6400);
+        return { body: { entry: { id: 'asset-purchase', version: 1 } } };
+      }
       assert.equal(lines[0].accountId, 'office');
       assert.equal(lines[0].debitAmount, 1645);
       assert.equal(lines[1].accountId, bank.ledgerAccountId);
@@ -306,6 +325,38 @@ try {
       expensePosted = true;
       return { body: { ok: true } };
     };
+    api['/accounting/journals/asset-purchase/validate'] = { body: { validation: { ok: true } } };
+    api['/accounting/journals/asset-purchase/post'] = (request) => {
+      assert.equal(request.postDataJSON().idempotencyKey, 'register-ui-asset-purchase-1');
+      ++purchasePosts;
+      return purchasePosts === 1 ? { status: 503, body: { error: 'Temporary posting error' } } : { body: { ok: true } };
+    };
+    api['/accounting/assets'] = (request) => {
+      if (request.method() === 'POST') {
+        ++registrations;
+        assert.equal(request.postDataJSON().acquisitionLineId, 'equipment-debit');
+        assert.equal(request.postDataJSON().cost, 6400);
+        return { body: { asset: { id: 'registered-asset' } } };
+      }
+      return { body: { totals: { cost: 0, accumulated: 0, netBookValue: 0 }, rows: [] } };
+    };
+    api['/accounting/assets/acquisition-lines'] = (request) => {
+      assert.equal(new URL(request.url()).searchParams.get('journalId'), 'asset-purchase');
+      return { body: { rows: [{ id: 'equipment-debit', available: 6400, entry_date: '2026-10-10', description: 'Equipment', account_name: 'Equipment' }] } };
+    };
+    api['/accounting/assets/opening-lines'] = { body: { rows: [] } };
+    api['/accounting/assets/registered-asset'] = {
+      body: {
+        asset: {
+          id: 'registered-asset', name: 'Parish equipment', tag: 'EQ-001', version: 1, cost: 6400,
+          acquisition_date: '2026-10-10', in_service_date: '2026-10-10', insurance_value: 0, salvage: 0,
+        },
+        source: { journal_entry_id: 'asset-purchase' },
+        movements: [],
+        schedule: [],
+      },
+    };
+    api['/accounting/attachments'] = { body: { attachments: [] } };
     const fixture = await openParishFixture(
       browser,
       () => ({
@@ -598,6 +649,27 @@ try {
       assert.ok(
         await pane.locator('.acct-simple-income').evaluate((element) => element.scrollWidth <= element.clientWidth + 1)
       );
+      await page.getByRole('button', { name: 'Overview', exact: true }).click();
+      await pane.getByRole('button', { name: /^Record an asset purchase/ }).click();
+      await pane.getByLabel('Paid to').fill('Equipment vendor');
+      await pane.getByLabel('Payment date').fill('2026-10-10');
+      await pane.getByLabel('Amount', { exact: true }).fill('64');
+      await pane.getByLabel('Fixed-asset account').selectOption('equipment');
+      await pane.getByRole('button', { name: 'Post asset purchase' }).click();
+      await pane.getByText('Temporary posting error').waitFor();
+      await pane.getByRole('button', { name: 'Retry posting purchase' }).click();
+      await pane.getByRole('button', { name: 'Register this asset' }).click();
+      await pane.getByRole('heading', { name: 'Register a parish asset' }).waitFor();
+      assert.equal(await pane.getByLabel('Acquisition entry').inputValue(), 'equipment-debit');
+      assert.equal(await pane.getByLabel('Cost allocated to this asset').inputValue(), '64.00');
+      await pane.getByLabel('Asset tag').fill('EQ-001');
+      await pane.getByLabel('Asset name').fill('Parish equipment');
+      await pane.getByLabel('Depreciation method').selectOption('none');
+      await pane.getByRole('button', { name: 'Register asset', exact: true }).click();
+      await pane.getByRole('heading', { name: 'Parish equipment' }).waitFor();
+      assert.equal(purchaseDrafts, 1);
+      assert.equal(purchasePosts, 2);
+      assert.equal(registrations, 1);
       fixture.assertClean();
     } finally {
       await fixture.close();

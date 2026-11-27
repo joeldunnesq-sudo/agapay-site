@@ -40,7 +40,7 @@ async function assetAccount(db, id, category, normalBalance) {
     throw new ValidationError(`Choose an active ${normalBalance || ''} ${category} posting account.`);
   return account;
 }
-async function acquisitionLines(db, actor) {
+async function acquisitionLines(db, actor, journalId = '') {
   permitted(actor);
   return (
     (
@@ -52,8 +52,10 @@ async function acquisitionLines(db, actor) {
  JOIN accounting_accounts a ON a.id=l.account_id JOIN accounting_account_types t ON t.id=a.account_type_id
  JOIN accounting_funds f ON f.id=l.fund_id WHERE e.status='posted' AND l.debit_amount>0
  AND t.category='asset' AND a.normal_balance='debit' AND a.cash_flow_classification='investing'
+ AND (?1 = '' OR e.id = ?1)
  ORDER BY e.entry_date DESC,l.id LIMIT 500`
         )
+        .bind(journalId)
         .all()
     ).results || []
   );
