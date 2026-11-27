@@ -380,7 +380,23 @@ try {
       await fixture.open();
       await page.locator('#nav-accounting').click();
       const pane = page.locator('#accountingPane');
+      const assertSingleActionRow = async (selector) => {
+        const buttons = pane.locator(selector);
+        assert.equal(await buttons.count(), parishTier ? 6 : 5);
+        assert.ok(
+          await buttons.evaluateAll((elements) => {
+            const firstTop = elements[0].getBoundingClientRect().top;
+            return elements.every(
+              (button) =>
+                Math.abs(button.getBoundingClientRect().top - firstTop) < 1 &&
+                button.scrollWidth <= button.clientWidth + 1
+            );
+          }),
+          'Accounting shortcuts should share one row without clipping'
+        );
+      };
       await pane.getByRole('heading', { name: 'Record activity' }).waitFor();
+      await assertSingleActionRow('.acct-treasurer-start .acct-command-actions > button');
       assert.equal(await pane.getByRole('heading', { name: 'Posting periods', exact: true }).count(), 0);
       assert.equal(await page.locator('[data-accounting-view]:visible').count(), 1);
       const workspaceNav = page.getByRole('navigation', { name: 'Accounting workspaces' });
@@ -638,6 +654,7 @@ try {
       await page.getByRole('button', { name: 'Accountant view' }).click();
       await page.getByRole('button', { name: 'Overview', exact: true }).click();
       await pane.locator('.acct-suite-stats').waitFor();
+      await assertSingleActionRow('.acct-home-action-grid > button');
 
       await page.setViewportSize({ width: 390, height: 844 });
       await page.getByRole('button', { name: 'Treasurer view' }).click();

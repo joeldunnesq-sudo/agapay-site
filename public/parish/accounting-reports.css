@@ -643,6 +643,7 @@
   position: relative;
   z-index: 1;
   min-width: 0;
+  container-type: inline-size;
 }
 .acct-home-actions h3 {
   margin: 0 0 12px;
@@ -709,6 +710,28 @@
   }
   .acct-home-action-grid button {
     min-height: 90px;
+  }
+}
+@container (min-width: 520px) {
+  :is(.acct-treasurer-start, .acct-home-actions) .acct-command-actions-treasurer {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  :is(.acct-treasurer-start, .acct-home-actions) .acct-command-actions-treasurer button {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    overflow-wrap: anywhere;
+  }
+  .acct-home-action-grid span {
+    font-size: 14px;
+  }
+  .acct-home-action-grid small {
+    margin-top: 4px;
+    font-size: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
