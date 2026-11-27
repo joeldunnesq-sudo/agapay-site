@@ -70,7 +70,7 @@ function renderYouTubeAdminList() {
   const rows = communicationsState.youtube || [];
   const channel = communicationsState.youtubeChannel;
   const channelRow = channel
-    ? `<article class="communications-row is-pinned"><div class="communications-row-copy"><div class="communications-row-meta"><span>Automatically synced channel</span></div><h3>${escapeHtml(channel.channelTitle || 'YouTube channel')}</h3><p>Every public upload is available through the embedded channel playlist in Koinonia.</p></div><div class="communications-row-actions"><a class="btn btn-ghost btn-sm" href="${escapeAttr(channel.channelUrl)}" target="_blank" rel="noopener">View channel</a><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeChannel(this)">Disconnect</button></div></article>`
+    ? `<article class="communications-row is-pinned"><div class="communications-row-copy"><div class="communications-row-meta"><span>Automatically synced channel</span></div><h3>${escapeHtml(channel.channelTitle || 'YouTube channel')}</h3><p>Every public upload is available through the embedded channel playlist in Parish Life.</p></div><div class="communications-row-actions"><a class="btn btn-ghost btn-sm" href="${escapeAttr(channel.channelUrl)}" target="_blank" rel="noopener">View channel</a><button class="btn btn-danger btn-sm" type="button" onclick="removeYouTubeChannel(this)">Disconnect</button></div></article>`
     : '';
   const curatedRows = rows
     .map(
@@ -80,7 +80,7 @@ function renderYouTubeAdminList() {
     .join('');
   list.innerHTML =
     channelRow + curatedRows ||
-    '<div class="communications-empty"><strong>No YouTube channel connected</strong><p>Connect the parish channel once to keep Koinonia video up to date automatically.</p></div>';
+    '<div class="communications-empty"><strong>No YouTube channel connected</strong><p>Connect the parish channel once to keep Parish Life video up to date automatically.</p></div>';
 }
 async function uploadTeachingAudio(teachingId, file) {
   if (file.size > 50 * 1024 * 1024) throw new Error('Teaching audio must be 50MB or smaller.');

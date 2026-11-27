@@ -111,7 +111,7 @@
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
           <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
-          <span class="nav-label">Koinonia</span>
+          <span class="nav-label">Parish Life</span>
           <span class="nav-module-status" id="communicationsNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="communicationsNavBadge" hidden>Upgrade</span>
         </div>
@@ -1172,19 +1172,19 @@ Generate Monthly Financial Report
       <div class="tab-panel parish-tier-panel" id="tab-library">
         <div id="parishLibraryAdmin" class="parish-library-admin"><p class="sw-tool-loading">Loading Parish Library…</p></div>
       </div>
-      <!-- ── KOINONIA STUDIO TAB ────────────────────── -->
+      <!-- ── PARISH LIFE TAB ────────────────────── -->
       <div class="tab-panel parish-tier-panel" id="tab-communications">
         <div class="communications-admin-shell koinonia-studio">
           <header class="communications-admin-header koinonia-studio-hero">
-<div class="koinonia-studio-identity"><span class="koinonia-studio-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span><div><span class="eyebrow">Parish publishing studio</span><h1>Koinonia</h1><p>Shape the digital life of your parish with news, teaching, audio, and video.</p></div></div>
+<div class="koinonia-studio-identity"><span class="koinonia-studio-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg></span><div><span class="eyebrow">Parish publishing studio</span><h1>Parish Life</h1><p>Shape the digital life of your parish with news, teaching, audio, and video.</p></div></div>
 <div class="communications-admin-actions">
-  <div class="koinonia-feature-toggle"><span><strong>Koinonia</strong><small>Publishing and parish life</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Koinonia content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Koinonia content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
+  <div class="koinonia-feature-toggle"><span><strong>Parish Life</strong><small>Parish publishing</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Parish Life content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Parish Life content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
 </div>
           </header>
-          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Koinonia is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review Parish tier</button></div>
-          <div id="communicationsDisabledNotice" class="communications-paywall koinonia-studio-notice" hidden><strong>Parish publishing is off.</strong><p>The Koinonia calendar remains available, but parish announcements, audio, video, and connected writing are hidden. Your library is safe until you turn publishing on.</p></div>
+          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Parish Life is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review Parish tier</button></div>
+          <div id="communicationsDisabledNotice" class="communications-paywall koinonia-studio-notice" hidden><strong>Parish publishing is off.</strong><p>The Parish Life calendar remains available, but parish announcements, audio, video, and connected writing are hidden. Your library is safe until you turn publishing on.</p></div>
           <div id="communicationsWorkspace" class="communications-workspace-stack">
-<nav class="koinonia-studio-nav" aria-label="Koinonia workspace">
+<nav class="koinonia-studio-nav" aria-label="Parish Life workspace">
 <button type="button" class="is-active" data-koinonia-view="overview" onclick="setKoinoniaStudioView('overview')"><span aria-hidden="true"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" focusable="false"><path d="M3 3h18v18H3zM3 9h18M9 9v12"/></svg></span>Overview</button>
 <button type="button" data-koinonia-view="content" onclick="setKoinoniaStudioView('content')"><span aria-hidden="true"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" focusable="false"><path d="M8 3h8l4 4v14H8zM16 3v5h4M4 6v14M11 12h6m-6 4h6"/></svg></span>Content library</button>
 <button type="button" data-koinonia-view="bulletins" onclick="setKoinoniaStudioView('bulletins')"><span aria-hidden="true"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" focusable="false"><path d="M4 4h16v16H4zM8 8h8m-8 4h3m2 0h3m-8 4h3m2 0h3"/></svg></span>Bulletins</button>
@@ -1199,7 +1199,7 @@ Generate Monthly Financial Report
   </div>
 <div class="koinonia-desk-summary" aria-label="Content summary"><article><span>Published posts</span><strong id="koinoniaPublishedTotal">—</strong></article><article><span>Drafts to finish</span><strong id="koinoniaDraftTotal">—</strong></article><article><span>Content channels</span><strong id="koinoniaChannelTotal">—</strong></article></div>
   <div class="koinonia-overview-grid">
-    <section class="koinonia-overview-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Recently updated</span><h3>Content activity</h3></div><button type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="koinoniaRecentContent" class="koinonia-recent-list"><p class="sw-tool-loading">Loading Koinonia…</p></div></section>
+    <section class="koinonia-overview-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Recently updated</span><h3>Content activity</h3></div><button type="button" onclick="loadCommunicationsTab(true)">Refresh</button></div><div id="koinoniaRecentContent" class="koinonia-recent-list"><p class="sw-tool-loading">Loading Parish Life…</p></div></section>
 
   </div>
 </section>
@@ -1207,13 +1207,13 @@ Generate Monthly Financial Report
 <section class="koinonia-studio-view" data-koinonia-panel="content" aria-labelledby="koinoniaContentHeading" hidden><div class="koinonia-desk-heading"><div><span class="eyebrow">Parish publishing</span><h2 id="koinoniaContentHeading">Content library</h2><p>Announcements, audio, and video in one place.</p></div><details class="koinonia-create-menu"><summary class="btn btn-gold">Create content</summary><div><button type="button" onclick="openKoinoniaComposer('announcements')">New announcement</button><button type="button" onclick="openKoinoniaComposer('audio')">New audio post</button><button type="button" onclick="openKoinoniaComposer('video')">Add video</button></div></details></div><div class="koinonia-library-filter"><label for="koinoniaContentFilter">Show</label><select id="koinoniaContentFilter" onchange="renderKoinoniaContentLibrary()"><option value="all">All content</option><option value="announcements">Announcements</option><option value="audio">Audio</option><option value="video">Video</option><option value="draft">Drafts</option></select></div><div id="koinoniaContentLibrary" class="koinonia-overview-panel koinonia-recent-list"></div></section>
 <section class="koinonia-studio-view" data-koinonia-panel="connections" aria-labelledby="koinoniaConnectionsHeading" hidden><div class="koinonia-desk-heading"><div><span class="eyebrow">Configuration</span><h2 id="koinoniaConnectionsHeading">Connections &amp; settings</h2><p>Connect your sources and choose which community features parishioners see.</p></div></div>                <section class="koinonia-calendar-connect is-compact" aria-labelledby="koinoniaCalendarHeading">
       <div class="koinonia-calendar-connect-mark" aria-hidden="true">▦</div>
-      <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Koinonia</h3><p>Connect a public ICS or iCal feed from Google Calendar, Squarespace, Wix, and most calendar platforms. Google Calendar share links are converted automatically.</p></div>
+      <div><span class="eyebrow">Calendar connection</span><h3 id="koinoniaCalendarHeading">Bring your parish calendar into Parish Life</h3><p>Connect a public ICS or iCal feed from Google Calendar, Squarespace, Wix, and most calendar platforms. Google Calendar share links are converted automatically.</p></div>
       <form onsubmit="saveKoinoniaCalendar(event)">
         <label for="koinoniaCalendarUrl">Public calendar (iCal/ICS) link</label>
         <div><input id="koinoniaCalendarUrl" type="url" inputmode="url" placeholder="https://calendar.example.org/public-feed" /><button class="btn btn-gold" type="submit">Save calendar</button></div>
         <small id="koinoniaCalendarStatus" role="status">No calendar sync link saved.</small>
       </form>
-    </section><h3 class="koinonia-config-title">Community features</h3>            <div class="koinonia-feature-menu" role="group" aria-label="Koinonia community feature controls">
+    </section><h3 class="koinonia-config-title">Community features</h3>            <div class="koinonia-feature-menu" role="group" aria-label="Parish Life community feature controls">
   <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">✓</span><div><strong>Parish Signups</strong><small>Serve the faithful</small></div><label class="sac-admin-switch" title="Show or hide Parish Signups"><input id="signupsEnabledSwitch" type="checkbox" aria-label="Show Parish Signups to parishioners" onchange="toggleKoinoniaSubfeature('signups', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
   <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true">⇄</span><div><strong>Parish Exchange</strong><small>Offer or request useful items</small></div><label class="sac-admin-switch" title="Show or hide Parish Exchange"><input id="exchangeEnabledSwitch" type="checkbox" aria-label="Show Parish Exchange to parishioners" onchange="toggleKoinoniaSubfeature('exchange', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
   <div class="koinonia-feature-menu-item"><span class="koinonia-feature-menu-icon" aria-hidden="true"><svg class="prayer-candle-icon" viewBox="0 0 24 24" focusable="false"><path d="M12 2.5c1.75 1.9 2.7 3.45 2.7 5.05a2.7 2.7 0 0 1-5.4 0c0-1.6.95-3.15 2.7-5.05Z"/><path d="M8.5 10.5h7l-.85 10h-5.3l-.85-10Z"/><path d="M7.5 20.5h9"/><path d="M9.5 14.5h5"/></svg></span><div><strong>Prayer Requests</strong><small>Pray for one another</small></div><label class="sac-admin-switch" title="Show or hide Prayer Requests"><input id="prayerRequestsEnabledSwitch" type="checkbox" aria-label="Show Prayer Requests to parishioners" onchange="toggleKoinoniaSubfeature('prayers', this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
@@ -1289,9 +1289,9 @@ Generate Monthly Financial Report
 </dialog>
 
 <section class="communications-content-section koinonia-studio-view blog-admin-section" data-koinonia-panel="news" aria-labelledby="blogAdminHeading" hidden><button class="btn btn-ghost koinonia-back" type="button" onclick="setKoinoniaStudioView('connections')">Back to connections</button>
-  <div class="communications-section-heading"><span class="eyebrow">External writing</span><h2 id="blogAdminHeading">Priest’s Blog</h2><p>Surface the newest posts from a priest’s public blog in Koinonia through RSS or Atom.</p></div>
+  <div class="communications-section-heading"><span class="eyebrow">External writing</span><h2 id="blogAdminHeading">Priest’s Blog</h2><p>Surface the newest posts from a priest’s public blog in Parish Life through RSS or Atom.</p></div>
   <form class="communications-compose" onsubmit="saveParishBlogSettings(event)">
-    <label class="communications-pin"><input id="parishBlogEnabled" type="checkbox" /> Show new blog posts in Koinonia</label>
+    <label class="communications-pin"><input id="parishBlogEnabled" type="checkbox" /> Show new blog posts in Parish Life</label>
     <label>Blog homepage or RSS feed URL<input id="parishBlogSourceUrl" type="url" inputmode="url" placeholder="https://father.example.org/blog" /><small>Paste the public blog homepage or its HTTPS RSS/Atom address. AGAPAY will discover and validate the feed.</small></label>
     <p class="section-note" id="parishBlogFeedStatus">No blog feed configured.</p>
     <button class="btn btn-gold" type="submit">Save blog feed</button>
@@ -1300,7 +1300,7 @@ Generate Monthly Financial Report
     <article><span>OCA</span><div><strong>Orthodox Church in America News</strong><p>Available to parishioners in OCA parishes through the official OCA news feed.</p></div><em>Donor controlled</em></article>
     <article><span>OC</span><div><strong>OrthoChristian</strong><p>Each parishioner chooses whether to follow this source on their personal News page.</p></div><em>Donor controlled</em></article>
     <article><span>SP</span><div><strong>SPZH</strong><p>Parishioners can choose this international Orthodox news source on their personal News page.</p></div><em>Donor controlled</em></article>
-    <article><span>OT</span><div><strong>Orthodox Times</strong><p>Parishioners can follow Orthodox Times without changing the parish-wide Koinonia setup.</p></div><em>Donor controlled</em></article>
+    <article><span>OT</span><div><strong>Orthodox Times</strong><p>Parishioners can follow Orthodox Times without changing the parish-wide Parish Life setup.</p></div><em>Donor controlled</em></article>
     <article><span>OE</span><div><strong>Orthodox Ethos</strong><p>Parishioners can follow Orthodox Ethos or add another public RSS feed of their choice.</p></div><em>Donor controlled</em></article>
   </div>
 </section>
@@ -1395,7 +1395,7 @@ Generate Monthly Financial Report
   </div>
   <div class="communications-grid youtube-admin-grid is-primary">
     <form class="communications-compose" onsubmit="saveYouTubeChannel(event)">
-      <span class="eyebrow">Automatic YouTube media</span><h2>Connect your YouTube channel</h2><p class="section-note">Connect once and Koinonia will embed the channel’s complete uploads playlist. New public videos appear automatically—no manual adding required.</p>
+      <span class="eyebrow">Automatic YouTube media</span><h2>Connect your YouTube channel</h2><p class="section-note">Connect once and Parish Life will embed the channel’s complete uploads playlist. New public videos appear automatically—no manual adding required.</p>
       <aside class="youtube-privacy-guidance" aria-labelledby="youtubePrivacyGuidanceHeading">
         <strong id="youtubePrivacyGuidanceHeading">Choose the YouTube privacy setting intentionally</strong>
         <ul>
@@ -1403,7 +1403,7 @@ Generate Monthly Financial Report
           <li><b>Unlisted:</b> Not searchable or listed on the channel, but anyone with the link can watch. YouTube does not require a login or perform a viewer check.</li>
           <li><b>Private:</b> Only explicitly invited Google accounts can watch. This is real access control: every viewer needs a Google account and an individual invitation.</li>
         </ul>
-        <p><strong>Koinonia access:</strong> Announcements, Groups, and Teaching are restricted by AGAPAY’s verified-household gate. YouTube-hosted video—even Unlisted—does not carry that same guarantee because AGAPAY cannot control YouTube access.</p>
+        <p><strong>Parish Life access:</strong> Announcements, Groups, and Teaching are restricted by AGAPAY’s verified-household gate. YouTube-hosted video—even Unlisted—does not carry that same guarantee because AGAPAY cannot control YouTube access.</p>
       </aside>
       <label>YouTube channel URL or ID<input id="youtubeChannelUrl" required placeholder="https://www.youtube.com/@yourparish" /></label>
       <button class="btn btn-gold" type="submit">Connect channel</button>
@@ -1415,7 +1415,7 @@ Generate Monthly Financial Report
     <label>YouTube video URL<input id="youtubeVideoUrl" type="url" required placeholder="https://www.youtube.com/watch?v=…" /></label>
     <label class="youtube-pin-option">
       <input id="youtubeVideoPinned" type="checkbox" />
-      <span><strong>Pin in Recent Videos</strong><small>Place this video at the top of Koinonia for parishioners.</small></span>
+      <span><strong>Pin in Recent Videos</strong><small>Place this video at the top of Parish Life for parishioners.</small></span>
     </label>
     <button class="btn btn-ghost" type="submit">Validate and add</button>
   </form>
@@ -1635,7 +1635,7 @@ Generate Monthly Financial Report
               <div class="sw-suite-hero-copy">
                 <span class="sw-suite-eyebrow">Parish Commerce</span>
                 <h1 class="sw-suite-heading">Events</h1>
-                <p class="sw-suite-subhead">Manage ticketed gatherings, festivals, fundraisers, and other parish events—including listings created by ministry leaders in Koinonia.</p>
+                <p class="sw-suite-subhead">Manage ticketed gatherings, festivals, fundraisers, and other parish events—including listings created by ministry leaders in My AGAPAY.</p>
               </div>
               <div class="sw-suite-hero-status agapay-feature-actions">
                 <div id="eventsFeatureToggle"></div>
@@ -1646,7 +1646,7 @@ Generate Monthly Financial Report
                 </div>
               </div>
             </div>
-            <p class="section-note" style="margin:0 0 14px;">Parish staff can create Events here. Ministry leaders can also create them from <strong>Koinonia → Groups → [Ministry] → Meals &amp; Events</strong>.</p>
+            <p class="section-note" style="margin:0 0 14px;">Parish staff can create Events here. Ministry leaders can also create them from <strong>My AGAPAY → Groups → [Ministry] → Meals &amp; Events</strong>.</p>
             <div id="eventsOversightBody"><p class="sw-tool-loading">Loading Events…</p></div>
           </section>
           <section class="commerce-workspace-panel" id="commerceMealsPanel" data-commerce-panel="meals" hidden>
@@ -1665,7 +1665,7 @@ Generate Monthly Financial Report
                 </div>
               </div>
             </div>
-            <p class="section-note" style="margin:0 0 14px;">Parish staff can create Meals here. Ministry leaders can also create them from <strong>Koinonia → Groups → [Ministry] → Meals &amp; Events</strong>.</p>
+            <p class="section-note" style="margin:0 0 14px;">Parish staff can create Meals here. Ministry leaders can also create them from <strong>My AGAPAY → Groups → [Ministry] → Meals &amp; Events</strong>.</p>
             <div id="mealsOversightBody"><p class="sw-tool-loading">Loading Meals…</p></div>
           </section>
         </div>
@@ -1829,7 +1829,7 @@ Generate Monthly Financial Report
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')" hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
-    <span>Koinonia</span>
+    <span>Parish Life</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="accounting" onclick="switchTab('accounting')">
@@ -1898,7 +1898,7 @@ Generate Monthly Financial Report
 <script src="/parish/backup.js?v=13e38cd89fa1572e"></script>
 <script src="/parish/feature-registry.js?v=b1ab21289b59564b"></script>
 <script src="/parish/features/staff-access.js?v=0464a9452ef9b876"></script>
-<script src="/parish/features/directory.js?v=576eaa3685b2f77b"></script>
+<script src="/parish/features/directory.js?v=177b713ae9478e40"></script>
 <script src="/parish/features/library.js?v=bec3925960687e23"></script>
 <script src="/parish/features/sacraments/pastoral-followup.js?v=1d6bd0e1345d3d18"></script>
 <script src="/parish/features/sacraments/preparation.js?v=a740deb36bc2c83a"></script>
@@ -1926,13 +1926,13 @@ Generate Monthly Financial Report
 <script src="/parish/features/commerce/bookstore-counts.js?v=660f430cd2593a6e"></script>
 <script src="/parish/features/commerce/bookstore-inventory.js?v=2685b3ba6bbb82c6"></script>
 <script src="/parish/features/commerce.js?v=c396970026faac5e"></script>
-<script src="/parish/features/koinonia/ministries.js?v=d8d38cda87aa518e"></script>
+<script src="/parish/features/koinonia/ministries.js?v=a98512ff3c5a17c2"></script>
 <script src="/parish/features/koinonia/bulletins.js?v=93fd335a4d84937f"></script>
 <script src="/parish/features/koinonia/announcements.js?v=6edf0b7b02889713"></script>
 <script src="/parish/features/koinonia/prayers.js?v=d81365565bca034f"></script>
-<script src="/parish/features/koinonia/media.js?v=c49f0e24c56d5d23"></script>
-<script src="/parish/features/koinonia.js?v=d65ba8ed53875581"></script>
-<script src="/parish/features/onboarding.js?v=5791ad66f8dd1b59"></script>
+<script src="/parish/features/koinonia/media.js?v=239eeeeaeea363d1"></script>
+<script src="/parish/features/koinonia.js?v=ae58ba05ab172665"></script>
+<script src="/parish/features/onboarding.js?v=911a96ca93008912"></script>
 <script src="/parish/features/campaigns/website-embed.js?v=0c8bcf3af3b84659"></script>
 <script src="/parish/features/campaigns.js?v=c3c1cf2e54ddd9c3"></script>
 <script src="/parish/features/stewardship/reports.js?v=4b361c1bf0175d0f"></script>
@@ -1963,10 +1963,10 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
 <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
 <script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
-<script src="/parish/app-subscriptions-and-settlement.js?v=50c249e196063e22"></script>
+<script src="/parish/app-subscriptions-and-settlement.js?v=655251698d150b9d"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
-<script src="/parish/overview-tasks.js?v=de8e5d1be35f9019"></script>
-<script src="/parish/app.js?v=9b135dfafca136c6"></script>
+<script src="/parish/overview-tasks.js?v=ba363a5817d9af98"></script>
+<script src="/parish/app.js?v=38dffa040f7aba07"></script>
 <script src="/parish/stewardship-sections.js?v=2"></script>
 <script src="/parish/givers-sections.js"></script>
 </body>

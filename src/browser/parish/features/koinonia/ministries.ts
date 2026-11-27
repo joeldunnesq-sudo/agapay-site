@@ -71,7 +71,7 @@ function renderKoinoniaMinistries() {
   if (generalTarget) {
     generalTarget.hidden = !generalCount;
     generalTarget.innerHTML = generalCount
-      ? `<span class="koinonia-general-interest-mark">✦</span><div><strong>${generalCount} parishioner${generalCount === 1 ? '' : 's'} ${generalCount === 1 ? 'is' : 'are'} ready to serve</strong><p>This private Koinonia signal is not tied to a specific ministry. Publish opportunities or follow up with the parish after services.</p></div><button type="button" onclick="acknowledgeKoinoniaGeneralInterest()">Acknowledge</button>`
+      ? `<span class="koinonia-general-interest-mark">✦</span><div><strong>${generalCount} parishioner${generalCount === 1 ? '' : 's'} ${generalCount === 1 ? 'is' : 'are'} ready to serve</strong><p>This private Parish Life signal is not tied to a specific ministry. Publish opportunities or follow up with the parish after services.</p></div><button type="button" onclick="acknowledgeKoinoniaGeneralInterest()">Acknowledge</button>`
       : '';
   }
   const list = document.getElementById('koinoniaMinistryList') as HTMLElement;
@@ -130,7 +130,7 @@ function renderKoinoniaMinistryDetail() {
       </form>`
           : ''
       }
-      <section class="koinonia-ministry-image-tools"><div><strong>Group photo</strong><p>Shown beside this ministry name in Koinonia and group chats.</p></div><label class="btn btn-gold">${ministry.hasImage ? 'Replace photo' : 'Choose photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadKoinoniaMinistryImage(event,'${escapeAttr(ministry.id)}')" hidden /></label>${ministry.hasImage ? `<button type="button" class="btn btn-ghost" onclick="removeKoinoniaMinistryImage('${escapeAttr(ministry.id)}')">Remove photo</button>` : ''}</section>
+      <section class="koinonia-ministry-image-tools"><div><strong>Group photo</strong><p>Shown beside this ministry name in Parish Life and group chats.</p></div><label class="btn btn-gold">${ministry.hasImage ? 'Replace photo' : 'Choose photo'}<input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadKoinoniaMinistryImage(event,'${escapeAttr(ministry.id)}')" hidden /></label>${ministry.hasImage ? `<button type="button" class="btn btn-ghost" onclick="removeKoinoniaMinistryImage('${escapeAttr(ministry.id)}')">Remove photo</button>` : ''}</section>
       <section class="koinonia-ministry-detail-section"><div class="koinonia-panel-head"><div><span class="eyebrow">Team roster</span><h4>${participants.length} member${participants.length === 1 ? '' : 's'}</h4><p>Published memberships appear beneath each person's name in the private parish directory.</p></div></div>
         <form class="koinonia-member-search" onsubmit="searchKoinoniaMinistryPeople(event,'${escapeAttr(ministry.id)}')"><label for="koinoniaMemberSearch">Invite a My AGAPAY parishioner into this group</label><div><input id="koinoniaMemberSearch" name="query" required minlength="2" placeholder="Search by name or email" /><button type="submit">Search</button></div><div id="koinoniaMemberSearchResults"></div></form>
         <div class="koinonia-ministry-roster">${
@@ -439,7 +439,7 @@ async function reviewKoinoniaMinistryRequest(requestId: string, decision: 'appro
         body: JSON.stringify({
           decision,
           reviewerNote:
-            decision === 'approve' ? 'Welcomed through Koinonia Ministries.' : 'Reviewed through Koinonia Ministries.',
+            decision === 'approve' ? 'Welcomed through Parish Life Ministries.' : 'Reviewed through Parish Life Ministries.',
         }),
       }
     );
@@ -489,7 +489,7 @@ async function saveKoinoniaCalendar(event: SubmitEvent) {
       status.textContent = currentParish!.koinoniaCalendarUrl
         ? 'Calendar verified and saved.'
         : 'Calendar sync link removed.';
-    setStatus('Koinonia calendar connection saved.', 'success');
+    setStatus('Parish Life calendar connection saved.', 'success');
   } catch (error) {
     if (status) status.textContent = (error as Error).message;
     setStatus((error as Error).message, 'error');

@@ -594,7 +594,7 @@ async function removeDirectoryPersonFromParish(
   const name = displayName || 'this person';
   if (
     !confirm(
-      `Remove ${name} from this parish?\n\nThis immediately hides them from the parishioner directory and blocks Koinonia. Their My AGAPAY account and giving history will not be deleted.`
+      `Remove ${name} from this parish?\n\nThis immediately hides them from the parishioner directory and blocks Parish Life. Their My AGAPAY account and giving history will not be deleted.`
     )
   )
     return;
@@ -608,7 +608,7 @@ async function removeDirectoryPersonFromParish(
     if (!res.ok || payload.ok === false)
       throw new Error(payload.message || payload.error || 'Unable to remove parish access.');
     setStatus(
-      `${name} no longer has parish directory or Koinonia access. Their account and giving history were preserved.`,
+      `${name} no longer has parish directory or Parish Life access. Their account and giving history were preserved.`,
       'success'
     );
     if (householdId) await openDirectoryHousehold(householdId);
@@ -641,7 +641,7 @@ async function openDirectoryPerson(personId: string) {
     const accessPanel = access.child
       ? `<div class="pdx-dir-empty"><strong>Managed through the family account</strong><span>Children do not need a separate My AGAPAY account.</span></div>`
       : access.linked
-        ? `<div class="pdx-dir-empty"><strong>My AGAPAY account linked</strong><span>This adult has their own identity inside the shared household and can be recognized for Koinonia ministries and groups.</span></div>`
+        ? `<div class="pdx-dir-empty"><strong>My AGAPAY account linked</strong><span>This adult has their own identity inside the shared household and can be recognized for Parish Life ministries and groups.</span></div>`
         : invitation
           ? `<div class="pdx-dir-detail-chip"><strong>Invitation ${escapeHtml(invitation.status)}</strong><span>${escapeHtml(invitation.recipientEmail || '')} · expires ${escapeHtml(new Date(invitation.expiresAt).toLocaleDateString())}</span></div>
                <div class="pdx-dir-actions"><button class="pdx-dir-action-btn" type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Resend invitation</button><button class="pdx-dir-action-btn" type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(invitation.id)}','${escapeAttr(person.id)}')">Revoke</button></div>`
@@ -657,10 +657,10 @@ async function openDirectoryPerson(personId: string) {
         <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column"><h4>Access &amp; visibility</h4>
             <div class="pdx-dir-status-list">
-              ${directoryAccessStatusRow('Parish connection', parishConnected ? 'Active' : 'Removed', parishConnected ? 'This person is currently connected to this parish.' : 'This parish no longer grants directory or Koinonia access.', parishConnected ? 'good' : 'blocked')}
+              ${directoryAccessStatusRow('Parish connection', parishConnected ? 'Active' : 'Removed', parishConnected ? 'This person is currently connected to this parish.' : 'This parish no longer grants directory or Parish Life access.', parishConnected ? 'good' : 'blocked')}
               ${directoryAccessStatusRow('My AGAPAY account', access.linked ? 'Connected' : 'Not connected', access.linked ? 'Their sign-in and giving history remain available.' : 'No personal My AGAPAY sign-in is linked to this record.', access.linked ? 'good' : 'neutral')}
               ${directoryAccessStatusRow('Parishioner directory', publicationVisible && parishConnected ? 'Visible' : 'Hidden', publicationVisible && parishConnected ? 'Approved parishioners can find this person.' : 'This person is not shown to parishioners.', publicationVisible && parishConnected ? 'good' : 'neutral')}
-              ${directoryAccessStatusRow('Koinonia', koinoniaAllowed ? 'Allowed' : 'Blocked', koinoniaAllowed ? 'Parish connection, account link, and household confirmation are current.' : !parishConnected ? 'Parish access was removed.' : !access.linked ? 'A personal account must be connected.' : !household.id ? 'A household connection is required.' : 'The household confirmation is not current.', koinoniaAllowed ? 'good' : 'blocked')}
+              ${directoryAccessStatusRow('Parish Life', koinoniaAllowed ? 'Allowed' : 'Blocked', koinoniaAllowed ? 'Parish connection, account link, and household confirmation are current.' : !parishConnected ? 'Parish access was removed.' : !access.linked ? 'A personal account must be connected.' : !household.id ? 'A household connection is required.' : 'The household confirmation is not current.', koinoniaAllowed ? 'good' : 'blocked')}
             </div>
           </section>
           <section class="pdx-dir-review-column pdx-dir-review-column-new"><h4>Households</h4>
@@ -668,7 +668,7 @@ async function openDirectoryPerson(personId: string) {
           </section>
         </div>
         <section class="pdx-dir-review-column"><h4>My AGAPAY access</h4>${accessPanel}<div id="directoryInvitationResult"></div></section>${parishConnected && !person.deceased ? `<section class="pdx-dir-review-column"><h4>Pastoral care</h4><p class="section-note">When this person reposes, begin the memorial-service tickler without first creating a routine follow-up plan.</p><div class="pdx-dir-actions"><button class="pdx-dir-action-btn" type="button" onclick="openPastoralReposeFromDirectory('${escapeAttr(person.id)}','${escapeAttr(person.preferredName || person.legalName || '')}')">Record repose</button></div></section>` : ''}
-        ${!access.child && parishConnected ? `<section class="pdx-dir-danger-zone"><div><strong>Remove from parish</strong><p>Use this when the person should no longer appear in this parish’s directory or enter Koinonia. Their My AGAPAY account and giving history will be kept.</p></div><button type="button" onclick="removeDirectoryPersonFromParish('${escapeAttr(person.id)}','${escapeAttr(person.preferredName || person.legalName || 'this person')}','${escapeAttr(person.version || '')}','${escapeAttr(household.id || '')}')">Remove from parish</button></section>` : ''}
+        ${!access.child && parishConnected ? `<section class="pdx-dir-danger-zone"><div><strong>Remove from parish</strong><p>Use this when the person should no longer appear in this parish’s directory or enter Parish Life. Their My AGAPAY account and giving history will be kept.</p></div><button type="button" onclick="removeDirectoryPersonFromParish('${escapeAttr(person.id)}','${escapeAttr(person.preferredName || person.legalName || 'this person')}','${escapeAttr(person.version || '')}','${escapeAttr(household.id || '')}')">Remove from parish</button></section>` : ''}
         <div class="pdx-dir-review-grid">
           <section class="pdx-dir-review-column"><h4>Contacts</h4>
             ${directoryDetailList(record.contacts, 'No contacts', 'No staff-visible contact method is attached to this person.', (item) => `<div class="pdx-dir-detail-chip"><strong>${escapeHtml(item.label || item.contact_type || item.contactType)}</strong><span>${escapeHtml(item.value || '')} · ${escapeHtml(item.visibility || '')}</span></div>`)}
@@ -705,7 +705,7 @@ function directoryHouseholdAccountRow(
   }
   if (member.accountLinked) {
     const ready = verificationStatus === 'current';
-    return `<div class="pdx-dir-account-row is-linked"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''}</span></div><div class="pdx-dir-account-state"><em>Account connected</em><span>${ready ? 'Koinonia allowed' : 'Koinonia blocked · household confirmation required'}</span></div>${removal}</div>`;
+    return `<div class="pdx-dir-account-row is-linked"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''}</span></div><div class="pdx-dir-account-state"><em>Account connected</em><span>${ready ? 'Parish Life allowed' : 'Parish Life blocked · household confirmation required'}</span></div>${removal}</div>`;
   }
   if (member.invitation) {
     return `<div class="pdx-dir-account-row is-pending"><div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(relationship)}${manager ? ' · household manager' : ''}</span></div><div class="pdx-dir-account-state"><em>Invitation pending</em><span>${escapeHtml(member.invitation.recipientEmail || member.email || '')}</span></div><div class="pdx-dir-account-actions"><button type="button" onclick="resendDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Resend</button><button type="button" onclick="revokeDirectoryAccountInvitation('${escapeAttr(member.invitation.id)}','${escapeAttr(member.id)}','${escapeAttr(householdId)}')">Revoke</button></div>${removal}</div>`;
@@ -754,12 +754,12 @@ async function openDirectoryHousehold(householdId: string) {
     detail.innerHTML = directoryRecordDetailShell(
       'Household access',
       household.displayName || 'Directory household',
-      'Manage who belongs to this parish, who can enter Koinonia, and what the family shares.',
+      'Manage who belongs to this parish, who can enter Parish Life, and what the family shares.',
       `
         <section class="pdx-dir-household-overview"><h4>At a glance</h4><div class="pdx-dir-household-summary">
           ${directoryHouseholdSummaryCard('Parishioner directory', publicationVisible ? 'Visible' : 'Hidden', publicationVisible ? 'Parishioners can find this family.' : 'This family is not published.', publicationVisible ? 'good' : 'neutral')}
-          ${directoryHouseholdSummaryCard('Koinonia', verificationStatus === 'current' && koinoniaReadyAdults ? `${koinoniaReadyAdults} allowed` : 'Blocked', verificationStatus !== 'current' ? 'Household confirmation is required.' : koinoniaReadyAdults ? 'Connected adults may enter.' : 'No connected adult has access.', verificationStatus === 'current' && koinoniaReadyAdults ? 'good' : 'blocked')}
-          ${directoryHouseholdSummaryCard('Household confirmation', verificationStatus === 'current' ? 'Current' : verificationStatus === 'overdue' ? 'Overdue' : 'Required', verificationStatus === 'current' ? 'Family information is current.' : 'Reconfirm before allowing Koinonia.', verificationStatus === 'current' ? 'good' : 'warn')}
+          ${directoryHouseholdSummaryCard('Parish Life', verificationStatus === 'current' && koinoniaReadyAdults ? `${koinoniaReadyAdults} allowed` : 'Blocked', verificationStatus !== 'current' ? 'Household confirmation is required.' : koinoniaReadyAdults ? 'Connected adults may enter.' : 'No connected adult has access.', verificationStatus === 'current' && koinoniaReadyAdults ? 'good' : 'blocked')}
+          ${directoryHouseholdSummaryCard('Household confirmation', verificationStatus === 'current' ? 'Current' : verificationStatus === 'overdue' ? 'Overdue' : 'Required', verificationStatus === 'current' ? 'Family information is current.' : 'Reconfirm before allowing Parish Life.', verificationStatus === 'current' ? 'good' : 'warn')}
         </div></section>
         <section class="pdx-dir-review-column pdx-dir-household-access"><div class="pdx-dir-section-heading"><div><h4>People &amp; access</h4><p>${connectedAdults} of ${adultMembers.length} adults connected to the parish · ${linkedAdults} My AGAPAY account${linkedAdults === 1 ? '' : 's'} linked${pendingAdults ? ` · ${pendingAdults} invitation${pendingAdults === 1 ? '' : 's'} pending` : ''}</p></div></div>
           <div class="pdx-dir-account-list">${(record.members || []).map((item) => directoryHouseholdAccountRow(item, household.id, verificationStatus, managerIds)).join('') || directoryEmptyState('No household members', 'Add people to this household before linking accounts.')}</div>
@@ -818,8 +818,8 @@ async function openDirectoryReview(sourceType: string, sourceId: string) {
           <div class="pdx-dir-review-top">
             <div class="pdx-dir-review-title-block">
               <span class="pdx-dir-review-kicker">Directory review</span>
-              <h2>${escapeHtml(item.targetLabel || item.summary || 'Directory item')}</h2>
-              <p>${escapeHtml(item.summary || 'Review the submitted member information and publication choices before approving.')}</p>
+              <h2>${escapeHtml(item.targetLabel || directoryReviewSummary(item) || 'Directory item')}</h2>
+              <p>${escapeHtml(directoryReviewSummary(item) || 'Review the submitted member information and publication choices before approving.')}</p>
               <div class="pdx-dir-review-meta">${escapeHtml(directoryReviewMeta(item))}</div>
             </div>
             <div class="pdx-dir-review-top-actions">
@@ -1036,7 +1036,7 @@ function directoryReviewQueueRows(items: DirectoryUiRow[] = []) {
       const openAction = `openDirectoryReview('${escapeAttr(item.sourceType)}','${escapeAttr(item.sourceId)}')`;
       return `<article class="pdx-dir-queue-row">
       <div class="pdx-dir-queue-priority is-${escapeAttr(item.priority || 'normal')}" aria-label="${escapeAttr(item.priority || 'normal')} priority"></div>
-      <div class="pdx-dir-queue-copy"><span>${escapeHtml(directoryReviewTypeLabel(item.reviewType))}</span><strong>${escapeHtml(item.targetLabel || 'Directory record')}</strong><small>${escapeHtml(item.summary || 'Directory review')} · ${item.ageDays ? `${escapeHtml(item.ageDays)} day${item.ageDays === 1 ? '' : 's'} waiting` : 'New'}</small></div>
+      <div class="pdx-dir-queue-copy"><span>${escapeHtml(directoryReviewTypeLabel(item.reviewType))}</span><strong>${escapeHtml(item.targetLabel || 'Directory record')}</strong><small>${escapeHtml(directoryReviewSummary(item) || 'Directory review')} · ${item.ageDays ? `${escapeHtml(item.ageDays)} day${item.ageDays === 1 ? '' : 's'} waiting` : 'New'}</small></div>
       <div class="pdx-dir-queue-state"><span>${escapeHtml((item.queueStatus || 'pending_review').replace(/_/g, ' '))}</span><button type="button" onclick="${openAction}">Review</button></div>
     </article>`;
     })
