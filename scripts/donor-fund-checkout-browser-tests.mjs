@@ -147,6 +147,17 @@ try {
     await page.screenshot({ path: `output/giving-redesign-${width}.png`, fullPage: true });
   }
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(new Date('2026-11-27T12:00:00Z'));
+  parish.nextFestalOffering = null;
+  parish.feastCampaigns = [];
+  await page.reload();
+  const calendarFeast = page.locator('#nextFeastCard');
+  await calendarFeast.getByRole('heading', { name: 'Nativity Fast Begins' }).waitFor();
+  await calendarFeast.getByRole('img', { name: 'Nativity of Christ icon' }).waitFor();
+  assert.equal(
+    await calendarFeast.getByRole('link', { name: 'View calendar' }).getAttribute('href'),
+    '/myagapay/giving/calendar'
+  );
   assert.equal(await fundList.getByText('Closed Fund').count(), 0);
   assert.equal(await fundList.locator('.active-funds-card').count(), 5);
   assert.match(await link.getAttribute('href'), /quick=1/);

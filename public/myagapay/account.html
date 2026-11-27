@@ -9,15 +9,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=913214f4e3440b00" />
+  <link rel="stylesheet" href="/donor/style.css?v=6e4afa18e40fd5a5" />
   <link rel="stylesheet" href="/styles/consumer-passkeys.css?v=20260827automatic1" />
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
-  <script src="/myagapay-shell.js?v=fa121135a6fd25b8"></script>
+  <script src="/myagapay-shell.js?v=cc175c8d4e172fad"></script>
   <script src="/donor/controllers/calendar.js?v=99d0fbbd2f4b9ef2" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0fcb331d33fa2cd0" defer></script>
-  <script src="/donor/app.js?v=5eca2e767be92fca" defer></script>
+  <script src="/donor/app.js?v=3155aa462c87902b" defer></script>
   <script src="/scripts/consumer-passkeys.js?v=562aab87fa49b2f2" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
@@ -158,14 +158,14 @@
             <div id="givingStatementsList"><p class="form-help">Loading giving statements…</p></div>
           </div>
         </section>
-        <section class="card section-gap" id="directorySettingsCard" hidden>
+        <section class="card section-gap" id="directorySettingsCard">
           <div class="card-header">
-            <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg></span> Parish Directory</div>
+            <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.5-4 2.4-6 5.5-6s5.1 2 5.5 6M14 15c3.5.2 5.8 1.9 6.5 5"/></svg></span> Family Information</div>
           </div>
           <div class="card-body">
-            <p class="form-help">Manage your private parish directory profile, household information, contacts, photos, and Skills &amp; Service listings.</p>
+            <p class="form-help">Manage your household details and sharing choices. You can start before your parish opens its directory.</p>
             <div class="btn-row section-gap">
-              <a class="btn btn-gold" href="/myagapay/directory">Open directory settings</a>
+              <a class="btn btn-gold" href="/myagapay/directory?view=family">Edit family information</a>
             </div>
           </div>
         </section>

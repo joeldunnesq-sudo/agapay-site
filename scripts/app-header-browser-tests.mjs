@@ -47,6 +47,7 @@ try {
   });
   let activeParish = parish;
   let rejectSwitch = false;
+  let startedFamily = null;
   const secondParish = {
     ...parish,
     id: 'second-parish',
@@ -85,6 +86,20 @@ try {
         };
       } else if (url.pathname === '/api/donor/liturgical-day') payload = { today, date: '2026-09-11' };
       else if (url.pathname === '/api/donor/parish-calendar') payload = { connected: true, events: [] };
+      else if (url.pathname === '/api/donor/bookstore' && !activeParish.bookstoreEnabled)
+        payload = { available: false, products: [], orders: [] };
+      else if (url.pathname === '/api/directory/self/start-profile') {
+        startedFamily = route.request().postDataJSON();
+        return route.fulfill({ status: 201, json: { ok: true } });
+      } else if (url.pathname === '/api/directory/self/profile' && startedFamily) {
+        payload = {
+          profile: {
+            claimed: true,
+            profile: { person: { id: 'private-person', preferredName: startedFamily.preferredName, version: 1 } },
+            pendingRequests: [{ requestType: 'person_profile_review', status: 'pending', summary: 'New profile' }],
+          },
+        };
+      }
       return route.fulfill({ json: payload });
     }
     let filename = url.pathname;
@@ -216,6 +231,12 @@ try {
   const homeGive = page.locator('.refined-liturgical-hero #todayGiveLink');
   assert.equal(await homeGive.getAttribute('href'), '/myagapay/giving');
   assert.equal(await homeGive.locator('svg').innerHTML(), await tabs.nth(1).locator('svg').innerHTML());
+  assert.equal(
+    await homeGive.evaluate((link) => link.offsetWidth),
+    await homeGive.locator('..').evaluate((row) => row.clientWidth)
+  );
+  assert.equal(await homeGive.evaluate((link) => getComputedStyle(link).borderTopLeftRadius), '999px');
+  assert.equal(await homeGive.evaluate((link) => link.offsetHeight), 40);
   await homeGive.click();
   await page.waitForURL('**/myagapay/giving');
   await page.locator('#greeting').waitFor();
@@ -257,18 +278,39 @@ try {
   await page.goto('https://agapay.test/myagapay/');
   const fixedTabs = page.locator('nav.my-agapay-tabbar[aria-label="My AGAPAY navigation"]');
   await fixedTabs.getByRole('link', { name: 'Directory' }).waitFor();
-  await fixedTabs.locator('.myagapay-tab-disabled').last().waitFor();
-  assert.deepEqual(await fixedTabs.locator(':scope > :is(a, .myagapay-tab-disabled) > span').allTextContents(), [
+  assert.deepEqual(await fixedTabs.locator(':scope > a > span').allTextContents(), [
     'Home',
     'Giving',
     'Bookstore',
     'Directory',
     'Account',
   ]);
-  const disabledTabs = fixedTabs.locator('.myagapay-tab-disabled[aria-disabled="true"]');
-  assert.equal(await disabledTabs.count(), 2);
-  assert.equal(await disabledTabs.first().locator('svg').count(), 1);
-  assert.equal(await disabledTabs.first().getAttribute('href'), null);
+  await fixedTabs.getByRole('link', { name: 'Bookstore' }).click();
+  await page.waitForURL('**/myagapay/bookstore');
+  await page
+    .locator('#bookstoreUnavailableNotice')
+    .getByText(/hasn't activated Bookstore Payments/)
+    .waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Scan book barcode' }).isVisible(), false);
+  await fixedTabs.getByRole('link', { name: 'Directory' }).click();
+  await page.waitForURL('**/myagapay/directory');
+  await page.getByRole('heading', { name: 'Directory is unavailable' }).waitFor();
+  assert.equal(await page.locator('#memberDirectory').isVisible(), false);
+  await page.getByRole('button', { name: 'Set up family information' }).click();
+  const setup = page.getByRole('dialog', { name: 'Create your parish directory profile' });
+  await setup.getByLabel('Name you go by').fill('New Member');
+  await setup.getByLabel('Family or household name').fill('New Member Household');
+  await setup.getByRole('button', { name: 'Create my private profile' }).click();
+  await page
+    .locator('#directoryNotice')
+    .getByText(/private profile is ready/)
+    .waitFor();
+  assert.equal(startedFamily.parishId, secondParish.id);
+  assert.equal(startedFamily.householdName, 'New Member Household');
+  await fixedTabs.getByRole('link', { name: 'Account' }).click();
+  await page.getByRole('link', { name: 'Edit family information' }).click();
+  await page.waitForURL('**/myagapay/directory?view=family');
+  assert.equal(await page.getByRole('tab', { name: 'Family Information' }).getAttribute('aria-selected'), 'true');
   activeParish = secondParish;
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();

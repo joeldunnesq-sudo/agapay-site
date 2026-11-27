@@ -2505,7 +2505,7 @@ body.donor-home {
   backdrop-filter: blur(16px);
 }
 
-.my-agapay-tabbar :is(a, .myagapay-tab-disabled) {
+.my-agapay-tabbar a {
   display: grid;
   min-width: 0;
   place-items: center;
@@ -2520,8 +2520,6 @@ body.donor-home {
   text-align: center;
   text-decoration: none;
 }
-
-.my-agapay-tabbar .myagapay-tab-disabled { color: #68625c; opacity: 0.76; }
 
 .my-agapay-tabbar a.active {
   background: rgba(201, 162, 91, 0.12);
