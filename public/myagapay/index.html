@@ -9,16 +9,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=556edc390f21a861" />
+  <link rel="stylesheet" href="/donor/style.css?v=6c25e1f1147e0902" />
   <script src="/liturgical-calendar.js?v=87b139e0c72b838d"></script>
-<link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260729c" />
+<link rel="manifest" href="/myagapay/manifest.webmanifest?v=1bb4749c7f0943ad" />
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
-  <script src="/myagapay-shell.js?v=77716ac18b23cb9f"></script>
-  <script src="/donor/controllers/calendar.js?v=2edc15b643149352" defer></script>
+  <script src="/myagapay-shell.js?v=3cf10e7a99c544b7"></script>
+  <script src="/donor/controllers/calendar.js?v=b96d03dfd73235f2" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0563aa47128c1c3b" defer></script>
-  <script src="/donor/app.js?v=976b56a006c9a980" defer></script>
+  <script src="/donor/app.js?v=c33b43d9c1a71e7f" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -27,12 +27,12 @@
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
-<body class="donor-home showing-giving-dashboard giving-tier-pending">
+<body class="donor-home showing-giving-dashboard giving-tier-pending myagapay-giving-dashboard">
   <div class="app donor-app-shell">
     <aside class="sidebar donor-home-sidebar">
       <div class="sidebar-scroll">
         <div class="brand unified-brand">
-          <a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a>
+          <a class="brand-mark dashboard-home-mark" href="/myagapay/" aria-label="My AGAPAY Home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a>
         </div>
         <div class="auth-panel" data-auth-guest>
           <div class="auth-grid">
@@ -56,7 +56,7 @@
       <div class="sidebar-footer unified-sidebar-signoff">
         <img src="/mark.png" alt="" aria-hidden="true" />
         <span>Faith in Action. Together.</span>
-        <a class="unified-home-link" href="/" hx-boost="false" aria-label="Back to AGAPAY homepage">
+        <a class="unified-home-link" href="/myagapay/" hx-boost="false" aria-label="Back to My AGAPAY Home">
           <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13V10.5"/><path d="M9.5 20v-5h5v5"/></svg>
           AGAPAY Home
         </a>
@@ -90,7 +90,7 @@
       </div>
       <section class="donor-desktop-home" id="giving-dashboard">
         <div class="desktop-hero">
-          <a class="desktop-hero-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
+          <a class="desktop-hero-mark" href="/myagapay/" aria-label="My AGAPAY Home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="desktop-hero-copy">
             <div class="eyebrow">AGAPAY — Love how you give</div>
             <h1 id="desktopGreeting">Welcome, Faithful Member</h1>
@@ -167,6 +167,20 @@
 
           <section class="desktop-panel">
             <div class="desktop-panel-head">
+              <h2>Active Funds</h2>
+              <a data-giving-plus-gift="fund" href="/myagapay/giving/give?giftType=fund">Give to fund</a>
+            </div>
+            <div class="active-funds-stack" id="desktopActiveFunds">
+              <article class="active-funds-card active-funds-empty">
+                <span class="campaign-pill">Funds</span>
+                <h3>Loading parish funds…</h3>
+                <p>Checking the funds available through your parish.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="desktop-panel">
+            <div class="desktop-panel-head">
               <h2>Active Campaign</h2>
               <a data-giving-plus-gift="campaign" href="/myagapay/giving/give?giftType=campaign">See all</a>
             </div>
@@ -191,20 +205,6 @@
 
           <section class="desktop-panel">
             <div class="desktop-panel-head">
-              <h2>Active Funds</h2>
-              <a data-giving-plus-gift="fund" href="/myagapay/giving/give?giftType=fund">Give to fund</a>
-            </div>
-            <div class="active-funds-stack" id="desktopActiveFunds">
-              <article class="active-funds-card active-funds-empty">
-                <span class="campaign-pill">Funds</span>
-                <h3>Loading parish funds…</h3>
-                <p>Checking the funds available through your parish.</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="desktop-panel">
-            <div class="desktop-panel-head">
               <h2>Recent Offerings</h2>
               <a href="/myagapay/giving/history">View history</a>
             </div>
@@ -219,7 +219,7 @@
         </div>
 
         <header class="mobile-hero-header">
-          <a class="mobile-brand-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
+          <a class="mobile-brand-mark" href="/myagapay/" aria-label="My AGAPAY Home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="mobile-identity">
             <div class="mobile-kicker">AGAPAY — Love how you give</div>
             <h1 id="greeting">Welcome, Faithful Member</h1>
@@ -313,6 +313,20 @@
 
         <section class="mobile-section">
           <div class="mobile-section-head">
+            <h2>Active Funds</h2>
+            <a data-giving-plus-gift="fund" href="/myagapay/giving/give?giftType=fund">Give to fund</a>
+          </div>
+          <div class="active-funds-stack" id="activeFunds">
+            <article class="active-funds-card active-funds-empty">
+              <span class="campaign-pill">Funds</span>
+              <h3>Loading parish funds…</h3>
+              <p>Checking the funds available through your parish.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="mobile-section">
+          <div class="mobile-section-head">
             <h2>Active Campaigns</h2>
             <a data-giving-plus-gift="campaign" href="/myagapay/giving/give?giftType=campaign">See all</a>
           </div>
@@ -339,20 +353,6 @@
             </div>
             <a id="nextFeastLink" data-giving-plus-gift="feast" href="/myagapay/giving/give?giftType=feast">Offer</a>
           </article>
-        </section>
-
-        <section class="mobile-section">
-          <div class="mobile-section-head">
-            <h2>Active Funds</h2>
-            <a data-giving-plus-gift="fund" href="/myagapay/giving/give?giftType=fund">Give to fund</a>
-          </div>
-          <div class="active-funds-stack" id="activeFunds">
-            <article class="active-funds-card active-funds-empty">
-              <span class="campaign-pill">Funds</span>
-              <h3>Loading parish funds…</h3>
-              <p>Checking the funds available through your parish.</p>
-            </article>
-          </div>
         </section>
 
         <section class="mobile-section mobile-live-section">

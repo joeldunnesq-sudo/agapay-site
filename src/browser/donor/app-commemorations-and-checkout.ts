@@ -507,7 +507,7 @@ async function handleDonorCheckoutReturn() {
   const sessionId = params.get('session_id');
   if (!sessionId) {
     setDonorStatus("Your payment was successful. We are still waiting for Stripe's final confirmation.", 'success');
-    window.history.replaceState(null, '', '/myagapay');
+    window.history.replaceState(null, '', window.location.pathname);
     return true;
   }
 
@@ -528,7 +528,7 @@ async function handleDonorCheckoutReturn() {
     );
     console.warn('AGAPAY donor checkout confirmation warning:', err);
   }
-  window.history.replaceState(null, '', '/myagapay');
+  window.history.replaceState(null, '', window.location.pathname);
   return true;
 }
 

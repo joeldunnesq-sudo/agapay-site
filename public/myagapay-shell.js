@@ -45,7 +45,7 @@
     const items = [
       {
         id: 'parish-life',
-        href: '/myagapay',
+        href: '/myagapay/',
         label: parishLife.label,
         short: parishLife.short,
         icon: icons.home,

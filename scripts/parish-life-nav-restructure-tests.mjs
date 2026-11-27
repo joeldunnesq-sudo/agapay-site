@@ -28,6 +28,14 @@ const legacy = await worker.fetch(
 assert.equal(legacy.status, 301);
 assert.equal(legacy.headers.get('location'), 'https://agapay.test/myagapay/parish-life?from=bookmark');
 
+const checkoutReturn = await worker.fetch(
+  new Request('https://agapay.test/myagapay?gift_success=1&session_id=example'),
+  {},
+  { waitUntil() {} }
+);
+assert.equal(checkoutReturn.status, 302);
+assert.equal(checkoutReturn.headers.get('location'), 'https://agapay.test/myagapay/giving?gift_success=1&session_id=example');
+
 let canonicalCalendarAssetPath = '';
 const canonicalCalendar = await worker.fetch(
   new Request('https://agapay.test/myagapay/calendar'),

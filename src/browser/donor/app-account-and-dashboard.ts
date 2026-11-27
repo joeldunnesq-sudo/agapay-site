@@ -66,7 +66,7 @@ async function verifyDonorEmail() {
     saveDonorSession(data);
     setDonorStatus('Email verified. Opening My AGAPAY...', 'success');
     setTimeout(() => {
-      window.location.href = '/myagapay';
+      window.location.href = '/myagapay/';
     }, 900);
   } catch (err) {
     clearDonorSession();

@@ -40,6 +40,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1080 }, serviceWorkers: 'block' });
   const checkout = [];
   const catalogParishes = [];
+  const isbnLookups = [];
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'agapay.test') return route.fulfill({ status: 204, body: '' });
@@ -51,6 +52,10 @@ try {
         payload = { donor: { ...donor, defaultParishId: activeParish.id }, parish: activeParish };
       }
       if (url.pathname.includes('/parishes')) payload = { parishes };
+      if (url.pathname === '/api/donor/bookstore/isbn-lookup') {
+        isbnLookups.push([url.searchParams.get('isbn'), route.request().headers()['x-agapay-parish-id']]);
+        payload = { found: true, product: product('b-book', 'Saint Nicholas Book', 'book', 1200) };
+      }
       if (url.pathname === '/api/donor/bookstore') {
         if (route.request().method() === 'POST') {
           checkout.push(route.request().postDataJSON());
@@ -88,7 +93,10 @@ try {
   const assertCentered = async (selector) => {
     const bounds = await page.locator(selector).boundingBox();
     const viewport = page.viewportSize();
-    assert.ok(bounds && Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2) < 2, `${selector} horizontally centered`);
+    assert.ok(
+      bounds && Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2) < 2,
+      `${selector} horizontally centered`
+    );
     assert.ok(Math.abs(bounds.y + bounds.height / 2 - viewport.height / 2) < 2, `${selector} vertically centered`);
   };
   page.setDefaultTimeout(15000);
@@ -187,6 +195,32 @@ try {
   await page.getByRole('button', { name: 'Close cart', exact: true }).first().click();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   await page.screenshot({ path: 'output/bookstore-integrated-mobile.png', fullPage: true });
+  await page.evaluate(() => {
+    Object.defineProperty(window, 'BarcodeDetector', { configurable: true, value: undefined });
+    navigator.mediaDevices.getUserMedia = async () => {
+      const canvas = document.createElement('canvas');
+      canvas.getContext('2d').fillRect(0, 0, 10, 10);
+      return canvas.captureStream(1);
+    };
+    HTMLMediaElement.prototype.play = async () => {};
+    window.ZXing = {
+      BrowserMultiFormatReader: class {
+        async decodeFromStream(stream, video, callback) {
+          if (!stream.active) throw new Error('Expected an active scanner stream');
+          video.srcObject = stream;
+          callback({ getText: () => '0123456789012' });
+          callback({ getText: () => '9780140449136' });
+        }
+        reset() {}
+      },
+    };
+  });
+  await page.getByRole('button', { name: 'Scan book barcode' }).click();
+  await page.locator('#donorStatus').filter({ hasText: 'Saint Nicholas Book found in the parish catalog' }).waitFor();
+  assert.deepEqual(isbnLookups, [['9780140449136', 'parish-b']]);
+  assert.equal(await page.locator('#bookstoreScannerOverlay').isVisible(), false);
+  assert.equal(await page.locator('#bookstoreScannerVideo').evaluate((video) => video.srcObject), null);
+  assert.equal(await page.locator('#bookstoreBagCount').textContent(), '2');
   assert.deepEqual(errors, []);
   console.log(
     'PASS - integrated bookstore sale display, details, saved items, sorting, search, checkout payload, sale removal, mobile cart and parish isolation'

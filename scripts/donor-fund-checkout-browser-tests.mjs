@@ -9,7 +9,13 @@ try {
     id: 'synthetic-parish',
     name: 'Synthetic Church',
     givingPlusEnabled: true,
-    funds: [{ id: 'building', name: 'Building Fund', description: 'Building needs' }],
+    designatedFundsEnabled: true,
+    funds: [
+      { id: 'general', name: 'General Operating Fund' },
+      ...['Choir', 'Education', 'Outreach'].map((name) => ({ id: name.toLowerCase(), name })),
+      { id: 'building', name: 'Building Fund', description: 'Building needs' },
+      { id: 'retired', name: 'Closed Fund', active: false },
+    ],
   };
   await page.addInitScript(() => {
     localStorage.setItem('agapayDonorEmail', 'synthetic@example.test');
@@ -54,11 +60,21 @@ try {
         json:
           url.pathname === '/api/parishes'
             ? { parishes: [parish] }
-            : url.pathname === '/api/security/config'
-              ? { turnstileEnabled: true, turnstileSiteKey: 'synthetic-key' }
-              : {},
+            : url.pathname === '/api/donor/dashboard'
+              ? {
+                  parish,
+                  donor: { email: 'synthetic@example.test', defaultParishId: parish.id, defaultParish: parish },
+                }
+              : url.pathname === '/api/security/config'
+                ? { turnstileEnabled: true, turnstileSiteKey: 'synthetic-key' }
+                : {},
       });
-    const path = url.pathname === '/myagapay/giving/give' ? '/myagapay/giving/give.html' : url.pathname;
+    const path =
+      url.pathname === '/myagapay/giving/give'
+        ? '/myagapay/giving/give.html'
+        : url.pathname === '/myagapay/giving'
+          ? '/myagapay/index.html'
+          : url.pathname;
     try {
       return route.fulfill({
         body: await readFile(resolve('public', '.' + path)),
@@ -70,10 +86,12 @@ try {
       return route.fulfill({ status: 404, body: '' });
     }
   });
-  await page.goto('https://fund.test/myagapay/giving/give?parish=synthetic-parish');
-  await page.waitForFunction(() => document.getElementById('parish').value === 'synthetic-parish');
-  await page.evaluate((parish) => renderActiveFunds(parish, { confirmed: true }), parish);
-  const link = page.locator('.active-funds-card a').filter({ hasText: 'Donate' }).first();
+  await page.goto('https://fund.test/myagapay/giving');
+  const fundList = page.locator('#activeFunds');
+  const link = fundList.getByRole('link', { name: 'Give to Building Fund' });
+  await link.waitFor();
+  assert.equal(await fundList.getByText('Closed Fund').count(), 0);
+  assert.equal(await fundList.locator('.active-funds-card').count(), 5);
   assert.match(await link.getAttribute('href'), /quick=1/);
   assert.match(await link.getAttribute('href'), /fund=building/);
   await link.click();
@@ -82,8 +100,6 @@ try {
   assert.equal(await page.locator('#fundFields').isVisible(), false);
   assert.match(await page.locator('#quickGiveContext').textContent(), /Building Fund/);
   assert.equal(await page.locator('#amount').isVisible(), true);
-  await page.goto('https://fund.test/myagapay/giving/give?parish=synthetic-parish&giftType=stewardship&quick=1');
-  await page.waitForFunction(() => document.body.classList.contains('quick-give-mode'));
   const checkout = page.getByRole('button', { name: 'Continue to AGAPAY checkout', exact: true });
   await checkout.click();
   await page.getByText('Complete “Verify you are human” above. Your checkout will continue automatically.').waitFor();
@@ -91,7 +107,8 @@ try {
   await page.getByRole('button', { name: 'Verify you are human', exact: true }).click();
   await page.locator('#donorCheckoutStatus').filter({ hasText: 'security challenge' }).waitFor();
   assert.equal(await checkout.isEnabled(), true);
-  assert.equal(checkoutBodies[0].giftType, 'stewardship');
+  assert.equal(checkoutBodies[0].giftType, 'fund');
+  assert.equal(checkoutBodies[0].fundId, 'building');
   assert.equal(checkoutBodies[0].parishId, 'synthetic-parish');
   assert.equal(await page.locator('#donorCheckoutStatus').isVisible(), true);
   checkoutFails = false;
@@ -100,6 +117,7 @@ try {
   await page.waitForURL('https://fund.test/synthetic-checkout');
   assert.equal(checkoutBodies.length, 2);
   assert.equal(checkoutBodies[1].turnstileToken, 'synthetic-verified-token');
+  assert.equal(checkoutBodies[1].fundId, 'building');
   challengeFails = true;
   await page.goto('https://fund.test/myagapay/giving/give?parish=synthetic-parish&giftType=stewardship&quick=1');
   await page.getByText('The security check could not load.', { exact: false }).waitFor();

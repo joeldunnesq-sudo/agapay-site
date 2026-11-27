@@ -61,10 +61,11 @@ interface DonorBarcodeDetector {
   detect(video: HTMLVideoElement): Promise<{ rawValue: string }[]>;
 }
 interface DonorZxingReader {
-  decodeFromVideoElement(
+  decodeFromStream(
+    stream: MediaStream,
     video: HTMLVideoElement,
-    callback: (result: { text?: string } | null, err?: unknown) => void
-  ): void;
+    callback: (result: { getText(): string } | null, err?: unknown) => void
+  ): Promise<void>;
   reset(): void;
 }
 declare const ZXing: { BrowserMultiFormatReader: new () => DonorZxingReader };

@@ -62,7 +62,7 @@ assert.doesNotMatch(
   /<h3>No Active (?:Campaigns|Funds)<\/h3>/,
   'unknown home widgets must not claim that parish content is absent'
 );
-assert.match(home, /Loading parish campaigns…[\s\S]*Loading parish feast…[\s\S]*Loading parish funds…/);
+assert.match(home, /Loading parish funds…[\s\S]*Loading parish campaigns…[\s\S]*Loading parish feast…/);
 assert.match(
   legacyHome,
   /data-giving-plus-gift="candles"[\s\S]*data-giving-plus-gift="commemoration"[\s\S]*data-giving-plus-gift="feast"[\s\S]*data-giving-plus-gift="campaign"/,
