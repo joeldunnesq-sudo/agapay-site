@@ -439,7 +439,9 @@ async function reviewKoinoniaMinistryRequest(requestId: string, decision: 'appro
         body: JSON.stringify({
           decision,
           reviewerNote:
-            decision === 'approve' ? 'Welcomed through Parish Life Ministries.' : 'Reviewed through Parish Life Ministries.',
+            decision === 'approve'
+              ? 'Welcomed through Parish Life Ministries.'
+              : 'Reviewed through Parish Life Ministries.',
         }),
       }
     );
