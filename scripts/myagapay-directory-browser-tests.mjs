@@ -35,6 +35,7 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 }, serviceWorkers: 'block' });
     let claimed = false;
     let directoryEnabled = true;
+    let optedIn = false;
     const edits = [];
     const childPublicationWrites = [];
     const invitationRequests = [];
@@ -72,6 +73,30 @@ try {
       }
       if (path === '/api/donor/dashboard')
         return route.fulfill({ json: { donor, parish: { ...parish, directoryEnabled } } });
+      if (path === '/api/directory/self/statement-sharing') {
+        return route.fulfill({
+          json: {
+            linkedChoices:
+              !directoryEnabled && claimed
+                ? [
+                    {
+                      id: 'first',
+                      householdName: 'First Household',
+                      parishName: parish.name,
+                      receivesStatement: true,
+                      optedIn,
+                      bothOptedIn: false,
+                    },
+                  ]
+                : [],
+          },
+        });
+      }
+      if (path === '/api/directory/self/statement-sharing/first') {
+        assert.equal(route.request().method(), 'PUT');
+        optedIn = route.request().postDataJSON().enabled;
+        return route.fulfill({ json: { ok: true } });
+      }
       if (path === '/api/directory/households/first/self/members/spouse/share-link') {
         assert.equal(route.request().method(), 'POST');
         assert.deepEqual(route.request().postDataJSON(), { combineGiving: true });
@@ -165,6 +190,10 @@ try {
     await page.getByRole('button', { name: 'Invite Test Spouse' }).waitFor();
     assert.equal(await page.locator('#memberDirectory').isVisible(), false);
     assert.equal(await page.locator('[data-go-to-step="3"]').isVisible(), false);
+    await page.getByRole('button', { name: 'Opt in to a combined statement' }).click();
+    await page.getByText('Waiting for the other adult').waitFor();
+    await page.getByRole('button', { name: 'Withdraw my consent' }).click();
+    await page.getByText('Your consent is needed').waitFor();
 
     claimed = false;
     await page.goto('https://agapay.test/myagapay/directory?view=household');

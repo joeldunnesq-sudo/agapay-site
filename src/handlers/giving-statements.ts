@@ -1,4 +1,5 @@
 import type { StatementGift, StatementParish, StatementDonor } from '../lib/giving-statement-pdf.js';
+import { LINKED_STATEMENT_PAIRS_SQL } from '../directory/household-share-invitations.js';
 interface StatementGiving extends StatementDonor {
   email: string;
   totalCents: number;
@@ -205,6 +206,20 @@ async function combineHouseholdGiving(
   fiscalYear: number,
   byDonor: Map<string, StatementGiving>
 ) {
+  const linkedConsentAvailable = await d1First(
+    env,
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='directory_household_giving_consent'"
+  );
+  const linkedAccounts = linkedConsentAvailable
+    ? `UNION
+       SELECT p.recipient_email,p.spouse_email,p.recipient_name,p.spouse_name
+         FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+         JOIN directory_household_giving_consent c ON c.household_id=p.household_id
+          AND c.parish_id=p.parish_id AND c.recipient_user_id=p.recipient_id AND c.spouse_user_id=p.spouse_id
+        WHERE p.parish_id=?1
+        GROUP BY p.household_id,p.recipient_id,p.spouse_id
+        HAVING COUNT(c.consenting_user_id)=2`
+    : '';
   const links = await d1All<{
     recipient_email: string;
     giver_email: string;
@@ -213,6 +228,7 @@ async function combineHouseholdGiving(
   }>(
     env,
     `
+    WITH consenting_accounts AS (
     SELECT recipient.email AS recipient_email, giver.email AS giver_email,
            recipient_person.preferred_name AS recipient_name, giver_person.preferred_name AS giver_name
       FROM directory_household_invitations i
@@ -235,11 +251,12 @@ async function combineHouseholdGiving(
       JOIN platform_users recipient ON recipient.id = recipient_link.external_id AND recipient.status = 'active' AND recipient.email_verified_at IS NOT NULL
      WHERE i.parish_id = ?1 AND i.combine_giving = 1 AND i.status = 'claimed'
        AND giver.id <> recipient.id
-       AND NOT EXISTS (
-         SELECT 1 FROM giving_statements previous WHERE previous.parish_id = i.parish_id
-           AND previous.fiscal_year = ?2 AND previous.donor_email = giver.email
-       )
-     ORDER BY giver.email, recipient.email`,
+    ${linkedAccounts}
+    )
+    SELECT * FROM consenting_accounts a
+     WHERE NOT EXISTS (SELECT 1 FROM giving_statements previous WHERE previous.parish_id=?1
+       AND previous.fiscal_year=?2 AND previous.donor_email=a.giver_email)
+     ORDER BY a.giver_email,a.recipient_email`,
     parishId,
     fiscalYear
   );

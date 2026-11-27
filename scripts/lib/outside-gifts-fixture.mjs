@@ -13,6 +13,7 @@ export async function createOutsideGiftsFixture() {
     '0025_directory_self_service_phase2a.sql',
     '0084_directory_household_share_invitations.sql',
     '0131_household_statement_consent.sql',
+    '0132_linked_household_giving_consent.sql',
     '0049_authoritative_stewardship_financial_snapshots.sql',
     '0115_outside_giver_contributions.sql',
   ])
