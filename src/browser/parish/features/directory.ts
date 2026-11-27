@@ -1028,6 +1028,12 @@ function directoryHealthOverview(
     </section>`;
 }
 
+function directoryReviewSummary(item: DirectoryUiRow) {
+  return item.reviewType === 'koinonia_membership' && item.summary === 'Koinonia membership access requested'
+    ? 'Parish Life access requested'
+    : item.summary;
+}
+
 function directoryReviewQueueRows(items: DirectoryUiRow[] = []) {
   if (!items.length)
     return `<div class="pdx-dir-queue-empty"><span>✓</span><strong>No submissions awaiting review</strong><small>Completed directory submissions will appear here after a member sends them from My AGAPAY.</small></div>`;

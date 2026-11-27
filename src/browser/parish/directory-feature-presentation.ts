@@ -118,12 +118,6 @@ function directoryHealthTile(label: string, value: unknown, copy: string, tone: 
   return `<div class="pdx-dir-health-tile is-${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(copy)}</small></div>`;
 }
 
-function directoryReviewSummary(item: DirectoryUiRow) {
-  return item.reviewType === 'koinonia_membership' && item.summary === 'Koinonia membership access requested'
-    ? 'Parish Life access requested'
-    : item.summary;
-}
-
 function directoryReviewTypeLabel(type: string = '') {
   const labels: Record<string, string> = {
     publication_person: 'Member directory submission',

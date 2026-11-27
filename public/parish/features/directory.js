@@ -108,11 +108,6 @@ function directoryReviewMeta(item) {
 function directoryHealthTile(label, value, copy, tone) {
   return `<div class="pdx-dir-health-tile is-${tone}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(copy)}</small></div>`;
 }
-function directoryReviewSummary(item) {
-  return item.reviewType === 'koinonia_membership' && item.summary === 'Koinonia membership access requested'
-    ? 'Parish Life access requested'
-    : item.summary;
-}
 function directoryReviewTypeLabel(type = '') {
   const labels = {
     publication_person: 'Member directory submission',
@@ -1067,6 +1062,11 @@ function directoryHealthOverview(metrics = {}, maintenance = {}, actionCount = 0
         ${directoryHealthTile('Connected households', Number(maintenance.accountManagedHouseholds || 0), 'Households connected to a My AGAPAY account', 'good')}
       </div>
     </section>`;
+}
+function directoryReviewSummary(item) {
+  return item.reviewType === 'koinonia_membership' && item.summary === 'Koinonia membership access requested'
+    ? 'Parish Life access requested'
+    : item.summary;
 }
 function directoryReviewQueueRows(items = []) {
   if (!items.length)
