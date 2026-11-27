@@ -980,6 +980,15 @@ async function loadTeaching() {
     const response = await fetch('/api/donor/teaching', { headers: teachingHeaders(), cache: 'no-store' });
     if (window.MyAgapayShell?.handleUnauthorized(response)) return;
     const data = await response.json().catch(() => ({}));
+    if (response.status === 403 || data.code === 'home_parish_required' || data.available === false) {
+      const modeTabs = document.querySelector('.audio-library-mode-tabs');
+      if (modeTabs) modeTabs.hidden = true;
+      const heading = document.getElementById('teachingHeading');
+      if (heading) heading.textContent = 'Listen';
+      heading?.nextElementSibling?.replaceChildren('Discover and follow Orthodox podcasts');
+      if (document.getElementById('podcastAudioPane')?.hidden) setAudioLibraryMode('podcasts');
+      return;
+    }
     if (!response.ok) throw new Error(data.error || 'Unable to load parish teaching.');
     teachingState = {
       posts: data.posts || [],

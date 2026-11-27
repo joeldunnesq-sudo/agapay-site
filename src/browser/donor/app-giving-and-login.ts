@@ -220,7 +220,7 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
   const raisedCents = Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0);
   const percent = goalCents > 0 ? Math.min(100, Math.floor((raisedCents / goalCents) * 100)) : 0;
   const link = donorGiftUrl('campaign', parish, { campaign: campaign.id || campaign.feastId || campaign.name });
-  const imageUrl = campaignImageUrl(campaign);
+  const imageUrl = campaignImageUrl(campaign) || '/images/marketplace/dome-cross.jpg';
   const description = campaign.description || 'Support this parish-approved campaign.';
   // Show the donor their own contribution to this campaign (server attaches
   // donorGivenCents only for an authenticated donor, so this stays hidden in
@@ -243,11 +243,7 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
     <div class="campaign-card-shell" style="position:relative;">
       <a class="campaign-card campaign-media-card" href="${escapeHtml(link)}">
         <div class="campaign-media-thumb">
-          ${
-            imageUrl
-              ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />`
-              : `<span>${escapeHtml((campaign.name || 'Campaign').slice(0, 1))}</span>`
-          }
+          <img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />
         </div>
         <div class="campaign-media-body">
           <h3>${escapeHtml(campaign.name || 'Parish Campaign')}</h3>
@@ -255,6 +251,7 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
           ${goalCents > 0 ? `<div class="campaign-progress-row"><strong>${money(raisedCents)} raised</strong><span>${percent}% of ${money(goalCents)}</span></div>` : ''}
           <p class="campaign-description">${escapeHtml(description)}</p>
           ${youGaveBlock}
+          <span class="giving-campaign-cta">Give to the campaign</span>
         </div>
       </a>
       ${shareBtn}
@@ -326,18 +323,51 @@ function renderActiveFunds(parish: DonorAppParish | null | undefined, { confirme
   });
 }
 
+function renderGivingFeastIcon(element: HTMLElement | null, feastId: string | undefined) {
+  if (!element) return;
+  // Individual panels from the public-domain Resurrection icon, circa 1900.
+  // https://commons.wikimedia.org/wiki/File:Icon_of_Resurrection_(circa_1900.,_Russia,_private_coll.).jpg
+  const panels: Record<string, readonly [string, number, number, number, number]> = {
+    'nativity-theotokos': ['Nativity of the Theotokos', 301, 327, 316, 428],
+    'entrance-theotokos': ['Entrance of the Theotokos', 656, 328, 334, 429],
+    annunciation: ['Annunciation', 1016, 331, 323, 424],
+    'nativity-christ': ['Nativity of Christ', 1374, 332, 335, 422],
+    'meeting-lord': ['Meeting of the Lord', 299, 787, 320, 413],
+    theophany: ['Theophany', 1374, 790, 330, 411],
+    'palm-sunday': ['Palm Sunday', 299, 1231, 318, 418],
+    transfiguration: ['Transfiguration', 1374, 1229, 327, 426],
+    ascension: ['Ascension', 299, 1685, 318, 417],
+    pentecost: ['Holy Trinity', 650, 1687, 332, 417],
+    dormition: ['Dormition of the Theotokos', 1013, 1685, 313, 421],
+    'exaltation-cross': ['Exaltation of the Cross', 1368, 1688, 336, 417],
+    pascha: ['Resurrection of Christ', 695, 825, 601, 785],
+  };
+  const panel = feastId && Object.hasOwn(panels, feastId) ? panels[feastId] : null;
+  element.hidden = !panel;
+  if (!panel) return;
+  const [name, x, y, width, height] = panel;
+  const sourceWidth = 2000;
+  const sourceHeight = 2426;
+  element.style.setProperty('--feast-icon-ratio', `${width} / ${height}`);
+  element.style.backgroundSize = `${(sourceWidth / width) * 100}% ${(sourceHeight / height) * 100}%`;
+  element.style.backgroundPosition = `${(x / (sourceWidth - width)) * 100}% ${(y / (sourceHeight - height)) * 100}%`;
+  element.setAttribute('aria-label', `${name} icon`);
+}
+
 function renderNextFeast(parish: DonorAppParish | null | undefined, { confirmed = false }: DonorAppOptions = {}) {
   const targets = [
     {
       name: document.getElementById('nextFeastName'),
       date: document.getElementById('nextFeastDate'),
       calendar: document.getElementById('nextFeastCalendar'),
+      icon: document.getElementById('nextFeastIcon'),
       link: document.getElementById('nextFeastLink') as HTMLAnchorElement | null,
     },
     {
       name: document.getElementById('desktopNextFeastName'),
       date: document.getElementById('desktopNextFeastDate'),
       calendar: document.getElementById('desktopNextFeastCalendar'),
+      icon: document.getElementById('desktopNextFeastIcon'),
       link: document.getElementById('desktopNextFeastLink') as HTMLAnchorElement | null,
     },
   ].filter((target) => target.name && target.date && target.calendar);
@@ -345,21 +375,38 @@ function renderNextFeast(parish: DonorAppParish | null | undefined, { confirmed 
   if (!parish) {
     if (!confirmed) return;
     targets.forEach((target) => {
-      target.calendar!.textContent = 'Next Feast Day:';
+      target.calendar!.textContent = 'Parish calendar';
       target.name!.textContent = 'Next feast day';
       target.date!.textContent = 'Sign in and select a church to see the next feast for its calendar.';
-      if (target.link) target.link.href = '/myagapay/giving/give?giftType=feast';
+      renderGivingFeastIcon(target.icon, undefined);
+      if (target.link) target.link.href = '/myagapay/giving/calendar';
     });
     return;
   }
   const feast = nextFeastForCalendar(parish.liturgicalCalendar);
+  const period = parish.nextFestalOffering;
+  const offeringOpen = Boolean(
+    period && activeParishFeastCampaigns(parish).some((campaign) => campaign.id === period.campaignId)
+  );
   targets.forEach((target) => {
-    target.calendar!.textContent = 'Next Feast Day:';
-    target.name!.textContent = feast?.name || 'Next feast day';
-    target.date!.textContent = feast?.date
-      ? `${shortDate(feast.date)} for ${parish.name || 'your church'}`
-      : `Based on ${calendarLabel(parish.liturgicalCalendar)}`;
-    if (target.link) target.link.href = donorGiftUrl('feast', parish, { feast: feast?.name });
+    renderGivingFeastIcon(target.icon, period ? period.feastId || period.campaignId : feast?.id);
+    target.calendar!.textContent = period
+      ? offeringOpen
+        ? 'Offering period open'
+        : 'Upcoming offering period'
+      : 'Upcoming feast';
+    target.name!.textContent = period?.name || feast?.name || 'Next feast day';
+    target.date!.textContent = period
+      ? `${shortDate(period.startsAt)} – ${shortDate(period.endsAt)}`
+      : feast?.date
+        ? `${shortDate(feast.date)} for ${parish.name || 'your church'}`
+        : `Based on ${calendarLabel(parish.liturgicalCalendar)}`;
+    if (target.link) {
+      target.link.textContent = offeringOpen ? 'Offer' : 'View calendar';
+      target.link.href = offeringOpen
+        ? donorGiftUrl('feast', parish, { campaign: period?.campaignId })
+        : '/myagapay/giving/calendar';
+    }
   });
 }
 

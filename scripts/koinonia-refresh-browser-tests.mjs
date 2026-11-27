@@ -20,16 +20,27 @@ try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
   let blocked = false;
   let readingsConnected = true;
+  const limitedRequests = [];
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.hostname !== 'agapay.test') return route.fulfill({ status: 204, body: '' });
     if (url.pathname.startsWith('/api/')) {
       let payload = {};
+      if (blocked) limitedRequests.push(url.pathname);
       if (url.pathname === '/api/donor/dashboard') payload = { donor, parish };
       if (url.pathname === '/api/donor/koinonia-access' && blocked)
         return route.fulfill({
           status: 403,
           json: { code: 'household_verification_required', error: 'Verify your household.' },
+        });
+      if (url.pathname === '/api/donor/teaching' && blocked)
+        return route.fulfill({ status: 403, json: { code: 'household_verification_required' } });
+      if (url.pathname === '/api/listen/subscriptions' && blocked)
+        payload = { subscriptions: [{ feedUrl: 'https://example.test/podcast.xml' }] };
+      if (url.pathname === '/api/listen/rss' && blocked)
+        return route.fulfill({
+          contentType: 'application/rss+xml',
+          body: '<rss><channel><title>Orthodox podcast</title><item><title>A public episode</title><guid>public-episode</guid><pubDate>Mon, 14 Sep 2026 12:00:00 GMT</pubDate><enclosure url="https://example.test/episode.mp3"/></item></channel></rss>',
         });
       if (url.pathname === '/api/donor/liturgical-day')
         payload = {
@@ -64,6 +75,8 @@ try {
         };
       if (url.pathname.includes('/external-feeds/'))
         payload = {
+          available: true,
+          sourceKey: url.pathname.split('/').at(-1),
           subscribed: url.pathname.endsWith('/oca'),
           source: 'oca',
           label: 'OCA',
@@ -192,15 +205,50 @@ try {
     .getByText('You need to be an approved member of this parish to access Koinonia.', { exact: true })
     .waitFor();
   await page.getByRole('button', { name: 'Request parish approval' }).waitFor();
-  assert.equal(await page.locator('#koinoniaShortcuts').isVisible(), false);
+  await page.locator('#parishLifeListenItems').getByText('A public episode').waitFor();
+  await page.locator('#parishLifeNewsMount').getByText('Story 0').waitFor();
+  assert.ok(await shortcuts.isVisible());
+  assert.deepEqual(await shortcuts.locator('.koinonia-shortcut[aria-disabled="true"] > span').allTextContents(), [
+    'Signups',
+    'Exchange',
+    'Prayers',
+    'Ministries',
+    'Directory',
+    'Sacraments',
+  ]);
+  assert.equal(await shortcuts.locator('a[href], [tabindex], button').count(), 0);
+  assert.equal(
+    await shortcuts
+      .locator('.koinonia-shortcut')
+      .evaluateAll((items) => new Set(items.map((item) => item.offsetTop)).size),
+    1
+  );
+  const previousUrl = page.url();
+  await shortcuts.getByText('Sacraments', { exact: true }).click();
+  assert.equal(page.url(), previousUrl);
+  assert.equal(await page.locator('#parishLifeMinistries, #parishLifeVideos').count(), 0);
+  assert.ok(!limitedRequests.includes('/api/donor/external-feeds/parish_blog'));
+  assert.ok(!limitedRequests.includes('/api/donor/custom-news-feeds'));
   await page
     .locator('#todayFeastNote')
     .filter({ hasText: /Daily readings.*temporarily unavailable/ })
     .waitFor();
   assert.equal(await readingButton.count(), 0);
+  await page.getByRole('link', { name: 'Open Podcasts' }).click();
+  await page.getByRole('heading', { name: 'Listen', exact: true }).waitFor();
+  await page.locator('#podcastAudioPane').getByText('A public episode').waitFor();
+  assert.equal(
+    await page
+      .locator('#parishAudioPane, .audio-library-mode-tabs')
+      .evaluateAll((items) => items.every((item) => item.hidden)),
+    true
+  );
+  await page.goBack();
+  await page.getByRole('link', { name: 'All News' }).click();
+  await page.locator('#newsArticleList').getByText('Story 0').waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    'PASS - Koinonia calendar dates, compact responsive layout, latest video, subscribed news, memberships, saint modal and household gate'
+    'PASS - Parish Life readings, responsive shortcuts, member content and unverified access to podcasts and curated news'
   );
 } finally {
   await browser.close();

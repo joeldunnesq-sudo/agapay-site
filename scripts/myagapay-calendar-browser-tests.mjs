@@ -242,7 +242,11 @@ try {
   const calendar = await page.locator('.parish-life-week-calendar').boundingBox();
   const request = await page.locator('#koinoniaAccessRequest').boundingBox();
   assert.ok(request.y >= calendar.y + calendar.height, 'Access request should sit below the calendar');
-  assert.equal(await page.locator('#parishLifeTierSections').isVisible(), false);
+  assert.equal(
+    await page.locator('#parishLifeTierSections').getByRole('link', { name: 'Open Podcasts' }).isVisible(),
+    true
+  );
+  assert.equal(await page.locator('#parishLifeTierSections #parishLifeVideos, #parishLifeMinistries').count(), 0);
   await page.getByRole('button', { name: 'Ask the parish to enable Directory' }).click();
   await page.getByText(/Return here to request approval once Directory is enabled/).waitFor();
   directoryEnabled = true;

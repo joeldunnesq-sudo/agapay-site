@@ -291,8 +291,8 @@ assert.ok(myAgapayShell.includes('parishFeature: "directoryEnabled"'), "shared M
 assert.ok(includesJavaScriptFragment(worker,"sacramentsEnabled: true") && includesJavaScriptFragment(worker,"ordinary_member_access_enabled = 1"), "the full St. Fiacre demo reseed should keep Sacraments and Directory visible to donors");
 assert.ok(donorHandler.includes("handleDonorMinistryServiceInterest") && includesJavaScriptFragment(worker,'/api/donor/ministry-service-interest'), "Koinonia should persist donor service interest through an authenticated endpoint");
 assert.ok(parishDashboardApp.includes("ministry-service") && parishDashboardApp.includes("ready to serve"), "the parish dashboard should notify leaders about donor service interest");
-assert.match(myAgapayShell, /\.\.\.middleTabs,\s*byId.get\("account"\)/, "Account should be the last bottom tab");
-assert.match(myAgapayShell, /\[\.\.\.parishTabs, byId.get\("history"\)\]\.slice\(0, 2\)/, "History should fill one slot when fewer parish tools are available");
+assert.match(myAgapayShell, /\["parish-life", "giving", "bookstore", "directory", "account"\]/, "The five app tabs should keep the same order");
+assert.ok(myAgapayShell.includes('myagapay-tab-disabled'), "Unavailable parish features should keep their tab positions");
 assert.ok(myAgapayShell.includes('fetch("/api/donor/dashboard?view=context"'), "shared My AGAPAY shell should load the donor home parish capabilities");
 assert.ok(includesJavaScriptFragment(siteChrome, "/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard"), "the site account menu should send AGAPAY Learn sign-ins directly to the Learn Dashboard");
 assert.ok(parishDashboardApp.includes("changeDemoTier") && parishDashboardApp.includes("/api/parish/dashboard/st-fiacre/demo-tier"), "St. Fiacre dashboard should support instant demo tier switching");
@@ -367,7 +367,8 @@ assert.ok(
 assert.ok(donorHome.includes("summary-metrics-row") && donorHome.indexOf('class="summary-title"') < donorHome.indexOf('class="summary-metrics-row"'), "mobile Total Giving label should sit above the month/year metrics");
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
 assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
-assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
+assert.ok(myAgapayGiveHome.includes("Next Festal Offering"), "Giving should show the upcoming festal offering period");
+assert.ok(!myAgapayGiveHome.includes("Recent Offerings"), "Past gifts belong in Giving History");
 assert.ok(
   myAgapayGiveHome.includes('id="quickGiveTithes"')
     && !myAgapayGiveHome.includes('id="quickGiveOneTime"')

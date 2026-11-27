@@ -187,6 +187,8 @@ async function loadNews() {
     const parish = dashboard?.parish || null;
     const parishName = document.getElementById('newsParishName');
     if (parishName) parishName.textContent = parish?.name || 'Your Orthodox news feeds';
+    const customForm = document.querySelector<HTMLFormElement>('.news-custom-feed-form');
+    if (customForm) customForm.hidden = !custom;
     newsState.sources = [
       ...sources.filter((source): source is NewsSource => Boolean(source)),
       ...(custom?.feeds || []),

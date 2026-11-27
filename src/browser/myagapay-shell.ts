@@ -126,15 +126,9 @@ import { icons } from './myagapay/shell-icons.js';
   }
 
   function mobileProducts() {
-    const byId = new Map(products().map((item) => [item.id, item]));
-    const active = activeProduct();
-    const parishTabs = ['bookstore', 'directory', 'library']
-      .map((id) => byId.get(id)!)
-      .filter((item) => active === item.id || (item.parishFeature && parishCapabilities[item.parishFeature]));
-    const middleTabs = [...parishTabs, byId.get('history')].slice(0, 2);
-    return [byId.get('parish-life'), byId.get('giving'), ...middleTabs, byId.get('account')].filter(
-      Boolean
-    ) as ShellProduct[];
+    return products().filter((item) =>
+      ['parish-life', 'giving', 'bookstore', 'directory', 'account'].includes(item.id)
+    );
   }
 
   function hamburgerProducts() {
@@ -569,7 +563,7 @@ import { icons } from './myagapay/shell-icons.js';
   function productNav(active = activeProduct(), className = 'my-agapay-tabbar') {
     const isLearnNav = className === 'learn-product-tabbar';
     const isDesktopSideNav = className.includes('unified-product-nav');
-    // Size the mobile grid to the tabs available for this parish.
+    // The bottom navigation stays in the same order across parishes.
     const navProducts = isDesktopSideNav ? visibleProducts() : mobileProducts();
     const navAttrs = isDesktopSideNav
       ? ' hx-boost="false"'
@@ -578,8 +572,8 @@ import { icons } from './myagapay/shell-icons.js';
       .map((item) => {
         const current =
           item.id === active ||
-          (item.id === 'parish-life' && active === 'commemorations' && !isDesktopSideNav) ||
-          (item.id === 'giving' && active === 'history' && !navProducts.some((product) => product.id === 'history'));
+          (item.id === 'parish-life' && ['commemorations', 'library'].includes(active) && !isDesktopSideNav) ||
+          (item.id === 'giving' && active === 'history');
         const activeClass = current ? (isLearnNav ? 'is-active' : 'active') : '';
         if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) {
           const loadingLabel = isDesktopSideNav
@@ -595,6 +589,9 @@ import { icons } from './myagapay/shell-icons.js';
         const label = isDesktopSideNav
           ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}`
           : `<span>${item.mobileLabel || item.label}</span>${badge}`;
+        if (!isDesktopSideNav && item.parishFeature && !parishCapabilities[item.parishFeature] && !current) {
+          return `<span class="myagapay-tab-disabled" role="link" aria-disabled="true">${item.icon}${label}</span>`;
+        }
         return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.icon}${label}</a>`;
       })
       .join('');

@@ -255,8 +255,20 @@ try {
   assert.equal(await tabs.last().getAttribute('aria-current'), 'page');
   activeParish = { ...secondParish, bookstoreEnabled: false, directoryEnabled: false, libraryEnabled: false };
   await page.goto('https://agapay.test/myagapay/');
-  await tabs.getByText('History', { exact: true }).waitFor();
-  assert.deepEqual(await tabs.locator('span').allTextContents(), ['Home', 'Giving', 'History', 'Account']);
+  const fixedTabs = page.locator('nav.my-agapay-tabbar[aria-label="My AGAPAY navigation"]');
+  await fixedTabs.getByRole('link', { name: 'Directory' }).waitFor();
+  await fixedTabs.locator('.myagapay-tab-disabled').last().waitFor();
+  assert.deepEqual(await fixedTabs.locator(':scope > :is(a, .myagapay-tab-disabled) > span').allTextContents(), [
+    'Home',
+    'Giving',
+    'Bookstore',
+    'Directory',
+    'Account',
+  ]);
+  const disabledTabs = fixedTabs.locator('.myagapay-tab-disabled[aria-disabled="true"]');
+  assert.equal(await disabledTabs.count(), 2);
+  assert.equal(await disabledTabs.first().locator('svg').count(), 1);
+  assert.equal(await disabledTabs.first().getAttribute('href'), null);
   activeParish = secondParish;
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();
