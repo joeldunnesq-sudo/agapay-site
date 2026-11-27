@@ -121,7 +121,8 @@ try {
   await page.evaluate(() => renderCommunityToolBadges({ counts: { signups: 2, exchange: 1, prayers: 3 } }));
   assert.equal(await page.locator('#koinoniaShortcuts [data-community-tool-badge="prayers"]').textContent(), '3');
   assert.equal(await page.locator('#koinoniaShortcuts a').count(), 5);
-  assert.equal(await page.locator('.koinonia-parish-context > svg').count(), 1);
+  assert.equal(await page.locator('.app-home-header [data-app-church-name]').textContent(), parish.name);
+  assert.equal(await page.locator('.refined-liturgical-hero #todayGiveLink').textContent(), 'Give');
   assert.equal(await page.locator('.koinonia-fasting-pill').textContent(), 'No fast');
   assert.equal(await page.locator('.koinonia-fasting-pill').getAttribute('aria-label'), 'No Fast (Bright Week)');
   assert.equal(await page.locator('#parishLifeNewsMount .parish-life-blog-card').count(), 4);

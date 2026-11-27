@@ -278,27 +278,32 @@ function parishLifeTierSectionsHtml(communicationsEnabled: boolean) {
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
     </section>
+    <section class="parish-life-explore" aria-labelledby="parishLifeExploreHeading">
+      <h2 id="parishLifeExploreHeading">Explore your parish</h2>
+      <div class="parish-life-media-grid">
     <section class="parish-life-home-section parish-life-listen-section" aria-labelledby="listenHeading">
-      <div class="parish-life-section-head"><h2 id="listenHeading">Listen</h2><a href="/myagapay/teaching">Open Library</a></div>
+      <div class="parish-life-section-head"><h3 id="listenHeading">Latest audio</h3><a href="/myagapay/teaching">Open Library</a></div>
       <section class="parish-life-listen-resume" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
         <div class="parish-life-listen-subhead"><h3 id="continueListeningHeading">Continue listening</h3></div>
         <div id="parishLifeContinueListening"></div>
       </section>
       <section class="parish-life-listen-latest" aria-labelledby="latestAudioHeading">
-        <div class="parish-life-listen-subhead"><h3 id="latestAudioHeading">Latest audio</h3></div>
+        <h4 class="koinonia-visually-hidden" id="latestAudioHeading">Latest audio</h4>
         <div class="parish-life-recording-list" id="parishLifeListenItems"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading audio…</p></div>
       </section>
     </section>
     <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
-      <div class="parish-life-section-head"><h2 id="recentVideosHeading">Latest Video</h2><a href="/myagapay/media">All Media</a></div>
+      <div class="parish-life-section-head"><h3 id="recentVideosHeading">Recent video</h3><a href="/myagapay/media">All Media</a></div>
       <div class="parish-life-video-grid" id="parishLifeVideos"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading videos…</p></div>
     </section>
+      </div>
     <div id="parishLifeNewsMount">
       <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
-        <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
+        <div class="parish-life-section-head"><h3 id="recentNewsHeading">Recent news</h3><a href="/myagapay/news">All News</a></div>
         <p class="sw-tool-loading parish-life-section-loading" role="status">Loading news…</p>
       </section>
-    </div>`;
+    </div>
+    </section>`;
 }
 
 function renderCommunityToolBadges(payload: ParishLifePayload = {}) {
@@ -781,7 +786,7 @@ function renderRecentNews(sources: ParishLifePayload[] = []) {
   if (!articles.length) {
     mount.innerHTML = `
       <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
-        <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
+        <div class="parish-life-section-head"><h3 id="recentNewsHeading">Recent news</h3><a href="/myagapay/news">All News</a></div>
         <a class="parish-life-news-invitation" href="/myagapay/news">
           <span class="parish-life-news-invitation-mark" aria-hidden="true">↗</span>
           <span><strong>Choose your news sources</strong><small>Nothing appears until you follow the sources you want.</small></span>
@@ -792,7 +797,7 @@ function renderRecentNews(sources: ParishLifePayload[] = []) {
   }
   mount.innerHTML = `
     <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
-      <div class="parish-life-section-head"><h2 id="recentNewsHeading">Recent News</h2><a href="/myagapay/news">All News</a></div>
+      <div class="parish-life-section-head"><h3 id="recentNewsHeading">Recent news</h3><a href="/myagapay/news">All News</a></div>
       <div class="parish-life-blog-list">${articles
         .map(
           (post) => `

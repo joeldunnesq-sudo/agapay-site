@@ -88,7 +88,9 @@ try {
       return route.fulfill({ json: payload });
     }
     let filename = url.pathname;
-    if (filename === '/myagapay/calendar') filename = '/myagapay/giving/calendar.html';
+    if (filename === '/myagapay' || filename === '/myagapay/') filename = '/myagapay/parish-life.html';
+    else if (filename === '/myagapay/giving') filename = '/myagapay/index.html';
+    else if (filename === '/myagapay/calendar') filename = '/myagapay/giving/calendar.html';
     else if (!filename.split('/').at(-1).includes('.')) filename += '.html';
     try {
       return route.fulfill({
@@ -146,7 +148,7 @@ try {
     await page.locator('.app-page-header').waitFor();
     await page.waitForFunction(() => document.querySelector('[data-app-church-name]')?.textContent === 'Test Parish');
     assert.equal(await page.locator('.app-page-header').count(), 1, route);
-    assert.equal(await page.locator('[data-app-church-location]').textContent(), 'Chicago, IL', route);
+    assert.equal(await page.locator('[data-app-church-name]').getAttribute('title'), 'Test Parish, Chicago, IL', route);
     // This fixture has no directory household; dismiss its first-run wizard before testing navigation.
     if (route === 'directory')
       await page.evaluate(() => {
@@ -177,22 +179,27 @@ try {
   await page.waitForFunction(
     () => document.querySelector('[data-app-church-name]')?.textContent === 'Saints Peter and Paul Orthodox Church'
   );
-  assert.equal(await page.locator('[data-app-church-location]').textContent(), 'Madison, WI');
+  assert.equal(await page.locator('[data-app-church-name]').getAttribute('title'), 'Saints Peter and Paul Orthodox Church, Madison, WI');
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 1000 });
-    const copy = page.locator('.app-header-parish-copy');
-    assert.ok(
-      await copy.evaluate((el) => {
-        const name = el.querySelector('[data-app-church-name]'),
-          place = el.querySelector('[data-app-church-location]');
-        return (
-          getComputedStyle(name).whiteSpace === 'nowrap' &&
-          place.getBoundingClientRect().top >= name.getBoundingClientRect().bottom
-        );
-      })
-    );
+    const name = page.locator('[data-app-church-name]');
+    assert.ok(await name.evaluate((el) => getComputedStyle(el).whiteSpace === 'nowrap'));
+    assert.ok(await page.locator('.app-header-bar').evaluate((el) => el.scrollWidth <= el.clientWidth));
   }
-  await page.goto('https://agapay.test/myagapay/index');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('https://agapay.test/myagapay');
+  await page.locator('.app-home-header').waitFor();
+  await page.locator('.refined-liturgical-hero').waitFor();
+  const tabs = page.locator('nav.my-agapay-tabbar a');
+  await page.getByRole('link', { name: 'Directory', exact: true }).last().waitFor();
+  assert.deepEqual(await tabs.locator('span').allTextContents(), ['Home', 'Giving', 'Bookstore', 'Directory', 'Sacraments']);
+  assert.equal(await tabs.first().getAttribute('aria-current'), 'page');
+  assert.equal(await tabs.first().locator('path').first().getAttribute('d'), 'M3 11l9-8 9 8');
+  assert.equal(await tabs.nth(1).locator('path').first().getAttribute('d'), 'M7 13V7.5a1.5 1.5 0 0 1 3 0V13');
+  assert.match(await page.locator('.refined-liturgical-hero').evaluate((el) => getComputedStyle(el).backgroundImage), /fresco-vault/);
+  await tabs.nth(1).click();
+  await page.waitForURL('**/myagapay/giving');
+  await page.locator('#greeting').waitFor();
   assert.equal(await page.locator('.app-page-header').count(), 0, 'Give homepage is excluded');
   await page.goto('https://agapay.test/myagapay/giving/calendar');
   await page.locator('.app-header-menu-button').click();

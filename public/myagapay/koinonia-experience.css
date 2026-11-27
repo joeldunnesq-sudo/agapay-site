@@ -7,7 +7,7 @@
 }
 .koinonia-landing-page,
 .koinonia-landing-page :is(.app,.content,.page) { background: #f3eee4; }
-.koinonia-landing-page .parish-life-page-shell { width: 100%; max-width: 850px; padding: 24px 30px 100px; }
+.koinonia-landing-page .parish-life-page-shell { width: 100%; max-width: 1120px; padding: 24px 30px 100px; }
 .koinonia-parish-context { display: flex; align-items: center; gap: 8px; padding: 0 2px 14px; color: #435866; font-size: 12px; }
 .koinonia-parish-context > svg { width: 16px; height: 16px; flex: 0 0 16px; stroke: #9a7837; fill: none; stroke-width: 1.6; }
 .koinonia-parish-context strong { flex: 1; min-width: 0; font-weight: 500; }
@@ -130,4 +130,42 @@
 }
 .koinonia-access-request textarea {
   width: 100%;
+}
+
+/* Keep the week picker and its agenda within one calendar surface. */
+.koinonia-landing-page .parish-life-week-calendar {
+  border-color:#d4d1c6;
+  background:linear-gradient(180deg,#fff,#fcfaf5);
+}
+.koinonia-landing-page .parish-life-week-calendar .cal-parish-month {
+  padding:0;
+  border:0;
+  background:transparent;
+  margin-bottom:10px;
+}
+.koinonia-landing-page .parish-life-week-calendar .cal-parish-event-list {
+  border-top:1px solid #e1d9cb;
+  padding-top:12px;
+}
+.koinonia-landing-page .parish-life-week-calendar .cal-parish-event-list:empty { display:none; }
+.koinonia-landing-page .parish-life-week-calendar .cal-parish-day.is-selected {
+  background:#111827;
+  color:#fff;
+  box-shadow:0 4px 12px rgba(6,21,34,.18);
+}
+
+.koinonia-landing-page .parish-life-explore > h2 {
+  margin:0 0 16px;
+  padding-bottom:10px;
+  border-bottom:1px solid #e1d9cb;
+  font:600 28px/1.1 'Cormorant Garamond',Georgia,serif;
+}
+.koinonia-landing-page .parish-life-media-grid { display:grid; gap:14px; }
+.koinonia-landing-page .parish-life-explore .parish-life-section-head h3 {
+  margin:0;
+  color:#18354b;
+  font:600 23px/1.1 'Cormorant Garamond',Georgia,serif;
+}
+@media (min-width: 701px) {
+  .koinonia-landing-page .parish-life-media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
 }

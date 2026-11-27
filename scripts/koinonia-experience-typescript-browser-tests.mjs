@@ -3,16 +3,36 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 const script = await readFile(new URL('../public/myagapay/koinonia-experience.js', import.meta.url), 'utf8');
 const calendar = await readFile(new URL('../public/liturgical-calendar.js', import.meta.url), 'utf8');
+const header = await readFile(new URL('../public/myagapay/app-header.js', import.meta.url), 'utf8');
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 393, height: 873 } });
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.setContent(
-    '<div id="koinoniaShortcuts"></div><h1 id="koinoniaParishName"></h1><a id="todayGiveLink">Give</a><div id="koinoniaChurchDate"></div><div id="chips"></div>'
+  await page.route('https://app.example/myagapay', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: '<main><div id="koinoniaShortcuts"></div><a id="todayGiveLink">Give</a><div id="koinoniaChurchDate"></div><div id="chips"></div></main>',
+    })
   );
+  await page.goto('https://app.example/myagapay');
+  await page.evaluate(() => {
+    window.MyAgapayShell = { icons: { menu: '' }, initializeMobileAppMenus() {} };
+    window.AGAPAYDonorSession = { profile: () => null };
+  });
+  await page.addScriptTag({ content: header });
   await page.addScriptTag({ content: calendar });
   await page.addScriptTag({ content: script });
+  const churchName = page.locator('[data-app-church-name]');
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new CustomEvent('myagapay:parish-context', { detail: { name: '<img src=x onerror=alert(1)>' } })
+    );
+  });
+  assert.equal(await churchName.textContent(), '<img src=x onerror=alert(1)>');
+  assert.equal(await churchName.locator('img').count(), 0);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('myagapay:parish-context', { detail: null })));
+  assert.equal(await churchName.textContent(), 'Choose a church');
   const keys = ['signupsEnabled', 'exchangeEnabled', 'prayerRequestsEnabled', 'directoryEnabled'];
   const paths = ['signups', 'exchange', 'prayer-requests', 'directory'];
   for (let mask = 0; mask < 16; mask++) {
@@ -47,8 +67,6 @@ try {
         await page.locator('#koinoniaShortcuts').evaluate((el) => el.style.getPropertyValue('--shortcut-count')),
         String(expected.length || 1)
       );
-      assert.equal(await page.locator('#koinoniaParishName').textContent(), '<img src=x onerror=alert(1)>');
-      assert.equal(await page.locator('#koinoniaParishName img').count(), 0);
       assert.ok(
         await page
           .locator('#koinoniaShortcuts [data-community-tool-badge]')
@@ -57,7 +75,6 @@ try {
     }
   }
   await page.evaluate(() => window.KoinoniaExperience.parishContext(null, false));
-  assert.equal(await page.locator('#koinoniaParishName').textContent(), 'Your church calendar');
   assert.equal(await page.locator('#todayGiveLink').evaluate((el) => el.hidden), true);
   for (const [rule, expected] of [
     ['No fasting', 'No fast'],

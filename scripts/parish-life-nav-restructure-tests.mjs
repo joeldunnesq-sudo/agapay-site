@@ -48,6 +48,25 @@ assert.equal(
   'the canonical full-calendar route must serve the calendar page instead of returning to Koinonia'
 );
 
+for (const [route, expected] of [
+  ['/myagapay', '/myagapay/parish-life.html'],
+  ['/myagapay/', '/myagapay/parish-life.html'],
+  ['/myagapay/giving', '/myagapay/index.html'],
+  ['/myagapay/dashboard', '/myagapay/index.html'],
+]) {
+  let assetPath = '';
+  const response = await worker.fetch(
+    new Request('https://agapay.test' + route),
+    { ASSETS: { async fetch(request) {
+      assetPath = new URL(request.url).pathname;
+      return new Response('app shell');
+    } } },
+    { waitUntil() {} }
+  );
+  assert.equal(response.status, 200, route);
+  assert.equal(assetPath, expected, route);
+}
+
 const [landing, landingScript, shell, donorApp, calendar, feed, groups, teaching, media, watch] = await Promise.all(
   [
     'parish-life.html',
@@ -135,7 +154,7 @@ assert.match(landing, /class="cal-date-heading-row"/);
 assert.match(landing, /id="todayCivilDateEyebrow"/);
 assert.match(landing, /id="todayFeastNote"/);
 assert.match(landing, /id="todayChips"/);
-assert.match(landing, />Make an offering →</);
+assert.match(landing, /id="todayGiveLink"[^>]*>Give</);
 assert.doesNotMatch(
   landing,
   /class="cal-hero parish-life-saint-card"/,
@@ -146,8 +165,9 @@ assert.match(landing, /id="donorSaintModal"[\s\S]*Orthocal\.info/);
 assert.match(landing, />This Week in the Church<[\s\S]*data-calendar-default-view="week"/);
 assert.match(landing, /href="\/myagapay\/calendar">Full Calendar</);
 assert.ok(
-  landing.indexOf('id="parishLifeInboxMount"') < landing.indexOf('>This Week in the Church<'),
-  'the actionable announcements card should sit directly below the hero and before the week calendar'
+  landing.indexOf('id="koinoniaShortcuts"') < landing.indexOf('>This Week in the Church<') &&
+    landing.indexOf('>This Week in the Church<') < landing.indexOf('id="parishLifeInboxMount"'),
+  'Home should show the shortcut strip and week calendar before the inbox'
 );
 assert.doesNotMatch(landing, />Community</, 'the product must not be renamed Community in the rendered landing');
 assert.match(
@@ -238,10 +258,11 @@ const parishInboxMarkup = sandbox.window.parishLifeInboxShellHtml(true);
 assert.match(parishInboxMarkup, /parishLifeCommunityInbox/);
 assert.match(parishInboxMarkup, /Parish Today/);
 assert.equal(sandbox.window.parishLifeInboxShellHtml(false), '');
-assert.match(parishTierMarkup, /id="listenHeading">Listen</);
+assert.match(parishTierMarkup, /id="parishLifeExploreHeading">Explore your parish</);
+assert.match(parishTierMarkup, /id="listenHeading">Latest audio</);
 assert.match(parishTierMarkup, /Continue listening/);
 assert.match(parishTierMarkup, /Latest audio/);
-assert.match(parishTierMarkup, /Latest Video/);
+assert.match(parishTierMarkup, /Recent video/);
 assert.match(parishTierMarkup, /Your Ministries/);
 for (const loadingLabel of ['ministries', 'audio', 'videos', 'news']) {
   assert.match(

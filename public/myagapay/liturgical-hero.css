@@ -47,3 +47,60 @@
   :is(.koinonia-landing-page, .koinonia-design-page).donor-mobile-page .refined-liturgical-hero .cal-hero-inner { padding: 22px 18px 0; }
   :is(.koinonia-landing-page, .koinonia-design-page).donor-mobile-page .refined-liturgical-hero .cal-today-title { font-size: 31px; }
 }
+
+/* Home uses the same artwork, photo crop, and controls as the app preview. */
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero {
+  border: 0;
+  border-radius: 18px;
+  background:
+    linear-gradient(90deg, #0e2635 10%, #0e2635 33%, #0e2635f2 45%, #10242d77 65%, #10242d22 93%),
+    url('/images/vision/fresco-vault.jpg') right center / 66% auto no-repeat,
+    #0e2635;
+}
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-hero-inner { padding:24px clamp(17px,3vw,37px); }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-today-title { margin-bottom:8px; font-weight:600; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero #todayChips { margin:12px 0; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero #todayChips > :is(span,button) { min-height:26px; padding:4px 9px; white-space:normal; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-hero-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-hero-actions .cal-btn { min-height:44px; padding:8px 13px; border-radius:9px; box-shadow:none; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-btn-gold { background:#eed09a; color:#2a2317; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-calendar-link { background:#132a33aa; color:#f9edd8; border:1px solid #f9edd86b; }
+@media (max-width: 580px) {
+  .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero {
+    background:
+      linear-gradient(90deg, #0e2635f7, #0e2635cd 62%, #0e263577),
+      linear-gradient(0deg, #0e2635 12%, transparent 78%),
+      url('/images/vision/fresco-vault.jpg') 58% 39% / cover no-repeat,
+      #0e2635;
+  }
+}
+
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-date-heading-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:0;
+  margin-bottom:12px;
+}
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero:has(.cal-date-badge:not([hidden])) :is(.cal-date-heading-row,.cal-today-title) { padding-right:0; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-date-badge {
+  position:static;
+  order:2;
+  border:1px solid #d3dde2;
+  border-radius:10px;
+}
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-date-day { font-size:26px; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-date-heading-copy { display:block; }
+.home-hero-kicker {
+  margin-bottom:4px;
+  color:#f1d39d;
+  font:700 12px/1.35 'DM Sans',sans-serif;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-hero-eyebrow {
+  color:#e5e4db;
+  font-size:12px;
+  text-transform:none;
+}

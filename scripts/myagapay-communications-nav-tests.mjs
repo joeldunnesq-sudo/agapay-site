@@ -37,7 +37,7 @@ assert.match(
 assert.doesNotMatch(desktopNav, /href="\/myagapay\/(?:feed|groups|giving\/calendar)"/);
 assert.equal((shell.match(/id: "parish-life"/g) || []).length, 1, 'there must be one global parish landing product');
 assert.doesNotMatch(shell, /id: "today"/);
-assert.match(shell, /communicationsEnabled \? "Koinonia" : "Today"/);
+assert.match(shell, /label: "Home"/);
 assert.match(shell, /byId\.get\("parish-life"\)/);
 assert.match(shell, /pathname\.startsWith\("\/myagapay\/calendar"\)[\s\S]*return "parish-life"/);
 assert.match(shell, /function ensureParishLifeBackLink[\s\S]*href = "\/myagapay\/parish-life"/);
@@ -47,12 +47,8 @@ assert.doesNotMatch(
   /data-parish-life-section/,
   'the My AGAPAY homepage must not repeat Koinonia as a content card'
 );
-assert.match(shell, /id: "giving"[^}]*icon: icons\.home/, 'the Home bottom-nav item must use the house icon');
-assert.match(
-  shell,
-  /parishLife: '[^']*<circle cx="12" cy="7" r="3"\/>[^']*<circle cx="5\.5" cy="9" r="2\.2"\/>[^']*<circle cx="18\.5" cy="9" r="2\.2"\/>/,
-  'the Koinonia bottom-nav item must depict three people'
-);
+assert.match(shell, /id: "parish-life"[^}]*icon: icons\.home/, 'Home must use the house icon');
+assert.match(shell, /id: "giving"[^}]*icon: icons\.give/, 'Giving must use the giving-hand icon');
 assert.equal(
   shellDirectoryIcon,
   dashboardDirectoryIcon,
@@ -279,14 +275,14 @@ assert.equal(coldStart.link.hidden, false, 'loading placeholder must occupy the 
 assert.equal(coldStart.link.classList.contains('sw-tool-loading'), true);
 assert.equal(coldStart.link.getAttribute('aria-busy'), 'true');
 assert.equal(coldStart.shell.capabilitiesLoaded(), false);
-assert.match(coldStart.shell.productNav(), /data-parish-life-loading[\s\S]*Loading…/);
+assert.match(coldStart.shell.productNav(), />Home</);
 assert.doesNotMatch(coldStart.shell.productNav(), />Koinonia<|>Today</, 'cold nav must never guess an identity');
 await resolveDashboard(coldStart, {
   communicationsEnabled: true,
   parishLifeLabel: 'Koinonia',
   parishLifeAvailable: true,
 });
-assert.equal(coldStart.label.textContent, 'Koinonia');
+assert.equal(coldStart.label.textContent, 'Home');
 assert.equal(coldStart.link.classList.contains('sw-tool-loading'), false);
 assert.equal(coldStart.link.getAttribute('aria-busy'), null);
 assert.doesNotMatch(
@@ -294,7 +290,7 @@ assert.doesNotMatch(
   /data-parish-life-loading|Loading…/,
   'resolved nav replaces the loading item in one render'
 );
-assert.match(coldStart.shell.productNav(), />Koinonia</);
+assert.match(coldStart.shell.productNav(), />Home</);
 assert.equal(JSON.parse(coldStart.values.get('agapay.parishCapabilities.v1')).parish.parishLifeLabel, 'Koinonia');
 
 const atomicPaint = await renderShell({ hydrate: true });
@@ -333,18 +329,18 @@ const freshCache = await renderShell({
     parish: { communicationsEnabled: true, parishLifeLabel: 'Koinonia', parishLifeAvailable: true },
   },
 });
-assert.equal(freshCache.label.textContent, 'Koinonia', 'fresh cache must render before fetch resolution');
+assert.equal(freshCache.label.textContent, 'Home', 'fresh cache must render before fetch resolution');
 assert.equal(freshCache.shell.capabilitiesLoaded(), true);
 assert.equal(freshCache.fetchCalls(), 1, 'fresh cache must still start a background refresh');
-assert.match(freshCache.shell.productNav(), />Koinonia</);
+assert.match(freshCache.shell.productNav(), />Home</);
 assert.doesNotMatch(freshCache.shell.productNav(), /Loading…/);
 await resolveDashboard(freshCache, {
   communicationsEnabled: false,
   parishLifeLabel: 'Today',
   parishLifeAvailable: true,
 });
-assert.equal(freshCache.label.textContent, 'Today', 'changed network data must replace cached display data');
-assert.match(freshCache.shell.productNav(), />Today</);
+assert.equal(freshCache.label.textContent, 'Home', 'changed network data must replace cached display data');
+assert.match(freshCache.shell.productNav(), />Home</);
 assert.doesNotMatch(freshCache.shell.productNav(), />Koinonia</);
 
 freshCache.shell.clearSession();

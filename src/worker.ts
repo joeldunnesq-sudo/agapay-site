@@ -70,9 +70,10 @@ import {
 export { observeScheduledTask, syncPledgeToHousehold };
 
 const MYAGAPAY_ASSET_ROUTES = new Map([
-  ['/myagapay', '/myagapay/index.html'],
-  ['/myagapay/', '/myagapay/index.html'],
+  ['/myagapay', '/myagapay/parish-life.html'],
+  ['/myagapay/', '/myagapay/parish-life.html'],
   ['/myagapay/dashboard', '/myagapay/index.html'],
+  ['/myagapay/dashboard/', '/myagapay/index.html'],
   ['/myagapay/giving', '/myagapay/index.html'],
   ['/myagapay/giving/', '/myagapay/index.html'],
   ['/myagapay/giving/offerings', '/myagapay/giving/history.html'],
@@ -157,7 +158,7 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
 const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ['/my-agapay', '/myagapay'],
   ['/my-agapay/', '/myagapay'],
-  ['/my-agapay/dashboard', '/myagapay'],
+  ['/my-agapay/dashboard', '/myagapay/giving'],
   ['/my-agapay/login', '/myagapay/login'],
   ['/my-agapay/login/', '/myagapay/login'],
   ['/my-agapay/signup', '/myagapay/signup'],
@@ -174,7 +175,7 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ['/my-agapay/settings', '/myagapay/account'],
   ['/donor', '/myagapay'],
   ['/donor/', '/myagapay'],
-  ['/donor/dashboard', '/myagapay'],
+  ['/donor/dashboard', '/myagapay/giving'],
   ['/donor/login', '/myagapay/login'],
   ['/donor/login/', '/myagapay/login'],
   ['/donor/login.html', '/myagapay/login'],

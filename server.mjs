@@ -284,15 +284,13 @@ async function resolveStaticPath(urlPath) {
   if (pathname === "/myagapay/learn/onboarding" || pathname === "/myagapay/learn/onboarding/") pathname = "/learn/onboarding.html";
   if (pathname.startsWith("/myagapay/learn/") && !path.extname(pathname)) pathname = pathname.replace(/^\/myagapay/, "") + ".html";
   if (
-    pathname === "/my-agapay" ||
-    pathname === "/my-agapay/" ||
     pathname === "/my-agapay/dashboard" ||
-    pathname === "/myagapay" ||
-    pathname === "/myagapay/" ||
     pathname === "/myagapay/dashboard" ||
+    pathname === "/myagapay/dashboard/" ||
     pathname === "/myagapay/giving" ||
     pathname === "/myagapay/giving/"
   ) pathname = "/myagapay/index.html";
+  if (["/myagapay", "/myagapay/", "/my-agapay", "/my-agapay/"].includes(pathname)) pathname = "/myagapay/parish-life.html";
   if (pathname === "/myagapay/giving/offerings") pathname = "/myagapay/giving/history.html";
   if (pathname === "/myagapay/giving/names") pathname = "/myagapay/giving/commemorations.html";
   if (pathname === "/myagapay/calendar" || pathname === "/myagapay/calendar/") pathname = "/myagapay/giving/calendar.html";

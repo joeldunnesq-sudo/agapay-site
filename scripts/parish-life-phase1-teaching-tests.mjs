@@ -381,7 +381,7 @@ assert.match(
 assert.match(sources['src/routes/parish.js'], /handleParishTeaching\(request, env, parishId,[\s\S]*, ctx\)/);
 assert.match(
   sources['public/myagapay/parish-life.js'],
-  />Listen<[\s\S]*href=['"]\/myagapay\/teaching['"]>Open Library/
+  />Latest audio<[\s\S]*href=['"]\/myagapay\/teaching['"]>Open Library/
 );
 assert.ok(
   includesJavaScriptFragment(

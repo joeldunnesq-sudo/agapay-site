@@ -114,8 +114,8 @@ try {
   }));
   assert.match(
     heroColors.background,
-    /linear-gradient.*rgb\(6, 21, 34\).*rgb\(11, 33, 48\)/,
-    'Koinonia must retain the dark calendar hero'
+    /linear-gradient.*fresco-vault\.jpg/,
+    'Home must use the preview’s photo with a dark gradient'
   );
   assert.equal(heroColors.title, 'rgb(245, 242, 235)', 'The dark hero must retain its readable cream title');
   await page.locator('#saintPreviewCard').click();

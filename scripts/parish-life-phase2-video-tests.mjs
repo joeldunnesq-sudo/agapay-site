@@ -335,7 +335,7 @@ assert.match(sources['public/myagapay/media.html'], /href=['"]\/myagapay\/parish
 assert.match(sources['public/myagapay/watch.html'], /href=['"]\/myagapay\/parish-life['"][^>]*>← Back</);
 assert.match(
   sources['public/myagapay/parish-life.js'],
-  />Latest Video<[\s\S]*href=['"]\/myagapay\/media['"]>All Media/
+  />Recent video<[\s\S]*href=['"]\/myagapay\/media['"]>All Media/
 );
 assert.ok(includesJavaScriptFragment(sources['public/myagapay/parish-life.js'], 'parishLifeFetch("/api/donor/videos"'));
 assert.match(

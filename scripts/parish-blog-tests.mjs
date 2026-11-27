@@ -183,7 +183,7 @@ assert.match(
   /renderKoinoniaOverview\(\);[\s\S]*setKoinoniaStudioView\(koinoniaStudioView\)/,
   'loaded content should refresh the studio overview'
 );
-assert.ok(includesJavaScriptFragment(landing, 'Recent News'));
+assert.ok(includesJavaScriptFragment(landing, 'Recent news'));
 assert.match(
   landing,
   /post\.imageUrl[\s\S]*class=['"]parish-life-blog-image['"][\s\S]*loading=['"]lazy['"][\s\S]*referrerpolicy=['"]no-referrer['"]/,
