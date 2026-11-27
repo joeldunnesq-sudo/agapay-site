@@ -1,6 +1,6 @@
 .give-koinonia-phone { width: clamp(228px,38vw,292px); margin: 0; }
 .give-koinonia-phone-shell { position: relative; padding: 7px; border: 1px solid rgba(255,255,255,.22); border-radius: 34px; background: #071723; box-shadow: 0 34px 70px rgba(6,21,34,.27),0 8px 18px rgba(6,21,34,.16); }
-.give-koinonia-viewport { position: relative; overflow: hidden; aspect-ratio: 720 / 1560; border-radius: 27px; background: #071723; }
+.give-koinonia-viewport { position: relative; overflow: hidden; aspect-ratio: 720 / 1560; border-radius: 0 0 27px 27px; background: #071723; }
 .give-koinonia-track { position: absolute; inset: 0; height: 300%; transform: translateY(0); transition: transform 1.2s cubic-bezier(.65,0,.25,1); }
 .give-koinonia-slide { height: calc(100% / 3); overflow: hidden; }
 .give-koinonia-slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -12,8 +12,33 @@
 @media (max-width: 560px) {
   .give-koinonia-phone { width: min(260px,76vw); }
   .give-koinonia-phone-shell { padding: 5px; border-radius: 28px; }
-  .give-koinonia-viewport { border-radius: 23px; }
+  .give-koinonia-viewport { border-radius: 0 0 23px 23px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .give-koinonia-track { transition: none; }
+}
+
+.preview-device-status {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+  align-items: center;
+  column-gap: 6px;
+  height: 32px;
+  padding-inline: 13px;
+  border-radius: 26px 26px 0 0;
+  background: #0c1d25;
+  color: #fff7e7;
+  font: 700 11px/1 system-ui, sans-serif;
+}
+.preview-device-status svg { justify-self: end; display: block; }
+.preview-device-camera {
+  display: block;
+  width: clamp(36px, 13vw, 66px);
+  height: 12px;
+  border-radius: 999px;
+  background: #03090d;
+}
+@media (max-width: 560px) {
+  .preview-device-status { border-radius: 23px 23px 0 0; }
+  .preview-device-camera { width: clamp(36px, 12vw, 54px); }
 }
