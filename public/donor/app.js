@@ -726,6 +726,9 @@ function renderActiveCampaigns(parish, { confirmed = false } = {}) {
   ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
+  document.querySelectorAll('[data-hide-empty-campaigns]').forEach((section) => {
+    section.hidden = !campaign;
+  });
   if (!campaign) {
     if (!confirmed) return;
     const empty = `
@@ -736,7 +739,7 @@ function renderActiveCampaigns(parish, { confirmed = false } = {}) {
       </article>
     `;
     targets.forEach((target) => {
-      target.innerHTML = empty;
+      target.innerHTML = target.closest('[data-hide-empty-campaigns]') ? '' : empty;
     });
     return;
   }

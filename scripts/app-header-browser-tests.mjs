@@ -234,7 +234,23 @@ try {
   await homeGive.click();
   await page.waitForURL('**/myagapay/giving');
   await page.locator('#greeting').waitFor();
-  assert.equal(await page.locator('.app-page-header').count(), 0, 'Give homepage is excluded');
+  await page.locator('.app-page-header [data-app-church-name]').getByText(activeParish.name, { exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Giving', exact: true }).waitFor();
+  assert.equal(await page.locator('#greeting + #donorParishName').count(), 0);
+  assert.equal(await page.getByRole('heading', { name: 'Active Campaigns' }).count(), 0);
+  activeParish = {
+    ...activeParish,
+    campaigns: [{ id: 'active-restoration', name: 'Roof Restoration', status: 'active' }],
+  };
+  await page.reload();
+  await page.getByRole('heading', { name: 'Roof Restoration' }).waitFor();
+  activeParish = {
+    ...activeParish,
+    campaigns: [{ id: 'active-restoration', name: 'Roof Restoration', status: 'ended' }],
+  };
+  await page.reload();
+  await page.locator('.app-page-header [data-app-church-name]').getByText(activeParish.name, { exact: true }).waitFor();
+  assert.equal(await page.getByRole('heading', { name: 'Active Campaigns' }).count(), 0);
   const manifest = JSON.parse(
     await readFile(new URL('../public/myagapay/manifest.webmanifest', import.meta.url), 'utf8')
   );
@@ -318,7 +334,7 @@ try {
   assert.equal(await page.evaluate(() => localStorage.getItem('agapayDonorToken')), null);
   errors.assertClean();
   console.log(
-    'PASS - 19 app headers, shared menus, parish identity, switch failure/retry/reload, responsive layout, and Give homepage exclusion'
+    'PASS - shared app headers, parish identity, switch failure/retry/reload, responsive layout, and Giving campaign visibility'
   );
 } finally {
   await browser.close();

@@ -201,6 +201,9 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
   ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
+  document.querySelectorAll<HTMLElement>('[data-hide-empty-campaigns]').forEach((section) => {
+    section.hidden = !campaign;
+  });
   if (!campaign) {
     if (!confirmed) return;
     const empty = `
@@ -211,7 +214,7 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
       </article>
     `;
     targets.forEach((target) => {
-      target.innerHTML = empty;
+      target.innerHTML = target.closest('[data-hide-empty-campaigns]') ? '' : empty;
     });
     return;
   }
