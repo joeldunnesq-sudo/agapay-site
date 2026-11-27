@@ -330,9 +330,7 @@ try {
       await page.locator('#nav-accounting').click();
       const pane = page.locator('#accountingPane');
       await pane.getByRole('heading', { name: 'Record activity' }).waitFor();
-      const postingPeriods = pane.getByRole('region', { name: 'Posting periods', exact: true });
-      await postingPeriods.getByText('November 2026 · Unopened', { exact: true }).waitFor();
-      assert.equal(await postingPeriods.getByRole('button', { name: 'Open November 2026', exact: true }).isVisible(), parishTier);
+      assert.equal(await pane.getByRole('heading', { name: 'Posting periods', exact: true }).count(), 0);
       assert.equal(await page.locator('[data-accounting-view]:visible').count(), 1);
       const workspaceNav = page.getByRole('navigation', { name: 'Accounting workspaces' });
       assert.equal(await workspaceNav.getByRole('button').count(), 8);
@@ -559,7 +557,8 @@ try {
       await pane.getByRole('button', { name: 'Use one allocation', exact: true }).press('Enter');
       assert.ok(await splitFunds.evaluate((element) => element === document.activeElement));
       await page.getByRole('button', { name: 'Overview', exact: true }).click();
-      await pane.getByRole('button', { name: 'View posting periods', exact: true }).click();
+      await workspaceNav.getByRole('button', { name: 'Setup & controls', exact: true }).click();
+      await pane.getByRole('button', { name: /^Posting periods/ }).click();
       await pane.getByRole('heading', { name: 'Posting periods', exact: true }).waitFor();
       await pane
         .getByRole('listitem')

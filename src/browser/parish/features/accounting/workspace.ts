@@ -659,8 +659,7 @@ function renderAccountingOverviewDirectory(
 ) {
   const overview = document.createElement('div');
   overview.className = 'acct-overview-directory';
-  overview.innerHTML = `${accountingOverviewPostingPeriod()}
-    ${accountingOverviewRecentActivity()}
+  overview.innerHTML = `${accountingOverviewRecentActivity()}
     <section class="acct-overview-funds" data-accounting-overview-section="funds" aria-labelledby="accountingOverviewFundsTitle"></section>
     ${accountingMonthEndChecklist()}
     <section class="acct-overview-reports" data-accounting-overview-section="reports" aria-labelledby="accountingOverviewReportsTitle"></section>
