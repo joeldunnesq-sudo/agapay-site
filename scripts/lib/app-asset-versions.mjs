@@ -7,6 +7,7 @@ import { repoRoot } from './browser-composed-source.mjs';
 // references so one content version is used by every consumer.
 // Admin keeps its network-only service-worker policy while using content versions.
 export const pageAssets = Object.freeze([
+  '/myagapay/manifest.webmanifest',
   '/parish/accounting-journey.js',
   '/parish/redesign.css',
   '/myagapay/bookstore-concept/app.js',
@@ -155,7 +156,6 @@ export const appAssets = Object.freeze([
   '/myagapay/liturgical-hero.css',
   '/myagapay/library.css',
   '/myagapay/app-header.css',
-  '/myagapay/manifest.webmanifest',
   '/myagapay/app-header.js',
   '/myagapay/groups.js',
   '/myagapay/groups-presentation.js',
