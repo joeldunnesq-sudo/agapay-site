@@ -15,6 +15,7 @@ interface AccountingJournalDraft {
   lines: AccountingJournalLine[];
 }
 interface AccountingJournalSummary {
+  bankMatch?: { accountCount: number; matchedAccountCount: number };
   entryNumber?: string;
   updatedAt?: string;
   memo?: string;

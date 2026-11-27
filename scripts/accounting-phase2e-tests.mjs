@@ -109,6 +109,32 @@ console.log('PASS - Banking history shows each saved transfer once with its send
 
 const { searchJournalEntries } = await import('../src/accounting/ledger/workspace.js');
 const recentActor = { ...actor, capabilities: [...actor.capabilities, 'accounting.view'] };
+const splitSummary = async (viewer = recentActor) => (await searchJournalEntries(db, {
+  actor: viewer, query: splitCheck.description, dateTo: splitCheck.entryDate,
+})).find((entry) => entry.id === checkEntry.id);
+assert.deepEqual((await splitSummary()).bankMatch, { accountCount: 2, matchedAccountCount: 0 });
+for (const [account, session, amount, matchedAccountCount] of [
+  [bank, reopened, '60.00', 1],
+  [savingsBank, savingsSession, '40.00', 2],
+]) {
+  const preview = await previewBankCsv({
+    actor, entitlementTier: 'mission', filename: 'check.csv',
+    csv: `date,description,amount\n2026-07-23,Foundation check,${amount}\n`,
+  });
+  await commitBankImport(db, { actor, entitlementTier: 'mission', bankAccountId: account.id, preview });
+  const statementRow = s.prepare("SELECT id FROM accounting_bank_transactions WHERE bank_account_id=? AND description='Foundation check'").get(account.id);
+  const eligible = await eligibleLedgerItems(db, { actor, entitlementTier: 'mission', reconciliationId: session.id });
+  const checkLine = eligible.find((entry) => entry.journalEntryId === checkEntry.id);
+  await confirmReconciliationMatch(db, {
+    actor, entitlementTier: 'mission', reconciliationId: session.id,
+    bankTransactionIds: [statementRow.id], journalLineIds: [checkLine.journalLineId],
+  });
+  const summary = await splitSummary();
+  assert.equal(summary.status, 'posted');
+  assert.deepEqual(summary.bankMatch, { accountCount: 2, matchedAccountCount });
+}
+assert.equal((await splitSummary({ ...recentActor, capabilities: ['accounting.view'] })).bankMatch, undefined);
+console.log('PASS - journal summaries distinguish a posted check from its confirmed bank matches on each account');
 const recentDraft = (entryDate) => createJournalDraft(db, {
   actor: recentActor,
   entryDate,

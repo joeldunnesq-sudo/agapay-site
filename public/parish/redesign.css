@@ -891,7 +891,12 @@ p.acct-period-error { flex-basis:100%; margin:0; color:#873d31; font:700 13px/1.
 .acct-overview-recent li,.acct-close-task-list li {
   display:flex; align-items:center; flex-wrap:wrap; gap:10px 16px; padding:12px 0; border-top:1px solid var(--line);
 }
-.acct-overview-recent li > div,.acct-close-task-list li > div:first-child { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; }
+.acct-recent-entry,.acct-close-task-list li > div:first-child { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; }
+.acct-recent-amount { font-variant-numeric:tabular-nums; white-space:nowrap; }
+.acct-recent-statuses,.acct-recent-footer { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.acct-recent-footer { justify-content:flex-end; padding-top:12px; border-top:1px solid var(--line); }
+.acct-status.acct-journal-status { font-size:11px; text-transform:none; line-height:1.35; }
+.acct-status.acct-bank-match-partial { background:#f6ecd9; color:#704713; }
 .acct-overview-recent li small { display:block; margin-top:4px; color:var(--stone); }
 .acct-close-context {
   display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:12px 16px;

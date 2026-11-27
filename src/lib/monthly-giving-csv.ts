@@ -191,10 +191,10 @@ export function monthlyGivingCsv(
     money(f.parishNetCents),
     money(f.donorCoveredFeeCents),
     o.source === 'outside'
-      ? 'Outside contribution; fees and bank net not verified'
+      ? 'Outside contribution (fee and payout details unavailable)'
       : o.stripeBalanceTransactionId
         ? 'Stripe balance transaction'
-        : 'Estimate / unverified',
+        : 'Estimated fees',
     o.source === 'outside' ? '' : money(o.refundedCents),
     o.refundedAt || '',
     status,

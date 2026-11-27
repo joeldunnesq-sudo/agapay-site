@@ -149,7 +149,7 @@ try {
   assert.equal(csv.status, 200);
   const csvText = await csv.text();
   assert.match(csvText, /Check 1001/);
-  assert.match(csvText, /Outside contribution; fees and bank net not verified/);
+  assert.match(csvText, /Outside contribution \(fee and payout details unavailable\)/);
   assert.doesNotMatch(csvText, /Check pledge/);
   assert.match(csvText, /Giving purpose/);
   assert.equal(
