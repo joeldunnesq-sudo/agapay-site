@@ -40,6 +40,12 @@ const NOTE_CATEGORIES = /* @__PURE__ */ new Set([
 ]);
 const BIOLOGICAL_SEXES = /* @__PURE__ */ new Set(['unknown', 'female', 'male']);
 const REVIEW_TYPES = Object.freeze({
+  donor_membership: {
+    reviewType: 'donor_membership',
+    sourceSystem: 'directory_change_requests',
+    capabilities: [DIRECTORY_CAPABILITIES.membershipsReview, DIRECTORY_CAPABILITIES.manage],
+    allowedActions: ['assign', 'unassign', 'begin', 'approve', 'deny', 'return', 'cancel', 'priority', 'note'],
+  },
   koinonia_membership: {
     reviewType: 'koinonia_membership',
     sourceSystem: 'directory_change_requests',

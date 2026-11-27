@@ -1,4 +1,5 @@
 // Generated from src/handlers/koinonia-access.ts by npm run build:server. Do not edit.
+import { DONOR_MEMBERSHIP_SOURCE } from '../directory/donor-membership.js';
 import { currentUser } from '../lib/authorization.js';
 import { d1First, d1Run, generateSecret, json, normalizeEmail, rateLimit } from '../lib/core.js';
 import { communicationsEnabledFor, directoryEnabledFor } from '../lib/entitlements.js';
@@ -170,7 +171,7 @@ async function findKoinoniaReview(env, parishId, userId) {
     WHERE request.parish_id = ?1 AND request.requester_user_id = ?2
       AND request.request_type = 'person_profile_review' AND request.status IN ('pending', 'denied')
       AND json_extract(request.requested_payload_json, '$.source')
-        IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access')
+        IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access', '${DONOR_MEMBERSHIP_SOURCE}')
     ORDER BY request.status = 'pending' DESC, request.updated_at DESC
     LIMIT 1`,
     parishId,
@@ -270,7 +271,7 @@ async function requestKoinoniaAccess(request, env) {
           WHERE parish_id = ?2 AND requester_user_id = ?3 AND target_id = ?4
             AND request_type = 'person_profile_review' AND status = 'pending'
             AND json_extract(requested_payload_json, '$.source')
-              IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access')
+              IN ('myagapay_directory_onboarding', 'myagapay_koinonia_access', '${DONOR_MEMBERSHIP_SOURCE}')
         )`,
         generateSecret('dir_req'),
         parishId,

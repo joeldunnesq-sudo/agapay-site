@@ -27,7 +27,7 @@ import './admin-person-records.js';
 import './admin-review-commands.js';
 import './admin-review-approval.js';
 import { listDirectoryNotes } from './admin-notes-duplicates.js';
-async function listDirectoryHouseholdsAdmin(env, { context, query = '', limit = 50 }) {
+async function listDirectoryHouseholdsAdmin(env, { context, query = '', limit = 50, offset = 0 }) {
   requireAny(actorDto(context), context.parishId, [
     DIRECTORY_CAPABILITIES.householdsManage,
     DIRECTORY_CAPABILITIES.requestsReview,
@@ -120,11 +120,12 @@ async function listDirectoryHouseholdsAdmin(env, { context, query = '', limit = 
         )
       )
       GROUP BY h.id
-      ORDER BY h.display_name
-      LIMIT ?3`,
+      ORDER BY h.display_name COLLATE NOCASE, h.id
+      LIMIT ?3 OFFSET ?4`,
     context.parishId,
     q,
-    Math.min(Number(limit) || 50, 100)
+    Math.max(1, Math.min(Math.trunc(Number(limit)) || 50, 100)),
+    Math.max(0, Math.min(Math.trunc(Number(offset)) || 0, Number.MAX_SAFE_INTEGER))
   );
   return rows.map((row) => ({
     id: row.id,

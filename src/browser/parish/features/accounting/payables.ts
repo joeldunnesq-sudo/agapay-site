@@ -3,6 +3,13 @@
 // Parish dashboard accounting: payables.
 // Classic script; preserve global names used by the dashboard and inline actions.
 
+let accountingOverviewBillFilter = '';
+
+function clearAccountingOverviewBillFilter() {
+  accountingOverviewBillFilter = '';
+  renderAccountingPane();
+}
+
 function accountingParishOnly() {
   return `<div class="acct-tier-gate"><span class="acct-kicker">Parish Accounting</span><h2>Advanced parish operations</h2><p>Payables and budgeting are included with the Parish tier. Mission Accounting continues to include the essential ledger and reports.</p></div>`;
 }
@@ -17,7 +24,7 @@ function renderAccountingPayables(pane: HTMLElement) {
     pane.innerHTML = '<p class="sw-tool-loading">Loading payables...</p>';
     return;
   }
-  if (accountingHomeTask === 'payables' && accountingPayablesView === 'bills') {
+  if ((accountingHomeTask === 'payables' || accountingOverviewBillFilter) && accountingPayablesView === 'bills') {
     renderAccountingBillQueue(pane, data);
     return;
   }
@@ -95,10 +102,23 @@ function renderAccountingBillQueue(pane: HTMLElement, data: AccountingPayablesWo
   const card = (bill: AccountingPayableItem) =>
     `<li><div><strong>${escapeHtml(bill.vendorName)}</strong><span>${escapeHtml(bill.description || bill.vendorInvoiceNumber || bill.billNumber)}</span><small>Due ${accountingDate(bill.dueDate)} · ${escapeHtml(bill.needsOtherApprover ? 'Another approver is needed' : labels[bill.status] || bill.status)}</small></div><div><strong>${accountingMoney(bill.amountDue ?? bill.totalAmount)}</strong><div class="acct-row-actions">${next(bill)}<button type="button" onclick="openAccountingBillDetail('${escapeAttr(bill.id)}')">Details</button></div></div></li>`;
   const done = (bill: AccountingPayableItem) => ['paid', 'rejected', 'voided'].includes(bill.status);
-  const open = bills
-    .filter((bill: AccountingPayableItem) => !done(bill))
-    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)));
-  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>Open bills</h2><p>Follow each bill from approval through payment.</p></div><div class="acct-row-actions">${actions.enter ? '<button class="acct-primary" type="button" onclick="showAccountingBillForm()">Enter bill</button>' : ''}<button type="button" onclick="setAccountingPayablesView('payments')">Payments &amp; checks</button></div></div><div id="accountingPhaseDForm"></div><ul class="acct-work-queue">${open.map(card).join('') || '<li>No open bills.</li>'}</ul><details><summary>Past bills</summary><ul class="acct-work-queue">${bills.filter(done).map(card).join('') || '<li>No past bills.</li>'}</ul></details></section>`;
+  const filter = accountingOverviewBillFilter;
+  const today = new Date().toISOString().slice(0, 10);
+  const matches =
+    filter === 'approvals'
+      ? (bill: AccountingPayableItem) => actions.approve && bill.status === 'submitted' && !bill.needsOtherApprover
+      : filter === 'overdue'
+        ? (bill: AccountingPayableItem) =>
+            actions.pay &&
+            ['posted', 'partially_paid'].includes(bill.status) &&
+            Number(bill.amountDue) > 0 &&
+            bill.dueDate &&
+            bill.dueDate < today
+        : (bill: AccountingPayableItem) => !done(bill);
+  const title =
+    filter === 'approvals' ? 'Bills awaiting your approval' : filter === 'overdue' ? 'Overdue bills' : 'Open bills';
+  const open = bills.filter(matches).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)));
+  pane.innerHTML = `<section class="acct-card"><div class="acct-list-head"><div><h2>${title}</h2>${filter ? '<button type="button" class="acct-link" onclick="clearAccountingOverviewBillFilter()">Show all bills</button>' : '<p>Follow each bill from approval through payment.</p>'}</div><div class="acct-row-actions">${actions.enter ? '<button class="acct-primary" type="button" onclick="showAccountingBillForm()">Enter bill</button>' : ''}<button type="button" onclick="setAccountingPayablesView('payments')">Payments &amp; checks</button></div></div><div id="accountingPhaseDForm"></div><ul class="acct-work-queue">${open.map(card).join('') || '<li>No matching bills.</li>'}</ul>${filter ? '' : `<details><summary>Past bills</summary><ul class="acct-work-queue">${bills.filter(done).map(card).join('') || '<li>No past bills.</li>'}</ul></details>`}</section>`;
 }
 
 function accountingPayablesTabs() {

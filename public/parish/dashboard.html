@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260901memorial1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=ff054ed9ded64b61" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=c6cddb4dc8f807b3" />
   <link rel="stylesheet" href="/parish/library.css?v=20260829fullscreen1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -190,6 +190,25 @@
       <div class="tab-panel active" id="tab-giving">
         <div id="setupWizardPane"></div>
         <!-- HERO -->
+        <details class="pdx-directory-reminder pdx-attention-banner" id="parishAttentionBanner" aria-labelledby="parishAttentionTitle" hidden>
+          <summary class="pdx-attention-heading">
+            <div class="pdx-directory-reminder-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></div>
+            <span id="parishAttentionTitle">Needs attention</span>
+            <span class="pdx-directory-reminder-badge" id="parishAttentionCount" hidden></span>
+            <svg class="pdx-attention-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 8 5 5 5-5"/></svg>
+          </summary>
+          <div class="pdx-attention-list">
+            <section class="pdx-attention-row" id="directoryReviewReminder" aria-labelledby="directoryReviewReminderTitle" hidden>
+              <h3 id="directoryReviewReminderTitle">Directory</h3>
+              <ul><li><button type="button" onclick="openDirectoryReviewQueue()">
+                <span class="pdx-directory-reminder-badge" id="directoryReviewReminderBadge" aria-hidden="true" hidden></span>
+                <span id="directoryReviewReminderCount" aria-live="polite"></span><span aria-hidden="true">→</span>
+              </button></li></ul>
+            </section>
+            <div id="parishOverviewTasks" aria-live="polite"></div>
+          </div>
+        </details>
+
         <section class="pdx-hero" id="pdxHero">
           <div class="pdx-hero-top">
             <div>
@@ -1608,7 +1627,7 @@ Generate Monthly Financial Report
               <div id="bookstoreStarterCatalog"><p class="sw-tool-loading">Loading...</p></div>
             </div>
           </section>
-<section class="bk-sales" id="bookstoreSalesPanel" aria-live="polite">
+<section class="bk-sales" id="bookstoreSalesPanel" tabindex="-1" aria-live="polite">
             <div class="bk-sales-head">
               <div class="bk-sales-head-copy">
                 <span class="bk-sales-eyebrow">My AGAPAY Purchases</span>
@@ -1898,17 +1917,17 @@ Generate Monthly Financial Report
 <script src="/parish/backup.js?v=13e38cd89fa1572e"></script>
 <script src="/parish/feature-registry.js?v=b1ab21289b59564b"></script>
 <script src="/parish/features/staff-access.js?v=0464a9452ef9b876"></script>
-<script src="/parish/features/directory.js?v=9b63dc85d233490f"></script>
+<script src="/parish/features/directory.js?v=765eb1cdcf4a6902"></script>
 <script src="/parish/features/library.js?v=bec3925960687e23"></script>
 <script src="/parish/features/sacraments/pastoral-followup.js?v=1d6bd0e1345d3d18"></script>
 <script src="/parish/features/sacraments/preparation.js?v=a740deb36bc2c83a"></script>
 <script src="/parish/features/sacraments.js?v=557ffeb7bc3dbe6d"></script>
 <script src="/parish/accounting-journey.js?v=8aea4d32b6874f07"></script>
 <script src="/parish/features/accounting/assets.js?v=96d3ef4a9818cd59"></script>
-<script src="/parish/features/accounting/workspace.js?v=151d7df21996a116"></script>
+<script src="/parish/features/accounting/workspace.js?v=a1938a51251c30f0"></script>
 <script src="/parish/features/accounting/treasurer.js?v=28961e7efb32ad56"></script>
 <script src="/parish/features/accounting/ledger.js?v=44158e7653b144e6"></script>
-<script src="/parish/features/accounting/payables.js?v=e46e74189f7b63e8"></script>
+<script src="/parish/features/accounting/payables.js?v=b9f338d3d89184ae"></script>
   <link rel="stylesheet" href="/parish/accounting-reports.css?v=6041c130a35b0250">
 <script src="/parish/features/accounting/report-documents.js?v=fd8112a2f8862524"></script>
 <script src="/parish/features/accounting/report-loaders.js?v=b12de6791b015bf8"></script>
@@ -1921,7 +1940,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/accounting.js?v=52cd1a42dca7936e"></script>
 <script src="/parish/features/commerce/bookstore-catalog.js?v=c228ee90fc233fb6"></script>
 <script src="/parish/features/commerce/bookstore-checkout.js?v=408c0df8ac281d32"></script>
-<script src="/parish/features/commerce/bookstore-sales.js?v=bb593e2f23b2fae2"></script>
+<script src="/parish/features/commerce/bookstore-sales.js?v=7c2d8c4737257372"></script>
 <script src="/parish/features/commerce/offerings.js?v=8aa08f521de7ddd6"></script>
 <script src="/parish/features/commerce/bookstore-counts.js?v=660f430cd2593a6e"></script>
 <script src="/parish/features/commerce/bookstore-inventory.js?v=2685b3ba6bbb82c6"></script>
@@ -1929,7 +1948,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/koinonia/ministries.js?v=d8d38cda87aa518e"></script>
 <script src="/parish/features/koinonia/bulletins.js?v=93fd335a4d84937f"></script>
 <script src="/parish/features/koinonia/announcements.js?v=6edf0b7b02889713"></script>
-<script src="/parish/features/koinonia/prayers.js?v=dd6236a3b2deedc6"></script>
+<script src="/parish/features/koinonia/prayers.js?v=d81365565bca034f"></script>
 <script src="/parish/features/koinonia/media.js?v=c49f0e24c56d5d23"></script>
 <script src="/parish/features/koinonia.js?v=d65ba8ed53875581"></script>
 <script src="/parish/features/onboarding.js?v=5791ad66f8dd1b59"></script>
@@ -1965,7 +1984,8 @@ Generate Monthly Financial Report
 <script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
 <script src="/parish/app-subscriptions-and-settlement.js?v=50c249e196063e22"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
-<script src="/parish/app.js?v=ab002068fc14ae7a"></script>
+<script src="/parish/overview-tasks.js?v=374a550c7ee30bdc"></script>
+<script src="/parish/app.js?v=9b135dfafca136c6"></script>
 <script src="/parish/stewardship-sections.js?v=2"></script>
 <script src="/parish/givers-sections.js"></script>
 </body>

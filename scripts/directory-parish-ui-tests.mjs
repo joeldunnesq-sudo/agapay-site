@@ -70,14 +70,15 @@ const checks = [
   [
     'directory views appear directly beneath the page header with plain-language labels',
     app.indexOf('pdx-dir-view-switcher') < app.indexOf('data-dir-panel="directory"') &&
-      app.includes('Families &amp; Members') &&
-      app.includes('Directory Management'),
+      app.includes('>Households</button>') &&
+      app.includes('>Review queue') &&
+      app.includes('>Directory tools</button>'),
   ],
   [
     'CSV and designed PDF directory downloads remain wired',
     app.includes("downloadDirectoryAdminExport('/exports/published-adults.csv')") &&
       app.includes("downloadDirectoryAdminExport('/exports/directory.pdf')") &&
-      app.includes('Download PDF'),
+      app.includes('Download directory PDF'),
   ],
   [
     'households lead with prototype initials and members',
@@ -105,8 +106,8 @@ const checks = [
   ],
   [
     'staff always sees complete contacts while eyes report donor-side sharing',
-    app.includes('Authorized parish staff always see the complete contact record') &&
-      app.includes('The eye reports the family’s sharing choice') &&
+    app.includes('Contact sharing') &&
+      app.includes('Family chose to share') &&
       app.includes('staffContact.email?.visibility') &&
       app.includes('private from parishioners'),
   ],
@@ -123,7 +124,7 @@ const checks = [
   [
     'directory management queue contains only completed member submissions',
     app.includes("fetch(directoryAdminApi('/queue')") &&
-      app.includes('Submission Review Queue') &&
+      app.includes('Submissions awaiting review') &&
       app.includes("queue.map((item) => ({ ...item, queueKind: 'submission' }))") &&
       !app.includes("queueKind: 'followup'") &&
       app.includes('directoryReviewQueueRows(managementQueue)'),
@@ -135,9 +136,7 @@ const checks = [
   ],
   [
     'guest donors and unfinished profiles are explicitly excluded from parish follow-up',
-    app.includes('Guest donors and unfinished profiles do not create parish follow-up') &&
-      !app.includes('Account links needed') &&
-      !app.includes('Adult account link needed'),
+    !app.includes('Account links needed') && !app.includes('Adult account link needed'),
   ],
   [
     'review queue exposes confirm, decline, and request-information actions',
@@ -164,7 +163,7 @@ const checks = [
   ],
   [
     'skills and exports are secondary disclosure tools rather than competing lists',
-    app.includes('<details class="pdx-dir-utilities">') && app.includes('Skills and exports'),
+    app.includes('data-dir-panel="settings"') && app.includes('<h2>Skills and service</h2>'),
   ],
   [
     'each adult can link a separate My AGAPAY identity inside one shared household',

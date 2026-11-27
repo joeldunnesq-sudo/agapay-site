@@ -1,10 +1,10 @@
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
-import assert from "node:assert/strict";
-import { seedDirectoryEntitlement } from "./lib/directory-entitlement-fixture.mjs";
-import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+import assert from 'node:assert/strict';
+import { seedDirectoryEntitlement } from './lib/directory-entitlement-fixture.mjs';
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import {
   addHouseholdAdmin,
@@ -36,18 +36,18 @@ import {
   removeDirectoryPersonFromParish,
   resolveDirectoryAdminContext,
   resolveDirectorySelfServiceContext,
-  transitionSelfServicePublication
-} from "../src/directory/index.js";
-import { handleDirectoryAdmin } from "../src/handlers/directory-admin.js";
-import { handleDirectorySelfService } from "../src/handlers/directory-self-service.js";
-import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from "../src/lib/identity.js";
-import { issueParishDashboardSession } from "../src/lib/core.js";
+  transitionSelfServicePublication,
+} from '../src/directory/index.js';
+import { handleDirectoryAdmin } from '../src/handlers/directory-admin.js';
+import { handleDirectorySelfService } from '../src/handlers/directory-self-service.js';
+import { ensurePlatformUser, issuePlatformUserSession, PLATFORM_USER_EMAIL_HEADER } from '../src/lib/identity.js';
+import { issueParishDashboardSession } from '../src/lib/core.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.join(__dirname, "..");
+const repoRoot = path.join(__dirname, '..');
 
 function migration(name) {
-  return readFileSync(path.join(repoRoot, "migrations", name), "utf8");
+  return readFileSync(path.join(repoRoot, 'migrations', name), 'utf8');
 }
 
 class FakeR2Bucket {
@@ -57,7 +57,7 @@ class FakeR2Bucket {
   async put(key, body, options = {}) {
     this.objects.set(key, {
       body: body instanceof ArrayBuffer ? new Uint8Array(body) : body,
-      httpMetadata: options.httpMetadata || {}
+      httpMetadata: options.httpMetadata || {},
     });
   }
   async get(key) {
@@ -70,27 +70,30 @@ class FakeR2Bucket {
 }
 
 function makeD1Env() {
-  const db = new DatabaseSync(":memory:");
-  db.exec("PRAGMA foreign_keys = ON;");
-  db.exec(migration("0001_production_records.sql"));
-  db.exec(migration("0014_audit_log.sql"));
-  db.exec(migration("0020_platform_identity.sql"));
-  db.exec(migration("0022_directory_canonical_foundation.sql"));
-  db.exec(migration("0023_directory_contact_privacy_publication.sql"));
-  db.exec(migration("0024_directory_invitations_claims.sql"));
-  db.exec(migration("0025_directory_self_service_phase2a.sql"));
-  db.exec(migration("0026_directory_media_phase2b.sql"));
-  db.exec(migration("0027_directory_admin_phase3a.sql"));
-  db.exec(migration("0028_directory_media_secure_transformation.sql"));
-  db.exec(migration("0030_directory_child_publication_phase4b.sql"));
-  db.exec(migration("0032_directory_phase5b_skills_completion.sql"));
-  db.exec(migration("0033_directory_household_namedays.sql"));
-  db.exec(migration("0082_directory_review_correspondence.sql"));
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON;');
+  db.exec(migration('0001_production_records.sql'));
+  db.exec(migration('0014_audit_log.sql'));
+  db.exec(migration('0020_platform_identity.sql'));
+  db.exec(migration('0022_directory_canonical_foundation.sql'));
+  db.exec(migration('0023_directory_contact_privacy_publication.sql'));
+  db.exec(migration('0024_directory_invitations_claims.sql'));
+  db.exec(migration('0025_directory_self_service_phase2a.sql'));
+  db.exec(migration('0026_directory_media_phase2b.sql'));
+  db.exec(migration('0027_directory_admin_phase3a.sql'));
+  db.exec(migration('0028_directory_media_secure_transformation.sql'));
+  db.exec(migration('0030_directory_child_publication_phase4b.sql'));
+  db.exec(migration('0032_directory_phase5b_skills_completion.sql'));
+  db.exec(migration('0033_directory_household_namedays.sql'));
+  db.exec(migration('0082_directory_review_correspondence.sql'));
 
   function wrap(sql) {
     return {
       _params: [],
-      bind(...params) { this._params = params; return this; },
+      bind(...params) {
+        this._params = params;
+        return this;
+      },
       async first() {
         const row = db.prepare(sql).get(...this._params);
         return row === undefined ? null : row;
@@ -101,59 +104,64 @@ function makeD1Env() {
       async run() {
         const info = db.prepare(sql).run(...this._params);
         return { success: true, meta: { changes: info.changes, last_row_id: info.lastInsertRowid } };
-      }
+      },
     };
   }
 
   const AGAPAY_DB = {
     prepare: (sql) => wrap(sql),
     async batch(statements) {
-      db.exec("BEGIN");
+      db.exec('BEGIN');
       try {
         const results = [];
         for (const statement of statements) results.push(await statement.run());
-        db.exec("COMMIT");
+        db.exec('COMMIT');
         return results;
       } catch (error) {
-        db.exec("ROLLBACK");
+        db.exec('ROLLBACK');
         throw error;
       }
-    }
+    },
   };
-  return { env: { AGAPAY_RATE_LIMITER: memoryRateLimiter(), AGAPAY_DB, AGAPAY_ENVIRONMENT: "test", DIRECTORY_MEDIA: new FakeR2Bucket() }, db };
+  return {
+    env: {
+      AGAPAY_RATE_LIMITER: memoryRateLimiter(),
+      AGAPAY_DB,
+      AGAPAY_ENVIRONMENT: 'test',
+      DIRECTORY_MEDIA: new FakeR2Bucket(),
+    },
+    db,
+  };
 }
 
 function png1x1() {
   return Uint8Array.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-    0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-    0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
-    0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41,
-    0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
-    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00,
-    0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
-    0x42, 0x60, 0x82
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,
+    0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49,
+    0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00,
+    0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
   ]).buffer;
 }
 
-function file(name = "family.png", type = "image/png") {
+function file(name = 'family.png', type = 'image/png') {
   return { name, type, arrayBuffer: async () => png1x1() };
 }
 
-function actor(parishId = "st-fiacre", capabilities = ["directory.manage"], userId = "seed-admin", personId = "") {
+function actor(parishId = 'st-fiacre', capabilities = ['directory.manage'], userId = 'seed-admin', personId = '') {
   return { userId, parishId, capabilities, personId };
 }
 
-function grant(db, { userId, parishId = "st-fiacre", capabilities }) {
-  const membershipId = `m_${userId}_${parishId}`.replace(/[^a-zA-Z0-9_]/g, "_");
-  db.prepare(`INSERT INTO parish_memberships
+function grant(db, { userId, parishId = 'st-fiacre', capabilities }) {
+  const membershipId = `m_${userId}_${parishId}`.replace(/[^a-zA-Z0-9_]/g, '_');
+  db.prepare(
+    `INSERT INTO parish_memberships
     (id, user_id, parish_id, role_template, status, invited_by_user_id, accepted_at, created_at, updated_at)
-    VALUES (?, ?, ?, 'administrator', 'active', 'test', datetime('now'), datetime('now'), datetime('now'))`)
-    .run(membershipId, userId, parishId);
+    VALUES (?, ?, ?, 'administrator', 'active', 'test', datetime('now'), datetime('now'), datetime('now'))`
+  ).run(membershipId, userId, parishId);
   for (const capability of capabilities) {
-    db.prepare("INSERT INTO membership_capabilities (id, membership_id, capability, granted_by_user_id, granted_at) VALUES (?, ?, ?, 'test', datetime('now'))")
-      .run(`${membershipId}_${capability}`.replace(/[^a-zA-Z0-9_]/g, "_"), membershipId, capability);
+    db.prepare(
+      "INSERT INTO membership_capabilities (id, membership_id, capability, granted_by_user_id, granted_at) VALUES (?, ?, ?, 'test', datetime('now'))"
+    ).run(`${membershipId}_${capability}`.replace(/[^a-zA-Z0-9_]/g, '_'), membershipId, capability);
   }
   return membershipId;
 }
@@ -161,46 +169,76 @@ function grant(db, { userId, parishId = "st-fiacre", capabilities }) {
 async function fixture() {
   const { env, db } = makeD1Env();
   seedDirectoryEntitlement(db);
-  const reviewerUser = await ensurePlatformUser(env, { email: "reviewer@example.org", displayName: "Reviewer" });
-  const requesterUser = await ensurePlatformUser(env, { email: "anna@example.org", displayName: "Anna Dunn" });
-  const limitedUser = await ensurePlatformUser(env, { email: "limited@example.org", displayName: "Limited" });
+  const reviewerUser = await ensurePlatformUser(env, { email: 'reviewer@example.org', displayName: 'Reviewer' });
+  const requesterUser = await ensurePlatformUser(env, { email: 'anna@example.org', displayName: 'Anna Dunn' });
+  const limitedUser = await ensurePlatformUser(env, { email: 'limited@example.org', displayName: 'Limited' });
   grant(db, {
     userId: reviewerUser.id,
     capabilities: [
-      "directory.requests.review",
-      "directory.corrections.review",
-      "directory.publication.review",
-      "directory.people.manage",
-      "directory.households.manage",
-      "directory.notes.view",
-      "directory.notes.manage",
-      "directory.assignments.manage",
-      "directory.audit.view",
-      "directory.private_contact.view",
-      "directory.skills.view",
-      "directory.invitations.manage"
-    ]
+      'directory.requests.review',
+      'directory.memberships.review',
+      'directory.corrections.review',
+      'directory.publication.review',
+      'directory.people.manage',
+      'directory.households.manage',
+      'directory.notes.view',
+      'directory.notes.manage',
+      'directory.assignments.manage',
+      'directory.audit.view',
+      'directory.private_contact.view',
+      'directory.skills.view',
+      'directory.invitations.manage',
+    ],
   });
-  grant(db, { userId: requesterUser.id, capabilities: ["directory.self.manage"] });
-  grant(db, { userId: limitedUser.id, capabilities: ["directory.requests.review"] });
+  grant(db, { userId: requesterUser.id, capabilities: ['directory.self.manage'] });
+  grant(db, { userId: limitedUser.id, capabilities: ['directory.requests.review'] });
 
   const seedActor = actor();
-  const reviewerPerson = await createPerson(env, { actor: seedActor, preferredName: "Reviewer" });
-  const adult = await createPerson(env, { actor: seedActor, preferredName: "Anna Dunn", legalName: "Anna Dunn", biologicalSex: "female" });
-  const spouse = await createPerson(env, { actor: seedActor, preferredName: "John Dunn", biologicalSex: "male" });
-  const household = await createHousehold(env, { actor: seedActor, displayName: "The Dunn Household" });
-  await addHouseholdMember(env, { actor: seedActor, householdId: household.id, personId: adult.id, relationship: "head" });
-  await addHouseholdMember(env, { actor: seedActor, householdId: household.id, personId: spouse.id, relationship: "spouse" });
+  const reviewerPerson = await createPerson(env, { actor: seedActor, preferredName: 'Reviewer' });
+  const adult = await createPerson(env, {
+    actor: seedActor,
+    preferredName: 'Anna Dunn',
+    legalName: 'Anna Dunn',
+    biologicalSex: 'female',
+  });
+  const spouse = await createPerson(env, { actor: seedActor, preferredName: 'John Dunn', biologicalSex: 'male' });
+  const household = await createHousehold(env, { actor: seedActor, displayName: 'The Dunn Household' });
+  await addHouseholdMember(env, {
+    actor: seedActor,
+    householdId: household.id,
+    personId: adult.id,
+    relationship: 'head',
+  });
+  await addHouseholdMember(env, {
+    actor: seedActor,
+    householdId: household.id,
+    personId: spouse.id,
+    relationship: 'spouse',
+  });
   await addHouseholdAdmin(env, { actor: seedActor, householdId: household.id, personId: adult.id });
-  await addParishAffiliation(env, { actor: seedActor, personId: adult.id, status: "member" });
-  await addParishAffiliation(env, { actor: seedActor, personId: spouse.id, status: "member" });
-  await linkExternalIdentity(env, { actor: seedActor, personId: adult.id, linkType: "platform_user", externalId: requesterUser.id });
-  await linkExternalIdentity(env, { actor: seedActor, personId: reviewerPerson.id, linkType: "platform_user", externalId: reviewerUser.id });
+  await addParishAffiliation(env, { actor: seedActor, personId: adult.id, status: 'member' });
+  await addParishAffiliation(env, { actor: seedActor, personId: spouse.id, status: 'member' });
+  await linkExternalIdentity(env, {
+    actor: seedActor,
+    personId: adult.id,
+    linkType: 'platform_user',
+    externalId: requesterUser.id,
+  });
+  await linkExternalIdentity(env, {
+    actor: seedActor,
+    personId: reviewerPerson.id,
+    linkType: 'platform_user',
+    externalId: reviewerUser.id,
+  });
 
   const selfContext = await resolveDirectorySelfServiceContext(env, { user: requesterUser });
   const reviewerContext = await resolveDirectoryAdminContext(env, {
-    request: requestWithSession("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", await issuePlatformUserSession(env, reviewerUser.id), reviewerUser.email),
-    parishId: "st-fiacre"
+    request: requestWithSession(
+      'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context',
+      await issuePlatformUserSession(env, reviewerUser.id),
+      reviewerUser.email
+    ),
+    parishId: 'st-fiacre',
   });
   return { env, db, reviewerUser, requesterUser, limitedUser, reviewerContext, selfContext, adult, spouse, household };
 }
@@ -209,35 +247,40 @@ function requestWithSession(url, session, email, init = {}) {
   return new Request(url, {
     ...init,
     headers: {
-      "Authorization": `Bearer ${session.token}`,
+      Authorization: `Bearer ${session.token}`,
       [PLATFORM_USER_EMAIL_HEADER]: email,
-      ...(init.headers || {})
-    }
+      ...(init.headers || {}),
+    },
   });
 }
 
-async function requestWithParishDashboardSession(env, db, parishId = "st-fiacre", init = {}) {
+async function requestWithParishDashboardSession(env, db, parishId = 'st-fiacre', init = {}) {
   const registration = {
     parishId,
-    parishName: parishId === "st-fiacre" ? "St. Fiacre Orthodox Church" : "Other Parish",
+    parishName: parishId === 'st-fiacre' ? 'St. Fiacre Orthodox Church' : 'Other Parish',
     contactEmail: `${parishId}@example.org`,
     verified: true,
-    subscriptionTier: "parish",
-    parishDashboardSessions: []
+    subscriptionTier: 'parish',
+    parishDashboardSessions: [],
   };
   const issued = await issueParishDashboardSession(registration);
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO registrations (reference, parish_id, data, received_at, updated_at)
     VALUES (?, ?, ?, datetime('now'), datetime('now'))
     ON CONFLICT(reference) DO UPDATE SET parish_id = excluded.parish_id, data = excluded.data, updated_at = datetime('now')
-  `).run(`reg_${parishId}`, parishId, JSON.stringify(issued.registration));
-  return new Request(`https://agapay.app/api/parish/dashboard/${encodeURIComponent(parishId)}/directory/admin/context`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${issued.token}`,
-      ...(init.headers || {})
+  `
+  ).run(`reg_${parishId}`, parishId, JSON.stringify(issued.registration));
+  return new Request(
+    `https://agapay.app/api/parish/dashboard/${encodeURIComponent(parishId)}/directory/admin/context`,
+    {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${issued.token}`,
+        ...(init.headers || {}),
+      },
     }
-  });
+  );
 }
 
 let passed = 0;
@@ -253,258 +296,524 @@ async function test(name, fn) {
   }
 }
 
-await test("migration creates review metadata and internal notes", async () => {
+await test('migration creates review metadata and internal notes', async () => {
   const { db } = makeD1Env();
-  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((row) => row.name);
-  assert.ok(tables.includes("directory_review_metadata"));
-  assert.ok(tables.includes("directory_internal_notes"));
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+    .all()
+    .map((row) => row.name);
+  assert.ok(tables.includes('directory_review_metadata'));
+  assert.ok(tables.includes('directory_internal_notes'));
 });
 
-await test("admin context accepts parish dashboard session and still resolves capability-scoped platform session", async () => {
+await test('admin context accepts parish dashboard session and still resolves capability-scoped platform session', async () => {
   const { env, db, reviewerUser } = await fixture();
   const parishDashboard = await requestWithParishDashboardSession(env, db);
-  const dashboardResponse = await handleDirectoryAdmin(parishDashboard, env, "st-fiacre");
+  const dashboardResponse = await handleDirectoryAdmin(parishDashboard, env, 'st-fiacre');
   assert.equal(dashboardResponse.status, 200);
-  assert.equal(dashboardResponse.headers.get("Cache-Control"), "private, no-store");
+  assert.equal(dashboardResponse.headers.get('Cache-Control'), 'private, no-store');
   const dashboardPayload = await dashboardResponse.json();
-  assert.equal(dashboardPayload.context.authenticationType, "parish_dashboard");
-  assert.equal(dashboardPayload.context.parishId, "st-fiacre");
+  assert.equal(dashboardPayload.context.authenticationType, 'parish_dashboard');
+  assert.equal(dashboardPayload.context.parishId, 'st-fiacre');
   assert.equal(dashboardPayload.context.permissions.canManagePeople, true);
 
-  const crossParish = await handleDirectoryAdmin(new Request("https://agapay.app/api/parish/dashboard/other-parish/directory/admin/context", {
-    headers: { Authorization: parishDashboard.headers.get("Authorization") }
-  }), env, "other-parish");
+  const crossParish = await handleDirectoryAdmin(
+    new Request('https://agapay.app/api/parish/dashboard/other-parish/directory/admin/context', {
+      headers: { Authorization: parishDashboard.headers.get('Authorization') },
+    }),
+    env,
+    'other-parish'
+  );
   assert.equal(crossParish.status, 401);
 
-  const selfServiceResponse = await handleDirectorySelfService(new Request("https://agapay.app/api/directory/self/profile", {
-    headers: parishDashboard.headers
-  }), env);
+  const selfServiceResponse = await handleDirectorySelfService(
+    new Request('https://agapay.app/api/directory/self/profile', {
+      headers: parishDashboard.headers,
+    }),
+    env
+  );
   assert.equal(selfServiceResponse.status, 401);
 
   const session = await issuePlatformUserSession(env, reviewerUser.id);
-  const response = await handleDirectoryAdmin(requestWithSession("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", session, reviewerUser.email), env, "st-fiacre");
+  const response = await handleDirectoryAdmin(
+    requestWithSession(
+      'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context',
+      session,
+      reviewerUser.email
+    ),
+    env,
+    'st-fiacre'
+  );
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.context.permissions.canReviewRequests, true);
 });
 
-await test("admin context denies unrecognized bearer token", async () => {
+await test('admin context denies unrecognized bearer token', async () => {
   const { env, reviewerUser } = await fixture();
-  const legacy = new Request("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", {
-    headers: { Authorization: "Bearer legacy-parish-token" }
+  const legacy = new Request('https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context', {
+    headers: { Authorization: 'Bearer legacy-parish-token' },
   });
-  const denied = await handleDirectoryAdmin(legacy, env, "st-fiacre");
+  const denied = await handleDirectoryAdmin(legacy, env, 'st-fiacre');
   assert.equal(denied.status, 401);
 
   const session = await issuePlatformUserSession(env, reviewerUser.id);
-  const response = await handleDirectoryAdmin(requestWithSession("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", session, reviewerUser.email), env, "st-fiacre");
+  const response = await handleDirectoryAdmin(
+    requestWithSession(
+      'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context',
+      session,
+      reviewerUser.email
+    ),
+    env,
+    'st-fiacre'
+  );
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.context.permissions.canReviewRequests, true);
 });
 
-await test("a downgrade revokes directory access for both dashboard and capability-scoped sessions", async () => {
+await test('a downgrade revokes directory access for both dashboard and capability-scoped sessions', async () => {
   const { env, db, reviewerUser } = await fixture();
   const dashboardRequest = await requestWithParishDashboardSession(env, db);
-  db.prepare("UPDATE registrations SET data=json_set(data,'$.subscriptionTier','starter') WHERE parish_id='st-fiacre'").run();
-  assert.equal((await handleDirectoryAdmin(dashboardRequest, env, "st-fiacre")).status, 403);
+  db.prepare(
+    "UPDATE registrations SET data=json_set(data,'$.subscriptionTier','starter') WHERE parish_id='st-fiacre'"
+  ).run();
+  assert.equal((await handleDirectoryAdmin(dashboardRequest, env, 'st-fiacre')).status, 403);
   const session = await issuePlatformUserSession(env, reviewerUser.id);
-  const platformRequest = requestWithSession("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context", session, reviewerUser.email);
-  assert.equal((await handleDirectoryAdmin(platformRequest, env, "st-fiacre")).status, 403);
+  const platformRequest = requestWithSession(
+    'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/context',
+    session,
+    reviewerUser.email
+  );
+  assert.equal((await handleDirectoryAdmin(platformRequest, env, 'st-fiacre')).status, 403);
 });
 
-await test("parish dashboard directory actions are audited as parish dashboard account", async () => {
+await test('parish dashboard directory actions are audited as parish dashboard account', async () => {
   const { env, db, household } = await fixture();
   const parishDashboard = await requestWithParishDashboardSession(env, db);
-  const response = await handleDirectoryAdmin(new Request("https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/notes", {
-    method: "POST",
-    headers: { Authorization: parishDashboard.headers.get("Authorization"), "Content-Type": "application/json" },
-    body: JSON.stringify({ targetType: "household", targetId: household.id, category: "verification", body: "Dashboard account review note." })
-  }), env, "st-fiacre");
+  const response = await handleDirectoryAdmin(
+    new Request('https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/notes', {
+      method: 'POST',
+      headers: { Authorization: parishDashboard.headers.get('Authorization'), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        targetType: 'household',
+        targetId: household.id,
+        category: 'verification',
+        body: 'Dashboard account review note.',
+      }),
+    }),
+    env,
+    'st-fiacre'
+  );
   assert.equal(response.status, 201);
-  const audit = db.prepare("SELECT actor_user_id, actor_type, metadata_json FROM audit_log WHERE action = 'directory.internal_note.created' ORDER BY created_at DESC LIMIT 1").get();
-  assert.equal(audit.actor_user_id, "st-fiacre");
-  assert.equal(audit.actor_type, "parish_dashboard_account");
+  const audit = db
+    .prepare(
+      "SELECT actor_user_id, actor_type, metadata_json FROM audit_log WHERE action = 'directory.internal_note.created' ORDER BY created_at DESC LIMIT 1"
+    )
+    .get();
+  assert.equal(audit.actor_user_id, 'st-fiacre');
+  assert.equal(audit.actor_type, 'parish_dashboard_account');
 });
 
-await test("queue aggregates Phase 2A change requests and publication submissions safely", async () => {
+await test('queue aggregates Phase 2A change requests and publication submissions safely', async () => {
   const { env, reviewerContext, selfContext, adult } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
-    parishId: "st-fiacre",
-    targetType: "person",
+    parishId: 'st-fiacre',
+    targetType: 'person',
     targetId: adult.id,
-    requestType: "person_profile_review",
-    summary: "Legal name spelling review",
-    payload: { legalName: "Anna Dunne" }
+    requestType: 'person_profile_review',
+    summary: 'Legal name spelling review',
+    payload: { legalName: 'Anna Dunne' },
   });
-  await transitionSelfServicePublication(env, { context: selfContext, ownerType: "person", ownerId: adult.id, status: "pending_approval" });
+  await transitionSelfServicePublication(env, {
+    context: selfContext,
+    ownerType: 'person',
+    ownerId: adult.id,
+    status: 'pending_approval',
+  });
   const queue = await listDirectoryReviewQueue(env, { context: reviewerContext });
-  assert.equal(queue.some((item) => item.sourceId === change.id && item.reviewType === "person_canonical_correction"), true);
-  assert.equal(queue.some((item) => item.reviewType === "publication_person"), true);
-  assert.ok(queue.every((item) => !("requestedPayloadJson" in item)));
+  assert.equal(
+    queue.some((item) => item.sourceId === change.id && item.reviewType === 'person_canonical_correction'),
+    true
+  );
+  assert.equal(
+    queue.some((item) => item.reviewType === 'publication_person'),
+    true
+  );
+  assert.ok(queue.every((item) => !('requestedPayloadJson' in item)));
 });
 
-await test("assignment, detail, approval, notification, and audit are transactional", async () => {
+await test('assignment, detail, approval, notification, and audit are transactional', async () => {
   const { env, db, reviewerContext, selfContext, adult } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
-    parishId: "st-fiacre",
-    targetType: "person",
+    parishId: 'st-fiacre',
+    targetType: 'person',
     targetId: adult.id,
-    requestType: "person_profile_review",
-    summary: "Legal name spelling review",
-    payload: { legalName: "Anna Dunne" }
+    requestType: 'person_profile_review',
+    summary: 'Legal name spelling review',
+    payload: { legalName: 'Anna Dunne' },
   });
-  await assignDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id, assigneeUserId: reviewerContext.user.id });
-  const detail = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
-  assert.equal(detail.proposed.legalName, "Anna Dunne");
+  await assignDirectoryReviewItem(env, {
+    context: reviewerContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+    assigneeUserId: reviewerContext.user.id,
+  });
+  const detail = await getDirectoryReviewItem(env, {
+    context: reviewerContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+  });
+  assert.equal(detail.proposed.legalName, 'Anna Dunne');
   const result = await decideDirectoryReviewItem(env, {
     context: reviewerContext,
-    sourceType: "change_request",
+    sourceType: 'change_request',
     sourceId: change.id,
-    decision: "approve",
+    decision: 'approve',
     expectedVersion: detail.item.version,
-    reasonCode: "verified"
+    reasonCode: 'verified',
   });
-  assert.equal(result.decision, "approve");
-  const person = db.prepare("SELECT legal_name FROM directory_people WHERE id = ?").get(adult.id);
-  assert.equal(person.legal_name, "Anna Dunne");
-  assert.equal(db.prepare("SELECT status FROM directory_change_requests WHERE id = ?").get(change.id).status, "completed");
-  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_notification_events WHERE event_type = 'directory.review.approved'").get().count, 1);
+  assert.equal(result.decision, 'approve');
+  const person = db.prepare('SELECT legal_name FROM directory_people WHERE id = ?').get(adult.id);
+  assert.equal(person.legal_name, 'Anna Dunne');
+  assert.equal(
+    db.prepare('SELECT status FROM directory_change_requests WHERE id = ?').get(change.id).status,
+    'completed'
+  );
+  assert.equal(
+    db
+      .prepare(
+        "SELECT COUNT(*) AS count FROM directory_notification_events WHERE event_type = 'directory.review.approved'"
+      )
+      .get().count,
+    1
+  );
   const audit = await listDirectoryAuditHistory(env, { context: reviewerContext });
-  assert.equal(audit.some((event) => event.action === "directory.review_item.approved"), true);
+  assert.equal(
+    audit.some((event) => event.action === 'directory.review_item.approved'),
+    true
+  );
 });
 
-await test("begin review is idempotent and an approval message survives metadata-only version changes", async () => {
+await test('begin review is idempotent and an approval message survives metadata-only version changes', async () => {
   const { env, db, reviewerContext, selfContext, adult } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
-    parishId: "st-fiacre",
-    targetType: "person",
+    parishId: 'st-fiacre',
+    targetType: 'person',
     targetId: adult.id,
-    requestType: "person_profile_review",
-    summary: "First-time profile review",
-    payload: { legalName: "Anna Dunne" }
+    requestType: 'person_profile_review',
+    summary: 'First-time profile review',
+    payload: { legalName: 'Anna Dunne' },
   });
-  const opened = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
-  const begun = await beginDirectoryReview(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
-  assert.notEqual(begun.item.version, opened.item.version, "beginning review should advance the optimistic-concurrency version");
-  const reopened = await beginDirectoryReview(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
-  assert.equal(reopened.item.version, begun.item.version, "reopening an in-progress review must not advance its version again");
+  const opened = await getDirectoryReviewItem(env, {
+    context: reviewerContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+  });
+  const begun = await beginDirectoryReview(env, {
+    context: reviewerContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+  });
+  assert.notEqual(
+    begun.item.version,
+    opened.item.version,
+    'beginning review should advance the optimistic-concurrency version'
+  );
+  const reopened = await beginDirectoryReview(env, {
+    context: reviewerContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+  });
+  assert.equal(
+    reopened.item.version,
+    begun.item.version,
+    'reopening an in-progress review must not advance its version again'
+  );
   const result = await decideDirectoryReviewItem(env, {
     context: reviewerContext,
-    sourceType: "change_request",
+    sourceType: 'change_request',
     sourceId: change.id,
-    decision: "approve",
+    decision: 'approve',
     expectedVersion: opened.item.version,
-    requesterNote: "Welcome to the parish directory."
+    requesterNote: 'Welcome to the parish directory.',
   });
-  assert.equal(result.decision, "approve");
-  const message = db.prepare("SELECT direction, body FROM directory_review_correspondence WHERE source_type = 'change_request' AND source_id = ?").get(change.id);
-  assert.equal(message.direction, "staff_to_member");
-  assert.equal(message.body, "Welcome to the parish directory.");
+  assert.equal(result.decision, 'approve');
+  const message = db
+    .prepare(
+      "SELECT direction, body FROM directory_review_correspondence WHERE source_type = 'change_request' AND source_id = ?"
+    )
+    .get(change.id);
+  assert.equal(message.direction, 'staff_to_member');
+  assert.equal(message.body, 'Welcome to the parish directory.');
 });
 
-await test("approving self-service profile setup approves requested contact publication preferences", async () => {
+await test('approving self-service profile setup approves requested contact publication preferences', async () => {
   const { env, db, reviewerContext, selfContext, adult, household } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
-    parishId: "st-fiacre",
-    targetType: "person",
+    parishId: 'st-fiacre',
+    targetType: 'person',
     targetId: adult.id,
-    requestType: "person_profile_review",
-    summary: "Approve submitted profile and contact preferences",
+    requestType: 'person_profile_review',
+    summary: 'Approve submitted profile and contact preferences',
     payload: {
-      preferredName: "Anna Dunn",
-      email: "anna.public@example.org",
-      phone: "555-202-3030",
+      preferredName: 'Anna Dunn',
+      email: 'anna.public@example.org',
+      phone: '555-202-3030',
       publicationPreferences: {
-        adultPreferredName: { visibility: "directory_members", publicationEligible: true },
-        adultEmail: { visibility: "directory_members", publicationEligible: true },
-        adultPhone: { visibility: "directory_members", publicationEligible: true }
+        adultPreferredName: { visibility: 'directory_members', publicationEligible: true },
+        adultEmail: { visibility: 'directory_members', publicationEligible: true },
+        adultPhone: { visibility: 'directory_members', publicationEligible: true },
       },
-      source: "myagapay_directory_onboarding"
-    }
+      source: 'myagapay_directory_onboarding',
+    },
   });
-  const detail = await getDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id });
-  assert.equal(detail.proposed.publicationPreferences.adultEmail.visibility, "directory_members");
+  const detail = await getDirectoryReviewItem(env, {
+    context: reviewerContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+  });
+  assert.equal(detail.proposed.publicationPreferences.adultEmail.visibility, 'directory_members');
   await decideDirectoryReviewItem(env, {
     context: reviewerContext,
-    sourceType: "change_request",
+    sourceType: 'change_request',
     sourceId: change.id,
-    decision: "approve",
-    expectedVersion: detail.item.version
+    decision: 'approve',
+    expectedVersion: detail.item.version,
   });
-  const publication = db.prepare("SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ? AND owner_type = 'person' AND owner_id = ?").get("st-fiacre", adult.id);
-  assert.equal(publication.status, "approved");
-  assert.equal(publication.approval_status, "approved");
-  const prefs = db.prepare("SELECT field_key, visibility, publication_eligible FROM directory_field_privacy_preferences WHERE owner_id = ? ORDER BY field_key").all(adult.id);
-  assert.deepEqual(prefs.map((row) => [row.field_key, row.visibility, row.publication_eligible]), [
-    ["adult_email", "directory_members", 1],
-    ["adult_phone", "directory_members", 1],
-    ["adult_preferred_name", "directory_members", 1]
-  ]);
-  const verification = db.prepare("SELECT verification_status, verification_due_at, verification_policy_version FROM directory_household_verifications WHERE household_id = ?").get(household.id);
-  assert.equal(verification.verification_status, "current");
+  const publication = db
+    .prepare(
+      "SELECT status, approval_status FROM directory_publication_profiles WHERE parish_id = ? AND owner_type = 'person' AND owner_id = ?"
+    )
+    .get('st-fiacre', adult.id);
+  assert.equal(publication.status, 'approved');
+  assert.equal(publication.approval_status, 'approved');
+  const prefs = db
+    .prepare(
+      'SELECT field_key, visibility, publication_eligible FROM directory_field_privacy_preferences WHERE owner_id = ? ORDER BY field_key'
+    )
+    .all(adult.id);
+  assert.deepEqual(
+    prefs.map((row) => [row.field_key, row.visibility, row.publication_eligible]),
+    [
+      ['adult_email', 'directory_members', 1],
+      ['adult_phone', 'directory_members', 1],
+      ['adult_preferred_name', 'directory_members', 1],
+    ]
+  );
+  const verification = db
+    .prepare(
+      'SELECT verification_status, verification_due_at, verification_policy_version FROM directory_household_verifications WHERE household_id = ?'
+    )
+    .get(household.id);
+  assert.equal(verification.verification_status, 'current');
   assert.ok(Number(verification.verification_due_at) > Date.now());
-  assert.equal(verification.verification_policy_version, "first-profile-review-v1");
+  assert.equal(verification.verification_policy_version, 'first-profile-review-v1');
 });
 
-await test("self approval and stale approval are denied", async () => {
+await test('self approval and stale approval are denied', async () => {
   const { env, reviewerContext, selfContext, adult, requesterUser } = await fixture();
   const change = await createDirectoryChangeRequest(env, {
     context: selfContext,
-    parishId: "st-fiacre",
-    targetType: "person",
+    parishId: 'st-fiacre',
+    targetType: 'person',
     targetId: adult.id,
-    requestType: "person_profile_review",
-    summary: "Legal name spelling review",
-    payload: { legalName: "Anna Dunne" }
+    requestType: 'person_profile_review',
+    summary: 'Legal name spelling review',
+    payload: { legalName: 'Anna Dunne' },
   });
   const requesterAdminContext = {
     user: { id: requesterUser.id, email: requesterUser.email, displayName: requesterUser.displayName },
-    parishId: "st-fiacre",
+    parishId: 'st-fiacre',
     personId: adult.id,
-    capabilities: ["directory.corrections.review"],
-    permissions: { canManagePeople: false, canManageProtected: false, canViewNotes: false, canAssign: false, canViewAudit: false, canViewPrivateContact: false }
+    capabilities: ['directory.corrections.review'],
+    permissions: {
+      canManagePeople: false,
+      canManageProtected: false,
+      canViewNotes: false,
+      canAssign: false,
+      canViewAudit: false,
+      canViewPrivateContact: false,
+    },
   };
-  const detail = await getDirectoryReviewItem(env, { context: requesterAdminContext, sourceType: "change_request", sourceId: change.id });
+  const detail = await getDirectoryReviewItem(env, {
+    context: requesterAdminContext,
+    sourceType: 'change_request',
+    sourceId: change.id,
+  });
   await assert.rejects(
-    () => decideDirectoryReviewItem(env, { context: requesterAdminContext, sourceType: "change_request", sourceId: change.id, decision: "approve", expectedVersion: detail.item.version }),
-    (error) => error instanceof DirectoryServiceError && error.code === "self_approval_denied"
+    () =>
+      decideDirectoryReviewItem(env, {
+        context: requesterAdminContext,
+        sourceType: 'change_request',
+        sourceId: change.id,
+        decision: 'approve',
+        expectedVersion: detail.item.version,
+      }),
+    (error) => error instanceof DirectoryServiceError && error.code === 'self_approval_denied'
   );
   await assert.rejects(
-    () => decideDirectoryReviewItem(env, { context: reviewerContext, sourceType: "change_request", sourceId: change.id, decision: "approve", expectedVersion: "old" }),
-    (error) => error instanceof DirectoryServiceError && error.code === "stale_review_item"
+    () =>
+      decideDirectoryReviewItem(env, {
+        context: reviewerContext,
+        sourceType: 'change_request',
+        sourceId: change.id,
+        decision: 'approve',
+        expectedVersion: 'old',
+      }),
+    (error) => error instanceof DirectoryServiceError && error.code === 'stale_review_item'
   );
 });
 
-await test("people, household, direct corrections, and notes are scoped and controlled", async () => {
+await test('people, household, direct corrections, and notes are scoped and controlled', async () => {
   const { env, reviewerContext, adult, spouse, household } = await fixture();
   const people = await listDirectoryPeopleAdmin(env, { context: reviewerContext });
-  assert.equal(people.some((person) => person.id === adult.id), true);
+  assert.equal(
+    people.some((person) => person.id === adult.id),
+    true
+  );
   assert.equal(people.find((person) => person.id === spouse.id)?.householdManaged, true);
   const spouseDetail = await getDirectoryPersonAdmin(env, { context: reviewerContext, personId: spouse.id });
   assert.equal(spouseDetail.accountAccess.linked, false);
-  assert.equal(spouseDetail.accountAccess.householdManaged, true, "a spouse is covered by the linked family account");
+  assert.equal(spouseDetail.accountAccess.householdManaged, true, 'a spouse is covered by the linked family account');
   const households = await listDirectoryHouseholdsAdmin(env, { context: reviewerContext });
-  assert.equal(households.some((item) => item.id === household.id), true);
-  const personDetail = await applyPersonDirectCorrection(env, { context: reviewerContext, personId: adult.id, expectedVersion: adult.updatedAt, patch: { preferredName: "Anna Dunne" } });
-  assert.equal(personDetail.preferredName, "Anna Dunne");
-  const householdDetail = await applyHouseholdDirectCorrection(env, { context: reviewerContext, householdId: household.id, expectedVersion: household.updatedAt, patch: { displayName: "Dunne Household" } });
-  assert.equal(householdDetail.household.displayName, "Dunne Household");
-  const note = await createDirectoryNote(env, { context: reviewerContext, targetType: "household", targetId: household.id, category: "verification", body: "Name spelling confirmed." });
-  assert.equal(note.category, "verification");
+  assert.equal(
+    households.some((item) => item.id === household.id),
+    true
+  );
+  const personDetail = await applyPersonDirectCorrection(env, {
+    context: reviewerContext,
+    personId: adult.id,
+    expectedVersion: adult.updatedAt,
+    patch: { preferredName: 'Anna Dunne' },
+  });
+  assert.equal(personDetail.preferredName, 'Anna Dunne');
+  const householdDetail = await applyHouseholdDirectCorrection(env, {
+    context: reviewerContext,
+    householdId: household.id,
+    expectedVersion: household.updatedAt,
+    patch: { displayName: 'Dunne Household' },
+  });
+  assert.equal(householdDetail.household.displayName, 'Dunne Household');
+  const note = await createDirectoryNote(env, {
+    context: reviewerContext,
+    targetType: 'household',
+    targetId: household.id,
+    category: 'verification',
+    body: 'Name spelling confirmed.',
+  });
+  assert.equal(note.category, 'verification');
 });
 
-await test("removing a person from the parish revokes directory and Koinonia eligibility without deleting their account or household", async () => {
+await test('paid home-parish donors enter membership review after account setup or a home-parish change', async () => {
+  const { env, db, reviewerUser, reviewerContext, requesterUser, adult } = await fixture();
+  const donor = (email, parishId, verified, name) =>
+    db
+      .prepare(
+        "INSERT INTO donors (email, default_parish_id, email_verified_at, updated_at, data) VALUES (?, ?, ?, datetime('now'), ?)"
+      )
+      .run(
+        email,
+        parishId,
+        verified ? '2026-11-01' : '',
+        JSON.stringify({ donorName: name, lastLoginAt: '2026-11-01' })
+      );
+  const gift = (id, email, paymentStatus, anonymous = false) =>
+    db
+      .prepare(
+        "INSERT INTO donor_offerings (id, donor_email, parish_id, payment_status, updated_at, data) VALUES (?, ?, 'st-fiacre', ?, datetime('now'), ?)"
+      )
+      .run(
+        id,
+        email,
+        paymentStatus,
+        JSON.stringify({ amountCents: 2500, giftType: 'general', publicAnonymous: anonymous })
+      );
+  const guest = 'new-member@example.org';
+  gift('first', guest, 'paid');
+  donor(requesterUser.email, 'other-parish', true, 'Anna Dunn');
+  db.prepare("UPDATE directory_parish_affiliations SET parish_id = 'other-parish' WHERE person_id = ?").run(adult.id);
+  donor('anonymous@example.org', 'st-fiacre', true, 'Private Gift');
+  gift('anonymous', 'anonymous@example.org', 'paid', true);
+  donor('unpaid@example.org', 'st-fiacre', true, 'Unpaid Gift');
+  gift('unpaid', 'unpaid@example.org', 'pending');
+  const session = await issuePlatformUserSession(env, reviewerUser.id);
+  const fetchQueue = async (query = '') => {
+    const request = requestWithSession(
+      'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/queue' + query,
+      session,
+      reviewerUser.email
+    );
+    const response = await handleDirectoryAdmin(request, env, 'st-fiacre');
+    assert.equal(response.status, 200, await response.clone().text());
+    return response.json();
+  };
+  const queue = async () => (await fetchQueue()).items.filter((row) => row.reviewType === 'donor_membership');
+  assert.deepEqual(await fetchQueue('?summary=1'), { ok: true, awaitingReview: 0 });
+  assert.deepEqual(await queue(), []);
+  donor(guest, 'st-fiacre', true, 'New Member');
+  assert.deepEqual(
+    (await queue()).map((item) => item.targetLabel),
+    ['New Member']
+  );
+  db.prepare("UPDATE donors SET default_parish_id = 'st-fiacre' WHERE email = ?").run(requesterUser.email);
+  gift('second', requesterUser.email, 'paid');
+  const rows = await queue();
+  assert.equal(rows.length, 2);
+  assert.deepEqual(await fetchQueue('?summary=1'), { ok: true, awaitingReview: 2 });
+  assert.equal(rows.find((item) => item.targetLabel === 'Anna Dunn')?.targetId, adult.id);
+  assert.equal((await queue()).length, 2);
+  const item = rows.find((row) => row.targetLabel === 'New Member');
+  assert.equal(
+    db.prepare('SELECT count(*) AS count FROM directory_parish_affiliations WHERE person_id = ?').get(item.targetId)
+      .count,
+    0
+  );
+  const decision = {
+    context: reviewerContext,
+    sourceType: item.sourceType,
+    sourceId: item.sourceId,
+    decision: 'approve',
+    expectedVersion: item.version,
+  };
+  db.prepare("UPDATE donors SET default_parish_id = 'other-parish' WHERE email = ?").run(guest);
+  await assert.rejects(() => decideDirectoryReviewItem(env, decision), /no longer eligible/);
+  db.prepare("UPDATE donors SET default_parish_id = 'st-fiacre' WHERE email = ?").run(guest);
+  assert.equal((await decideDirectoryReviewItem(env, decision)).ok, true);
+  assert.equal(
+    db.prepare('SELECT status FROM directory_parish_affiliations WHERE person_id = ?').get(item.targetId).status,
+    'member'
+  );
+  assert.equal(
+    db.prepare('SELECT count(*) AS count FROM directory_publication_profiles WHERE owner_id = ?').get(item.targetId)
+      .count,
+    0
+  );
+  assert.equal((await queue()).length, 1);
+  assert.deepEqual(await fetchQueue('?summary=1'), { ok: true, awaitingReview: 1 });
+  const [remaining] = await queue();
+  await decideDirectoryReviewItem(env, {
+    ...decision,
+    sourceId: remaining.sourceId,
+    expectedVersion: remaining.version,
+    decision: 'return',
+    requesterNote: 'Please confirm your preferred name.',
+  });
+  assert.deepEqual(await fetchQueue('?summary=1'), { ok: true, awaitingReview: 0 });
+});
+
+await test('removing a person from the parish revokes directory and Koinonia eligibility without deleting their account or household', async () => {
   const { env, db, reviewerContext, adult, household } = await fixture();
   const timestamp = Date.now();
-  db.prepare(`INSERT INTO directory_publication_profiles
+  db.prepare(
+    `INSERT INTO directory_publication_profiles
     (id, parish_id, owner_type, owner_id, status, approval_status, approved_by_user_id, approved_at, active, created_at, updated_at)
-    VALUES ('publication_remove_test', 'st-fiacre', 'person', ?, 'approved', 'approved', 'reviewer', ?, 1, ?, ?)`)
-    .run(adult.id, timestamp, timestamp, timestamp);
+    VALUES ('publication_remove_test', 'st-fiacre', 'person', ?, 'approved', 'approved', 'reviewer', ?, 1, ?, ?)`
+  ).run(adult.id, timestamp, timestamp, timestamp);
 
   const before = await getDirectoryPersonAdmin(env, { context: reviewerContext, personId: adult.id });
   assert.equal(before.parishConnected, true);
@@ -515,114 +824,172 @@ await test("removing a person from the parish revokes directory and Koinonia eli
     expectedVersion: before.person.version,
   });
 
-  assert.equal(removed.parishConnected, false, "the staff detail must clearly report that parish access was removed");
-  assert.equal(removed.publication.status, "paused", "person publication must be hidden immediately");
-  assert.equal(removed.accountAccess.linked, true, "the My AGAPAY identity link must be preserved");
-  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM directory_parish_affiliations WHERE person_id = ? AND parish_id = 'st-fiacre' AND active = 1").get(adult.id).count, 0);
-  assert.equal(db.prepare("SELECT active FROM directory_person_links WHERE person_id = ? AND link_type = 'platform_user'").get(adult.id).active, 1);
-  assert.equal(db.prepare("SELECT active FROM directory_household_members WHERE household_id = ? AND person_id = ?").get(household.id, adult.id).active, 1);
-  assert.equal(db.prepare("SELECT active FROM directory_people WHERE id = ?").get(adult.id).active, 1);
+  assert.equal(removed.parishConnected, false, 'the staff detail must clearly report that parish access was removed');
+  assert.equal(removed.publication.status, 'paused', 'person publication must be hidden immediately');
+  assert.equal(removed.accountAccess.linked, true, 'the My AGAPAY identity link must be preserved');
+  assert.equal(
+    db
+      .prepare(
+        "SELECT COUNT(*) AS count FROM directory_parish_affiliations WHERE person_id = ? AND parish_id = 'st-fiacre' AND active = 1"
+      )
+      .get(adult.id).count,
+    0
+  );
+  assert.equal(
+    db
+      .prepare("SELECT active FROM directory_person_links WHERE person_id = ? AND link_type = 'platform_user'")
+      .get(adult.id).active,
+    1
+  );
+  assert.equal(
+    db
+      .prepare('SELECT active FROM directory_household_members WHERE household_id = ? AND person_id = ?')
+      .get(household.id, adult.id).active,
+    1
+  );
+  assert.equal(db.prepare('SELECT active FROM directory_people WHERE id = ?').get(adult.id).active, 1);
 });
 
-await test("parish household records expose complete staff contact data with separate donor visibility", async () => {
+await test('parish household records expose complete staff contact data with separate donor visibility', async () => {
   const { env, reviewerContext, selfContext, adult, household } = await fixture();
   await createSelfServiceContact(env, {
     context: selfContext,
-    ownerType: "person",
+    ownerType: 'person',
     ownerId: adult.id,
-    data: { contactType: "email", value: "anna.private@example.org", label: "personal", primary: true, visibility: "private" }
+    data: {
+      contactType: 'email',
+      value: 'anna.private@example.org',
+      label: 'personal',
+      primary: true,
+      visibility: 'private',
+    },
   });
   await createSelfServiceContact(env, {
     context: selfContext,
-    ownerType: "person",
+    ownerType: 'person',
     ownerId: adult.id,
-    data: { contactType: "phone", value: "(555) 765-4321", label: "mobile", primary: true, visibility: "directory_members" }
+    data: {
+      contactType: 'phone',
+      value: '(555) 765-4321',
+      label: 'mobile',
+      primary: true,
+      visibility: 'directory_members',
+    },
   });
   await createSelfServiceAddress(env, {
     context: selfContext,
     householdId: household.id,
     data: {
-      addressType: "residential",
-      line1: "123 Parish Lane",
-      line2: "Unit 4",
-      city: "Amarillo",
-      region: "TX",
-      postalCode: "79101",
-      country: "US",
+      addressType: 'residential',
+      line1: '123 Parish Lane',
+      line2: 'Unit 4',
+      city: 'Amarillo',
+      region: 'TX',
+      postalCode: '79101',
+      country: 'US',
       primary: true,
-      visibility: "directory_members"
-    }
+      visibility: 'directory_members',
+    },
   });
   const rows = await listDirectoryHouseholdsAdmin(env, { context: reviewerContext });
   const row = rows.find((item) => item.id === household.id);
-  assert.equal(row.staffContact.email.value, "anna.private@example.org");
-  assert.equal(row.staffContact.email.visibility, "private");
-  assert.equal(row.staffContact.phone.value, "(555) 765-4321");
-  assert.equal(row.staffContact.phone.visibility, "directory_members");
-  assert.equal(row.staffContact.address.line1, "123 Parish Lane");
-  assert.equal(row.staffContact.address.visibility, "directory_members");
+  assert.equal(row.staffContact.email.value, 'anna.private@example.org');
+  assert.equal(row.staffContact.email.visibility, 'private');
+  assert.equal(row.staffContact.phone.value, '(555) 765-4321');
+  assert.equal(row.staffContact.phone.visibility, 'directory_members');
+  assert.equal(row.staffContact.address.line1, '123 Parish Lane');
+  assert.equal(row.staffContact.address.visibility, 'directory_members');
   const detail = await getDirectoryHouseholdAdmin(env, { context: reviewerContext, householdId: household.id });
-  assert.equal(detail.contacts.find((item) => item.contactType === "email").value, "anna.private@example.org");
-  assert.equal(detail.addresses[0].line1, "123 Parish Lane");
-  assert.equal(detail.addresses[0].directoryDisplay, "Amarillo, TX");
-  assert.equal("line1" in detail.addresses[0], true, "staff detail retains the full address");
+  assert.equal(detail.contacts.find((item) => item.contactType === 'email').value, 'anna.private@example.org');
+  assert.equal(detail.addresses[0].line1, '123 Parish Lane');
+  assert.equal(detail.addresses[0].directoryDisplay, 'Amarillo, TX');
+  assert.equal('line1' in detail.addresses[0], true, 'staff detail retains the full address');
 });
 
-await test("parish staff can link each adult spouse to a separate account in the shared household", async () => {
+await test('parish staff can link each adult spouse to a separate account in the shared household', async () => {
   const { env, reviewerUser, reviewerContext, spouse, household } = await fixture();
   const session = await issuePlatformUserSession(env, reviewerUser.id);
-  const response = await handleDirectoryAdmin(requestWithSession(
-    "https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/invitations",
-    session,
-    reviewerUser.email,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ personId: spouse.id, householdId: household.id, email: "spouse@example.org" })
-    }
-  ), env, "st-fiacre");
+  const response = await handleDirectoryAdmin(
+    requestWithSession(
+      'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/invitations',
+      session,
+      reviewerUser.email,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personId: spouse.id, householdId: household.id, email: 'spouse@example.org' }),
+      }
+    ),
+    env,
+    'st-fiacre'
+  );
   assert.equal(response.status, 201);
   const payload = await response.json();
   assert.equal(payload.invitation.intendedPersonId, spouse.id);
   assert.equal(payload.invitation.intendedHouseholdId, household.id);
   const spouseRecord = await getDirectoryPersonAdmin(env, { context: reviewerContext, personId: spouse.id });
-  assert.equal(spouseRecord.accountAccess.linked, false, "sending an invitation must not link the wrong account early");
+  assert.equal(spouseRecord.accountAccess.linked, false, 'sending an invitation must not link the wrong account early');
   assert.equal(spouseRecord.accountAccess.activeInvitation.id, payload.invitation.id);
 });
 
-await test("authorized parish staff can download a private PDF directory", async () => {
+await test('authorized parish staff can download a private PDF directory', async () => {
   const { env, reviewerUser } = await fixture();
   const session = await issuePlatformUserSession(env, reviewerUser.id);
-  const response = await handleDirectoryAdmin(requestWithSession(
-    "https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/exports/directory.pdf",
-    session,
-    reviewerUser.email
-  ), env, "st-fiacre");
+  const response = await handleDirectoryAdmin(
+    requestWithSession(
+      'https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/exports/directory.pdf',
+      session,
+      reviewerUser.email
+    ),
+    env,
+    'st-fiacre'
+  );
   assert.equal(response.status, 200);
-  assert.equal(response.headers.get("Content-Type"), "application/pdf");
-  assert.match(response.headers.get("Content-Disposition") || "", /st-fiacre-parish-directory\.pdf/);
-  assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+  assert.equal(response.headers.get('Content-Type'), 'application/pdf');
+  assert.match(response.headers.get('Content-Disposition') || '', /st-fiacre-parish-directory\.pdf/);
+  assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
   const bytes = new Uint8Array(await response.arrayBuffer());
-  assert.equal(String.fromCharCode(...bytes.slice(0, 4)), "%PDF");
+  assert.equal(String.fromCharCode(...bytes.slice(0, 4)), '%PDF');
 });
 
-await test("household admin detail exposes uploaded family photo preview metadata", async () => {
+await test('household admin detail exposes uploaded family photo preview metadata', async () => {
   const { env, reviewerContext, selfContext, household, reviewerUser } = await fixture();
-  const session = await createDirectoryMediaUploadSession(env, { context: selfContext, ownerType: "household", ownerId: household.id, visibility: "directory_members" });
-  await completeDirectoryMediaUpload(env, { context: selfContext, sessionId: session.id, file: file(), arrayBuffer: png1x1() });
+  const session = await createDirectoryMediaUploadSession(env, {
+    context: selfContext,
+    ownerType: 'household',
+    ownerId: household.id,
+    visibility: 'directory_members',
+  });
+  await completeDirectoryMediaUpload(env, {
+    context: selfContext,
+    sessionId: session.id,
+    file: file(),
+    arrayBuffer: png1x1(),
+  });
   const households = await listDirectoryHouseholdsAdmin(env, { context: reviewerContext });
   const householdRow = households.find((item) => item.id === household.id);
-  assert.equal(householdRow.photo.lifecycleStatus, "ready");
-  assert.match(householdRow.photo.url, /\/api\/parish\/dashboard\/st-fiacre\/directory\/admin\/media\/.+\/variants\/household_card/);
+  assert.equal(householdRow.photo.lifecycleStatus, 'ready');
+  assert.match(
+    householdRow.photo.url,
+    /\/api\/parish\/dashboard\/st-fiacre\/directory\/admin\/media\/.+\/variants\/household_card/
+  );
   const reviewerSession = await issuePlatformUserSession(env, reviewerUser.id);
-  const detailRequest = requestWithSession(`https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/households/${encodeURIComponent(household.id)}`, reviewerSession, reviewerUser.email);
-  const detailResponse = await handleDirectoryAdmin(detailRequest, env, "st-fiacre");
+  const detailRequest = requestWithSession(
+    `https://agapay.app/api/parish/dashboard/st-fiacre/directory/admin/households/${encodeURIComponent(household.id)}`,
+    reviewerSession,
+    reviewerUser.email
+  );
+  const detailResponse = await handleDirectoryAdmin(detailRequest, env, 'st-fiacre');
   assert.equal(detailResponse.status, 200);
   const payload = await detailResponse.json();
-  assert.equal(payload.household.photo.lifecycleStatus, "ready");
-  const mediaResponse = await handleDirectoryAdmin(requestWithSession("https://agapay.app" + payload.household.photo.url, reviewerSession, reviewerUser.email), env, "st-fiacre");
+  assert.equal(payload.household.photo.lifecycleStatus, 'ready');
+  const mediaResponse = await handleDirectoryAdmin(
+    requestWithSession('https://agapay.app' + payload.household.photo.url, reviewerSession, reviewerUser.email),
+    env,
+    'st-fiacre'
+  );
   assert.equal(mediaResponse.status, 200);
-  assert.match(mediaResponse.headers.get("Content-Type") || "", /^image\//);
+  assert.match(mediaResponse.headers.get('Content-Type') || '', /^image\//);
 });
 
 if (process.exitCode) {

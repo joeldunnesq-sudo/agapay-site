@@ -913,6 +913,8 @@ export async function searchMemberDirectory(
     q = '',
     type = 'all',
     ministryId = '',
+    letter = '',
+    sort = 'az',
     limit,
     cursor,
   }: {
@@ -920,6 +922,8 @@ export async function searchMemberDirectory(
     q?: string;
     type?: string;
     ministryId?: unknown;
+    letter?: string;
+    sort?: string;
     limit?: unknown;
     cursor?: unknown;
   }
@@ -935,7 +939,7 @@ export async function searchMemberDirectory(
     const allowed = await personIdsWithPublishedMinistry(env, { context, ministryId });
     scopedPeople = people.filter((item) => allowed.has(item.id));
   }
-  const items = applyBrowseFilters([...scopedPeople, ...households], { q: query, sort: 'az' });
+  const items = applyBrowseFilters([...scopedPeople, ...households], { q: query, letter, sort });
   const page = paginate(items, { limit, cursor });
   return { ...page, minimumQueryLength: 2, items: page.items.map(stripSearchText) };
 }

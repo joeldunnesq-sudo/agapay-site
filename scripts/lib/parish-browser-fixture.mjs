@@ -88,6 +88,17 @@ export async function openParishFixture(browser, dashboardResponse = () => ({ pa
     if (url.pathname.startsWith('/api/')) {
       const suffix = url.pathname.slice(base.length);
       const responseKey = Object.hasOwn(apiResponses, url.pathname) ? url.pathname : suffix;
+      if (url.searchParams.get('summary') === '1' && !Object.hasOwn(apiResponses, responseKey)) {
+        const summaries = {
+          '/directory/admin/queue': { awaitingReview: 0 },
+          '/sacraments': { awaitingReview: 0 },
+          '/prayer-requests': { awaitingReview: 0 },
+          '/bookstore/sales': { ready: 0, inventory: 0 },
+          '/accounting/payables/bills': { approvals: 0, overdue: 0 },
+          '/accounting/bank/reconciliations': { exceptions: 0 },
+        };
+        if (Object.hasOwn(summaries, suffix)) return route.fulfill({ json: summaries[suffix] });
+      }
       if (
         Object.hasOwn(apiResponses, url.pathname) ||
         (url.pathname.startsWith(base + '/') &&

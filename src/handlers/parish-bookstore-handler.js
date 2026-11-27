@@ -181,6 +181,26 @@ async function handleParishBookstore(request, env, parishId, subpath = '') {
   }
   if (segments[0] === 'sales' && request.method === 'GET') {
     const params = new URL(request.url).searchParams;
+    const ready = "(o.payment_status IN ('paid','partially_refunded') AND o.fulfillment_status = 'ready')";
+    const inventory =
+      "(o.payment_status IN ('paid','partially_refunded') AND o.fulfillment_status IN ('pending','ready') AND instr(COALESCE(o.parish_notes, ''), ?) > 0)";
+    if (params.get('summary') === '1') {
+      const row = await d1First(
+        env,
+        `SELECT COUNT(CASE WHEN ${ready} THEN 1 END) AS ready,
+        COUNT(CASE WHEN ${inventory} THEN 1 END) AS inventory
+        FROM commerce_orders o WHERE o.parish_id = ? AND o.commerce_module = 'bookstore'`,
+        BOOKSTORE_INVENTORY_ATTENTION,
+        parishId
+      );
+      return json(
+        { ready: Number(row?.ready || 0), inventory: Number(row?.inventory || 0) },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
+    const attention = params.get('attention');
+    const whereAttention =
+      attention === 'ready' ? ` AND ${ready}` : attention === 'inventory' ? ` AND ${inventory}` : '';
     const rangeParam = params.get('range') || '90d';
     const cursorParam = params.get('cursor') || '';
     const qRaw = (params.get('q') || '').trim().toLowerCase().slice(0, 80);
@@ -219,6 +239,7 @@ async function handleParishBookstore(request, env, parishId, subpath = '') {
         orderBinds.push(cAt, cAt, cId);
       }
     }
+    if (attention === 'inventory') orderBinds.push(BOOKSTORE_INVENTORY_ATTENTION);
     orderBinds.push(pageLimit + 1);
     const orderRows = await d1All(
       env,
@@ -233,7 +254,7 @@ async function handleParishBookstore(request, env, parishId, subpath = '') {
        LEFT JOIN donors d ON d.email = o.donor_email
        LEFT JOIN settlement_profiles sp ON sp.id = o.settlement_profile_id
        WHERE o.parish_id = ? AND o.commerce_module = 'bookstore'
-         AND o.payment_status IN ('paid','refunded','partially_refunded')${whereSearch}${whereCursor}
+         AND o.payment_status IN ('paid','refunded','partially_refunded')${whereSearch}${whereCursor}${whereAttention}
        ORDER BY o.created_at DESC, o.id DESC
        LIMIT ?`,
       ...orderBinds

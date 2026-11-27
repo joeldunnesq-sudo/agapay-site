@@ -65,6 +65,12 @@ export const NOTE_CATEGORIES = new Set([
 export const BIOLOGICAL_SEXES = new Set(['unknown', 'female', 'male']);
 
 export const REVIEW_TYPES: Readonly<Record<string, DirectoryReviewDefinition>> = Object.freeze({
+  donor_membership: {
+    reviewType: 'donor_membership',
+    sourceSystem: 'directory_change_requests',
+    capabilities: [DIRECTORY_CAPABILITIES.membershipsReview, DIRECTORY_CAPABILITIES.manage],
+    allowedActions: ['assign', 'unassign', 'begin', 'approve', 'deny', 'return', 'cancel', 'priority', 'note'],
+  },
   koinonia_membership: {
     reviewType: 'koinonia_membership',
     sourceSystem: 'directory_change_requests',

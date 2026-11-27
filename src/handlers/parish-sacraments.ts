@@ -298,6 +298,17 @@ export async function handleParishSacraments(request: Request, env: SacramentEnv
 
   let rows = [];
   try {
+    if (new URL(request.url).searchParams.get('summary') === '1') {
+      const row = await d1First<{ count: number; oldestAt: string | null }>(
+        env,
+        "SELECT COUNT(*) AS count, MIN(created_at) AS oldestAt FROM sacrament_requests WHERE parish_id = ? AND status = 'requested'",
+        parishId
+      );
+      return json(
+        { awaitingReview: Number(row?.count || 0), oldestAt: row?.oldestAt || null },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
     rows = await d1All<SacramentRow>(
       env,
       'SELECT * FROM sacrament_requests WHERE parish_id = ? ORDER BY created_at DESC LIMIT 200',

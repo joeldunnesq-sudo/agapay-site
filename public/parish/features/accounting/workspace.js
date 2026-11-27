@@ -672,6 +672,7 @@ function applyAccountingRegisterDefaultFund(accountSelect) {
   if (defaultFundId && fundSelect) fundSelect.value = defaultFundId;
 }
 function setAccountingView(view, onHome = false) {
+  if (view !== 'payables') accountingOverviewBillFilter = '';
   if (accountingPreviewOnly()) {
     renderAccountingPaywall();
     return;

@@ -347,6 +347,7 @@ function renderDashboard(preserveSettings = false) {
   if (overviewEmpty) overviewEmpty.style.display = 'none';
   renderSetupWizard();
   updateStarterPaywalls();
+  if (activeTab === 'giving') refreshParishAttention();
   if (preserveSettings) {
     window.ParishSettings?.renderPasswordNotice();
     return;
