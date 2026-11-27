@@ -27,7 +27,11 @@ function parishPrayerDate(value: unknown) {
 function filteredParishPrayerRequests() {
   const rows = prayerAdminState.requests || [];
   if (prayerAdminState.filter === 'review')
-    return rows.filter((item) => ['pending', 'flagged'].includes(item.status) || Number(item.reportCount || 0) > 0);
+    return rows.filter(
+      (item) =>
+        !['archived', 'declined'].includes(item.status) &&
+        (['pending', 'flagged'].includes(item.status) || Number(item.reportCount || 0) > 0)
+    );
   if (prayerAdminState.filter === 'active')
     return rows.filter((item) => item.status === 'active' && item.visibility === 'parish_members');
   if (prayerAdminState.filter === 'clergy')

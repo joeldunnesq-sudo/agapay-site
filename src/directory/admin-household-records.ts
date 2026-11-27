@@ -49,7 +49,12 @@ import { listDirectoryNotes } from './admin-notes-duplicates.js';
 
 export async function listDirectoryHouseholdsAdmin(
   env: Partial<Env>,
-  { context, query = '', limit = 50 }: { context: DirectoryReviewContext; query?: unknown; limit?: unknown }
+  {
+    context,
+    query = '',
+    limit = 50,
+    offset = 0,
+  }: { context: DirectoryReviewContext; query?: unknown; limit?: unknown; offset?: unknown }
 ) {
   requireAny(actorDto(context), context.parishId, [
     DIRECTORY_CAPABILITIES.householdsManage,
@@ -143,11 +148,12 @@ export async function listDirectoryHouseholdsAdmin(
         )
       )
       GROUP BY h.id
-      ORDER BY h.display_name
-      LIMIT ?3`,
+      ORDER BY h.display_name COLLATE NOCASE, h.id
+      LIMIT ?3 OFFSET ?4`,
     context.parishId,
     q,
-    Math.min(Number(limit) || 50, 100)
+    Math.max(1, Math.min(Math.trunc(Number(limit)) || 50, 100)),
+    Math.max(0, Math.min(Math.trunc(Number(offset)) || 0, Number.MAX_SAFE_INTEGER))
   );
   return rows.map((row) => ({
     id: row.id,

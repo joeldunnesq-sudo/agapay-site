@@ -672,6 +672,19 @@ export async function handleParishPrayerRequests(request: Request, env: Communit
   try {
     const normalized = String(subpath || '').replace(/^\/+|\/+$/g, '');
     if (!normalized && request.method === 'GET') {
+      if (new URL(request.url).searchParams.get('summary') === '1') {
+        await archiveExpiredPrayerRequests(env, parishId);
+        const row = await d1First<{ count: number }>(
+          env,
+          `SELECT COUNT(*) AS count FROM koinonia_prayer_requests request
+          WHERE request.parish_id = ? AND request.status NOT IN ('archived', 'declined')
+            AND (request.status IN ('pending', 'flagged') OR EXISTS (
+              SELECT 1 FROM koinonia_prayer_reports report WHERE report.request_id = request.id AND report.resolved_at IS NULL
+            ))`,
+          parishId
+        );
+        return privateJson({ awaitingReview: Number(row?.count || 0) });
+      }
       const [data, settings] = await Promise.all([
         listParishPrayerRequests(env, parishId),
         getPrayerSettings(env, parishId),

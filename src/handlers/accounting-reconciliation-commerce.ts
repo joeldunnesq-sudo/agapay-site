@@ -142,6 +142,28 @@ export async function handleAccountingReconciliationCommerce(request: Request, e
           preview: body.preview,
         }),
       });
+    if (request.method === 'GET' && path === '/bank/reconciliations' && url.searchParams.get('summary') === '1') {
+      if (
+        !ctx.actor.capabilities.some((item) =>
+          [
+            'accounting.reconciliation.match',
+            'accounting.reconciliation.adjust',
+            'accounting.reconciliation.complete',
+          ].includes(item)
+        )
+      )
+        return reply({ exceptions: 0 });
+      const [result] = await rows(
+        ctx.db,
+        `SELECT COUNT(*) AS exceptions FROM accounting_reconciliation_sessions s
+        WHERE s.status IN ('in_progress','reopened') AND (s.difference != 0 OR EXISTS (
+          SELECT 1 FROM accounting_bank_transactions t WHERE t.bank_account_id = s.bank_account_id
+            AND t.status = 'imported' AND t.unmatched_amount > 0
+            AND t.posted_date BETWEEN s.statement_start_date AND s.statement_end_date
+        ))`
+      );
+      return reply({ exceptions: result.exceptions });
+    }
     if (request.method === 'GET' && path === '/bank/reconciliations')
       return reply({
         ok: true,

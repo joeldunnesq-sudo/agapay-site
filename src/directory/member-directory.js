@@ -734,7 +734,10 @@ async function listMemberDirectoryHouseholds(env, { context, q = '', letter = ''
   const page = paginate(items, { limit, cursor });
   return { ...page, alphabet: alphabet(items), items: page.items.map(stripSearchText) };
 }
-async function searchMemberDirectory(env, { context, q = '', type = 'all', ministryId = '', limit, cursor }) {
+async function searchMemberDirectory(
+  env,
+  { context, q = '', type = 'all', ministryId = '', letter = '', sort = 'az', limit, cursor }
+) {
   const query = normalizeQuery(q);
   if (query.length < 2) return { items: [], nextCursor: '', totalVisible: 0, minimumQueryLength: 2 };
   const [people, households] = await Promise.all([
@@ -746,7 +749,7 @@ async function searchMemberDirectory(env, { context, q = '', type = 'all', minis
     const allowed = await personIdsWithPublishedMinistry(env, { context, ministryId });
     scopedPeople = people.filter((item) => allowed.has(item.id));
   }
-  const items = applyBrowseFilters([...scopedPeople, ...households], { q: query, sort: 'az' });
+  const items = applyBrowseFilters([...scopedPeople, ...households], { q: query, letter, sort });
   const page = paginate(items, { limit, cursor });
   return { ...page, minimumQueryLength: 2, items: page.items.map(stripSearchText) };
 }

@@ -19,13 +19,6 @@ function directoryEmptyState(title: string, subtitle: string) {
   return `<div class="pdx-dir-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>`;
 }
 
-function directoryPriorityBadgeClass(priority: string | undefined) {
-  const value = String(priority || '').toLowerCase();
-  if (value === 'urgent') return 'urgent';
-  if (value === 'high') return 'high';
-  return '';
-}
-
 function directoryPhotoPlaceholderElement(label: string) {
   const span = document.createElement('span');
   span.className = 'pdx-dir-thumb pdx-dir-thumb-placeholder';
@@ -135,15 +128,8 @@ function directoryReviewTypeLabel(type: string = '') {
     child_publication_review: 'Child sharing request',
     publication_media: 'Photo sharing request',
     person_canonical_correction: 'Member record correction',
+    donor_membership: 'Parish membership',
     koinonia_membership: 'Koinonia membership',
   };
   return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
-}
-
-function directoryMetric(label: string, value: unknown, iconPath: string) {
-  return `<div class="pdx-kpi-card">
-      <div class="pdx-kpi-label">${escapeHtml(label)}</div>
-      <div class="pdx-kpi-value">${escapeHtml(value ?? 0)}</div>
-      <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24">${iconPath || ''}</svg></div>
-    </div>`;
 }

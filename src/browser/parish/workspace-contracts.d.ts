@@ -365,3 +365,6 @@ interface DonorBookstoreExperienceProduct {
 declare function setDonorStatus(message: string, tone?: string): void;
 
 declare module '*attribution.js' {}
+
+declare function refreshParishAttention(): void;
+declare function syncParishAttentionBanner(): void;

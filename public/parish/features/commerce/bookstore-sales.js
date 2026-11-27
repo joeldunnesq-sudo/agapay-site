@@ -8,6 +8,16 @@ let bookstoreSalesState = {
   orders: [],
   nextCursor: null,
 };
+let bookstoreOrderAttention = '';
+let bookstoreSalesRequest = 0;
+function setBookstoreOrderAttention(attention) {
+  bookstoreOrderAttention = attention;
+  bookstoreSalesState.query = '';
+  return loadBookstoreSalesPanel(true);
+}
+function bookstoreAttentionQuery() {
+  return bookstoreOrderAttention ? '&attention=' + encodeURIComponent(bookstoreOrderAttention) : '';
+}
 function setBookstoreSalesRange(range) {
   if (bookstoreSalesState.range === range && bookstoreSalesState.loaded) return;
   bookstoreSalesState.range = range;
@@ -23,15 +33,20 @@ async function loadBookstoreSalesPanel(force = false) {
     renderBookstoreSalesPanel();
     return;
   }
-  if (bookstoreSalesState.loading) return;
+  if (bookstoreSalesState.loading && !force) return;
+  const request = ++bookstoreSalesRequest;
   bookstoreSalesState.loading = true;
   if (!bookstoreSalesState.loaded) body.innerHTML = '<p class="sw-tool-loading">Loading sales…</p>';
   try {
-    const res = await fetch(bookstoreApi('/sales?range=' + encodeURIComponent(bookstoreSalesState.range)), {
-      headers: authHeaders(),
-    });
+    const res = await fetch(
+      bookstoreApi('/sales?range=' + encodeURIComponent(bookstoreSalesState.range) + bookstoreAttentionQuery()),
+      {
+        headers: authHeaders(),
+      }
+    );
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Unable to load bookstore sales.');
+    if (request !== bookstoreSalesRequest) return;
     bookstoreSalesState.data = data;
     bookstoreSalesState.orders = data.orders || [];
     bookstoreSalesState.nextCursor = data.nextCursor || null;
@@ -41,7 +56,7 @@ async function loadBookstoreSalesPanel(force = false) {
   } catch (err) {
     body.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
   } finally {
-    bookstoreSalesState.loading = false;
+    if (request === bookstoreSalesRequest) bookstoreSalesState.loading = false;
   }
 }
 function bkAgo(iso) {
@@ -199,6 +214,7 @@ function renderBookstoreSalesPanel() {
             <input type="search" id="bookstoreOrderSearch" placeholder="Search buyer or item…" value="${escapeAttr(bookstoreSalesState.query || '')}" onkeydown="if(event.key==='Enter')searchBookstoreOrders(this.value)" />
           </div>
         </header>
+        ${bookstoreOrderAttention ? `<p>${bookstoreOrderAttention === 'ready' ? 'Orders ready to fulfill' : 'Inventory exceptions'} <button type="button" class="btn btn-ghost btn-sm" onclick="setBookstoreOrderAttention('')">Show all orders</button></p>` : ''}
         <div id="bookstoreOrderList" class="bk-order-list">${renderBookstoreOrderRows(bookstoreSalesState.orders)}</div>
         <div class="bk-ledger-foot">${bookstoreSalesState.nextCursor ? '<button class="btn btn-ghost btn-sm" type="button" onclick="loadMoreBookstoreOrders(this)">Load more orders</button>' : '<span class="bk-ledger-end">End of orders</span>'}</div>
       </section>`;
@@ -269,7 +285,8 @@ async function searchBookstoreOrders(query) {
       '/sales?range=' +
         encodeURIComponent(bookstoreSalesState.range) +
         '&q=' +
-        encodeURIComponent(bookstoreSalesState.query)
+        encodeURIComponent(bookstoreSalesState.query) +
+        bookstoreAttentionQuery()
     );
     const res = await fetch(url, { headers: authHeaders() });
     const data = await res.json().catch(() => ({}));
@@ -297,6 +314,7 @@ async function loadMoreBookstoreOrders(btn) {
       '/sales?range=' +
         encodeURIComponent(bookstoreSalesState.range) +
         (bookstoreSalesState.query ? '&q=' + encodeURIComponent(bookstoreSalesState.query) : '') +
+        bookstoreAttentionQuery() +
         '&cursor=' +
         encodeURIComponent(bookstoreSalesState.nextCursor)
     );
@@ -320,3 +338,4 @@ async function loadMoreBookstoreOrders(btn) {
     }
   }
 }
+Object.assign(window, { setBookstoreOrderAttention });

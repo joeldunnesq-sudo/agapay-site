@@ -1,3 +1,4 @@
+import { queueEligibleDonorMemberships } from '../directory/donor-membership.js';
 import type { DirectoryContext } from '../directory/contracts.js';
 import type { JsonResponseInit } from '../lib/http-responses.js';
 import type { CatalogRegistration } from './parish-giving-catalog.js';
@@ -423,6 +424,22 @@ export async function handleDirectoryAdmin(request: Request, env: Partial<Env>, 
       }
     }
     if (request.method === 'GET' && path === '/queue') {
+      if (
+        context.capabilities.includes('directory.memberships.review') ||
+        context.capabilities.includes('directory.manage')
+      )
+        await queueEligibleDonorMemberships(env, parishId);
+      if (url.searchParams.get('summary') === '1') {
+        const items = await listDirectoryReviewQueue(env, { context });
+        return privateJson({
+          ok: true,
+          awaitingReview: items.filter(
+            (item) =>
+              ['pending_review', 'assigned', 'in_review'].includes(item.queueStatus) &&
+              item.permittedActions.includes('approve')
+          ).length,
+        });
+      }
       return privateJson({
         ok: true,
         items: await listDirectoryReviewQueue(env, { context, filters: Object.fromEntries(url.searchParams) }),
@@ -522,6 +539,7 @@ export async function handleDirectoryAdmin(request: Request, env: Partial<Env>, 
           context,
           query: url.searchParams.get('q') || '',
           limit: url.searchParams.get('limit') || 50,
+          offset: url.searchParams.get('offset') || 0,
         }),
       });
     const householdMatch = path.match(/^\/households\/([^/]+)(?:\/correction)?$/);

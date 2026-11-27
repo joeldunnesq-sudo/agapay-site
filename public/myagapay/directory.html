@@ -1258,6 +1258,7 @@
     let directoryParish = { name: "Parish", city: "", state: "" };
     let skillListingsById = new Map();
     let memberSearchTimer = 0;
+    let memberBrowseRequest = 0;
     function goBackFromDirectory() {
       if (window.history.length > 1) window.history.back();
       else window.location.href = "/myagapay/";
@@ -1829,6 +1830,12 @@
         return `<button type="button" data-letter="${esc(letter)}" ${item.available ? "" : "disabled"} aria-current="${current === letter ? "true" : "false"} aria-label="${letter === "ALL" ? "All results" : `Names beginning with ${letter}`}">${esc(letter)}</button>`;
       }).join("");
     }
+    function syncMemberAlphabet() {
+      document.querySelectorAll("#memberAlphabet [data-letter]").forEach((button) => {
+        const selected = button.dataset.letter === (memberState.letter || "ALL");
+        button.setAttribute("aria-current", String(selected));
+      });
+    }
     function renderMemberCards(items = [], append = false) {
       const target = document.getElementById("memberResults");
       const household = firstHousehold();
@@ -1871,10 +1878,10 @@
         && (!memberState.skill || memberSkills(item).includes(memberState.skill))
       );
       renderMemberCards(items);
-      const activeFilters = [memberState.query, memberState.namedayMonth, memberState.skill].filter(Boolean).length;
+      const activeFilters = [memberState.query, memberState.letter, memberState.namedayMonth, memberState.skill].filter(Boolean).length;
       const label = `${items.length} ${items.length === 1 ? "family" : "families"}`;
       document.getElementById("directoryBrowseNote").textContent = activeFilters
-        ? `Showing ${label} with ${activeFilters} active ${activeFilters === 1 ? "filter" : "filters"}.`
+        ? `Showing ${label} with ${activeFilters} active ${activeFilters === 1 ? "filter" : "filters"}.${memberState.namedayMonth || memberState.skill ? " Nameday and skill filters apply to loaded families." : ""}`
         : "Search by family or member, then narrow by nameday or skill.";
       document.getElementById("directoryFilterSummary").textContent = activeFilters
         ? `${activeFilters} active ${activeFilters === 1 ? "filter" : "filters"} · ${label}`
@@ -1882,8 +1889,12 @@
       document.getElementById("clearDirectoryFilters").hidden = activeFilters === 0;
     }
     async function loadMemberDirectory({ append = false } = {}) {
-      if (!token || !email || memberState.loading) return;
+      if (!token || !email || (append && (memberState.loading || !memberState.cursor))) return;
+      const request = ++memberBrowseRequest;
+      const loadMore = document.getElementById("memberLoadMore");
       memberState.loading = true;
+      loadMore.disabled = true;
+      if (!append) loadMore.hidden = true;
       document.getElementById("memberProfile").hidden = true;
       const params = new URLSearchParams({
         q: memberState.query,
@@ -1893,27 +1904,37 @@
         cursor: append ? memberState.cursor : ""
       });
       try {
-        const endpoint = memberState.query.length >= 2
-          ? `/api/directory/member/search?${new URLSearchParams({ q: memberState.query, type: memberState.view, limit: "24", cursor: append ? memberState.cursor : "" })}`
-          : `/api/directory/member/${memberState.view}?${params}`;
-        const payload = await api(endpoint);
+        const searching = memberState.query.length >= 2;
+        if (searching) params.set("type", memberState.view);
+        const endpoint = searching ? "search" : memberState.view;
+        const payload = await api(`/api/directory/member/${endpoint}?${params}`);
+        if (request !== memberBrowseRequest) return;
         const result = payload.households || payload.people || payload.results || { items: [] };
         memberState.items = append ? [...memberState.items, ...(result.items || [])] : (result.items || []);
         populateMemberSkillFilter(memberState.items);
         refreshMemberCards();
         if (!append) renderNamedaySpotlight(memberState.items);
-        if (result.alphabet) renderAlphabet(result.alphabet);
         memberState.cursor = result.nextCursor || "";
         document.getElementById("memberLoadMore").hidden = !memberState.cursor;
       } catch (error) {
+        if (request !== memberBrowseRequest) return;
+        if (append) {
+          showNotice(error.message || "Unable to load more families. Please try again.", true);
+          return;
+        }
+        memberState.items = [];
         document.getElementById("memberResults").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
         document.getElementById("memberLoadMore").hidden = true;
       } finally {
-        memberState.loading = false;
+        if (request === memberBrowseRequest) {
+          memberState.loading = false;
+          loadMore.disabled = false;
+        }
       }
     }
     async function loadMemberHome() {
       if (!token || !email) return;
+      const request = memberBrowseRequest;
       try {
         const payload = await api("/api/directory/member");
         const directory = payload.directory || {};
@@ -1926,7 +1947,10 @@
         renderDirectoryIdentity();
         if (directory.privacyReminder) document.getElementById("memberDirectoryPrivacy").textContent = directory.privacyReminder;
         renderAlphabet(directory.alphabet?.households || []);
-        if (directory.households?.items) {
+        if (request !== memberBrowseRequest) return;
+        if (memberState.query || memberState.letter) {
+          await loadMemberDirectory();
+        } else if (directory.households?.items) {
           memberState.items = directory.households.items;
           memberState.cursor = directory.households.nextCursor || "";
           populateMemberSkillFilter(memberState.items);
@@ -1937,6 +1961,7 @@
           await loadMemberDirectory();
         }
       } catch (error) {
+        if (request !== memberBrowseRequest) return;
         document.getElementById("memberResults").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
       }
     }
@@ -2632,8 +2657,10 @@
           <div class="directory-review-thread">${(request.conversation || []).map((message) => `<div class="directory-review-message is-${esc(message.direction)}"><span>${message.direction === "staff_to_member" ? "Parish office" : "You"}</span><p>${esc(message.body)}</p></div>`).join("")}</div>
           <form class="directory-review-response" onsubmit="respondToDirectoryReviewRequest(event,'${esc(request.sourceType)}','${esc(request.sourceId)}')"><textarea name="message" maxlength="1200" required placeholder="Provide the information the parish requested…"></textarea><button type="submit">Send response and resubmit</button></form>
         </section>`).join("");
-      } catch (error) {
-        container.hidden = true;
+      } catch {
+        container.hidden = false;
+        container.innerHTML = '<p>Unable to check for messages from your parish.</p><button type="button" class="btn">Retry</button>';
+        container.querySelector("button").addEventListener("click", loadDirectoryReviewRequests, { once: true });
       }
     }
     async function respondToDirectoryReviewRequest(event, sourceType, sourceId) {
@@ -3450,12 +3477,19 @@
     document.getElementById("publicationActions").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-publication]");
       if (!button || !profileState?.currentPerson) return;
-      await api("/api/directory/publication/transition", {
-        method: "POST",
-        body: JSON.stringify({ ownerType: "person", ownerId: profileState.currentPerson.id, status: button.dataset.publication })
-      });
-      showNotice(button.dataset.publication === "paused" ? "Publication paused." : "Publication submitted for review.");
-      await loadDirectory();
+      button.disabled = true;
+      try {
+        await api("/api/directory/publication/transition", {
+          method: "POST",
+          body: JSON.stringify({ ownerType: "person", ownerId: profileState.currentPerson.id, status: button.dataset.publication })
+        });
+        showNotice(button.dataset.publication === "paused" ? "Publication paused." : "Publication submitted for review.");
+        await loadDirectory();
+      } catch (error) {
+        showNotice(error.message || "Unable to update your directory listing.", true);
+      } finally {
+        button.disabled = false;
+      }
     });
     document.getElementById("householdPublicationActions").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-household-publication]");
@@ -3640,6 +3674,7 @@
       const button = event.target.closest("[data-letter]");
       if (!button || button.disabled) return;
       memberState.letter = button.dataset.letter === "ALL" ? "" : button.dataset.letter;
+      syncMemberAlphabet();
       memberState.cursor = "";
       await loadMemberDirectory();
     });
@@ -3662,6 +3697,8 @@
     document.getElementById("clearDirectoryFilters").addEventListener("click", async () => {
       clearTimeout(memberSearchTimer);
       memberState.query = "";
+      memberState.letter = "";
+      syncMemberAlphabet();
       memberState.namedayMonth = "";
       memberState.skill = "";
       memberState.cursor = "";

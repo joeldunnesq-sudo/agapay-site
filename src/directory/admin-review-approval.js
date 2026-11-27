@@ -1,4 +1,5 @@
 // Generated from src/directory/admin-review-approval.ts by npm run build:server. Do not edit.
+import { DONOR_MEMBERSHIP_SOURCE, donorMembershipStillEligible } from './donor-membership.js';
 import { generateSecret } from '../lib/core.js';
 import '../lib/entitlements.js';
 import { actorDto } from './admin-actor.js';
@@ -118,7 +119,15 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
   const payload = JSON.parse(request.requested_payload_json || '{}');
   const additionalStatements = [];
   if (request.request_type === 'person_profile_review') {
-    if (payload.source === 'myagapay_koinonia_access') {
+    if (payload.source === 'myagapay_koinonia_access' || payload.source === DONOR_MEMBERSHIP_SOURCE) {
+      const donorMembership = payload.source === DONOR_MEMBERSHIP_SOURCE;
+      if (donorMembership && !(await donorMembershipStillEligible(env, context.parishId, request.requester_user_id))) {
+        throw new DirectoryServiceError(
+          'invalid_transition',
+          'The account is no longer eligible for automatic membership review.',
+          409
+        );
+      }
       const person = await d1First(
         env,
         `
@@ -166,7 +175,8 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
               SELECT ?, ?, ?, 'member', ?, ?
               WHERE NOT EXISTS (
                 SELECT 1 FROM directory_parish_affiliations
-                WHERE person_id = ? AND parish_id = ? AND active = 1 AND status != 'former_member'
+                WHERE person_id = ? AND parish_id = ? AND active = 1
+                  AND (status IN ('member', 'clergy', 'monastic') OR (? = 0 AND status != 'former_member'))
               )
               ON CONFLICT(person_id, parish_id, status) DO UPDATE
                 SET active = 1, left_date = NULL, updated_at = excluded.updated_at`,
@@ -178,13 +188,18 @@ async function approveReviewItem(env, { context, row, reasonCode, reviewerNote, 
             timestamp,
             person.id,
             context.parishId,
+            donorMembership ? 1 : 0,
           ],
         },
-        await householdVerificationStatement(env, {
-          context,
-          householdId,
-          policyVersion: 'koinonia-membership-review-v1',
-        })
+        ...(!donorMembership
+          ? [
+              await householdVerificationStatement(env, {
+                context,
+                householdId,
+                policyVersion: 'koinonia-membership-review-v1',
+              }),
+            ]
+          : [])
       );
       return markApproved(env, {
         context,

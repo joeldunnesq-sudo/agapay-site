@@ -144,6 +144,8 @@ async function handleDirectoryMember(request, env) {
         ok: true,
         results: await searchMemberDirectory(env, {
           context,
+          letter: url.searchParams.get('letter') || '',
+          sort: url.searchParams.get('sort') || 'az',
           q: url.searchParams.get('q') || '',
           type: url.searchParams.get('type') || 'all',
           ministryId: url.searchParams.get('ministryId') || '',

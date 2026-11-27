@@ -1,3 +1,4 @@
+import { DONOR_MEMBERSHIP_SOURCE } from './donor-membership.js';
 import type { SelfServiceSqlRow, SelfServiceContext } from './self-service-composition-contracts.js';
 
 import { d1First, generateSecret } from '../lib/core.js';
@@ -56,6 +57,8 @@ export async function createDirectoryChangeRequest(
     correlationId?: string;
   }
 ) {
+  if (payload?.source === DONOR_MEMBERSHIP_SOURCE)
+    throw new DirectoryServiceError('validation_failed', 'Home parish membership reviews are submitted automatically.');
   if (payload?.source === 'myagapay_koinonia_access') {
     throw new DirectoryServiceError(
       'validation_failed',

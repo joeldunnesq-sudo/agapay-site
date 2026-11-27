@@ -1,3 +1,4 @@
+import { DONOR_MEMBERSHIP_SOURCE } from './donor-membership.js';
 import type {
   DirectoryReviewSqlRow,
   DirectoryReviewContext,
@@ -119,7 +120,10 @@ export async function reviewRows(env: Partial<Env>, parishId: string) {
             CASE WHEN cr.request_type = 'person_profile_review'
               AND json_valid(cr.requested_payload_json)
               AND json_extract(cr.requested_payload_json, '$.source') = 'myagapay_koinonia_access'
-              THEN 'koinonia_membership' ELSE cr.request_type END AS review_key,
+              THEN 'koinonia_membership'
+              WHEN cr.request_type = 'person_profile_review' AND json_valid(cr.requested_payload_json)
+                AND json_extract(cr.requested_payload_json, '$.source') = '${DONOR_MEMBERSHIP_SOURCE}'
+              THEN 'donor_membership' ELSE cr.request_type END AS review_key,
             cr.request_type AS review_type, cr.status AS source_status, cr.created_at AS submitted_at,
             cr.updated_at AS source_updated_at, cr.requester_user_id, cr.requester_person_id, cr.target_type,
             cr.target_id, cr.household_id, cr.summary AS safe_summary,
@@ -442,5 +446,6 @@ export function sanitizePayload(payload: Record<string, unknown> | null, context
   const copy = { ...payload };
   if (!context.permissions.canManagePeople && 'legalName' in copy) copy.legalName = maskValue(copy.legalName);
   if (!context.permissions.canManageProtected) delete copy.protectedReason;
+  if (copy.source === DONOR_MEMBERSHIP_SOURCE && !context.permissions.canViewPrivateContact) delete copy.email;
   return copy;
 }
