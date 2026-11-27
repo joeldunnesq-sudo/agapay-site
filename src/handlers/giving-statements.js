@@ -139,6 +139,19 @@ async function combineHouseholdGiving(env, parishId, fiscalYear, byDonor) {
         GROUP BY p.household_id,p.recipient_id,p.spouse_id
         HAVING COUNT(c.consenting_user_id)=2`
     : '';
+  const globalConsentAvailable = await d1First(
+    env,
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='directory_global_giving_consent'"
+  );
+  const globalAccounts = globalConsentAvailable
+    ? `UNION
+       SELECT p.recipient_email,p.spouse_email,p.recipient_name,p.spouse_name
+         FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+         JOIN directory_global_giving_consent c ON c.recipient_user_id=p.recipient_id AND c.spouse_user_id=p.spouse_id
+        WHERE p.parish_id=?1
+        GROUP BY p.household_id,p.recipient_id,p.spouse_id
+        HAVING COUNT(c.consenting_user_id)=2`
+    : '';
   const links = await d1All(
     env,
     `
@@ -166,6 +179,7 @@ async function combineHouseholdGiving(env, parishId, fiscalYear, byDonor) {
      WHERE i.parish_id = ?1 AND i.combine_giving = 1 AND i.status = 'claimed'
        AND giver.id <> recipient.id
     ${linkedAccounts}
+    ${globalAccounts}
     )
     SELECT * FROM consenting_accounts a
      WHERE NOT EXISTS (SELECT 1 FROM giving_statements previous WHERE previous.parish_id=?1

@@ -27,6 +27,50 @@ const LINKED_STATEMENT_PAIRS_SQL = `
        WHERE f.parish_id=h.parish_id AND f.person_id IN (head.person_id,partner.person_id)
          AND f.active=1 AND (f.is_child=1 OR f.protected_person=1))
 `;
+async function listGlobalHouseholdStatementChoices(env, userId) {
+  const available = await d1First(
+    env,
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='directory_global_giving_consent'"
+  );
+  if (!available) return [];
+  return d1All(
+    env,
+    `
+    SELECT MIN(p.household_id) AS id, MIN(p.household_name) AS householdName,
+           p.recipient_name AS recipientName, p.recipient_id=?1 AS receivesStatement,
+           MAX(CASE WHEN c.consenting_user_id=?1 THEN 1 ELSE 0 END) AS optedIn,
+           COUNT(DISTINCT c.consenting_user_id)=2 AS bothOptedIn
+      FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+      LEFT JOIN directory_global_giving_consent c ON c.recipient_user_id=p.recipient_id AND c.spouse_user_id=p.spouse_id
+     WHERE ?1 IN (p.recipient_id,p.spouse_id)
+     GROUP BY p.recipient_id,p.spouse_id,p.recipient_name
+     ORDER BY householdName, id`,
+    userId
+  );
+}
+async function updateGlobalHouseholdStatementConsent(env, userId, householdId, enabled) {
+  const pair = await d1First(
+    env,
+    `
+    SELECT p.recipient_id,p.spouse_id FROM (${LINKED_STATEMENT_PAIRS_SQL}) p
+     WHERE p.household_id=?1 AND ?2 IN (p.recipient_id,p.spouse_id)`,
+    householdId,
+    userId
+  );
+  if (!pair) throw new DirectoryServiceError('not_found', 'Household statement sharing was not found.', 404);
+  await runAtomic(env, [
+    {
+      sql: enabled
+        ? `INSERT INTO directory_global_giving_consent (recipient_user_id,spouse_user_id,consenting_user_id,created_at)
+         VALUES (?1,?2,?3,?4) ON CONFLICT DO NOTHING`
+        : `DELETE FROM directory_global_giving_consent
+          WHERE recipient_user_id=?1 AND spouse_user_id=?2 AND consenting_user_id=?3`,
+      params: enabled
+        ? [pair.recipient_id, pair.spouse_id, userId, Date.now()]
+        : [pair.recipient_id, pair.spouse_id, userId],
+    },
+  ]);
+}
 async function listLinkedHouseholdStatementChoices(env, userId) {
   return d1All(
     env,
@@ -505,9 +549,11 @@ export {
   createHouseholdShareInvitation,
   householdShareApprovalStatement,
   inspectHouseholdShareInvitation,
+  listGlobalHouseholdStatementChoices,
   listHouseholdStatementSharing,
   listLinkedHouseholdStatementChoices,
   prepareLinkedHouseholdAtHomeParish,
   stopHouseholdStatementSharing,
+  updateGlobalHouseholdStatementConsent,
   updateLinkedHouseholdStatementConsent,
 };

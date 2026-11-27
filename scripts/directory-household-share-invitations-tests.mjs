@@ -10,10 +10,12 @@ import {
   createHouseholdShareInvitation,
   inspectHouseholdShareInvitation,
   listHouseholdStatementSharing,
+  listGlobalHouseholdStatementChoices,
   listLinkedHouseholdStatementChoices,
   prepareLinkedHouseholdAtHomeParish,
   stopHouseholdStatementSharing,
   updateLinkedHouseholdStatementConsent,
+  updateGlobalHouseholdStatementConsent,
 } from '../src/directory/household-share-invitations.js';
 import { DirectoryServiceError } from '../src/directory/foundation.js';
 import { decideDirectoryReviewItem } from '../src/directory/admin.js';
@@ -42,6 +44,7 @@ function makeEnv() {
     '0084_directory_household_share_invitations.sql',
     '0131_household_statement_consent.sql',
     '0132_linked_household_giving_consent.sql',
+    '0133_household_giving_consent_all_parishes.sql',
   ])
     db.exec(migration(name));
   db.exec(`CREATE TABLE directory_household_verifications (
@@ -357,7 +360,7 @@ await test('separate gifts combine only after both adults consent and the parish
   assert.deepEqual(await totals(), separate);
 });
 
-await test('a shared parish move keeps the old household and asks each spouse for new consent', async () => {
+await test('a shared parish move preserves the old household and supports parish-specific and all-parish consent', async () => {
   const { env, db } = seed();
   db.exec(`UPDATE platform_users SET email_verified_at=datetime('now');
     INSERT INTO directory_person_links (id,person_id,link_type,external_id,source,active,created_at,updated_at)
@@ -391,6 +394,19 @@ await test('a shared parish move keeps the old household and asks each spouse fo
   assert.deepEqual(await totals('parish_2'), [1000]);
   assert.deepEqual(await totals('parish_1'), [400, 600]);
   await updateLinkedHouseholdStatementConsent(env, 'user_claimant', choice.id, false);
+  assert.deepEqual(await totals('parish_2'), [400, 600]);
+  const globalChoices = await listGlobalHouseholdStatementChoices(env, 'user_claimant');
+  assert.equal(globalChoices.length, 1);
+  const [global] = globalChoices;
+  await assert.rejects(updateGlobalHouseholdStatementConsent(env, 'unrelated', global.id, true), { code: 'not_found' });
+  await updateGlobalHouseholdStatementConsent(env, 'user_claimant', global.id, true);
+  assert.deepEqual(await totals('parish_1'), [400, 600]);
+  assert.deepEqual(await totals('parish_2'), [400, 600]);
+  await updateGlobalHouseholdStatementConsent(env, 'user_inviter', global.id, true);
+  assert.deepEqual(await totals('parish_1'), [1000]);
+  assert.deepEqual(await totals('parish_2'), [1000]);
+  await updateGlobalHouseholdStatementConsent(env, 'user_claimant', global.id, false);
+  assert.deepEqual(await totals('parish_1'), [400, 600]);
   assert.deepEqual(await totals('parish_2'), [400, 600]);
 });
 

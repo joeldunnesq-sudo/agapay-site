@@ -1709,14 +1709,19 @@
       const section = document.getElementById("householdStatementSharing");
       const list = document.getElementById("householdStatementChoices");
       try {
-        const { choices = [], linkedChoices = [] } = await api("/api/directory/self/statement-sharing");
-        section.hidden = choices.length === 0 && linkedChoices.length === 0;
-        list.innerHTML = linkedChoices.map((choice) => {
+        const { choices = [], linkedChoices = [], globalChoices = [] } = await api("/api/directory/self/statement-sharing");
+        const settings = [...globalChoices.map((choice) => ({ ...choice, allParishes: true })), ...linkedChoices.filter((choice) => choice.optedIn)];
+        section.hidden = choices.length === 0 && settings.length === 0;
+        list.innerHTML = settings.map((choice) => {
           const status = choice.bothOptedIn ? "Both adults opted in" : choice.optedIn ? "Waiting for the other adult" : "Your consent is needed";
-          return `<div class="mini-card"><strong>${esc(choice.householdName)} · ${esc(choice.parishName)}</strong>
+          const scope = choice.allParishes ? "All shared parishes" : choice.parishName;
+          const description = choice.allParishes
+            ? "Applies to every parish where you share a household, including after a move. Each parish generates its own combined statement, including both adults’ itemized gifts, and sends it to"
+            : "Your existing consent applies to this parish. Its combined statement goes to";
+          return `<div class="mini-card"><strong>${esc(choice.householdName)} · ${esc(scope)}</strong>
             <small>${esc(status)}</small>
-            <small>The combined statement includes both adults’ itemized gifts to this parish and goes to ${esc(choice.receivesStatement ? "your account" : choice.recipientName)}.</small>
-            <button class="btn secondary" type="button" data-linked-statement-consent="${esc(choice.id)}" data-enabled="${choice.optedIn ? "false" : "true"}">${choice.optedIn ? "Withdraw my consent" : "Opt in to a combined statement"}</button></div>`;
+            <small>${esc(description)} ${esc(choice.receivesStatement ? "your account" : choice.recipientName)}.</small>
+            <button class="btn secondary" type="button" data-linked-statement-consent="${esc(choice.id)}" data-all-parishes="${Boolean(choice.allParishes)}" data-enabled="${choice.optedIn ? "false" : "true"}">${choice.optedIn ? "Withdraw my consent" : "Opt in at all shared parishes"}</button></div>`;
         }).join("") + choices.map((choice) => `<div class="mini-card"><strong>${esc(choice.householdName)}</strong>
           <small>${choice.receivesStatement ? `Statement sharing with ${esc(choice.memberName)}` : "Statement sharing with your inviter"}</small>
           <button class="btn secondary" type="button" data-stop-statement-sharing="${esc(choice.id)}">Stop statement sharing</button></div>`).join("");
@@ -1731,7 +1736,7 @@
         try {
           await api("/api/directory/self/statement-sharing/" + encodeURIComponent(linked.dataset.linkedStatementConsent), {
             method: "PUT",
-            body: JSON.stringify({ enabled: linked.dataset.enabled === "true" })
+            body: JSON.stringify({ enabled: linked.dataset.enabled === "true", allParishes: linked.dataset.allParishes === "true" })
           });
           await loadHouseholdStatementSharing();
         } catch (error) {
@@ -2574,9 +2579,6 @@
             `}
           </div>
           <div class="notice" data-household-share-result="${esc(member.personId)}" hidden></div>
-          ${isSelf || member.child || member.protectedPerson || member.accountLinked ? "" : `
-            <label><input type="checkbox" data-invite-combine-giving /> Offer a combined annual statement delivered to my account</label>
-          `}
         </div>`;
       }).join("") : '<div class="empty"><strong>No family members found.</strong>Add an adult or child below.</div>';
     }
@@ -3521,13 +3523,13 @@
           shareButton.textContent = "Creating link…";
           const payload = await api(`/api/directory/households/${encodeURIComponent(household.id)}/self/members/${encodeURIComponent(member.personId)}/share-link`, {
             method: "POST",
-            body: JSON.stringify({ combineGiving: Boolean(shareButton.closest(".household-member-row").querySelector("[data-invite-combine-giving]")?.checked) })
+            body: "{}"
           });
           const shareUrl = new URL(payload.invitation.sharePath, window.location.origin).href;
           const inputId = `householdShare${member.personId.replace(/[^a-z0-9_-]/gi, "")}`;
           result.hidden = false;
           result.innerHTML = `<strong>Send this private link to ${esc(member.preferredName)}.</strong>
-            <span>They can open it while signed in to their own My AGAPAY account. Your parish reviews the connection request. The link expires in 14 days.</span>
+            <span>They can open it while signed in to their own My AGAPAY account. Your parish reviews the connection request. Once connected, you can each opt in to combined giving statements from Settings. The link expires in 14 days.</span>
             <div class="actions"><input id="${esc(inputId)}" value="${esc(shareUrl)}" readonly aria-label="Household review link for ${esc(member.preferredName)}" />
             <button class="btn secondary" type="button" data-copy-household-share="${esc(inputId)}">Copy link</button></div>`;
           try {
