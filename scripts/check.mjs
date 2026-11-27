@@ -220,7 +220,7 @@ assert.ok(manifest.includes('"lang": "en-US"') && manifest.includes('"dir": "ltr
 for (const category of ["finance", "lifestyle", "education"]) {
   assert.ok(manifest.includes(`"${category}"`), `My AGAPAY PWA manifest should include the ${category} category`);
 }
-for (const shortcut of ["/myagapay", "/myagapay/calendar", "/myagapay/directory", "/myagapay/bookstore"]) {
+for (const shortcut of ["/myagapay/giving", "/myagapay/calendar", "/myagapay/directory", "/myagapay/bookstore"]) {
   assert.ok(manifest.includes(`"url": "${shortcut}"`), `My AGAPAY PWA manifest should include the ${shortcut} shortcut`);
 }
 const parsedManifest = JSON.parse(manifest);
@@ -234,7 +234,7 @@ for (const screenshot of ["giving-dashboard.jpg", "koinonia-2.jpg", "parish-book
   await access(`public/images/app/screenshots/${screenshot}`);
 }
 assert.equal((manifest.match(/"form_factor": "narrow"/g) || []).length, 3, "My AGAPAY PWA screenshots should declare the narrow mobile form factor");
-assert.ok(myAgapayLoginPage.includes("/myagapay/manifest.webmanifest?v=20260729c"), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
+assert.ok(myAgapayLoginPage.includes(appAssetUrl("/myagapay/manifest.webmanifest")), "My AGAPAY login should use the current manifest URL so PWA analyzers do not reuse a stale report");
 assert.ok(/navigator\.serviceWorker\.register\(\s*(["'])\/service-worker\.js\1/.test(myAgapayLoginPage), "My AGAPAY login HTML should directly register the service worker for PWABuilder's source parser");
 assert.ok(includesJavaScriptFragment(pwaRegister, "registerOrUpdate();") && !includesJavaScriptFragment(pwaRegister, 'window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
