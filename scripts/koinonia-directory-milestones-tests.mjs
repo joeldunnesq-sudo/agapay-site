@@ -84,8 +84,8 @@ const [page, script, styles, calendarPage, donorApp, directory, privacy, selfSer
 
 assert.match(
   page,
-  /id="parishLifeInboxMount"[\s\S]*id="parishCalendarEventList"/,
-  'the Parish Today panel should remain ahead of the synced calendar'
+  /id="parishCalendarEventList"[\s\S]*id="parishLifeInboxMount"/,
+  'the unified Home calendar should appear above the Parish Today panel'
 );
 assert.doesNotMatch(
   page,
