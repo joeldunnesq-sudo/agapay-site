@@ -362,3 +362,5 @@ async function loadMoreBookstoreOrders(btn: HTMLButtonElement | null) {
     }
   }
 }
+
+Object.assign(window, { setBookstoreOrderAttention });

@@ -1156,6 +1156,7 @@ function printableSkillsHtml(print: DirectoryUiPrint = {}) {
 
 let directoryQueueFocusRequested = false;
 
+Object.assign(window, { navigateDirectoryTabs, clearDirectoryBrowseFilters, closeDirectoryReview });
 window.ParishFeatureRegistry.register('directory', {
   load: loadDirectoryAdminTab,
   refresh: () => loadDirectoryAdminTab(true),

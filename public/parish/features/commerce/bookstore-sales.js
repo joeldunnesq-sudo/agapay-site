@@ -338,3 +338,4 @@ async function loadMoreBookstoreOrders(btn) {
     }
   }
 }
+Object.assign(window, { setBookstoreOrderAttention });

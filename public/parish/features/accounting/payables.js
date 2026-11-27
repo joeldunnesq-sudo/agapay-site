@@ -899,3 +899,4 @@ async function accountingPhaseDMutation(path, body, success) {
   accountingBudgetReport = null;
   await loadAccountingPhaseD();
 }
+Object.assign(window, { clearAccountingOverviewBillFilter });

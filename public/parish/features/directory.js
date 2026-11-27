@@ -17,12 +17,6 @@ function directoryHouseholdInitials(name) {
 function directoryEmptyState(title, subtitle) {
   return `<div class="pdx-dir-empty"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>`;
 }
-function directoryPriorityBadgeClass(priority) {
-  const value = String(priority || '').toLowerCase();
-  if (value === 'urgent') return 'urgent';
-  if (value === 'high') return 'high';
-  return '';
-}
 function directoryPhotoPlaceholderElement(label) {
   const span = document.createElement('span');
   span.className = 'pdx-dir-thumb pdx-dir-thumb-placeholder';
@@ -128,13 +122,6 @@ function directoryReviewTypeLabel(type = '') {
     koinonia_membership: 'Koinonia membership',
   };
   return labels[type] || String(type || 'Directory submission').replace(/_/g, ' ');
-}
-function directoryMetric(label, value, iconPath) {
-  return `<div class="pdx-kpi-card">
-      <div class="pdx-kpi-label">${escapeHtml(label)}</div>
-      <div class="pdx-kpi-value">${escapeHtml(value ?? 0)}</div>
-      <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24">${iconPath || ''}</svg></div>
-    </div>`;
 }
 function directoryAdminApi(path = '') {
   if (!currentParish?.parishId) return '';
@@ -1195,6 +1182,7 @@ function printableSkillsHtml(print = {}) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>Skills &amp; Service</title><style>body{font:14px/1.5 Arial;margin:32px;color:#171715}h1,h2{font-family:Georgia,serif}button{float:right;padding:9px 14px}article{break-inside:avoid;border-bottom:1px solid #ddd;padding:12px 0}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print</button><h1>Skills &amp; Service</h1><p>${escapeHtml(print.disclaimer || '')}</p>${rows || '<p>No active listings.</p>'}</body></html>`;
 }
 let directoryQueueFocusRequested = false;
+Object.assign(window, { navigateDirectoryTabs, clearDirectoryBrowseFilters, closeDirectoryReview });
 window.ParishFeatureRegistry.register('directory', {
   load: loadDirectoryAdminTab,
   refresh: () => loadDirectoryAdminTab(true),
