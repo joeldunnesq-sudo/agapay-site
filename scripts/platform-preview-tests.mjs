@@ -46,12 +46,12 @@ assert.ok(
 );
 assert.match(
   html,
-  /data-src="\/images\/app\/screenshots\/parish-bookstore\.jpg\?v=6e64e98eb164"/,
+  /data-src="\/images\/app\/screenshots\/preview\/bookstore\.jpg\?v=[a-f0-9]{12}"/,
   'homepage should defer the optimized Bookstore screenshot until its tab is shown'
 );
 assert.match(
   html,
-  /data-src="\/images\/app\/screenshots\/sacraments-and-services\.jpg\?v=d341e8558523"/,
+  /data-src="\/images\/app\/screenshots\/preview\/sacraments\.jpg\?v=[a-f0-9]{12}"/,
   'homepage should defer the optimized Sacraments & Services screenshot until its tab is shown'
 );
 assert.ok(
@@ -86,7 +86,7 @@ for (const icon of ['heart-give', 'handshake', 'orthodox-cross', 'grid']) {
   );
 }
 for (const capability of [
-  'Koinonia',
+  'Parish Life',
   'Directory',
   'Sacraments',
   'Events',
@@ -97,7 +97,7 @@ for (const capability of [
 ]) {
   assert.ok(html.includes(capability), `homepage should surface ${capability}`);
 }
-for (const room of ['give', 'koinonia', 'directory', 'sacraments', 'bookstore']) {
+for (const room of ['give', 'home', 'directory', 'sacraments', 'bookstore']) {
   assert.match(
     html,
     new RegExp(`role="tab"[^>]+data-room="${room}"`),
@@ -114,10 +114,10 @@ assert.match(
   /target\.addEventListener\('load', showTarget, \{ once: true \}\)/,
   'inactive app screenshots should replace the visible screen only after loading'
 );
-const expectedRoomOrder = ['give', 'bookstore', 'koinonia', 'directory', 'sacraments'];
+const expectedRoomOrder = ['home', 'give', 'bookstore', 'directory', 'sacraments'];
 const roomTabPositions = expectedRoomOrder.map((room) =>
   html.indexOf(
-    `role="tab" aria-selected="${room === 'give' ? 'true' : 'false'}" aria-controls="opPhoneScreen" data-room="${room}"`
+    `role="tab" aria-selected="${room === 'home' ? 'true' : 'false'}" aria-controls="opPhoneScreen" data-room="${room}"`
   )
 );
 assert.ok(
@@ -151,7 +151,7 @@ assert.match(
 );
 assert.match(
   html,
-  /og:image" content="https:\/\/agapay\.app\/images\/AGAPAY_social_share_v2\.png"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/,
+  /og:image" content="https:\/\/agapay\.app\/images\/app\/screenshots\/preview\/social\.jpg"[\s\S]*?og:image:width" content="1200"[\s\S]*?og:image:height" content="630"/,
   'homepage should use the supplied landscape social sharing image with accurate dimensions'
 );
 assert.match(html, /href="\/give\/request-demo"/, 'homepage should route parish demo requests to the existing form');
@@ -229,7 +229,7 @@ assert.match(
 assert.match(
   html,
   /op-connector-shot[\s\S]*?data-koinonia-preview/,
-  'homepage should show the scrolling Koinonia preview'
+  'homepage should show the scrolling Parish Life preview'
 );
 assert.match(css, /\.op-trust-grid[^\n]+padding-block:/, 'trust items should preserve the shared mobile gutters');
 assert.match(
