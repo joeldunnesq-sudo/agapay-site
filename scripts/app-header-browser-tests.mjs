@@ -208,13 +208,14 @@ try {
   ]);
   assert.equal(await tabs.first().getAttribute('aria-current'), 'page');
   assert.equal(await tabs.first().locator('path').first().getAttribute('d'), 'M3 11l9-8 9 8');
-  assert.equal(await tabs.nth(1).locator('path').first().getAttribute('d'), 'M7 13V7.5a1.5 1.5 0 0 1 3 0V13');
+  assert.equal(await tabs.nth(1).locator('svg circle').getAttribute('r'), '9');
   assert.match(
     await page.locator('.refined-liturgical-hero').evaluate((el) => getComputedStyle(el).backgroundImage),
     /fresco-vault/
   );
   const homeGive = page.locator('.refined-liturgical-hero #todayGiveLink');
   assert.equal(await homeGive.getAttribute('href'), '/myagapay/giving');
+  assert.equal(await homeGive.locator('svg').innerHTML(), await tabs.nth(1).locator('svg').innerHTML());
   await homeGive.click();
   await page.waitForURL('**/myagapay/giving');
   await page.locator('#greeting').waitFor();
@@ -230,6 +231,12 @@ try {
   await page.locator('.app-home-header').waitFor();
   await page.locator('.app-header-menu-button').click();
   const homeMenu = page.locator('.app-home-header [data-myagapay-app-menu]');
+  const givingLink = homeMenu.getByRole('link', { name: 'Giving', exact: true });
+  assert.equal(await givingLink.locator('svg').innerHTML(), await tabs.nth(1).locator('svg').innerHTML());
+  const sacramentsLink = homeMenu.getByRole('link', { name: 'Sacraments & Services', exact: true });
+  const chalice = await sacramentsLink.locator('svg path').getAttribute('d');
+  assert.equal(chalice, 'M5 4h14v3a7 7 0 0 1-14 0V4Zm7 10v6m-5 1h10M6 7h12');
+  assert.equal(await tabs.nth(4).locator('svg path').getAttribute('d'), chalice);
   const historyLink = homeMenu.getByRole('link', { name: 'Giving History', exact: true });
   assert.equal(
     await historyLink.locator('svg path').first().getAttribute('d'),

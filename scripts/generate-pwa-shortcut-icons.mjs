@@ -1,12 +1,7 @@
 import { chromium } from "playwright";
 
 const icons = {
-  give: `
-    <path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/>
-    <path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/>
-    <path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/>
-    <path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/>
-  `,
+  give: `<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9h-3.75a1.5 1.5 0 0 0 0 3h2.5a1.5 1.5 0 0 1 0 3H9.5"/>`,
   today: `
     <rect x="3" y="4" width="18" height="17" rx="2"/>
     <path d="M8 2v4M16 2v4M3 10h18"/>

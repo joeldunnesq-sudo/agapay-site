@@ -100,13 +100,27 @@ try {
   const assertReadings = async () => {
     await page.waitForFunction(() => document.querySelectorAll('#todayFeastNote .is-heading').length === 2);
     assert.deepEqual(await page.locator('#todayFeastNote .is-heading').allTextContents(), [
-      'Feast — Forerunner',
       'Readings of the day',
+      'Feast — Forerunner',
     ]);
     assert.match(await page.locator('#todayFeastNote').textContent(), /Galatians 4\.8-21/);
   };
   await page.goto('https://agapay.test/myagapay/parish-life');
   await assertReadings();
+  const summary = page.locator('#todayFeastNote .cal-reading-summary');
+  assert.deepEqual(await summary.allTextContents(), [
+    'Epistle: Galatians 4.8-21, Gospel: Mark 6.45-53',
+    'Epistle: Acts 13.25-33, Gospel: Mark 6.14-30',
+  ]);
+  await page.locator('.cal-readings-trigger').click();
+  const readingDialog = page.getByRole('dialog', { name: 'Today’s Scripture readings' });
+  await readingDialog.waitFor();
+  assert.deepEqual(await readingDialog.getByRole('heading', { level: 3 }).allTextContents(), [
+    'Readings of the day',
+    'Feast — Forerunner',
+  ]);
+  await page.keyboard.press('Escape');
+  await readingDialog.waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#calendarChurchYear').count(), 0);
   const heroColors = await page.locator('.parish-life-liturgical-hero').evaluate((element) => ({
     background: getComputedStyle(element).backgroundImage,

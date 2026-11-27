@@ -89,6 +89,8 @@
   cursor:pointer;
 }
 .cal-readings-trigger svg { color:#f1d39d; }
+.cal-readings-trigger .cal-reading-summary { line-height:1.55; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-readings-trigger .is-heading:not(:first-child) { margin-top:6px; }
 .cal-readings-trigger::after { content:''; width:6px; height:6px; flex:none; border-top:1px solid #f1d39d; border-right:1px solid #f1d39d; transform:rotate(45deg); }
 .refined-liturgical-hero :is(.cal-readings-trigger,.home-give-button):focus-visible { outline:2px solid #f8e3b3; outline-offset:3px; }
 .cal-readings-trigger:hover .cal-reading-line:not(.is-heading) { text-decoration:underline; text-underline-offset:3px; }

@@ -161,12 +161,15 @@ function liturgicalReadingRows(today = {}) {
     const type = String(reading?.type || '').toLowerCase();
     const ref = String(reading?.ref || '').trim();
     if (!ref || ref === 'Not listed' || (type !== 'epistle' && type !== 'gospel')) return;
-    const appointment = String(reading?.appointment || '').trim();
+    const appointment = String(reading?.appointment || '')
+      .trim()
+      .replace(/^(?:readings? )?of the day$/i, '');
     if (!groups.has(appointment)) groups.set(appointment, []);
     groups.get(appointment).push({ type, ref, preview: reading.preview });
   });
   const rows = [];
-  groups.forEach((readings, appointment) => {
+  const orderedGroups = [...groups].sort(([left], [right]) => Number(Boolean(left)) - Number(Boolean(right)));
+  orderedGroups.forEach(([appointment, readings]) => {
     if (groups.size > 1)
       rows.push({
         text: appointment
@@ -214,7 +217,21 @@ function renderLiturgicalReadingLines(note, rows) {
   trigger.innerHTML =
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 5c4-1 7 0 9 2 2-2 5-3 9-2v14c-4-1-7 0-9 2-2-2-5-3-9-2z"/></svg>';
   const references = document.createElement('span');
-  references.append(...lines);
+  let summary;
+  for (const line of lines) {
+    if (line.classList.contains('is-heading')) {
+      references.append(line);
+      summary = void 0;
+      continue;
+    }
+    if (!summary) {
+      summary = document.createElement('span');
+      summary.className = 'cal-reading-line cal-reading-summary';
+      references.append(summary);
+    }
+    if (summary.firstChild) summary.append(', ');
+    summary.append(line.textContent || '');
+  }
   trigger.append(references);
   trigger.addEventListener('click', () => dialog.showModal());
   note.replaceChildren(trigger);
