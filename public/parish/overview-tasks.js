@@ -80,7 +80,7 @@ async function refreshParishOverviewTasks() {
   const groups = {
     sacraments: ['Sacraments & Services', []],
     accounting: ['Accounting', []],
-    prayers: ['Koinonia', []],
+    prayers: ['Parish Life', []],
     bookstore: ['Bookstore', []],
   };
   const results = await Promise.allSettled(

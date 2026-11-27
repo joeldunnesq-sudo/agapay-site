@@ -399,7 +399,7 @@ assert.match(sources['src/handlers/parish-video.js'], /feeds\/videos\.xml\?chann
 assert.match(sources['public/parish/app.js'], /toggleYouTubeVideoPin[\s\S]*\/pin/);
 assert.match(
   sources['public/parish/dashboard.html'],
-  /youtube-pin-option[\s\S]*Pin in Recent Videos[\s\S]*Place this video at the top of Koinonia for parishioners/
+  /youtube-pin-option[\s\S]*Pin in Recent Videos[\s\S]*Place this video at the top of Parish Life for parishioners/
 );
 assert.match(
   sources['public/parish/style.css'],

@@ -147,7 +147,7 @@ function showParishFeatureRequestPopup(featureRequests = []) {
   const givingPlus = request.featureId === 'giving-plus';
   const ministryService = request.featureId === 'ministry-service';
   if (request.featureId === 'directory') {
-    if (heading) heading.textContent = 'Parishioners are requesting Koinonia access';
+    if (heading) heading.textContent = 'Parishioners are requesting Parish Life access';
     if (copy)
       copy.textContent =
         count === 1

@@ -336,7 +336,7 @@ try {
       await fixture.page.evaluate(() => openDirectoryHousehold('fixture-household'));
       const detail = fixture.page.locator('#directoryRecordDetail');
       assert.ok((await detail.innerText()).includes('Account connected'));
-      assert.ok((await detail.innerText()).includes('Koinonia allowed'));
+      assert.ok((await detail.innerText()).includes('Parish Life allowed'));
       await detail.getByText('Family directory information', { exact: true }).click();
       assert.ok((await detail.innerText()).includes('Street private'));
     },
