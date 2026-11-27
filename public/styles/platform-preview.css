@@ -72,12 +72,12 @@ p { margin: 0; line-height: 1.7; }
 /* Signature: single phone frame, tabbed "rooms" */
 .op-phone-stage { position: relative; display: flex; flex-direction: column; align-items: center; }
 .op-phone-frame {
-  position: relative; width: min(300px, 78vw); aspect-ratio: 9 / 19.4;
+  position: relative; width: min(300px, 78vw);
   border-radius: 38px; padding: 12px; background: linear-gradient(160deg, #12222f, var(--navy));
   box-shadow: 0 30px 60px -20px rgba(6,21,34,.45), 0 2px 0 rgba(255,255,255,.04) inset;
 }
 .op-phone-screen {
-  position: relative; width: 100%; height: 100%; border-radius: 26px; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 720 / 1560; border-radius: 0 0 26px 26px; overflow: hidden;
   background: var(--cream);
 }
 .op-phone-screen img {

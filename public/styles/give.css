@@ -424,7 +424,7 @@ a { color: inherit; }
   .give-koinonia-screens { min-height: 570px; }
   .give-koinonia-phone { width: min(228px,72vw); }
   .give-koinonia-phone-shell { padding: 5px; border-radius: 28px; }
-  .give-koinonia-viewport { border-radius: 23px; }
+  .give-koinonia-viewport { border-radius: 0 0 23px 23px; }
   .give-koinonia-phone figcaption { font-size: .61rem; }
   .give-council-actions .give-button { width: 100%; }
 }
