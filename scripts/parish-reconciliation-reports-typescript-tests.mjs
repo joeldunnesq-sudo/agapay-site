@@ -58,7 +58,7 @@ context.renderReconciliationPayouts([], []);
 context.renderReconciliationExceptions([]);
 context.renderReconciliationReviewHistory([]);
 context.renderReconciliationGiftActivity({});
-assert.match(panes.get('reconcileAllocationsPane').innerHTML, /No verified/);
+assert.match(panes.get('reconcileAllocationsPane').innerHTML, /No fund allocations are available/);
 assert.match(panes.get('reconcileExceptionsPane').innerHTML, /bank check is still required/);
 const data = {
   available: true,
@@ -106,7 +106,7 @@ context.renderReconciliationAllocations(data.allocations);
 assert.match(panes.get('reconcileAllocationsPane').innerHTML, /Fund &lt;safe>/);
 assert.match(panes.get('reconcileAllocationsPane').innerHTML, /Saved gift designation/);
 context.renderReconciliationPayouts(data.payouts, data.transactions);
-assert.match(panes.get('reconcilePayoutsPane').innerHTML, /Not verified/);
+assert.match(panes.get('reconcilePayoutsPane').innerHTML, /Breakdown unavailable/);
 for (const [difference, matched, label, chip] of [
   [0, false, '1 to review', 'attention'],
   [50, true, 'Composition delta', 'partial'],
@@ -152,9 +152,9 @@ let printed = printouts.at(-1);
 assert.equal(printed.popup.opener, null);
 assert.match(printed.html, /Hold \$5.00 for review/);
 assert.match(printed.html, /Savings &lt;safe>/);
-assert.match(printed.html, /DRAFT — NOT BANK-VERIFIED/);
+assert.match(printed.html, /DRAFT — BANK CONFIRMATION PENDING/);
 context.printReconciliationReport();
-assert.match(printouts.at(-1).html, /Not verified for this report revision/);
+assert.match(printouts.at(-1).html, /Bank confirmation pending for this version of the report/);
 data.state = 'reconciled';
 data.closeRecord = { bankStatementCents: 10000, closedAt: '2026-10-01', notes: 'Saved <safe>' };
 context.printReconciliationReport();

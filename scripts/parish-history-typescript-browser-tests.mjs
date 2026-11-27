@@ -83,7 +83,7 @@ function downloadBlob(name,blob){capturedDownload={name,blob};}`,
       assert.equal(await page.evaluate('giverRenders'), 2);
       assert.equal(await page.evaluate('optionsRenders'), 1);
       assert.equal(await page.locator('img').count(), 0);
-      assert.match(await page.locator('#historyTableWrap').textContent(), /Not verified/);
+      assert.match(await page.locator('#historyTableWrap').textContent(), /Fee details unavailable/);
       assert.equal(await page.locator('.parish-history-bar-column').count(), 6);
       await page.locator('#histTypeFilter').selectOption('recurring');
       await page.evaluate(() => filterHistory());
@@ -102,7 +102,7 @@ function downloadBlob(name,blob){capturedDownload={name,blob};}`,
       await page.locator('#histTypeFilter').selectOption('candle');
       await page.evaluate(() => filterHistory());
       await page.evaluate(() => exportHistoryCsv());
-      assert.ok((await page.evaluate('capturedDownload.blob.text()')).includes('"","25.00","","Not verified"'));
+      assert.ok((await page.evaluate('capturedDownload.blob.text()')).includes('"","25.00","","Not recorded"'));
       await page.locator('#histTypeFilter').selectOption('all');
       await page.locator('#histSearch').fill('special intention');
       await page.evaluate(() => filterHistory());

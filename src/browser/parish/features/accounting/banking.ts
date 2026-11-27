@@ -587,7 +587,10 @@ async function saveAccountingStatementMatch(
       'POST',
       review
     );
-    if (result && review.isConnected) await openAccountingStatementReview(id);
+    if (result) {
+      void refreshAccountingJournalBankMatches();
+      if (review.isConnected) await openAccountingStatementReview(id);
+    }
   } catch {
     if (review.isConnected)
       status.textContent = 'Unable to confirm the match. Reopen the statement to see its current status.';
@@ -767,6 +770,7 @@ async function confirmAccountingSuggestedMatch(id: string, index: number, button
     if (result) {
       accountingData.banking = null;
       await loadAccountingPhaseE();
+      void refreshAccountingJournalBankMatches();
       await showAccountingMatchSuggestions(id);
     }
   } catch (error) {

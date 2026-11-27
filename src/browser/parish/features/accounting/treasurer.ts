@@ -233,20 +233,59 @@ function renderAccountingPostingPeriods(pane: HTMLElement) {
   </section>`;
 }
 
+function accountingJournalStatus(status = 'draft') {
+  return `<span class="acct-status acct-journal-status ${status === 'posted' ? 'posted' : ''}">${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span>`;
+}
+
+function accountingJournalBankMatch(
+  entry: { status?: string; bankMatch?: AccountingJournalSummary['bankMatch'] },
+  showUnmatched = true
+) {
+  if (!entry.bankMatch || entry.status === 'voided') return '';
+  const { accountCount, matchedAccountCount } = entry.bankMatch;
+  if (!showUnmatched && !matchedAccountCount) return '';
+  const allMatched = matchedAccountCount === accountCount;
+  const canMatch = entry.status === 'posted' || entry.status === 'reversed';
+  const label = !canMatch
+    ? 'Match after posting'
+    : allMatched
+      ? 'Matched to bank'
+      : matchedAccountCount
+        ? `Matched ${matchedAccountCount} of ${accountCount} bank accounts`
+        : 'Ready for reconciliation';
+  const tone = canMatch && allMatched ? 'posted' : matchedAccountCount ? 'acct-bank-match-partial' : '';
+  return `<span class="acct-status acct-journal-status ${tone}">${escapeHtml(label)}</span>`;
+}
+
 function accountingOverviewRecentActivity() {
   const entries = accountingData.recentActivity;
+  const hasBankActivity = entries?.some((entry) => entry.status === 'posted' && entry.bankMatch);
   const rows = (entries || []).map((entry) => {
     const amount = entry.totalDebits ?? entry.total_debits ?? 0;
     return `<li>
-      <div><strong>${escapeHtml(entry.description || entry.entryNumber || 'Journal entry')}</strong><small>${accountingDate(entry.updatedAt || entry.postingDate || entry.entryDate)}</small></div>
-      ${amount > 0 ? `<strong>${accountingMoney(amount)}</strong>` : ''}
-      <span class="acct-status ${entry.status === 'posted' ? 'posted' : ''}">${escapeHtml(entry.status)}</span>
+      <div class="acct-recent-entry"><strong>${escapeHtml(entry.description || entry.entryNumber || 'Journal entry')}</strong><small>${accountingDate(entry.postingDate || entry.entryDate || entry.updatedAt)}</small></div>
+      ${amount > 0 ? `<strong class="acct-recent-amount">${accountingMoney(amount)}</strong>` : ''}
+      <div class="acct-recent-statuses">${accountingJournalStatus(entry.status)}${accountingJournalBankMatch(entry, false)}</div>
     </li>`;
   });
   return `<section class="acct-card acct-overview-recent" aria-labelledby="accountingRecentActivityTitle">
     <div class="acct-list-head"><h2 id="accountingRecentActivityTitle">Recent activity</h2><button type="button" class="acct-action-button" onclick="setAccountingView('journals')">View journal entries</button></div>
     ${rows.length ? `<ul>${rows.join('')}</ul>` : `<p>${entries ? 'New journal entries and updates will appear here.' : 'Recent activity is unavailable. Refresh Accounting to try again.'}</p>`}
+    ${hasBankActivity ? '<div class="acct-recent-footer"><button type="button" class="acct-action-button" id="accountingRecentBankMatch" onclick="openAccountingHomeBank(this.id)">Bank reconciliation</button></div>' : ''}
   </section>`;
+}
+
+async function refreshAccountingJournalBankMatches() {
+  const parishId = currentParish?.parishId;
+  const [journals, recent] = await Promise.allSettled([
+    accountingDeskRead<AccountingWorkspaceResponse>('/journals?limit=50'),
+    accountingDeskRead<AccountingWorkspaceResponse>('/journals?limit=5&sort=activity'),
+  ]);
+  if (parishId !== currentParish?.parishId) return;
+  if (journals.status === 'fulfilled' && journals.value.entries) accountingData.journals = journals.value.entries;
+  if (recent.status === 'fulfilled' && recent.value.entries) accountingData.recentActivity = recent.value.entries;
+  if (accountingView === 'overview' || (accountingView === 'journals' && !accountingReviewingCloseJournals()))
+    renderAccountingPane();
 }
 
 function accountingInKindDebitOptions() {

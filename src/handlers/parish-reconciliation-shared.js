@@ -207,7 +207,7 @@ async function prepareReconciliationReport(env, parishId, registration, params) 
           code: 'unsupported_or_large_payout',
           payoutId: payout.id,
           message:
-            'This payout is manual/instant, is still preparing its settlement breakdown, or exceeds the interactive report limit. Its fund allocation is not verified. Contact support for a complete report.',
+            'This payout is manual/instant, is still preparing its settlement breakdown, or exceeds the interactive report limit. Fund allocation details are unavailable. Contact support for a complete report.',
         });
       payoutRows.push({
         id: payout.id,

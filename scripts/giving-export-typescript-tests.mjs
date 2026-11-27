@@ -135,7 +135,7 @@ for (const header of [
   'Refunds to date',
 ])
   assert.equal(offline[header], '', header);
-assert.equal(offline['Fee basis'], 'Outside contribution; fees and bank net not verified');
+assert.equal(offline['Fee basis'], 'Outside contribution (fee and payout details unavailable)');
 assert.equal(offline['Outside reference'], "'=danger");
 assert.equal(offline['Giving purpose'], 'Pledge payment');
 assert.equal(offline['Pledge year'], '2026');

@@ -192,7 +192,7 @@ function renderHistoryTable() {
           <td data-label="Donor"><span class="parish-history-donor"><strong>${g.donorName ? escapeHtml(g.donorName) : 'Anonymous donor'}</strong><small>${g.donorEmail ? escapeHtml(g.donorEmail) : 'No email available'}</small></span></td>
           <td data-label="Fund"><span class="history-fund">${escapeHtml(g.fund || g.fundId || 'General')}</span>${details}</td>
           <td data-label="Gift"><span class="history-amount">${moneyFull(giftCents)}</span></td>
-          <td data-label="Fees"><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.source === 'outside' ? 'Not verified' : g.coverFees ? 'Donor covered' : feeCents ? '-' + moneyFull(feeCents) : 'No fee'}</span></td>
+          <td data-label="Fees"><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.source === 'outside' ? 'Fee details unavailable' : g.coverFees ? 'Donor covered' : feeCents ? '-' + moneyFull(feeCents) : 'No fee'}</span></td>
           <td data-label="Net"><span class="parish-history-net">${g.source === 'outside' ? '—' : moneyFull(netCents)}</span></td>
           <td data-label="Type"><span class="history-type">${g.source === 'outside' ? 'Outside · ' + escapeHtml(g.sourceLabel) : g.recurring ? 'Recurring' : 'One-time'}</span></td>
         </tr>`;
@@ -231,7 +231,7 @@ function exportHistoryCsv() {
       g.source === 'outside' ? '' : (((g.parishNetCents ?? g.amountCents) || 0) / 100).toFixed(2),
       (((g.giftAmountCents ?? g.amountCents) || 0) / 100).toFixed(2),
       g.source === 'outside' ? '' : ((g.totalFeeCents || 0) / 100).toFixed(2),
-      g.source === 'outside' ? 'Not verified' : g.coverFees ? 'Yes' : 'No',
+      g.source === 'outside' ? 'Not recorded' : g.coverFees ? 'Yes' : 'No',
       g.donorName || 'Anonymous',
       g.donorEmail || '',
       g.fund || g.fundId || 'General',

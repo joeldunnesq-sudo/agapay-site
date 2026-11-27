@@ -241,7 +241,43 @@ async function searchJournalEntries(
     `SELECT e.* FROM accounting_journal_entries e WHERE ${clauses.join(' AND ')} ORDER BY ${order} LIMIT ? OFFSET ?`,
     ...params
   );
-  return Object.freeze(rows.map(entryDto));
+  if (!rows.length || !actor?.capabilities?.includes('accounting.reconciliation.view'))
+    return Object.freeze(rows.map(entryDto));
+  const { results: matches = [] } = await db
+    .prepare(
+      `WITH bank_lines AS (
+        SELECT l.journal_entry_id, b.id bank_account_id, MIN(EXISTS (
+          SELECT 1 FROM accounting_reconciliation_items i
+          JOIN accounting_reconciliation_sessions s ON s.id=i.reconciliation_session_id
+          JOIN accounting_bank_transactions t ON t.id=i.bank_transaction_id
+          WHERE i.journal_line_id=l.id AND i.status='confirmed'
+            AND s.status<>'voided' AND t.status='imported'
+        )) matched
+        FROM accounting_journal_lines l JOIN accounting_bank_accounts b ON b.account_id=l.account_id
+        WHERE l.journal_entry_id IN (${rows.map(() => '?').join(',')})
+        GROUP BY l.journal_entry_id,b.id
+      )
+      SELECT journal_entry_id, COUNT(*) account_count, SUM(matched) matched_account_count
+      FROM bank_lines GROUP BY journal_entry_id`
+    )
+    .bind(...rows.map(({ id }) => id))
+    .all();
+  const byEntry = new Map(matches.map((row) => [row.journal_entry_id, row]));
+  return Object.freeze(
+    rows.map((row) => {
+      const bank = byEntry.get(row.id);
+      const entry = entryDto(row);
+      return bank
+        ? Object.freeze({
+            ...entry,
+            bankMatch: {
+              accountCount: Number(bank.account_count),
+              matchedAccountCount: Number(bank.matched_account_count),
+            },
+          })
+        : entry;
+    })
+  );
 }
 async function ledgerRegister(db, { actor, accountId = '', fundId = '', dateFrom = '', dateTo = '' } = {}) {
   capability(actor, 'accounting.view');

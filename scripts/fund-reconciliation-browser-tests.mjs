@@ -156,7 +156,7 @@ try {
       const popupPromise = page.waitForEvent('popup');
       await page.getByRole('button', { name: 'Print report', exact: true }).click();
       const popup = await popupPromise;
-      await popup.getByText('DRAFT — NOT BANK-VERIFIED', { exact: true }).waitFor();
+      await popup.getByText('DRAFT — BANK CONFIRMATION PENDING', { exact: true }).waitFor();
       assert.match(await popup.locator('body').innerText(), /\$12,848\.54/);
       await popup.close();
     },

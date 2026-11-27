@@ -13,6 +13,11 @@ const fund = {
   restrictionType: 'unrestricted',
 };
 const { promise: releaseBills, resolve: finishBills } = Promise.withResolvers();
+const recentDeposits = [
+  { id: 'recent', entryNumber: 'JE-1052', description: 'Foundation check · Building purchase and repairs', status: 'posted', totalDebits: 100000, entryDate: '2026-11-23', bankMatch: { accountCount: 2, matchedAccountCount: 0 } },
+  { id: 'partly-matched', entryNumber: 'JE-1051', description: 'Capital gift · Checking and savings', status: 'posted', totalDebits: 50000, entryDate: '2026-11-20', bankMatch: { accountCount: 2, matchedAccountCount: 1 } },
+  { id: 'matched', entryNumber: 'JE-1050', description: 'Sunday offering deposit', status: 'posted', totalDebits: 32500, entryDate: '2026-11-17', bankMatch: { accountCount: 1, matchedAccountCount: 1 } },
+];
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -269,15 +274,19 @@ try {
     api['/accounting/journals'] = (request) => {
       if (request.method() === 'GET') {
         const params = new URL(request.url()).searchParams;
+        const entries = matched ? recentDeposits : recentDeposits.map((deposit) =>
+          deposit.id === 'matched' ? { ...deposit, bankMatch: { accountCount: 1, matchedAccountCount: 0 } } : deposit
+        );
         if (params.get('sort') === 'activity') {
           assert.equal(params.get('limit'), '5');
-          return { body: { entries: [{ id: 'recent', description: 'Recent foundation deposit', status: 'posted', totalDebits: 100000, updatedAt: '2026-11-23T18:00:00Z' }] } };
+          return { body: { entries } };
         }
         if (params.get('status') === 'unposted') {
           assert.equal(params.get('from'), closePeriod.startDate);
           assert.equal(params.get('to'), closePeriod.endDate);
+          return { body: { entries: [] } };
         }
-        return { body: { entries: [] } };
+        return { body: { entries } };
       }
       const { lines } = request.postDataJSON();
       assert.equal(lines[0].accountId, 'office');
@@ -425,6 +434,8 @@ try {
       await pane.getByText('completed', { exact: true }).waitFor();
       assert.ok(matched && completed);
       await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
+      await pane.getByRole('region', { name: 'Recent activity' }).getByRole('listitem')
+        .filter({ hasText: 'Sunday offering deposit' }).getByText('Matched to bank', { exact: true }).waitFor();
       await pane.getByRole('button', { name: 'Record a transfer' }).click();
       await pane.locator('select[name="fromAccountId"]').selectOption(bank.ledgerAccountId);
       await pane.locator('select[name="toAccountId"]').selectOption(bank.ledgerAccountId);
@@ -486,7 +497,20 @@ try {
         await pane.getByText('Match all bank statements', { exact: true }).waitFor();
         await page.getByRole('button', { name: 'Overview', exact: true }).click();
       }
-      await pane.getByRole('region', { name: 'Recent activity' }).getByText('Recent foundation deposit', { exact: true }).waitFor();
+      const activity = pane.getByRole('region', { name: 'Recent activity' });
+      const foundation = activity.getByRole('listitem').filter({ hasText: recentDeposits[0].description });
+      await foundation.getByText('Posted', { exact: true }).waitFor();
+      assert.equal(await foundation.locator('.acct-journal-status').count(), 1);
+      await activity.getByText('Matched 1 of 2 bank accounts', { exact: true }).waitFor();
+      await activity.getByText('Matched to bank', { exact: true }).waitFor();
+      await activity.getByRole('button', { name: 'View journal entries' }).click();
+      await pane.getByRole('columnheader', { name: 'Ledger status' }).waitFor();
+      await pane.getByRole('columnheader', { name: 'Bank match' }).waitFor();
+      await pane.getByRole('row').filter({ hasText: recentDeposits[0].description }).getByText('Ready for reconciliation', { exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Overview', exact: true }).click();
+      await activity.getByRole('button', { name: 'Bank reconciliation', exact: true }).click();
+      await pane.getByRole('heading', { name: 'Match a bank statement' }).waitFor();
+      await page.getByRole('button', { name: 'Back to overview', exact: true }).click();
       await pane.getByRole('button', { name: 'Record a paid expense' }).click();
       await pane.getByRole('heading', { name: 'Tell us what you paid for' }).waitFor();
       await pane.getByLabel('Paid to', { exact: true }).fill('Office store');
