@@ -303,13 +303,10 @@ function renderActiveFunds(parish: DonorAppParish | null | undefined, { confirme
       const link = general
         ? quickDonorGiftUrl('stewardship', parish, { frequency: 'once' })
         : quickDonorGiftUrl('fund', parish, { fund: fund.id || fund.name });
-      const icon = general
-        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V11l7-5 7 5v10M12 2v4M10 4h4M9 21v-6h6v6"/></svg>'
-        : window.MyAgapayShell?.icons.give || '';
       return `
       <article class="active-funds-card">
         <a class="active-fund-row" href="${escapeHtml(link)}" aria-label="${escapeHtml('Give to ' + label)}">
-          <span class="active-fund-icon" aria-hidden="true">${icon}</span>
+          <span class="active-fund-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V11l7-5 7 5v10M12 2v4M10 4h4M9 21v-6h6v6"/></svg></span>
           <span class="active-fund-copy"><strong>${escapeHtml(label)}</strong>${description ? `<span class="active-fund-description">${escapeHtml(description)}</span>` : ''}</span>
           <span class="active-fund-action" aria-hidden="true">Give <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span>
         </a>

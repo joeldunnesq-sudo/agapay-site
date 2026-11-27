@@ -3842,10 +3842,6 @@ body.donor-home {
   color: #18354b;
 }
 
-.myagapay-giving-dashboard :is(.quick-give-icon, .desktop-quick-icon) svg {
-  stroke: #8a6b32;
-}
-
 .myagapay-giving-dashboard .campaign-media-card {
   grid-template-columns: minmax(0, 1fr) minmax(98px, 34%);
   border: 1px solid #ddd3c0;
