@@ -90,7 +90,6 @@
     .op-hero-note { max-width: 48ch; margin-top: 1.5rem; color: var(--muted); font-size: .86rem; }
     .op-phone-stage { position: relative; display: flex; flex-direction: column; align-items: center; }
     .op-phone-frame { position: relative; width: min(300px, 78vw); aspect-ratio: 9 / 19.4; padding: 12px; border-radius: 38px; background: linear-gradient(160deg, #12222f, var(--navy)); box-shadow: 0 30px 60px -20px rgba(6,21,34,.45), 0 2px 0 rgba(255,255,255,.04) inset; }
-    .op-phone-notch { position: absolute; z-index: 2; top: 12px; left: 50%; width: 38%; height: 22px; border-radius: 0 0 14px 14px; background: var(--navy); transform: translateX(-50%); }
     .op-phone-screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 26px; background: var(--cream); }
     .op-phone-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; }
     .op-phone-screen img.is-active { opacity: 1; }
@@ -236,7 +235,6 @@
 
         <div class="op-phone-stage">
           <div class="op-phone-frame">
-            <div class="op-phone-notch" aria-hidden="true"></div>
             <div class="op-phone-screen" id="opPhoneScreen">
               <img class="is-active" data-room="home" src="/images/app/screenshots/preview/home.jpg?v=f1c0151de165" alt="My AGAPAY Home showing the liturgical day and Parish Life shortcuts" width="720" height="1560" decoding="async" fetchpriority="high" />
               <img data-room="give" data-src="/images/app/screenshots/preview/give.jpg?v=68ea0daaf320" alt="My AGAPAY Giving showing annual pledge progress, giving totals, and Quick Give" width="720" height="1560" decoding="async" />
