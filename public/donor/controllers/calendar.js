@@ -231,7 +231,10 @@ function renderLiturgicalReadingLines(note, rows) {
     references.append(summary);
   }
   trigger.append(references);
-  trigger.addEventListener('click', () => dialog.showModal());
+  trigger.addEventListener('click', () => {
+    dialog.showModal();
+    body.scrollTop = 0;
+  });
   note.replaceChildren(trigger);
   body.replaceChildren(
     ...rows.map((row) => {

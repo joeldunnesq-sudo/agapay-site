@@ -14,7 +14,7 @@
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
   <script src="/myagapay-shell.js?v=fa121135a6fd25b8"></script>
-  <script src="/donor/controllers/calendar.js?v=2f0610b471545ef3" defer></script>
+  <script src="/donor/controllers/calendar.js?v=99d0fbbd2f4b9ef2" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0fcb331d33fa2cd0" defer></script>
   <script src="/donor/app.js?v=5eca2e767be92fca" defer></script>
@@ -22,7 +22,7 @@
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
-<link rel="stylesheet" href="/myagapay/koinonia-experience.css?v=f95e9418c78c38bb" /><script src="/myagapay/koinonia-experience.js?v=d9f5ba4745d5f557" defer></script><link rel="stylesheet" href="/myagapay/liturgical-hero.css?v=a29dc783528672c1" /><link rel="stylesheet" href="/myagapay/app-header.css?v=3a983e6a779622b4" />
+<link rel="stylesheet" href="/myagapay/koinonia-experience.css?v=f95e9418c78c38bb" /><script src="/myagapay/koinonia-experience.js?v=d9f5ba4745d5f557" defer></script><link rel="stylesheet" href="/myagapay/liturgical-hero.css?v=34c3dc4a62c2b875" /><link rel="stylesheet" href="/myagapay/app-header.css?v=3a983e6a779622b4" />
 <script src="/myagapay/app-header.js?v=276855b0cdf71e80" defer></script>
 </head>
 <body class="donor-mobile-page donor-parish-life-page koinonia-landing-page">
@@ -94,10 +94,10 @@
         <div class="notice" id="parishLifeStatus" hidden></div>
       </div>
 
-      <dialog class="donor-saint-modal" id="todayReadingsDialog" aria-labelledby="todayReadingsTitle">
+      <dialog id="todayReadingsDialog" aria-labelledby="todayReadingsTitle">
         <div class="donor-saint-modal-card">
           <div class="donor-saint-modal-head"><h2 id="todayReadingsTitle">Today’s Scripture readings</h2><form method="dialog"><button class="donor-saint-close" type="submit" aria-label="Close Scripture readings">×</button></form></div>
-          <div class="donor-saint-modal-body" id="todayReadingsBody"></div>
+          <div class="donor-saint-modal-body" id="todayReadingsBody" role="region" aria-label="Readings" tabindex="0"></div>
         </div>
       </dialog>
       <dialog class="donor-saint-modal" id="donorSaintModal" aria-labelledby="donorSaintModalTitle">
