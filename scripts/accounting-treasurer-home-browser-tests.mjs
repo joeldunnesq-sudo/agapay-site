@@ -344,7 +344,17 @@ try {
       await pane.getByRole('heading', { name: 'Fund balances' }).waitFor();
       await pane.locator('.acct-fund-bars').getByText('$940.00', { exact: true }).waitFor();
       const jumpNav = page.getByRole('navigation', { name: 'On this page' });
-      if (!parishTier) await page.setViewportSize({ width: 390, height: 900 });
+      const checklist = pane.getByRole('region', { name: 'Month-end checklist' });
+      const reports = pane.getByRole('region', { name: 'Reports', exact: true });
+      const left = await checklist.boundingBox();
+      const right = await reports.boundingBox();
+      assert.ok(left && right && right.x >= left.x + left.width && Math.abs(right.y - left.y) < 1);
+      if (!parishTier) {
+        await page.setViewportSize({ width: 390, height: 900 });
+        const top = await checklist.boundingBox();
+        const bottom = await reports.boundingBox();
+        assert.ok(top && bottom && bottom.y >= top.y + top.height && Math.abs(bottom.x - top.x) < 1);
+      }
       for (const [label, section] of [
         ['Record activity', 'activity'],
         ['Financial summary', 'summary'],
