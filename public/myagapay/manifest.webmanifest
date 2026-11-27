@@ -64,13 +64,13 @@
   ],
   "shortcuts": [
     {
-      "name": "Give",
-      "short_name": "Give",
+      "name": "Giving",
+      "short_name": "Giving",
       "description": "Open the My AGAPAY giving dashboard.",
       "url": "/myagapay/giving",
       "icons": [
         {
-          "src": "/images/app/shortcuts/give-v2.png",
+          "src": "/images/app/shortcuts/give-v2.png?v=coin",
           "sizes": "96x96",
           "type": "image/png"
         }

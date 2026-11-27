@@ -135,3 +135,30 @@ export function activeFestalAlmsCampaigns<T extends FestalAlmsCampaign>(
       return aDistance - bDistance;
     });
 }
+
+export function nextFestalOffering(
+  campaigns: readonly FestalAlmsCampaign[] | null | undefined,
+  calendar = 'julian',
+  referenceDate: Date | string = new Date()
+) {
+  const today = isoDate(referenceDate);
+  const nextYear = addDaysToIso(today, 366);
+  const configured: readonly FestalAlmsCampaign[] = Array.isArray(campaigns) ? campaigns : [];
+  const candidates = configured
+    .filter((campaign) => campaign && !campaign.patronal && campaignIsEnabled(campaign))
+    .flatMap((campaign) =>
+      [today, nextYear].flatMap((date) => {
+        const period = festalAlmsVisibilityWindow(campaign, calendar, date);
+        if (!period || period.endsAt < today) return [];
+        return [
+          {
+            ...period,
+            feastId: campaignFeastId(campaign),
+            campaignId: campaign.id || campaignFeastId(campaign),
+            name: campaign.name || campaign.campaignName || 'Festal Alms',
+          },
+        ];
+      })
+    );
+  return candidates.sort((a, b) => a.feastDate.localeCompare(b.feastDate))[0] || null;
+}

@@ -22,6 +22,14 @@ export interface DonorAppParish extends DonorBookstoreParish {
   sacramentsEnabled?: boolean;
   campaigns?: DonorAppCampaign[];
   feastCampaigns?: DonorAppCampaign[];
+  nextFestalOffering?: {
+    campaignId: string;
+    feastId: string;
+    name: string;
+    feastDate: string;
+    startsAt: string;
+    endsAt: string;
+  } | null;
 }
 export interface DonorAppFund extends ParishGivingOption {
   label?: string;

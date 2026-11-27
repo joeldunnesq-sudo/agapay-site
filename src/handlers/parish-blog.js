@@ -281,7 +281,7 @@ async function handleDonorExternalFeed(request, env, feedKey) {
   if (!donor?.email) return unauthorized();
   const parishId = String(donor.defaultParishId || '').trim();
   const found = parishId ? await findRegistrationByParishId(env, parishId) : null;
-  if (!found || !communicationsEnabledFor(found.registration))
+  if (feedKey === 'parish_blog' && (!found || !communicationsEnabledFor(found.registration)))
     return json({ available: false, subscribed: false, posts: [] });
   const donorId = normalizeEmail(donor.email);
   const settings = feedKey === 'parish_blog' ? await readBlogSettings(db, parishId) : null;
@@ -293,7 +293,7 @@ async function handleDonorExternalFeed(request, env, feedKey) {
       feedUrl: settings?.feedUrl || '',
     },
     oca: {
-      available: isOcaJurisdiction(found.registration.jurisdiction),
+      available: !found || isOcaJurisdiction(found.registration.jurisdiction),
       sourceLabel: 'OCA News',
       sourceUrl: 'https://www.oca.org/news',
       feedUrl: OCA_NEWS_FEED_URL,

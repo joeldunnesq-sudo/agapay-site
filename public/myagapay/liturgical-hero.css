@@ -53,8 +53,8 @@
   border: 0;
   border-radius: 18px;
   background:
-    linear-gradient(90deg, #0e2635 10%, #0e2635 33%, #0e2635f2 45%, #10242d77 65%, #10242d22 93%),
-    url('/images/vision/fresco-vault.jpg') right center / 66% auto no-repeat,
+    linear-gradient(90deg, #0e2635 8%, #0e2635 34%, #0e2635f0 48%, #10242d87 71%, #10242d30 100%),
+    url('/images/vision/parish-chandelier.jpg') right 43% / 60% auto no-repeat,
     #0e2635;
 }
 .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-hero-inner { padding:24px clamp(17px,3vw,37px); }
@@ -63,14 +63,67 @@
 .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero #todayChips > :is(span,button) { min-height:26px; padding:4px 9px; white-space:normal; }
 .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-hero-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
 .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-hero-actions .cal-btn { min-height:44px; padding:8px 13px; border-radius:9px; box-shadow:none; }
-.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .cal-btn-gold { background:#eed09a; color:#2a2317; }
-.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-calendar-link { background:#132a33aa; color:#f9edd8; border:1px solid #f9edd86b; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-give-button {
+  gap:8px;
+  padding:10px 16px;
+  border:1px solid #f7dfa7;
+  background:linear-gradient(165deg,#f5dea6,#e0b968);
+  color:#2b2417;
+  font-weight:700;
+  letter-spacing:0;
+}
+.home-give-button svg,.cal-readings-trigger svg { width:18px; height:18px; flex:none; fill:none; stroke:currentColor; stroke-width:1.55; stroke-linecap:round; stroke-linejoin:round; }
+.koinonia-landing-page.donor-mobile-page .refined-liturgical-hero .home-give-button:hover { background:#f8e3b3; }
+.cal-readings-trigger {
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  min-height:44px;
+  max-width:100%;
+  padding:4px 0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.cal-readings-trigger svg { color:#f1d39d; }
+.cal-readings-trigger .cal-reading-summary { line-height:1.55; }
+.cal-readings-trigger .cal-reading-summary strong { color:#f1d39d; font-weight:600; }
+.cal-readings-trigger::after { content:''; width:6px; height:6px; flex:none; border-top:1px solid #f1d39d; border-right:1px solid #f1d39d; transform:rotate(45deg); }
+.refined-liturgical-hero :is(.cal-readings-trigger,.home-give-button):focus-visible { outline:2px solid #f8e3b3; outline-offset:3px; }
+.cal-readings-trigger:hover .cal-reading-line:not(.is-heading) { text-decoration:underline; text-underline-offset:3px; }
+#todayReadingsDialog {
+  position:fixed;
+  inset:0;
+  width:min(540px, calc(100% - 28px));
+  max-height:calc(100dvh - 32px);
+  margin:auto;
+  padding:0;
+  overflow:hidden;
+  border:1px solid #d9d0c0;
+  border-radius:16px;
+  background:#fffdf8;
+  color:#18354b;
+  box-shadow:0 16px 48px #06152238;
+}
+#todayReadingsDialog::backdrop { background:#06152299; }
+#todayReadingsDialog .donor-saint-modal-card {
+  height:auto;
+  max-height:calc(100dvh - 34px);
+}
+#todayReadingsBody { flex:0 1 auto; }
+#todayReadingsBody:focus-visible { outline:2px solid #8a6a2c; outline-offset:-3px; }
+#todayReadingsBody strong { color:#18354b; }
+#todayReadingsBody h3 { color:#806532; font-size:14px; }
+#todayReadingsBody p { margin:5px 0 0; font-size:14px; line-height:1.6; }
 @media (max-width: 580px) {
   .koinonia-landing-page.donor-mobile-page .refined-liturgical-hero {
     background:
-      linear-gradient(90deg, #0e2635f7, #0e2635cd 62%, #0e263577),
-      linear-gradient(0deg, #0e2635 12%, transparent 78%),
-      url('/images/vision/fresco-vault.jpg') 58% 39% / cover no-repeat,
+      linear-gradient(90deg, #0e2635eb, #0e2635c7 52%, #0e263571),
+      linear-gradient(0deg, #0e2635 6%, #0e263583 30%, transparent 70%),
+      url('/images/vision/parish-chandelier.jpg') center 44% / cover no-repeat,
       #0e2635;
   }
 }

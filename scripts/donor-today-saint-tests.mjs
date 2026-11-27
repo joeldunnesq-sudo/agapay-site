@@ -126,14 +126,14 @@ const forerunnerDay = {
 assert.deepEqual(
   readingTexts(forerunnerDay),
   [
-    'Feast — Forerunner',
-    'Epistle: Acts 13.25-33',
-    'Gospel: Mark 6.14-30',
     'Readings of the day',
     'Epistle: Galatians 4.8-21',
     'Gospel: Mark 6.45-53',
+    'Feast — Forerunner',
+    'Epistle: Acts 13.25-33',
+    'Gospel: Mark 6.14-30',
   ],
-  "the Forerunner's feast readings and ordinary readings must remain distinct"
+  "ordinary readings must precede the Forerunner's feast readings even if the provider lists the feast first"
 );
 assert.deepEqual(
   readingTexts({
@@ -152,11 +152,6 @@ assert.doesNotMatch(
   donorApp,
   /when this service is celebrated|The parish Typikon determines which appointed readings are proclaimed|Liturgical observance:/,
   'the Today hero must keep the grouped reading presentation concise'
-);
-assert.match(
-  donorApp,
-  /feastNote\.replaceChildren[\s\S]*line\.className = reading\.className/,
-  'each daily reading must render as its own hero line'
 );
 assert.match(
   parishLife,

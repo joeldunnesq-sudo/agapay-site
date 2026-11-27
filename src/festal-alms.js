@@ -92,4 +92,26 @@ function activeFestalAlmsCampaigns(campaigns, calendar = 'julian', referenceDate
       return aDistance - bDistance;
     });
 }
-export { activeFestalAlmsCampaigns, festalAlmsVisibilityWindow };
+function nextFestalOffering(campaigns, calendar = 'julian', referenceDate = /* @__PURE__ */ new Date()) {
+  const today = isoDate(referenceDate);
+  const nextYear = addDaysToIso(today, 366);
+  const configured = Array.isArray(campaigns) ? campaigns : [];
+  const candidates = configured
+    .filter((campaign) => campaign && !campaign.patronal && campaignIsEnabled(campaign))
+    .flatMap((campaign) =>
+      [today, nextYear].flatMap((date) => {
+        const period = festalAlmsVisibilityWindow(campaign, calendar, date);
+        if (!period || period.endsAt < today) return [];
+        return [
+          {
+            ...period,
+            feastId: campaignFeastId(campaign),
+            campaignId: campaign.id || campaignFeastId(campaign),
+            name: campaign.name || campaign.campaignName || 'Festal Alms',
+          },
+        ];
+      })
+    );
+  return candidates.sort((a, b) => a.feastDate.localeCompare(b.feastDate))[0] || null;
+}
+export { activeFestalAlmsCampaigns, festalAlmsVisibilityWindow, nextFestalOffering };

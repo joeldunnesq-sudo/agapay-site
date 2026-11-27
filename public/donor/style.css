@@ -2505,7 +2505,7 @@ body.donor-home {
   backdrop-filter: blur(16px);
 }
 
-.my-agapay-tabbar a {
+.my-agapay-tabbar :is(a, .myagapay-tab-disabled) {
   display: grid;
   min-width: 0;
   place-items: center;
@@ -2520,6 +2520,8 @@ body.donor-home {
   text-align: center;
   text-decoration: none;
 }
+
+.my-agapay-tabbar .myagapay-tab-disabled { color: #68625c; opacity: 0.76; }
 
 .my-agapay-tabbar a.active {
   background: rgba(201, 162, 91, 0.12);
@@ -3629,35 +3631,43 @@ body.donor-home {
 }
 
 .active-funds-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 8px;
 }
 
 .active-funds-empty {
   display: block;
 }
 
-.active-fund-icon {
-  display: none;
+.active-funds-card > a.active-fund-row {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  justify-content: normal;
+  gap: 12px;
+  min-width: 0;
+  min-height: 70px;
+  padding: 12px 0;
+  border: 0;
+  border-radius: 0;
+  color: #172b31;
+  white-space: normal;
 }
 
 .myagapay-giving-dashboard .active-funds-stack {
   gap: 0;
-  padding: 0 14px;
+  padding: 0 17px;
   border: 1px solid #e7dfd1;
-  border-radius: 16px;
+  border-radius: 18px;
   background: #fffcf6;
 }
 
 .myagapay-giving-dashboard .active-funds-stack .active-funds-card {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
-  min-height: 66px;
   border: 0;
   border-radius: 0;
-  padding: 11px 0;
+  padding: 0;
   background: transparent;
   box-shadow: none;
 }
@@ -3670,19 +3680,25 @@ body.donor-home {
   display: none;
 }
 
-.myagapay-giving-dashboard .active-fund-icon {
+.myagapay-giving-dashboard .active-funds-stack .active-funds-empty {
+  min-height: 66px;
+  padding-block: 14px;
+}
+
+.active-fund-icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 41px;
+  height: 41px;
+  border-radius: 11px;
   background: #f0e8d7;
   color: #806027;
 }
 
-.myagapay-giving-dashboard .active-fund-icon svg {
-  width: 19px;
-  height: 19px;
+.active-fund-icon svg,
+.active-fund-action svg {
+  width: 21px;
+  height: 21px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -3690,29 +3706,229 @@ body.donor-home {
   stroke-linejoin: round;
 }
 
-.myagapay-giving-dashboard .active-fund-copy h3 {
-  margin: 0;
-  color: #172b31;
-  font: 600 15px/1.3 'DM Sans', sans-serif;
+.active-fund-copy strong {
+  font: 700 1rem/1.35 'DM Sans', sans-serif;
   overflow-wrap: anywhere;
 }
 
-.myagapay-giving-dashboard .active-funds-card a {
-  min-height: 44px;
-  padding: 0 4px;
-  border: 0;
+.active-fund-description {
+  display: block;
+  color: var(--stone);
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.myagapay-giving-dashboard .active-fund-description {
+  display: none;
+}
+
+.active-fund-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: #806027;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
-.myagapay-giving-dashboard .active-funds-card a::after {
-  content: '';
-  width: 5px;
-  height: 5px;
-  margin-left: 6px;
-  border-right: 1px solid;
-  border-top: 1px solid;
-  transform: rotate(45deg);
+.active-fund-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+.active-fund-row:is(:hover, :focus-visible) .active-fund-copy strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.active-fund-row:focus-visible {
+  outline: 2px solid #806027;
+  outline-offset: -2px;
+}
+
+.myagapay-giving-dashboard .active-funds-card > .active-fund-recurring {
+  border: 0;
+  padding: 0 2px;
+  color: #806027;
+  font-size: 12px;
+}
+
+.giving-funds-section .mobile-section-head h2 {
+  font-size: 1.85rem;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.myagapay-giving-dashboard .desktop-panel.giving-funds-section {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.myagapay-giving-dashboard .giving-funds-section .desktop-panel-head {
+  padding: 0 0 12px;
+  border: 0;
+  background: transparent;
+}
+
+.myagapay-giving-dashboard .giving-funds-section > .active-funds-stack {
+  margin: 0;
+}
+
+.myagapay-giving-dashboard .mobile-hero-header {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin: 0 0 14px;
+}
+
+.myagapay-giving-dashboard .mobile-identity h1,
+.myagapay-giving-dashboard .desktop-hero h1 {
+  color: #18354b;
+  font: 700 1.65rem/1.05 var(--serif);
+}
+
+.myagapay-giving-dashboard .giving-account-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #d8cbae;
+  border-radius: 11px;
+  background: #fffdf8;
+  color: #18354b;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.myagapay-giving-dashboard :is(.mobile-summary-card, .pledge-tracker-card, .desktop-pledge-tracker) {
+  min-height: 0;
+  padding: 13px 16px;
+  border: 1px solid #28424c;
+  border-radius: 16px;
+  background: linear-gradient(125deg, #0b2232 10%, #132d39 78%, #183338);
+  box-shadow: 0 6px 18px rgba(6, 21, 34, 0.11);
+}
+
+.giving-summary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.giving-summary-head a,
+.myagapay-giving-dashboard :is(.pledge-tracker-edit, .desktop-pledge-edit) {
+  color: #f2d29b;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.myagapay-giving-dashboard .summary-metric strong {
+  font: 700 clamp(1.8rem, 5vw, 2.7rem)/1.1 var(--serif);
+}
+
+.myagapay-giving-dashboard :is(.mobile-section-head, .desktop-panel-head) h2 {
+  color: #18354b;
+  font: 700 1.45rem/1.1 var(--serif);
+}
+
+.myagapay-giving-dashboard :is(.quick-give-tile, .desktop-quick-card) {
+  min-height: 70px;
+  border-radius: 13px;
+  background: #fffdf8;
+  color: #18354b;
+}
+
+.myagapay-giving-dashboard .campaign-media-card {
+  grid-template-columns: minmax(0, 1fr) minmax(98px, 34%);
+  border: 1px solid #ddd3c0;
+  border-radius: 18px;
+  background: #fffdf8;
+}
+
+.myagapay-giving-dashboard .campaign-media-thumb {
+  order: 1;
+  border-radius: 0 17px 17px 0;
+}
+
+.myagapay-giving-dashboard .campaign-media-thumb img {
+  position: absolute;
+  inset: 0;
+}
+
+.myagapay-giving-dashboard :is(.campaign-media-card, .next-feast-card) h3 {
+  color: #18354b;
+  font: 700 1.4rem/1.05 var(--serif);
+}
+
+.giving-campaign-cta {
+  justify-self: start;
+  margin-top: 12px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  background: #b88e45;
+  color: #081927;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.giving-remembrance-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 10px 17px;
+  border: 1px solid #ddd3c0;
+  border-radius: 17px;
+  background: #fffdf8;
+  color: #18354b;
+  text-decoration: none;
+}
+
+.giving-row-chevron {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.myagapay-giving-dashboard .next-feast-card {
+  padding: 13px 16px;
+  border: 1px solid #ddd3c0;
+  border-radius: 17px;
+  background: #fffdf8;
+}
+
+.myagapay-giving-dashboard .next-feast-card::before { display: none; }
+.myagapay-giving-dashboard .next-feast-card .feast-kicker { margin-top: 0; }
+
+.myagapay-giving-dashboard .next-feast-card:has(.giving-feast-icon:not([hidden])) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: 14px;
+}
+
+.giving-feast-icon {
+  width: clamp(62px, 18vw, 88px);
+  aspect-ratio: var(--feast-icon-ratio);
+  border-radius: 9px;
+  background: #a07941 url("/images/vision/twelve-great-feasts.jpg") no-repeat;
+  box-shadow: 0 0 0 1px #85622f;
+}
+
+@media (max-width: 380px) {
+  .myagapay-giving-dashboard .next-feast-card:has(.giving-feast-icon:not([hidden])) {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 8px;
+  }
+  .myagapay-giving-dashboard .giving-feast-icon { grid-row: span 2; }
+  .myagapay-giving-dashboard .next-feast-card:has(.giving-feast-icon:not([hidden])) a { justify-self: start; }
 }
 
 .campaign-card::before,
@@ -6019,24 +6235,6 @@ body.donor-mobile-page {
   font-size: 0.78rem;
 }
 
-.starter-fund-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.starter-fund-actions a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 0.45rem 0.75rem;
-  background: #061522;
-  color: #f6f1e8;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-decoration: none;
-}
 
 .coming-pill {
   display: inline-flex;
@@ -7546,6 +7744,53 @@ a.cal-parish-event:focus-visible { outline:3px solid rgba(198,154,57,.3); outlin
   .desktop-panel > .active-funds-stack {
     margin: 0.85rem;
   }
+
+  .myagapay-giving-dashboard .desktop-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0 !important;
+  }
+
+  .myagapay-giving-dashboard .desktop-hero::after { display: none; }
+  .myagapay-giving-dashboard .desktop-hero-actions { justify-content: flex-end; }
+
+  .myagapay-giving-dashboard .desktop-dashboard-top {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .myagapay-giving-dashboard .desktop-dashboard-top:has(.desktop-pledge-tracker[hidden]),
+  .myagapay-giving-dashboard .desktop-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .myagapay-giving-dashboard .desktop-dashboard-grid { gap: 22px; }
+
+  .myagapay-giving-dashboard .desktop-dashboard-grid > .desktop-panel {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .myagapay-giving-dashboard .desktop-dashboard-grid .desktop-panel-head {
+    margin: 0;
+    padding: 0 0 10px;
+    border: 0;
+    background: transparent;
+  }
+
+  .myagapay-giving-dashboard .desktop-panel > :is(.desktop-quick-grid, .campaign-stack, .next-feast-card) {
+    margin: 0;
+  }
+
+  .myagapay-giving-dashboard .desktop-quick-grid { padding: 0; }
+  .myagapay-giving-dashboard .desktop-quick-card span:last-child { display: none; }
 }
 
 @media (min-width: 1320px) {

@@ -5,9 +5,10 @@ interface KoinoniaParishPresentation {
   exchangeEnabled?: boolean;
   prayerRequestsEnabled?: boolean;
   directoryEnabled?: boolean;
+  sacramentsEnabled?: boolean;
 }
 type KoinoniaShortcut = [
-  id: 'signups' | 'exchange' | 'prayers' | 'groups' | 'directory',
+  id: 'signups' | 'exchange' | 'prayers' | 'groups' | 'directory' | 'sacraments',
   label: string,
   name: string,
   enabled: boolean | undefined,
@@ -15,7 +16,11 @@ type KoinoniaShortcut = [
 ];
 interface Window {
   KoinoniaExperience: {
-    parishContext(parish: KoinoniaParishPresentation | null | undefined, communicationsEnabled: boolean): void;
+    parishContext(
+      parish: KoinoniaParishPresentation | null | undefined,
+      communicationsEnabled: boolean,
+      shortcutsDisabled?: boolean
+    ): void;
     compactFasting(chips: HTMLElement, rule: string): void;
     liturgicalDay(date: string, calendar: string | undefined, churchDate: string): void;
   };
@@ -28,7 +33,11 @@ interface Window {
     groups: '<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 15a5 5 0 0 1 3 5"/>',
     directory: '<path d="M4 3h16v18H4zM8 3v18M11 8h6M11 12h6M11 16h4"/>',
   };
-  function shortcuts(parish: KoinoniaParishPresentation | null | undefined, communicationsEnabled: boolean) {
+  function shortcuts(
+    parish: KoinoniaParishPresentation | null | undefined,
+    communicationsEnabled: boolean,
+    disabled: boolean
+  ) {
     const target = document.getElementById('koinoniaShortcuts');
     if (!target) return;
     const items = (
@@ -38,23 +47,35 @@ interface Window {
         ['prayers', 'Prayers', 'Prayer Requests', parish?.prayerRequestsEnabled, 'prayer-requests'],
         ['groups', 'Ministries', 'Browse Ministries', communicationsEnabled, 'groups'],
         ['directory', 'Directory', 'Parish Directory', parish?.directoryEnabled, 'directory'],
+        ['sacraments', 'Sacraments', 'Sacraments & Services', parish?.sacramentsEnabled, 'sacraments'],
       ] satisfies KoinoniaShortcut[]
-    ).filter((item) => item[3]);
-    target.hidden = !communicationsEnabled || !items.length;
+    ).filter((item) => disabled || item[3]);
+    target.hidden = (!communicationsEnabled && !disabled) || !items.length;
     target.style.setProperty('--shortcut-count', String(items.length || 1));
     target.innerHTML = items
       .map(([id, label, name, , path]) => {
         const badge = ['signups', 'exchange', 'prayers'].includes(id)
           ? `<b class="koinonia-shortcut-badge" data-community-tool-badge="${id}" hidden></b>`
           : '';
-        return `<a href="/myagapay/${path}" aria-label="${name}"><svg viewBox="0 0 24 24" aria-hidden="true">${iconPaths[id]}</svg><span>${label}</span>${badge}</a>`;
+        const icon =
+          id === 'sacraments'
+            ? window.MyAgapayShell?.icons.sacraments || ''
+            : `<svg viewBox="0 0 24 24" aria-hidden="true">${iconPaths[id]}</svg>`;
+        const content = `${icon}<span>${label}</span>`;
+        return disabled
+          ? `<span class="koinonia-shortcut" role="link" aria-disabled="true" aria-label="${name}">${content}</span>`
+          : `<a class="koinonia-shortcut" href="/myagapay/${path}" aria-label="${name}">${content}${badge}</a>`;
       })
       .join('');
   }
-  function parishContext(parish: KoinoniaParishPresentation | null | undefined, communicationsEnabled: boolean) {
+  function parishContext(
+    parish: KoinoniaParishPresentation | null | undefined,
+    communicationsEnabled: boolean,
+    shortcutsDisabled = false
+  ) {
     const offering = document.getElementById('todayGiveLink');
     if (offering) offering.hidden = !parish?.id;
-    shortcuts(parish, communicationsEnabled);
+    shortcuts(parish, communicationsEnabled, shortcutsDisabled);
   }
   function compactFasting(chips: HTMLElement, rule: string) {
     const pill = [...chips.querySelectorAll('span')].find((item) => item.textContent === rule);

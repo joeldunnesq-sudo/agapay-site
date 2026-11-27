@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { chromium } from 'playwright';
 const browser = await chromium.launch({ headless: true });
@@ -9,6 +9,20 @@ try {
     id: 'synthetic-parish',
     name: 'Synthetic Church',
     givingPlusEnabled: true,
+    pledgeTrackerEnabled: true,
+    liturgicalCalendar: 'julian',
+    campaigns: [
+      { id: 'roof', name: 'Church Roof Restoration', description: 'Preserve our church for generations to come.' },
+    ],
+    feastCampaigns: [{ id: 'nativity-christ', name: 'Nativity Alms' }],
+    nextFestalOffering: {
+      campaignId: 'nativity-christ',
+      feastId: 'nativity-christ',
+      name: 'Nativity Alms',
+      feastDate: '2027-01-07',
+      startsAt: '2026-11-28',
+      endsAt: '2027-01-14',
+    },
     designatedFundsEnabled: true,
     funds: [
       { id: 'general', name: 'General Operating Fund' },
@@ -63,7 +77,15 @@ try {
             : url.pathname === '/api/donor/dashboard'
               ? {
                   parish,
-                  donor: { email: 'synthetic@example.test', defaultParishId: parish.id, defaultParish: parish },
+                  donor: {
+                    email: 'synthetic@example.test',
+                    donorName: 'Jamie',
+                    defaultParishId: parish.id,
+                    defaultParish: parish,
+                    pledgeAmountCents: 600000,
+                    pledgeCadence: 'annual',
+                  },
+                  summary: { monthCents: 25000, ytdCents: 250000 },
                 }
               : url.pathname === '/api/security/config'
                 ? { turnstileEnabled: true, turnstileSiteKey: 'synthetic-key' }
@@ -90,11 +112,51 @@ try {
   const fundList = page.locator('#activeFunds');
   const link = fundList.getByRole('link', { name: 'Give to Building Fund' });
   await link.waitFor();
+  const expectedSections = [
+    'Quick Give',
+    'Active Funds',
+    'Active Campaigns',
+    'Prayer & Remembrance',
+    'Next Festal Offering',
+  ];
+  for (const [layout, width] of [
+    ['.donor-phone', 390],
+    ['#giving-dashboard', 1280],
+  ]) {
+    await page.setViewportSize({ width, height: 844 });
+    const dashboard = page.locator(layout);
+    await dashboard.getByRole('heading', { name: 'Nativity Alms' }).waitFor();
+    assert.deepEqual(
+      await dashboard.locator('.mobile-section-head h2, .desktop-panel-head h2').allTextContents(),
+      expectedSections
+    );
+    assert.equal(await dashboard.locator('.giving-summary-head a').getAttribute('href'), '/myagapay/giving/history');
+    assert.equal(
+      await dashboard.getByRole('link', { name: 'Commemorations' }).getAttribute('href'),
+      '/myagapay/sacraments#commemorations'
+    );
+    assert.match(await dashboard.locator('.next-feast-card').textContent(), /Nov 28, 2026 – Jan 14, 2027/);
+    assert.equal(await dashboard.getByRole('img', { name: 'Nativity of Christ icon' }).isVisible(), true);
+    assert.match(
+      await dashboard.getByRole('link', { name: 'Offer', exact: true }).getAttribute('href'),
+      /campaign=nativity-christ/
+    );
+    assert.equal(await dashboard.getByText('Give to the campaign', { exact: true }).isVisible(), true);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await mkdir('output', { recursive: true });
+    await page.screenshot({ path: `output/giving-redesign-${width}.png`, fullPage: true });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await fundList.getByText('Closed Fund').count(), 0);
   assert.equal(await fundList.locator('.active-funds-card').count(), 5);
   assert.match(await link.getAttribute('href'), /quick=1/);
   assert.match(await link.getAttribute('href'), /fund=building/);
-  await link.click();
+  assert.equal(await link.getByText('Building needs', { exact: true }).isVisible(), false);
+  assert.equal(
+    await link.evaluate((row) => Math.round(row.getBoundingClientRect().width)),
+    await fundList.evaluate((list) => list.clientWidth - 34)
+  );
+  await link.getByText('Building Fund', { exact: true }).click();
   await page.waitForFunction(() => document.body.classList.contains('quick-give-mode'));
   assert.equal(await page.locator('#fund').inputValue(), 'building');
   assert.equal(await page.locator('#fundFields').isVisible(), false);

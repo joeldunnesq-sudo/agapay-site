@@ -9,16 +9,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=6c25e1f1147e0902" />
+  <link rel="stylesheet" href="/donor/style.css?v=913214f4e3440b00" />
   <script src="/liturgical-calendar.js?v=87b139e0c72b838d"></script>
-<link rel="manifest" href="/myagapay/manifest.webmanifest?v=1bb4749c7f0943ad" />
+<link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
   <script src="/donor/session.js?v=c516cd6a6611e3be"></script>
-  <script src="/myagapay-shell.js?v=3cf10e7a99c544b7"></script>
-  <script src="/donor/controllers/calendar.js?v=b96d03dfd73235f2" defer></script>
+  <script src="/myagapay-shell.js?v=fa121135a6fd25b8"></script>
+  <script src="/donor/controllers/calendar.js?v=99d0fbbd2f4b9ef2" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
-  <script src="/donor/controllers/sacraments.js?v=0563aa47128c1c3b" defer></script>
-  <script src="/donor/app.js?v=c33b43d9c1a71e7f" defer></script>
+  <script src="/donor/controllers/sacraments.js?v=0fcb331d33fa2cd0" defer></script>
+  <script src="/donor/app.js?v=5eca2e767be92fca" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -45,7 +45,7 @@
           <div class="profile-meta" id="profileMeta">Sign in to load live giving history</div>
         </div>
         <nav class="nav unified-product-nav" hx-boost="false">
-          <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Giving</a>
+          <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9h-3.75a1.5 1.5 0 0 0 0 3h2.5a1.5 1.5 0 0 1 0 3H9.5"/></svg> Giving</a>
           <a href="/myagapay/parish-life" class="sw-tool-loading" data-parish-life-link aria-busy="true" aria-disabled="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> <span data-parish-life-label>Loading…</span></a>
           <a href="/myagapay/learn"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg> Learn</a>
           <a href="/myagapay/directory"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg> Directory</a>
@@ -90,17 +90,13 @@
       </div>
       <section class="donor-desktop-home" id="giving-dashboard">
         <div class="desktop-hero">
-          <a class="desktop-hero-mark" href="/myagapay/" aria-label="My AGAPAY Home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="desktop-hero-copy">
-            <div class="eyebrow">AGAPAY — Love how you give</div>
             <h1 id="desktopGreeting">Welcome, Faithful Member</h1>
             <p id="desktopParishName">Sign in to load your church, giving history, and saved offering preferences.</p>
           </div>
           <div class="desktop-hero-actions">
-            <a class="btn btn-gold" href="/myagapay/giving/give">Make an Offering</a>
-            <a class="btn btn-ghost" href="/myagapay/account">Change Church</a>
+            <a class="giving-account-link" href="/myagapay/account">Account</a>
           </div>
-          <a class="desktop-avatar" href="/myagapay/account" aria-label="Open settings">FM</a>
         </div>
         <div class="notice desktop-status" id="desktopDonorStatus" style="display:none;"></div>
 
@@ -142,13 +138,14 @@
             </div>
           </div>
 
-          <div class="summary-title" style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(246, 241, 232, 0.65); margin: 0.4rem 0 0.75rem;">Total Giving</div>
-          <div class="desktop-metrics-grid">
-            <div class="metric-card"><div class="metric-label">This month</div><div class="metric-value" id="desktopMetricMonth">$0</div><div class="metric-note">Giving through AGAPAY this month.</div></div>
-            <div class="metric-card"><div class="metric-label">This year</div><div class="metric-value" id="desktopMetricYtd">$0</div><div class="metric-note">Year-to-date offerings.</div></div>
-            <div class="metric-card"><div class="metric-label">Offerings</div><div class="metric-value" id="desktopMetricOfferings">0</div><div class="metric-note">Recorded gifts and checkout activity.</div></div>
-            <div class="metric-card"><div class="metric-label">Names</div><div class="metric-value" id="desktopMetricCommemorations">0</div><div class="metric-note">Commemoration submissions.</div></div>
-          </div>
+          <section class="mobile-summary-card" aria-label="Total giving summary">
+            <div class="giving-summary-head"><div class="summary-title">Total Giving</div><a href="/myagapay/giving/history">History</a></div>
+            <div class="summary-metrics-row">
+              <div class="summary-metric"><span>This month</span><strong id="desktopMetricMonth">$0</strong></div>
+              <div class="summary-divider"></div>
+              <div class="summary-metric"><span>This year</span><strong id="desktopMetricYtd">$0</strong></div>
+            </div>
+          </section>
         </div>
 
         <div class="desktop-dashboard-grid">
@@ -165,51 +162,48 @@
             </div>
           </section>
 
-          <section class="desktop-panel">
+          <section class="desktop-panel giving-funds-section">
             <div class="desktop-panel-head">
               <h2>Active Funds</h2>
-              <a data-giving-plus-gift="fund" href="/myagapay/giving/give?giftType=fund">Give to fund</a>
             </div>
             <div class="active-funds-stack" id="desktopActiveFunds">
               <article class="active-funds-card active-funds-empty">
-                <span class="campaign-pill">Funds</span>
-                <h3>Loading parish funds…</h3>
-                <p>Checking the funds available through your parish.</p>
+                <p>Loading parish funds…</p>
               </article>
             </div>
           </section>
 
           <section class="desktop-panel">
             <div class="desktop-panel-head">
-              <h2>Active Campaign</h2>
+              <h2>Active Campaigns</h2>
               <a data-giving-plus-gift="campaign" href="/myagapay/giving/give?giftType=campaign">See all</a>
             </div>
             <div class="campaign-stack" id="desktopActiveCampaigns"></div>
           </section>
 
-          <section class="desktop-panel">
+          <section class="desktop-panel giving-remembrance-section" aria-labelledby="desktopGivingRemembranceHeading">
+            <div class="desktop-panel-head"><h2 id="desktopGivingRemembranceHeading">Prayer &amp; Remembrance</h2></div>
+            <a class="giving-remembrance-link" href="/myagapay/sacraments#commemorations">
+              <span class="active-fund-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg></span>
+              <strong>Commemorations</strong><svg class="giving-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+            </a>
+          </section>
+
+          <section class="desktop-panel giving-festal-section">
             <div class="desktop-panel-head">
-              <h2>Next Feast Offering</h2>
-              <a href="/myagapay/giving/calendar">View all</a>
+              <h2>Next Festal Offering</h2>
             </div>
             <article class="next-feast-card">
+              <div class="giving-feast-icon" id="desktopNextFeastIcon" role="img" hidden></div>
               <div>
-                <span class="campaign-pill">Alms</span>
-                <span class="feast-kicker" id="desktopNextFeastCalendar">Next Feast Day:</span>
+                <span class="feast-kicker" id="desktopNextFeastCalendar">Upcoming feast</span>
                 <h3 id="desktopNextFeastName">Loading parish feast…</h3>
                 <p id="desktopNextFeastDate">Checking your parish calendar.</p>
               </div>
-              <a id="desktopNextFeastLink" data-giving-plus-gift="feast" href="/myagapay/giving/give?giftType=feast">Offer</a>
+              <a id="desktopNextFeastLink" href="/myagapay/giving/calendar">View calendar</a>
             </article>
           </section>
 
-          <section class="desktop-panel">
-            <div class="desktop-panel-head">
-              <h2>Recent Offerings</h2>
-              <a href="/myagapay/giving/history">View history</a>
-            </div>
-            <div class="list" id="desktopRecentOfferings"></div>
-          </section>
         </div>
       </section>
 
@@ -219,15 +213,12 @@
         </div>
 
         <header class="mobile-hero-header">
-          <a class="mobile-brand-mark" href="/myagapay/" aria-label="My AGAPAY Home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="mobile-identity">
-            <div class="mobile-kicker">AGAPAY — Love how you give</div>
             <h1 id="greeting">Welcome, Faithful Member</h1>
             <p id="donorParishName" data-auth-required hidden></p>
-            <a class="change-parish-link" href="/myagapay/account" data-auth-required hidden>Change church</a>
             <a class="welcome-signin-prompt" href="/myagapay/login" data-auth-guest>Sign in to load your church, giving history, and saved offering preferences.</a>
           </div>
-          <a class="mobile-avatar" href="/myagapay/account" aria-label="Open settings">FM</a>
+          <a class="giving-account-link" href="/myagapay/account">Account</a>
         </header>
 
         <section class="pledge-tracker-card" id="pledgeTrackerCard" hidden aria-label="Annual pledge progress">
@@ -268,7 +259,7 @@
         </section>
 
         <section class="mobile-summary-card" aria-label="Total giving summary">
-          <div class="summary-title">Total Giving</div>
+          <div class="giving-summary-head"><div class="summary-title">Total Giving</div><a href="/myagapay/giving/history">History</a></div>
           <div class="summary-metrics-row">
             <div class="summary-metric">
               <span>This month</span>
@@ -280,7 +271,6 @@
               <strong id="metricYtd">$0</strong>
             </div>
           </div>
-          <img class="summary-watermark" src="/mark.png" alt="" />
         </section>
 
         <section class="mobile-section">
@@ -311,16 +301,13 @@
           </div>
         </section>
 
-        <section class="mobile-section">
+        <section class="mobile-section giving-funds-section">
           <div class="mobile-section-head">
             <h2>Active Funds</h2>
-            <a data-giving-plus-gift="fund" href="/myagapay/giving/give?giftType=fund">Give to fund</a>
           </div>
           <div class="active-funds-stack" id="activeFunds">
             <article class="active-funds-card active-funds-empty">
-              <span class="campaign-pill">Funds</span>
-              <h3>Loading parish funds…</h3>
-              <p>Checking the funds available through your parish.</p>
+              <p>Loading parish funds…</p>
             </article>
           </div>
         </section>
@@ -339,41 +326,36 @@
           </div>
         </section>
 
-        <section class="mobile-section">
+        <section class="mobile-section giving-remembrance-section" aria-labelledby="givingRemembranceHeading">
+          <div class="mobile-section-head"><h2 id="givingRemembranceHeading">Prayer &amp; Remembrance</h2></div>
+          <a class="giving-remembrance-link" href="/myagapay/sacraments#commemorations">
+            <span class="active-fund-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg></span>
+            <strong>Commemorations</strong><svg class="giving-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </a>
+        </section>
+
+        <section class="mobile-section giving-festal-section">
           <div class="mobile-section-head">
-            <h2>Next Feast Offering</h2>
-            <a href="/myagapay/giving/calendar">View all</a>
+            <h2>Next Festal Offering</h2>
           </div>
           <article class="next-feast-card" id="nextFeastCard">
+            <div class="giving-feast-icon" id="nextFeastIcon" role="img" hidden></div>
             <div>
-              <span class="campaign-pill">Alms</span>
-              <span class="feast-kicker" id="nextFeastCalendar">Next Feast Day:</span>
+              <span class="feast-kicker" id="nextFeastCalendar">Upcoming feast</span>
               <h3 id="nextFeastName">Loading parish feast…</h3>
               <p id="nextFeastDate">Checking your parish calendar.</p>
             </div>
-            <a id="nextFeastLink" data-giving-plus-gift="feast" href="/myagapay/giving/give?giftType=feast">Offer</a>
+            <a id="nextFeastLink" href="/myagapay/giving/calendar">View calendar</a>
           </article>
         </section>
 
-        <section class="mobile-section mobile-live-section">
-          <div class="mobile-section-head">
-            <h2>Recent Offerings</h2>
-          </div>
-          <div class="mobile-stat-row">
-            <div><strong id="metricOfferings">0</strong><span>Offerings</span></div>
-            <div><strong id="metricRecurring">0</strong><span>Recurring</span></div>
-            <div><strong id="metricCommemorations">0</strong><span>Names</span></div>
-          </div>
-          <div class="list mobile-offering-list" id="recentOfferings">
-          </div>
-        </section>
 
         <nav class="my-agapay-tabbar" aria-label="My AGAPAY navigation">
-          <a class="active" href="/myagapay/dashboard"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Give</span></a>
+          <a href="/myagapay/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
+          <a class="active" href="/myagapay/giving"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9h-3.75a1.5 1.5 0 0 0 0 3h2.5a1.5 1.5 0 0 1 0 3H9.5"/></svg><span>Giving</span></a>
           <a href="/myagapay/bookstore"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Bookstore</span></a>
-          <a href="/myagapay/parish-life"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg><span data-parish-life-label>Today</span></a>
-          <a href="/myagapay/directory"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg><span>Directory</span></a>
-          <a href="/myagapay/sacraments"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg><span>Sacraments &amp; Services</span></a>
+          <a href="/myagapay/directory"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg><span>Directory</span></a>
+          <a href="/myagapay/account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
         </nav>
       </div>
     </main>

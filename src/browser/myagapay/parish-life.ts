@@ -272,30 +272,41 @@ function parishLifeApprovedServiceEvents(payload: ParishLifePayload = {}) {
 }
 
 function parishLifeTierSectionsHtml(communicationsEnabled: boolean) {
-  if (!communicationsEnabled) return '';
+  const listenHeader = communicationsEnabled
+    ? '<h3 id="listenHeading">Latest audio</h3><a href="/myagapay/teaching">Open Library</a>'
+    : '<h3 id="listenHeading">Listen</h3><a href="/myagapay/teaching?mode=podcasts">Open Podcasts</a>';
   return `
+    ${
+      communicationsEnabled
+        ? `
     <section class="parish-life-home-section" aria-labelledby="yourMinistriesHeading">
       <div class="parish-life-section-head"><h2 id="yourMinistriesHeading">Your Ministries</h2><a href="/myagapay/groups">All Groups</a></div>
       <div class="parish-life-ministry-grid" id="parishLifeMinistries"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading ministries…</p></div>
-    </section>
+    </section>`
+        : ''
+    }
     <section class="parish-life-explore" aria-labelledby="parishLifeExploreHeading">
-      <h2 id="parishLifeExploreHeading">Explore your parish</h2>
-      <div class="parish-life-media-grid">
+      <h2 id="parishLifeExploreHeading">${communicationsEnabled ? 'Explore your parish' : 'Explore'}</h2>
+      <div class="${communicationsEnabled ? 'parish-life-media-grid' : ''}">
     <section class="parish-life-home-section parish-life-listen-section" aria-labelledby="listenHeading">
-      <div class="parish-life-section-head"><h3 id="listenHeading">Latest audio</h3><a href="/myagapay/teaching">Open Library</a></div>
+      <div class="parish-life-section-head">${listenHeader}</div>
       <section class="parish-life-listen-resume" id="parishLifeContinueListeningSection" aria-labelledby="continueListeningHeading" hidden>
         <div class="parish-life-listen-subhead"><h3 id="continueListeningHeading">Continue listening</h3></div>
         <div id="parishLifeContinueListening"></div>
       </section>
       <section class="parish-life-listen-latest" aria-labelledby="latestAudioHeading">
-        <h4 class="koinonia-visually-hidden" id="latestAudioHeading">Latest audio</h4>
-        <div class="parish-life-recording-list" id="parishLifeListenItems"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading audio…</p></div>
+        <h4 class="koinonia-visually-hidden" id="latestAudioHeading">${communicationsEnabled ? 'Latest audio' : 'Latest podcast episodes'}</h4>
+        <div class="parish-life-recording-list" id="parishLifeListenItems"${communicationsEnabled ? '' : ' data-podcasts-only'}><p class="sw-tool-loading parish-life-section-loading" role="status">Loading audio…</p></div>
       </section>
     </section>
-    <section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
+    ${
+      communicationsEnabled
+        ? `<section class="parish-life-home-section" aria-labelledby="recentVideosHeading">
       <div class="parish-life-section-head"><h3 id="recentVideosHeading">Recent video</h3><a href="/myagapay/media">All Media</a></div>
       <div class="parish-life-video-grid" id="parishLifeVideos"><p class="sw-tool-loading parish-life-section-loading" role="status">Loading videos…</p></div>
-    </section>
+    </section>`
+        : ''
+    }
       </div>
     <div id="parishLifeNewsMount">
       <section class="parish-life-home-section" aria-labelledby="recentNewsHeading">
@@ -530,8 +541,9 @@ function renderParishLifeListenItems() {
     return;
   }
   if (!items.length) {
-    target.innerHTML =
-      '<div class="parish-life-empty-state"><strong>No audio yet</strong><p>New parish recordings and episodes from your podcast subscriptions will appear here.</p></div>';
+    target.innerHTML = target.hasAttribute('data-podcasts-only')
+      ? '<div class="parish-life-empty-state"><strong>Discover Orthodox podcasts</strong><p>Follow a show in Listen to see new episodes here.</p></div>'
+      : '<div class="parish-life-empty-state"><strong>No audio yet</strong><p>New parish recordings and episodes from your podcast subscriptions will appear here.</p></div>';
     return;
   }
   target.innerHTML = items
@@ -874,7 +886,7 @@ function applyParishLifeExperience(
   experience: { communicationsEnabled: boolean; label: string; [field: string]: unknown },
   parish: AppHeaderParish | null
 ) {
-  window.KoinoniaExperience?.parishContext(parish, experience.communicationsEnabled);
+  window.KoinoniaExperience?.parishContext(parish, false);
   document.title = `${experience.label} | My AGAPAY`;
   document.documentElement.dataset.parishLifeExperience = experience.communicationsEnabled ? 'koinonia' : 'today';
   document.querySelectorAll<HTMLElement>('[data-parish-life-label]').forEach((element) => {
@@ -886,9 +898,7 @@ function applyParishLifeExperience(
   if (sidebarCommunications) sidebarCommunications.hidden = !experience.communicationsEnabled;
   const inboxMount = document.getElementById('parishLifeInboxMount') as HTMLElement;
   if (inboxMount) inboxMount.innerHTML = parishLifeInboxShellHtml(experience.communicationsEnabled);
-  (document.getElementById('parishLifeTierSections') as HTMLElement).innerHTML = (
-    parishLifeTierSectionsHtml as (enabled: boolean, parish?: unknown) => string
-  )(experience.communicationsEnabled, parish || {});
+  (document.getElementById('parishLifeTierSections') as HTMLElement).innerHTML = parishLifeTierSectionsHtml(false);
 }
 
 function initializeParishLifeStructure() {
@@ -1005,9 +1015,7 @@ async function loadParishLife() {
         ) {
           hasKoinoniaAccess = false;
           document
-            .querySelectorAll<HTMLElement>(
-              '#koinoniaShortcuts, #parishLifeInboxMount, #parishLifeTierSections, .parish-life-notification-bell'
-            )
+            .querySelectorAll<HTMLElement>('#parishLifeInboxMount, .parish-life-notification-bell')
             .forEach((element) => {
               element.hidden = true;
             });
@@ -1016,6 +1024,12 @@ async function loadParishLife() {
           throw new Error(access.error || 'Unable to confirm Koinonia access.');
         }
       }
+    }
+    window.KoinoniaExperience?.parishContext(parish, hasKoinoniaAccess, !hasKoinoniaAccess);
+    if (hasKoinoniaAccess) {
+      document.getElementById('parishLifeTierSections')!.innerHTML = parishLifeTierSectionsHtml(true);
+    } else {
+      parishLifeListenSources.parish = [];
     }
     const liturgicalDayPromise =
       typeof loadDonorLiturgicalDay === 'function'
@@ -1044,8 +1058,30 @@ async function loadParishLife() {
       })
       .catch(() => renderDonorParishCalendar({}, parish));
 
+    const podcastProgressPromise = loadParishLifeContinueListening(headers);
+    const podcastsPromise = loadRecentPodcastEpisodes(headers);
+    const parishNewsPromise = hasKoinoniaAccess
+      ? Promise.all([
+          parishLifeFetch('/api/donor/custom-news-feeds', headers),
+          parishLifeFetch('/api/donor/external-feeds/parish_blog', headers),
+        ])
+      : Promise.resolve([null, null]);
+    const newsPromise = Promise.all([
+      parishNewsPromise,
+      parishLifeFetch('/api/donor/external-feeds/oca', headers),
+      parishLifeFetch('/api/donor/external-feeds/orthochristian', headers),
+      parishLifeFetch('/api/donor/external-feeds/spzh', headers),
+      parishLifeFetch('/api/donor/external-feeds/orthodoxtimes', headers),
+      parishLifeFetch('/api/donor/external-feeds/orthodoxethos', headers),
+    ]).then(([[customNews, parishBlog], ...newsSources]) => {
+      renderRecentNews([
+        ...([parishBlog, ...newsSources].filter(Boolean) as ParishLifePayload[]),
+        ...(customNews?.feeds || []),
+      ]);
+    });
+
     if (!hasKoinoniaAccess) {
-      await Promise.all([liturgicalDayPromise, calendarPromise]);
+      await Promise.all([liturgicalDayPromise, calendarPromise, podcastProgressPromise, podcastsPromise, newsPromise]);
       status.hidden = true;
       return;
     }
@@ -1076,20 +1112,7 @@ async function loadParishLife() {
       renderRecentRecordings(teaching || {});
       window.MyAgapayShell?.setTeachingUnreadCount(Math.max(0, Number(teaching?.unreadCount) || 0));
     });
-    const podcastProgressPromise = loadParishLifeContinueListening(headers);
-    const podcastsPromise = loadRecentPodcastEpisodes(headers);
     const mediaPromise = parishLifeFetch('/api/donor/videos', headers).then((media) => renderRecentVideos(media || {}));
-    const newsPromise = Promise.all([
-      parishLifeFetch('/api/donor/custom-news-feeds', headers),
-      parishLifeFetch('/api/donor/external-feeds/parish_blog', headers),
-      parishLifeFetch('/api/donor/external-feeds/oca', headers),
-      parishLifeFetch('/api/donor/external-feeds/orthochristian', headers),
-      parishLifeFetch('/api/donor/external-feeds/spzh', headers),
-      parishLifeFetch('/api/donor/external-feeds/orthodoxtimes', headers),
-      parishLifeFetch('/api/donor/external-feeds/orthodoxethos', headers),
-    ]).then(([customNews, ...newsSources]) => {
-      renderRecentNews([...(newsSources.filter(Boolean) as ParishLifePayload[]), ...(customNews?.feeds || [])]);
-    });
     await Promise.all([
       liturgicalDayPromise,
       calendarPromise,

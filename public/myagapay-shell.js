@@ -3,9 +3,9 @@
   // src/browser/myagapay/shell-icons.ts
   var icons = {
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
-    give: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg>',
+    give: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9h-3.75a1.5 1.5 0 0 0 0 3h2.5a1.5 1.5 0 0 1 0 3H9.5"/></svg>',
     history:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>',
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l2 1.5L9 3l3 1.5L15 3l2 1.5L19 3v18l-2-1.5L15 21l-3-1.5L9 21l-2-1.5L5 21z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>',
     bookstore:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
     parishLife:
@@ -26,7 +26,7 @@
     commemorations:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg>',
     sacraments:
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>',
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v3a7 7 0 0 1-14 0V4Zm7 10v6m-5 1h10M6 7h12"/></svg>',
     library:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>',
     learn:
@@ -97,7 +97,6 @@
         label: 'History',
         short: 'Giving history',
         icon: icons.history,
-        mobileFallbackFor: 'sacramentsEnabled',
         desktopHidden: true,
       },
       {
@@ -125,12 +124,11 @@
         parishFeature: 'prayerRequestsEnabled',
       },
       {
-        id: 'settings',
+        id: 'account',
         href: '/myagapay/account',
-        label: 'Settings',
+        label: 'Account',
         short: 'Account settings',
         icon: icons.account,
-        mobileFallbackFor: 'bookstoreEnabled',
         desktopHidden: true,
       },
     ];
@@ -242,25 +240,9 @@
       });
     }
     function mobileProducts() {
-      const byId = new Map(products().map((item) => [item.id, item]));
-      const active = activeProduct();
-      const featureOrFallback = (featureId, fallbackId) => {
-        const feature = byId.get(featureId);
-        return parishCapabilities[feature?.parishFeature] === true || active === featureId
-          ? feature
-          : byId.get(fallbackId);
-      };
-      const libraryOrHistory = featureOrFallback('library', 'history');
-      const directory = byId.get('directory');
-      const directoryOrFallback =
-        parishCapabilities.directoryEnabled || active === 'directory' ? directory : libraryOrHistory;
-      return [
-        byId.get('parish-life'),
-        byId.get('giving'),
-        featureOrFallback('bookstore', 'settings'),
-        directoryOrFallback,
-        byId.get('commemorations'),
-      ].filter(Boolean);
+      return products().filter((item) =>
+        ['parish-life', 'giving', 'bookstore', 'directory', 'account'].includes(item.id)
+      );
     }
     function hamburgerProducts() {
       return visibleProducts();
@@ -668,8 +650,8 @@
         .map((item) => {
           const current =
             item.id === active ||
-            (item.id === 'settings' && active === 'account') ||
-            (item.id === 'giving' && active === 'history' && !navProducts.some((product) => product.id === 'history'));
+            (item.id === 'parish-life' && ['commemorations', 'library'].includes(active) && !isDesktopSideNav) ||
+            (item.id === 'giving' && active === 'history');
           const activeClass = current ? (isLearnNav ? 'is-active' : 'active') : '';
           if (item.deferUntilCapabilitiesLoaded && !capabilitiesLoaded) {
             const loadingLabel = isDesktopSideNav
@@ -685,6 +667,9 @@
           const label = isDesktopSideNav
             ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>${badge}`
             : `<span>${item.mobileLabel || item.label}</span>${badge}`;
+          if (!isDesktopSideNav && item.parishFeature && !parishCapabilities[item.parishFeature] && !current) {
+            return `<span class="myagapay-tab-disabled" role="link" aria-disabled="true">${item.icon}${label}</span>`;
+          }
           return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ''}>${item.icon}${label}</a>`;
         })
         .join('');
@@ -720,7 +705,7 @@
         })
         .join('');
       const sharedExtras = document.body.classList.contains('app-shared-header-page')
-        ? `<a href="/myagapay/giving/calendar">${icons.history}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>`
+        ? `<a href="/myagapay/calendar">${icons.calendar}<span>Calendar</span></a><button type="button" data-app-support>Report a problem / Request a feature</button><button type="button" data-app-log-out>Log out</button>`
         : '';
       return `${links}<span class="koinonia-mobile-menu-divider" aria-hidden="true"></span><a href="/myagapay/giving/history">${icons.history}<span>Giving History</span></a><a href="/myagapay/account"${active === 'account' ? ' aria-current="page"' : ''}>${icons.account}<span>Account Settings</span></a>${sharedExtras}`;
     }
