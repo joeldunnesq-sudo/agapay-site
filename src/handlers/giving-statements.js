@@ -119,8 +119,73 @@ async function computeParishDonorYearGiving(env, parishId, fiscalYear) {
       label: gift.fund + ' (' + gift.sourceLabel + ')',
     });
   }
+  if (byDonor.size) await combineHouseholdGiving(env, parishId, fiscalYear, byDonor);
   for (const entry of byDonor.values()) entry.gifts.sort((a, b) => a.date.localeCompare(b.date));
   return Array.from(byDonor.values());
+}
+async function combineHouseholdGiving(env, parishId, fiscalYear, byDonor) {
+  const links = await d1All(
+    env,
+    `
+    SELECT recipient.email AS recipient_email, giver.email AS giver_email,
+           recipient_person.preferred_name AS recipient_name, giver_person.preferred_name AS giver_name
+      FROM directory_household_invitations i
+      JOIN directory_households h ON h.id = i.household_id AND h.parish_id = i.parish_id AND h.active = 1
+      JOIN directory_change_requests r ON r.household_id = h.id AND r.parish_id = i.parish_id
+        AND r.request_type = 'household_membership_add' AND r.status = 'completed'
+        AND json_extract(r.requested_payload_json, '$.shareToLink.invitationId') = i.id
+        AND json_extract(r.requested_payload_json, '$.shareToLink.combineGiving') = 1
+      JOIN directory_person_links giver_link ON giver_link.claim_id = i.id AND giver_link.person_id = i.person_id
+        AND giver_link.link_type = 'platform_user' AND giver_link.external_id = i.claimed_by_user_id AND giver_link.active = 1
+      JOIN directory_person_links recipient_link ON recipient_link.external_id = i.created_by_user_id
+        AND recipient_link.person_id = r.requester_person_id AND recipient_link.link_type = 'platform_user' AND recipient_link.active = 1
+      JOIN directory_people giver_person ON giver_person.id = giver_link.person_id AND giver_person.active = 1
+      JOIN directory_people recipient_person ON recipient_person.id = recipient_link.person_id AND recipient_person.active = 1
+      JOIN directory_household_members giver_member ON giver_member.household_id = h.id
+        AND giver_member.person_id = giver_person.id AND giver_member.active = 1
+      JOIN directory_household_admins admin ON admin.household_id = h.id
+        AND admin.person_id = recipient_person.id AND admin.active = 1
+      JOIN platform_users giver ON giver.id = giver_link.external_id AND giver.status = 'active' AND giver.email_verified_at IS NOT NULL
+      JOIN platform_users recipient ON recipient.id = recipient_link.external_id AND recipient.status = 'active' AND recipient.email_verified_at IS NOT NULL
+     WHERE i.parish_id = ?1 AND i.combine_giving = 1 AND i.status = 'claimed'
+       AND giver.id <> recipient.id
+       AND NOT EXISTS (
+         SELECT 1 FROM giving_statements previous WHERE previous.parish_id = i.parish_id
+           AND previous.fiscal_year = ?2 AND previous.donor_email = giver.email
+       )
+     ORDER BY giver.email, recipient.email`,
+    parishId,
+    fiscalYear
+  );
+  const recipientEmails = new Set(links.map((link) => link.recipient_email));
+  const giverLinkCounts = /* @__PURE__ */ new Map();
+  for (const { giver_email: email } of links) {
+    giverLinkCounts.set(email, (giverLinkCounts.get(email) || 0) + 1);
+  }
+  for (const {
+    recipient_email: recipientEmail,
+    giver_email: giverEmail,
+    recipient_name: recipientName,
+    giver_name: giverName,
+  } of links) {
+    if (giverLinkCounts.get(giverEmail) !== 1 || recipientEmails.has(giverEmail) || giverLinkCounts.has(recipientEmail))
+      continue;
+    const giver = byDonor.get(giverEmail);
+    if (!giver) continue;
+    const recipient = byDonor.get(recipientEmail) || {
+      email: recipientEmail,
+      donorName: recipientName,
+      totalCents: 0,
+      gifts: [],
+    };
+    recipient.donorName = [recipient.donorName || recipientName, giver.donorName || giverName]
+      .filter(Boolean)
+      .join(' and ');
+    recipient.totalCents += giver.totalCents;
+    recipient.gifts.push(...giver.gifts);
+    byDonor.set(recipientEmail, recipient);
+    byDonor.delete(giverEmail);
+  }
 }
 async function loadDonorContactInfo(env, email) {
   if (!d1(env)) return {};

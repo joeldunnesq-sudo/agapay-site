@@ -48,6 +48,8 @@ import {
   claimHouseholdShareInvitation,
   createHouseholdShareInvitation,
   inspectHouseholdShareInvitation,
+  listHouseholdStatementSharing,
+  stopHouseholdStatementSharing,
 } from '../directory/household-share-invitations.js';
 async function body(request) {
   return request.json().catch(() => ({}));
@@ -73,6 +75,14 @@ async function handleDirectorySelfService(request, env) {
   try {
     const context = await withContext(request, env);
     if (!context) return unauthorized();
+    if (request.method === 'GET' && path === '/api/directory/self/statement-sharing') {
+      return json({ ok: true, choices: await listHouseholdStatementSharing(env, context.user.id) });
+    }
+    const statementSharingMatch = path.match(/^\/api\/directory\/self\/statement-sharing\/([^/]+)$/);
+    if (request.method === 'DELETE' && statementSharingMatch) {
+      await stopHouseholdStatementSharing(env, context.user.id, decodeURIComponent(statementSharingMatch[1]));
+      return json({ ok: true });
+    }
     const householdShareTokenMatch = path.match(/^\/api\/directory\/household-share\/([^/]+)(?:\/(claim))?$/);
     if (householdShareTokenMatch) {
       const limited = await rateLimit(request, env, 'directory-household-share-recipient', {
@@ -86,8 +96,12 @@ async function handleDirectorySelfService(request, env) {
         return json({ ok: true, invitation: await inspectHouseholdShareInvitation(env, { token }) });
       }
       if (request.method === 'POST' && action === 'claim') {
+        const { combineGiving } = await body(request);
         return json(
-          { ok: true, result: await claimHouseholdShareInvitation(env, { context, token, correlationId }) },
+          {
+            ok: true,
+            result: await claimHouseholdShareInvitation(env, { context, token, combineGiving, correlationId }),
+          },
           { status: 201 }
         );
       }
@@ -271,10 +285,17 @@ async function handleDirectorySelfService(request, env) {
           windowSeconds: 300,
         });
         if (limited) return limited;
+        const { combineGiving } = await body(request);
         return json(
           {
             ok: true,
-            invitation: await createHouseholdShareInvitation(env, { context, householdId, personId, correlationId }),
+            invitation: await createHouseholdShareInvitation(env, {
+              context,
+              householdId,
+              personId,
+              combineGiving,
+              correlationId,
+            }),
           },
           { status: 201 }
         );

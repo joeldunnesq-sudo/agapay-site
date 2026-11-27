@@ -162,9 +162,9 @@
           : "/myagapay/";
       }
 
-      // Preserve a directory invitation when a new user chooses Sign up.
+      // Preserve directory and household invitations through sign-up.
       const signupLink = document.querySelector('a[href="/myagapay/signup"]');
-      if (signupLink && /^\/myagapay\/directory\?invite=[a-f0-9]{64}$/.test(safeNextPath())) {
+      if (signupLink && /^\/myagapay\/(?:directory\?invite=|join-household\?token=)[a-f0-9]{64}$/.test(safeNextPath())) {
         signupLink.href = "/myagapay/signup?next=" + encodeURIComponent(safeNextPath());
       }
 

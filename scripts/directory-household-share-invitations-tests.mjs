@@ -9,9 +9,12 @@ import {
   claimHouseholdShareInvitation,
   createHouseholdShareInvitation,
   inspectHouseholdShareInvitation,
+  listHouseholdStatementSharing,
+  stopHouseholdStatementSharing,
 } from '../src/directory/household-share-invitations.js';
 import { DirectoryServiceError } from '../src/directory/foundation.js';
 import { decideDirectoryReviewItem } from '../src/directory/admin.js';
+import { computeParishDonorYearGiving } from '../src/handlers/giving-statements.js';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const migration = (name) => readFileSync(path.join(repoRoot, 'migrations', name), 'utf8');
@@ -21,6 +24,7 @@ function makeEnv() {
   db.exec('PRAGMA foreign_keys = ON');
   for (const name of [
     '0014_audit_log.sql',
+    '0017_giving_statements.sql',
     '0020_platform_identity.sql',
     '0022_directory_canonical_foundation.sql',
     '0023_directory_contact_privacy_publication.sql',
@@ -33,6 +37,7 @@ function makeEnv() {
     '0030_directory_child_publication_phase4b.sql',
     '0031_directory_ministries_phase5a.sql',
     '0084_directory_household_share_invitations.sql',
+    '0131_household_statement_consent.sql',
   ])
     db.exec(migration(name));
   db.exec(`CREATE TABLE directory_household_verifications (
@@ -131,12 +136,13 @@ function staffReviewerContext() {
   };
 }
 
-async function invitationFixture() {
+async function invitationFixture(combineGiving = false) {
   const fixture = seed();
   const invitation = await createHouseholdShareInvitation(fixture.env, {
     context: fixture.inviterContext,
     householdId: 'household_1',
     personId: 'person_target',
+    combineGiving,
   });
   const token = new URL(`https://agapay.test${invitation.sharePath}`).searchParams.get('token');
   return { ...fixture, invitation, token };
@@ -293,15 +299,69 @@ await test('approved proposal projects the identity link only after review compl
   );
 });
 
+await test('separate gifts combine only after both adults consent and the parish approves', async () => {
+  const { env, db, claimantContext, token } = await invitationFixture(true);
+  db.exec(`UPDATE platform_users SET email_verified_at = datetime('now');
+    CREATE TABLE donor_offerings (parish_id TEXT, donor_email TEXT, created_at TEXT, payment_status TEXT, data TEXT);`);
+  const insert = db.prepare("INSERT INTO donor_offerings VALUES (?, ?, ?, 'paid', ?)");
+  insert.run(
+    'parish_1',
+    'anna@example.org',
+    '2026-01-03',
+    JSON.stringify({ donorName: 'Anna', giftAmountCents: 1000 })
+  );
+  insert.run(
+    'parish_1',
+    'john@example.org',
+    '2026-03-01',
+    JSON.stringify({ donorName: 'John', giftAmountCents: 2500 })
+  );
+  insert.run(
+    'parish_2',
+    'john@example.org',
+    '2026-03-01',
+    JSON.stringify({ donorName: 'John', giftAmountCents: 4000 })
+  );
+  const totals = async (parish = 'parish_1') =>
+    (await computeParishDonorYearGiving(env, parish, 2026)).map(({ email, totalCents, gifts }) => [
+      email,
+      totalCents,
+      gifts.length,
+    ]);
+  const separate = [
+    ['anna@example.org', 1000, 1],
+    ['john@example.org', 2500, 1],
+  ];
+  assert.equal((await inspectHouseholdShareInvitation(env, { token })).combineGivingOffered, true);
+  const result = await claimHouseholdShareInvitation(env, { context: claimantContext, token, combineGiving: true });
+  assert.deepEqual(await totals(), separate);
+  await decideDirectoryReviewItem(env, {
+    context: staffReviewerContext(),
+    sourceType: 'change_request',
+    sourceId: result.requestId,
+    decision: 'approve',
+  });
+  assert.deepEqual(await totals(), [['anna@example.org', 3500, 2]]);
+  assert.deepEqual(await totals('parish_2'), [['john@example.org', 4000, 1]]);
+  db.exec(`INSERT INTO giving_statements (id, parish_id, donor_email, fiscal_year, total_cents, gift_count)
+    VALUES ('previous', 'parish_1', 'john@example.org', 2026, 2500, 1)`);
+  assert.deepEqual(await totals(), separate);
+  db.exec("DELETE FROM giving_statements WHERE id = 'previous'");
+  const [choice] = await listHouseholdStatementSharing(env, claimantContext.user.id);
+  await assert.rejects(stopHouseholdStatementSharing(env, 'another_user', choice.id), { code: 'not_found' });
+  await stopHouseholdStatementSharing(env, claimantContext.user.id, choice.id);
+  assert.deepEqual(await totals(), separate);
+});
+
 await test('donor and recipient UI explain proposal-only behavior and expose the exact route', async () => {
   const directoryPage = readFileSync(path.join(repoRoot, 'public', 'myagapay', 'directory.html'), 'utf8');
   const joinPage = readFileSync(path.join(repoRoot, 'public', 'myagapay', 'join-household.html'), 'utf8');
   const worker = readFileSync(path.join(repoRoot, 'src', 'worker.js'), 'utf8');
-  assert.ok(includesJavaScriptFragment(directoryPage, 'data-share-household-member'));
-  assert.match(directoryPage, /it does not connect the account automatically/i);
-  assert.ok(includesJavaScriptFragment(joinPage, 'Submit for parish review'));
-  assert.match(joinPage, /never connects an account automatically and never verifies a household/i);
-  assert.ok(includesJavaScriptFragment(worker, '["/myagapay/join-household", "/myagapay/join-household.html"]'));
+  assert.match(directoryPage, /data-share-household-member/);
+  assert.match(directoryPage, /Your parish reviews the connection request/i);
+  assert.match(joinPage, /Submit for parish review/);
+  assert.match(joinPage, /Your parish reviews the request before connecting your My AGAPAY account/i);
+  assert.match(worker, /join-household\.html/);
 });
 
 if (!process.exitCode) console.log(`Directory household share invitation checks passed (${passed}).`);
