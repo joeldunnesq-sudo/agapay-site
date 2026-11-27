@@ -482,9 +482,10 @@ assert.match(
 );
 assert.match(
   sources['public/myagapay/teaching.js'],
-  /openRequestedKoinoniaPodcastEpisode[\s\S]*parameters\.get\(['"]feed['"]\)[\s\S]*parameters\.get\(['"]episode['"]\)[\s\S]*playKoinoniaPodcast\(episode\)/,
+  /openRequestedKoinoniaPodcastEpisode[\s\S]*parameters\.get\(['"]feed['"]\)[\s\S]*parameters\.get\(['"]episode['"]\)[\s\S]*playKoinoniaPodcast\(episode, parameters\.get\(['"]player['"]\) === ['"]full['"]\)/,
   'podcast landing links must open the selected episode in the shared player'
 );
+assert.match(sources['public/myagapay/parish-life.js'], /renderParishLifeContinueListening[\s\S]*?&player=full/);
 assert.doesNotMatch(
   sources['public/myagapay/teaching.js'],
   /<audio controls preload="metadata"/,
