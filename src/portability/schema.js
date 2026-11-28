@@ -231,7 +231,7 @@ const PORTABILITY_SCHEMA = Object.freeze({
   "stewardship_reports": ["annual_meeting_id", "body", "created_at", "created_by", "id", "report_type", "sort_order", "title", "updated_at"],
   "stewardship_resolutions": ["annual_meeting_id", "body", "created_at", "id", "resolved_text", "sort_order", "title"],
   "stewardship_restricted_fund_snapshots": ["annual_meeting_id", "beginning_balance_cents", "created_at", "ending_balance_cents", "fund_name", "id", "notes", "sort_order", "total_disbursed_cents", "total_received_cents"],
-  "stripe_events": ["error_message", "event_type", "id", "processed_at", "received_at", "status"],
+  "stripe_events": ["error_message", "event_type", "id", "parish_id", "processed_at", "received_at", "status", "stripe_account_id"],
   "stripe_payment_volume_records": ["charge_status", "classification_source", "currency", "gross_cents", "net_cents", "occurred_at", "parish_id", "payment_class", "refunded_cents", "stripe_account_id", "stripe_charge_id", "updated_at"],
   "stripe_payment_volume_scans": ["last_completed_at", "last_error", "parish_id", "pass_started_at", "period_start", "scanned_count", "starting_after", "status", "stripe_account_id", "updated_at"],
   "subscription_early_adopter_slots": ["activated_at", "registration_reference", "reserved_at", "slot", "status", "updated_at"],

@@ -747,6 +747,7 @@ export const serverTypeScriptCompositions = Object.freeze({
   'src/handlers/stripe.ts': [
     'src/handlers/stripe-shared.ts',
     'src/handlers/stripe-account-refresh.ts',
+    'src/handlers/stripe-event-context.ts',
     'src/handlers/stripe-webhook-processing.ts',
   ],
   'src/handlers/parish-events.ts': [
@@ -772,6 +773,7 @@ export const serverTypeScriptCompositions = Object.freeze({
     'src/handlers/donor-giving.ts',
   ],
   'src/handlers/admin.ts': [
+    'src/handlers/stripe-payment-retry.ts',
     'src/handlers/admin-shared.ts',
     'src/handlers/admin-revenue.ts',
     'src/handlers/admin-registration-storage.ts',
