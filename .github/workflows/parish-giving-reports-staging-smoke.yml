@@ -1,67 +1,27 @@
-name: Parish Giving Reports Staging Smoke
+name: Sandbox ACH reconciliation verification
 
 on:
   workflow_dispatch:
-    inputs:
-      target_url:
-        description: Deployed staging Worker URL
-        required: true
-        default: https://agapay-site-staging.joeldunnesq.workers.dev
-      environment:
-        description: GitHub environment holding the protected parish credentials
-        required: true
-        default: accounting-release-gates
-
-      include_catalog:
-        description: Also verify campaign upload and catalog save with cleanup
-        type: boolean
-        default: false
 
 permissions:
   contents: read
 
 jobs:
-  staging-smoke:
+  verify:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-
-      - name: Verify giving-report dashboard endpoints
-        run: node scripts/parish-giving-reports-staging-smoke.mjs "${{ inputs.target_url }}"
+      - name: Confirm the exact staging release
+        run: |
+          curl --silent --show-error --fail --max-time 10 https://agapay-site-staging.joeldunnesq.workers.dev/api/health |
+            jq -e '.ok == true and .version == "b4823a16f005d8fb2054d7e90efcc4328afe0b0f"'
+      - name: Scan Stripe sandbox for both original ACH outcomes
+        run: node scripts/check-staging-stripe-reconciliation.mjs
         env:
-          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
-          ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
-          ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
-          ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
-          ACCOUNTING_GATE_USER_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_A_TOTP_SECRET }}
-
-      - name: Install catalog cleanup tooling
-        if: inputs.include_catalog
-        run: npm ci
-
-      - name: Verify giving catalog with enrolled MFA
-        if: inputs.include_catalog
-        run: node scripts/parish-giving-catalog-staging-smoke.mjs "${{ inputs.target_url }}"
-        env:
-          ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
-          ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}
-          ACCOUNTING_GATE_USER_A_PASSWORD: ${{ secrets.ACCOUNTING_GATE_USER_A_PASSWORD }}
-          ACCOUNTING_GATE_USER_A_TOTP_SECRET: ${{ secrets.ACCOUNTING_GATE_USER_A_TOTP_SECRET }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
-      - name: Upload staging evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: parish-giving-reports-staging-smoke-${{ github.run_id }}
-          path: |
-            artifacts/parish-giving-reports-staging-smoke.json
-            artifacts/parish-giving-catalog-staging-smoke.json
-          if-no-files-found: error
-          retention-days: 30
+          AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_STAGING_MONITOR_CANARY_TOKEN }}
