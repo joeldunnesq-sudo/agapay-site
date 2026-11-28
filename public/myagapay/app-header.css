@@ -421,6 +421,7 @@
   padding-right: max(var(--app-header-inline-padding), env(safe-area-inset-right, 0px));
 }
 .app-shared-header-page .app-home-header .koinonia-mobile-menu {
+  display: grid;
   top: calc(100% + 3px);
   right: max(14px, env(safe-area-inset-right, 0px));
   width: min(310px, calc(100% - max(14px, env(safe-area-inset-left, 0px)) - max(14px, env(safe-area-inset-right, 0px))));
