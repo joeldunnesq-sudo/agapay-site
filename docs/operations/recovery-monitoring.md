@@ -26,10 +26,18 @@ The private R2 backup manifest download also gets three attempts with two- and f
 - a bearer-authenticated, read-only operations canary for D1, KV, private backup/document bindings, failed jobs, and the five-minute scheduler heartbeat;
 - private R2 backup-manifest freshness, with a 30-hour ceiling.
 
-Keep a separate UptimeRobot HTTP monitor for production at `https://agapay.app/api/health`. Use the five-minute interval and enable provider email alerts to the operations contact. Verify the alert setup and a successful probe on the staging health URL before enabling the production monitor. UptimeRobot probes and sends its alerts independently of the AGAPAY Worker and GitHub Actions.
+The production UptimeRobot keyword monitor sends a GET request to `https://agapay.app/api/health` every five minutes and alerts the operations contact when the healthy response prefix is missing. Staging health is checked in the staging deployment workflow. UptimeRobot probes and sends its alerts independently of the AGAPAY Worker and GitHub Actions.
 
 GitHub Actions still records detailed canary and backup evidence. Its supplemental email uses the authenticated monitor-alert route and the production Resend configuration. Use the UptimeRobot incident for an outage that prevents the Worker from responding.
 
 The canary secret exists only as the Worker secret and GitHub Actions secret `AGAPAY_MONITOR_CANARY_TOKEN`. Rotate both values together. Never put the token in `wrangler.toml`, logs, artifacts, or a workflow input.
 
 The staging Worker uses a separate canary credential. Its GitHub Actions counterpart is `AGAPAY_STAGING_MONITOR_CANARY_TOKEN`. The staging and production workflows verify that their own Stripe Connect destination is active, points to their own Worker, and includes every required event. The probe returns only the destination match and missing event names.
+
+## Stripe payment delivery reconciliation
+
+The production Worker compares Stripe Connect payout, refund, and dispute events with AGAPAY's signed webhook records daily at 08:15 UTC. Each connected account has a coverage checkpoint. Scans overlap by one day to catch delayed deliveries and allow ten minutes for new deliveries before flagging a gap. The first scan uses three days of history. Failed scans appear in the existing scheduled job heartbeat and alert path.
+
+Open findings appear under **Missing delivery** in the admin payment exception queue. Use the Stripe object ID to compare the provider record with the relevant AGAPAY payment or journal. Record an owner and next action, or enter the review outcome and mark the finding reviewed. A late signed webhook supersedes the missing-delivery finding. The scan reads Stripe and writes review records only.
+
+On a protected main push, the deploy workflow can reuse a successful staging run's Quality and Test results for the exact source tree. It verifies the staging job and its hosted health, Stripe Connect, and reconciliation checks. Missing or stale evidence triggers the full suites. Production migrations, deployment and post-deploy checks still run.

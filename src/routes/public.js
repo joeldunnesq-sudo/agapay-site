@@ -52,7 +52,11 @@ async function routePublicRequest({ request, env, url, actions }) {
   if (request.method === 'GET' && url.pathname === '/api/security/config') return actions.handleSecurityConfig(env);
   if (url.pathname === '/api/contact') return actions.handleContact(request, env);
   if (request.method === 'GET' && url.pathname === '/api/health') return actions.handleHealth(env);
-  if (request.method === 'GET' && url.pathname === '/api/operations/canary') {
+  if (
+    url.pathname === '/api/operations/canary' &&
+    (request.method === 'GET' ||
+      (request.method === 'POST' && url.searchParams.get('check') === 'stripe-reconciliation'))
+  ) {
     return actions.handleOperationsCanary(request, env);
   }
   if (request.method === 'POST' && url.pathname === '/api/operations/monitor-alert') {

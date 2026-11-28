@@ -23,6 +23,7 @@ interface HeartbeatRow {
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
 import { REQUIRED_STRIPE_CONNECT_EVENTS, stripeGetRequest } from '../lib/stripe-connect.js';
+import { reconcileStripePaymentDeliveries } from './stripe-reconciliation.js';
 
 const PORTABILITY_MAX_AGE_MS = 20 * 60 * 1000;
 
@@ -65,7 +66,19 @@ function bindings(env: OperationsEnvironment) {
 export async function handleOperationsCanary(request: Request, env: OperationsEnvironment) {
   if (!env?.AGAPAY_MONITOR_CANARY_TOKEN) return response({ ok: false, error: 'canary_not_configured' }, 503);
   if (!(await tokenMatches(request, env))) return response({ ok: false, error: 'unauthorized' }, 401);
-  if (new URL(request.url).searchParams.get('check') === 'stripe-connect') {
+  const check = new URL(request.url).searchParams.get('check');
+  if (check === 'stripe-reconciliation') {
+    if (request.method !== 'POST' || env.AGAPAY_ENVIRONMENT !== 'staging')
+      return response({ ok: false, error: 'staging_reconciliation_only' }, 405);
+    try {
+      const summary = await reconcileStripePaymentDeliveries(env, Date.now());
+      return response({ ok: true, ...summary });
+    } catch (error) {
+      console.error('staging_stripe_reconciliation_failed', error instanceof Error ? error.message : 'unknown');
+      return response({ ok: false, error: 'stripe_reconciliation_failed' }, 503);
+    }
+  }
+  if (check === 'stripe-connect') {
     const endpointId = env.STRIPE_CONNECT_WEBHOOK_ENDPOINT_ID || '';
     if (!/^we_[A-Za-z0-9]+$/.test(endpointId) || !env.AGAPAY_APP_URL || !env.STRIPE_SECRET_KEY)
       return response({ ok: false, error: 'stripe_connect_check_not_configured' }, 503);

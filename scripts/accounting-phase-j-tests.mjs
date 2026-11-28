@@ -196,6 +196,7 @@ try {
   queueDb.exec(read('migrations/0014_audit_log.sql'));
   queueDb.exec(read('migrations/0134_stripe_event_recovery.sql'));
   queueDb.exec(read('migrations/0135_payment_exception_assignments.sql'));
+  queueDb.exec(read('migrations/0136_stripe_payment_reconciliation.sql'));
   const add = queueDb.prepare(
     'INSERT INTO stripe_events (id,event_type,status,received_at,error_message) VALUES (?,?,?,?,?)'
   );
@@ -303,6 +304,39 @@ try {
   assert.equal(assigned.events[0].owner, 'Test operator');
   assert.equal(assigned.events[0].nextAction, 'Compare the Stripe delivery.');
   assert.equal(assigned.events[0].assignmentVersion, 1);
+  queueDb.exec(`INSERT INTO stripe_payment_reconciliation_findings
+    (event_id,event_type,object_id,stripe_account_id,parish_id,occurred_at,discovered_at)
+    VALUES('evt_missing','payout.paid','po_test','acct_test','parish-a','${old}','${recent}'),
+    ('evt_late','refund.updated','re_test','acct_test','parish-a','${old}','${recent}')`);
+  const missingOnly = `${url}?status=missing_delivery&search=po_test`;
+  const missing = await (await platformWorker.fetch(request(verified, 'GET', missingOnly), queueEnv)).json();
+  assert.equal(missing.events.length, 1);
+  assert.equal(missing.events[0].objectId, 'po_test');
+  assert.equal(missing.events[0].status, 'missing_delivery');
+  assert.equal(missing.events[0].parishName, 'Parish A');
+  assert.equal(missing.events[0].canRetry, false);
+  const review = (version) =>
+    new Request(`${url}/evt_missing/assignment`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${verified.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        owner: 'Test operator',
+        nextAction: 'Matched existing journal.',
+        version,
+        markReviewed: true,
+      }),
+    });
+  assert.equal((await platformWorker.fetch(review(5), queueEnv)).status, 409);
+  assert.deepEqual(await (await platformWorker.fetch(review(0), queueEnv)).json(), {
+    ok: true,
+    version: 1,
+    reviewed: true,
+  });
+  add.run('evt_late', 'refund.updated', 'processed', recent, '');
+  const remaining = await (
+    await platformWorker.fetch(request(verified, 'GET', `${url}?status=missing_delivery`), queueEnv)
+  ).json();
+  assert.equal(remaining.events.length, 0);
   for (let index = 0; index < 51; index += 1)
     add.run(`evt_page_${String(index).padStart(2, '0')}`, 'payout.failed', 'failed', old, '');
   const firstPage = await (

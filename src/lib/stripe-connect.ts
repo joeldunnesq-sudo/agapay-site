@@ -110,12 +110,14 @@ export async function stripeGetRequest(env: StripeRequestEnv, path: string): Pro
 export async function stripeGetConnectedRequest(
   env: StripeRequestEnv,
   path: string,
-  stripeAccountId: string
+  stripeAccountId: string,
+  signal?: AbortSignal
 ): Promise<StripeApiResponse> {
   if (!env.STRIPE_SECRET_KEY) {
     return { ok: false, status: 500, body: { error: { message: 'STRIPE_SECRET_KEY is not configured' } } };
   }
   const response = await fetch(`https://api.stripe.com${path}`, {
+    signal,
     headers: {
       Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
       'Stripe-Account': stripeAccountId,

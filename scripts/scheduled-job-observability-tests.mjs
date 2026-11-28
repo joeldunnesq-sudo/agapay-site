@@ -105,9 +105,16 @@ try {
     workerSource.indexOf('async fetch(request, env, ctx)')
   );
   const waits = javascriptCalls(scheduledBody, 'ctx.waitUntil');
-  assert.equal(waits.length, 18, 'the Worker must retain all 18 scheduled jobs');
   const observed = javascriptCalls(scheduledBody, 'observeScheduledTask');
-  assert.equal(observed.length, 18);
+  assert.equal(waits.length, 19, 'the Worker must retain all 19 scheduled jobs');
+  assert.equal(observed.length, waits.length);
+  assert.ok(
+    includesJavaScriptFragment(
+      scheduledBody,
+      'observeScheduledTask("daily_stripe_payment_reconciliation", reconcileStripePaymentDeliveries(env, event.scheduledTime), env, event)'
+    ),
+    'daily Stripe reconciliation must report its heartbeat and failures'
+  );
   assert.ok(
     waits.every((wait) => includesJavaScriptFragment(wait.arguments[0].text, 'observeScheduledTask(')),
     'every waitUntil must invoke the observable wrapper'

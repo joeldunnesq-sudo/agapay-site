@@ -135,3 +135,8 @@ jobs:
         env:
           AGAPAY_BASE_URL: https://agapay-site-staging.joeldunnesq.workers.dev
           AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_STAGING_MONITOR_CANARY_TOKEN }}
+
+      - name: Verify Stripe reconciliation against sandbox
+        run: node scripts/check-staging-stripe-reconciliation.mjs
+        env:
+          AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_STAGING_MONITOR_CANARY_TOKEN }}

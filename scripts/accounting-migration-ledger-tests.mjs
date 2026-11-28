@@ -157,3 +157,57 @@ assert.ok(
 console.log(
   'PASS - immutable accounting migration manifest, safe legacy baseline, and automatic production application'
 );
+
+const { findStagingEvidence } = await import('./reuse-staging-release-checks.mjs');
+const mergeCommit = 'd'.repeat(40);
+const productionParent = 'e'.repeat(40);
+const testedCommit = 'f'.repeat(40);
+const checkedAt = Date.parse('2026-10-21T11:30:00Z');
+let matchesStaging = true;
+function releaseGit(command, ...args) {
+  if (command === 'rev-list') return `${mergeCommit} ${productionParent} ${testedCommit}`;
+  assert.equal(command, 'rev-parse');
+  return args[0] === `${testedCommit}^{tree}` && !matchesStaging ? 'unverified-tree' : 'tested-tree';
+}
+const stageRun = {
+  id: 72,
+  run_attempt: 1,
+  head_sha: testedCommit,
+  status: 'completed',
+  conclusion: 'success',
+  repository: { id: 31 },
+  head_repository: { id: 31 },
+  event: 'workflow_dispatch',
+  updated_at: '2026-10-21T11:00:00Z',
+};
+const success = (name) => ({ name, status: 'completed', conclusion: 'success' });
+const checks = [
+  success('Quality'),
+  success('Test'),
+  {
+    ...success('Migrate and deploy staging'),
+    steps: [
+      success('Verify the staging release candidate'),
+      success('Verify Stripe Connect sandbox destination'),
+      success('Verify Stripe reconciliation against sandbox'),
+    ],
+  },
+];
+let jobsAvailable = checks;
+const evidenceApi = async (endpoint) => {
+  if (endpoint.includes(`head_sha=${mergeCommit}`)) return { workflow_runs: [] };
+  if (endpoint.includes(`head_sha=${testedCommit}`)) return { workflow_runs: [stageRun] };
+  assert.match(endpoint, /actions\/runs\/72\/attempts\/1\/jobs/);
+  return { jobs: jobsAvailable };
+};
+const evidence = () => findStagingEvidence({ commit: mergeCommit, git: releaseGit, api: evidenceApi, now: checkedAt });
+assert.deepEqual(await evidence(), { sha: testedCommit, runId: 72 });
+jobsAvailable = checks.filter((job) => job.name !== 'Test');
+assert.equal(await evidence(), null);
+jobsAvailable = checks;
+stageRun.head_repository = { id: 55 };
+assert.equal(await evidence(), null);
+stageRun.head_repository = { id: 31 };
+matchesStaging = false;
+assert.equal(await evidence(), null);
+console.log('PASS - production reuses fresh in-repository staging checks for an identical tree only');
