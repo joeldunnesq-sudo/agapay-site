@@ -8,6 +8,7 @@ export async function stagingParishSession({
   password,
   email,
   totpSecret,
+  includeIdentity = false,
   label = 'Staging parish',
 }) {
   if (baseUrl !== 'https://agapay-site-staging.joeldunnesq.workers.dev')
@@ -45,5 +46,5 @@ export async function stagingParishSession({
   if (login.mfaRequired || typeof token !== 'string' || !token) {
     throw new Error(`${label} authentication did not return a session token.`);
   }
-  return token;
+  return includeIdentity ? { parishToken: token, identityToken: login.token } : token;
 }

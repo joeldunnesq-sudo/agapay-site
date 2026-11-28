@@ -1,4 +1,4 @@
-name: Parish Giving Reports Staging Smoke
+name: Ministries Week Staging Smoke
 
 on:
   workflow_dispatch:
@@ -27,13 +27,16 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
 
-      - name: Verify giving-report dashboard endpoints
-        run: node scripts/parish-giving-reports-staging-smoke.mjs "${{ inputs.target_url }}"
+      - name: Verify Ministries on the deployed staging candidate
+        run: node scripts/parish-this-week-staging-smoke.mjs "$(git rev-parse HEAD^)"
         env:
           ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
           ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
@@ -56,12 +59,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Upload staging evidence
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v7
         with:
-          name: parish-giving-reports-staging-smoke-${{ github.run_id }}
-          path: |
-            artifacts/parish-giving-reports-staging-smoke.json
-            artifacts/parish-giving-catalog-staging-smoke.json
+          name: parish-week-staging-smoke-${{ github.run_id }}
+          path: artifacts/parish-week-staging-smoke.json
           if-no-files-found: error
           retention-days: 30
