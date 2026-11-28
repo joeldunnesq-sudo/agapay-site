@@ -35,6 +35,9 @@ try {
   assert.equal(await churchName.textContent(), 'Choose a church');
   const keys = ['signupsEnabled', 'exchangeEnabled', 'prayerRequestsEnabled', 'directoryEnabled', 'sacramentsEnabled'];
   const paths = ['signups', 'exchange', 'prayer-requests', 'directory', 'sacraments'];
+  const shortcuts = page.locator('#koinoniaShortcuts');
+  await page.evaluate(() => window.KoinoniaExperience.parishContext({ id: 'p' }, true));
+  assert.equal(await shortcuts.evaluate((el) => el.hidden), true, 'Wait for parish access before showing shortcuts');
   for (let mask = 0; mask < 2 ** keys.length; mask++) {
     for (const communications of [false, true]) {
       const parish = {
@@ -43,26 +46,23 @@ try {
         ...Object.fromEntries(keys.map((key, i) => [key, Boolean(mask & (1 << i))])),
       };
       await page.evaluate(
-        ({ parish, communications }) => window.KoinoniaExperience.parishContext(parish, communications),
+        ({ parish, communications }) => window.KoinoniaExperience.parishContext(parish, communications, communications),
         { parish, communications }
       );
-      const expected = paths.slice(0, 3).filter((_, i) => mask & (1 << i));
-      if (communications) expected.push('groups');
-      expected.push(...paths.slice(3).filter((_, i) => mask & (1 << (i + 3))));
+      const expected = communications
+        ? [
+            ...paths.slice(0, 3).filter((_, i) => mask & (1 << i)),
+            'groups',
+            ...paths.slice(3).filter((_, i) => mask & (1 << (i + 3))),
+          ]
+        : [];
       assert.deepEqual(
-        await page
-          .locator('#koinoniaShortcuts a')
-          .evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
+        await shortcuts.locator('a').evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
         expected.map((path) => `/myagapay/${path}`)
       );
-      assert.equal(
-        await page.locator('#koinoniaShortcuts').evaluate((el) => el.hidden),
-        !communications || !expected.length
-      );
-      assert.equal(
-        await page.locator('#koinoniaShortcuts').evaluate((el) => el.style.getPropertyValue('--shortcut-count')),
-        String(expected.length || 1)
-      );
+      assert.equal(await shortcuts.evaluate((el) => el.hidden), false);
+      assert.equal(await shortcuts.evaluate((el) => el.style.getPropertyValue('--shortcut-count')), '6');
+      assert.equal(await shortcuts.getByRole('button').count(), 6 - expected.length);
       assert.ok(
         await page
           .locator('#koinoniaShortcuts [data-community-tool-badge]')
@@ -105,7 +105,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    'PASS - Koinonia shortcut capability combinations, communications visibility, safe parish labels, fasting accessibility, calendar labels and missing DOM'
+    'PASS - Koinonia shortcut capability combinations, access states, safe parish labels, fasting accessibility, calendar labels and missing DOM'
   );
 } finally {
   await browser.close();
