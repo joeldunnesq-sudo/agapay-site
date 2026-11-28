@@ -198,6 +198,8 @@ export async function processStripeWebhookEvent(env: StripeHandlerEnv, event: St
     const paymentStatus = object.payment_status || 'pending';
     const status = paymentStatus === 'paid' ? 'completed' : 'pending';
     const paymentIntentId = checkoutPaymentIntentId(object);
+    const completedAtSeconds =
+      event.type === 'checkout.session.async_payment_succeeded' ? event.created || object.created : object.created;
     const feeUpdates =
       status === 'completed' && paymentIntentId
         ? await stripePaymentIntentFinancialUpdates(
@@ -215,8 +217,8 @@ export async function processStripeWebhookEvent(env: StripeHandlerEnv, event: St
       stripeSubscriptionId: object.subscription || '',
       completedAt:
         status === 'completed'
-          ? object.created
-            ? new Date(object.created * 1000).toISOString()
+          ? completedAtSeconds
+            ? new Date(completedAtSeconds * 1000).toISOString()
             : new Date().toISOString()
           : '',
       ...feeUpdates,
@@ -291,6 +293,9 @@ export async function processStripeWebhookEvent(env: StripeHandlerEnv, event: St
       return;
     }
     const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
+    const isBankDebit =
+      existingOffering?.paymentMethod === 'ach' || existingOffering?.paymentMethod === 'us_bank_account';
+    const completedAtSeconds = isBankDebit ? event.created || object.created : object.created;
     const feeUpdates = await stripePaymentIntentFinancialUpdates(
       env,
       object.id,
@@ -301,7 +306,7 @@ export async function processStripeWebhookEvent(env: StripeHandlerEnv, event: St
       status: 'completed',
       paymentStatus: 'paid',
       stripeCustomerId: object.customer || '',
-      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
+      completedAt: completedAtSeconds ? new Date(completedAtSeconds * 1000).toISOString() : new Date().toISOString(),
       ...feeUpdates,
     });
     if (updatedOffering) await wireGivingOfferingToAccounting(env, updatedOffering);

@@ -14,6 +14,8 @@ const EVENT_TYPES = {
   'refund.updated': 're',
   'charge.dispute.created': 'dp',
   'charge.dispute.closed': 'dp',
+  'checkout.session.async_payment_succeeded': 'cs',
+  'checkout.session.async_payment_failed': 'cs',
 } as const;
 type EventType = keyof typeof EVENT_TYPES;
 
@@ -49,6 +51,7 @@ function observeEvent(raw: unknown, expectedLive: boolean, account: string, star
   } | null;
   const type = event?.type as EventType;
   const prefix = Object.hasOwn(EVENT_TYPES, type) ? EVENT_TYPES[type] : '';
+  const objectPrefix = prefix === 'cs' ? (expectedLive ? 'cs_live_' : 'cs_test_') : `${prefix}_`;
   const objectId = event?.data?.object?.id;
   const created = event?.created;
   if (
@@ -57,8 +60,8 @@ function observeEvent(raw: unknown, expectedLive: boolean, account: string, star
     !/^evt_[A-Za-z0-9_]{1,100}$/.test(event.id) ||
     !prefix ||
     typeof objectId !== 'string' ||
-    !/^[a-z]+_[A-Za-z0-9]{1,100}$/.test(objectId) ||
-    !objectId.startsWith(`${prefix}_`) ||
+    !objectId.startsWith(objectPrefix) ||
+    !/^[A-Za-z0-9]{1,100}$/.test(objectId.slice(objectPrefix.length)) ||
     typeof created !== 'number' ||
     !Number.isSafeInteger(created) ||
     created < start ||

@@ -168,6 +168,8 @@ async function processStripeWebhookEvent(env, event) {
     const paymentStatus = object.payment_status || 'pending';
     const status = paymentStatus === 'paid' ? 'completed' : 'pending';
     const paymentIntentId = checkoutPaymentIntentId(object);
+    const completedAtSeconds =
+      event.type === 'checkout.session.async_payment_succeeded' ? event.created || object.created : object.created;
     const feeUpdates =
       status === 'completed' && paymentIntentId
         ? await stripePaymentIntentFinancialUpdates(
@@ -185,8 +187,8 @@ async function processStripeWebhookEvent(env, event) {
       stripeSubscriptionId: object.subscription || '',
       completedAt:
         status === 'completed'
-          ? object.created
-            ? new Date(object.created * 1e3).toISOString()
+          ? completedAtSeconds
+            ? new Date(completedAtSeconds * 1e3).toISOString()
             : /* @__PURE__ */ new Date().toISOString()
           : '',
       ...feeUpdates,
@@ -259,6 +261,9 @@ async function processStripeWebhookEvent(env, event) {
       return;
     }
     const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
+    const isBankDebit =
+      existingOffering?.paymentMethod === 'ach' || existingOffering?.paymentMethod === 'us_bank_account';
+    const completedAtSeconds = isBankDebit ? event.created || object.created : object.created;
     const feeUpdates = await stripePaymentIntentFinancialUpdates(
       env,
       object.id,
@@ -269,8 +274,8 @@ async function processStripeWebhookEvent(env, event) {
       status: 'completed',
       paymentStatus: 'paid',
       stripeCustomerId: object.customer || '',
-      completedAt: object.created
-        ? new Date(object.created * 1e3).toISOString()
+      completedAt: completedAtSeconds
+        ? new Date(completedAtSeconds * 1e3).toISOString()
         : /* @__PURE__ */ new Date().toISOString(),
       ...feeUpdates,
     });
