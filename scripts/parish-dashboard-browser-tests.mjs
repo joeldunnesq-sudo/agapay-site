@@ -95,6 +95,7 @@ try {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.locator('#openParishSections').click();
       const mobileNav = page.locator('.mobile-tabbar [data-nav-tab="communications"]');
+      assert.equal(await mobileNav.locator('svg[aria-hidden="true"]').count(), 1);
       await mobileNav.click();
       await agenda.getByText('Divine Liturgy').waitFor();
       assert.equal(await weekTab.getAttribute('aria-pressed'), 'true');
