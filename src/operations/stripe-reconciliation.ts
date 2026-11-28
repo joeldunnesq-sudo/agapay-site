@@ -106,7 +106,7 @@ async function scanAccount(
     if (!result.ok || !Array.isArray(result.body.data) || typeof result.body.has_more !== 'boolean') {
       throw new Error(`Stripe event list unavailable (HTTP ${result.status})`);
     }
-    const events = result.body.data.map((event) =>
+    const events = result.body.data.map((event: unknown) =>
       observeEvent(event, env.AGAPAY_ENVIRONMENT === 'production', account.stripe_account_id, start, end)
     );
     checked += events.length;
