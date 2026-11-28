@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { readWorkerCompositionSource } from './lib/worker-composition-source.mjs';
 import { CAPABILITY_CATALOG, ROLE_TEMPLATES } from '../src/lib/authorization.js';
+import { issueAdminSession } from '../src/lib/admin-sessions.js';
+import platformWorker from '../src/worker.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFileSync(path.join(root, file), 'utf8');
@@ -185,3 +187,60 @@ assert.deepEqual(
   'rector staff profile must remain unchanged'
 );
 console.log('Accounting Phase J governance and operations checks passed.');
+
+const queueDb = new DatabaseSync(':memory:');
+try {
+  queueDb.exec(read('migrations/0001_production_records.sql'));
+  queueDb.exec(read('migrations/0002_stripe_event_status.sql'));
+  const add = queueDb.prepare(
+    'INSERT INTO stripe_events (id,event_type,status,received_at,error_message) VALUES (?,?,?,?,?)'
+  );
+  const old = new Date(Date.now() - 20 * 60_000).toISOString();
+  const recent = new Date().toISOString();
+  add.run('evt_failed', 'refund.updated', 'failed', recent, 'provider data must stay private');
+  add.run('evt_stalled', 'charge.dispute.closed', 'processing', old, '');
+  add.run('evt_active', 'payment_intent.succeeded', 'processing', recent, '');
+  add.run('evt_done', 'refund.updated', 'processed', recent, '');
+  add.run('internal_dedupe_record', 'digest', 'failed', recent, '');
+  const queueEnv = {
+    PRIVILEGED_MFA_REQUIRED: 'true',
+    AGAPAY_DB: {
+      prepare(sql) {
+        const statement = queueDb.prepare(sql);
+        return {
+          bind(...args) {
+            return {
+              first: async () => statement.get(...args) || null,
+              all: async () => ({ results: statement.all(...args) }),
+              run: async () => ({ meta: statement.run(...args) }),
+            };
+          },
+        };
+      },
+    },
+  };
+  const url = 'https://agapay.test/api/admin/accounting/payment-exceptions';
+  assert.equal((await platformWorker.fetch(new Request(url), queueEnv)).status, 401);
+  const unverified = await issueAdminSession(queueEnv, 'Test operator');
+  const request = (session, method = 'GET') =>
+    new Request(url, {
+      method,
+      headers: { Authorization: `Bearer ${session.token}` },
+    });
+  assert.equal((await platformWorker.fetch(request(unverified), queueEnv)).status, 401);
+  const verified = await issueAdminSession(queueEnv, 'Test operator', { mfaVerifiedAt: recent });
+  assert.equal((await platformWorker.fetch(request(verified, 'POST'), queueEnv)).status, 405);
+  const response = await platformWorker.fetch(request(verified), queueEnv);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.deepEqual(await response.json(), {
+    events: [
+      { id: 'evt_failed', type: 'refund.updated', status: 'failed', receivedAt: recent },
+      { id: 'evt_stalled', type: 'charge.dispute.closed', status: 'stalled', receivedAt: old },
+    ],
+    hasMore: false,
+  });
+  console.log('PASS - the MFA-protected payment exception route shows only failed or stalled Stripe deliveries');
+} finally {
+  queueDb.close();
+}

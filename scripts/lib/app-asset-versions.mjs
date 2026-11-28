@@ -123,6 +123,7 @@ export const pageAssets = Object.freeze([
   '/admin/metrics.js',
   '/admin/giving-impact.js',
   '/admin/controllers/contact-leads.js',
+  '/admin/controllers/payment-exceptions.js',
 ]);
 
 export const appAssets = Object.freeze([
