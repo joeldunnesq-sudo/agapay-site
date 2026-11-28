@@ -17,6 +17,8 @@ export const pageAssets = Object.freeze([
   '/admin/app-accounting-and-audit.js',
   '/parish/app.js',
   '/parish/overview-tasks.js',
+  '/parish/features/this-week.js',
+  '/parish/this-week.css',
   '/parish/settings-autosave.js',
   '/parish/app-subscriptions-and-settlement.js',
   '/myagapay/teaching.js',

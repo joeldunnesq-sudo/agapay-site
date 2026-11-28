@@ -442,6 +442,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/lib/lead-attribution.ts',
 
   'src/handlers/parish-dashboard-handler.ts',
+  'src/handlers/parish-this-week.ts',
   'src/lib/subscriptions.ts',
   'src/lib/entitlements.ts',
   'src/lib/parish-onboarding.ts',

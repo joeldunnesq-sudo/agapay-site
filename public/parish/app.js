@@ -87,7 +87,7 @@ function switchTab(tab) {
     sacraments: 'Sacraments & Services',
     directory: 'Parish Directory',
     library: 'Parish Library',
-    communications: 'Communications',
+    communications: 'Parish Life',
     bookstore: 'Commerce',
   };
   const isMobile = window.matchMedia('(max-width: 760px)').matches;
