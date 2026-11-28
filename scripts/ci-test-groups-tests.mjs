@@ -113,6 +113,15 @@ for (const path of ['.github/workflows/deploy.yml', '.github/workflows/deploy-st
       );
     }
     assert.match(caller, /run: node scripts\/reuse-staging-release-checks\.mjs/);
+    const deploy = caller.slice(caller.indexOf('  deploy:'), caller.indexOf('  post-deploy-accounting-smoke:'));
+    const smoke = caller.slice(caller.indexOf('  post-deploy-accounting-smoke:'));
+    for (const job of [deploy, smoke]) {
+      assert.match(job, /if: >-\s+\$\{\{ !cancelled\(\) &&/);
+      assert.match(job, /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
+      assert.match(job, /environment: production/);
+    }
+    assert.match(deploy, /needs\.quality\.result == 'success' && needs\.test\.result == 'success'/);
+    assert.match(smoke, /needs\.deploy\.result == 'success'/);
   }
 }
 

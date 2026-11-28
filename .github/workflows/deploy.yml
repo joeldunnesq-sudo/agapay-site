@@ -93,7 +93,12 @@ jobs:
   deploy:
     name: Deploy
     needs: [quality, test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # An explicit status function allows successful aggregate gates to stand
+    # even when their upstream test matrices intentionally did not run.
+    if: >-
+      ${{ !cancelled() &&
+          github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          needs.quality.result == 'success' && needs.test.result == 'success' }}
     runs-on: ubuntu-latest
     environment: production
     # Only this job -- the one that actually touches production -- is
@@ -182,7 +187,10 @@ jobs:
   post-deploy-accounting-smoke:
     name: Post-deploy accounting smoke
     needs: deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      ${{ !cancelled() &&
+          github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          needs.deploy.result == 'success' }}
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 15
