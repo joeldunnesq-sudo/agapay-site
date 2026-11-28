@@ -15,6 +15,7 @@
     "count": 295
   },
   "workerScheduledTaskOrder": [
+    "daily_stripe_payment_reconciliation",
     "parish_milestones",
     "parish_recovery_jobs",
     "parish_portability_jobs",

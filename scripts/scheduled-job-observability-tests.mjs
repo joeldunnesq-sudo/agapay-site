@@ -111,7 +111,7 @@ try {
   assert.ok(
     includesJavaScriptFragment(
       scheduledBody,
-      'observeScheduledTask(STRIPE_RECONCILIATION_JOB, reconcileStripePaymentDeliveries(env, event.scheduledTime), env, event)'
+      'observeScheduledTask("daily_stripe_payment_reconciliation", reconcileStripePaymentDeliveries(env, event.scheduledTime), env, event)'
     ),
     'daily Stripe reconciliation must report its heartbeat and failures'
   );

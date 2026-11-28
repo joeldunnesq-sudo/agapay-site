@@ -14,7 +14,6 @@ const EVENT_TYPES = {
   'charge.dispute.created': 'dp',
   'charge.dispute.closed': 'dp',
 };
-const STRIPE_RECONCILIATION_JOB = 'daily_stripe_payment_reconciliation';
 const STRIPE_RECONCILIATION_CRON = '15 8 * * *';
 function observeEvent(raw, expectedLive, account, start, end) {
   const event = raw;
@@ -143,4 +142,4 @@ async function reconcileStripePaymentDeliveries(env, scheduledTime) {
   }
   return { accounts: accounts.length, checked, discovered };
 }
-export { STRIPE_RECONCILIATION_CRON, STRIPE_RECONCILIATION_JOB, reconcileStripePaymentDeliveries };
+export { STRIPE_RECONCILIATION_CRON, reconcileStripePaymentDeliveries };

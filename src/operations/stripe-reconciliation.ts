@@ -36,7 +36,6 @@ interface Observation {
   created: number;
 }
 
-export const STRIPE_RECONCILIATION_JOB = 'daily_stripe_payment_reconciliation';
 export const STRIPE_RECONCILIATION_CRON = '15 8 * * *';
 
 function observeEvent(raw: unknown, expectedLive: boolean, account: string, start: number, end: number): Observation {

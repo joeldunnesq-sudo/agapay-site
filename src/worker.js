@@ -34,11 +34,7 @@ import { protectFileStorage } from './portability/storage.js';
 import { protectLegacyStorage } from './portability/legacy.js';
 import { sendNonprofitThresholdAlerts } from './lib/nonprofit-pricing.js';
 import { observeScheduledTask } from './operations/scheduled-task-observer.js';
-import {
-  reconcileStripePaymentDeliveries,
-  STRIPE_RECONCILIATION_CRON,
-  STRIPE_RECONCILIATION_JOB,
-} from './operations/stripe-reconciliation.js';
+import { reconcileStripePaymentDeliveries, STRIPE_RECONCILIATION_CRON } from './operations/stripe-reconciliation.js';
 import { androidAssetLinks, appleAppSiteAssociation } from './handlers/mobile-app-associations.js';
 import { materializeMemorialAnniversaries } from './sacraments/memorial-followup.js';
 import { sendDailyPastoralCareDigestEmails } from './sacraments/pastoral-digest.js';
@@ -331,7 +327,7 @@ var stdin_default = withRequestDiagnostics({
     if (event.cron === STRIPE_RECONCILIATION_CRON)
       return ctx.waitUntil(
         observeScheduledTask(
-          STRIPE_RECONCILIATION_JOB,
+          'daily_stripe_payment_reconciliation',
           reconcileStripePaymentDeliveries(env, event.scheduledTime),
           env,
           event
