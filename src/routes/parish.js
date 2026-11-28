@@ -1,5 +1,6 @@
 // Generated from src/routes/parish.ts by npm run build:server. Do not edit.
 import { handleParishOutsideGifts } from '../handlers/parish-outside-gifts.js';
+import { handleParishThisWeek } from '../handlers/parish-this-week.js';
 const SIMPLE_SUFFIX_ROUTES = /* @__PURE__ */ new Map([
   ['/session', 'handleParishSession'],
   ['/onboarding', 'handleParishOnboarding'],
@@ -54,6 +55,7 @@ async function routeParishRequest({ request, env, ctx, url, actions }) {
   const slashIndex = remainder.indexOf('/');
   const parishId = decodeURIComponent(slashIndex < 0 ? remainder : remainder.slice(0, slashIndex));
   const suffix = slashIndex < 0 ? '' : remainder.slice(slashIndex);
+  if (suffix === '/this-week') return handleParishThisWeek(request, env, parishId);
   if (suffix === '/outside-gifts' || suffix.startsWith('/outside-gifts/')) {
     return handleParishOutsideGifts(request, env, parishId, suffix.slice('/outside-gifts'.length));
   }

@@ -105,6 +105,7 @@ export interface ParishRouteContext<TEnv, TExecutionContext> {
 }
 
 import { handleParishOutsideGifts } from '../handlers/parish-outside-gifts.js';
+import { handleParishThisWeek } from '../handlers/parish-this-week.js';
 
 const SIMPLE_SUFFIX_ROUTES = new Map<
   string,
@@ -204,6 +205,7 @@ export async function routeParishRequest<TEnv extends Env, TExecutionContext>({
   const slashIndex = remainder.indexOf('/');
   const parishId = decodeURIComponent(slashIndex < 0 ? remainder : remainder.slice(0, slashIndex));
   const suffix = slashIndex < 0 ? '' : remainder.slice(slashIndex);
+  if (suffix === '/this-week') return handleParishThisWeek(request, env, parishId);
   if (suffix === '/outside-gifts' || suffix.startsWith('/outside-gifts/')) {
     return handleParishOutsideGifts(request, env, parishId, suffix.slice('/outside-gifts'.length));
   }

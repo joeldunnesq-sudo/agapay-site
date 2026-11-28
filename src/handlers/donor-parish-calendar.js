@@ -66,7 +66,7 @@ function icsDate(value = '', params = {}, context = void 0) {
   const parts = icsDateParts(value);
   if (!parts) return null;
   let date;
-  if (parts.utc) {
+  if (parts.allDay || parts.utc) {
     date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
   } else if (params.tzid) {
     date = icsZonedDate(parts, params.tzid, context);
@@ -88,6 +88,9 @@ function icsNaiveDate(parts) {
   return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
 }
 function icsDateInEventZone(date, event, context) {
+  if (!event.dtstart?.includes('T')) {
+    return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() };
+  }
   if (event.dtstartParams?.tzid) {
     try {
       const formatter = icsZoneFormatter(event.dtstartParams.tzid, context);
@@ -102,6 +105,7 @@ function icsDateInEventZone(date, event, context) {
     : { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
 }
 function icsRecurrenceDate(cursor, event, context) {
+  if (!event.dtstart?.includes('T')) return cursor;
   const parts = {
     year: cursor.getUTCFullYear(),
     month: cursor.getUTCMonth() + 1,
@@ -250,11 +254,11 @@ function expandIcsEvent(event, now, horizon, context) {
   }
   return results;
 }
-function parseKoinoniaCalendarIcs(text, fromDate = /* @__PURE__ */ new Date()) {
+function parseKoinoniaCalendarIcs(text, fromDate = /* @__PURE__ */ new Date(), throughDate) {
   const unfolded = String(text || '').replace(/\r?\n[ \t]/g, '');
   const blocks = unfolded.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || [];
   const now = new Date(fromDate);
-  const horizon = new Date(now.getTime() + 180 * 864e5);
+  const horizon = throughDate || new Date(now.getTime() + 180 * 864e5);
   const context = { formatters: /* @__PURE__ */ new Map() };
   return blocks
     .flatMap((block) => {

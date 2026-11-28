@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css?v=20260901memorial1" />
   <link rel="stylesheet" href="/parish/redesign.css?v=737068ab74b4dd84" />
+  <link rel="stylesheet" href="/parish/this-week.css?v=4a93ce2f34e72562" />
   <link rel="stylesheet" href="/parish/library.css?v=20260829fullscreen1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -1181,7 +1182,7 @@ Generate Monthly Financial Report
   <div class="koinonia-feature-toggle"><span><strong>Parish Life</strong><small>Parish publishing</small></span><label class="sac-admin-switch agapay-feature-switch" title="Show or hide parish-published Parish Life content in My AGAPAY"><input id="communicationsEnabledSwitch" type="checkbox" aria-label="Show parish-published Parish Life content in My AGAPAY" onchange="toggleCommunicationsFeature(this)" /><span aria-hidden="true"></span><em>Off</em></label></div>
 </div>
           </header>
-          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Parish Life is included with Parish.</strong><p>Review your plan to publish parish life in My AGAPAY.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review Parish tier</button></div>
+          <div id="communicationsPaywall" class="communications-paywall" hidden><strong>Parish Life is included with Give + and Parish.</strong><p>Review your plan to use parish scheduling and publishing tools.</p><button class="btn btn-gold" type="button" onclick="switchTab('settings');selectParishSettings('billing')">Review plans</button></div>
           <div id="communicationsDisabledNotice" class="communications-paywall koinonia-studio-notice" hidden><strong>Parish publishing is off.</strong><p>The Parish Life calendar remains available, but parish announcements, audio, video, and connected writing are hidden. Your library is safe until you turn publishing on.</p></div>
           <div id="communicationsWorkspace" class="communications-workspace-stack">
 <nav class="koinonia-studio-nav" aria-label="Parish Life workspace">
@@ -1222,9 +1223,11 @@ Generate Monthly Financial Report
 <div class="koinonia-source-actions"><h3>Connected writing &amp; video</h3><p>Manage the priest’s blog, Orthodox news sources, and your parish YouTube channel.</p><div class="btn-row"><button class="btn btn-ghost" type="button" onclick="setKoinoniaStudioView('news')">Blog &amp; news feeds</button><button class="btn btn-ghost" type="button" onclick="setKoinoniaStudioView('video')">YouTube connection</button></div></div></section>
 <div class="koinonia-studio-view bulletin-workspace" data-koinonia-panel="bulletins" id="bulletinMount" hidden></div>
 
-<section class="koinonia-studio-view koinonia-ministries-workspace" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>
+<section class="koinonia-studio-view ministries-hub" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>
+  <div id="ministriesWeekMount"></div>
+<section class="koinonia-ministries-workspace" data-ministries-panel="teams" id="ministriesTeamsPanel" aria-labelledby="ministriesTeamsButton" hidden>
   <div class="koinonia-ministries-head">
-    <div><span class="eyebrow">People serving together</span><h2 id="koinoniaMinistriesHeading">Ministries</h2><p>Create ministry groups, welcome parishioners onto teams, and respond to requests to serve.</p></div>
+    <div><h3>Ministry teams</h3><p>Welcome parishioners onto teams and respond to requests to serve.</p></div>
     <button class="btn btn-gold" type="button" onclick="toggleKoinoniaMinistryComposer(true)">＋ Create ministry</button>
   </div>
   <div class="koinonia-ministry-metrics">
@@ -1248,6 +1251,7 @@ Generate Monthly Financial Report
     <section class="koinonia-ministry-list-panel"><div class="koinonia-panel-head"><div><span class="eyebrow">Your teams</span><h3>Ministry groups</h3></div><button type="button" onclick="loadKoinoniaMinistries(true)">Refresh</button></div><div id="koinoniaMinistryList"><p class="sw-tool-loading">Loading ministries…</p></div></section>
     <section class="koinonia-ministry-detail" id="koinoniaMinistryDetail"><div class="koinonia-ministry-empty"><span>✦</span><strong>Select a ministry</strong><p>Choose a team to see its members, add a parishioner, and review requests.</p></div></section>
   </div>
+</section>
 </section>
 
 <section class="koinonia-studio-view prayer-admin-workspace" data-koinonia-panel="prayers" aria-labelledby="prayerAdminHeading" hidden>
@@ -1931,7 +1935,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/koinonia/announcements.js?v=6edf0b7b02889713"></script>
 <script src="/parish/features/koinonia/prayers.js?v=d81365565bca034f"></script>
 <script src="/parish/features/koinonia/media.js?v=239eeeeaeea363d1"></script>
-<script src="/parish/features/koinonia.js?v=ae58ba05ab172665"></script>
+<script src="/parish/features/koinonia.js?v=5f5d31d4dc5ff792"></script>
 <script src="/parish/features/onboarding.js?v=911a96ca93008912"></script>
 <script src="/parish/features/campaigns/website-embed.js?v=0c8bcf3af3b84659"></script>
 <script src="/parish/features/campaigns.js?v=c3c1cf2e54ddd9c3"></script>
@@ -1961,12 +1965,13 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving/transfers.js?v=c4c120c8886b8769"></script>
 <script src="/parish/features/giving/insights.js?v=46975b9e8339c4e0"></script>
 <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
+<script src="/parish/features/this-week.js?v=7c7fe4e349ed30eb"></script>
 <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
-<script src="/parish/dashboard-runtime.js?v=8ef88784bc56d553"></script>
+<script src="/parish/dashboard-runtime.js?v=a833ed89e9176e41"></script>
 <script src="/parish/app-subscriptions-and-settlement.js?v=655251698d150b9d"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
 <script src="/parish/overview-tasks.js?v=ba363a5817d9af98"></script>
-<script src="/parish/app.js?v=38dffa040f7aba07"></script>
+<script src="/parish/app.js?v=9aea36f2297d4fd9"></script>
 <script src="/parish/stewardship-sections.js?v=2"></script>
 <script src="/parish/givers-sections.js"></script>
 </body>

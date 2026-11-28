@@ -47,6 +47,19 @@ let prayerAdminState: ParishPrayerAdminState = {
 const koinoniaMinistryImageUrls = new Map<string, string>();
 
 let koinoniaStudioView = 'overview';
+let koinoniaMinistriesView: 'this-week' | 'teams' = 'this-week';
+
+function setKoinoniaMinistriesView(view = koinoniaMinistriesView) {
+  if (!currentParish?.parishLifeAvailable || !moduleIncluded('communications')) return;
+  koinoniaMinistriesView = view;
+  document.querySelectorAll<HTMLElement>('[data-ministries-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset.ministriesPanel !== view;
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-ministries-view]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.ministriesView === view));
+  });
+  return view === 'teams' ? loadKoinoniaMinistries() : window.ParishFeatureRegistry?.get('this-week')?.load();
+}
 
 function communicationsApi(path = '') {
   return '/api/parish/dashboard/' + encodeURIComponent(currentParish!.parishId) + '/communications' + path;
@@ -94,7 +107,14 @@ function setKoinoniaStudioView(view = 'overview') {
   if (koinoniaStudioView === 'overview') renderKoinoniaOverview();
   if (koinoniaStudioView === 'content') renderKoinoniaContentLibrary();
   if (koinoniaStudioView === 'bulletins') void loadBulletins();
-  if (koinoniaStudioView === 'ministries') loadKoinoniaMinistries();
+  if (koinoniaStudioView === 'ministries') {
+    const button = document.querySelector<HTMLElement>('[data-koinonia-view="ministries"]');
+    const menu = button?.parentElement;
+    if (button && menu && menu.scrollWidth > menu.clientWidth) {
+      menu.scrollLeft = button.getBoundingClientRect().left - menu.getBoundingClientRect().left + menu.scrollLeft;
+    }
+    void setKoinoniaMinistriesView();
+  }
   if (koinoniaStudioView === 'prayers') loadParishPrayerRequests();
 }
 
@@ -189,9 +209,9 @@ async function loadCommunicationsTab(force = false) {
   renderVideoAdminList();
   renderYouTubeAdminList();
   renderKoinoniaOverview();
-  if (koinoniaStudioView === 'ministries') loadKoinoniaMinistries(true);
+  if (koinoniaStudioView === 'ministries' && koinoniaMinistriesView === 'teams') loadKoinoniaMinistries(true);
   if (koinoniaStudioView === 'prayers') loadParishPrayerRequests(true);
-  setKoinoniaStudioView(koinoniaStudioView);
+  if (koinoniaStudioView !== 'ministries') setKoinoniaStudioView(koinoniaStudioView);
 }
 
 async function saveParishBlogSettings(event: SubmitEvent) {
@@ -308,6 +328,9 @@ async function toggleKoinoniaSubfeature(feature: 'signups' | 'exchange' | 'praye
 }
 
 window.ParishFeatureRegistry.register('koinonia', {
-  load: loadCommunicationsTab,
+  load: () => {
+    if (koinoniaStudioView === 'ministries') void setKoinoniaMinistriesView();
+    return loadCommunicationsTab();
+  },
   refresh: () => loadCommunicationsTab(true),
 });

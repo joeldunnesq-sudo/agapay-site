@@ -414,6 +414,7 @@ export const browserTypeScriptEntries = Object.freeze([
     output: 'public/parish/features/stewardship/reports.js',
   },
   { source: 'src/browser/parish/dashboard-runtime.ts', output: 'public/parish/dashboard-runtime.js' },
+  { source: 'src/browser/parish/features/this-week.ts', output: 'public/parish/features/this-week.js' },
   { source: 'src/browser/parish/features/commerce.ts', output: 'public/parish/features/commerce.js' },
   { source: 'src/browser/registration-assistance.ts', output: 'public/registration-assistance.js' },
   { source: 'src/browser/parish/features/giving.ts', output: 'public/parish/features/giving.js' },

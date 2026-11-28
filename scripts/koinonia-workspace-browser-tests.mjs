@@ -34,6 +34,18 @@ const api = {
   '/communications/video': { body: { videos: [], youtube: [] } },
   '/communications/blog': { body: { blog: null } },
   '/directory/admin/ministries': { body: { ministries: [] } },
+  '/this-week': {
+    body: {
+      weekStart: '2026-11-23',
+      weekEnd: '2026-11-29',
+      today: '2026-11-28',
+      timeZone: 'America/Chicago',
+      calendarState: 'not_connected',
+      signupsEnabled: true,
+      events: [],
+      serving: [],
+    },
+  },
   '/prayer-requests': { body: { requests: [], settings: {}, metrics: {} } },
   '/bulletins': { body: { bulletins: [], suggestions: null } },
 };

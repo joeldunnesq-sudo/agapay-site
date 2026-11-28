@@ -61,7 +61,8 @@ export {
 export async function loadPublishedCommerceCalendarEvents(
   env: EventEnvironment,
   parishId: string,
-  registration: EventRegistration = {}
+  registration: EventRegistration = {},
+  range?: { from: string; through: string }
 ) {
   if (!d1(env) || !parishId || !commerceSuiteEnabledFor(registration)) return [];
   const eventsEnabled = eventsEnabledFor(registration);
@@ -82,13 +83,15 @@ export async function loadPublishedCommerceCalendarEvents(
       AND v.commerce_module = 'events' AND v.status = 'active'
     LEFT JOIN directory_ministries m
       ON m.id = p.ministry_id AND m.parish_id = p.parish_id
-    WHERE p.parish_id = ? AND p.commerce_module = 'events' AND p.status = 'active'
+    WHERE p.parish_id = ?1 AND p.commerce_module = 'events' AND p.status = 'active'
       AND COALESCE(p.show_on_calendar, 1) = 1 AND p.event_date IS NOT NULL AND p.event_date <> ''
-      AND p.event_date BETWEEN date('now', '-1 day') AND date('now', '+180 days')
+      AND p.event_date BETWEEN COALESCE(?2,date('now', '-1 day')) AND COALESCE(?3,date('now', '+180 days'))
     GROUP BY p.id
     ORDER BY p.event_date ASC, p.event_start_time ASC, p.name COLLATE NOCASE
   `,
-    parishId
+    parishId,
+    range?.from ?? null,
+    range?.through ?? null
   );
   return rows.flatMap((row) => {
     const offeringKind = eventOfferingKind(row.item_category);

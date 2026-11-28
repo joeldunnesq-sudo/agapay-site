@@ -35,6 +35,136 @@ async function scenario(name, response, run, apiResponses) {
 
 try {
   await scenario(
+    'Give parishes see the Parish Life plan requirement and have no week view',
+    () => ({ parish: { ...parish, parishLifeAvailable: true } }),
+    async ({ page, open }) => {
+      await open();
+      await ready(page);
+      await page.locator('#nav-communications').click();
+      assert.equal(await page.locator('#communicationsPaywall').isVisible(), true);
+      assert.equal(await page.getByRole('button', { name: 'This Week', exact: true }).count(), 0);
+    }
+  );
+
+  await scenario(
+    'parish week dashboard filters dates and navigates weeks on desktop and mobile',
+    () => ({
+      parish: {
+        ...parish,
+        subscriptionTier: 'giving',
+        subscriptionTierLabel: 'Give +',
+        parishLifeAvailable: true,
+        communicationsEnabled: true,
+        signupsEnabled: true,
+        entitlements: { modules: { communications: { included: true } } },
+      },
+    }),
+    async ({ page, open }) => {
+      await open();
+      await ready(page);
+      await page.locator('#nav-communications').click();
+      const weekTab = page.getByRole('button', { name: 'This Week', exact: true });
+      await page.getByRole('button', { name: 'Ministries', exact: true }).click();
+      const agenda = page.locator('.parish-week-agenda');
+      const serving = page.locator('.parish-week-serving');
+      await agenda.getByText('Choir rehearsal').waitFor();
+      assert.equal(await weekTab.getAttribute('aria-pressed'), 'true');
+      assert.equal(await agenda.getByText('Divine Liturgy').isVisible(), true);
+      assert.equal(await serving.getByText('1 coverage request').isVisible(), true);
+      assert.equal(
+        await serving.getByRole('link', { name: 'Signup' }).getAttribute('href'),
+        '/myagapay/signups?sheet=liturgy'
+      );
+      await page.getByRole('button', { name: /Sunday, November 29/ }).click();
+      assert.equal(await agenda.getByText('Choir rehearsal').count(), 0);
+      assert.equal(await agenda.getByRole('heading', { name: 'Sunday agenda' }).isVisible(), true);
+      await page.getByRole('button', { name: 'Full week' }).click();
+      assert.equal(await agenda.getByText('Choir rehearsal').isVisible(), true);
+      const previous = page.getByRole('button', { name: 'Previous week' });
+      await previous.click();
+      await agenda.getByText('There are no scheduled events in this view.').waitFor();
+      assert.equal(await previous.evaluate((element) => element === document.activeElement), true);
+      await page.getByRole('button', { name: 'Current week' }).click();
+      await agenda.getByText('Choir rehearsal').waitFor();
+      await page.getByRole('button', { name: 'Teams', exact: true }).click();
+      await page.getByRole('heading', { name: 'Ministry teams' }).waitFor();
+      assert.equal(await agenda.isVisible(), false);
+      await weekTab.click();
+      await agenda.getByText('Choir rehearsal').waitFor();
+      await page.setViewportSize({ width: 390, height: 844 });
+      const mobileNav = page.locator('.mobile-tabbar [data-nav-tab="communications"]');
+      await mobileNav.click();
+      await agenda.getByText('Divine Liturgy').waitFor();
+      assert.equal(await weekTab.getAttribute('aria-pressed'), 'true');
+      assert.equal(await page.locator('.topbar').isVisible(), false);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      const bounds = await page.locator('#parishWeekPanel').boundingBox();
+      assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 390);
+    },
+    {
+      '/communications': { body: { announcements: [] } },
+      '/communications/teaching': { body: { posts: [] } },
+      '/communications/video': { body: { videos: [] } },
+      '/communications/blog': { body: {} },
+      '/directory/admin/ministries': { body: { ministries: [] } },
+      '/this-week': (request) => {
+        assert.equal(request.headers().authorization, 'Bearer synthetic-session-token');
+        const week = new URL(request.url()).searchParams.get('week');
+        const body = {
+          today: '2026-11-27',
+          timeZone: 'America/Chicago',
+          calendarState: 'connected',
+          signupsEnabled: true,
+        };
+        if (week) {
+          assert.equal(week, '2026-11-16');
+          return { body: { ...body, weekStart: week, weekEnd: '2026-11-22', events: [], serving: [] } };
+        }
+        return {
+          body: {
+            ...body,
+            weekStart: '2026-11-23',
+            weekEnd: '2026-11-29',
+            events: [
+              {
+                id: '1',
+                title: 'Choir rehearsal',
+                startsAt: '2026-11-27T23:00:00Z',
+                day: '2026-11-27',
+                kind: 'ministry',
+                ministry: 'Choir',
+                href: '/myagapay/groups?group=choir',
+              },
+              {
+                id: '2',
+                title: 'Divine Liturgy',
+                startsAt: '2026-11-29T15:00:00Z',
+                day: '2026-11-29',
+                kind: 'calendar',
+              },
+            ],
+            serving: [
+              {
+                id: '1',
+                title: 'Liturgy',
+                label: 'Epistle reader',
+                ministry: 'Readers',
+                day: '2026-11-29',
+                startsAt: '2026-11-29T15:00:00Z',
+                needed: 2,
+                confirmed: 1,
+                open: 1,
+                coverage: 1,
+                href: '/myagapay/signups?sheet=liturgy',
+              },
+            ],
+          },
+        };
+      },
+    }
+  );
+
+  await scenario(
     'Settings logo upgrade selects Give + and church-calendar dates convert automatically',
     () => ({
       parish: {

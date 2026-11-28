@@ -123,6 +123,7 @@ async function loadDashboardInner(btn: HTMLButtonElement | null | undefined) {
       window.ParishFeatureRegistry?.get('stewardship') as (ParishRegisteredFeature & { invalidate(): unknown }) | null
     )?.invalidate();
     if (activeTab === 'stewardship') loadRegisteredParishFeature('stewardship', true);
+    if (activeTab === 'communications') loadRegisteredParishFeature('koinonia');
     if (initialLoad) finishDashboardBoot();
   } catch (err) {
     currentParish = previousParish;

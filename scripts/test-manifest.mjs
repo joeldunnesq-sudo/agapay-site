@@ -92,6 +92,7 @@ const core = [
   'scripts/academic-records-typescript-tests.mjs',
   'scripts/learn-html-sanitization-tests.mjs',
   'scripts/koinonia-ministries-calendar-tests.mjs',
+  'scripts/parish-this-week-tests.mjs',
   'scripts/content-services-typescript-tests.mjs',
   'scripts/private-document-storage-tests.mjs',
   'scripts/certificate-storage-typescript-tests.mjs',
