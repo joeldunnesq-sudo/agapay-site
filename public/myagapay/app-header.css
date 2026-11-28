@@ -388,7 +388,12 @@
 }
 
 /* Compact preview-style header used by the signed-in destinations. */
-.app-shared-header-page .app-header-bar { min-height:65px; padding:10px 20px; background:#0c1d25; }
+.app-shared-header-page .app-header-bar {
+  --app-header-inline-padding: 20px;
+  min-height: 65px;
+  padding: 10px var(--app-header-inline-padding);
+  background: #0c1d25;
+}
 .app-header-brand { min-width:0; flex:1 1 auto; font-size:18px; font-weight:700; letter-spacing:.095em; color:#fff7e7; }
 .app-header-brand > span { min-width:0; }
 .app-header-brand img { width:40px; height:40px; flex:none; padding:0; border:0; }
@@ -409,6 +414,17 @@
 .app-header-back { min-height:36px; margin:0 0 4px; padding:0; border:0; background:transparent; color:#806532; }
 .app-header-description { margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #ded6c6; color:#536773; font-size:.875rem; }
 .app-home-header .app-header-body { display:none; }
+.app-shared-header-page .app-home-header .app-header-bar {
+  min-height: calc(65px + env(safe-area-inset-top, 0px));
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  padding-left: max(var(--app-header-inline-padding), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--app-header-inline-padding), env(safe-area-inset-right, 0px));
+}
+.app-shared-header-page .app-home-header .koinonia-mobile-menu {
+  top: calc(100% + 3px);
+  right: max(14px, env(safe-area-inset-right, 0px));
+  width: min(310px, calc(100% - max(14px, env(safe-area-inset-left, 0px)) - max(14px, env(safe-area-inset-right, 0px))));
+}
 .app-shared-header-page.koinonia-landing-page main > .parish-life-page-shell { padding-top:16px !important; }
 .app-shared-header-page:is(.donor-bookstore-page,.donor-library-page,.donor-directory-page) .app-header-title-row {
   padding-bottom: 12px;
@@ -434,6 +450,24 @@
   color:#806027;
   box-shadow:none;
 }
+@media (max-width: 900px) {
+  .app-shared-header-page.koinonia-landing-page .donor-mobile-content {
+    --home-gutter: 0.95rem;
+    grid-template-columns:
+      max(var(--home-gutter), env(safe-area-inset-left, 0px))
+      minmax(0, 1fr)
+      max(var(--home-gutter), env(safe-area-inset-right, 0px));
+    padding-top: 0;
+    padding-inline: 0;
+  }
+  .app-shared-header-page .app-home-header {
+    max-width: none;
+    margin-inline: 0;
+  }
+  .app-shared-header-page.koinonia-landing-page .parish-life-page-shell {
+    grid-column: 2;
+  }
+}
 @media (max-width: 700px) {
   .app-shared-header-page.donor-library-page .app-header-body { padding-inline: 20px; }
   .app-shared-header-page.donor-directory-page .member-card { border-color:#ddd7cb; }
@@ -442,6 +476,9 @@
     font-weight:600;
   }
 }
+@media (max-width: 430px) {
+  .app-shared-header-page.koinonia-landing-page .donor-mobile-content { --home-gutter: 0px; }
+}
 @media (max-width: 360px) {
-  .app-shared-header-page .app-header-bar { padding-inline:12px; }
+  .app-shared-header-page .app-header-bar { --app-header-inline-padding: 12px; }
 }
