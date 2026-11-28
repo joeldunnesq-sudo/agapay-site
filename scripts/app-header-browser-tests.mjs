@@ -206,6 +206,43 @@ try {
   await page.goto('https://agapay.test/myagapay');
   await page.locator('.app-home-header').waitFor();
   await page.locator('.refined-liturgical-hero').waitFor();
+  const homeBar = page.locator('.app-home-header .app-header-bar');
+  assert.match(await page.locator('meta[name="viewport"]').getAttribute('content'), /viewport-fit=cover/);
+  for (const width of [390, 448, 540, 756]) {
+    await page.setViewportSize({ width, height: 844 });
+    const bar = await homeBar.boundingBox();
+    assert.equal(bar.x, 0, `Home header should start at the left edge at ${width}px`);
+    assert.equal(bar.width, width, `Home header should span the viewport at ${width}px`);
+    assert.equal(bar.y, 0, `Home header should start at the top edge at ${width}px`);
+  }
+  const homeDevtools = await context.newCDPSession(page);
+  const homeBrand = homeBar.locator('.app-header-brand');
+  const homeMenuButton = homeBar.getByRole('button', { name: 'Open My AGAPAY navigation' });
+  const homeSafeAreaMenu = page.locator('.app-home-header [data-myagapay-app-menu]');
+  try {
+    await page.setViewportSize({ width: 402, height: 681 });
+    await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 62, bottom: 34 } });
+    const bar = await homeBar.boundingBox();
+    assert.equal(bar.y, 0, 'The Home bar background should cover the status area');
+    assert.ok((await homeBrand.boundingBox()).y >= 62, 'The Home brand should be below the status area');
+    assert.ok((await homeMenuButton.boundingBox()).y >= 62, 'The menu button should be below the status area');
+    await homeMenuButton.click();
+    await homeSafeAreaMenu.waitFor({ state: 'visible' });
+    assert.ok((await homeSafeAreaMenu.boundingBox()).y >= bar.y + bar.height, 'The menu should open below the taller bar');
+    await page.keyboard.press('Escape');
+
+    await page.setViewportSize({ width: 756, height: 352 });
+    await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, bottom: 21 } });
+    const brand = await homeBrand.boundingBox();
+    const menuButton = await homeMenuButton.boundingBox();
+    assert.ok(brand.x >= 62, 'The Home brand should clear the landscape cutout');
+    assert.ok(menuButton.x + menuButton.width <= 756 - 62, 'The Home menu button should clear the landscape cutout');
+    assert.equal((await homeBar.boundingBox()).width, 756, 'The landscape bar background should span the viewport');
+  } finally {
+    await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: {} });
+    await homeDevtools.detach();
+    await page.setViewportSize({ width: 390, height: 844 });
+  }
   const tabs = page.locator('nav.my-agapay-tabbar a');
   await page.getByRole('link', { name: 'Directory', exact: true }).last().waitFor();
   assert.deepEqual(await tabs.locator('span').allTextContents(), [
