@@ -235,9 +235,16 @@ try {
     await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 62, right: 62, bottom: 21 } });
     const brand = await homeBrand.boundingBox();
     const menuButton = await homeMenuButton.boundingBox();
+    const landscapeBar = await homeBar.boundingBox();
     assert.ok(brand.x >= 62, 'The Home brand should clear the landscape cutout');
     assert.ok(menuButton.x + menuButton.width <= 756 - 62, 'The Home menu button should clear the landscape cutout');
-    assert.equal((await homeBar.boundingBox()).width, 756, 'The landscape bar background should span the viewport');
+    assert.equal(landscapeBar.width, 756, 'The landscape bar background should span the viewport');
+    await homeMenuButton.click();
+    await homeSafeAreaMenu.waitFor({ state: 'visible' });
+    const landscapeMenu = await homeSafeAreaMenu.boundingBox();
+    assert.ok(landscapeMenu.y >= landscapeBar.y + landscapeBar.height, 'The landscape menu should open below the bar');
+    assert.ok(landscapeMenu.x + landscapeMenu.width <= 756 - 62, 'The landscape menu should clear the cutout');
+    await page.keyboard.press('Escape');
   } finally {
     await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: {} });
     await homeDevtools.detach();
