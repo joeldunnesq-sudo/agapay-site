@@ -94,31 +94,39 @@ import { subscriptionStatusFromStripe, updateSubscriptionRecord } from './stripe
 
 export async function processStripeWebhookEvent(env: StripeHandlerEnv, event: StripeWebhookEvent) {
   const object = (event.data?.object || {}) as StripeWebhookObject;
-  if (event.type === 'payout.paid') {
+  if (['payout.paid', 'payout.failed', 'payout.canceled'].includes(event.type)) {
     if (!event.account || event.livemode !== (detectAccountingEnvironment(env) === 'production')) return;
     const parishId = await parishForStripeAccount(env, event.account);
     if (!parishId) return;
-    const { arrival_date: arrivalDate, amount, currency } = object;
+    const { amount, currency } = object;
+    const originalPayoutId = stripeObjectId(object.original_payout);
+    const paid = event.type === 'payout.paid';
+    // A failed reversal attempt does not return the original payout.
+    if (!paid && originalPayoutId) return;
+    const returned = !paid || Boolean(originalPayoutId);
+    const occurredAt = paid ? object.arrival_date : event.created;
     if (
       object.object !== 'payout' ||
-      object.status !== 'paid' ||
+      object.status !== event.type.slice('payout.'.length) ||
       !/^po_[A-Za-z0-9_]+$/.test(object.id || '') ||
+      (originalPayoutId && !/^po_[A-Za-z0-9_]+$/.test(originalPayoutId)) ||
       typeof amount !== 'number' ||
       !Number.isSafeInteger(amount) ||
-      amount <= 0 ||
+      (originalPayoutId ? amount === 0 : amount <= 0) ||
       typeof currency !== 'string' ||
       !/^[a-z]{3}$/.test(currency) ||
-      typeof arrivalDate !== 'number' ||
-      !Number.isFinite(new Date(arrivalDate * 1000).getTime()) ||
-      arrivalDate <= 0
+      typeof occurredAt !== 'number' ||
+      !Number.isFinite(new Date(occurredAt * 1000).getTime()) ||
+      occurredAt <= 0
     )
-      throw new Error('Stripe paid payout was missing required settlement facts.');
+      throw new Error('Stripe payout was missing required settlement facts.');
     await wireStripePayoutToAccounting(env, parishId, {
-      id: object.id,
-      amount,
+      id: originalPayoutId || object.id,
+      amount: Math.abs(amount),
       currency,
-      arrivalDate,
-      balanceTransactionId: typeof object.balance_transaction === 'string' ? object.balance_transaction : '',
+      occurredAt,
+      returned,
+      balanceTransactionId: stripeObjectId(paid ? object.balance_transaction : object.failure_balance_transaction),
     });
     return;
   }

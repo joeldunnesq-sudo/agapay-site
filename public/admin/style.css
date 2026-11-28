@@ -1587,6 +1587,31 @@
     }
     #deploymentHealthPane .health-item { min-width: 0; overflow-wrap: anywhere; }
     #paymentExceptionsTitle { margin: 0; }
+    .payment-exception-filters, .payment-exception-pages {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: end;
+    }
+    .payment-exception-pages { margin-top: 0.75rem; }
+    .payment-exception-filters label, .payment-exception-assignment label {
+      display: grid;
+      gap: 0.3rem;
+      min-width: 0;
+      font-size: 0.85rem;
+    }
+    .payment-exception-filters input, .payment-exception-filters select,
+    .payment-exception-assignment input, .payment-exception-assignment textarea {
+      width: 100%;
+      min-height: 2.25rem;
+      padding: 0.35rem 0.55rem;
+      border: 1px solid rgba(110,104,96,0.42);
+      border-radius: 6px;
+      font: inherit;
+    }
+    .payment-exception-filters label:has(input) { flex: 1 1 10rem; }
+    .payment-exception-assignment { display: grid; gap: 0.6rem; margin: 0.55rem 0; }
+    .payment-exception-assignment button { justify-self: start; }
     .payment-exception-list { list-style: none; padding: 0; margin: 0; }
     .payment-exception-list li {
       display: grid;
@@ -1596,11 +1621,11 @@
       border-top: 1px solid rgba(110,104,96,0.14);
     }
     .payment-exception-list li > * { overflow-wrap: anywhere; }
-    .payment-exception-list li > :nth-child(even) { text-align: right; }
+    .payment-exception-list li > time { text-align: right; }
     .payment-exception-guidance { grid-column: 1 / -1; margin: 0.25rem 0 0; color: var(--stone); }
     @media (max-width: 420px) {
       #deploymentHealthPane, .payment-exception-list li { grid-template-columns: minmax(0, 1fr); }
-      .payment-exception-list li > :nth-child(even) { text-align: left; }
+      .payment-exception-list li > time { text-align: left; }
     }
     .diagnostics-badge-row {
       display: flex;

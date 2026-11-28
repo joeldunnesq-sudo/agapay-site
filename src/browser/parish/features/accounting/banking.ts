@@ -108,7 +108,7 @@ function renderAccountingPayoutAlerts(pane: HTMLElement) {
   async function checkPayouts() {
     const month = String(new FormData(form).get('month') || '');
     button.disabled = true;
-    summary.textContent = 'Comparing paid Stripe payouts with posted ledger entries…';
+    summary.textContent = 'Comparing Stripe payouts with posted ledger entries…';
     results.replaceChildren();
     try {
       const data = await accountingDeskRead<{
@@ -127,6 +127,7 @@ function renderAccountingPayoutAlerts(pane: HTMLElement) {
         missing_entry: 'No posted journal is linked to this payout.',
         multiple_entries: 'More than one posted journal is linked to this payout.',
         currency_mismatch: 'The Stripe and ledger currencies differ.',
+        returned_payout_unreversed: 'Stripe returned this payout and a posted deposit still needs a reversal.',
         amount_mismatch: 'The Stripe amount differs from the posted amount.',
       };
       for (const alert of data.alerts) {
@@ -139,8 +140,8 @@ function renderAccountingPayoutAlerts(pane: HTMLElement) {
         results.append(item);
       }
       summary.textContent = data.complete
-        ? `${data.month} · ${data.checked} paid payouts checked, ${data.alerts.length} to review.`
-        : `${data.month} · Stripe returned only part of the month. Reviewed ${data.checked} paid payouts.`;
+        ? `${data.month} · ${data.checked} payouts checked, ${data.alerts.length} to review.`
+        : `${data.month} · Stripe returned only part of the month. Reviewed ${data.checked} payouts.`;
     } catch {
       summary.textContent = 'Could not check payouts. Try again.';
     } finally {

@@ -12,6 +12,8 @@ const RETRYABLE_PAYMENT_EVENTS = /* @__PURE__ */ new Set([
   'invoice.paid',
   'invoice.payment_succeeded',
   'payout.paid',
+  'payout.failed',
+  'payout.canceled',
 ]);
 async function parishForStripeAccount(env, accountId) {
   if (!accountId || !env.AGAPAY_DB) return '';

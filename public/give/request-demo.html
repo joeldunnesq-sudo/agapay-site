@@ -274,6 +274,8 @@
     .final-cta h2 em { display: block; color: var(--gold); font-weight: 500; }
     .final-cta p { max-width: 570px; margin: 1.15rem auto 0; color: rgba(248,243,233,.68); line-height: 1.7; }
     .cta-button { min-height: 54px; margin-top: 1.6rem; display: inline-flex; align-items: center; justify-content: center; gap: .65rem; padding: 0 1.55rem; border-radius: 9px; background: linear-gradient(135deg, #dfbd6d, #b8872d); color: #071522; font-weight: 800; box-shadow: 0 14px 30px rgba(0,0,0,.22); }
+    .hero-form-link { display: none; }
+    #demo-form { scroll-margin-top: 1.25rem; }
 
     footer { padding: 1.3rem; color: rgba(248,243,233,.53); background: #05121c; font-size: .75rem; }
     .footer-inner { width: min(1120px, 100%); margin: 0 auto; display: flex; justify-content: space-between; gap: 1rem; }
@@ -290,6 +292,7 @@
     @media (max-width: 930px) {
       .hero-grid { grid-template-columns: 1fr; }
       .hero-copy { max-width: 760px; }
+      .hero-form-link { display: inline-flex; margin: 0 0 1.25rem; }
       .demo-card { max-width: 680px; }
       .trust-inner { grid-template-columns: repeat(3, 1fr); padding: 1.35rem 0; }
       .trust-label { grid-column: 1 / -1; }
@@ -351,6 +354,7 @@
           <div class="eyebrow">For Orthodox parish leaders</div>
           <h1>A better giving experience <em>for your whole parish.</em></h1>
           <p class="hero-lead">See the Orthodox tithing app and custom-built Orthodox church management software platform in action. We will walk through giving, stewardship, and the parish workflows that matter to your community.</p>
+          <a class="cta-button hero-form-link" href="#demo-form">Go to the demo form <span aria-hidden="true">↓</span></a>
 
           <div class="hero-points" aria-label="What makes AGAPAY different">
             <div class="hero-point">
@@ -377,7 +381,7 @@
           <h2 id="form-title">Request your parish demo</h2>
           <p class="form-intro">Tell us a little about your community. We’ll shape the walkthrough around the work your parish is doing now.</p>
 
-          <form class="demo-form" id="demo-form" novalidate>
+          <form class="demo-form" id="demo-form" tabindex="-1" novalidate>
             <div class="field">
               <label for="name">Your name</label>
               <input id="name" name="name" autocomplete="name" placeholder="First and last name" required />

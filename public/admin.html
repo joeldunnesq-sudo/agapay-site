@@ -250,7 +250,21 @@
 
               <section class="section-card" id="paymentExceptionsCard" aria-labelledby="paymentExceptionsTitle">
                 <div class="section-header"><h2 class="section-title" id="paymentExceptionsTitle">Payment exceptions</h2><button type="button" class="secondary btn-sm" id="paymentExceptionRefresh">Refresh</button></div>
-                <div class="section-body"><p id="paymentExceptionStatus" role="status">Review failed or stalled Stripe webhook deliveries.</p><ul class="payment-exception-list" id="paymentExceptionList"></ul></div>
+                <div class="section-body">
+                  <form class="payment-exception-filters" id="paymentExceptionFilters">
+                    <label>Event ID or type<input name="search" type="search" maxlength="120"></label>
+                    <label>Parish<input name="parish" type="search" maxlength="120"></label>
+                    <label>Status<select name="status"><option value="">All</option><option value="failed">Failed</option><option value="stalled">Stalled</option></select></label>
+                    <label>Sort<select name="sort"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label>
+                    <button type="submit" class="secondary btn-sm">Apply filters</button>
+                  </form>
+                  <p id="paymentExceptionStatus" role="status">Review failed or stalled Stripe webhook deliveries.</p>
+                  <ul class="payment-exception-list" id="paymentExceptionList"></ul>
+                  <nav class="payment-exception-pages" aria-label="Payment exception pages">
+                    <button type="button" class="secondary btn-sm" id="paymentExceptionPrevious" disabled>Previous</button>
+                    <button type="button" class="secondary btn-sm" id="paymentExceptionNext" disabled>Next</button>
+                  </nav>
+                </div>
               </section>
               <section class="section-card" id="contactLeadsCard" aria-label="Contact submissions">
                 <div class="section-header"><div class="section-title">Contact submissions</div><button class="secondary btn-sm" onclick="loadContactLeads()">Load contacts</button></div>
@@ -1054,7 +1068,7 @@
   <script src="/admin/presentation.js?v=3fab636db05161dd"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=3d75b8f03a0729fd"></script>
   <script src="/admin/controllers/contact-leads.js?v=f6b278f668dd6ab2"></script>
-  <script src="/admin/controllers/payment-exceptions.js?v=6a3f565e7168f3b6"></script>
+  <script src="/admin/controllers/payment-exceptions.js?v=b862443653e9b3d9"></script>
   <script src="/admin/giving-impact.js?v=a00517bba632291d"></script>
   <script src="/admin/metrics.js?v=6db326f37adbe052"></script>
   <script src="/admin/relationships.js?v=1d05a38cad659d4a"></script>

@@ -195,6 +195,7 @@ try {
   queueDb.exec(read('migrations/0002_stripe_event_status.sql'));
   queueDb.exec(read('migrations/0014_audit_log.sql'));
   queueDb.exec(read('migrations/0134_stripe_event_recovery.sql'));
+  queueDb.exec(read('migrations/0135_payment_exception_assignments.sql'));
   const add = queueDb.prepare(
     'INSERT INTO stripe_events (id,event_type,status,received_at,error_message) VALUES (?,?,?,?,?)'
   );
@@ -250,6 +251,10 @@ try {
         receivedAt: recent,
         parishId: 'parish-a',
         parishName: 'Parish A',
+        owner: '',
+        nextAction: '',
+        assignmentVersion: 0,
+        canAssign: true,
         canRetry: true,
         reason: 'Payment processing failed.',
         nextStep: 'Review the Stripe delivery and AGAPAY logs for this event before resending it.',
@@ -261,13 +266,59 @@ try {
         receivedAt: old,
         parishId: '',
         parishName: '',
+        owner: '',
+        nextAction: '',
+        assignmentVersion: 0,
+        canAssign: true,
         canRetry: true,
         reason: 'Processing exceeded the expected time.',
         nextStep: 'Check the latest delivery in Stripe Workbench before resending it.',
       },
     ],
     hasMore: false,
+    nextCursor: '',
   });
+  const filtered = await platformWorker.fetch(
+    request(verified, 'GET', `${url}?status=failed&search=refund&parish=Parish+A&sort=oldest`),
+    queueEnv
+  );
+  assert.deepEqual(
+    (await filtered.json()).events.map(({ id }) => id),
+    ['evt_failed']
+  );
+  const assignmentUrl = `${url}/evt_failed/assignment`;
+  const assignment = (session, version) =>
+    new Request(assignmentUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner: 'Test operator', nextAction: 'Compare the Stripe delivery.', version }),
+    });
+  assert.equal((await platformWorker.fetch(assignment(unverified, 0), queueEnv)).status, 401);
+  assert.deepEqual(await (await platformWorker.fetch(assignment(verified, 0), queueEnv)).json(), {
+    ok: true,
+    version: 1,
+  });
+  assert.equal((await platformWorker.fetch(assignment(verified, 0), queueEnv)).status, 409);
+  const assigned = await (await platformWorker.fetch(request(verified), queueEnv)).json();
+  assert.equal(assigned.events[0].owner, 'Test operator');
+  assert.equal(assigned.events[0].nextAction, 'Compare the Stripe delivery.');
+  assert.equal(assigned.events[0].assignmentVersion, 1);
+  for (let index = 0; index < 51; index += 1)
+    add.run(`evt_page_${String(index).padStart(2, '0')}`, 'payout.failed', 'failed', old, '');
+  const firstPage = await (
+    await platformWorker.fetch(request(verified, 'GET', `${url}?search=payout&sort=oldest`), queueEnv)
+  ).json();
+  assert.equal(firstPage.events.length, 50);
+  const secondPage = await (
+    await platformWorker.fetch(
+      request(verified, 'GET', `${url}?search=payout&sort=oldest&cursor=${encodeURIComponent(firstPage.nextCursor)}`),
+      queueEnv
+    )
+  ).json();
+  assert.deepEqual(
+    secondPage.events.map(({ id }) => id),
+    ['evt_page_50']
+  );
   const retryUrl = `${url}/evt_failed/retry`;
   assert.equal((await platformWorker.fetch(request(unverified, 'POST', retryUrl), queueEnv)).status, 401);
   let returnedAccount = 'acct_wrong';
@@ -289,6 +340,7 @@ try {
   const results = await Promise.all([retry(), retry()]);
   assert.deepEqual(results.map((response) => response.status).sort(), [200, 409]);
   assert.equal(queueDb.prepare("SELECT status FROM stripe_events WHERE id='evt_failed'").get().status, 'processed');
+  assert.equal((await platformWorker.fetch(assignment(verified, 1), queueEnv)).status, 409);
   const audit = queueDb
     .prepare(
       "SELECT actor_user_id, organization_id, after_summary_json FROM audit_log WHERE action='stripe.payment_retry.finished'"

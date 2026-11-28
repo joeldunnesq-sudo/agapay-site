@@ -90,7 +90,7 @@ const JOIN_SCOPES: Record<string, readonly [string, string, string]> = {
   tax_exemption_stripe_syncs: ['registration_reference', 'registrations', 'reference'],
 };
 const INDEPENDENT = new Set(
-  `parish_milestone_deliveries parish_relationship_snapshots contact_leads academic_years account_deletion_requests accounting_schema_versions app_settings consumer_passkey_accounts consumer_passkey_transactions consumer_webauthn_credentials courses directory_person_links donor_custom_news_feeds donor_external_feed_subscriptions donor_news_source_subscriptions donor_podcast_preferences donor_podcast_progress donor_podcast_subscriptions donors grades_and_progress legal_terms_versions platform_users stripe_events`.split(
+  `parish_milestone_deliveries parish_relationship_snapshots contact_leads academic_years account_deletion_requests accounting_schema_versions app_settings consumer_passkey_accounts consumer_passkey_transactions consumer_webauthn_credentials courses directory_person_links donor_custom_news_feeds donor_external_feed_subscriptions donor_news_source_subscriptions donor_podcast_preferences donor_podcast_progress donor_podcast_subscriptions donors grades_and_progress legal_terms_versions platform_users stripe_events stripe_payment_exception_assignments`.split(
     ' '
   )
 );

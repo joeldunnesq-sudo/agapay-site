@@ -81,5 +81,24 @@ try {
   await page.locator('button[type=submit]').click();
   await failureResponse;
   await page.getByText(/Reference: browser-failure-reference/).waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('https://agapay.test/');
+  const menu = page.getByRole('button', { name: 'Open navigation', exact: true });
+  await menu.waitFor();
+  await menu.press('Tab');
+  assert.equal(await page.evaluate(() => Boolean(document.activeElement.closest('#mobileDrawer'))), false);
+  await menu.press('Enter');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'drawerCloseBtn');
+  await page.keyboard.press('Shift+Tab');
+  assert.ok(await page.evaluate(() => document.activeElement.closest('#mobileDrawer')));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'mobileMenuBtn');
+  assert.equal(await menu.getAttribute('aria-expanded'), 'false');
+  await page.goto('https://agapay.test/give/request-demo');
+  const shortcut = page.getByRole('link', { name: 'Go to the demo form' });
+  assert.ok((await shortcut.boundingBox()).y < 844, 'the shortcut is available before scrolling');
+  await shortcut.press('Enter');
+  await page.waitForURL('**/give/request-demo#demo-form');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'demo-form');
   console.log('PASS - Chromium attribution, blocked tracking, contact/demo failure references, and idempotent form retries');
 } finally { await browser.close(); }

@@ -481,11 +481,12 @@ async function wireStripePayoutToAccounting(env, parishId, payout) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);
   if (!db) return null;
   const postingActor = actor('accounting.integrations.post');
+  const sourceType = payout.returned ? 'stripe_payout_reversed' : 'stripe_payout_paid';
   const existing = await db
     .prepare(
-      "SELECT id,net_amount,currency FROM accounting_integration_source_events WHERE source_system='stripe' AND source_type='stripe_payout_paid' AND payout_id=? LIMIT 2"
+      "SELECT id,net_amount,currency FROM accounting_integration_source_events WHERE source_system='stripe' AND source_type=? AND payout_id=? LIMIT 2"
     )
-    .bind(payout.id)
+    .bind(sourceType, payout.id)
     .all();
   const [prior] = existing.results || [];
   if (
@@ -501,21 +502,36 @@ async function wireStripePayoutToAccounting(env, parishId, payout) {
       entitlementTier: 'parish',
       event: {
         sourceSystem: 'stripe',
-        sourceType: 'stripe_payout_paid',
-        sourceEventId: `stripe:payout:${payout.id}:paid`,
+        sourceType,
+        sourceEventId: `stripe:payout:${payout.id}:${payout.returned ? 'returned' : 'paid'}`,
         sourceObjectId: payout.id,
         payoutId: payout.id,
-        occurredAt: new Date(payout.arrivalDate * 1e3).toISOString(),
+        occurredAt: new Date(payout.occurredAt * 1e3).toISOString(),
         currency: payout.currency,
         netAmount: payout.amount,
         balanceTransactionId: payout.balanceTransactionId,
       },
     }));
-  return processAccountingSourceEvent(db, {
+  const processed = await processAccountingSourceEvent(db, {
     actor: postingActor,
     entitlementTier: 'parish',
     sourceEventId: source.id,
   });
+  if (!payout.returned && processed?.status === 'posted') {
+    const returned = await db
+      .prepare(
+        "SELECT id FROM accounting_integration_source_events WHERE source_system='stripe' AND source_type='stripe_payout_reversed' AND payout_id=?"
+      )
+      .bind(payout.id)
+      .first();
+    if (returned)
+      await processAccountingSourceEvent(db, {
+        actor: postingActor,
+        entitlementTier: 'parish',
+        sourceEventId: returned.id,
+      });
+  }
+  return processed;
 }
 async function synchronizeGivingCatalogWithAccounting(env, parishId, registration = {}) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);

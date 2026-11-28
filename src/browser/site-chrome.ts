@@ -122,14 +122,14 @@
             ).join('')}
           </div>
 
-          <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="mobileDrawer">
             ${shellIcon('menu')}
           </button>
         </nav>
       </header>
 
       <div class="drawer-backdrop" data-shell="canonical" id="drawerBackdrop"></div>
-      <aside class="mobile-drawer" data-shell="canonical" id="mobileDrawer" aria-label="Mobile navigation">
+      <aside class="mobile-drawer" data-shell="canonical" id="mobileDrawer" role="dialog" aria-modal="true" aria-label="Mobile navigation" aria-hidden="true" inert>
         <div class="drawer-head">
           <strong class="drawer-title">AGAPAY</strong>
           <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">
@@ -216,11 +216,22 @@
     const body = document.body;
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const drawerBackdrop = document.getElementById('drawerBackdrop');
+    const drawer = document.getElementById('mobileDrawer');
     const drawerCloseBtn = document.getElementById('drawerCloseBtn');
 
     function setDrawer(open: boolean) {
+      if (!drawer || !mobileMenuBtn || open === body.classList.contains('drawer-open')) return;
       body.classList.toggle('drawer-open', open);
-      if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      mobileMenuBtn.setAttribute('aria-expanded', String(open));
+      if (open) {
+        drawer.inert = false;
+        drawer.removeAttribute('aria-hidden');
+        drawerCloseBtn?.focus();
+      } else {
+        if (drawer.contains(document.activeElement)) mobileMenuBtn.focus();
+        drawer.inert = true;
+        drawer.setAttribute('aria-hidden', 'true');
+      }
     }
 
     if (mobileMenuBtn)
@@ -249,7 +260,23 @@
     });
 
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') setDrawer(false);
+      if (!drawer || !body.classList.contains('drawer-open')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setDrawer(false);
+      }
+      if (event.key === 'Tab') {
+        const controls = drawer.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
     });
   }
 
