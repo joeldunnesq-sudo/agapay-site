@@ -132,12 +132,6 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   min-width: 0;
 }
 
-.site-header[data-shell="canonical"] .nav-links a,
-.site-header[data-shell="canonical"] .signin-menu a,
-.site-header[data-shell="canonical"] .drawer-links a {
-  text-decoration: none;
-}
-
 .site-header[data-shell="canonical"] .nav-links a {
   position: relative;
   color: rgba(246, 241, 232, 0.84);
@@ -145,6 +139,7 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 0.4rem 0;
+  text-decoration: none;
 }
 
 .site-header[data-shell="canonical"] .nav-links a::after {
@@ -232,59 +227,38 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   stroke-linejoin: round;
 }
 
-.site-header[data-shell="canonical"] .signin-wrap {
-  position: relative;
+.site-header[data-shell="canonical"] .nav-signin {
+  display: flex;
+  gap: 0.5rem;
+  justify-self: end;
 }
 
-.nav-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  border: 1px solid rgba(200, 162, 74, 0.7);
-  background: rgba(6, 21, 34, 0.36);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-
-.nav-avatar svg {
-  width: 18px;
-  height: 18px;
-  stroke: var(--agp-gold);
-  fill: none;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.site-header[data-shell="canonical"] .signin-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.65rem);
-  min-width: 196px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(200, 162, 74, 0.18);
-  background: linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(7, 24, 37, 0.98));
-  box-shadow: 0 20px 40px rgba(2, 10, 18, 0.4);
-  display: none;
-}
-
-.site-header[data-shell="canonical"] .signin-menu.open {
-  display: block;
-}
-
-.site-header[data-shell="canonical"] .signin-menu a {
-  display: block;
-  padding: 0.85rem 1rem;
-  color: rgba(246, 241, 232, 0.88);
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.site-header[data-shell="canonical"] .signin-menu a:hover {
-  background: rgba(214, 175, 91, 0.12);
+.site-header[data-shell="canonical"] .nav-signin a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.35rem 0.8rem;
+  box-sizing: border-box;
+  border: 1px solid rgba(214, 175, 91, 0.55);
+  border-radius: 8px;
   color: #FFE4A4;
+  background: rgba(214, 175, 91, 0.08);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+}
+
+.site-header[data-shell="canonical"] .nav-signin a:hover {
+  border-color: var(--agp-gold);
+  background: rgba(214, 175, 91, 0.18);
+}
+
+.site-header[data-shell="canonical"] .nav-signin a:focus-visible {
+  outline: 2px solid var(--agp-gold);
+  outline-offset: 2px;
 }
 
 .site-header[data-shell="canonical"] .mobile-menu-btn {
@@ -456,11 +430,6 @@ body.drawer-open .mobile-drawer[data-shell="canonical"] {
   font-size: 0.95rem;
   font-weight: 700;
   text-decoration: none;
-}
-
-.mobile-drawer[data-shell="canonical"] .drawer-divider {
-  height: 1px;
-  background: rgba(200, 162, 74, 0.16);
 }
 
 .site-footer[data-shell="canonical"] {
@@ -666,8 +635,7 @@ body.drawer-open {
     font-size: 1.7rem;
   }
 
-  .site-header[data-shell="canonical"] .mobile-menu-btn,
-  .nav-avatar {
+  .site-header[data-shell="canonical"] .mobile-menu-btn {
     width: 40px;
     height: 40px;
   }
@@ -705,6 +673,32 @@ body.drawer-open {
   .mobile-drawer[data-shell="canonical"] .drawer-join svg {
     width: 15px;
     height: 15px;
+  }
+}
+
+@media (max-width: 560px) {
+  body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
+    min-height: 114px;
+  }
+
+  .site-header[data-shell="canonical"] .nav {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    padding-block: 0.5rem;
+  }
+
+  .site-header[data-shell="canonical"] .nav-signin {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .site-header[data-shell="canonical"] .nav-signin a {
+    flex: 1;
+  }
+
+  .site-header[data-shell="canonical"] .mobile-menu-btn {
+    grid-column: 2;
+    grid-row: 1;
   }
 }
 
