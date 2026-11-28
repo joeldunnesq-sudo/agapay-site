@@ -40,6 +40,9 @@
     <path d="M9 13h6"/>
     <path d="M12 5V2"/>
   </symbol>
+  <symbol id="parish-church" viewBox="0 0 24 24">
+    <path d="M12 2v5M9.5 4.5h5M5 21V11l7-5 7 5v10H5ZM2 21h20M10 21v-6h4v6M3 13v8M21 13v8"/>
+  </symbol>
   <symbol id="mission" viewBox="0 0 24 24">
     <path d="M5 21h14"/>
     <path d="M7 21V10l5-3 5 3v11"/>

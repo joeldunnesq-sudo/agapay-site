@@ -10,9 +10,10 @@
     { href: '/about', label: 'About', key: 'about' },
     { href: '/contact', label: 'Contact', key: 'contact' },
   ];
+  const DEMO_LINK = { href: '/give/request-demo', label: 'Request a Demo', key: 'demo' };
   const SIGN_IN_LINKS = [
-    { href: '/myagapay/login', label: 'My AGAPAY' },
-    { href: '/give/login', label: 'Parish Dashboard' },
+    { href: '/myagapay/login', label: 'My AGAPAY', className: 'signin-personal', icon: 'user' },
+    { href: '/give/login', label: 'Parish Dashboard', className: 'signin-parish', icon: 'parish-church' },
   ];
   const SOCIAL_ACCOUNTS = [
     { platform: 'facebook', href: 'https://www.facebook.com/profile.php?id=61590403694587' },
@@ -95,20 +96,19 @@
           </a>
 
           <div class="nav-links">
-            ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join('')}
+            ${[...PRIMARY_LINKS, DEMO_LINK].map((item) => navLink(item, activeKey)).join('')}
           </div>
 
           <div class="nav-actions">
-            <a class="btn-demo${activeKey === 'demo' ? ' active' : ''}" href="/give/request-demo"${activeKey === 'demo' ? ' aria-current="page"' : ''}>
-              Request a Demo
-            </a>
             <a class="btn-donate" href="/register">
               Start for free
             </a>
           </div>
 
           <div class="nav-signin" role="group" aria-label="Sign in">
-            ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join('')}
+            ${SIGN_IN_LINKS.map(
+              (item) => `<a class="${item.className}" href="${item.href}">${shellIcon(item.icon)}${item.label}</a>`
+            ).join('')}
           </div>
 
           <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
@@ -130,7 +130,7 @@
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join('')}
           </nav>
           <div class="drawer-actions">
-            <a class="drawer-demo" href="/give/request-demo">Request a Demo</a>
+            <a class="drawer-demo" href="${DEMO_LINK.href}">${DEMO_LINK.label}</a>
             <a class="drawer-join" href="/register">Start for free</a>
           </div>
         </div>

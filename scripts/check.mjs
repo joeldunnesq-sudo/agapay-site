@@ -43,9 +43,9 @@ const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
 const parishFeatureRequestMigration = await readFile("migrations/0059_parish_feature_requests.sql", "utf8");
 const siteChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(includesJavaScriptFragment(siteChrome, 'class="btn-demo${activeKey === \'demo\' ? \' active\' : \'\'}" href="/give/request-demo"'), "canonical desktop navigation should present Request a Demo beside the primary action");
-assert.ok(includesJavaScriptFragment(siteChrome, 'class="drawer-demo" href="/give/request-demo"'), "canonical mobile navigation should present Request a Demo as an action button");
-assert.ok(!includesJavaScriptFragment(siteChrome, '{ href: "/give/request-demo", label: "Request Demo", key: "demo" }'), "Request a Demo should not remain in the canonical text-link group");
+assert.ok(includesJavaScriptFragment(siteChrome, '{ href: "/give/request-demo", label: "Request a Demo", key: "demo" }'), "canonical navigation should link to the demo request page");
+assert.ok(siteChrome.includes('[...PRIMARY_LINKS, DEMO_LINK].map'), "canonical desktop navigation should place Request a Demo after the primary links");
+assert.ok(siteChrome.includes('class="drawer-demo" href="${DEMO_LINK.href}"'), "canonical mobile navigation should present Request a Demo as an action button");
 for (const link of [
   '{ href: "/give", label: "Platform", key: "platform" }',
   '{ href: "/about", label: "About", key: "about" }',
