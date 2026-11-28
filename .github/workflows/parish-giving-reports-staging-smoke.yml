@@ -36,8 +36,9 @@ jobs:
           node-version: '24'
 
       - name: Verify Ministries on the deployed staging candidate
-        run: node scripts/parish-this-week-staging-smoke.mjs "$(git rev-parse HEAD^)"
+        run: node scripts/parish-this-week-staging-smoke.mjs "$EXPECTED_BUILD"
         env:
+          EXPECTED_BUILD: 0fc31956addec36f4eae046f15a9d89b7bae4f8d
           ACCOUNTING_GATE_PARISH_A_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_A_ID }}
           ACCOUNTING_GATE_PARISH_B_ID: ${{ secrets.ACCOUNTING_GATE_PARISH_B_ID }}
           ACCOUNTING_GATE_USER_A_EMAIL: ${{ secrets.ACCOUNTING_GATE_USER_A_EMAIL }}

@@ -17,12 +17,14 @@ assert.equal(health.version, expectedBuild, 'Staging must serve the exact releas
 const dashboard = await get('/parish/dashboard');
 assert.equal(dashboard.status, 200);
 const html = await dashboard.text();
-assert.match(html, /id="parishWeekPanel"/);
-assert.match(html, /data-ministries-view="teams"/);
-for (const asset of ['/parish/features/this-week.js', '/parish/this-week.css']) {
-  assert.ok(html.includes(asset));
-  assert.equal((await get(asset)).status, 200);
-}
+assert.match(html, /id="ministriesWeekMount"/);
+assert.match(html, /id="ministriesTeamsPanel"/);
+assert.ok(html.includes('/parish/features/this-week.js'));
+assert.ok(html.includes('/parish/this-week.css'));
+const feature = await get('/parish/features/this-week.js');
+assert.equal(feature.status, 200);
+assert.match(await feature.text(), /id="parishWeekPanel"/);
+assert.equal((await get('/parish/this-week.css')).status, 200);
 
 const {
   ACCOUNTING_GATE_PARISH_A_ID: parishId,
