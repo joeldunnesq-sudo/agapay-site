@@ -1224,38 +1224,7 @@ Generate Monthly Financial Report
 <div class="koinonia-studio-view bulletin-workspace" data-koinonia-panel="bulletins" id="bulletinMount" hidden></div>
 
 <section class="koinonia-studio-view ministries-hub" data-koinonia-panel="ministries" aria-labelledby="koinoniaMinistriesHeading" hidden>
-  <header class="ministries-hub-heading">
-    <h2 id="koinoniaMinistriesHeading">Ministries</h2>
-    <p>Plan the parish week and coordinate the teams that serve.</p>
-  </header>
-  <div class="ministries-hub-views" role="group" aria-label="Ministries views">
-    <button type="button" id="ministriesWeekButton" data-ministries-view="this-week" aria-pressed="true" aria-controls="parishWeekPanel" onclick="setKoinoniaMinistriesView('this-week')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18m-13 5h1m3 0h1m3 0h1"/></svg>
-      This Week
-    </button>
-    <button type="button" id="ministriesTeamsButton" data-ministries-view="teams" aria-pressed="false" aria-controls="ministriesTeamsPanel" onclick="setKoinoniaMinistriesView('teams')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-4M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm4-4a4 4 0 0 1 0 8"/></svg>
-      Teams
-    </button>
-  </div>
-<section class="parish-week" data-ministries-panel="this-week" id="parishWeekPanel" aria-labelledby="ministriesWeekButton">
-  <p class="parish-week-visually-hidden" role="status" id="parishWeekStatus"></p>
-  <section class="parish-week-navigation" id="parishWeekNavigation" aria-label="Week and day navigation" hidden>
-    <div class="parish-week-date-bar">
-      <h3 data-week-range></h3>
-      <div class="parish-week-date-controls">
-        <button type="button" data-week-action="previous" aria-label="Previous week">‹</button>
-        <button type="button" data-week-action="current">Current week</button>
-        <button type="button" data-week-action="next" aria-label="Next week">›</button>
-      </div>
-    </div>
-    <div class="parish-week-day-row">
-      <button class="parish-week-all-days" type="button" data-week-action="all" aria-pressed="true">Full week</button>
-      <div class="parish-week-days" data-week-days></div>
-    </div>
-  </section>
-  <div id="parishWeekContent"></div>
-</section>
+  <div id="ministriesWeekMount"></div>
 <section class="koinonia-ministries-workspace" data-ministries-panel="teams" id="ministriesTeamsPanel" aria-labelledby="ministriesTeamsButton" hidden>
   <div class="koinonia-ministries-head">
     <div><h3>Ministry teams</h3><p>Welcome parishioners onto teams and respond to requests to serve.</p></div>
@@ -1996,7 +1965,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving/transfers.js?v=c4c120c8886b8769"></script>
 <script src="/parish/features/giving/insights.js?v=46975b9e8339c4e0"></script>
 <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
-<script src="/parish/features/this-week.js?v=c7c24f6903f0c67e"></script>
+<script src="/parish/features/this-week.js?v=7c7fe4e349ed30eb"></script>
 <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
 <script src="/parish/dashboard-runtime.js?v=a833ed89e9176e41"></script>
 <script src="/parish/app-subscriptions-and-settlement.js?v=655251698d150b9d"></script>

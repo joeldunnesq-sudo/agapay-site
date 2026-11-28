@@ -1,5 +1,41 @@
 // Generated from src/browser/parish/features/this-week.ts by npm run build:browser. Do not edit.
 (() => {
+  const mount = document.getElementById('ministriesWeekMount');
+  if (!mount) return;
+  mount.innerHTML = `
+  <header class="ministries-hub-heading">
+    <h2 id="koinoniaMinistriesHeading">Ministries</h2>
+    <p>Plan the parish week and coordinate the teams that serve.</p>
+  </header>
+  <div class="ministries-hub-views" role="group" aria-label="Ministries views">
+    <button type="button" id="ministriesWeekButton" data-ministries-view="this-week" aria-pressed="true" aria-controls="parishWeekPanel" onclick="setKoinoniaMinistriesView('this-week')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18m-13 5h1m3 0h1m3 0h1"/></svg>
+      This Week
+    </button>
+    <button type="button" id="ministriesTeamsButton" data-ministries-view="teams" aria-pressed="false" aria-controls="ministriesTeamsPanel" onclick="setKoinoniaMinistriesView('teams')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-4M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zm4-4a4 4 0 0 1 0 8"/></svg>
+      Teams
+    </button>
+  </div>
+<section class="parish-week" data-ministries-panel="this-week" id="parishWeekPanel" aria-labelledby="ministriesWeekButton">
+  <p class="parish-week-visually-hidden" role="status" id="parishWeekStatus"></p>
+  <section class="parish-week-navigation" id="parishWeekNavigation" aria-label="Week and day navigation" hidden>
+    <div class="parish-week-date-bar">
+      <h3 data-week-range></h3>
+      <div class="parish-week-date-controls">
+        <button type="button" data-week-action="previous" aria-label="Previous week">‹</button>
+        <button type="button" data-week-action="current">Current week</button>
+        <button type="button" data-week-action="next" aria-label="Next week">›</button>
+      </div>
+    </div>
+    <div class="parish-week-day-row">
+      <button class="parish-week-all-days" type="button" data-week-action="all" aria-pressed="true">Full week</button>
+      <div class="parish-week-days" data-week-days></div>
+    </div>
+  </section>
+  <div id="parishWeekContent"></div>
+</section>
+  `;
   const panel = document.getElementById('parishWeekPanel');
   const nav = document.getElementById('parishWeekNavigation');
   const details = document.getElementById('parishWeekContent');
@@ -221,5 +257,5 @@
       void load(shiftDay(week.weekStart, weekAction === 'previous' ? -7 : 7));
     }
   });
-  window.ParishFeatureRegistry?.register('this-week', { load });
+  window.ParishFeatureRegistry.register('this-week', { load });
 })();
