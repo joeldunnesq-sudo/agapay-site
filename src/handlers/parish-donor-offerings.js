@@ -39,7 +39,10 @@ async function sendDonationReceiptIfNeeded(env, offering = {}) {
   const donorModule = await import('./donor.js');
   return donorModule.sendDonationReceiptIfNeeded(env, offering);
 }
-async function storeDonorOffering(env, offering) {
+const unsettledOfferingStatuses = ['checkout_created', 'pending', 'failed', 'expired', 'cancelled'];
+const reversalOfferingStatuses = ['refunded', 'partially_refunded', 'disputed', 'dispute_closed'];
+const sqlStatuses = (statuses) => statuses.map((status) => `'${status}'`).join(',');
+async function storeDonorOffering(env, offering, { disputeResolution = false } = {}) {
   if (!hasProductionStore(env) || !offering?.donorEmail) return null;
   const email = normalizeEmail(offering.donorEmail);
   const id = offering.id || crypto.randomUUID();
@@ -49,12 +52,18 @@ async function storeDonorOffering(env, offering) {
     Number(previous?.refundedCents || 0) > Number(offering.refundedCents || 0)
   )
     return previous;
-  const protectedStatus = ['refunded', 'partially_refunded', 'disputed', 'dispute_closed'];
+  const previousStatus = previous?.status || '';
+  const nextStatus = offering.status || '';
   if (
-    protectedStatus.includes(previous?.status) &&
-    ['completed', 'pending', 'failed'].includes(offering.status) &&
-    offering.disputeStatus !== 'won'
+    unsettledOfferingStatuses.includes(nextStatus) &&
+    (previousStatus === 'completed' ||
+      previous?.paymentStatus === 'paid' ||
+      reversalOfferingStatuses.includes(previousStatus))
   )
+    return previous;
+  if (reversalOfferingStatuses.includes(previousStatus) && nextStatus === 'completed' && !disputeResolution)
+    return previous;
+  if (nextStatus === 'disputed' && previous?.stripeDisputeId === offering.stripeDisputeId && previous?.disputeClosedAt)
     return previous;
   offering = { ...previous, ...offering };
   const fees = offeringFeeBreakdown(offering);
@@ -149,9 +158,14 @@ async function storeDonorOffering(env, offering) {
          created_at = excluded.created_at,
          updated_at = excluded.updated_at,
          data = excluded.data
-       WHERE NOT (donor_offerings.status IN ('refunded','partially_refunded','disputed','dispute_closed')
-         AND excluded.status IN ('completed','pending','failed')
-         AND COALESCE(json_extract(excluded.data,'$.disputeStatus'),'') != 'won')
+       WHERE NOT (excluded.status IN (${sqlStatuses(unsettledOfferingStatuses)})
+           AND (donor_offerings.status IN ('completed',${sqlStatuses(reversalOfferingStatuses)})
+             OR donor_offerings.payment_status='paid'))
+         AND NOT (donor_offerings.status IN (${sqlStatuses(reversalOfferingStatuses)})
+           AND excluded.status='completed' AND ?13=0)
+         AND NOT (excluded.status='disputed'
+           AND COALESCE(json_extract(donor_offerings.data,'$.disputeClosedAt'),'')!=''
+           AND json_extract(donor_offerings.data,'$.stripeDisputeId')=json_extract(excluded.data,'$.stripeDisputeId'))
          AND NOT (excluded.status IN ('refunded','partially_refunded')
            AND COALESCE(json_extract(donor_offerings.data,'$.refundedCents'),0) > COALESCE(json_extract(excluded.data,'$.refundedCents'),0))`,
       record.id,
@@ -165,7 +179,8 @@ async function storeDonorOffering(env, offering) {
       record.settlementProfileId,
       record.createdAt,
       record.updatedAt,
-      JSON.stringify(record)
+      JSON.stringify(record),
+      Number(disputeResolution)
     );
     return loadDonorOfferingById(env, id, email);
   } else {
@@ -206,10 +221,10 @@ async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
   const raw = await env.AGAPAY_REGISTRATIONS.get(key);
   return raw ? JSON.parse(raw) : null;
 }
-async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}) {
+async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}, options) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;
   const current = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
-  return current ? storeDonorOffering(env, { ...current, ...updates }) : null;
+  return current ? storeDonorOffering(env, { ...current, ...updates }, options) : null;
 }
 async function loadDonorOfferingByPaymentIntent(env, paymentIntentId) {
   if (!hasProductionStore(env) || !paymentIntentId) return null;

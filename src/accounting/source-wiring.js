@@ -1,4 +1,5 @@
 // Generated from src/accounting/source-wiring.ts by npm run build:server. Do not edit.
+import { stripeGetConnectedRequest, stripeGetRequest, stripeObjectId } from '../lib/stripe-connect.js';
 import { recognizeGivingStripeFee } from './integrations/processor-fees.js';
 import {
   createD1DatabaseFacade,
@@ -301,14 +302,41 @@ async function wireGivingOfferingToAccounting(env, offering = {}) {
   }
   return processed;
 }
-async function wireGivingRefundsToAccounting(env, offering = {}, charge = {}) {
+async function chargeRefunds(env, charge, stripeAccountId) {
+  const embedded = charge.refunds;
+  if (embedded?.data?.length && !embedded.has_more) return embedded.data;
+  const chargeId = text(charge.id);
+  if (!chargeId || !cents(charge.amount_refunded)) return [];
+  const params = new URLSearchParams({ charge: chargeId, limit: '100' });
+  const refunds = [];
+  const cursors = /* @__PURE__ */ new Set();
+  while (true) {
+    const path = `/v1/refunds?${params}`;
+    const page = stripeAccountId
+      ? await stripeGetConnectedRequest(env, path, stripeAccountId)
+      : await stripeGetRequest(env, path);
+    if (!page.ok || !Array.isArray(page.body.data) || !page.body.data.length) {
+      throw new Error('Unable to load the Stripe charge refund records for Accounting.');
+    }
+    refunds.push(...page.body.data);
+    if (!page.body.has_more) return refunds;
+    const cursor = text(refunds.at(-1)?.id);
+    if (!cursor || cursors.has(cursor)) throw new Error('Stripe refund pagination did not advance.');
+    cursors.add(cursor);
+    params.set('starting_after', cursor);
+  }
+}
+function settledRefund(refund) {
+  return text(refund.id) && cents(refund.amount) && (!refund.status || refund.status === 'succeeded');
+}
+async function wireGivingRefundsToAccounting(env, offering = {}, charge = {}, stripeAccountId = '') {
   const db = await resolveOperationalAccountingDatabase(env, text(offering.parishId));
   const donationId =
     text(offering.id) ||
     text(offering.reference) ||
     text(offering.stripePaymentIntentId) ||
     text(offering.checkoutSessionId);
-  if (!db || !donationId) return [];
+  if (!db || !donationId) return null;
   const campaignId = text(offering.campaignId);
   const festalAlmsGift = ['alms', 'feast'].includes(text(offering.giftType).toLowerCase());
   const campaignGift = Boolean(campaignId) && !festalAlmsGift;
@@ -327,7 +355,7 @@ async function wireGivingRefundsToAccounting(env, offering = {}, charge = {}) {
         : text(offering.fund) || text(offering.giftType) || 'General Operating Fund',
     restricted: Boolean(offering.donorRestricted),
   });
-  const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
+  const refunds = await chargeRefunds(env, charge, stripeAccountId);
   const results = [];
   const original = await db
     .prepare(
@@ -336,8 +364,8 @@ async function wireGivingRefundsToAccounting(env, offering = {}, charge = {}) {
     .bind(`give:${donationId}:succeeded`)
     .first();
   for (const refund of refunds) {
+    if (!settledRefund(refund)) continue;
     const refundId = text(refund.id);
-    if (!refundId) continue;
     const existing = await db
       .prepare(
         "SELECT id,refund_amount FROM accounting_integration_source_events WHERE source_system='stripe' AND source_event_id=?"
@@ -388,6 +416,66 @@ async function wireGivingRefundsToAccounting(env, offering = {}, charge = {}) {
     );
   }
   return results;
+}
+async function wireGivingDisputeToAccounting(env, offering, dispute, { phase, occurredAt }) {
+  const db = await resolveOperationalAccountingDatabase(env, text(offering.parishId));
+  const donationId = text(
+    offering.id || offering.reference || offering.stripePaymentIntentId || offering.checkoutSessionId
+  );
+  const disputeId = text(dispute.id);
+  const disputeAmount = cents(dispute.amount);
+  if (!db || !donationId || !disputeId || !disputeAmount) return null;
+  const donation = await db
+    .prepare(
+      `SELECT id, designated_fund_id, donor_restricted, campaign_id
+      FROM accounting_integration_source_events WHERE source_system='agapay_give' AND source_event_id=?`
+    )
+    .bind(`give:${donationId}:succeeded`)
+    .first();
+  const postingActor = actor('accounting.integrations.post');
+  const facts = {
+    sourceSystem: 'stripe',
+    sourceObjectId: disputeId,
+    currency: text(dispute.currency || offering.currency) || 'USD',
+    disputeAmount,
+    donationId,
+    paymentIntentId: text(offering.stripePaymentIntentId),
+    chargeId: stripeObjectId(dispute.charge),
+    disputeId,
+    campaignId: text(donation?.campaign_id || offering.campaignId),
+    designatedFundId: text(donation?.designated_fund_id),
+    donorRestricted: Boolean(donation?.donor_restricted ?? offering.donorRestricted),
+  };
+  async function postDisputeEvent(sourceType, originalSourceEventId, date) {
+    const sourceEventId = `give:${donationId}:dispute:${disputeId}:${sourceType}`;
+    const existing = await db
+      .prepare(
+        "SELECT id, dispute_amount FROM accounting_integration_source_events WHERE source_system='stripe' AND source_event_id=?"
+      )
+      .bind(sourceEventId)
+      .first();
+    if (existing && Number(existing.dispute_amount) !== disputeAmount) {
+      throw new Error('Dispute amount conflicts with the recorded accounting event.');
+    }
+    const source =
+      existing ||
+      (await ingestAccountingSourceEvent(db, {
+        actor: postingActor,
+        entitlementTier: 'parish',
+        event: { ...facts, sourceType, sourceEventId, originalSourceEventId, occurredAt: date },
+      }));
+    return processAccountingSourceEvent(db, {
+      actor: postingActor,
+      entitlementTier: 'parish',
+      sourceEventId: source.id,
+    });
+  }
+  const openedAt = dispute.created ? new Date(dispute.created * 1e3).toISOString() : occurredAt;
+  const withdrawal = await postDisputeEvent('stripe_dispute_created', donation?.id || '', openedAt);
+  if (phase === 'closed' && dispute.status === 'won') {
+    return postDisputeEvent('stripe_dispute_won', withdrawal.id, occurredAt);
+  }
+  return withdrawal;
 }
 async function synchronizeGivingCatalogWithAccounting(env, parishId, registration = {}) {
   const db = await resolveOperationalAccountingDatabase(env, parishId);
@@ -663,19 +751,19 @@ async function wireCommerceDisputeToAccounting(env, orderId, dispute = {}, phase
     sourceEventId: source.id,
   });
 }
-async function wireCommerceRefundsToAccounting(env, orderId, charge = {}) {
+async function wireCommerceRefundsToAccounting(env, orderId, charge = {}, stripeAccountId = '') {
   if (!env?.AGAPAY_DB?.prepare || !orderId) return [];
   const order = await d1First(env, 'SELECT * FROM commerce_orders WHERE id=?', orderId);
   if (!order) return [];
   const db = await resolveOperationalAccountingDatabase(env, order.parish_id);
   if (!db) return [];
   const total = cents(order.total_charged_cents) || cents(charge.amount);
-  const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
+  const refunds = await chargeRefunds(env, charge, stripeAccountId);
   const results = [];
   for (const refund of refunds) {
+    if (!settledRefund(refund)) continue;
     const amount = cents(refund.amount);
     const refundId = text(refund.id);
-    if (!refundId || !amount) continue;
     const tax = total ? Math.min(cents(order.tax_cents), Math.round((amount * cents(order.tax_cents)) / total)) : 0;
     const source = await ingestCommerceSourceEvent(db, {
       actor: actor('accounting.commerce.post'),
@@ -715,6 +803,7 @@ export {
   wireCommerceDisputeToAccounting,
   wireCommerceOrderToAccounting,
   wireCommerceRefundsToAccounting,
+  wireGivingDisputeToAccounting,
   wireGivingOfferingToAccounting,
   wireGivingRefundsToAccounting,
 };

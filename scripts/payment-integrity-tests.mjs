@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import { processStripeWebhookEvent } from '../src/handlers/stripe.js';
@@ -6,7 +7,8 @@ import { storeDonorOffering, loadDonorOfferings, paidOfferingStatus } from '../s
 import { createFundAllocationResolver } from '../src/lib/fund-reporting.js';
 import { sendDonorDonationReceiptEmail } from '../src/handlers/donor.js';
 import { sendDonationReceiptMessage } from '../src/payments/donation-receipts.js';
-import { initializeLedger } from '../src/accounting/index.js';
+import { initializeLedger, stripeClearingValidation } from '../src/accounting/index.js';
+import worker from '../src/worker.js';
 import { handleCheckout } from '../src/handlers/parish-checkout.js';
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
 
@@ -57,18 +59,22 @@ function database() {
   };
 }
 
-async function fixture() {
+async function fixture(environment = 'production') {
   const db = database();
   db.sqlite.exec(`CREATE TABLE donor_offerings (id TEXT PRIMARY KEY, donor_email TEXT, parish_id TEXT,
     checkout_session_id TEXT, payment_intent_id TEXT, stripe_subscription_id TEXT, status TEXT, payment_status TEXT,
     settlement_profile_id TEXT, created_at TEXT, updated_at TEXT, data TEXT);
     CREATE TABLE accounting_entities(id TEXT, parish_id TEXT, entity_status TEXT);
     CREATE TABLE accounting_databases(id TEXT, accounting_entity_id TEXT, environment TEXT, database_identifier TEXT, provisioning_status TEXT, health_status TEXT);
-    CREATE TABLE registrations(reference TEXT,parish_id TEXT,data TEXT,updated_at TEXT,received_at TEXT);
+    CREATE TABLE registrations(reference TEXT,parish_id TEXT,stripe_account_id TEXT,data TEXT,updated_at TEXT,received_at TEXT);
     CREATE TABLE commerce_orders(id TEXT, stripe_payment_intent_id TEXT, total_charged_cents INTEGER);
-    INSERT INTO accounting_entities VALUES('entity-a','parish-a','ready');
-    INSERT INTO accounting_databases VALUES('db-a','entity-a','production','ledger-a','ready','healthy');`);
+    CREATE TABLE stripe_events(id TEXT PRIMARY KEY, received_at TEXT);
+    INSERT INTO accounting_entities VALUES('entity-a','parish-a','ready');`);
+  db.sqlite
+    .prepare("INSERT INTO accounting_databases VALUES('db-a','entity-a',?,'ledger-a','ready','healthy')")
+    .run(environment);
   db.sqlite.exec(readFileSync('migrations/0125_donation_receipt_delivery.sql', 'utf8'));
+  db.sqlite.exec(readFileSync('migrations/0002_stripe_event_status.sql', 'utf8'));
   db.sqlite.exec(readFileSync('migrations/0010_settlement_profiles.sql', 'utf8').split(/\r?\nALTER TABLE/)[0]);
   const ledger = database();
   for (const file of readdirSync('accounting-migrations')
@@ -90,7 +96,7 @@ async function fixture() {
     "UPDATE accounting_integration_settings SET give_posting_enabled=1, stripe_posting_enabled=1, posting_mode='automatic'"
   );
   return {
-    AGAPAY_ENVIRONMENT: 'production',
+    AGAPAY_ENVIRONMENT: environment,
     AGAPAY_DB: db,
     LEDGER_A: ledger,
     ACCOUNTING_DATABASE_BINDINGS: JSON.stringify({ 'ledger-a': 'LEDGER_A' }),
@@ -137,6 +143,59 @@ const invoice = {
   subscription_details: { metadata },
 };
 const event = (type, object) => ({ type, data: { object } });
+
+async function deliver(env, id, type, object, extra = {}) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const secret = 'whsec_payment_integrity_fixture';
+  const body = JSON.stringify({ id, created: timestamp, ...event(type, object), ...extra });
+  const signature = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
+  return worker.fetch(
+    new Request('https://agapay.test/api/stripe/webhook', {
+      method: 'POST',
+      headers: { 'Stripe-Signature': `t=${timestamp},v1=${signature}` },
+      body,
+    }),
+    { ...env, STRIPE_WEBHOOK_SECRET: secret }
+  );
+}
+
+async function paidBankGift(env, name) {
+  const checkout = {
+    id: `cs_${name}`,
+    payment_intent: `pi_${name}`,
+    mode: 'payment',
+    payment_status: 'paid',
+    created: invoice.created,
+  };
+  await storeDonorOffering(env, {
+    ...base,
+    id: checkout.id,
+    checkoutSessionId: checkout.id,
+    stripePaymentIntentId: checkout.payment_intent,
+    recordType: 'payment',
+    frequency: 'once',
+    paymentMethod: 'ach',
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    donorRestricted: true,
+  });
+  assert.equal(
+    (await deliver(env, `evt_${name}_paid`, 'checkout.session.async_payment_succeeded', checkout)).status,
+    200
+  );
+  return checkout;
+}
+
+function postedLines(env, type) {
+  return env.LEDGER_A.sqlite
+    .prepare(
+      `SELECT l.account_id, l.fund_id, l.debit_amount, l.credit_amount
+       FROM accounting_journal_lines l JOIN accounting_journal_entries j ON j.id=l.journal_entry_id
+       WHERE j.source_type=? AND j.status='posted' ORDER BY l.account_id`
+    )
+    .all(`integration.${type}`)
+    .map((row) => ({ ...row }));
+}
 
 try {
   const blockedFetch = globalThis.fetch;
@@ -304,6 +363,132 @@ try {
   );
   console.log(
     'PASS - concurrent invoice delivery and current invoice shape; partial/full refunds survive delayed events'
+  );
+
+  const achEnv = await fixture();
+  const ach = await paidBankGift(achEnv, 'bank');
+  const staleCheckout = { ...ach, payment_status: 'unpaid', created: ach.created - 1 };
+  assert.equal((await deliver(achEnv, 'evt_bank_unpaid', 'checkout.session.completed', staleCheckout)).status, 200);
+  assert.equal((await deliver(achEnv, 'evt_bank_expired', 'checkout.session.expired', staleCheckout)).status, 200);
+  const settled = await loadDonorOfferingById(achEnv, ach.id);
+  assert.equal(settled.status, 'completed');
+  assert.equal(settled.paymentStatus, 'paid');
+  assert.equal(settled.stripePaymentIntentId, ach.payment_intent);
+  assert.equal(postedLines(achEnv, 'donation_succeeded').length, 2);
+  console.log('PASS - a signed, delayed unpaid or expired Checkout event cannot undo a settled ACH gift');
+
+  const refundEnv = await fixture('staging');
+  const refundPayment = await paidBankGift(refundEnv, 'refund');
+  const original = postedLines(refundEnv, 'donation_succeeded');
+  refundEnv.STRIPE_SECRET_KEY = 'sk_test_payment_integrity_fixture';
+  let providerUnavailable = true;
+  let refundPending = true;
+  const refundRequests = [];
+  const charge = {
+    id: 'ch_refund',
+    payment_intent: { id: refundPayment.payment_intent },
+    amount: 1000,
+    amount_refunded: 1000,
+  };
+  globalThis.fetch = async (url, options) => {
+    const request = new URL(url);
+    assert.equal(options.headers['Stripe-Account'], 'acct_refund_fixture');
+    if (request.pathname === '/v1/charges/ch_refund') return Response.json(charge);
+    assert.equal(request.pathname, '/v1/refunds');
+    assert.equal(request.searchParams.get('charge'), 'ch_refund');
+    const cursor = request.searchParams.get('starting_after');
+    refundRequests.push(cursor);
+    if (providerUnavailable) return Response.json({}, { status: 503 });
+    const refund = cursor ? { id: 're_part', amount: 400 } : { id: 're_rest', amount: 600 };
+    return Response.json({
+      data: [{ ...refund, status: !cursor && refundPending ? 'pending' : 'succeeded', created: invoice.created }],
+      has_more: !cursor,
+    });
+  };
+  const connected = { account: 'acct_refund_fixture' };
+  assert.equal((await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected)).status, 500);
+  assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).status, 'completed');
+  assert.equal((await deliver(refundEnv, 'evt_refund_retry', 'charge.refunded', charge, connected)).status, 500);
+  providerUnavailable = false;
+  assert.equal((await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected)).status, 200);
+  const duplicate = await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected);
+  assert.equal((await duplicate.json()).duplicate, true);
+  assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).refundedCents, 400);
+  assert.equal(postedLines(refundEnv, 'donation_partially_refunded').length, 2);
+  refundPending = false;
+  const settledRefund = { id: 're_rest', charge: charge.id, status: 'succeeded' };
+  assert.equal(
+    (await deliver(refundEnv, 'evt_refund_settled', 'refund.updated', settledRefund, connected)).status,
+    200
+  );
+  assert.equal((await deliver(refundEnv, 'evt_refund_replay', 'charge.refunded', charge, connected)).status, 200);
+  assert.deepEqual(refundRequests, [null, null, null, 're_rest', null, 're_rest', null, 're_rest']);
+  assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).refundedCents, 1000);
+  const refundLines = postedLines(refundEnv, 'donation_partially_refunded');
+  assert.equal(refundLines.length, 4);
+  for (const line of original) {
+    const reversals = refundLines.filter((refund) => refund.account_id === line.account_id);
+    assert.ok(reversals.every((refund) => refund.fund_id === line.fund_id));
+    assert.equal(
+      reversals.reduce((sum, refund) => sum + refund.debit_amount, 0),
+      line.credit_amount
+    );
+    assert.equal(
+      reversals.reduce((sum, refund) => sum + refund.credit_amount, 0),
+      line.debit_amount
+    );
+  }
+  globalThis.fetch = async () => {
+    throw new Error('Unexpected network access');
+  };
+  console.log('PASS - unexpanded connected-account refunds retry on provider failure and post every page exactly once');
+
+  for (const outcome of ['won', 'lost']) {
+    const disputeEnv = await fixture();
+    const gift = await paidBankGift(disputeEnv, outcome);
+    const dispute = {
+      id: `dp_${outcome}`,
+      payment_intent: gift.payment_intent,
+      amount: 1000,
+      created: invoice.created,
+      currency: 'usd',
+    };
+    const opened = { ...dispute, status: 'needs_response' };
+    const closed = { ...dispute, status: outcome };
+    if (outcome === 'lost') {
+      assert.equal((await deliver(disputeEnv, 'evt_open', 'charge.dispute.created', opened)).status, 200);
+      assert.equal((await loadDonorOfferingById(disputeEnv, gift.id)).status, 'disputed');
+    }
+    assert.equal((await deliver(disputeEnv, 'evt_close', 'charge.dispute.closed', closed)).status, 200);
+    assert.equal((await deliver(disputeEnv, 'evt_late_open', 'charge.dispute.created', opened)).status, 200);
+    assert.equal((await deliver(disputeEnv, 'evt_repeat_close', 'charge.dispute.closed', closed)).status, 200);
+    const saved = await loadDonorOfferingById(disputeEnv, gift.id);
+    assert.equal(saved.disputeStatus, outcome);
+    assert.equal(saved.status, outcome === 'won' ? 'completed' : 'dispute_closed');
+    const withdrawn = postedLines(disputeEnv, 'stripe_dispute_created');
+    assert.deepEqual(
+      withdrawn,
+      postedLines(disputeEnv, 'donation_succeeded').map((line) => ({
+        ...line,
+        debit_amount: line.credit_amount,
+        credit_amount: line.debit_amount,
+      }))
+    );
+    assert.deepEqual(
+      postedLines(disputeEnv, 'stripe_dispute_won'),
+      outcome === 'won' ? postedLines(disputeEnv, 'donation_succeeded') : []
+    );
+    const day = new Date().toISOString().slice(0, 10);
+    const clearing = await stripeClearingValidation(disputeEnv.LEDGER_A, {
+      actor: { id: 'test', capabilities: ['accounting.integrations.view'] },
+      entitlementTier: 'parish',
+      startDate: day,
+      endDate: day,
+    });
+    assert.equal(clearing.endingLedgerClearingBalance, outcome === 'won' ? 1000 : 0);
+  }
+  console.log(
+    'PASS - signed donation dispute events record one debit, restore only won amounts, and preserve closed outcomes'
   );
 
   const env = await fixture();

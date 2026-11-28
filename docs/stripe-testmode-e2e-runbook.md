@@ -119,6 +119,7 @@ Run this in Stripe test mode after at least one successful payment/subscription:
    - `checkout.session.expired`
    - `invoice.payment_succeeded` / `invoice.payment_failed`
    - `charge.refunded`
+   - `refund.updated` for refunds that settle after the initial charge event
    - `charge.dispute.created` / `charge.dispute.closed`
 
 Validation targets:
