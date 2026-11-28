@@ -18,14 +18,15 @@
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0fcb331d33fa2cd0" defer></script>
   <script src="/donor/app.js?v=17ce26471eed7d44" defer></script>
-  <script src="/myagapay/parish-life.js?v=022c1a34d720c66c" defer></script>
+  <script src="/myagapay/parish-life.js?v=98e4e53cebac3ac6" defer></script>
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#0c1d25" />
-<link rel="stylesheet" href="/myagapay/koinonia-experience.css?v=f95e9418c78c38bb" /><script src="/myagapay/koinonia-experience.js?v=d9f5ba4745d5f557" defer></script><link rel="stylesheet" href="/myagapay/liturgical-hero.css?v=1857c757b6cf4188" /><link rel="stylesheet" href="/myagapay/app-header.css?v=1874bd727b039ef5" />
+<link rel="stylesheet" href="/myagapay/koinonia-experience.css?v=beb0150f283c9b8d" /><script src="/myagapay/koinonia-experience.js?v=3e21c54dd4d2b2b8" defer></script><link rel="stylesheet" href="/myagapay/liturgical-hero.css?v=1857c757b6cf4188" /><link rel="stylesheet" href="/myagapay/app-header.css?v=d457320a9d1a2f43" />
 <script src="/myagapay/app-header.js?v=8191b5f631e52e91" defer></script>
 </head>
 <body class="donor-mobile-page donor-parish-life-page koinonia-landing-page">
+  <div class="app-home-status-bar-surface" aria-hidden="true"></div>
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-scroll">
@@ -93,6 +94,12 @@
         <div id="parishLifeTierSections"><p class="sw-tool-loading parish-life-structure-loading" data-parish-life-structure-loading role="status">Loading parish sections…</p></div>
         <div class="notice" id="parishLifeStatus" hidden></div>
       </div>
+
+      <dialog class="app-church-dialog" id="koinoniaShortcutDialog" aria-labelledby="koinoniaShortcutTitle" aria-describedby="koinoniaShortcutMessage">
+        <h2 id="koinoniaShortcutTitle"></h2>
+        <p id="koinoniaShortcutMessage"></p>
+        <form method="dialog"><button type="submit" class="btn btn-primary" autofocus>OK</button></form>
+      </dialog>
 
       <dialog id="todayReadingsDialog" aria-labelledby="todayReadingsTitle">
         <div class="donor-saint-modal-card">
