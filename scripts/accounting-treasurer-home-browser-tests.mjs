@@ -357,6 +357,23 @@ try {
       },
     };
     api['/accounting/attachments'] = { body: { attachments: [] } };
+    api['/accounting/integrations/give-stripe/settings'] = { body: { settings: {} } };
+    api['/accounting/integrations/give-stripe/overview'] = { body: { overview: {} } };
+    api['/accounting/integrations/give-stripe/clearing'] = { body: { clearing: {} } };
+    api['/accounting/commerce/overview'] = { body: { overview: {} } };
+    api['/accounting/integrations/give-stripe/payout-alerts'] = (request) => {
+      assert.equal(new URL(request.url()).searchParams.get('month'), '2026-10');
+      assert.equal(request.headers()['x-agapay-accounting-token'], 'synthetic-token');
+      return {
+        body: {
+          available: true,
+          complete: true,
+          month: '2026-10',
+          checked: 2,
+          alerts: [{ payoutId: 'po_test', code: 'amount_mismatch', currency: 'USD', stripeCents: 2400, ledgerCents: 2100 }],
+        },
+      };
+    };
     const fixture = await openParishFixture(
       browser,
       () => ({
@@ -687,6 +704,12 @@ try {
       assert.equal(purchaseDrafts, 1);
       assert.equal(purchasePosts, 2);
       assert.equal(registrations, 1);
+      await page.evaluate(() => window.setAccountingView('integrations'));
+      const payouts = pane.getByRole('region', { name: 'Stripe payout discrepancies' });
+      await payouts.getByLabel('Month', { exact: true }).fill('2026-10');
+      await payouts.getByRole('button', { name: 'Check payouts' }).click();
+      await payouts.getByText('2 paid payouts checked, 1 to review.', { exact: false }).waitFor();
+      await payouts.getByText('Stripe 24.00 USD, ledger 21.00 USD.', { exact: false }).waitFor();
       fixture.assertClean();
     } finally {
       await fixture.close();

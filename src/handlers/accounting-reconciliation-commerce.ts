@@ -1,8 +1,15 @@
 import type { FeeCoverageBackfillOptions } from '../accounting/integrations/fee-coverage.js';
 import type { AccountingHttpDatabase, AccountingHttpError } from './accounting-http-contracts.js';
-import { processAccountingSourceEvent } from '../accounting/integrations/service.js';
+import {
+  findStripePayoutLedgerAlerts,
+  getIntegrationSettings,
+  processAccountingSourceEvent,
+} from '../accounting/integrations/service.js';
 import { givingFeeCoverageBackfill } from '../accounting/integrations/fee-coverage.js';
 import { json } from '../lib/core.js';
+import { parishReportingTimezone } from '../lib/fund-reporting.js';
+import type { StripeRequestEnv } from '../lib/stripe-connect.js';
+import { listStripePayoutsForPeriod, reconciliationPeriod } from './parish-reconciliation.js';
 import { listBankTransfers, recordBankTransfer } from '../accounting/ledger/service.js';
 import {
   commitBankImport,
@@ -14,7 +21,6 @@ import {
   createBankAccount,
   createReconciliation,
   eligibleLedgerItems,
-  getIntegrationSettings,
   integrationOverview,
   listBankAccounts,
   postReconciliationAdjustment,
@@ -66,7 +72,11 @@ function capability(path: string, method: string) {
   return 'accounting.commerce.reports.view';
 }
 
-export async function handleAccountingReconciliationCommerce(request: Request, env: Partial<Env>, parishId: string) {
+export async function handleAccountingReconciliationCommerce(
+  request: Request,
+  env: Partial<Env> & StripeRequestEnv,
+  parishId: string
+) {
   const url = new URL(request.url),
     base = `/api/parish/dashboard/${encodeURIComponent(parishId)}/accounting`;
   if (!url.pathname.startsWith(base)) return null;
@@ -303,6 +313,24 @@ export async function handleAccountingReconciliationCommerce(request: Request, e
           endDate: url.searchParams.get('endDate') || today(),
         }),
       });
+    if (request.method === 'GET' && path === '/integrations/give-stripe/payout-alerts') {
+      const settings = await getIntegrationSettings(ctx.db, { actor: ctx.actor, entitlementTier: tier });
+      const stripeAccountId = ctx.registration.stripeAccountId;
+      if (typeof stripeAccountId !== 'string' || !stripeAccountId || !settings?.stripePostingEnabled) {
+        return reply({ available: false, reason: 'Connect Stripe and enable Stripe posting to check payouts.' });
+      }
+      const timezone = ctx.registration.timezone;
+      const period = reconciliationPeriod(
+        url.searchParams.get('month'),
+        new Date(),
+        parishReportingTimezone({ timezone: typeof timezone === 'string' ? timezone : undefined })
+      );
+      // Keep below D1's statement binding limit and identify incomplete results.
+      const payouts = await listStripePayoutsForPeriod(env, stripeAccountId, period, 75);
+      if (!payouts.ok) return reply({ error: 'Could not verify payouts with Stripe. Try again.' }, 502);
+      const report = await findStripePayoutLedgerAlerts(ctx.db, payouts.body.data || []);
+      return reply({ available: true, month: period.month, complete: !payouts.body.truncated, ...report });
+    }
     if (request.method === 'POST' && path === '/integrations/give-stripe/fee-coverage-backfill')
       return reply({
         ok: true,

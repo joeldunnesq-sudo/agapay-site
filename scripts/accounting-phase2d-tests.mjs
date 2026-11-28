@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ingestAccountingSourceEvent, initializeLedger, integrationOverview, previewIntegrationBackfill, processAccountingSourceEvent, statementOfActivities, stripeClearingValidation, updateIntegrationSettings } from "../src/accounting/index.js";
+import { findStripePayoutLedgerAlerts } from "../src/accounting/integrations/service.js";
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),"..");
 const sqlite=new DatabaseSync(":memory:");
 for(const file of ["0001_accounting_database_foundation.sql","0002_core_ledger.sql","0003_phase2a_setup_configuration.sql","0005_phase2c_reporting_indexes.sql"]){sqlite.exec(readFileSync(path.join(root,"accounting-migrations",file),"utf8"));}
@@ -30,4 +31,20 @@ assert.equal(clearing.endingLedgerClearingBalance,0);assert.equal(clearing.valid
 const overview=await integrationOverview(db,{actor,entitlementTier:"parish"});assert.equal(overview.coreGiveIntegrationIncluded,true);assert.equal(overview.totals.grossContributions,10350);
 const preview=await previewIntegrationBackfill(db,{actor,entitlementTier:"mission",startDate:"2026-07-01",endDate:"2026-07-31",maximumBatchSize:50});assert.equal(preview.dryRun,true);assert.equal(preview.eventsFound,4);
 await assert.rejects(()=>ingestAccountingSourceEvent(db,{actor,entitlementTier:"core",event:{sourceType:"donation_succeeded",sourceEventId:"x",sourceObjectId:"x",occurredAt:"2026-07-20",grossAmount:1}}),/not included/);
+const paid = { id: "po_1", status: "paid", amount: 9025, currency: "usd" };
+assert.deepEqual(await findStripePayoutLedgerAlerts(db, [paid, paid]), { checked: 1, alerts: [] });
+assert.deepEqual(
+  await findStripePayoutLedgerAlerts(db, [
+    { ...paid, amount: 9000 },
+    { ...paid, id: "po_missing" },
+    { ...paid, id: "po_pending", status: "pending" },
+  ]),
+  {
+    checked: 2,
+    alerts: [
+      { payoutId: "po_1", code: "amount_mismatch", currency: "USD", stripeCents: 9000, ledgerCents: 9025 },
+      { payoutId: "po_missing", code: "missing_entry", currency: "USD", stripeCents: 9025, ledgerCents: null },
+    ],
+  }
+);
 console.log("PASS - Phase 2D gross Give revenue, actual Stripe fees, refunds, payouts, clearing, tiers, idempotency, and dry-run backfill");
