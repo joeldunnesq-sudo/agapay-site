@@ -432,6 +432,31 @@ export function staleStripeProcessingEvent(receivedAt: string | undefined, nowMs
   return Number.isFinite(receivedMs) && nowMs - receivedMs > STRIPE_EVENT_PROCESSING_RETRY_MS;
 }
 
+export async function reclaimStripeEvent(
+  env: Partial<Env>,
+  id: string,
+  type: string,
+  observed: { status: string; received_at: string }
+) {
+  if (
+    observed.status !== 'failed' &&
+    !(observed.status === 'processing' && staleStripeProcessingEvent(observed.received_at))
+  )
+    return '';
+  const receivedAt = new Date(Math.max(Date.now(), Date.parse(observed.received_at) + 1 || 0)).toISOString();
+  const result = await d1Run(
+    env,
+    `UPDATE stripe_events SET event_type=?2, status='processing', received_at=?3, processed_at=NULL, error_message=''
+     WHERE id=?1 AND status=?4 AND received_at=?5`,
+    id,
+    type,
+    receivedAt,
+    observed.status,
+    observed.received_at
+  );
+  return result?.meta?.changes ? receivedAt : '';
+}
+
 export async function claimStripeEvent(env: Partial<Env>, event: { id?: string; type?: string } = {}) {
   const eventId = event.id || '';
   if (!eventId) return { claimed: true };
@@ -447,7 +472,7 @@ export async function claimStripeEvent(env: Partial<Env>, event: { id?: string; 
         event.type || '',
         now
       );
-      if ((result?.meta?.changes || 0) > 0) return { claimed: true };
+      if ((result?.meta?.changes || 0) > 0) return { claimed: true, receivedAt: now };
       const row = await d1First<{
         id: string;
         value: string;
@@ -457,19 +482,14 @@ export async function claimStripeEvent(env: Partial<Env>, event: { id?: string; 
         data: string;
       }>(env, 'SELECT status, received_at FROM stripe_events WHERE id = ?1', eventId);
       if (row?.status === 'failed' || (row?.status === 'processing' && staleStripeProcessingEvent(row.received_at))) {
-        const retry = await d1Run(
-          env,
-          `UPDATE stripe_events
-           SET event_type = ?2, status = 'processing', received_at = ?3, processed_at = NULL, error_message = ''
-           WHERE id = ?1 AND status = ?4 AND received_at = ?5`,
-          eventId,
-          event.type || '',
-          now,
-          row.status,
-          row.received_at
-        );
-        if (!retry?.meta?.changes) return { claimed: false, duplicate: true, status: 'processing' };
-        return { claimed: true, retryingFailed: row?.status === 'failed', retryingStale: row?.status === 'processing' };
+        const receivedAt = await reclaimStripeEvent(env, eventId, event.type || '', row);
+        if (!receivedAt) return { claimed: false, duplicate: true, status: 'processing' };
+        return {
+          claimed: true,
+          receivedAt,
+          retryingFailed: row.status === 'failed',
+          retryingStale: row.status === 'processing',
+        };
       }
       return { claimed: false, duplicate: true, status: row?.status || 'processed' };
     } catch (error) {
@@ -524,24 +544,27 @@ export async function finishStripeEvent(
   env: Partial<Env>,
   eventId: string,
   status: string = 'processed',
-  errorMessage: string = ''
+  errorMessage: string = '',
+  claimedAt?: string
 ) {
   if (!eventId) return;
   const now = new Date().toISOString();
   if (d1(env)) {
     try {
-      await d1Run(
+      const result = await d1Run(
         env,
         `UPDATE stripe_events
          SET status = ?2, processed_at = ?3, error_message = ?4
-         WHERE id = ?1`,
+         WHERE id = ?1 AND (?5 IS NULL OR received_at = ?5)`,
         eventId,
         status,
         status === 'processed' ? now : '',
-        String(errorMessage || '').slice(0, 1000)
+        String(errorMessage || '').slice(0, 1000),
+        claimedAt || null
       );
-      return;
-    } catch {
+      return Boolean(result?.meta?.changes);
+    } catch (error) {
+      if (claimedAt) throw error;
       if (status === 'failed') {
         await d1Run(env, 'DELETE FROM stripe_events WHERE id = ?1', eventId);
       }

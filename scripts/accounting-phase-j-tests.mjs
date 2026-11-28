@@ -189,9 +189,12 @@ assert.deepEqual(
 console.log('Accounting Phase J governance and operations checks passed.');
 
 const queueDb = new DatabaseSync(':memory:');
+const originalFetch = globalThis.fetch;
 try {
   queueDb.exec(read('migrations/0001_production_records.sql'));
   queueDb.exec(read('migrations/0002_stripe_event_status.sql'));
+  queueDb.exec(read('migrations/0014_audit_log.sql'));
+  queueDb.exec(read('migrations/0134_stripe_event_recovery.sql'));
   const add = queueDb.prepare(
     'INSERT INTO stripe_events (id,event_type,status,received_at,error_message) VALUES (?,?,?,?,?)'
   );
@@ -202,7 +205,12 @@ try {
   add.run('evt_active', 'payment_intent.succeeded', 'processing', recent, '');
   add.run('evt_done', 'refund.updated', 'processed', recent, '');
   add.run('internal_dedupe_record', 'digest', 'failed', recent, '');
+  queueDb.exec(`INSERT INTO registrations(reference,parish_id,parish_name,stripe_account_id,updated_at,data)
+    VALUES('reg-a','parish-a','Parish A','acct_test',datetime('now'),'{}');
+    UPDATE stripe_events SET stripe_account_id='acct_test',parish_id='parish-a' WHERE id='evt_failed';`);
   const queueEnv = {
+    AGAPAY_ENVIRONMENT: 'test',
+    STRIPE_SECRET_KEY: 'sk_test_fixture',
     PRIVILEGED_MFA_REQUIRED: 'true',
     AGAPAY_DB: {
       prepare(sql) {
@@ -222,8 +230,8 @@ try {
   const url = 'https://agapay.test/api/admin/accounting/payment-exceptions';
   assert.equal((await platformWorker.fetch(new Request(url), queueEnv)).status, 401);
   const unverified = await issueAdminSession(queueEnv, 'Test operator');
-  const request = (session, method = 'GET') =>
-    new Request(url, {
+  const request = (session, method = 'GET', path = url) =>
+    new Request(path, {
       method,
       headers: { Authorization: `Bearer ${session.token}` },
     });
@@ -240,6 +248,9 @@ try {
         type: 'refund.updated',
         status: 'failed',
         receivedAt: recent,
+        parishId: 'parish-a',
+        parishName: 'Parish A',
+        canRetry: true,
         reason: 'Payment processing failed.',
         nextStep: 'Review the Stripe delivery and AGAPAY logs for this event before resending it.',
       },
@@ -248,13 +259,47 @@ try {
         type: 'charge.dispute.closed',
         status: 'stalled',
         receivedAt: old,
+        parishId: '',
+        parishName: '',
+        canRetry: true,
         reason: 'Processing exceeded the expected time.',
         nextStep: 'Check the latest delivery in Stripe Workbench before resending it.',
       },
     ],
     hasMore: false,
   });
-  console.log('PASS - the MFA-protected payment exception route shows only failed or stalled Stripe deliveries');
+  const retryUrl = `${url}/evt_failed/retry`;
+  assert.equal((await platformWorker.fetch(request(unverified, 'POST', retryUrl), queueEnv)).status, 401);
+  let returnedAccount = 'acct_wrong';
+  globalThis.fetch = async (request, options) => {
+    assert.equal(String(request), 'https://api.stripe.com/v1/events/evt_failed');
+    assert.equal(new Headers(options.headers).get('stripe-account'), 'acct_test');
+    return Response.json({
+      id: 'evt_failed',
+      type: 'refund.updated',
+      livemode: false,
+      account: returnedAccount,
+      data: { object: { id: 're_test', status: 'failed' } },
+    });
+  };
+  const retry = () => platformWorker.fetch(request(verified, 'POST', retryUrl), queueEnv);
+  assert.equal((await retry()).status, 409);
+  assert.equal(queueDb.prepare("SELECT status FROM stripe_events WHERE id='evt_failed'").get().status, 'failed');
+  returnedAccount = 'acct_test';
+  const results = await Promise.all([retry(), retry()]);
+  assert.deepEqual(results.map((response) => response.status).sort(), [200, 409]);
+  assert.equal(queueDb.prepare("SELECT status FROM stripe_events WHERE id='evt_failed'").get().status, 'processed');
+  const audit = queueDb
+    .prepare(
+      "SELECT actor_user_id, organization_id, after_summary_json FROM audit_log WHERE action='stripe.payment_retry.finished'"
+    )
+    .all();
+  assert.equal(audit.filter((row) => JSON.parse(row.after_summary_json).outcome === 'processed').length, 1);
+  assert.ok(audit.every((row) => row.actor_user_id === 'Test operator' && row.organization_id === 'parish-a'));
+  console.log(
+    'PASS - payment exception queue shows the parish and enforces MFA, original Stripe event identity, and audited single-claim retries'
+  );
 } finally {
+  globalThis.fetch = originalFetch;
   queueDb.close();
 }

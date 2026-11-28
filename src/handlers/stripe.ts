@@ -60,6 +60,7 @@ import './stripe-shared.js';
 import './stripe-shared.js';
 import { invalidateAndSaveMaterialRegistration, refreshStripeStatusForRegistration } from './stripe-account-refresh.js';
 import { processStripeWebhookEvent } from './stripe-webhook-processing.js';
+import { rememberStripeEventContext } from './stripe-event-context.js';
 export { createStripeOnboardingSession, refreshStripeStatusForRegistration } from './stripe-account-refresh.js';
 export { processStripeWebhookEvent } from './stripe-webhook-processing.js';
 
@@ -305,8 +306,11 @@ export async function handleStripeWebhook(request: Request, env: StripeHandlerEn
   }
 
   try {
+    await rememberStripeEventContext(env, event).catch(() =>
+      logEvent(env, { eventType: 'stripe.webhook.context_unavailable', severity: 'warn', stripeEventId: event.id })
+    );
     await processStripeWebhookEvent(env, event);
-    await finishStripeEvent(env, event.id, 'processed');
+    await finishStripeEvent(env, event.id, 'processed', '', claim.receivedAt);
     await logEvent(env, {
       eventType: 'stripe.webhook.processed',
       severity: 'info',
@@ -322,7 +326,13 @@ export async function handleStripeWebhook(request: Request, env: StripeHandlerEn
     });
     return json({ received: true });
   } catch (error) {
-    await finishStripeEvent(env, event.id, 'failed', (error as Error | undefined)?.message || String(error));
+    await finishStripeEvent(
+      env,
+      event.id,
+      'failed',
+      (error as Error | undefined)?.message || String(error),
+      claim.receivedAt
+    );
     await logEvent(env, {
       eventType: 'stripe.webhook.processing_failed',
       severity: 'error',

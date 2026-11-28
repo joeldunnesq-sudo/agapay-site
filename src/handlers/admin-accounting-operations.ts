@@ -25,6 +25,8 @@ import { findRegistrationByParishId, requireAdminContext } from './parish.js';
 import './parish-commemorations.js';
 
 import { recordAuditEvent } from '../lib/audit-log.js';
+import { RETRYABLE_PAYMENT_EVENTS } from './stripe-event-context.js';
+import { retryStripePaymentEvent } from './stripe-payment-retry.js';
 
 import '../lib/tax-readiness.js';
 
@@ -140,6 +142,12 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
     path = url.pathname,
     body: AdminMutation = request.method === 'GET' ? {} : ((await request.json().catch(() => ({}))) as AdminMutation);
   try {
+    const retry = path.match(/^\/api\/admin\/accounting\/payment-exceptions\/(evt_[A-Za-z0-9_]{1,100})\/retry$/);
+    if (retry) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+      if (!admin.mfaVerifiedAt) return unauthorized();
+      return await retryStripePaymentEvent(request, env, retry[1], admin.actor);
+    }
     if (path === '/api/admin/accounting/payment-exceptions') {
       const response = { headers: { 'Cache-Control': 'no-store' } };
       if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { ...response, status: 405 });
@@ -152,11 +160,16 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
         status: 'failed' | 'processing';
         received_at: string;
         error_message: string | null;
+        parish_id: string;
+        parish_name: string | null;
       }>(
         env,
-        `SELECT id, event_type, status, received_at, error_message FROM stripe_events
-        WHERE id GLOB 'evt_*' AND (status='failed' OR (status='processing' AND received_at<?))
-        ORDER BY received_at DESC, id DESC LIMIT 51`,
+        `SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.parish_id,
+          (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.parish_id
+           ORDER BY r.updated_at DESC LIMIT 1) AS parish_name
+        FROM stripe_events e
+        WHERE e.id GLOB 'evt_*' AND (e.status='failed' OR (e.status='processing' AND e.received_at<?))
+        ORDER BY e.received_at DESC, e.id DESC LIMIT 51`,
         cutoff
       );
       return json(
@@ -166,6 +179,9 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
             type: event.event_type,
             status: event.status === 'failed' ? 'failed' : 'stalled',
             receivedAt: event.received_at,
+            parishId: event.parish_id,
+            parishName: event.parish_name || '',
+            canRetry: RETRYABLE_PAYMENT_EVENTS.has(event.event_type) && Boolean(admin.mfaVerifiedAt),
             ...paymentRecoveryGuidance(event.status, event.error_message),
           })),
           hasMore: events.length > 50,

@@ -636,6 +636,51 @@ export async function wireGivingDisputeToAccounting(
   return withdrawal;
 }
 
+export async function wireStripePayoutToAccounting(
+  env: Partial<Env>,
+  parishId: string,
+  payout: { id: string; amount: number; currency: string; arrivalDate: number; balanceTransactionId: string }
+) {
+  const db = await resolveOperationalAccountingDatabase(env, parishId);
+  if (!db) return null;
+  const postingActor = actor('accounting.integrations.post');
+  const existing = await db
+    .prepare(
+      "SELECT id,net_amount,currency FROM accounting_integration_source_events WHERE source_system='stripe' AND source_type='stripe_payout_paid' AND payout_id=? LIMIT 2"
+    )
+    .bind(payout.id)
+    .all<{ id: string; net_amount: number; currency: string }>();
+  const [prior] = existing.results || [];
+  if (
+    (existing.results?.length || 0) > 1 ||
+    (prior && (Number(prior.net_amount) !== payout.amount || prior.currency !== payout.currency.toUpperCase()))
+  ) {
+    throw new Error('Stripe payout conflicts with the recorded accounting event.');
+  }
+  const source =
+    prior ||
+    (await ingestAccountingSourceEvent(db, {
+      actor: postingActor,
+      entitlementTier: 'parish',
+      event: {
+        sourceSystem: 'stripe',
+        sourceType: 'stripe_payout_paid',
+        sourceEventId: `stripe:payout:${payout.id}:paid`,
+        sourceObjectId: payout.id,
+        payoutId: payout.id,
+        occurredAt: new Date(payout.arrivalDate * 1000).toISOString(),
+        currency: payout.currency,
+        netAmount: payout.amount,
+        balanceTransactionId: payout.balanceTransactionId,
+      },
+    }));
+  return processAccountingSourceEvent(db, {
+    actor: postingActor,
+    entitlementTier: 'parish',
+    sourceEventId: source!.id,
+  });
+}
+
 export async function synchronizeGivingCatalogWithAccounting(
   env: Partial<Env>,
   parishId: string,
