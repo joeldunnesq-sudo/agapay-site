@@ -25,6 +25,14 @@
       'contactLeadsCard',
     ],
     [
+      'overview',
+      'Payment exceptions',
+      'Review failed or stalled Stripe webhook deliveries.',
+      'Your work',
+      'stripe payments refunds webhooks errors',
+      'paymentExceptionsCard',
+    ],
+    [
       'taxexemptions',
       'Tax exemptions',
       'Review certificates and tax exemption requests.',

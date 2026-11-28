@@ -18,6 +18,7 @@ try {
   for (const width of [1440, 390]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     const errors = [];
+    let paymentQueueStatus = 200;
     page.on('pageerror', (error) => errors.push(error.message));
     await page.route('**/*', (route) => {
       const url = new URL(route.request().url());
@@ -26,9 +27,33 @@ try {
       if (url.pathname === '/admin/app.js')
         return route.fulfill({
           contentType: 'text/javascript',
-          body: `let activeTab = 'overview'; function loadParishSupportTickets() {} ${navigation}`,
+          body: `let activeTab = 'overview'; function loadParishSupportTickets() {}
+            function authHeaders() { return { Authorization: 'Bearer admin-test' }; }
+            ${navigation}`,
         });
-      if (url.pathname.endsWith('.js') && !['/admin/navigation.js', '/admin/metrics.js'].includes(url.pathname))
+      if (url.pathname === '/api/admin/accounting/payment-exceptions') {
+        assert.equal(route.request().headers().authorization, 'Bearer admin-test');
+        return route.fulfill({
+          status: paymentQueueStatus,
+          json: {
+            events: [
+              {
+                id: 'evt_veryLongReferenceUsedToExerciseWrappingOnNarrowScreens123456789',
+                type: 'refund.updated',
+                status: 'failed',
+                receivedAt: '2026-11-27T20:00:00.000Z',
+              },
+            ],
+            hasMore: false,
+          },
+        });
+      }
+      if (
+        url.pathname.endsWith('.js') &&
+        !['/admin/navigation.js', '/admin/metrics.js', '/admin/controllers/payment-exceptions.js'].includes(
+          url.pathname
+        )
+      )
         return route.fulfill({ contentType: 'text/javascript', body: '' });
       try {
         return route.fulfill({
@@ -101,6 +126,23 @@ try {
     assert.equal(await page.locator('.admin-secondary-workspace').evaluate((el) => el.open), true);
     assert.equal(await page.evaluate(() => document.activeElement.id), 'contactLeadsCard');
     await trigger.click();
+    await page.locator('#adminToolSearch').fill('payment exceptions');
+    await page.locator('#adminToolSearch').press('Enter');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'paymentExceptionsCard');
+    const exceptions = page.locator('#paymentExceptionsCard');
+    await exceptions.getByRole('button', { name: 'Refresh' }).click();
+    await exceptions.getByText('refund.updated', { exact: true }).waitFor();
+    assert.equal(await exceptions.getByText('Failed', { exact: true }).isVisible(), true);
+    assert.equal(
+      await exceptions.locator('li').evaluate((entry) => entry.scrollWidth <= entry.clientWidth),
+      true,
+      'Long payment references must fit the queue at the current viewport'
+    );
+    paymentQueueStatus = 503;
+    await exceptions.getByRole('button', { name: 'Refresh' }).click();
+    await exceptions.getByRole('status').filter({ hasText: 'Could not refresh' }).waitFor();
+    assert.equal(await exceptions.getByText('refund.updated', { exact: true }).isVisible(), true);
+    await trigger.click();
     await page.locator('#adminToolSearch').fill('support');
     await page.locator('#adminFinderResults button').click();
     assert.equal(await page.locator('#tab-support').getAttribute('class'), 'tab-panel active');
@@ -111,6 +153,10 @@ try {
     await page.locator('.admin-secondary-workspace').evaluate((el) => {
       el.open = false;
     });
+    await page.locator('#diagVersion').evaluate((el) => {
+      el.textContent = 'ebcf7db6fdab943ddd786bdf411eba5f3a14e6be';
+    });
+    assert.equal(await page.locator('#diagVersion').evaluate((el) => el.scrollWidth <= el.clientWidth), true);
     await page.evaluate(() => window.scrollTo(0, 0));
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),

@@ -113,4 +113,18 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           wranglerVersion: '4'
-          command: deploy --env staging
+          command: deploy --env staging --var AGAPAY_BUILD_SHA:${{ github.sha }}
+
+      - name: Verify the staging release candidate
+        env:
+          EXPECTED_BUILD: ${{ github.sha }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl --silent --show-error --fail --max-time 10 https://agapay-site-staging.joeldunnesq.workers.dev/api/health |
+              jq -e --arg build "$EXPECTED_BUILD" '.ok == true and .version == $build' >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "The staging health check could not confirm build $EXPECTED_BUILD." >&2
+          exit 1

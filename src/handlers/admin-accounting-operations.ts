@@ -1,6 +1,6 @@
 import type { AdminRegistration, AdminSqlRow, AdminMutation, AdminEnvironment } from './admin-composition-contracts.js';
 
-import { d1All, json, unauthorized } from '../lib/core.js';
+import { d1All, json, STRIPE_EVENT_PROCESSING_RETRY_MS, unauthorized } from '../lib/core.js';
 
 import '../lib/mfa.js';
 
@@ -109,6 +109,37 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
     path = url.pathname,
     body: AdminMutation = request.method === 'GET' ? {} : ((await request.json().catch(() => ({}))) as AdminMutation);
   try {
+    if (path === '/api/admin/accounting/payment-exceptions') {
+      const response = { headers: { 'Cache-Control': 'no-store' } };
+      if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { ...response, status: 405 });
+      if (!env.AGAPAY_DB)
+        return json({ error: 'Payment exception data is unavailable.' }, { ...response, status: 503 });
+      const cutoff = new Date(Date.now() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
+      const events = await d1All<{
+        id: string;
+        event_type: string;
+        status: 'failed' | 'processing';
+        received_at: string;
+      }>(
+        env,
+        `SELECT id, event_type, status, received_at FROM stripe_events
+        WHERE id GLOB 'evt_*' AND (status='failed' OR (status='processing' AND received_at<?))
+        ORDER BY received_at DESC, id DESC LIMIT 51`,
+        cutoff
+      );
+      return json(
+        {
+          events: events.slice(0, 50).map((event) => ({
+            id: event.id,
+            type: event.event_type,
+            status: event.status === 'failed' ? 'failed' : 'stalled',
+            receivedAt: event.received_at,
+          })),
+          hasMore: events.length > 50,
+        },
+        response
+      );
+    }
     if (request.method === 'GET' && path === '/api/admin/accounting/targets')
       return json({
         ok: true,

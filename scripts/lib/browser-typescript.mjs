@@ -488,6 +488,10 @@ export const browserTypeScriptEntries = Object.freeze([
   { source: 'src/browser/parish/features/giving/overview.ts', output: 'public/parish/features/giving/overview.js' },
   { source: 'src/browser/parish/features/giving/recurring.ts', output: 'public/parish/features/giving/recurring.js' },
   { source: 'src/browser/admin/controllers/contact-leads.ts', output: 'public/admin/controllers/contact-leads.js' },
+  {
+    source: 'src/browser/admin/controllers/payment-exceptions.ts',
+    output: 'public/admin/controllers/payment-exceptions.js',
+  },
   { source: 'src/browser/admin/navigation.ts', output: 'public/admin/navigation.js' },
   { source: 'src/browser/admin/metrics.ts', output: 'public/admin/metrics.js' },
   { source: 'src/browser/admin/giving-impact.ts', output: 'public/admin/giving-impact.js' },

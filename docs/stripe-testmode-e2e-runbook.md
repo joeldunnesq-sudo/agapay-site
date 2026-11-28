@@ -133,6 +133,19 @@ Pass criteria:
 - Replayed event IDs are safely ignored or treated idempotently.
 - Refund/dispute transitions are reflected accurately.
 
+For the refund release check, capture the original Stripe delivery, the
+`refund.updated` receipt, and the ledger counts before posting, after posting,
+and after resending the same event. Validate the evidence against the exact
+build deployed to staging:
+
+```sh
+node scripts/verify-stripe-refund-release.mjs artifacts/staging-stripe-verification/refund-updated-sandbox.json <expected-build>
+```
+
+Supply the expected build from the release workflow. The verifier checks the
+recorded evidence for the dedicated staging destination, one balanced posted
+refund, and an unchanged journal entry after Stripe resends the event.
+
 ## 7) Cross-role session/security checks
 
 1. Donor logout/login cycle works.

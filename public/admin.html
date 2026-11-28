@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/admin/style.css?v=20261124-giving-design" />
+  <link rel="stylesheet" href="/admin/style.css?v=bd71ef3ce34b885d" />
   <link rel="stylesheet" href="/admin/relationships.css?v=20260930-care1" />
   <link rel="stylesheet" href="/admin/navigation.css?v=20260930-tiers1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
@@ -248,6 +248,10 @@
                 <div class="community-snapshot-card"><div class="community-snapshot-value" id="snapshotMonasteries">0</div><div class="community-snapshot-label">Monasteries</div><div class="community-snapshot-note">Monastic support</div></div>
               </section>
 
+              <section class="section-card" id="paymentExceptionsCard" aria-labelledby="paymentExceptionsTitle">
+                <div class="section-header"><h2 class="section-title" id="paymentExceptionsTitle">Payment exceptions</h2><button type="button" class="secondary btn-sm" id="paymentExceptionRefresh">Refresh</button></div>
+                <div class="section-body"><p id="paymentExceptionStatus" role="status">Review failed or stalled Stripe webhook deliveries.</p><ul class="payment-exception-list" id="paymentExceptionList"></ul></div>
+              </section>
               <section class="section-card" id="contactLeadsCard" aria-label="Contact submissions">
                 <div class="section-header"><div class="section-title">Contact submissions</div><button class="secondary btn-sm" onclick="loadContactLeads()">Load contacts</button></div>
                 <div class="section-body"><p id="contactLeadsStatus" role="status">Review saved contacts and retry notifications that were not sent.</p><div id="contactLeads"></div><button id="contactLeadsMore" class="secondary btn-sm" hidden onclick="loadContactLeads(true)">Load older contacts</button></div>
@@ -1050,12 +1054,13 @@
   <script src="/admin/presentation.js?v=3fab636db05161dd"></script>
   <script src="/admin/controllers/tax-exemptions.js?v=3d75b8f03a0729fd"></script>
   <script src="/admin/controllers/contact-leads.js?v=f6b278f668dd6ab2"></script>
+  <script src="/admin/controllers/payment-exceptions.js?v=7a21061eb6980641"></script>
   <script src="/admin/giving-impact.js?v=a00517bba632291d"></script>
   <script src="/admin/metrics.js?v=6db326f37adbe052"></script>
   <script src="/admin/relationships.js?v=1d05a38cad659d4a"></script>
   <script src="/admin/app-accounting-and-audit.js?v=21b79331c5158d29"></script>
 <script src="/admin/app.js?v=fa04d2a31d51c634"></script>
-  <script src="/admin/navigation.js?v=d4f8800051dd8bb6"></script>
+  <script src="/admin/navigation.js?v=a702b7aa509fe69c"></script>
   <script src="/admin/pwa.js?v=290054144a23a185"></script>
 </body>
 </html>

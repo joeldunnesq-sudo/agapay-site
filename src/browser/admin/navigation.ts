@@ -15,6 +15,7 @@ type AdminNavigationTab =
 type AdminNavigationGroup = 'Your work' | 'Reviews' | 'Products' | 'System' | 'Insights';
 type AdminNavigationSection =
   | 'contactLeadsCard'
+  | 'paymentExceptionsCard'
   | 'deploymentHealthCard'
   | 'parishCare'
   | 'overviewEmailLogCard'
@@ -54,6 +55,14 @@ declare function switchTab(tab: AdminNavigationTab): void;
       'Your work',
       'contacts leads messages email',
       'contactLeadsCard',
+    ],
+    [
+      'overview',
+      'Payment exceptions',
+      'Review failed or stalled Stripe webhook deliveries.',
+      'Your work',
+      'stripe payments refunds webhooks errors',
+      'paymentExceptionsCard',
     ],
     [
       'taxexemptions',
