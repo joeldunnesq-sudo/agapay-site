@@ -180,8 +180,11 @@
     header.className = 'app-page-header';
     header.innerHTML = `<div class="app-header-bar koinonia-mobile-appbar"><a class="app-header-brand" href="/myagapay/"><img src="/images/app/icon-192.png" alt=""><span>MY AGAPAY<small data-app-church-name>Loading your church…</small></span></a><div class="app-header-tools"><div class="app-header-switch"><button type="button" data-app-switch-church aria-label="Switch churches">${switchIcon}</button></div><button class="app-header-menu-button" type="button" data-myagapay-app-menu-toggle aria-label="Open My AGAPAY navigation">${window.MyAgapayShell.icons.menu}</button></div></div><nav id="appHeaderNavigation" class="koinonia-mobile-menu" data-myagapay-app-menu aria-label="My AGAPAY navigation" hidden></nav><div class="app-header-body"><div class="app-header-title-row"><h1 data-app-page-title></h1><div class="app-header-actions"></div></div></div>`;
     header.querySelector('[data-app-page-title]').textContent = titles[key];
+    if (key === 'parish-life') {
+      header.classList.add('app-home-header');
+      header.classList.toggle('app-home-ios-standalone', navigator.standalone === true);
+    }
     main.prepend(header);
-    if (key === 'parish-life') header.classList.add('app-home-header');
     const description = document.createElement('p');
     description.className = 'app-header-description';
     description.textContent = descriptions[key];

@@ -20,6 +20,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
   let blocked = false;
   let readingsConnected = true;
+  let tone = 'Tone 8';
   const limitedRequests = [];
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url());
@@ -49,7 +50,7 @@ try {
             feastTitle: 'The Beginning of the Church Year',
             feastRank: 'great',
             fastingRule: 'No Fast (Bright Week)',
-            tone: 4,
+            tone,
             saints: ['Saint Symeon'],
             saintStories: [{ title: 'Saint Symeon', story: 'A life of prayer.' }],
             sourceConnected: readingsConnected,
@@ -172,6 +173,8 @@ try {
   assert.equal(await sacramentsShortcut.locator('svg path').count(), 1);
   assert.equal(await page.locator('.app-home-header [data-app-church-name]').textContent(), parish.name);
   const hero = page.locator('.refined-liturgical-hero');
+  const toneChip = hero.locator('#todayChips').getByText('Tone of the Week: 8', { exact: true });
+  await toneChip.waitFor({ state: 'visible' });
   assert.equal(await hero.getByRole('link', { name: 'Give now' }).getAttribute('href'), '/myagapay/giving');
   assert.equal(await hero.locator('a[href="/myagapay/calendar"]').count(), 0);
   assert.equal(await page.getByRole('link', { name: 'Full Calendar', exact: true }).isVisible(), true);
@@ -213,7 +216,9 @@ try {
   }
   blocked = true;
   readingsConnected = false;
+  tone = 8;
   await page.reload();
+  await toneChip.waitFor({ state: 'visible' });
   await page
     .getByText('You need to be an approved member of this parish to access Koinonia.', { exact: true })
     .waitFor();

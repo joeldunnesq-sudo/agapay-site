@@ -135,7 +135,9 @@ try {
         localStorage.setItem('agapayDonorProfile', JSON.stringify(donor));
         sessionStorage.setItem('fixture-initialized', '1');
       }
-      Object.defineProperty(navigator, 'standalone', { value: true });
+      Object.defineProperty(navigator, 'standalone', {
+        value: sessionStorage.getItem('fixture-browser-tab') !== '1',
+      });
     },
     { donor }
   );
@@ -206,6 +208,7 @@ try {
     assert.ok(await page.locator('.app-header-bar').evaluate((el) => el.scrollWidth <= el.clientWidth));
   }
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => sessionStorage.setItem('fixture-browser-tab', '1'));
   await page.goto('https://agapay.test/myagapay');
   await page.locator('.app-home-header').waitFor();
   await page.locator('.refined-liturgical-hero').waitFor();
@@ -223,12 +226,22 @@ try {
   const homeMenuButton = homeBar.getByRole('button', { name: 'Open My AGAPAY navigation' });
   const homeSafeAreaMenu = page.locator('.app-home-header [data-myagapay-app-menu]');
   try {
-    await page.setViewportSize({ width: 402, height: 681 });
+    await page.setViewportSize({ width: 402, height: 874 });
     await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 62, bottom: 34 } });
+    assert.equal(await homeBar.evaluate((el) => getComputedStyle(el).paddingTop), '72px');
+    const browserBar = await homeBar.boundingBox();
+    await page.evaluate(() => sessionStorage.removeItem('fixture-browser-tab'));
+    await page.reload();
+    await homeBar.waitFor();
     const bar = await homeBar.boundingBox();
     assert.equal(bar.y, 0, 'The Home bar background should cover the status area');
-    assert.ok((await homeBrand.boundingBox()).y >= 62, 'The Home brand should be below the status area');
-    assert.ok((await homeMenuButton.boundingBox()).y >= 62, 'The menu button should be below the status area');
+    // The iOS portrait overlay can extend to about 112px from the top of the screen.
+    assert.ok((await homeBrand.boundingBox()).y >= 112, 'The Home brand should clear the portrait overlay');
+    assert.ok(
+      (await homeBar.locator('[data-app-switch-church]').boundingBox()).y >= 112,
+      'The church switcher should clear the portrait overlay'
+    );
+    assert.ok((await homeMenuButton.boundingBox()).y >= 112, 'The menu button should clear the portrait overlay');
 
     await homeMenuButton.click();
     await homeSafeAreaMenu.waitFor({ state: 'visible' });
@@ -243,6 +256,7 @@ try {
     assert.ok(brand.x >= 62, 'The Home brand should clear the landscape cutout');
     assert.ok(menuButton.x + menuButton.width <= 756 - 62, 'The Home menu button should clear the landscape cutout');
     assert.equal(landscapeBar.width, 756, 'The landscape bar background should span the viewport');
+    assert.equal(landscapeBar.height, browserBar.height - 62, 'Landscape should use the compact bar');
     await homeMenuButton.click();
     await homeSafeAreaMenu.waitFor({ state: 'visible' });
     const landscapeMenu = await homeSafeAreaMenu.boundingBox();

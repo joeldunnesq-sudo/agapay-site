@@ -415,10 +415,17 @@
 .app-header-description { margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #ded6c6; color:#536773; font-size:.875rem; }
 .app-home-header .app-header-body { display:none; }
 .app-shared-header-page .app-home-header .app-header-bar {
-  min-height: calc(65px + env(safe-area-inset-top, 0px));
-  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  --app-home-header-top-inset: env(safe-area-inset-top, 0px);
+  min-height: calc(65px + var(--app-home-header-top-inset));
+  padding-top: calc(10px + var(--app-home-header-top-inset));
   padding-left: max(var(--app-header-inline-padding), env(safe-area-inset-left, 0px));
   padding-right: max(var(--app-header-inline-padding), env(safe-area-inset-right, 0px));
+}
+@media (orientation: portrait) {
+  .app-shared-header-page .app-home-ios-standalone .app-header-bar {
+    /* The iOS Home Screen app can blur content below the status-bar inset. */
+    --app-home-header-top-inset: calc(env(safe-area-inset-top, 0px) + 48px);
+  }
 }
 .app-shared-header-page .app-home-header .koinonia-mobile-menu {
   display: grid;

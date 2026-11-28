@@ -117,7 +117,7 @@ function toneOfWeekLabel(tone = '') {
   const text = String(tone || '').trim();
   if (!text) return '';
   const number = text.match(/\b(\d+)\b/);
-  return number ? `Tone of the Week ${number[1]}` : text.replace(/^Tone\b/i, 'Tone of the Week');
+  return number ? `Tone of the Week: ${number[1]}` : text.replace(/^Tone\b/i, 'Tone of the Week');
 }
 
 function saintDisplayTitle(day: DonorLiturgicalDay = {}) {
@@ -366,7 +366,7 @@ function renderDonorTodayInChurch(parish: AppHeaderParish | null, payload: Donor
     const standardChips = [
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
-      window.KoinoniaExperience && today.tone ? `Tone ${today.tone}` : toneOfWeekLabel(today.tone),
+      toneOfWeekLabel(today.tone),
       dedicatedSaintCard && saintCount ? `${saintCount} saint${saintCount === 1 ? '' : 's'}` : '',
       !window.KoinoniaExperience && nameDays.length
         ? `${nameDays.length} name day${nameDays.length === 1 ? '' : 's'}`
