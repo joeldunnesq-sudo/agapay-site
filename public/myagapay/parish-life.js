@@ -869,7 +869,7 @@ async function loadParishLife() {
         }
       }
     }
-    window.KoinoniaExperience?.parishContext(parish, hasKoinoniaAccess, !hasKoinoniaAccess);
+    window.KoinoniaExperience?.parishContext(parish, experience.communicationsEnabled, hasKoinoniaAccess);
     if (hasKoinoniaAccess) {
       document.getElementById('parishLifeTierSections').innerHTML = parishLifeTierSectionsHtml(true);
     } else {

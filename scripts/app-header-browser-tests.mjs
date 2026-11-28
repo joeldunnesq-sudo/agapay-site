@@ -47,6 +47,7 @@ try {
   });
   let activeParish = parish;
   let rejectSwitch = false;
+  let koinoniaApprovalRequired = false;
   let startedFamily = null;
   const secondParish = {
     ...parish,
@@ -75,6 +76,8 @@ try {
         posts: [],
       };
       if (url.pathname === '/api/parishes') return route.fulfill({ json: { parishes: [parish, secondParish] } });
+      if (url.pathname === '/api/donor/koinonia-access' && koinoniaApprovalRequired)
+        return route.fulfill({ status: 403, json: { code: 'household_verification_required' } });
       if (url.pathname === '/api/donor/dashboard') {
         if (route.request().method() === 'PATCH') {
           if (rejectSwitch) return route.fulfill({ status: 503, json: { error: 'Please try again.' } });
@@ -219,6 +222,10 @@ try {
   const homeBrand = homeBar.locator('.app-header-brand');
   const homeMenuButton = homeBar.getByRole('button', { name: 'Open My AGAPAY navigation' });
   const homeSafeAreaMenu = page.locator('.app-home-header [data-myagapay-app-menu]');
+  const statusBarSurface = page.locator('body > .app-home-status-bar-surface');
+  assert.equal(await statusBarSurface.getAttribute('aria-hidden'), 'true');
+  assert.equal(await statusBarSurface.evaluate((surface) => surface.hasChildNodes()), false);
+  assert.equal(await statusBarSurface.isVisible(), false, 'The color surface should be inactive in browser tabs');
   try {
     await page.setViewportSize({ width: 402, height: 681 });
     await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 62, bottom: 34 } });
@@ -226,6 +233,32 @@ try {
     assert.equal(bar.y, 0, 'The Home bar background should cover the status area');
     assert.ok((await homeBrand.boundingBox()).y >= 62, 'The Home brand should be below the status area');
     assert.ok((await homeMenuButton.boundingBox()).y >= 62, 'The menu button should be below the status area');
+
+    const standaloneSurfaceCss = await page.locator('link[href^="/myagapay/app-header.css"]').evaluate((link) => {
+      const webkitRule = [...link.sheet.cssRules].find(
+        (rule) => rule.conditionText === '(-webkit-touch-callout: none) and (background-clip: text)'
+      );
+      const standaloneRule = [...webkitRule.cssRules].find((rule) => rule.conditionText === '(display-mode: standalone)');
+      return [...standaloneRule.cssRules].map((rule) => rule.cssText).join('\n');
+    });
+    // Apply the installed WebKit styles directly to check their layout in Chromium.
+    const simulatedWebKitStyles = await page.addStyleTag({ content: standaloneSurfaceCss });
+    try {
+      assert.deepEqual(await statusBarSurface.boundingBox(), { x: 0, y: 0, width: 402, height: 11 });
+      assert.deepEqual(await homeBar.boundingBox(), bar, 'The color surface should leave the Home header in place');
+      const surfaceStyles = await statusBarSurface.evaluate((surface) => {
+        const styles = getComputedStyle(surface);
+        return [styles.position, styles.pointerEvents, styles.backgroundClip, styles.backgroundColor];
+      });
+      assert.deepEqual(surfaceStyles, [
+        'fixed',
+        'none',
+        'text',
+        await homeBar.evaluate((el) => getComputedStyle(el).backgroundColor),
+      ]);
+    } finally {
+      await simulatedWebKitStyles.evaluate((style) => style.remove());
+    }
     await homeMenuButton.click();
     await homeSafeAreaMenu.waitFor({ state: 'visible' });
     assert.ok((await homeSafeAreaMenu.boundingBox()).y >= bar.y + bar.height, 'The menu should open below the taller bar');
@@ -328,8 +361,45 @@ try {
   await tabs.last().click();
   await page.waitForURL('**/myagapay/account');
   assert.equal(await tabs.last().getAttribute('aria-current'), 'page');
+
+  activeParish = {
+    ...secondParish,
+    communicationsEnabled: false,
+    signupsEnabled: false,
+    exchangeEnabled: false,
+    prayerRequestsEnabled: false,
+    directoryEnabled: false,
+    sacramentsEnabled: false,
+  };
+  await page.goto('https://agapay.test/myagapay/');
+  const shortcuts = page.getByRole('navigation', { name: 'Community tools' });
+  const availability = page.locator('#koinoniaShortcutDialog');
+  for (const name of ['Parish Signups', 'Parish Exchange', 'Prayer Requests', 'Browse Ministries', 'Parish Directory', 'Sacraments & Services']) {
+    const shortcut = shortcuts.getByRole('button', { name, exact: true });
+    await shortcut.click();
+    assert.equal(await availability.getByRole('heading', { name, exact: true }).isVisible(), true);
+    assert.match(await availability.textContent(), /Your parish needs to enable this feature/);
+    await availability.getByRole('button', { name: 'OK', exact: true }).click();
+    assert.equal(await availability.isVisible(), false);
+    assert.ok(await shortcut.evaluate((button) => document.activeElement === button));
+  }
+  assert.equal(page.url(), 'https://agapay.test/myagapay/');
+
+  activeParish = secondParish;
+  koinoniaApprovalRequired = true;
+  await page.reload();
+  await shortcuts.getByRole('button', { name: 'Parish Signups', exact: true }).click();
+  assert.match(await availability.textContent(), /Your parish needs to approve your membership/);
+  await page.keyboard.press('Escape');
+  assert.equal(await availability.isVisible(), false);
+  koinoniaApprovalRequired = false;
+
   activeParish = { ...secondParish, bookstoreEnabled: false, directoryEnabled: false, libraryEnabled: false };
   await page.goto('https://agapay.test/myagapay/');
+  assert.equal(await shortcuts.getByRole('link', { name: 'Parish Exchange', exact: true }).getAttribute('href'), '/myagapay/exchange');
+  await shortcuts.getByRole('button', { name: 'Parish Directory', exact: true }).click();
+  assert.match(await availability.textContent(), /Your parish needs to enable this feature/);
+  await availability.getByRole('button', { name: 'OK', exact: true }).click();
   const fixedTabs = page.locator('nav.my-agapay-tabbar[aria-label="My AGAPAY navigation"]');
   await fixedTabs.getByRole('link', { name: 'Directory' }).waitFor();
   assert.deepEqual(await fixedTabs.locator(':scope > a > span').allTextContents(), [

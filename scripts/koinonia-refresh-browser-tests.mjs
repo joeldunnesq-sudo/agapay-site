@@ -221,7 +221,7 @@ try {
   await page.locator('#parishLifeListenItems').getByText('A public episode').waitFor();
   await page.locator('#parishLifeNewsMount').getByText('Story 0').waitFor();
   assert.ok(await shortcuts.isVisible());
-  assert.deepEqual(await shortcuts.locator('.koinonia-shortcut[aria-disabled="true"] > span').allTextContents(), [
+  assert.deepEqual(await shortcuts.locator('button.koinonia-shortcut[aria-haspopup="dialog"] > span').allTextContents(), [
     'Signups',
     'Exchange',
     'Prayers',
@@ -229,7 +229,7 @@ try {
     'Directory',
     'Sacraments',
   ]);
-  assert.equal(await shortcuts.locator('a[href], [tabindex], button').count(), 0);
+  assert.equal(await shortcuts.locator('a[href]').count(), 0);
   assert.equal(
     await shortcuts
       .locator('.koinonia-shortcut')
@@ -237,7 +237,11 @@ try {
     1
   );
   const previousUrl = page.url();
-  await shortcuts.getByText('Sacraments', { exact: true }).click();
+  await shortcuts.getByRole('button', { name: 'Sacraments & Services', exact: true }).click();
+  const approvalDialog = page.getByRole('dialog', { name: 'Sacraments & Services', exact: true });
+  await approvalDialog.waitFor({ state: 'visible' });
+  assert.match(await approvalDialog.textContent(), /Your parish needs to approve your membership/);
+  await approvalDialog.getByRole('button', { name: 'OK', exact: true }).click();
   assert.equal(page.url(), previousUrl);
   assert.equal(await page.locator('#parishLifeMinistries, #parishLifeVideos').count(), 0);
   assert.ok(!limitedRequests.includes('/api/donor/external-feeds/parish_blog'));
