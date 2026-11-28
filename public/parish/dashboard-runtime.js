@@ -135,6 +135,7 @@ async function loadDashboardInner(btn) {
     }
   }
 }
+document.getElementById('openParishSections')?.addEventListener('click', openParishSections);
 window.addEventListener('popstate', () => {
   if (!currentParish) return;
   const tab = new URLSearchParams(window.location.search).get('tab') || 'giving';

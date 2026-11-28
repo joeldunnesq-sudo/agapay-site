@@ -349,17 +349,14 @@ function parishCanUseGiftType(parish, value) {
   const giftType = normalizeDonorGiftType(value);
   if (giftType === 'stewardship') return true;
   if (giftType === 'candles') return Boolean(parish?.candlesEnabled);
-  if (giftType === 'fund') {
+  if (giftType === 'fund')
     return (
       Boolean(parish?.designatedFundsEnabled) &&
       (parish?.funds || []).some((fund) => fund && !isGeneralDonorFund(fund) && !isCandleDonorFund(fund))
     );
-  }
   if (giftType === 'commemoration') return Boolean(parish?.commemorationsEnabled);
-  return (
-    parishHasGivingPlus(parish) &&
-    (giftType === 'feast' || (giftType === 'campaign' && activeParishCampaigns(parish).length > 0))
-  );
+  if (!parishHasGivingPlus(parish)) return false;
+  return giftType === 'feast' || (giftType === 'campaign' && activeParishCampaigns(parish).length > 0);
 }
 function ensureGivingPlusPaywall() {
   let dialog = document.getElementById('givingPlusPaywall');
@@ -458,28 +455,17 @@ function updateGivingTierTiles(parish) {
     const giftType = tile.getAttribute('data-giving-plus-gift') || '';
     const allowed = parishCanUseGiftType(parish, giftType);
     const noCampaigns = giftType === 'campaign' && !allowed;
-    if (noCampaigns) tile.setAttribute('data-campaign-unavailable', 'None open');
-    else tile.removeAttribute('data-campaign-unavailable');
     tile.classList.remove('giving-tier-loading');
     tile.classList.toggle('giving-tier-locked', !allowed);
     tile.removeAttribute('aria-busy');
-    tile.removeAttribute('aria-disabled');
     tile.removeAttribute('tabindex');
-    tile.setAttribute(
-      'aria-label',
-      !allowed ? `${tile.textContent.trim()} — not currently available` : tile.textContent.trim()
-    );
-    if (noCampaigns) {
-      tile.setAttribute('aria-disabled', 'true');
-      tile.setAttribute('role', 'link');
-      tile.setAttribute('aria-label', `${tile.textContent.trim()} — no open campaigns`);
-      tile.removeAttribute('href');
-      tile.onclick = null;
-    } else {
-      tile.removeAttribute('role');
-      tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
-      tile.onclick = allowed ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
-    }
+    const availability = allowed ? '' : noCampaigns ? ' — no open campaigns' : ' — not currently available';
+    tile.setAttribute('aria-label', tile.textContent.trim() + availability);
+    if (noCampaigns) tile.setAttribute('aria-disabled', 'true');
+    else tile.removeAttribute('aria-disabled');
+    tile.onclick = allowed || noCampaigns ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    if (noCampaigns) tile.removeAttribute('href');
+    else tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
   });
 }
 function markDonorGiftAmountEdited() {
@@ -522,10 +508,8 @@ function donorNavIcon(kind) {
       '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="9" r="4"/><path d="M5.5 24a8.5 8.5 0 0 1 17 0"/></svg>',
     billing:
       '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="14" rx="3"/><path d="M3 12h22"/><path d="M8 17h5"/></svg>',
-    profile:
-      '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="9" r="4"/><path d="M5.5 24a8.5 8.5 0 0 1 17 0"/></svg>',
   };
-  return icons[kind] || icons.home;
+  return icons[kind === 'profile' ? 'account' : kind] || icons.home;
 }
 function donorNavKind(href) {
   const path = String(href || '');
@@ -582,17 +566,14 @@ function updateQuickGiveLinks(parish, { syncGivingTier = true } = {}) {
   syncSacramentsEntry(parish);
 }
 function activeParishCampaigns(parish) {
-  const campaigns = Array.isArray(parish?.campaigns) ? parish.campaigns : [];
-  return campaigns.filter((campaign) => {
-    const status = String(campaign?.status || 'active').toLowerCase();
-    return (
+  return (Array.isArray(parish?.campaigns) ? parish.campaigns : []).filter(
+    (campaign) =>
       campaign &&
       campaign.active !== false &&
       campaign.enabled !== false &&
       campaign.hidden !== true &&
-      ['active', 'published', 'open'].includes(status)
-    );
-  });
+      ['active', 'published', 'open'].includes(String(campaign.status || 'active').toLowerCase())
+  );
 }
 function activeParishFeastCampaigns(parish) {
   const campaigns = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [];
@@ -748,7 +729,7 @@ function renderActiveCampaigns(parish, { confirmed = false } = {}) {
   ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
-  document.querySelectorAll('section[data-hide-empty-campaigns]').forEach((section) => {
+  document.querySelectorAll('[data-hide-empty-campaigns]').forEach((section) => {
     section.hidden = !campaign;
   });
   if (!campaign) {

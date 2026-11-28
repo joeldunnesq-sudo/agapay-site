@@ -100,7 +100,7 @@ assert.match(
 );
 assert.match(
   script,
-  /const actionCount = signupActions\.length \+ announcements\.length/,
+  /const actionCount =\s*allSignupActions\.length \+ Math\.max\(unreadAnnouncements\.length, Number\(inboxFeed\?\.unreadCount\) \|\| 0\)/,
   'celebrations must not alter announcement or action counts'
 );
 assert.doesNotMatch(

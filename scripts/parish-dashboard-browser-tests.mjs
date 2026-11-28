@@ -40,6 +40,7 @@ try {
     async ({ page, open }) => {
       await open();
       await ready(page);
+      await page.locator('#sidebarPlanTools').click();
       await page.locator('#nav-communications').click();
       assert.equal(await page.locator('#communicationsPaywall').isVisible(), true);
       assert.equal(await page.getByRole('button', { name: 'This Week', exact: true }).count(), 0);
@@ -92,6 +93,7 @@ try {
       await weekTab.click();
       await agenda.getByText('Choir rehearsal').waitFor();
       await page.setViewportSize({ width: 390, height: 844 });
+      await page.locator('#openParishSections').click();
       const mobileNav = page.locator('.mobile-tabbar [data-nav-tab="communications"]');
       await mobileNav.click();
       await agenda.getByText('Divine Liturgy').waitFor();

@@ -1941,7 +1941,6 @@ function selectParishSettings(section) {
   });
 }
 function renderDashboard(preserveSettings = false) {
-  document.querySelector('.app')?.classList.toggle('give-dashboard', currentParish?.subscriptionTier === 'starter');
   const editingSettings = window.ParishSettings?.state();
   if (editingSettings?.dirty || editingSettings?.pending) preserveSettings = true;
   const p = currentParish;

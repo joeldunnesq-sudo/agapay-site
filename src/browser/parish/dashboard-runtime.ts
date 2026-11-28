@@ -1,6 +1,6 @@
 'use strict';
 
-/* exported openParishSections, loadDashboard, bookstoreCatalogState, bookstoreLowStockOnly, parishFeatureRequests */
+/* exported loadDashboard, bookstoreCatalogState, bookstoreLowStockOnly, parishFeatureRequests */
 /* global dashboardLoadPromise:writable, currentParish:writable,
   bookstoreCatalogState:writable, bookstoreLowStockOnly:writable, parishFeatureRequests:writable,
   activeTab, setStatus, authHeaders, refreshSubscriptionStatus,
@@ -157,6 +157,8 @@ async function loadDashboardInner(btn: HTMLButtonElement | null | undefined) {
     }
   }
 }
+
+document.getElementById('openParishSections')?.addEventListener('click', openParishSections);
 
 window.addEventListener('popstate', () => {
   if (!currentParish) return;

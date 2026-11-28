@@ -10634,20 +10634,20 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
   opacity: 0.14;
   pointer-events: none;
 }
-[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"] {
+[data-giving-plus-gift="campaign"].giving-tier-locked[aria-disabled="true"] {
   background: #eeece7 !important;
   border-color: #d3d0c9 !important;
   color: #555c60 !important;
   box-shadow: none;
   cursor: default;
 }
-[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"] :is(svg,strong,h3,span,p) { color: inherit; }
-[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"]::after {
-  content: attr(data-campaign-unavailable);
+[data-giving-plus-gift="campaign"].giving-tier-locked[aria-disabled="true"] :is(svg,strong,h3,span,p) { color: inherit; }
+[data-giving-plus-gift="campaign"].giving-tier-locked[aria-disabled="true"]::after {
+  content: 'None open';
   color: #fff;
   background: #606568;
 }
-.quick-give-tile[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"]::after {
+.quick-give-tile[data-giving-plus-gift="campaign"].giving-tier-locked[aria-disabled="true"]::after {
   position: static;
   padding: 0;
   background: none;

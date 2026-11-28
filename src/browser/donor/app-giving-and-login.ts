@@ -201,7 +201,7 @@ function renderActiveCampaigns(parish: DonorAppParish | null | undefined, { conf
   ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
-  document.querySelectorAll<HTMLElement>('section[data-hide-empty-campaigns]').forEach((section) => {
+  document.querySelectorAll<HTMLElement>('[data-hide-empty-campaigns]').forEach((section) => {
     section.hidden = !campaign;
   });
   if (!campaign) {

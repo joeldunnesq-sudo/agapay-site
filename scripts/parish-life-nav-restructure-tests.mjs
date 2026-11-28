@@ -314,7 +314,8 @@ assert.ok(
 );
 assert.match(landingScript, /Get involved/);
 assert.match(landingScript, /\/api\/donor\/ministry-service-interest/);
-assert.match(landingScript, /item\.status === ['"]published['"] && item\.pinned === true && !item\.read/);
+assert.match(landingScript, /item\.status === ['"]published['"] && !item\.read/);
+assert.match(landingScript, /Number\(Boolean\(right\.pinned\)\) - Number\(Boolean\(left\.pinned\)\)/);
 assert.match(landingScript, /item\.kind === ['"]coverage['"] \? ['"]I can cover['"] : ['"]Claim spot['"]/);
 assert.match(landingScript, /signups\/coverage\/\$\{encodeURIComponent\(id\)\}\/accept/);
 assert.doesNotMatch(parishTierMarkup, /Pinned Announcements/);

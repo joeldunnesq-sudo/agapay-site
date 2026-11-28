@@ -740,7 +740,7 @@ assert.ok(
 assert.ok(
   parishDashboardApp.includes("pdx-sub-plan-kicker")
     && parishDashboardApp.includes("pdx-sub-module-grid")
-    && parishDashboardApp.includes("Explore upgrade options"),
+    && parishDashboardApp.includes("Compare tiers"),
   "Giving Overview should render the polished subscription plan and module-access card"
 );
 assert.ok(

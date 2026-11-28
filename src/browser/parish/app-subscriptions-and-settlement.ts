@@ -724,6 +724,7 @@ function renderSubscriptionPanel() {
 }
 
 function updateTierScopedNavigation() {
+  document.querySelector('.app')?.classList.toggle('give-dashboard', currentParish?.subscriptionTier === 'starter');
   const planTools = document.getElementById('sidebarPlanTools');
   if (planTools) planTools.hidden = currentParish?.subscriptionTier !== 'starter';
   syncTierRequirementNavigation('communications', 'Give +', moduleIncluded('communications'));
