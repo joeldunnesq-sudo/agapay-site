@@ -166,6 +166,12 @@ jobs:
         env:
           AGAPAY_BASE_URL: https://agapay.app
 
+      - name: Verify Stripe Connect production destination
+        run: node scripts/check-stripe-connect-webhook.mjs --wait-for-configuration
+        env:
+          AGAPAY_BASE_URL: https://agapay.app
+          AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_MONITOR_CANARY_TOKEN }}
+
       - name: Run Test Lubbock authenticated accounting and Stripe health
         run: node scripts/accounting-health-live.mjs
         env:

@@ -129,3 +129,9 @@ jobs:
           done
           echo "The staging health check could not confirm build $EXPECTED_BUILD." >&2
           exit 1
+
+      - name: Verify Stripe Connect sandbox destination
+        run: node scripts/check-stripe-connect-webhook.mjs
+        env:
+          AGAPAY_BASE_URL: https://agapay-site-staging.joeldunnesq.workers.dev
+          AGAPAY_MONITOR_CANARY_TOKEN: ${{ secrets.AGAPAY_STAGING_MONITOR_CANARY_TOKEN }}

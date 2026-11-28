@@ -11,6 +11,7 @@ interface SourceRow {
   source_type: string;
   source_event_id: string;
   source_object_id: string;
+  payout_id: string;
   occurred_at: string;
   currency: string;
   status: string;
@@ -499,7 +500,7 @@ function proposalFor(event: SourceRow, mapping: Awaited<ReturnType<typeof resolv
 async function exception(db: PortabilityDatabase, event: SourceRow, code: string, message: string) {
   await run(
     db,
-    "UPDATE accounting_integration_source_events SET status='exception',posting_status='failed',exception_code=?,exception_message=?,updated_at=datetime('now') WHERE id=?",
+    "UPDATE accounting_integration_source_events SET status='exception',posting_status='failed',exception_code=?,exception_message=?,updated_at=datetime('now') WHERE id=? AND status<>'posted'",
     code,
     message,
     event.id
@@ -522,6 +523,23 @@ export async function processAccountingSourceEvent(
   const event = await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', sourceEventId);
   if (!event) throw new ValidationError('Accounting source event was not found.');
   if (event.status === 'posted') return sourceDto(event);
+  if (event.source_type === 'stripe_payout_paid' && event.payout_id) {
+    const returned = await first<{ id: string }>(
+      db,
+      "SELECT id FROM accounting_integration_source_events WHERE source_system='stripe' AND source_type='stripe_payout_reversed' AND payout_id=?",
+      event.payout_id
+    );
+    if (returned) {
+      await run(
+        db,
+        `UPDATE accounting_integration_source_events SET status='ignored',posting_status='ignored',
+          exception_code=NULL,exception_message=NULL,ignored_reason='Stripe returned this payout',
+          updated_at=datetime('now') WHERE id=? AND status NOT IN ('posted','posting')`,
+        event.id
+      );
+      return sourceDto(await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', event.id));
+    }
+  }
   const settings = await first<SettingsRow>(db, "SELECT * FROM accounting_integration_settings WHERE id='give_stripe'");
   const ledgerSettings = await first<{ base_currency: string }>(
     db,
@@ -584,6 +602,55 @@ export async function processAccountingSourceEvent(
     mappingEvent = { ...event, original_source_event_id: original.id };
   }
   const mapping = await resolveMapping(db, mappingEvent, settings!);
+  let payoutOriginalId: string | null = null;
+  if (event.source_type === 'stripe_payout_reversed') {
+    const original = await all<{
+      id: string;
+      account_id: string;
+      fund_id: string;
+      debit_amount: number;
+      credit_amount: number;
+      currency: string;
+    }>(
+      db,
+      `SELECT e.id,l.account_id,l.fund_id,l.debit_amount,l.credit_amount,j.currency
+       FROM accounting_integration_source_events e
+       JOIN accounting_journal_entries j ON j.source_type='integration.stripe_payout_paid'
+         AND j.source_id=e.id AND j.status='posted'
+       JOIN accounting_journal_lines l ON l.journal_entry_id=j.id
+       WHERE e.source_system='stripe' AND e.source_type='stripe_payout_paid' AND e.payout_id=?
+       LIMIT 3`,
+      event.payout_id
+    );
+    if (!original.length)
+      return exception(
+        db,
+        event,
+        'payout_return_unposted',
+        'Stripe returned this payout. No posted deposit was found to reverse.'
+      );
+    const debit = original.find((line) => line.debit_amount === Math.abs(event.net_amount) && !line.credit_amount);
+    const credit = original.find((line) => line.credit_amount === Math.abs(event.net_amount) && !line.debit_amount);
+    if (
+      original.length !== 2 ||
+      !debit ||
+      !credit ||
+      debit.id !== credit.id ||
+      debit.fund_id !== credit.fund_id ||
+      debit.currency !== event.currency
+    )
+      return exception(
+        db,
+        event,
+        'payout_return_mismatch',
+        'The returned payout does not match the original posted deposit.'
+      );
+    payoutOriginalId = debit.id;
+    mapping.bankAccountId = debit.account_id;
+    mapping.clearingAccountId = credit.account_id;
+    mapping.fundId = debit.fund_id;
+    mapping.mappingId = debit.id;
+  }
   if (event.donor_restricted && !mapping.fundId)
     return exception(
       db,
@@ -645,7 +712,7 @@ export async function processAccountingSourceEvent(
       capabilities: [...new Set([...actor.capabilities, 'accounting.journals.create', 'accounting.journals.post'])],
     };
     const existingDraft =
-      event.source_type === 'agapay_subscription_paid' &&
+      ['agapay_subscription_paid', 'stripe_payout_paid', 'stripe_payout_reversed'].includes(event.source_type) &&
       (await first(
         db,
         'SELECT id FROM accounting_journal_entries WHERE source_type=? AND source_id=?',
@@ -682,8 +749,9 @@ export async function processAccountingSourceEvent(
     );
     await run(
       db,
-      "UPDATE accounting_integration_source_events SET status='posted',posting_status='posted',journal_entry_id=?,exception_code=NULL,exception_message=NULL,updated_at=datetime('now') WHERE id=?",
+      "UPDATE accounting_integration_source_events SET status='posted',posting_status='posted',journal_entry_id=?,original_source_event_id=COALESCE(?,original_source_event_id),exception_code=NULL,exception_message=NULL,updated_at=datetime('now') WHERE id=?",
       posted!.id,
+      payoutOriginalId,
       event.id
     );
     await run(
@@ -728,7 +796,8 @@ export async function integrationOverview(db: PortabilityDatabase, { actor, enti
     COALESCE(SUM(CASE WHEN status='posted' AND source_type='stripe_fee_assessed' THEN fee_amount ELSE 0 END),0) stripe_fees,
     COALESCE(SUM(CASE WHEN status='posted' AND source_type='agapay_fee_assessed' THEN fee_amount ELSE 0 END),0) agapay_fees,
     COALESCE(SUM(CASE WHEN status='posted' AND source_type LIKE 'donation_%refunded' THEN refund_amount ELSE 0 END),0) refunds,
-    COALESCE(SUM(CASE WHEN status='posted' AND source_type='stripe_payout_paid' THEN net_amount ELSE 0 END),0) payouts,
+    COALESCE(SUM(CASE WHEN status='posted' AND source_type='stripe_payout_paid' THEN net_amount
+      WHEN status='posted' AND source_type='stripe_payout_reversed' THEN -ABS(net_amount) ELSE 0 END),0) payouts,
     SUM(CASE WHEN status='exception' THEN 1 ELSE 0 END) exceptions,SUM(CASE WHEN status NOT IN('posted','ignored') THEN 1 ELSE 0 END) unposted FROM accounting_integration_source_events`
   );
   const serviceInvoices = await all(
@@ -776,7 +845,9 @@ export async function stripeClearingValidation(
     COALESCE(SUM(CASE WHEN source_type LIKE 'donation_%refunded' THEN refund_amount ELSE 0 END),0) refunds,
     COALESCE(SUM(CASE WHEN source_type='stripe_dispute_won' THEN -dispute_amount
       WHEN source_type IN ('stripe_dispute_created','stripe_dispute_lost') THEN dispute_amount ELSE 0 END),0) disputes,
-    COALESCE(SUM(CASE WHEN source_type='stripe_payout_paid' THEN net_amount ELSE 0 END),0) payouts FROM accounting_integration_source_events WHERE status='posted' AND date(occurred_at) BETWEEN ? AND ?`,
+    COALESCE(SUM(CASE WHEN source_type='stripe_payout_paid' THEN net_amount
+      WHEN source_type='stripe_payout_reversed' THEN -ABS(net_amount) ELSE 0 END),0) payouts
+    FROM accounting_integration_source_events WHERE status='posted' AND date(occurred_at) BETWEEN ? AND ?`,
     startDate,
     endDate
   );
@@ -806,46 +877,66 @@ interface StripePayoutForLedger {
 }
 
 export async function findStripePayoutLedgerAlerts(db: PortabilityDatabase, payouts: StripePayoutForLedger[]) {
-  const paid = [
+  const candidates = [
     ...new Map(
       payouts
-        .filter((payout) => payout.status === 'paid' && payout.id && Number.isSafeInteger(payout.amount))
+        .filter(
+          (payout) =>
+            ['paid', 'failed', 'canceled'].includes(payout.status || '') &&
+            payout.id &&
+            Number.isSafeInteger(payout.amount) &&
+            Number(payout.amount) > 0
+        )
         .map((payout) => [payout.id, payout])
     ).values(),
   ];
-  if (!paid.length) return { checked: 0, alerts: [] };
-  const ids = paid.map((payout) => payout.id);
-  const posted = await all<{ payout_id: string; entries: number; debit_cents: number; currency: string }>(
+  if (!candidates.length) return { checked: 0, alerts: [] };
+  const ids = candidates.map((payout) => payout.id);
+  const posted = await all<{
+    payout_id: string;
+    entries: number;
+    debit_cents: number;
+    currency: string;
+    reversals: number;
+  }>(
     db,
     `WITH linked AS (
-      SELECT DISTINCT e.payout_id,j.id,j.currency
+      SELECT DISTINCT e.payout_id,e.id AS source_id,j.id,j.currency
       FROM accounting_integration_source_events e JOIN accounting_journal_entries j ON j.id=e.journal_entry_id
       WHERE e.source_system='stripe' AND e.source_type='stripe_payout_paid' AND j.status='posted'
         AND e.payout_id IN (${ids.map(() => '?').join(',')})
     )
     SELECT linked.payout_id,COUNT(DISTINCT linked.id) AS entries,COALESCE(SUM(l.debit_amount),0) AS debit_cents,
-      MIN(linked.currency) AS currency
+      MIN(linked.currency) AS currency,
+      COUNT(DISTINCT (SELECT r.id FROM accounting_integration_source_events r
+        JOIN accounting_journal_entries rev ON rev.id=r.journal_entry_id AND rev.status='posted'
+        WHERE r.source_type='stripe_payout_reversed' AND r.original_source_event_id=linked.source_id)) AS reversals
     FROM linked LEFT JOIN accounting_journal_lines l ON l.journal_entry_id=linked.id
     GROUP BY linked.payout_id`,
     ...ids
   );
   const entriesByPayout = new Map(posted.map((entry) => [entry.payout_id, entry]));
-  const alerts = paid.flatMap((payout) => {
+  const alerts = candidates.flatMap((payout) => {
     const entry = entriesByPayout.get(payout.id);
     const stripeCents = Number(payout.amount);
     const currency = String(payout.currency || 'usd').toUpperCase();
-    const code = !entry
-      ? 'missing_entry'
-      : entry.entries !== 1
-        ? 'multiple_entries'
-        : String(entry.currency).toUpperCase() !== currency
-          ? 'currency_mismatch'
-          : entry.debit_cents !== stripeCents
-            ? 'amount_mismatch'
-            : null;
+    const code =
+      payout.status !== 'paid'
+        ? entry && entry.entries !== entry.reversals
+          ? 'returned_payout_unreversed'
+          : null
+        : !entry
+          ? 'missing_entry'
+          : entry.entries !== 1
+            ? 'multiple_entries'
+            : String(entry.currency).toUpperCase() !== currency
+              ? 'currency_mismatch'
+              : entry.debit_cents !== stripeCents
+                ? 'amount_mismatch'
+                : null;
     return code ? [{ payoutId: payout.id, code, currency, stripeCents, ledgerCents: entry?.debit_cents ?? null }] : [];
   });
-  return { checked: paid.length, alerts };
+  return { checked: candidates.length, alerts };
 }
 
 export async function previewIntegrationBackfill(

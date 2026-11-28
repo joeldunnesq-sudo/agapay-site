@@ -132,7 +132,7 @@ try {
     const exceptions = page.locator('#paymentExceptionsCard');
     await exceptions.getByRole('button', { name: 'Refresh' }).click();
     await exceptions.getByText('refund.updated', { exact: true }).waitFor();
-    assert.equal(await exceptions.getByText('Failed', { exact: true }).isVisible(), true);
+    assert.equal(await exceptions.locator('#paymentExceptionList').getByText('Failed', { exact: true }).isVisible(), true);
     assert.equal(
       await exceptions.locator('li').evaluate((entry) => entry.scrollWidth <= entry.clientWidth),
       true,

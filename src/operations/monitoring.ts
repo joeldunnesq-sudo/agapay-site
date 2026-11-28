@@ -1,5 +1,6 @@
 import type { EmailEnv } from '../lib/email.js';
 import type { HeartbeatEnvironment } from './scheduled-heartbeats.js';
+import type { StripeRequestEnv } from '../lib/stripe-connect.js';
 export type OperationsEnvironment = EmailEnv &
   HeartbeatEnvironment & {
     AGAPAY_SCHEDULED_ALERT_DEDUPE_SECONDS?: unknown;
@@ -7,11 +8,13 @@ export type OperationsEnvironment = EmailEnv &
     AGAPAY_FROM_EMAIL?: string;
     AGAPAY_REPLY_TO_EMAIL?: string;
     AGAPAY_APP_URL?: string;
+    AGAPAY_ENVIRONMENT?: string;
     AGAPAY_REGISTRATIONS?: KVNamespace;
     AGAPAY_MONITOR_CANARY_TOKEN?: string;
+    STRIPE_CONNECT_WEBHOOK_ENDPOINT_ID?: string;
     ACCOUNTING_BACKUPS?: R2Bucket;
     SACRAMENT_DOCUMENTS?: R2Bucket;
-  };
+  } & StripeRequestEnv;
 interface HeartbeatRow {
   job_name: string;
   completed_at?: string;
@@ -19,6 +22,7 @@ interface HeartbeatRow {
 }
 import { agapayEmailHtml, sendEmail } from '../lib/email.js';
 import { htmlEscape } from '../lib/format.js';
+import { REQUIRED_STRIPE_CONNECT_EVENTS, stripeGetRequest } from '../lib/stripe-connect.js';
 
 const PORTABILITY_MAX_AGE_MS = 20 * 60 * 1000;
 
@@ -61,6 +65,26 @@ function bindings(env: OperationsEnvironment) {
 export async function handleOperationsCanary(request: Request, env: OperationsEnvironment) {
   if (!env?.AGAPAY_MONITOR_CANARY_TOKEN) return response({ ok: false, error: 'canary_not_configured' }, 503);
   if (!(await tokenMatches(request, env))) return response({ ok: false, error: 'unauthorized' }, 401);
+  if (new URL(request.url).searchParams.get('check') === 'stripe-connect') {
+    const endpointId = env.STRIPE_CONNECT_WEBHOOK_ENDPOINT_ID || '';
+    if (!/^we_[A-Za-z0-9]+$/.test(endpointId) || !env.AGAPAY_APP_URL || !env.STRIPE_SECRET_KEY)
+      return response({ ok: false, error: 'stripe_connect_check_not_configured' }, 503);
+    try {
+      const endpoint = await stripeGetRequest(env, `/v1/webhook_endpoints/${endpointId}`);
+      if (!endpoint.ok) return response({ ok: false, error: 'stripe_connect_check_unavailable' }, 503);
+      const events = Array.isArray(endpoint.body.enabled_events) ? endpoint.body.enabled_events : [];
+      const missingEvents = REQUIRED_STRIPE_CONNECT_EVENTS.filter((event) => !events.includes(event));
+      const expectedDestination =
+        endpoint.body.id === endpointId &&
+        endpoint.body.url === `${new URL(env.AGAPAY_APP_URL).origin}/api/stripe/webhook` &&
+        endpoint.body.livemode === (env.AGAPAY_ENVIRONMENT === 'production') &&
+        endpoint.body.status === 'enabled';
+      const ok = expectedDestination && missingEvents.length === 0;
+      return response({ ok, expectedDestination, missingEvents }, ok ? 200 : 503);
+    } catch {
+      return response({ ok: false, error: 'stripe_connect_check_unavailable' }, 503);
+    }
+  }
   const bindingChecks = bindings(env);
   try {
     const result = await (env.DB || env.AGAPAY_DB)!

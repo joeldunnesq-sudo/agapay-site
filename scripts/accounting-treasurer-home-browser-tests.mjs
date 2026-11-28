@@ -708,7 +708,7 @@ try {
       const payouts = pane.getByRole('region', { name: 'Stripe payout discrepancies' });
       await payouts.getByLabel('Month', { exact: true }).fill('2026-10');
       await payouts.getByRole('button', { name: 'Check payouts' }).click();
-      await payouts.getByText('2 paid payouts checked, 1 to review.', { exact: false }).waitFor();
+      await payouts.getByText('2 payouts checked, 1 to review.', { exact: false }).waitFor();
       await payouts.getByText('Stripe 24.00 USD, ledger 21.00 USD.', { exact: false }).waitFor();
       fixture.assertClean();
     } finally {

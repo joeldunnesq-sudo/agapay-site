@@ -13,6 +13,8 @@ export const RETRYABLE_PAYMENT_EVENTS = new Set([
   'invoice.paid',
   'invoice.payment_succeeded',
   'payout.paid',
+  'payout.failed',
+  'payout.canceled',
 ]);
 
 export async function parishForStripeAccount(env: Partial<Env>, accountId: string) {

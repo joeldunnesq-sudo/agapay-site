@@ -26,6 +26,10 @@ The private R2 backup manifest download also gets three attempts with two- and f
 - a bearer-authenticated, read-only operations canary for D1, KV, private backup/document bindings, failed jobs, and the five-minute scheduler heartbeat;
 - private R2 backup-manifest freshness, with a 30-hour ceiling.
 
-Failures remain visible in GitHub Actions and also call the authenticated monitor-alert route, which sends email through the production Resend configuration to `AGAPAY_OPS_ALERT_EMAIL`. The email path is independent of GitHub notifications, but a total Worker outage can also prevent that route from sending; a future provider-level health check should cover that final failure mode.
+Keep a separate UptimeRobot HTTP monitor for production at `https://agapay.app/api/health`. Use the five-minute interval and enable provider email alerts to the operations contact. Verify the alert setup and a successful probe on the staging health URL before enabling the production monitor. UptimeRobot probes and sends its alerts independently of the AGAPAY Worker and GitHub Actions.
+
+GitHub Actions still records detailed canary and backup evidence. Its supplemental email uses the authenticated monitor-alert route and the production Resend configuration. Use the UptimeRobot incident for an outage that prevents the Worker from responding.
 
 The canary secret exists only as the Worker secret and GitHub Actions secret `AGAPAY_MONITOR_CANARY_TOKEN`. Rotate both values together. Never put the token in `wrangler.toml`, logs, artifacts, or a workflow input.
+
+The staging Worker uses a separate canary credential. Its GitHub Actions counterpart is `AGAPAY_STAGING_MONITOR_CANARY_TOKEN`. The staging and production workflows verify that their own Stripe Connect destination is active, points to their own Worker, and includes every required event. The probe returns only the destination match and missing event names.

@@ -1,5 +1,5 @@
 // Generated from src/handlers/admin-accounting-operations.ts by npm run build:server. Do not edit.
-import { d1All, json, STRIPE_EVENT_PROCESSING_RETRY_MS, unauthorized } from '../lib/core.js';
+import { d1All, d1First, json, STRIPE_EVENT_PROCESSING_RETRY_MS, unauthorized } from '../lib/core.js';
 import '../lib/mfa.js';
 import '../lib/admin-overview-metrics.js';
 import '../lib/registrations.js';
@@ -116,6 +116,51 @@ async function handleAdminAccountingOperations(request, env) {
     path = url.pathname,
     body = request.method === 'GET' ? {} : await request.json().catch(() => ({}));
   try {
+    const assignment = path.match(
+      /^\/api\/admin\/accounting\/payment-exceptions\/(evt_[A-Za-z0-9_]{1,100})\/assignment$/
+    );
+    if (assignment) {
+      const headers = { 'Cache-Control': 'no-store' };
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { headers, status: 405 });
+      if (!admin.mfaVerifiedAt) return unauthorized();
+      if (!env.AGAPAY_DB) return json({ error: 'Payment exception data is unavailable.' }, { headers, status: 503 });
+      const { owner, nextAction, version } = body;
+      if (
+        typeof owner !== 'string' ||
+        owner.length > 80 ||
+        typeof nextAction !== 'string' ||
+        nextAction.length > 240 ||
+        typeof version !== 'number' ||
+        !Number.isSafeInteger(version) ||
+        version < 0
+      )
+        return json(
+          { error: 'Provide an owner, next action and current assignment version.' },
+          { headers, status: 422 }
+        );
+      const eventId = assignment[1];
+      const cutoff = new Date(Date.now() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
+      const updated = await d1First(
+        env,
+        `INSERT INTO stripe_payment_exception_assignments(event_id,owner,next_action,version,updated_by,updated_at)
+          SELECT e.id,?2,?3,?4+1,?5,?6 FROM stripe_events e WHERE e.id=?1
+            AND (e.status='failed' OR (e.status='processing' AND e.received_at<?7))
+            AND ?4=COALESCE((SELECT version FROM stripe_payment_exception_assignments WHERE event_id=e.id),0)
+          ON CONFLICT(event_id) DO UPDATE SET owner=excluded.owner,next_action=excluded.next_action,
+            version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at
+          WHERE stripe_payment_exception_assignments.version=?4 RETURNING version`,
+        eventId,
+        owner.trim(),
+        nextAction.trim(),
+        version,
+        admin.actor,
+        /* @__PURE__ */ new Date().toISOString(),
+        cutoff
+      );
+      if (!updated)
+        return json({ error: 'This exception changed. Refresh the queue before editing.' }, { headers, status: 409 });
+      return json({ ok: true, version: updated.version }, { headers });
+    }
     const retry = path.match(/^\/api\/admin\/accounting\/payment-exceptions\/(evt_[A-Za-z0-9_]{1,100})\/retry$/);
     if (retry) {
       if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
@@ -128,15 +173,43 @@ async function handleAdminAccountingOperations(request, env) {
       if (!env.AGAPAY_DB)
         return json({ error: 'Payment exception data is unavailable.' }, { ...response, status: 503 });
       const cutoff = new Date(Date.now() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
+      const statusFilter = url.searchParams.get('status') || '';
+      const order = url.searchParams.get('sort') === 'oldest' ? 'ASC' : 'DESC';
+      const compare = order === 'ASC' ? '>' : '<';
+      const search = (url.searchParams.get('search') || '').trim().slice(0, 120).toLowerCase();
+      const parish = (url.searchParams.get('parish') || '').trim().slice(0, 120).toLowerCase();
+      const cursor = url.searchParams.get('cursor') || '';
+      const [cursorAt = '', cursorId = '', ...cursorRemainder] = cursor.split('~');
+      if (
+        (statusFilter && !['failed', 'stalled'].includes(statusFilter)) ||
+        (cursor &&
+          (!Number.isFinite(Date.parse(cursorAt)) ||
+            !/^evt_[A-Za-z0-9_]{1,100}$/.test(cursorId) ||
+            cursorRemainder.length))
+      )
+        return json({ error: 'Invalid payment queue filter or page.' }, { ...response, status: 422 });
       const events = await d1All(
         env,
-        `SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.affected_parish_id AS parish_id,
-          (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.affected_parish_id
-           ORDER BY r.updated_at DESC LIMIT 1) AS parish_name
-        FROM stripe_events e
-        WHERE e.id GLOB 'evt_*' AND (e.status='failed' OR (e.status='processing' AND e.received_at<?))
-        ORDER BY e.received_at DESC, e.id DESC LIMIT 51`,
-        cutoff
+        `WITH eligible AS (
+          SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.affected_parish_id AS parish_id,
+            (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.affected_parish_id
+             ORDER BY r.updated_at DESC LIMIT 1) AS parish_name,
+            COALESCE(a.owner,'') AS owner, COALESCE(a.next_action,'') AS next_action, COALESCE(a.version,0) AS version
+          FROM stripe_events e LEFT JOIN stripe_payment_exception_assignments a ON a.event_id=e.id
+          WHERE e.id GLOB 'evt_*' AND (e.status='failed' OR (e.status='processing' AND e.received_at<?1))
+            AND (?2='' OR e.status=?2)
+            AND (?3='' OR instr(lower(e.id),?3)>0 OR instr(lower(e.event_type),?3)>0)
+            AND (?4='' OR (e.received_at,e.id) ${compare} (?4,?5))
+        )
+        SELECT * FROM eligible
+        WHERE ?6='' OR instr(lower(COALESCE(parish_id,'')),?6)>0 OR instr(lower(COALESCE(parish_name,'')),?6)>0
+        ORDER BY received_at ${order}, id ${order} LIMIT 51`,
+        cutoff,
+        statusFilter === 'stalled' ? 'processing' : statusFilter,
+        search,
+        cursorAt,
+        cursorId,
+        parish
       );
       return json(
         {
@@ -147,10 +220,15 @@ async function handleAdminAccountingOperations(request, env) {
             receivedAt: event.received_at,
             parishId: event.parish_id,
             parishName: event.parish_name || '',
+            owner: event.owner,
+            nextAction: event.next_action,
+            assignmentVersion: event.version,
+            canAssign: Boolean(admin.mfaVerifiedAt),
             canRetry: RETRYABLE_PAYMENT_EVENTS.has(event.event_type) && Boolean(admin.mfaVerifiedAt),
             ...paymentRecoveryGuidance(event.status, event.error_message),
           })),
           hasMore: events.length > 50,
+          nextCursor: events.length > 50 ? `${events[49].received_at}~${events[49].id}` : '',
         },
         response
       );

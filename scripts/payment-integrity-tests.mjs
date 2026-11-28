@@ -8,6 +8,7 @@ import { createFundAllocationResolver } from '../src/lib/fund-reporting.js';
 import { sendDonorDonationReceiptEmail } from '../src/handlers/donor.js';
 import { sendDonationReceiptMessage } from '../src/payments/donation-receipts.js';
 import { initializeLedger, stripeClearingValidation } from '../src/accounting/index.js';
+import { findStripePayoutLedgerAlerts } from '../src/accounting/integrations/service.js';
 import worker from '../src/worker.js';
 import { handleCheckout } from '../src/handlers/parish-checkout.js';
 import { memoryRateLimiter } from './lib/memory-rate-limiter.mjs';
@@ -248,6 +249,63 @@ try {
   console.log(
     'PASS - signed paid payout posts once to the mapped parish and ignores unrecognized accounts and mode mismatches'
   );
+
+  const connectDelivery = { account: 'acct_testpayout', livemode: false };
+  const returnedPayout = { ...payout, status: 'failed', failure_balance_transaction: 'txn_return' };
+  assert.equal(
+    (await findStripePayoutLedgerAlerts(payoutEnv.LEDGER_A, [returnedPayout])).alerts[0].code,
+    'returned_payout_unreversed'
+  );
+  const originalPayoutLines = postedLines(payoutEnv, 'stripe_payout_paid');
+  payoutEnv.LEDGER_A.sqlite.exec("UPDATE accounting_integration_settings SET default_bank_account_id='acct_1110'");
+  const returnDelivery = (id, object = returnedPayout) =>
+    deliver(payoutEnv, id, 'payout.failed', object, connectDelivery);
+  assert.equal((await returnDelivery('evt_payout_failed')).status, 200);
+  assert.equal((await (await returnDelivery('evt_payout_failed')).json()).duplicate, true);
+  assert.equal((await returnDelivery('evt_payout_failed_distinct')).status, 200);
+  assert.deepEqual(
+    postedLines(payoutEnv, 'stripe_payout_reversed'),
+    originalPayoutLines.map((line) => ({
+      ...line,
+      debit_amount: line.credit_amount,
+      credit_amount: line.debit_amount,
+    }))
+  );
+  const linkedReturn = payoutEnv.LEDGER_A.sqlite
+    .prepare(
+      `SELECT returned.balance_transaction_id, paid.payout_id
+       FROM accounting_integration_source_events returned
+       JOIN accounting_integration_source_events paid ON paid.id=returned.original_source_event_id
+       WHERE returned.source_type='stripe_payout_reversed' AND returned.status='posted'`
+    )
+    .get();
+  assert.equal(linkedReturn.payout_id, payout.id);
+  assert.equal(linkedReturn.balance_transaction_id, 'txn_return');
+  assert.deepEqual(await findStripePayoutLedgerAlerts(payoutEnv.LEDGER_A, [returnedPayout]), {
+    checked: 1,
+    alerts: [],
+  });
+
+  const nextPayout = { ...payout, id: 'po_failed_first' };
+  assert.equal((await returnDelivery('evt_payout_failed_first', { ...nextPayout, status: 'failed' })).status, 200);
+  assert.equal(
+    (await deliver(payoutEnv, 'evt_payout_paid_late', 'payout.paid', nextPayout, connectDelivery)).status,
+    200
+  );
+  const earlyReturn = payoutEnv.LEDGER_A.sqlite
+    .prepare(
+      'SELECT source_type,status,exception_code FROM accounting_integration_source_events WHERE payout_id=? ORDER BY source_type'
+    )
+    .all(nextPayout.id);
+  assert.deepEqual(
+    earlyReturn.map((row) => ({ ...row })),
+    [
+      { source_type: 'stripe_payout_paid', status: 'ignored', exception_code: null },
+      { source_type: 'stripe_payout_reversed', status: 'exception', exception_code: 'payout_return_unposted' },
+    ]
+  );
+  assert.deepEqual(postedLines(payoutEnv, 'stripe_payout_paid'), originalPayoutLines);
+  console.log('PASS - payout returns reverse the original mapping once and block late paid deliveries');
 
   const blockedFetch = globalThis.fetch;
   for (const receiptEnv of [{}, { AGAPAY_FROM_EMAIL: 'AGAPAY <onboarding@agapay.app>' }]) {

@@ -1,4 +1,29 @@
 // Generated from src/lib/stripe-connect.ts by npm run build:server. Do not edit.
+const REQUIRED_STRIPE_CONNECT_EVENTS = Object.freeze([
+  'account.updated',
+  'charge.dispute.closed',
+  'charge.dispute.created',
+  'charge.refunded',
+  'charge.succeeded',
+  'charge.updated',
+  'checkout.session.async_payment_failed',
+  'checkout.session.async_payment_succeeded',
+  'checkout.session.completed',
+  'checkout.session.expired',
+  'customer.subscription.deleted',
+  'customer.subscription.updated',
+  'invoice.paid',
+  'invoice.payment_action_required',
+  'invoice.payment_failed',
+  'invoice.payment_succeeded',
+  'payment_intent.canceled',
+  'payment_intent.payment_failed',
+  'payment_intent.succeeded',
+  'payout.canceled',
+  'payout.failed',
+  'payout.paid',
+  'refund.updated',
+]);
 import { monthLabel } from './format.js';
 import { estimateStripeAchFeeCents, estimateStripeProcessingFeeCents } from './payment-fees.js';
 import { classifyStripeCharge } from './payment-classification.js';
@@ -190,6 +215,7 @@ function summarizeCharges(charges) {
   };
 }
 export {
+  REQUIRED_STRIPE_CONNECT_EVENTS,
   booleanFromStripeMetadata,
   checkoutPaymentIntentId,
   listYtdStripeCharges,

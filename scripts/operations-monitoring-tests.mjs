@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { handleOperationsCanary, handleOperationsMonitorAlert } from '../src/operations/monitoring.js';
 import { recordScheduledHeartbeat } from '../src/operations/scheduled-heartbeats.js';
+import { REQUIRED_STRIPE_CONNECT_EVENTS } from '../src/lib/stripe-connect.js';
 
 const token = 'monitor-test-secret';
 const now = new Date().toISOString();
@@ -81,6 +82,39 @@ assert.deepEqual(runs[0].values.slice(0, 4), ['test', '* * * * *', 'completed', 
 
 const originalFetch = globalThis.fetch;
 try {
+  const endpointId = 'we_StageFixture';
+  const stripeRequest = new Request(`${authorized.url}?check=stripe-connect`, { headers: authorized.headers });
+  const stripeEnv = {
+    ...env,
+    STRIPE_SECRET_KEY: 'sk_test_fixture',
+    STRIPE_CONNECT_WEBHOOK_ENDPOINT_ID: endpointId,
+    AGAPAY_APP_URL: 'https://agapay.test',
+    AGAPAY_ENVIRONMENT: 'staging',
+  };
+  let stripeEndpoint = {
+    id: endpointId,
+    url: 'https://agapay.test/api/stripe/webhook',
+    status: 'enabled',
+    livemode: false,
+    enabled_events: REQUIRED_STRIPE_CONNECT_EVENTS,
+  };
+  globalThis.fetch = async (url) => {
+    assert.equal(url, `https://api.stripe.com/v1/webhook_endpoints/${endpointId}`);
+    return Response.json({ ...stripeEndpoint, secret: 'private-fixture' });
+  };
+  const stripeResult = await handleOperationsCanary(stripeRequest, stripeEnv);
+  assert.equal(stripeResult.status, 200);
+  assert.deepEqual(await stripeResult.json(), { ok: true, expectedDestination: true, missingEvents: [] });
+  stripeEndpoint = {
+    ...stripeEndpoint,
+    enabled_events: REQUIRED_STRIPE_CONNECT_EVENTS.filter((e) => e !== 'payout.failed'),
+  };
+  const drift = await handleOperationsCanary(stripeRequest, stripeEnv);
+  assert.equal(drift.status, 503);
+  assert.deepEqual(await drift.json(), { ok: false, expectedDestination: true, missingEvents: ['payout.failed'] });
+  stripeEndpoint = { ...stripeEndpoint, livemode: true, enabled_events: REQUIRED_STRIPE_CONNECT_EVENTS };
+  assert.equal((await handleOperationsCanary(stripeRequest, stripeEnv)).status, 503);
+  assert.equal((await handleOperationsCanary(new Request(stripeRequest.url), stripeEnv)).status, 401);
   globalThis.fetch = async () => Response.json({ id: 'email-1' });
   const alert = await handleOperationsMonitorAlert(
     new Request('https://agapay.test/api/operations/monitor-alert', {

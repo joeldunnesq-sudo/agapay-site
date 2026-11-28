@@ -2,6 +2,31 @@ import type { StripeChargeClassificationInput } from './payment-classification.j
 export interface StripeRequestEnv {
   readonly STRIPE_SECRET_KEY?: string | null;
 }
+export const REQUIRED_STRIPE_CONNECT_EVENTS = Object.freeze([
+  'account.updated',
+  'charge.dispute.closed',
+  'charge.dispute.created',
+  'charge.refunded',
+  'charge.succeeded',
+  'charge.updated',
+  'checkout.session.async_payment_failed',
+  'checkout.session.async_payment_succeeded',
+  'checkout.session.completed',
+  'checkout.session.expired',
+  'customer.subscription.deleted',
+  'customer.subscription.updated',
+  'invoice.paid',
+  'invoice.payment_action_required',
+  'invoice.payment_failed',
+  'invoice.payment_succeeded',
+  'payment_intent.canceled',
+  'payment_intent.payment_failed',
+  'payment_intent.succeeded',
+  'payout.canceled',
+  'payout.failed',
+  'payout.paid',
+  'refund.updated',
+]);
 // Stripe JSON is described at the transport boundary; this is not runtime validation.
 export interface StripeResponseBody {
   [field: string]: unknown;
