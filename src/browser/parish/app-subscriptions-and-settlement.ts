@@ -708,13 +708,13 @@ function renderSubscriptionPanel() {
           ${statusChip(stripeConnected ? 'Stripe connected' : 'Stripe not connected', stripeConnected)}
           ${pricingUsage.upgradeRequired ? statusChip('Household band update needed', false) : ''}
         </div>
-        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings');selectParishSettings('billing')">${demoActive ? 'Add billing details or manage demo' : ent.parishPlusIncludedInTier ? 'Manage subscription' : 'Explore upgrade options'}<span aria-hidden="true">→</span></button>
+        <button class="pdx-sub-plan-action" type="button" onclick="switchTab('settings');selectParishSettings('billing')">${demoActive ? 'Add billing details or manage demo' : 'Manage subscription'}<span aria-hidden="true">→</span></button>
       </div>
       <div class="pdx-sub-modules">
         <div class="pdx-sub-modules-head"><div><span>Plan access</span><strong>Included parish tools</strong></div><button type="button" onclick="switchTab('settings');selectParishSettings('billing')">Compare tiers</button></div>
         <div class="pdx-sub-module-grid">
           ${moduleRow('Give +', 'givingPlus', 'Campaigns, branding, and annual statements', 'Give +')}
-          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Pledges, insights, and stewardship reporting', 'Give +')}
+          ${moduleRow('Stewardship Health', 'stewardshipHealth', 'Giving insights and stewardship reports', 'Give +')}
           ${moduleRow('Bookstore', 'bookstore', 'Parish commerce and Stripe-powered sales', 'Give +')}
           ${moduleRow('Parish Directory', 'directory', 'Member, household, and ministry records', 'Give +')}
           ${moduleRow('Sacraments & Services', 'sacraments', 'Pastoral requests and clergy coordination', 'Sacraments add-on')}
@@ -724,6 +724,9 @@ function renderSubscriptionPanel() {
 }
 
 function updateTierScopedNavigation() {
+  const planTools = document.getElementById('sidebarPlanTools');
+  if (planTools) planTools.hidden = currentParish?.subscriptionTier !== 'starter';
+  syncTierRequirementNavigation('communications', 'Give +', moduleIncluded('communications'));
   const stewardshipIncluded = moduleIncluded('stewardshipHealth');
   const directoryActive = moduleIncluded('directory');
   const accountingIncluded = moduleIncluded('accounting');
@@ -781,6 +784,8 @@ function orderTierNavigation() {
       if (mobile && mobileItem) mobile.appendChild(mobileItem);
     });
   });
+  const planTools = document.getElementById('sidebarPlanTools');
+  if (sidebar && planTools) sidebar.insertBefore(planTools, document.getElementById('nav-tier-giving-plus'));
   const settings = document.getElementById('nav-settings');
   if (sidebar && settings) sidebar.appendChild(settings);
   const mobileSettings = document.querySelector<HTMLElement>('.mobile-tab-link[data-nav-tab="settings"]');

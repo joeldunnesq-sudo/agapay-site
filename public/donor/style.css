@@ -10621,3 +10621,46 @@ html:not([data-parish-capabilities-loaded="true"]) [data-parish-life-link],
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.myagapay-giving-dashboard .metric-year { isolation: isolate; }
+.myagapay-giving-dashboard .metric-year > :not(.summary-watermark) { position: relative; z-index: 1; }
+.myagapay-giving-dashboard .metric-year .summary-watermark {
+  right: 0;
+  top: 50%;
+  width: clamp(54px, 18vw, 78px);
+  height: auto;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  opacity: 0.14;
+  pointer-events: none;
+}
+[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"] {
+  background: #eeece7 !important;
+  border-color: #d3d0c9 !important;
+  color: #555c60 !important;
+  box-shadow: none;
+  cursor: default;
+}
+[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"] :is(svg,strong,h3,span,p) { color: inherit; }
+[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"]::after {
+  content: attr(data-campaign-unavailable);
+  color: #fff;
+  background: #606568;
+}
+.quick-give-tile[data-campaign-unavailable].giving-tier-locked[aria-disabled="true"]::after {
+  position: static;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: 8px;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.parish-life-inbox-recovery {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 10px 14px; font-size: 12px; color: var(--k-muted);
+  border-top: 1px solid var(--k-divider);
+}
+.parish-life-inbox-recovery button { min-height: 36px; }

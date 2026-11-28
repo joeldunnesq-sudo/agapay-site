@@ -14,6 +14,7 @@ import {
   stripePaymentIntentIndexKey,
 } from '../lib/core.js';
 import { givingContribution } from '../lib/giving-contributions.js';
+import { addOutsideDonorPledgeSummary } from '../lib/pledge-report-reads.js';
 import { offeringFeeBreakdown } from '../lib/stripe-fees.js';
 import {
   booleanFromStripeMetadata,
@@ -484,8 +485,40 @@ async function loadReconciledDonorCommemorations(env, email, offerings = null, l
   await repairMissingDonorCommemorationsFromOfferings(env, email, donorOfferings);
   return loadDonorCommemorations(env, email, limit);
 }
-function donorSummaryFromOfferings(offerings, commemorations = []) {
-  const now = /* @__PURE__ */ new Date();
+async function summarizeDonorGiving(env, donor, offerings, commemorations, now = /* @__PURE__ */ new Date()) {
+  const parishId = String(donor.defaultParishId || '').trim();
+  const year = now.getUTCFullYear();
+  let pledgeOfferings = [];
+  if (parishId && env.AGAPAY_DB) {
+    const rows = await d1All(
+      env,
+      'SELECT data, created_at FROM donor_offerings WHERE donor_email = ?1 AND parish_id = ?2 AND created_at >= ?3 AND created_at < ?4',
+      normalizeEmail(donor.email),
+      parishId,
+      `${year}-01-01`,
+      `${year + 1}-01-01`
+    );
+    pledgeOfferings = rows.flatMap((row) => {
+      const offering = parseJsonRow(row);
+      return offering ? [{ ...offering, parishId, createdAt: offering.createdAt || row.created_at }] : [];
+    });
+  } else if (parishId) {
+    const history = await loadDonorOfferings(env, normalizeEmail(donor.email), Infinity);
+    const recentById = new Map(offerings.map((offering) => [offering.id, offering]));
+    pledgeOfferings = history.map((offering) => recentById.get(offering.id) || offering);
+  }
+  return addOutsideDonorPledgeSummary(
+    env,
+    donor,
+    donorSummaryFromOfferings(offerings, commemorations, { parishId, pledgeOfferings, now }),
+    now
+  );
+}
+function donorSummaryFromOfferings(
+  offerings,
+  commemorations = [],
+  { parishId = '', pledgeOfferings = offerings, now = /* @__PURE__ */ new Date() } = {}
+) {
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
@@ -497,7 +530,15 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
   const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
   const isStewardshipOffering = (item) =>
     ['stewardship', 'general'].includes(String(item.giftType || 'stewardship').toLowerCase());
-  const stewardshipPaid = paid.filter(isStewardshipOffering);
+  const stewardshipPaid = parishId
+    ? pledgeOfferings.filter(
+        (item) =>
+          item.parishId === parishId &&
+          new Date(item.createdAt || 0).getUTCFullYear() === year &&
+          paidOfferingStatus(item) &&
+          isStewardshipOffering(item)
+      )
+    : [];
   const stewardshipYtdCents = stewardshipPaid.reduce(
     (sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents,
     0
@@ -575,6 +616,7 @@ export {
   storeDonorOffering,
   stripeObjectMetadata,
   stripePaymentIntentFinancialUpdates,
+  summarizeDonorGiving,
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
 };

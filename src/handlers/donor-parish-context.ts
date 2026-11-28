@@ -26,7 +26,7 @@ import {
   hasModuleAccess,
   prayerRequestsEnabledFor,
   signupsEnabledFor,
-  stewardshipToolAccess,
+  givingFeatureAccess,
 } from '../lib/entitlements.js';
 import { parishLifeAvailableFor } from '../lib/parish-life-access.js';
 import { parishLifeExperienceFor } from '../lib/parish-life-experience.js';
@@ -59,7 +59,7 @@ export async function loadDonorParishContext(
         parish.prayerRequestsEnabled = prayerRequestsEnabledFor(found.registration);
         parish.parishLifeLabel = parishLifeExperience.label;
         parish.parishLifeAvailable = parishLifeAvailableFor(env);
-        parish.pledgeTrackerEnabled = stewardshipToolAccess(found.registration);
+        parish.pledgeTrackerEnabled = givingFeatureAccess(found.registration, 'pledgeTracking');
       }
     }
   }

@@ -97,7 +97,7 @@ async function renderQrCode(): Promise<void> {
   if (!url || typeof qrcode === 'undefined') {
     targets.forEach((t) => {
       t.innerHTML =
-        '<span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>';
+        `<span class="pdx-qr-placeholder">${url ? 'QR unavailable' : 'QR pending'}</span>`;
     });
     currentQrSvg = '';
     return;

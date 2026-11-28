@@ -6,6 +6,12 @@ function setDashboardBootMessage(title, message) {
   if (titleEl && title) titleEl.textContent = title;
   if (messageEl && message) messageEl.textContent = message;
 }
+function openParishSections() {
+  const dialog = document.getElementById('parishSectionsDialog');
+  if (!dialog || dialog.open) return;
+  dialog.showModal();
+  dialog.querySelector('[aria-current="page"]:not([hidden])')?.focus();
+}
 function finishDashboardBoot() {
   document.body.classList.remove('dashboard-booting', 'dashboard-load-failed');
   document.body.classList.add('dashboard-ready');
@@ -94,7 +100,14 @@ async function loadDashboardInner(btn) {
           : new URLSearchParams(window.location.search).get('message') || 'Google Calendar could not be connected.',
         googleCalendarResult === 'connected' ? 'success' : 'error'
       );
-      window.history.replaceState({}, '', '/parish/dashboard');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('googleCalendar');
+      url.searchParams.delete('message');
+      url.searchParams.set('tab', 'sacraments');
+      window.history.replaceState(null, '', url);
+    } else if (initialLoad) {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab && document.getElementById('nav-' + tab)) switchTab(tab);
     }
     parishFeatureRequests = data.featureRequests || [];
     showParishFeatureRequestPopup(data.featureRequests || []);
@@ -122,3 +135,10 @@ async function loadDashboardInner(btn) {
     }
   }
 }
+window.addEventListener('popstate', () => {
+  if (!currentParish) return;
+  const tab = new URLSearchParams(window.location.search).get('tab') || 'giving';
+  const available = document.getElementById('nav-' + tab);
+  if (available && !available.hidden) switchTab(tab, false);
+  else if (activeTab !== 'giving') switchTab('giving', false);
+});

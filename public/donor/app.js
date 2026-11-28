@@ -355,7 +355,11 @@ function parishCanUseGiftType(parish, value) {
       (parish?.funds || []).some((fund) => fund && !isGeneralDonorFund(fund) && !isCandleDonorFund(fund))
     );
   }
-  return parishHasGivingPlus(parish) && ['commemoration', 'campaign', 'feast'].includes(giftType);
+  if (giftType === 'commemoration') return Boolean(parish?.commemorationsEnabled);
+  return (
+    parishHasGivingPlus(parish) &&
+    (giftType === 'feast' || (giftType === 'campaign' && activeParishCampaigns(parish).length > 0))
+  );
 }
 function ensureGivingPlusPaywall() {
   let dialog = document.getElementById('givingPlusPaywall');
@@ -368,7 +372,7 @@ function ensureGivingPlusPaywall() {
       <button class="giving-plus-paywall-close" type="button" aria-label="Close" onclick="closeGivingPlusPaywall()">×</button>
       <span class="giving-plus-paywall-badge">Give + feature</span>
       <h2 id="givingPlusPaywallTitle">Help your parish offer more ways to give</h2>
-      <p id="givingPlusPaywallCopy">Give includes a General Operating Fund, one designated fund, and candles. Give + unlocks unlimited funds, campaigns, commemorations, and festal alms.</p>
+      <p id="givingPlusPaywallCopy">Give includes unlimited designated funds, candles, and memorials. Give + adds campaigns and festal alms.</p>
       <div class="giving-plus-paywall-actions">
         <button class="btn btn-ghost" type="button" onclick="closeGivingPlusPaywall()">Not now</button>
         <button class="btn btn-gold" id="givingPlusEncourageButton" type="button" onclick="requestParishGivingPlusUpgrade(this)">Encourage my parish</button>
@@ -397,10 +401,10 @@ function openGivingPlusPaywall(event, parish, giftType = '') {
   const label = donorGiftTypeCopy[normalizeDonorGiftType(giftType)]?.detailsTitle || 'This giving option';
   const copy = document.getElementById('givingPlusPaywallCopy');
   if (copy) {
-    const starterOption = ['fund', 'candles'].includes(normalizeDonorGiftType(giftType));
+    const starterOption = ['fund', 'candles', 'commemoration'].includes(normalizeDonorGiftType(giftType));
     copy.textContent = starterOption
       ? `${selectedParish?.name || 'This parish'} can offer ${label.toLowerCase()} on Give, but this option has not been configured or is currently paused.`
-      : `${label} is available with Give +. Give includes General Operating, one designated fund, and candle giving.`;
+      : `${label} is available with Give +. Give includes unlimited designated funds, candles, and memorials.`;
   }
   if (status)
     status.textContent = selectedParish
@@ -453,6 +457,9 @@ function updateGivingTierTiles(parish) {
   document.querySelectorAll('[data-giving-plus-gift]').forEach((tile) => {
     const giftType = tile.getAttribute('data-giving-plus-gift') || '';
     const allowed = parishCanUseGiftType(parish, giftType);
+    const noCampaigns = giftType === 'campaign' && !allowed;
+    if (noCampaigns) tile.setAttribute('data-campaign-unavailable', 'None open');
+    else tile.removeAttribute('data-campaign-unavailable');
     tile.classList.remove('giving-tier-loading');
     tile.classList.toggle('giving-tier-locked', !allowed);
     tile.removeAttribute('aria-busy');
@@ -462,8 +469,17 @@ function updateGivingTierTiles(parish) {
       'aria-label',
       !allowed ? `${tile.textContent.trim()} — not currently available` : tile.textContent.trim()
     );
-    tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
-    tile.onclick = allowed ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    if (noCampaigns) {
+      tile.setAttribute('aria-disabled', 'true');
+      tile.setAttribute('role', 'link');
+      tile.setAttribute('aria-label', `${tile.textContent.trim()} — no open campaigns`);
+      tile.removeAttribute('href');
+      tile.onclick = null;
+    } else {
+      tile.removeAttribute('role');
+      tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
+      tile.onclick = allowed ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    }
   });
 }
 function markDonorGiftAmountEdited() {
@@ -568,8 +584,14 @@ function updateQuickGiveLinks(parish, { syncGivingTier = true } = {}) {
 function activeParishCampaigns(parish) {
   const campaigns = Array.isArray(parish?.campaigns) ? parish.campaigns : [];
   return campaigns.filter((campaign) => {
-    const status = String(campaign?.status || (campaign?.enabled === false ? 'hidden' : 'active')).toLowerCase();
-    return campaign && !['hidden', 'paused', 'cancelled', 'ended', 'inactive'].includes(status);
+    const status = String(campaign?.status || 'active').toLowerCase();
+    return (
+      campaign &&
+      campaign.active !== false &&
+      campaign.enabled !== false &&
+      campaign.hidden !== true &&
+      ['active', 'published', 'open'].includes(status)
+    );
   });
 }
 function activeParishFeastCampaigns(parish) {
@@ -726,7 +748,7 @@ function renderActiveCampaigns(parish, { confirmed = false } = {}) {
   ].filter(truthyDonor);
   if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
-  document.querySelectorAll('[data-hide-empty-campaigns]').forEach((section) => {
+  document.querySelectorAll('section[data-hide-empty-campaigns]').forEach((section) => {
     section.hidden = !campaign;
   });
   if (!campaign) {
@@ -2068,7 +2090,7 @@ async function startDonorCheckout(event) {
   const parish = (window.agapayPublicParishes || []).find(
     (item) => item.id === document.getElementById('parish')?.value
   );
-  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(normalizedGiftType)) {
+  if (isGivingPlusGiftType(normalizedGiftType) && !parishCanUseGiftType(parish, normalizedGiftType)) {
     openGivingPlusPaywall(null, parish, normalizedGiftType);
     return;
   }

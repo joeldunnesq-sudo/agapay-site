@@ -312,6 +312,7 @@ function selectParishSettings(section: string) {
 
 // ── RENDER DASHBOARD ──────────────────────────────────────
 function renderDashboard(preserveSettings = false) {
+  document.querySelector('.app')?.classList.toggle('give-dashboard', currentParish?.subscriptionTier === 'starter');
   const editingSettings = window.ParishSettings?.state();
   if (editingSettings?.dirty || editingSettings?.pending) preserveSettings = true;
   const p = currentParish!;
@@ -339,7 +340,7 @@ function renderDashboard(preserveSettings = false) {
   (document.getElementById('sidebarPublicLink') as HTMLAnchorElement | null)!.href = dedicatedGivingUrl();
   const embedPreviewLink = document.getElementById('givingEmbedPreviewLink') as HTMLAnchorElement | null;
   if (embedPreviewLink) embedPreviewLink.href = dedicatedGivingEmbedUrl();
-  document.getElementById('topbarTitle')!.textContent = p.parishName || 'Parish Dashboard';
+  if (activeTab === 'giving') document.getElementById('topbarTitle')!.textContent = 'Giving Overview';
   syncTopbarTabIcon(activeTab);
   const commIcon = document.getElementById('commemorationCommunityIcon');
   if (commIcon) commIcon.innerHTML = communityMarkIcon(p);

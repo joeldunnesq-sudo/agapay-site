@@ -26,7 +26,7 @@ declare const writeDonorCache: DonorAppBindings['writeDonorCache'];
 declare const clearDonorSession: DonorAppBindings['clearDonorSession'];
 declare const setDonorStatus: DonorAppBindings['setDonorStatus'];
 declare const normalizeDonorGiftType: DonorAppBindings['normalizeDonorGiftType'];
-declare const parishHasGivingPlus: DonorAppBindings['parishHasGivingPlus'];
+declare const parishCanUseGiftType: DonorAppBindings['parishCanUseGiftType'];
 declare const isGivingPlusGiftType: DonorAppBindings['isGivingPlusGiftType'];
 declare const openGivingPlusPaywall: DonorAppBindings['openGivingPlusPaywall'];
 declare const selectedCampaign: DonorAppBindings['selectedCampaign'];
@@ -369,7 +369,7 @@ async function startDonorCheckout(event: Event) {
       item.id ===
       (document.getElementById('parish') as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value
   );
-  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(normalizedGiftType)) {
+  if (isGivingPlusGiftType(normalizedGiftType) && !parishCanUseGiftType(parish, normalizedGiftType)) {
     openGivingPlusPaywall(null, parish, normalizedGiftType);
     return;
   }

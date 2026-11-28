@@ -59,6 +59,7 @@ interface ParishLifeItem {
   role?: string;
 }
 interface ParishLifePayload {
+  available?: boolean;
   announcements?: ParishLifeItem[];
   posts?: ParishLifeItem[];
   youtube?: ParishLifeItem[];
@@ -364,9 +365,12 @@ function parishLifeInboxDate(value: unknown) {
 
 let parishLifeInboxCelebrationState: DonorCalendarCelebrations = { items: [] };
 
+let inboxFeed: ParishLifePayload | null = null;
+let inboxSignups: ParishLifePayload | null = null;
+
 function renderCommunityInbox(
-  feed: ParishLifePayload = {},
-  signupPayload: ParishLifePayload = {},
+  feed: ParishLifePayload | null,
+  signupPayload: ParishLifePayload | null,
   celebrationPayload: DonorCalendarCelebrations | null = null
 ) {
   const target = document.getElementById('parishLifeCommunityInbox') as HTMLElement;
@@ -377,18 +381,27 @@ function renderCommunityInbox(
     };
   }
   const celebrationHtml = parishLifeInboxCelebrationsHtml(parishLifeInboxCelebrationState);
-  const signupActions = (signupPayload.actions || []).slice(0, 4);
-  const announcements = (feed.announcements || [])
-    .filter((item) => item.status === 'published' && item.pinned === true && !item.read)
+  inboxFeed = feed?.available !== false && Array.isArray(feed?.announcements) ? feed : null;
+  inboxSignups = Array.isArray(signupPayload?.actions) ? signupPayload : null;
+  const unreadAnnouncements = (inboxFeed?.announcements || [])
+    .filter((item) => item.status === 'published' && !item.read)
     .sort(
       (left, right) =>
-        (new Date(right.publishedAt || right.createdAt || 0) as Date & number) -
-        (new Date(left.publishedAt || left.createdAt || 0) as Date & number)
-    )
-    .slice(0, Math.max(0, 4 - signupActions.length));
-  const actionCount = signupActions.length + announcements.length;
+        Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) ||
+        new Date(right.publishedAt || right.createdAt || 0).getTime() -
+          new Date(left.publishedAt || left.createdAt || 0).getTime()
+    );
+  const allSignupActions = inboxSignups?.actions || [];
+  const signupActions = allSignupActions.slice(0, unreadAnnouncements.length ? 2 : 4);
+  const announcements = unreadAnnouncements.slice(0, 4 - signupActions.length);
+  const actionCount =
+    allSignupActions.length + Math.max(unreadAnnouncements.length, Number(inboxFeed?.unreadCount) || 0);
+  const unavailable = [!inboxFeed && 'Announcements', !inboxSignups && 'Signups'].filter(Boolean);
+  const recovery = unavailable.length
+    ? `<div class="parish-life-inbox-recovery" role="status"><span>${unavailable.join(' and ')} temporarily unavailable.</span><button type="button" class="parish-life-inbox-action" onclick="location.reload()">Retry</button></div>`
+    : '';
   if (!actionCount) {
-    target.innerHTML = `<div class="parish-life-inbox-head is-caught-up"><span class="parish-life-inbox-symbol" aria-hidden="true">✓</span><span><strong id="communityInboxHeading">Parish Today</strong><p>You’re all caught up on parish updates.</p></span><a href="/myagapay/feed">Open inbox →</a></div>${celebrationHtml}`;
+    target.innerHTML = `<div class="parish-life-inbox-head ${unavailable.length ? 'is-unavailable' : 'is-caught-up'}"><span class="parish-life-inbox-symbol" aria-hidden="true">${unavailable.length ? '!' : '✓'}</span><span><strong id="communityInboxHeading">Parish Today</strong><p>${unavailable.length ? 'Some updates couldn’t load.' : 'You’re all caught up on parish updates.'}</p></span><a href="/myagapay/feed">Open inbox →</a></div>${recovery}${celebrationHtml}`;
     return;
   }
   const signupRows = signupActions
@@ -406,7 +419,7 @@ function renderCommunityInbox(
     .map(
       (item) => `<article class="parish-life-inbox-item" data-community-action>
     <span class="parish-life-inbox-item-icon is-announcement" aria-hidden="true">!</span>
-    <span class="parish-life-inbox-item-copy"><strong>${parishLifeEscape(item.title)}</strong><small>Important parish announcement · ${parishLifeEscape(parishLifeDate(item.publishedAt || item.createdAt))}</small></span>
+    <span class="parish-life-inbox-item-copy"><strong>${parishLifeEscape(item.title)}</strong><small>${item.pinned ? 'Pinned announcement' : 'Unread announcement'} · ${parishLifeEscape(parishLifeDate(item.publishedAt || item.createdAt))}</small></span>
     <a class="parish-life-inbox-action" href="/myagapay/feed#${encodeURIComponent(item.id!)}">Review</a>
   </article>`
     )
@@ -417,7 +430,7 @@ function renderCommunityInbox(
       <span><strong id="communityInboxHeading">Parish Today</strong><p><b data-community-action-count>${actionCount}</b> ${actionCount === 1 ? 'thing needs' : 'things need'} your attention</p></span>
       <em aria-hidden="true">⌃</em>
     </button>
-    <div class="parish-life-inbox-list">${signupRows}${announcementRows}<a class="parish-life-inbox-footer" href="/myagapay/feed">Open Community Inbox <span data-parish-life-unread hidden>0</span> →</a></div>${celebrationHtml}`;
+    <div class="parish-life-inbox-list">${signupRows}${announcementRows}<a class="parish-life-inbox-footer" href="/myagapay/feed">Open Community Inbox <span data-parish-life-unread hidden>0</span> →</a></div>${recovery}${celebrationHtml}`;
 }
 
 function toggleParishLifeInbox(button: HTMLButtonElement) {
@@ -451,16 +464,12 @@ async function resolveParishLifeInboxAction(button: HTMLButtonElement) {
     if (window.MyAgapayShell?.handleUnauthorized(response)) return;
     const data = await (response.json().catch(() => ({})) as Promise<ParishLifePayload>);
     if (!response.ok) throw new Error(data.error || 'This action is no longer available.');
-    const row = button.closest<HTMLElement>('[data-community-action]')!;
-    row?.remove();
-    const target = document.getElementById('parishLifeCommunityInbox') as HTMLElement;
-    const remaining = target?.querySelectorAll<HTMLElement>('[data-community-action]').length || 0;
-    const count = target?.querySelector<HTMLElement>('[data-community-action-count]');
-    if (count) count.textContent = String(remaining);
-    const summary = target?.querySelector<HTMLElement>('.parish-life-inbox-head p');
-    if (summary)
-      summary.innerHTML = `<b data-community-action-count>${remaining}</b> ${remaining === 1 ? 'thing needs' : 'things need'} your attention`;
-    if (!remaining && target) renderCommunityInbox({}, {});
+    if (inboxSignups) {
+      renderCommunityInbox(inboxFeed, {
+        ...inboxSignups,
+        actions: (inboxSignups.actions || []).filter((item) => item.kind !== kind || String(item.id) !== id),
+      });
+    }
   } catch (error) {
     button.disabled = false;
     button.textContent = previous;
@@ -1037,7 +1046,7 @@ async function loadParishLife() {
         : Promise.resolve();
     const signupPayloadPromise =
       hasKoinoniaAccess && parish?.signupsEnabled
-        ? parishLifeFetch('/api/donor/koinonia/signups/upcoming', headers)
+        ? parishLifeFetch('/api/donor/koinonia/signups/upcoming', headers).catch(() => null)
         : Promise.resolve({ signups: [], actions: [] });
     const calendarPromise = Promise.all([
       parishLifeFetch('/api/donor/parish-calendar', headers),
@@ -1090,12 +1099,12 @@ async function loadParishLife() {
       milestones: { items: [] },
     }));
     const feedPromise = Promise.all([
-      parishLifeFetch('/api/donor/feed', headers),
+      parishLifeFetch('/api/donor/feed', headers).catch(() => null),
       signupPayloadPromise,
       celebrationsPromise,
     ]).then(([feed, signupPayload, celebrations]) => {
-      renderCommunityInbox(feed || {}, signupPayload || {}, celebrations?.milestones || {});
-      window.MyAgapayShell?.setFeedUnreadCount(Math.max(0, Number(feed?.unreadCount) || 0));
+      renderCommunityInbox(feed, signupPayload, celebrations?.milestones || null);
+      if (inboxFeed) window.MyAgapayShell?.setFeedUnreadCount(Math.max(0, Number(inboxFeed.unreadCount) || 0));
     });
     const groupsPromise = parishLifeFetch('/api/donor/groups', headers).then((groups) => {
       renderMinistries(groups || {});

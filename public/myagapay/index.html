@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=6e4afa18e40fd5a5" />
+  <link rel="stylesheet" href="/donor/style.css?v=63bb86de51320659" />
   <script src="/liturgical-calendar.js?v=87b139e0c72b838d"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
@@ -18,9 +18,9 @@
   <script src="/donor/controllers/calendar.js?v=926b8dcf09dabf64" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0fcb331d33fa2cd0" defer></script>
-  <script src="/donor/app.js?v=17ce26471eed7d44" defer></script>
-  <link rel="stylesheet" href="/myagapay/app-header.css?v=e452d1faec391a7d" />
-  <script src="/myagapay/app-header.js?v=3bf588a285b1b366" defer></script>
+  <script src="/donor/app.js?v=14b32ce0c9015a4c" defer></script>
+  <link rel="stylesheet" href="/myagapay/app-header.css?v=81a1bc73669bf3de" />
+  <script src="/myagapay/app-header.js?v=e2786f7dad977d6b" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
@@ -70,11 +70,9 @@
           <img src="/mark.png" alt="" aria-hidden="true" />
           <span>
             <strong class="topbar-title" id="donorUtilityTitle">My AGAPAY</strong>
-            <small id="donorUtilityTagline">Giving</small>
           </span>
         </div>
         <div class="topbar-actions">
-          <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving/give">Make Offering</a>
           <div class="donor-home-account-menu" data-donor-account-menu data-auth-required hidden>
             <button class="donor-home-account-chip myagapay-menu-trigger" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false" aria-label="Open My AGAPAY menu">
               <span class="myagapay-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -130,11 +128,8 @@
               </div>
             </div>
             <div class="pledge-locked-state desktop-pledge-inner" id="desktopPledgeLockedState" hidden>
-              <span class="pledge-lock-badge">Stewardship feature</span>
-              <h2>Your pledge progress could appear here</h2>
-              <p>Annual pledge tracking is available when your parish adopts the Stewardship tier. Let parish leadership know this would help you.</p>
-              <button class="pledge-encourage-btn" type="button" onclick="requestParishStewardshipUpgrade(this)">Encourage my parish</button>
-              <span class="pledge-request-status" data-pledge-request-status aria-live="polite"></span>
+            <h2>Pledge tracking is unavailable</h2>
+            <p>Check your home parish in Account to see your pledge progress.</p>
             </div>
           </div>
 
@@ -143,7 +138,7 @@
             <div class="summary-metrics-row">
               <div class="summary-metric"><span>This month</span><strong id="desktopMetricMonth">$0</strong></div>
               <div class="summary-divider"></div>
-              <div class="summary-metric"><span>This year</span><strong id="desktopMetricYtd">$0</strong></div>
+              <div class="summary-metric metric-year"><span>This year</span><strong id="desktopMetricYtd">$0</strong><img class="summary-watermark" src="/mark.png" alt="" /></div>
             </div>
           </section>
         </div>
@@ -158,8 +153,23 @@
               <a class="desktop-quick-card" id="desktopQuickCandle" data-giving-plus-gift="candles" href="/myagapay/giving/give?quick=1&giftType=candles"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span><strong>Candle</strong><span>Offer candles and intentions</span></a>
               <a class="desktop-quick-card" id="desktopQuickMemorial" data-giving-plus-gift="commemoration" href="/myagapay/giving/give?quick=1&giftType=commemoration"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span><strong>Memorial</strong><span>Liturgical prayer or a special service</span></a>
               <a class="desktop-quick-card" id="desktopQuickFeast" data-giving-plus-gift="feast" href="/myagapay/giving/give?quick=1&giftType=feast"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span><strong>Festal Alms</strong><span>For the poor and needy</span></a>
-              <a class="desktop-quick-card" id="desktopQuickCampaigns" data-hide-empty-campaigns hidden data-giving-plus-gift="campaign" href="/myagapay/giving/give?quick=1&giftType=campaign"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 25s9-4.8 9-11.2V6.5L14 3 5 6.5v7.3C5 20.2 14 25 14 25z"/></svg></span><strong>Campaigns</strong><span>Support active parish appeals</span></a>
+              <a class="desktop-quick-card" id="desktopQuickCampaigns" data-giving-plus-gift="campaign" href="/myagapay/giving/give?quick=1&giftType=campaign"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 25s9-4.8 9-11.2V6.5L14 3 5 6.5v7.3C5 20.2 14 25 14 25z"/></svg></span><strong>Campaigns</strong><span>Support active parish appeals</span></a>
             </div>
+          </section>
+
+          <section class="desktop-panel giving-festal-section">
+            <div class="desktop-panel-head">
+              <h2>Next Festal Offering</h2>
+            </div>
+            <article class="next-feast-card">
+              <div class="giving-feast-icon" id="desktopNextFeastIcon" role="img" hidden></div>
+              <div>
+                <span class="feast-kicker" id="desktopNextFeastCalendar">Upcoming feast</span>
+                <h3 id="desktopNextFeastName">Loading parish feast…</h3>
+                <p id="desktopNextFeastDate">Checking your parish calendar.</p>
+              </div>
+              <a id="desktopNextFeastLink" href="/myagapay/giving/calendar">View calendar</a>
+            </article>
           </section>
 
           <section class="desktop-panel giving-funds-section">
@@ -189,20 +199,6 @@
             </a>
           </section>
 
-          <section class="desktop-panel giving-festal-section">
-            <div class="desktop-panel-head">
-              <h2>Next Festal Offering</h2>
-            </div>
-            <article class="next-feast-card">
-              <div class="giving-feast-icon" id="desktopNextFeastIcon" role="img" hidden></div>
-              <div>
-                <span class="feast-kicker" id="desktopNextFeastCalendar">Upcoming feast</span>
-                <h3 id="desktopNextFeastName">Loading parish feast…</h3>
-                <p id="desktopNextFeastDate">Checking your parish calendar.</p>
-              </div>
-              <a id="desktopNextFeastLink" href="/myagapay/giving/calendar">View calendar</a>
-            </article>
-          </section>
 
         </div>
       </section>
@@ -249,11 +245,8 @@
             </div>
           </div>
           <div class="pledge-locked-state" id="pledgeLockedState" hidden>
-            <span class="pledge-lock-badge">Stewardship feature</span>
-            <h2>Your pledge progress could appear here</h2>
-            <p>Annual pledge tracking is available when your parish adopts the Stewardship tier.</p>
-            <button class="pledge-encourage-btn" type="button" onclick="requestParishStewardshipUpgrade(this)">Encourage my parish</button>
-            <span class="pledge-request-status" data-pledge-request-status aria-live="polite"></span>
+            <h2>Pledge tracking is unavailable</h2>
+            <p>Check your home parish in Account to see your pledge progress.</p>
           </div>
         </section>
 
@@ -265,9 +258,9 @@
               <strong id="metricMonth">$0</strong>
             </div>
             <div class="summary-divider"></div>
-            <div class="summary-metric">
+            <div class="summary-metric metric-year">
               <span>This year</span>
-              <strong id="metricYtd">$0</strong>
+              <strong id="metricYtd">$0</strong><img class="summary-watermark" src="/mark.png" alt="" />
             </div>
           </div>
         </section>
@@ -293,11 +286,26 @@
               <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span>
               <span>Festal Alms</span>
             </a>
-            <a class="quick-give-tile" id="quickGiveCampaigns" data-hide-empty-campaigns hidden data-giving-plus-gift="campaign" href="/myagapay/giving/give?quick=1&giftType=campaign">
+            <a class="quick-give-tile" id="quickGiveCampaigns" data-giving-plus-gift="campaign" href="/myagapay/giving/give?quick=1&giftType=campaign">
               <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 25s9-4.8 9-11.2V6.5L14 3 5 6.5v7.3C5 20.2 14 25 14 25z"/></svg></span>
               <span>Campaigns</span>
             </a>
           </div>
+        </section>
+
+        <section class="mobile-section giving-festal-section">
+          <div class="mobile-section-head">
+            <h2>Next Festal Offering</h2>
+          </div>
+          <article class="next-feast-card" id="nextFeastCard">
+            <div class="giving-feast-icon" id="nextFeastIcon" role="img" hidden></div>
+            <div>
+              <span class="feast-kicker" id="nextFeastCalendar">Upcoming feast</span>
+              <h3 id="nextFeastName">Loading parish feast…</h3>
+              <p id="nextFeastDate">Checking your parish calendar.</p>
+            </div>
+            <a id="nextFeastLink" href="/myagapay/giving/calendar">View calendar</a>
+          </article>
         </section>
 
         <section class="mobile-section giving-funds-section">
@@ -325,21 +333,6 @@
             <span class="active-fund-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg></span>
             <strong>Commemorations</strong><svg class="giving-row-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </a>
-        </section>
-
-        <section class="mobile-section giving-festal-section">
-          <div class="mobile-section-head">
-            <h2>Next Festal Offering</h2>
-          </div>
-          <article class="next-feast-card" id="nextFeastCard">
-            <div class="giving-feast-icon" id="nextFeastIcon" role="img" hidden></div>
-            <div>
-              <span class="feast-kicker" id="nextFeastCalendar">Upcoming feast</span>
-              <h3 id="nextFeastName">Loading parish feast…</h3>
-              <p id="nextFeastDate">Checking your parish calendar.</p>
-            </div>
-            <a id="nextFeastLink" href="/myagapay/giving/calendar">View calendar</a>
-          </article>
         </section>
 
 

@@ -1,6 +1,6 @@
 'use strict';
 
-/* exported loadDashboard, bookstoreCatalogState, bookstoreLowStockOnly, parishFeatureRequests */
+/* exported openParishSections, loadDashboard, bookstoreCatalogState, bookstoreLowStockOnly, parishFeatureRequests */
 /* global dashboardLoadPromise:writable, currentParish:writable,
   bookstoreCatalogState:writable, bookstoreLowStockOnly:writable, parishFeatureRequests:writable,
   activeTab, setStatus, authHeaders, refreshSubscriptionStatus,
@@ -14,6 +14,13 @@ function setDashboardBootMessage(title: string, message: string) {
   const messageEl = document.getElementById('dashboardBootMessage');
   if (titleEl && title) titleEl.textContent = title;
   if (messageEl && message) messageEl.textContent = message;
+}
+
+function openParishSections() {
+  const dialog = document.getElementById('parishSectionsDialog') as HTMLDialogElement | null;
+  if (!dialog || dialog.open) return;
+  dialog.showModal();
+  dialog.querySelector<HTMLElement>('[aria-current="page"]:not([hidden])')?.focus();
 }
 
 function finishDashboardBoot() {
@@ -111,7 +118,14 @@ async function loadDashboardInner(btn: HTMLButtonElement | null | undefined) {
           : new URLSearchParams(window.location.search).get('message') || 'Google Calendar could not be connected.',
         googleCalendarResult === 'connected' ? 'success' : 'error'
       );
-      window.history.replaceState({}, '', '/parish/dashboard');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('googleCalendar');
+      url.searchParams.delete('message');
+      url.searchParams.set('tab', 'sacraments');
+      window.history.replaceState(null, '', url);
+    } else if (initialLoad) {
+      const tab = new URLSearchParams(window.location.search).get('tab') as ParishDashboardSection | null;
+      if (tab && document.getElementById('nav-' + tab)) switchTab(tab);
     }
     parishFeatureRequests = data.featureRequests || [];
     showParishFeatureRequestPopup(data.featureRequests || []);
@@ -143,3 +157,11 @@ async function loadDashboardInner(btn: HTMLButtonElement | null | undefined) {
     }
   }
 }
+
+window.addEventListener('popstate', () => {
+  if (!currentParish) return;
+  const tab = (new URLSearchParams(window.location.search).get('tab') || 'giving') as ParishDashboardSection;
+  const available = document.getElementById('nav-' + tab);
+  if (available && !available.hidden) switchTab(tab, false);
+  else if (activeTab !== 'giving') switchTab('giving', false);
+});

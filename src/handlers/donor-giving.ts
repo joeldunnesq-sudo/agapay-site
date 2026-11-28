@@ -6,7 +6,7 @@ import '../payments/donation-receipts.js';
 
 import '../payments/donation-events.js';
 
-import { addOutsideDonorPledgeSummary } from '../lib/outside-pledges.js';
+import { summarizeDonorGiving } from './parish-donor-offerings.js';
 
 import '../lib/logging.js';
 
@@ -46,7 +46,6 @@ import { stripeFormConnectedRequest } from '../lib/stripe-connect.js';
 import '../lib/stripe-fees.js';
 
 import {
-  donorSummaryFromOfferings,
   findRegistrationByParishId,
   loadDonorOfferings,
   loadReconciledDonorCommemorations,
@@ -71,7 +70,7 @@ export async function handleDonorOfferings(request: Request, env: DonorEnvironme
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   return json({
     offerings: offerings.map(publicDonorOffering),
-    summary: await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations)),
+    summary: await summarizeDonorGiving(env, donor, offerings, commemorations),
   });
 }
 

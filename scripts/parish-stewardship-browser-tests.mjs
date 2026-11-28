@@ -143,6 +143,8 @@ async function scenario(name, run, overrides = {}, dashboardResponse = () => ({ 
     await fixture.open();
     const { page } = fixture;
     await page.waitForFunction(() => document.body.classList.contains('dashboard-ready'));
+    const planTools = page.getByRole('button', { name: 'Explore plan options' });
+    if (await planTools.isVisible()) await planTools.click();
     await page.locator('#nav-stewardship').click();
     await run(page);
     fixture.assertClean();

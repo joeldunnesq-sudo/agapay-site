@@ -99,6 +99,7 @@ import {
   stripePaymentIntentIndexKey,
 } from '../lib/core.js';
 import { givingContribution } from '../lib/giving-contributions.js';
+import { addOutsideDonorPledgeSummary, type PledgeDonor } from '../lib/pledge-report-reads.js';
 import { offeringFeeBreakdown } from '../lib/stripe-fees.js';
 import {
   booleanFromStripeMetadata,
@@ -651,8 +652,47 @@ export async function loadReconciledDonorCommemorations(
   return loadDonorCommemorations(env, email, limit);
 }
 
-export function donorSummaryFromOfferings(offerings: ReceiptOffering[], commemorations: CommemorationRecord[] = []) {
-  const now = new Date();
+export async function summarizeDonorGiving(
+  env: ModuleEnv,
+  donor: PledgeDonor,
+  offerings: ReceiptOffering[],
+  commemorations: CommemorationRecord[],
+  now = new Date()
+) {
+  const parishId = String(donor.defaultParishId || '').trim();
+  const year = now.getUTCFullYear();
+  let pledgeOfferings: ReceiptOffering[] = [];
+  if (parishId && env.AGAPAY_DB) {
+    const rows = await d1All<{ data: string; created_at: string }>(
+      env,
+      'SELECT data, created_at FROM donor_offerings WHERE donor_email = ?1 AND parish_id = ?2 AND created_at >= ?3 AND created_at < ?4',
+      normalizeEmail(donor.email),
+      parishId,
+      `${year}-01-01`,
+      `${year + 1}-01-01`
+    );
+    pledgeOfferings = rows.flatMap((row) => {
+      const offering = parseJsonRow(row) as ReceiptOffering | null;
+      return offering ? [{ ...offering, parishId, createdAt: offering.createdAt || row.created_at }] : [];
+    });
+  } else if (parishId) {
+    const history = await loadDonorOfferings(env, normalizeEmail(donor.email), Infinity);
+    const recentById = new Map(offerings.map((offering) => [offering.id, offering]));
+    pledgeOfferings = history.map((offering) => recentById.get(offering.id) || offering);
+  }
+  return addOutsideDonorPledgeSummary(
+    env,
+    donor,
+    donorSummaryFromOfferings(offerings, commemorations, { parishId, pledgeOfferings, now }),
+    now
+  );
+}
+
+export function donorSummaryFromOfferings(
+  offerings: ReceiptOffering[],
+  commemorations: CommemorationRecord[] = [],
+  { parishId = '', pledgeOfferings = offerings, now = new Date() } = {}
+) {
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
@@ -669,7 +709,15 @@ export function donorSummaryFromOfferings(offerings: ReceiptOffering[], commemor
   // they're normalized everywhere else in the app.
   const isStewardshipOffering = (item: ReceiptOffering) =>
     ['stewardship', 'general'].includes(String(item.giftType || 'stewardship').toLowerCase());
-  const stewardshipPaid = paid.filter(isStewardshipOffering);
+  const stewardshipPaid = parishId
+    ? pledgeOfferings.filter(
+        (item) =>
+          item.parishId === parishId &&
+          new Date(item.createdAt || 0).getUTCFullYear() === year &&
+          paidOfferingStatus(item) &&
+          isStewardshipOffering(item)
+      )
+    : [];
   const stewardshipYtdCents = stewardshipPaid.reduce(
     (sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents,
     0
