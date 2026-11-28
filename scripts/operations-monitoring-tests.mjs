@@ -147,7 +147,7 @@ try {
       ('reg-real','parish-a','acct_A123','verified',datetime('now'),'{}'),
       ('reg-demo','demo','acct_demo_a','verified',datetime('now'),'{}');
     INSERT INTO settlement_profiles VALUES ('acct_A123','parish-a',1);
-    INSERT INTO stripe_events(id,received_at) VALUES('evt_received',datetime('now'));
+    INSERT INTO stripe_events(id,received_at) VALUES('evt_received',datetime('now')),('evt_achDelivered',datetime('now'));
   `);
   const reconciliationEnv = {
     ...env,
@@ -188,12 +188,20 @@ try {
     assert.equal(options.method ?? 'GET', 'GET');
     assert.equal(new Headers(options.headers).get('stripe-account'), 'acct_A123');
     assert.equal(url.searchParams.get('types[0]'), 'payout.paid');
+    const requestedTypes = [...url.searchParams].filter(([key]) => key.startsWith('types[')).map(([, type]) => type);
+    assert.ok(requestedTypes.includes('checkout.session.async_payment_succeeded'));
+    assert.ok(requestedTypes.includes('checkout.session.async_payment_failed'));
     assert.ok(Number(url.searchParams.get('created[lt]')) > created);
     if (url.searchParams.get('starting_after')) {
       assert.equal(url.searchParams.get('starting_after'), 'evt_received');
       if (secondPageUnavailable) return Response.json({}, { status: 429 });
       return Response.json({
-        data: [observation('evt_missingRefund', 'refund.updated', 're_test')],
+        data: [
+          observation('evt_missingRefund', 'refund.updated', 're_test'),
+          observation('evt_achSettled', 'checkout.session.async_payment_succeeded', 'cs_test_settled'),
+          observation('evt_achFailed', 'checkout.session.async_payment_failed', 'cs_test_failed'),
+          observation('evt_achDelivered', 'checkout.session.async_payment_succeeded', 'cs_test_delivered'),
+        ],
         has_more: false,
       });
     }
@@ -210,17 +218,27 @@ try {
     (SELECT count(*) FROM stripe_payment_reconciliation_scans) AS checkpoints,
     (SELECT count(*) FROM stripe_events) AS signed_events`);
   await assert.rejects(reconcileStripePaymentDeliveries(reconciliationEnv, tick), /HTTP 429/);
-  assert.deepEqual({ ...counts.get() }, { findings: 1, checkpoints: 0, signed_events: 1 });
+  assert.deepEqual({ ...counts.get() }, { findings: 1, checkpoints: 0, signed_events: 2 });
   secondPageUnavailable = false;
   assert.deepEqual(await reconcileStripePaymentDeliveries(reconciliationEnv, tick), {
     accounts: 1,
-    checked: 3,
-    discovered: 1,
+    checked: 6,
+    discovered: 3,
   });
-  assert.deepEqual({ ...counts.get() }, { findings: 2, checkpoints: 1, signed_events: 1 });
+  assert.deepEqual({ ...counts.get() }, { findings: 4, checkpoints: 1, signed_events: 2 });
+  const achFindings = reconciliationDb.prepare(
+    "SELECT event_type,object_id FROM stripe_payment_reconciliation_findings WHERE event_type LIKE 'checkout.session.async_payment_%' ORDER BY event_type"
+  );
+  assert.deepEqual(
+    achFindings.all().map((row) => [row.event_type, row.object_id]),
+    [
+      ['checkout.session.async_payment_failed', 'cs_test_failed'],
+      ['checkout.session.async_payment_succeeded', 'cs_test_settled'],
+    ]
+  );
   const repeated = await reconcileStripePaymentDeliveries(reconciliationEnv, tick + 1000);
   assert.equal(repeated.discovered, 0);
-  assert.deepEqual({ ...counts.get() }, { findings: 2, checkpoints: 1, signed_events: 1 });
+  assert.deepEqual({ ...counts.get() }, { findings: 4, checkpoints: 1, signed_events: 2 });
   const canaryUrl = `${authorized.url}?check=stripe-reconciliation`;
   assert.equal(
     (await handleOperationsCanary(new Request(canaryUrl, { method: 'POST' }), reconciliationEnv)).status,
