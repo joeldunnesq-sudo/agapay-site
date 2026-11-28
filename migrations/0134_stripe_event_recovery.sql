@@ -1,2 +1,3 @@
 ALTER TABLE stripe_events ADD COLUMN stripe_account_id TEXT;
-ALTER TABLE stripe_events ADD COLUMN parish_id TEXT NOT NULL DEFAULT '';
+-- This reference attributes a platform-owned delivery to a parish.
+ALTER TABLE stripe_events ADD COLUMN affected_parish_id TEXT NOT NULL DEFAULT '';

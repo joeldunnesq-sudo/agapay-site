@@ -46,7 +46,7 @@ export async function rememberStripeEventContext(env: Partial<Env>, event: Strip
   if (!env.AGAPAY_DB || !RETRYABLE_PAYMENT_EVENTS.has(event.type)) return;
   await d1Run(
     env,
-    "UPDATE stripe_events SET stripe_account_id=COALESCE(stripe_account_id,?), parish_id=COALESCE(NULLIF(parish_id,''),?) WHERE id=?",
+    "UPDATE stripe_events SET stripe_account_id=COALESCE(stripe_account_id,?), affected_parish_id=COALESCE(NULLIF(affected_parish_id,''),?) WHERE id=?",
     event.account || '',
     parishId ?? (await stripeEventParish(env, event)),
     event.id

@@ -130,8 +130,8 @@ async function handleAdminAccountingOperations(request, env) {
       const cutoff = new Date(Date.now() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
       const events = await d1All(
         env,
-        `SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.parish_id,
-          (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.parish_id
+        `SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.affected_parish_id AS parish_id,
+          (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.affected_parish_id
            ORDER BY r.updated_at DESC LIMIT 1) AS parish_name
         FROM stripe_events e
         WHERE e.id GLOB 'evt_*' AND (e.status='failed' OR (e.status='processing' AND e.received_at<?))

@@ -15,8 +15,12 @@ export async function retryStripePaymentEvent(request: Request, env: StripeHandl
     status: string;
     received_at: string;
     stripe_account_id: string | null;
-    parish_id: string;
-  }>(env, 'SELECT event_type,status,received_at,stripe_account_id,parish_id FROM stripe_events WHERE id=?', eventId);
+    affected_parish_id: string;
+  }>(
+    env,
+    'SELECT event_type,status,received_at,stripe_account_id,affected_parish_id FROM stripe_events WHERE id=?',
+    eventId
+  );
   if (!row) return reply(404, { error: 'Payment exception was not found.' });
   if (!RETRYABLE_PAYMENT_EVENTS.has(row.event_type))
     return reply(422, { error: 'Use Stripe Workbench to review this event.' });
@@ -27,12 +31,12 @@ export async function retryStripePaymentEvent(request: Request, env: StripeHandl
     actorUserId: actor,
     targetType: 'stripe_event',
     targetId: eventId,
-    organizationId: row.parish_id,
+    organizationId: row.affected_parish_id,
     before: { status: row.status, type: row.event_type },
   };
   const attempt = await recordAuditEvent(env, request, { ...audit, action: 'stripe.payment_retry.requested' });
   if (!attempt) return reply(503, { error: 'The audit log is unavailable. Try again before retrying this event.' });
-  let parishId = row.parish_id;
+  let parishId = row.affected_parish_id;
   const result = async (outcome: string, status: number, error?: string) => {
     const recorded = await recordAuditEvent(env, request, {
       ...audit,

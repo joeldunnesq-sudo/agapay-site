@@ -207,7 +207,7 @@ try {
   add.run('internal_dedupe_record', 'digest', 'failed', recent, '');
   queueDb.exec(`INSERT INTO registrations(reference,parish_id,parish_name,stripe_account_id,updated_at,data)
     VALUES('reg-a','parish-a','Parish A','acct_test',datetime('now'),'{}');
-    UPDATE stripe_events SET stripe_account_id='acct_test',parish_id='parish-a' WHERE id='evt_failed';`);
+    UPDATE stripe_events SET stripe_account_id='acct_test',affected_parish_id='parish-a' WHERE id='evt_failed';`);
   const queueEnv = {
     AGAPAY_ENVIRONMENT: 'test',
     STRIPE_SECRET_KEY: 'sk_test_fixture',

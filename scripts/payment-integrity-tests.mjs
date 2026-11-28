@@ -241,8 +241,8 @@ try {
     { n: 1, debits: 1234, credits: 1234 }
   );
   assert.equal(
-    payoutEnv.AGAPAY_DB.sqlite.prepare("SELECT parish_id FROM stripe_events WHERE id='evt_payout_paid'").get()
-      .parish_id,
+    payoutEnv.AGAPAY_DB.sqlite.prepare("SELECT affected_parish_id FROM stripe_events WHERE id='evt_payout_paid'").get()
+      .affected_parish_id,
     'parish-a'
   );
   console.log(

@@ -10,7 +10,7 @@ async function retryStripePaymentEvent(request, env, eventId, actor) {
   if (!env.AGAPAY_DB) return reply(503, { error: 'Payment exception data is unavailable.' });
   const row = await d1First(
     env,
-    'SELECT event_type,status,received_at,stripe_account_id,parish_id FROM stripe_events WHERE id=?',
+    'SELECT event_type,status,received_at,stripe_account_id,affected_parish_id FROM stripe_events WHERE id=?',
     eventId
   );
   if (!row) return reply(404, { error: 'Payment exception was not found.' });
@@ -22,12 +22,12 @@ async function retryStripePaymentEvent(request, env, eventId, actor) {
     actorUserId: actor,
     targetType: 'stripe_event',
     targetId: eventId,
-    organizationId: row.parish_id,
+    organizationId: row.affected_parish_id,
     before: { status: row.status, type: row.event_type },
   };
   const attempt = await recordAuditEvent(env, request, { ...audit, action: 'stripe.payment_retry.requested' });
   if (!attempt) return reply(503, { error: 'The audit log is unavailable. Try again before retrying this event.' });
-  let parishId = row.parish_id;
+  let parishId = row.affected_parish_id;
   const result = async (outcome, status, error) => {
     const recorded = await recordAuditEvent(env, request, {
       ...audit,
