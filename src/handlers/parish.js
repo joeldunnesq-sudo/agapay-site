@@ -37,6 +37,7 @@ import {
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
 } from './parish-donor-offerings.js';
+import { summarizeDonorGiving } from './parish-donor-offerings.js';
 import {
   giftDisplayName,
   loadParishPaidOfferings,
@@ -450,6 +451,7 @@ export {
   subscriptionTier,
   subscriptionTierSummary,
   summarizeCharges,
+  summarizeDonorGiving,
   summarizeParishRecurringHealth,
   unauthorized,
   updateDonorOfferingByCheckout,

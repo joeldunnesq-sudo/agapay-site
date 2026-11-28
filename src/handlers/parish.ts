@@ -46,6 +46,7 @@ import {
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
 } from './parish-donor-offerings.js';
+export { summarizeDonorGiving } from './parish-donor-offerings.js';
 
 import {
   giftDisplayName,

@@ -21,7 +21,10 @@ function openParishSections() {
   if (!dialog || dialog.open) return;
   dialog.querySelectorAll<HTMLButtonElement>('[data-nav-tab]').forEach((button) => {
     if (button.querySelector('svg')) return;
-    const icon = document.getElementById('nav-' + button.dataset.navTab)?.querySelector('svg')?.cloneNode(true);
+    const icon = document
+      .getElementById('nav-' + button.dataset.navTab)
+      ?.querySelector('svg')
+      ?.cloneNode(true);
     if (icon instanceof SVGElement) {
       icon.setAttribute('aria-hidden', 'true');
       button.prepend(icon);
