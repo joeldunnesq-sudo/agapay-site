@@ -2,7 +2,7 @@ import type { PortabilityDatabase } from '../portability/contracts.js';
 import type { DashboardRegistration } from '../handlers/parish-dashboard-handler.js';
 import type { CatalogRegistration } from '../handlers/parish-giving-catalog.js';
 import { stripeGetConnectedRequest, stripeGetRequest, stripeObjectId } from '../lib/stripe-connect.js';
-import type { StripeObjectReference } from '../lib/stripe-connect.js';
+import type { StripeObjectReference, StripeRequestEnv } from '../lib/stripe-connect.js';
 export interface OperationalCatalogEntry extends Record<string, unknown> {
   name?: string | null;
   title?: string;
@@ -444,7 +444,7 @@ export async function wireGivingOfferingToAccounting(env: Partial<Env>, offering
   return processed;
 }
 
-async function chargeRefunds(env: Partial<Env>, charge: StripeChargeInput, stripeAccountId: string) {
+async function chargeRefunds(env: StripeRequestEnv, charge: StripeChargeInput, stripeAccountId: string) {
   const embedded = charge.refunds;
   if (embedded?.data?.length && !embedded.has_more) return embedded.data;
   const chargeId = text(charge.id);
@@ -475,7 +475,7 @@ function settledRefund(refund: StripeRefundInput) {
 }
 
 export async function wireGivingRefundsToAccounting(
-  env: Partial<Env>,
+  env: Partial<Env> & StripeRequestEnv,
   offering: Record<string, unknown> = {},
   charge: StripeChargeInput = {},
   stripeAccountId = ''
@@ -939,7 +939,7 @@ export async function wireCommerceDisputeToAccounting(
 }
 
 export async function wireCommerceRefundsToAccounting(
-  env: Partial<Env>,
+  env: Partial<Env> & StripeRequestEnv,
   orderId: string,
   charge: StripeChargeInput = {},
   stripeAccountId = ''
