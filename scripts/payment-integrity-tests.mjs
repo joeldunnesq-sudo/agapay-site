@@ -75,6 +75,7 @@ async function fixture(environment = 'production') {
     .run(environment);
   db.sqlite.exec(readFileSync('migrations/0125_donation_receipt_delivery.sql', 'utf8'));
   db.sqlite.exec(readFileSync('migrations/0002_stripe_event_status.sql', 'utf8'));
+  db.sqlite.exec(readFileSync('migrations/0134_stripe_event_recovery.sql', 'utf8'));
   db.sqlite.exec(readFileSync('migrations/0010_settlement_profiles.sql', 'utf8').split(/\r?\nALTER TABLE/)[0]);
   const ledger = database();
   for (const file of readdirSync('accounting-migrations')
@@ -198,6 +199,56 @@ function postedLines(env, type) {
 }
 
 try {
+  const payoutEnv = await fixture('staging');
+  payoutEnv.AGAPAY_DB.sqlite
+    .prepare('INSERT INTO registrations(reference,parish_id,stripe_account_id,data) VALUES (?,?,?,?)')
+    .run('reg-a', 'parish-a', 'acct_testpayout', '{}');
+  payoutEnv.LEDGER_A.sqlite.exec("UPDATE accounting_integration_settings SET default_bank_account_id='acct_1010'");
+  const payout = {
+    id: 'po_testpayout',
+    object: 'payout',
+    status: 'paid',
+    amount: 1234,
+    currency: 'usd',
+    arrival_date: Math.floor(Date.now() / 1000),
+    balance_transaction: 'txn_payout',
+  };
+  const paidPayout = (id, extra = {}) =>
+    deliver(payoutEnv, id, 'payout.paid', payout, {
+      account: 'acct_testpayout',
+      livemode: false,
+      ...extra,
+    });
+  assert.equal((await paidPayout('evt_unmapped_payout', { account: 'acct_unmapped' })).status, 200);
+  assert.equal((await paidPayout('evt_wrong_mode', { livemode: true })).status, 200);
+  assert.equal(
+    payoutEnv.LEDGER_A.sqlite
+      .prepare("SELECT count(*) n FROM accounting_journal_entries WHERE source_type='integration.stripe_payout_paid'")
+      .get().n,
+    0
+  );
+  assert.equal((await paidPayout('evt_payout_paid')).status, 200);
+  assert.equal((await (await paidPayout('evt_payout_paid')).json()).duplicate, true);
+  assert.equal((await paidPayout('evt_payout_paid_distinct_delivery')).status, 200);
+  assert.deepEqual(
+    {
+      ...payoutEnv.LEDGER_A.sqlite
+        .prepare(
+          "SELECT count(*) n, SUM(total_debits) debits, SUM(total_credits) credits FROM accounting_journal_entries WHERE status='posted' AND source_type='integration.stripe_payout_paid'"
+        )
+        .get(),
+    },
+    { n: 1, debits: 1234, credits: 1234 }
+  );
+  assert.equal(
+    payoutEnv.AGAPAY_DB.sqlite.prepare("SELECT affected_parish_id FROM stripe_events WHERE id='evt_payout_paid'").get()
+      .affected_parish_id,
+    'parish-a'
+  );
+  console.log(
+    'PASS - signed paid payout posts once to the mapped parish and ignores unrecognized accounts and mode mismatches'
+  );
+
   const blockedFetch = globalThis.fetch;
   for (const receiptEnv of [{}, { AGAPAY_FROM_EMAIL: 'AGAPAY <onboarding@agapay.app>' }]) {
     let sentReceipt;
@@ -410,7 +461,20 @@ try {
   assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).status, 'completed');
   assert.equal((await deliver(refundEnv, 'evt_refund_retry', 'charge.refunded', charge, connected)).status, 500);
   providerUnavailable = false;
-  assert.equal((await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected)).status, 200);
+  const retries = await Promise.all([
+    deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected),
+    deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected),
+  ]);
+  assert.deepEqual(
+    retries.map((response) => response.status),
+    [200, 200]
+  );
+  const retryResults = await Promise.all(retries.map((response) => response.json()));
+  assert.equal(
+    retryResults.filter((result) => result.duplicate).length,
+    1,
+    'Only one delivery may reclaim a failed event'
+  );
   const duplicate = await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected);
   assert.equal((await duplicate.json()).duplicate, true);
   assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).refundedCents, 400);

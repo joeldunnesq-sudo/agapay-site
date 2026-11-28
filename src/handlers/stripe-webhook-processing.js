@@ -1,5 +1,6 @@
 // Generated from src/handlers/stripe-webhook-processing.ts by npm run build:server. Do not edit.
 import { recordServiceInvoice, postServiceInvoices } from '../accounting/service-costs.js';
+import { detectAccountingEnvironment } from '../accounting/environment.js';
 import { resolveOperationalAccountingDatabase } from '../accounting/source-wiring.js';
 import {
   subscriptionSetupUpdates,
@@ -58,13 +59,43 @@ import {
   wireGivingDisputeToAccounting,
   wireGivingOfferingToAccounting,
   wireGivingRefundsToAccounting,
+  wireStripePayoutToAccounting,
 } from '../accounting/source-wiring.js';
+import { parishForStripeAccount } from './stripe-event-context.js';
 import './stripe-shared.js';
 import { sendDonationReceiptIfNeeded, isCommerceOrderCompletion } from './stripe-shared.js';
 import { stripePayoutBankSummary, invalidateAndSaveMaterialRegistration } from './stripe-account-refresh.js';
 import { subscriptionStatusFromStripe, updateSubscriptionRecord } from './stripe.js';
 async function processStripeWebhookEvent(env, event) {
   const object = event.data?.object || {};
+  if (event.type === 'payout.paid') {
+    if (!event.account || event.livemode !== (detectAccountingEnvironment(env) === 'production')) return;
+    const parishId = await parishForStripeAccount(env, event.account);
+    if (!parishId) return;
+    const { arrival_date: arrivalDate, amount, currency } = object;
+    if (
+      object.object !== 'payout' ||
+      object.status !== 'paid' ||
+      !/^po_[A-Za-z0-9_]+$/.test(object.id || '') ||
+      typeof amount !== 'number' ||
+      !Number.isSafeInteger(amount) ||
+      amount <= 0 ||
+      typeof currency !== 'string' ||
+      !/^[a-z]{3}$/.test(currency) ||
+      typeof arrivalDate !== 'number' ||
+      !Number.isFinite(new Date(arrivalDate * 1e3).getTime()) ||
+      arrivalDate <= 0
+    )
+      throw new Error('Stripe paid payout was missing required settlement facts.');
+    await wireStripePayoutToAccounting(env, parishId, {
+      id: object.id,
+      amount,
+      currency,
+      arrivalDate,
+      balanceTransactionId: typeof object.balance_transaction === 'string' ? object.balance_transaction : '',
+    });
+    return;
+  }
   if (event.type === 'charge.succeeded' || event.type === 'charge.updated' || event.type === 'charge.refunded') {
     const stripeAccountId = event.account || stripeObjectId(object.on_behalf_of);
     const found = stripeAccountId ? await findRegistrationByStripeAccountId(env, stripeAccountId) : null;

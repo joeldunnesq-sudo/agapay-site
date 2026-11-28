@@ -72,6 +72,7 @@ function renderAccountingIntegrationsBase(pane: HTMLElement) {
 function renderAccountingIntegrations(pane: HTMLElement) {
   renderAccountingIntegrationsBase(pane);
   if (accountingData.integrations) {
+    renderAccountingPayoutAlerts(pane);
     renderAccountingServiceInvoices(pane);
     renderAccountingFeeCoverageRepair(pane);
   }
@@ -80,6 +81,72 @@ function renderAccountingIntegrations(pane: HTMLElement) {
     'beforeend',
     `<div class="acct-setup-grid"><section class="acct-card"><span class="acct-kicker">Commerce item mapping</span><h2>Configure an item</h2><form class="acct-phase-form" onsubmit="configureAccountingCommerceItem(event)"><label>Operational item ID<input name="operationalItemId" required></label><label>Name<input name="name" required></label><label>Revenue account<select name="defaultRevenueAccountId">${accountingData.accounts.map((a) => `<option value="${escapeAttr(a.id)}">${escapeHtml(a.accountNumber)} · ${escapeHtml(a.name)}</option>`).join('')}</select></label><label>Default fund<select name="defaultFundId">${accountingData.funds.map((f) => `<option value="${escapeAttr(f.id)}">${escapeHtml(f.code)} · ${escapeHtml(f.name)}</option>`).join('')}</select></label><button class="acct-primary">Save commerce item</button><span class="acct-form-status"></span></form></section><section class="acct-card"><span class="acct-kicker">Commerce backfill preview</span><h2>Review historical orders</h2><form class="acct-phase-form" onsubmit="previewAccountingCommerceBackfill(event)"><label>Start<input name="startDate" type="date" required></label><label>End<input name="endDate" type="date" required></label><button class="acct-primary">Preview backfill</button><span class="acct-form-status"></span></form><div id="accountingCommerceBackfillPreview"></div></section></div>`
   );
+}
+
+function renderAccountingPayoutAlerts(pane: HTMLElement) {
+  pane.insertAdjacentHTML(
+    'beforeend',
+    `<section class="acct-card" aria-labelledby="accountingPayoutAlertsHeading">
+      <h2 id="accountingPayoutAlertsHeading">Stripe payout discrepancies</h2>
+      <form class="acct-phase-form" data-accounting-payout-alerts>
+        <label>Month<input name="month" type="month"></label>
+        <button class="acct-primary" type="submit">Check payouts</button>
+      </form>
+      <p data-accounting-payout-summary role="status">Leave the month blank to check the last completed month.</p>
+      <ul data-accounting-payout-results></ul>
+    </section>`
+  );
+  const form = pane.querySelector<HTMLFormElement>('[data-accounting-payout-alerts]')!;
+  const button = form.querySelector<HTMLButtonElement>('button')!;
+  const summary = pane.querySelector<HTMLElement>('[data-accounting-payout-summary]')!;
+  const results = pane.querySelector<HTMLElement>('[data-accounting-payout-results]')!;
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void checkPayouts();
+  });
+
+  async function checkPayouts() {
+    const month = String(new FormData(form).get('month') || '');
+    button.disabled = true;
+    summary.textContent = 'Comparing paid Stripe payouts with posted ledger entries…';
+    results.replaceChildren();
+    try {
+      const data = await accountingDeskRead<{
+        available: boolean;
+        reason?: string;
+        month: string;
+        complete: boolean;
+        checked: number;
+        alerts: { payoutId: string; code: string; currency: string; stripeCents: number; ledgerCents: number | null }[];
+      }>(`/integrations/give-stripe/payout-alerts?month=${encodeURIComponent(month)}`);
+      if (!data.available) {
+        summary.textContent = data.reason || 'Payout checks are unavailable.';
+        return;
+      }
+      const reasons: Record<string, string> = {
+        missing_entry: 'No posted journal is linked to this payout.',
+        multiple_entries: 'More than one posted journal is linked to this payout.',
+        currency_mismatch: 'The Stripe and ledger currencies differ.',
+        amount_mismatch: 'The Stripe amount differs from the posted amount.',
+      };
+      for (const alert of data.alerts) {
+        const item = document.createElement('li');
+        const amounts =
+          alert.code === 'amount_mismatch'
+            ? ` Stripe ${(alert.stripeCents / 100).toFixed(2)} ${alert.currency}, ledger ${((alert.ledgerCents ?? 0) / 100).toFixed(2)} ${alert.currency}.`
+            : '';
+        item.textContent = `${alert.payoutId} · ${reasons[alert.code] || 'Review the linked journal.'}${amounts}`;
+        results.append(item);
+      }
+      summary.textContent = data.complete
+        ? `${data.month} · ${data.checked} paid payouts checked, ${data.alerts.length} to review.`
+        : `${data.month} · Stripe returned only part of the month. Reviewed ${data.checked} paid payouts.`;
+    } catch {
+      summary.textContent = 'Could not check payouts. Try again.';
+    } finally {
+      button.disabled = false;
+    }
+  }
 }
 
 function renderAccountingServiceInvoices(pane: HTMLElement) {

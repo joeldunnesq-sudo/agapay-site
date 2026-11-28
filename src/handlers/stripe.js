@@ -36,6 +36,7 @@ import './stripe-shared.js';
 import './stripe-shared.js';
 import { invalidateAndSaveMaterialRegistration, refreshStripeStatusForRegistration } from './stripe-account-refresh.js';
 import { processStripeWebhookEvent } from './stripe-webhook-processing.js';
+import { rememberStripeEventContext } from './stripe-event-context.js';
 import {
   createStripeOnboardingSession,
   refreshStripeStatusForRegistration as refreshStripeStatusForRegistration2,
@@ -258,8 +259,11 @@ async function handleStripeWebhook(request, env) {
     return json({ received: true, duplicate: true, status: claim.status || 'processed' });
   }
   try {
+    await rememberStripeEventContext(env, event).catch(() =>
+      logEvent(env, { eventType: 'stripe.webhook.context_unavailable', severity: 'warn', stripeEventId: event.id })
+    );
     await processStripeWebhookEvent(env, event);
-    await finishStripeEvent(env, event.id, 'processed');
+    await finishStripeEvent(env, event.id, 'processed', '', claim.receivedAt);
     await logEvent(env, {
       eventType: 'stripe.webhook.processed',
       severity: 'info',
@@ -267,11 +271,15 @@ async function handleStripeWebhook(request, env) {
       route,
       method: 'POST',
       stripeEventId: event.id,
-      metadata: { type: event.type },
+      metadata: {
+        type: event.type,
+        retryingFailed: Boolean(claim.retryingFailed),
+        retryingStale: Boolean(claim.retryingStale),
+      },
     });
     return json({ received: true });
   } catch (error) {
-    await finishStripeEvent(env, event.id, 'failed', error?.message || String(error));
+    await finishStripeEvent(env, event.id, 'failed', error?.message || String(error), claim.receivedAt);
     await logEvent(env, {
       eventType: 'stripe.webhook.processing_failed',
       severity: 'error',

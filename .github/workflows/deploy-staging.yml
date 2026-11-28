@@ -55,9 +55,10 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '24'
+          cache: npm
 
       - name: Install release tooling (deterministic)
-        run: npm ci
+        run: npm ci --prefer-offline
 
       - name: Validate Cloudflare authentication
         uses: cloudflare/wrangler-action@v4

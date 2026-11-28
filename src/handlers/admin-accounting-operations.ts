@@ -25,6 +25,8 @@ import { findRegistrationByParishId, requireAdminContext } from './parish.js';
 import './parish-commemorations.js';
 
 import { recordAuditEvent } from '../lib/audit-log.js';
+import { RETRYABLE_PAYMENT_EVENTS } from './stripe-event-context.js';
+import { retryStripePaymentEvent } from './stripe-payment-retry.js';
 
 import '../lib/tax-readiness.js';
 
@@ -102,6 +104,37 @@ export async function adminAccountingTarget(env: AdminEnvironment, parishId: str
   };
 }
 
+function paymentRecoveryGuidance(status: 'failed' | 'processing', message: string | null) {
+  if (status === 'processing') {
+    return {
+      reason: 'Processing exceeded the expected time.',
+      nextStep: 'Check the latest delivery in Stripe Workbench before resending it.',
+    };
+  }
+  if (message === 'The original gift is not yet available for this Stripe refund.') {
+    return {
+      reason: 'The original gift has not been recorded yet.',
+      nextStep:
+        'Confirm the original payment is recorded in AGAPAY, then resend the refund event from Stripe Workbench.',
+    };
+  }
+  if (
+    message === 'Unable to load the Stripe charge refund records for Accounting.' ||
+    message === 'Unable to load the charge for the updated Stripe refund.' ||
+    message === 'Unable to resolve the recurring donation invoice payment.'
+  ) {
+    return {
+      reason: 'AGAPAY could not retrieve a related payment record from Stripe.',
+      nextStep:
+        'Check the connected account and Stripe delivery details. Resend from Stripe Workbench once the record is available.',
+    };
+  }
+  return {
+    reason: 'Payment processing failed.',
+    nextStep: 'Review the Stripe delivery and AGAPAY logs for this event before resending it.',
+  };
+}
+
 export async function handleAdminAccountingOperations(request: Request, env: AdminEnvironment) {
   const admin = await requireAdminContext(request, env);
   if (!admin) return unauthorized();
@@ -109,6 +142,12 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
     path = url.pathname,
     body: AdminMutation = request.method === 'GET' ? {} : ((await request.json().catch(() => ({}))) as AdminMutation);
   try {
+    const retry = path.match(/^\/api\/admin\/accounting\/payment-exceptions\/(evt_[A-Za-z0-9_]{1,100})\/retry$/);
+    if (retry) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { status: 405 });
+      if (!admin.mfaVerifiedAt) return unauthorized();
+      return await retryStripePaymentEvent(request, env, retry[1], admin.actor);
+    }
     if (path === '/api/admin/accounting/payment-exceptions') {
       const response = { headers: { 'Cache-Control': 'no-store' } };
       if (request.method !== 'GET') return json({ error: 'Method not allowed' }, { ...response, status: 405 });
@@ -120,11 +159,17 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
         event_type: string;
         status: 'failed' | 'processing';
         received_at: string;
+        error_message: string | null;
+        parish_id: string;
+        parish_name: string | null;
       }>(
         env,
-        `SELECT id, event_type, status, received_at FROM stripe_events
-        WHERE id GLOB 'evt_*' AND (status='failed' OR (status='processing' AND received_at<?))
-        ORDER BY received_at DESC, id DESC LIMIT 51`,
+        `SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.affected_parish_id AS parish_id,
+          (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.affected_parish_id
+           ORDER BY r.updated_at DESC LIMIT 1) AS parish_name
+        FROM stripe_events e
+        WHERE e.id GLOB 'evt_*' AND (e.status='failed' OR (e.status='processing' AND e.received_at<?))
+        ORDER BY e.received_at DESC, e.id DESC LIMIT 51`,
         cutoff
       );
       return json(
@@ -134,6 +179,10 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
             type: event.event_type,
             status: event.status === 'failed' ? 'failed' : 'stalled',
             receivedAt: event.received_at,
+            parishId: event.parish_id,
+            parishName: event.parish_name || '',
+            canRetry: RETRYABLE_PAYMENT_EVENTS.has(event.event_type) && Boolean(admin.mfaVerifiedAt),
+            ...paymentRecoveryGuidance(event.status, event.error_message),
           })),
           hasMore: events.length > 50,
         },

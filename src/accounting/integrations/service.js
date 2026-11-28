@@ -659,6 +659,48 @@ async function stripeClearingValidation(
     validated: reported === null ? null : ending === reported,
   });
 }
+async function findStripePayoutLedgerAlerts(db, payouts) {
+  const paid = [
+    ...new Map(
+      payouts
+        .filter((payout) => payout.status === 'paid' && payout.id && Number.isSafeInteger(payout.amount))
+        .map((payout) => [payout.id, payout])
+    ).values(),
+  ];
+  if (!paid.length) return { checked: 0, alerts: [] };
+  const ids = paid.map((payout) => payout.id);
+  const posted = await all(
+    db,
+    `WITH linked AS (
+      SELECT DISTINCT e.payout_id,j.id,j.currency
+      FROM accounting_integration_source_events e JOIN accounting_journal_entries j ON j.id=e.journal_entry_id
+      WHERE e.source_system='stripe' AND e.source_type='stripe_payout_paid' AND j.status='posted'
+        AND e.payout_id IN (${ids.map(() => '?').join(',')})
+    )
+    SELECT linked.payout_id,COUNT(DISTINCT linked.id) AS entries,COALESCE(SUM(l.debit_amount),0) AS debit_cents,
+      MIN(linked.currency) AS currency
+    FROM linked LEFT JOIN accounting_journal_lines l ON l.journal_entry_id=linked.id
+    GROUP BY linked.payout_id`,
+    ...ids
+  );
+  const entriesByPayout = new Map(posted.map((entry) => [entry.payout_id, entry]));
+  const alerts = paid.flatMap((payout) => {
+    const entry = entriesByPayout.get(payout.id);
+    const stripeCents = Number(payout.amount);
+    const currency = String(payout.currency || 'usd').toUpperCase();
+    const code = !entry
+      ? 'missing_entry'
+      : entry.entries !== 1
+        ? 'multiple_entries'
+        : String(entry.currency).toUpperCase() !== currency
+          ? 'currency_mismatch'
+          : entry.debit_cents !== stripeCents
+            ? 'amount_mismatch'
+            : null;
+    return code ? [{ payoutId: payout.id, code, currency, stripeCents, ledgerCents: entry?.debit_cents ?? null }] : [];
+  });
+  return { checked: paid.length, alerts };
+}
 async function previewIntegrationBackfill(db, { actor, entitlementTier, startDate, endDate, maximumBatchSize = 100 }) {
   requireCapability(actor, 'accounting.integrations.backfill');
   assertTier(entitlementTier);
@@ -696,6 +738,7 @@ async function previewIntegrationBackfill(db, { actor, entitlementTier, startDat
 }
 export {
   GIVE_STRIPE_SOURCE_TYPES,
+  findStripePayoutLedgerAlerts,
   getIntegrationSettings,
   ingestAccountingSourceEvent,
   integrationOverview,

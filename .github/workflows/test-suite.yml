@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - run: npm ci
+      - run: npm ci --prefer-offline
       # npm run check previously invoked this through the npm precheck lifecycle.
       - run: npm run precheck
       - run: node scripts/ci-test-groups-tests.mjs
@@ -38,10 +38,13 @@ jobs:
             browser-2,
             browser-3,
             browser-4,
+            browser-5,
+            browser-6,
             payments,
             directory,
             core-1,
             core-2,
+            core-3,
             other,
           ]
     steps:
@@ -50,7 +53,7 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - run: npm ci
+      - run: npm ci --prefer-offline
       - name: Install Chromium
         if: startsWith(matrix.group, 'browser-')
         run: npx playwright install chromium --with-deps
