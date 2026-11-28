@@ -95,10 +95,13 @@ function clearDonorCache(name) {
     localStorage.removeItem(donorCacheKey(name));
   } catch {}
 }
-function money(cents) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
-    (Number(cents) || 0) / 100
-  );
+function money(cents, showCents = false) {
+  const amount = (Number(cents) || 0) / 100;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: showCents && !Number.isInteger(amount) ? 2 : 0,
+  }).format(amount);
 }
 function donorInitials(donor) {
   const source = donor?.householdName || donor?.donorName || donor?.email || 'Faithful Member';
@@ -454,17 +457,18 @@ function updateGivingTierTiles(parish) {
   document.querySelectorAll('[data-giving-plus-gift]').forEach((tile) => {
     const giftType = tile.getAttribute('data-giving-plus-gift') || '';
     const allowed = parishCanUseGiftType(parish, giftType);
-    const noCampaigns = giftType === 'campaign' && !allowed;
+    const parishOffering = giftType === 'candles' || giftType === 'commemoration';
+    const unavailable = !allowed && (parishOffering || giftType === 'campaign');
     tile.classList.remove('giving-tier-loading');
     tile.classList.toggle('giving-tier-locked', !allowed);
     tile.removeAttribute('aria-busy');
     tile.removeAttribute('tabindex');
-    const availability = allowed ? '' : noCampaigns ? ' — no open campaigns' : ' — not currently available';
-    tile.setAttribute('aria-label', tile.textContent.trim() + availability);
-    if (noCampaigns) tile.setAttribute('aria-disabled', 'true');
+    const reason = parishOffering ? 'not offered here' : unavailable ? 'no open campaigns' : 'not currently available';
+    tile.setAttribute('aria-label', tile.textContent.trim() + (allowed ? '' : ` — ${reason}`));
+    if (unavailable) tile.setAttribute('aria-disabled', 'true');
     else tile.removeAttribute('aria-disabled');
-    tile.onclick = allowed || noCampaigns ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
-    if (noCampaigns) tile.removeAttribute('href');
+    tile.onclick = allowed || unavailable ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    if (unavailable) tile.removeAttribute('href');
     else tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
   });
 }
@@ -2223,8 +2227,10 @@ function renderPledgeTracker(donor, summary, parish) {
   const pledgeCents = Number(donor.pledgeAmountCents || 0);
   const cadence = donor.pledgeCadence === 'monthly' ? 'monthly' : 'annual';
   const pledgeYear = String(/* @__PURE__ */ new Date().getFullYear());
-  const ytdCents = Number(summary?.stewardshipYtdCents || 0);
-  const trackedCents = cadence === 'monthly' ? Number(summary?.stewardshipMonthCents || 0) : ytdCents;
+  const trackedCents = Number(
+    (cadence === 'monthly' ? summary?.stewardshipMonthCents : summary?.stewardshipYtdCents) || 0
+  );
+  const remainingCents = Math.max(0, pledgeCents - trackedCents);
   const periodTitle =
     cadence === 'monthly'
       ? /* @__PURE__ */ new Date().toLocaleDateString(void 0, { month: 'long', year: 'numeric' }) + ' Pledge'
@@ -2247,7 +2253,7 @@ function renderPledgeTracker(donor, summary, parish) {
     }
     if (activeState) activeState.hidden = false;
     if (emptyState) emptyState.hidden = true;
-    const pct = Math.min(100, Math.round((trackedCents / pledgeCents) * 100));
+    const pct = Math.min(remainingCents ? 99 : 100, Math.max(0, Math.round((trackedCents / pledgeCents) * 100)));
     const fill = document.getElementById(prefix + 'BarFill');
     const track = document.getElementById(prefix + 'BarTrack');
     if (fill) {
@@ -2260,15 +2266,9 @@ function renderPledgeTracker(donor, summary, parish) {
     const label = document.getElementById(labelId);
     if (label) label.textContent = periodTitle;
     const raised = document.getElementById(prefix + 'Raised');
-    if (raised) raised.textContent = money(trackedCents) + ' given';
-    const pctEl = document.getElementById(prefix + 'Pct');
-    if (pctEl) pctEl.textContent = pct + '%';
-    const goal = document.getElementById(prefix + 'Goal');
-    if (goal) goal.textContent = 'of ' + money(pledgeCents) + ' pledge';
-    if (prefix === 'pledge') {
-      const editLink = card.querySelector('.pledge-tracker-edit');
-      if (editLink) editLink.href = '/myagapay/account#pledge';
-    }
+    if (raised) raised.textContent = `${money(trackedCents, true)} of ${money(pledgeCents, true)}`;
+    const remaining = document.getElementById(prefix + 'Remaining');
+    if (remaining) remaining.textContent = money(remainingCents, true) + ' remaining';
   }
 }
 async function checkDonorNotifications() {

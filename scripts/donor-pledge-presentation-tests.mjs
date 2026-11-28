@@ -20,8 +20,7 @@ const ids = [
   'pledgeBarTrack',
   'pledgeTrackerLabel',
   'pledgeRaised',
-  'pledgePct',
-  'pledgeGoal',
+  'pledgeRemaining',
   'desktopPledgeTracker',
   'desktopPledgeActiveState',
   'desktopPledgeEmptyState',
@@ -30,12 +29,12 @@ const ids = [
   'desktopPledgeBarTrack',
   'desktopPledgeTitle',
   'desktopPledgeRaised',
-  'desktopPledgePct',
-  'desktopPledgeGoal',
+  'desktopPledgeRemaining',
 ];
 const markup = readFileSync(new URL('../public/myagapay/index.html', import.meta.url), 'utf8');
 for (const id of ids)
   assert.ok(markup.includes(`id="${id}"`), 'Pledge fixture must match actual dashboard markup: ' + id);
+assert.match(markup, /<a class="pledge-tracker-edit" href="\/myagapay\/account#pledge"/);
 export function exercisePledge(code, { donor, summary = {}, parish, missing = [] }) {
   const trace = [],
     timers = [],
@@ -43,14 +42,12 @@ export function exercisePledge(code, { donor, summary = {}, parish, missing = []
   for (const id of ids.filter((id) => !missing.includes(id))) {
     const attrs = {},
       classes = {},
-      link = { href: 'original' },
       element = {
         hidden: false,
         textContent: 'original',
         style: { width: 'original' },
         attrs,
         classes,
-        link,
         setAttribute(name, value) {
           attrs[name] = String(value);
           trace.push(['attribute', id, name, String(value)]);
@@ -60,10 +57,6 @@ export function exercisePledge(code, { donor, summary = {}, parish, missing = []
             classes[name] = enabled;
             trace.push(['class', id, name, enabled]);
           },
-        },
-        querySelector(selector) {
-          trace.push(['query', id, selector]);
-          return link;
         },
       };
     elements.set(id, element);
@@ -98,7 +91,6 @@ export function exercisePledge(code, { donor, summary = {}, parish, missing = []
           style: { ...e.style },
           attrs: { ...e.attrs },
           classes: { ...e.classes },
-          href: e.link.href,
         },
       ])
     );
@@ -116,12 +108,13 @@ const annual = exercisePledge(code, {
 assert.equal(annual.before.pledgeBarFill.style.width, 'original');
 assert.equal(annual.after.pledgeBarFill.style.width, '25%');
 assert.equal(annual.after.desktopPledgeBarFill.style.width, '25%');
-assert.equal(annual.after.pledgeRaised.textContent, '$25 given');
-assert.equal(annual.after.desktopPledgeRaised.textContent, '$25 given');
+assert.equal(annual.after.pledgeRaised.textContent, '$25 of $100');
+assert.equal(annual.after.desktopPledgeRaised.textContent, '$25 of $100');
+assert.equal(annual.after.pledgeRemaining.textContent, '$75 remaining');
+assert.equal(annual.after.desktopPledgeRemaining.textContent, '$75 remaining');
 assert.equal(annual.after.pledgeTrackerLabel.textContent, '2026 Annual Pledge');
 assert.equal(annual.after.desktopPledgeTitle.textContent, '2026 Annual Pledge');
 assert.equal(annual.after.pledgeBarTrack.attrs['aria-valuenow'], '25');
-assert.equal(annual.after.pledgeTrackerCard.href, '/myagapay/account#pledge');
 assert.deepEqual(annual.delays, [120, 120]);
 const monthly = exercisePledge(code, {
   donor: { pledgeAmountCents: 10000, pledgeCadence: 'monthly' },
@@ -130,7 +123,16 @@ const monthly = exercisePledge(code, {
 });
 assert.equal(monthly.after.pledgeBarFill.style.width, '100%');
 assert.equal(monthly.after.desktopPledgeBarFill.classes['pledge-complete'], true);
-assert.equal(monthly.after.pledgeRaised.textContent, '$150 given');
+assert.equal(monthly.after.pledgeRaised.textContent, '$150 of $100');
+assert.equal(monthly.after.pledgeRemaining.textContent, '$0 remaining');
+const almostComplete = exercisePledge(code, {
+  donor: { pledgeAmountCents: 10000 },
+  summary: { stewardshipYtdCents: 9999 },
+  parish,
+});
+assert.equal(almostComplete.after.pledgeRemaining.textContent, '$0.01 remaining');
+assert.equal(almostComplete.after.pledgeBarTrack.attrs['aria-valuenow'], '99');
+assert.equal(almostComplete.after.pledgeBarFill.classes['pledge-complete'], false);
 for (const [donor, p, activeHidden, emptyHidden, lockedHidden] of [
   [{ pledgeAmountCents: 0 }, parish, true, false, true],
   [{ pledgeAmountCents: 10000 }, { ...parish, pledgeTrackerEnabled: false }, true, true, false],

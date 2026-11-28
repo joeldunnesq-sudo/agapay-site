@@ -545,8 +545,10 @@ function renderPledgeTracker(
   const pledgeYear = String(new Date().getFullYear());
   // Pledge progress counts parish offerings (tithe/stewardship) only — not designated
   // funds, campaigns, candles, or commemorations. See donorSummaryFromOfferings.
-  const ytdCents = Number(summary?.stewardshipYtdCents || 0);
-  const trackedCents = cadence === 'monthly' ? Number(summary?.stewardshipMonthCents || 0) : ytdCents;
+  const trackedCents = Number(
+    (cadence === 'monthly' ? summary?.stewardshipMonthCents : summary?.stewardshipYtdCents) || 0
+  );
+  const remainingCents = Math.max(0, pledgeCents - trackedCents);
   const periodTitle =
     cadence === 'monthly'
       ? new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) + ' Pledge'
@@ -571,7 +573,7 @@ function renderPledgeTracker(
     }
     if (activeState) activeState.hidden = false;
     if (emptyState) emptyState.hidden = true;
-    const pct = Math.min(100, Math.round((trackedCents / pledgeCents) * 100));
+    const pct = Math.min(remainingCents ? 99 : 100, Math.max(0, Math.round((trackedCents / pledgeCents) * 100)));
     const fill = document.getElementById(prefix + 'BarFill');
     const track = document.getElementById(prefix + 'BarTrack');
     if (fill) {
@@ -584,15 +586,9 @@ function renderPledgeTracker(
     const label = document.getElementById(labelId);
     if (label) label.textContent = periodTitle;
     const raised = document.getElementById(prefix + 'Raised');
-    if (raised) raised.textContent = money(trackedCents) + ' given';
-    const pctEl = document.getElementById(prefix + 'Pct');
-    if (pctEl) pctEl.textContent = pct + '%';
-    const goal = document.getElementById(prefix + 'Goal');
-    if (goal) goal.textContent = 'of ' + money(pledgeCents) + ' pledge';
-    if (prefix === 'pledge') {
-      const editLink = card.querySelector<HTMLAnchorElement>('.pledge-tracker-edit');
-      if (editLink) editLink.href = '/myagapay/account#pledge';
-    }
+    if (raised) raised.textContent = `${money(trackedCents, true)} of ${money(pledgeCents, true)}`;
+    const remaining = document.getElementById(prefix + 'Remaining');
+    if (remaining) remaining.textContent = money(remainingCents, true) + ' remaining';
   }
 }
 
