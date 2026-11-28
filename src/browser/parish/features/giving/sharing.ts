@@ -96,8 +96,7 @@ async function renderQrCode(): Promise<void> {
   });
   if (!url || typeof qrcode === 'undefined') {
     targets.forEach((t) => {
-      t.innerHTML =
-        `<span class="pdx-qr-placeholder">${url ? 'QR unavailable' : 'QR pending'}</span>`;
+      t.innerHTML = `<span class="pdx-qr-placeholder">${url ? 'QR unavailable' : 'QR pending'}</span>`;
     });
     currentQrSvg = '';
     return;

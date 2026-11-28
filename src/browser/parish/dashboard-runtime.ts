@@ -19,6 +19,14 @@ function setDashboardBootMessage(title: string, message: string) {
 function openParishSections() {
   const dialog = document.getElementById('parishSectionsDialog') as HTMLDialogElement | null;
   if (!dialog || dialog.open) return;
+  dialog.querySelectorAll<HTMLButtonElement>('[data-nav-tab]').forEach((button) => {
+    if (button.querySelector('svg')) return;
+    const icon = document.getElementById('nav-' + button.dataset.navTab)?.querySelector('svg')?.cloneNode(true);
+    if (icon instanceof SVGElement) {
+      icon.setAttribute('aria-hidden', 'true');
+      button.prepend(icon);
+    }
+  });
   dialog.showModal();
   dialog.querySelector<HTMLElement>('[aria-current="page"]:not([hidden])')?.focus();
 }

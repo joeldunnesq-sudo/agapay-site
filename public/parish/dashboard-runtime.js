@@ -9,6 +9,17 @@ function setDashboardBootMessage(title, message) {
 function openParishSections() {
   const dialog = document.getElementById('parishSectionsDialog');
   if (!dialog || dialog.open) return;
+  dialog.querySelectorAll('[data-nav-tab]').forEach((button) => {
+    if (button.querySelector('svg')) return;
+    const icon = document
+      .getElementById('nav-' + button.dataset.navTab)
+      ?.querySelector('svg')
+      ?.cloneNode(true);
+    if (icon instanceof SVGElement) {
+      icon.setAttribute('aria-hidden', 'true');
+      button.prepend(icon);
+    }
+  });
   dialog.showModal();
   dialog.querySelector('[aria-current="page"]:not([hidden])')?.focus();
 }

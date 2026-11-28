@@ -2936,7 +2936,7 @@ textarea {
 /* Giving workspace and section navigation */
 .sidebar-nav button.sidebar-nav-item {
   width:100%; min-height:38px; border-block:0; border-right:0; background:transparent;
-  font-family:var(--sans); text-align:left; line-height:1.25;
+  font-family:var(--sans); font-weight:600; text-align:left; line-height:1.25;
 }
 .sidebar-nav button.sidebar-nav-item:hover,
 .sidebar-nav button.sidebar-nav-item.active { background:rgba(184,144,47,.1); color:var(--cream); }

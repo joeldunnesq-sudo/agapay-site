@@ -99,7 +99,7 @@ for (const asset of featureAssetVersions) {
   );
 }
 assert.ok(
-  dashboard.includes('/parish/style.css?v=20260901memorial1') &&
+  dashboard.includes(appAssetUrl('/parish/style.css')) &&
     dashboard.includes(appAssetUrl('/parish/redesign.css')) &&
     dashboard.includes('/parish/library.css?v=20260829fullscreen1') &&
     dashboard.includes('/styles/stewardship.css?v=20260902access1'),

@@ -21,10 +21,14 @@ const gift = {
   createdAt: new Date().toISOString(),
   isDiagnostic: true,
 };
-const summary = donorSummaryFromOfferings([gift, { ...gift, id: 'refund', refundedCents: 500 }]);
-assert.equal(summary.ytdCents, 20160);
-assert.equal(summary.monthCents, 20160);
-assert.equal(summary.stewardshipYtdCents, 20000, 'Pledge progress keeps intended gift');
+const summary = donorSummaryFromOfferings(
+  [gift, { ...gift, id: 'refund', refundedCents: 500 }, { ...gift, id: 'other', parishId: 'another-parish' }],
+  [],
+  { parishId: gift.parishId }
+);
+assert.equal(summary.ytdCents, 30490);
+assert.equal(summary.monthCents, 30490);
+assert.equal(summary.stewardshipYtdCents, 20000, 'Pledge progress keeps intended gifts to the home parish');
 assert.equal(publicDonorOffering(gift).contributionCents, 10330);
 assert.equal(publicDonorOffering({ ...gift, refundedCents: 500 }).contributionCents, 9830);
 let message;

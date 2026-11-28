@@ -120,7 +120,7 @@ try {
       assert.equal(await page.locator('.pdx-commemoration-names').first().textContent(), 'Living <name>');
       assert.equal(await page.locator('#commemorationQueuePane img').count(), 0);
       assert.equal(await page.locator('#givingUrlHeroInput').inputValue(), `${origin}/give/synthetic-parish`);
-      assert.ok((await page.locator('#qrCodeHero').textContent()).includes('Load dashboard'));
+      assert.equal(await page.locator('#qrCodeHero').textContent(), 'QR unavailable');
       summaryFails = true;
       await page.evaluate(() => loadGivingSummary());
       await page.locator('#givingSummaryStatus').waitFor({ state: 'visible' });
