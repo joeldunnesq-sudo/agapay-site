@@ -369,7 +369,22 @@ export async function wireGivingOfferingToAccounting(env: Partial<Env>, offering
     text(offering.checkoutSessionId);
   if (!donationId) return null;
   const paymentIntentId = text(offering.stripePaymentIntentId);
-  const occurredAt = text(offering.completedAt) || text(offering.createdAt) || new Date().toISOString();
+  const sourceEventId = `give:${donationId}:succeeded`;
+  // Older delayed Checkout deliveries could overwrite the offering's completion time.
+  // Keep the original posting date and settlement estimate for the same bank debit.
+  const recorded =
+    paymentIntentId && ['ach', 'us_bank_account'].includes(text(offering.paymentMethod))
+      ? await db
+          .prepare(
+            `SELECT occurred_at,net_amount FROM accounting_integration_source_events
+             WHERE source_system='agapay_give' AND source_type='donation_succeeded'
+             AND source_event_id=? AND payment_intent_id=?`
+          )
+          .bind(sourceEventId, paymentIntentId)
+          .first<{ occurred_at: string; net_amount: number }>()
+      : null;
+  const occurredAt =
+    recorded?.occurred_at || text(offering.completedAt) || text(offering.createdAt) || new Date().toISOString();
   const grossAmount = cents(offering.giftAmountCents ?? offering.amountCents);
   const event = await ingestAccountingSourceEvent(db, {
     actor: actor('accounting.integrations.post'),
@@ -377,12 +392,12 @@ export async function wireGivingOfferingToAccounting(env: Partial<Env>, offering
     event: {
       sourceSystem: 'agapay_give',
       sourceType: 'donation_succeeded',
-      sourceEventId: `give:${donationId}:succeeded`,
+      sourceEventId,
       sourceObjectId: donationId,
       occurredAt,
       currency: text(offering.currency) || 'USD',
       grossAmount,
-      netAmount: cents(offering.parishNetCents) || grossAmount,
+      netAmount: recorded?.net_amount ?? (cents(offering.parishNetCents) || grossAmount),
       donationId,
       paymentIntentId,
       donationType: text(offering.giftType) || 'offering',

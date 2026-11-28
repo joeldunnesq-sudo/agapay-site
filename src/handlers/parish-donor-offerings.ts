@@ -159,6 +159,14 @@ export async function storeDonorOffering(
   if (nextStatus === 'disputed' && previous?.stripeDisputeId === offering.stripeDisputeId && previous?.disputeClosedAt)
     return previous;
   offering = { ...previous, ...offering };
+  if (
+    nextStatus === 'completed' &&
+    previous?.paymentStatus === 'paid' &&
+    previous.stripePaymentIntentId === offering.stripePaymentIntentId &&
+    previous.completedAt
+  ) {
+    offering.completedAt = previous.completedAt;
+  }
   const fees = offeringFeeBreakdown(offering);
   const settlementProfileId =
     offering.settlementProfileId ||
@@ -251,7 +259,12 @@ export async function storeDonorOffering(
          settlement_profile_id = excluded.settlement_profile_id,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at,
-         data = excluded.data
+         data = CASE WHEN excluded.status='completed'
+           AND donor_offerings.payment_status='paid'
+           AND donor_offerings.payment_intent_id=excluded.payment_intent_id
+           AND COALESCE(json_extract(donor_offerings.data,'$.completedAt'),'')<>''
+           THEN json_set(excluded.data,'$.completedAt',json_extract(donor_offerings.data,'$.completedAt'))
+           ELSE excluded.data END
        WHERE NOT (excluded.status IN (${sqlStatuses(unsettledOfferingStatuses)})
            AND (donor_offerings.status IN ('completed',${sqlStatuses(reversalOfferingStatuses)})
              OR donor_offerings.payment_status='paid'))

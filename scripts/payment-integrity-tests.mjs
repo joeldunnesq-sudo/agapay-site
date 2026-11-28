@@ -200,6 +200,71 @@ function postedLines(env, type) {
 }
 
 try {
+  for (const order of ['intent-first', 'session-first', 'concurrent']) {
+    const env = await fixture('staging');
+    const checkout = {
+      id: 'cs_test_delayedAch',
+      payment_intent: 'pi_delayedAch',
+      mode: 'payment',
+      payment_status: 'paid',
+      created: invoice.created - 3600,
+    };
+    const intent = { id: checkout.payment_intent, created: checkout.created + 60 };
+    const offering = {
+      ...base,
+      id: checkout.id,
+      checkoutSessionId: checkout.id,
+      stripePaymentIntentId: checkout.payment_intent,
+      recordType: 'payment',
+      frequency: 'once',
+      paymentMethod: 'ach',
+      status: 'pending',
+      paymentStatus: 'unpaid',
+    };
+    await storeDonorOffering(env, offering);
+    const payments = {
+      intent: () =>
+        deliver(env, 'evt_delayed_intent', 'payment_intent.succeeded', intent, { created: invoice.created }),
+      session: () =>
+        deliver(env, 'evt_delayed_session', 'checkout.session.async_payment_succeeded', checkout, {
+          created: invoice.created + 2,
+        }),
+    };
+    const deliveries =
+      order === 'concurrent'
+        ? await Promise.all([payments.intent(), payments.session()])
+        : order === 'intent-first'
+          ? [await payments.intent(), await payments.session()]
+          : [await payments.session(), await payments.intent()];
+    assert.deepEqual(
+      deliveries.map((result) => result.status),
+      [200, 200],
+      order
+    );
+    const saved = await loadDonorOfferingById(env, offering.id);
+    const entries = env.LEDGER_A.sqlite
+      .prepare(
+        `SELECT e.occurred_at, j.total_debits, j.total_credits FROM accounting_integration_source_events e
+         JOIN accounting_journal_entries j ON j.id=e.journal_entry_id WHERE e.payment_intent_id=? AND j.status='posted'`
+      )
+      .all(intent.id);
+    assert.equal(entries.length, 1, order);
+    assert.equal(entries[0].occurred_at, saved.completedAt, order);
+    assert.ok(Date.parse(saved.completedAt) >= invoice.created * 1000, order);
+    assert.equal(entries[0].total_debits, 1000, order);
+    assert.equal(entries[0].total_credits, 1000, order);
+    // Simulate a previously deployed webhook having replaced the completion timestamp.
+    env.AGAPAY_DB.sqlite
+      .prepare("UPDATE donor_offerings SET data=json_set(data,'$.completedAt',?) WHERE id=?")
+      .run(new Date(checkout.created * 1000).toISOString(), offering.id);
+    assert.equal(
+      (await deliver(env, 'evt_delayed_legacy', 'checkout.session.async_payment_succeeded', checkout)).status,
+      200
+    );
+    assert.equal(env.LEDGER_A.sqlite.prepare('SELECT COUNT(*) n FROM accounting_journal_entries').get().n, 1);
+  }
+  console.log('PASS - delayed ACH success preserves one balanced posting in either delivery order and on retry');
+
   const payoutEnv = await fixture('staging');
   payoutEnv.AGAPAY_DB.sqlite
     .prepare('INSERT INTO registrations(reference,parish_id,stripe_account_id,data) VALUES (?,?,?,?)')
