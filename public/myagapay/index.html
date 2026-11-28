@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=cdc69f96a2fc9ef2" />
+  <link rel="stylesheet" href="/donor/style.css?v=0827b53392c46b76" />
   <script src="/liturgical-calendar.js?v=87b139e0c72b838d"></script>
 <link rel="manifest" href="/myagapay/manifest.webmanifest?v=c6e32ab2d6840dc9" />
   <script src="/pwa-register.js?v=b41a4196ec973449" defer></script>
@@ -18,7 +18,7 @@
   <script src="/donor/controllers/calendar.js?v=926b8dcf09dabf64" defer></script>
   <script src="/donor/controllers/history.js?v=5634795bbdf2fb25" defer></script>
   <script src="/donor/controllers/sacraments.js?v=0fcb331d33fa2cd0" defer></script>
-  <script src="/donor/app.js?v=c44713a135e9cf92" defer></script>
+  <script src="/donor/app.js?v=d795495f0e75d7a7" defer></script>
   <link rel="stylesheet" href="/myagapay/app-header.css?v=81a1bc73669bf3de" />
   <script src="/myagapay/app-header.js?v=e2786f7dad977d6b" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
@@ -92,9 +92,6 @@
           <div class="desktop-hero-copy">
             <h1 id="desktopGreeting">Welcome, Faithful Member</h1>
           </div>
-          <div class="desktop-hero-actions">
-            <a class="giving-account-link" href="/myagapay/account">Account</a>
-          </div>
         </div>
         <div class="notice desktop-status" id="desktopDonorStatus" style="display:none;"></div>
 
@@ -103,22 +100,21 @@
             <!-- Active pledge state -->
             <div class="desktop-pledge-inner" id="desktopPledgeActiveState">
               <div class="desktop-pledge-label">
-                <span id="desktopPledgeTitle">Annual Pledge</span>
+                <div class="pledge-title-group"><span id="desktopPledgeTitle">Annual Pledge</span><span class="pledge-scope">Home parish</span></div>
                 <a href="/myagapay/account#pledge" class="desktop-pledge-edit">Edit pledge</a>
               </div>
-              <div class="desktop-pledge-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="desktopPledgeBarTrack">
+              <div class="desktop-pledge-bar-track" role="progressbar" aria-labelledby="desktopPledgeTitle" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="desktopPledgeBarTrack" aria-describedby="desktopPledgeRaised desktopPledgeRemaining">
                 <div class="desktop-pledge-bar-fill" id="desktopPledgeBarFill" style="width:0%"></div>
               </div>
               <div class="desktop-pledge-meta">
-                <span id="desktopPledgeRaised">$0 given</span>
-                <span id="desktopPledgePct">0%</span>
-                <span id="desktopPledgeGoal">of $0 pledge</span>
+                <span id="desktopPledgeRaised"></span>
+                <strong class="pledge-remaining" id="desktopPledgeRemaining"></strong>
               </div>
             </div>
             <!-- Empty/encourage state -->
             <div class="desktop-pledge-inner" id="desktopPledgeEmptyState" hidden>
               <div class="desktop-pledge-label">
-                <span>Set Annual Pledge</span>
+                <div class="pledge-title-group"><span>Set Annual Pledge</span><span class="pledge-scope">Home parish</span></div>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
                 <p style="margin: 0; font-size: 13px; line-height: 1.45; color: rgba(246, 241, 232, 0.8); max-width: 440px;">
@@ -148,10 +144,15 @@
             <div class="desktop-panel-head">
               <h2>Quick Give</h2>
             </div>
+            <a class="giving-recurring-bar" href="/myagapay/giving/give?quick=1&amp;giftType=stewardship&amp;frequency=monthly">
+              <span class="giving-recurring-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 8a8 8 0 0 0-14 0L3 11m0 0V6m0 5h5m-3 5a8 8 0 0 0 14 0l2-3m0 0v5m0-5h-5"/></svg></span>
+              <strong>Start a recurring gift now</strong>
+              <span class="giving-recurring-arrow" aria-hidden="true">→</span>
+            </a>
             <div class="desktop-quick-grid" data-giving-tier-region aria-busy="true">
               <a class="desktop-quick-card" id="desktopQuickTithes" href="/myagapay/giving/give?quick=1&giftType=stewardship"><span id="desktopParishIcon" class="desktop-quick-icon"></span><strong>Tithes</strong><span>Give once or set up recurring parish support</span></a>
-              <a class="desktop-quick-card" id="desktopQuickCandle" data-giving-plus-gift="candles" href="/myagapay/giving/give?quick=1&giftType=candles"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span><strong>Candle</strong><span>Offer candles and intentions</span></a>
-              <a class="desktop-quick-card" id="desktopQuickMemorial" data-giving-plus-gift="commemoration" href="/myagapay/giving/give?quick=1&giftType=commemoration"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span><strong>Memorial</strong><span>Liturgical prayer or a special service</span></a>
+              <a class="desktop-quick-card" id="desktopQuickCandle" role="link" data-giving-plus-gift="candles" href="/myagapay/giving/give?quick=1&giftType=candles"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span><strong>Candle</strong><span>Offer candles and intentions</span></a>
+              <a class="desktop-quick-card" id="desktopQuickMemorial" role="link" data-giving-plus-gift="commemoration" href="/myagapay/giving/give?quick=1&giftType=commemoration"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span><strong>Memorial</strong><span>Liturgical prayer or a special service</span></a>
               <a class="desktop-quick-card" id="desktopQuickFeast" data-giving-plus-gift="feast" href="/myagapay/giving/give?quick=1&giftType=feast"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span><strong>Festal Alms</strong><span>For the poor and needy</span></a>
               <a class="desktop-quick-card" id="desktopQuickCampaigns" role="link" data-giving-plus-gift="campaign" href="/myagapay/giving/give?quick=1&giftType=campaign"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 25s9-4.8 9-11.2V6.5L14 3 5 6.5v7.3C5 20.2 14 25 14 25z"/></svg></span><strong>Campaigns</strong><span>Support active parish appeals</span></a>
             </div>
@@ -213,29 +214,27 @@
             <h1 id="greeting">Welcome, Faithful Member</h1>
             <a class="welcome-signin-prompt" href="/myagapay/login" data-auth-guest>Sign in to load your church, giving history, and saved offering preferences.</a>
           </div>
-          <a class="giving-account-link" href="/myagapay/account">Account</a>
         </header>
 
         <section class="pledge-tracker-card" id="pledgeTrackerCard" hidden aria-label="Annual pledge progress">
           <!-- Active pledge state -->
           <div id="pledgeActiveState">
             <div class="pledge-tracker-head">
-              <span class="pledge-tracker-label" id="pledgeTrackerLabel">Annual Pledge</span>
+              <div class="pledge-title-group"><span class="pledge-tracker-label" id="pledgeTrackerLabel">Annual Pledge</span><span class="pledge-scope">Home parish</span></div>
               <a class="pledge-tracker-edit" href="/myagapay/account#pledge" aria-label="Edit pledge">Edit</a>
             </div>
-            <div class="pledge-bar-track" role="progressbar" aria-labelledby="pledgeTrackerLabel" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="pledgeBarTrack">
+            <div class="pledge-bar-track" role="progressbar" aria-labelledby="pledgeTrackerLabel" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="pledgeBarTrack" aria-describedby="pledgeRaised pledgeRemaining">
               <div class="pledge-bar-fill" id="pledgeBarFill" style="width:0%"></div>
             </div>
             <div class="pledge-tracker-meta">
-              <span id="pledgeRaised">$0 given</span>
-              <span id="pledgePct">0%</span>
-              <span id="pledgeGoal">of $0 pledge</span>
+              <span id="pledgeRaised"></span>
+              <strong class="pledge-remaining" id="pledgeRemaining"></strong>
             </div>
           </div>
           <!-- Empty/encourage state -->
           <div id="pledgeEmptyState" hidden>
             <div class="pledge-tracker-head">
-              <span class="pledge-tracker-label">Set Annual Pledge</span>
+              <div class="pledge-title-group"><span class="pledge-tracker-label">Set Annual Pledge</span><span class="pledge-scope">Home parish</span></div>
             </div>
             <p style="margin: 0 0 0.75rem 0; font-size: 13px; line-height: 1.45; color: rgba(246, 241, 232, 0.8);">
               Support your parish's mission and enable real-time stewardship tracking by setting your annual pledge.
@@ -269,16 +268,21 @@
           <div class="mobile-section-head">
             <h2>Quick Give</h2>
           </div>
+          <a class="giving-recurring-bar" href="/myagapay/giving/give?quick=1&amp;giftType=stewardship&amp;frequency=monthly">
+            <span class="giving-recurring-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 8a8 8 0 0 0-14 0L3 11m0 0V6m0 5h5m-3 5a8 8 0 0 0 14 0l2-3m0 0v5m0-5h-5"/></svg></span>
+            <strong>Start a recurring gift now</strong>
+            <span class="giving-recurring-arrow" aria-hidden="true">→</span>
+          </a>
           <div class="quick-give-grid" data-giving-tier-region aria-busy="true">
             <a class="quick-give-tile" id="quickGiveTithes" href="/myagapay/giving/give?quick=1&giftType=stewardship">
               <span class="quick-give-icon" id="quickGiveParishIcon"><svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg></span>
               <span>Tithes</span>
             </a>
-            <a class="quick-give-tile" id="quickGiveCandle" data-giving-plus-gift="candles" href="/myagapay/giving/give?quick=1&giftType=candles">
+            <a class="quick-give-tile" id="quickGiveCandle" role="link" data-giving-plus-gift="candles" href="/myagapay/giving/give?quick=1&giftType=candles">
               <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span>
               <span>Candle</span>
             </a>
-            <a class="quick-give-tile" id="quickGiveMemorial" data-giving-plus-gift="commemoration" href="/myagapay/giving/give?quick=1&giftType=commemoration">
+            <a class="quick-give-tile" id="quickGiveMemorial" role="link" data-giving-plus-gift="commemoration" href="/myagapay/giving/give?quick=1&giftType=commemoration">
               <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span>
               <span>Memorial</span>
             </a>

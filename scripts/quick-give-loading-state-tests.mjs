@@ -89,11 +89,16 @@ function fakeClassList(initial = []) {
 }
 
 function fakeTile(giftType) {
-  const attributes = new Map([['data-giving-plus-gift', giftType]]);
+  const attributes = new Map([
+    ['data-giving-plus-gift', giftType],
+    ['href', `/initial/${giftType}`],
+  ]);
   return {
     classList: fakeClassList(),
     textContent: giftType,
-    href: `/initial/${giftType}`,
+    set href(url) {
+      attributes.set('href', url);
+    },
     onclick: null,
     getAttribute: (name) => attributes.get(name) || '',
     setAttribute: (name, value) => attributes.set(name, String(value)),
@@ -189,5 +194,17 @@ assert.ok(
 context.setGivingTierTilesLoading();
 context.updateGivingTierTiles({ id: 'starter-parish', givingPlusEnabled: false, candlesEnabled: false });
 assert.ok(tiles.every((tile) => tile.classList.contains('giving-tier-locked')));
+for (const tile of tiles.slice(0, 2)) {
+  assert.equal(tile.attribute('aria-label'), tile.textContent + ' — not offered here');
+  assert.equal(tile.attribute('aria-disabled'), 'true');
+  assert.equal(tile.attribute('href'), undefined);
+  assert.equal(tile.onclick, null);
+}
+context.updateGivingTierTiles(givingPlusParish);
+for (const tile of tiles.slice(0, 2)) {
+  assert.equal(tile.attribute('aria-label'), tile.textContent);
+  assert.equal(tile.attribute('aria-disabled'), undefined);
+  assert.equal(tile.attribute('href'), `/give/giving-plus-parish/${tile.textContent}`);
+}
 
 console.log('PASS - Quick Give is neutral without tier data and never locks freshly permitted gift types');

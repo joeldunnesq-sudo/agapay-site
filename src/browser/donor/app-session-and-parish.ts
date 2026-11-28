@@ -145,10 +145,13 @@ function clearDonorCache(name: string) {
   }
 }
 
-function money(cents: unknown) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
-    (Number(cents) || 0) / 100
-  );
+function money(cents: unknown, showCents = false) {
+  const amount = (Number(cents) || 0) / 100;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: showCents && !Number.isInteger(amount) ? 2 : 0,
+  }).format(amount);
 }
 
 function donorInitials(donor: DonorAppProfile | null | undefined) {
@@ -550,17 +553,18 @@ function updateGivingTierTiles(parish: DonorAppParish | null | undefined) {
   document.querySelectorAll<HTMLAnchorElement>('[data-giving-plus-gift]').forEach((tile) => {
     const giftType = tile.getAttribute('data-giving-plus-gift') || '';
     const allowed = parishCanUseGiftType(parish, giftType);
-    const noCampaigns = giftType === 'campaign' && !allowed;
+    const parishOffering = giftType === 'candles' || giftType === 'commemoration';
+    const unavailable = !allowed && (parishOffering || giftType === 'campaign');
     tile.classList.remove('giving-tier-loading');
     tile.classList.toggle('giving-tier-locked', !allowed);
     tile.removeAttribute('aria-busy');
     tile.removeAttribute('tabindex');
-    const availability = allowed ? '' : noCampaigns ? ' — no open campaigns' : ' — not currently available';
-    tile.setAttribute('aria-label', tile.textContent.trim() + availability);
-    if (noCampaigns) tile.setAttribute('aria-disabled', 'true');
+    const reason = parishOffering ? 'not offered here' : unavailable ? 'no open campaigns' : 'not currently available';
+    tile.setAttribute('aria-label', tile.textContent.trim() + (allowed ? '' : ` — ${reason}`));
+    if (unavailable) tile.setAttribute('aria-disabled', 'true');
     else tile.removeAttribute('aria-disabled');
-    tile.onclick = allowed || noCampaigns ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
-    if (noCampaigns) tile.removeAttribute('href');
+    tile.onclick = allowed || unavailable ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    if (unavailable) tile.removeAttribute('href');
     else tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
   });
 }
