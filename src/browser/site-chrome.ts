@@ -15,7 +15,6 @@
   const SIGN_IN_LINKS = [
     { href: '/myagapay/login', label: 'My AGAPAY' },
     { href: '/give/login', label: 'Parish Dashboard' },
-    { href: '/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard', label: 'AGAPAY Learn' },
   ];
 
   // Official AGAPAY profiles shared by the public-site footer.
@@ -117,15 +116,10 @@
             <a class="btn-donate" href="/register">
               Start for free
             </a>
+          </div>
 
-            <div class="signin-wrap">
-              <button class="nav-avatar" id="signinBtn" type="button" aria-label="Sign in" aria-expanded="false">
-                ${shellIcon('user')}
-              </button>
-              <div class="signin-menu" id="signinMenu" role="menu">
-                ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join('')}
-              </div>
-            </div>
+          <div class="nav-signin" role="group" aria-label="Sign in">
+            ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join('')}
           </div>
 
           <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
@@ -150,10 +144,6 @@
             <a class="drawer-demo" href="/give/request-demo">Request a Demo</a>
             <a class="drawer-join" href="/register">Start for free</a>
           </div>
-          <div class="drawer-divider"></div>
-          <nav class="drawer-links" aria-label="Sign in options">
-            ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join('')}
-          </nav>
         </div>
       </aside>
     `;
@@ -204,8 +194,8 @@
             </nav>
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
-              <a href="/myagapay/login">My AGAPAY</a>
-              <a href="/give/login">Parish Dashboard</a>
+              ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join('')}
+              <a href="/myagapay/login?next=%2Fmyagapay%2Flearn%2Fdashboard">AGAPAY Learn</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">
               <h4>Legal</h4>
@@ -227,8 +217,6 @@
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const drawerBackdrop = document.getElementById('drawerBackdrop');
     const drawerCloseBtn = document.getElementById('drawerCloseBtn');
-    const signinBtn = document.getElementById('signinBtn');
-    const signinMenu = document.getElementById('signinMenu');
 
     function setDrawer(open: boolean) {
       body.classList.toggle('drawer-open', open);
@@ -260,25 +248,8 @@
       });
     });
 
-    if (signinBtn && signinMenu) {
-      signinBtn.addEventListener('click', function (event) {
-        event.stopPropagation();
-        const open = signinMenu.classList.toggle('open');
-        signinBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      });
-
-      document.addEventListener('click', function () {
-        signinMenu.classList.remove('open');
-        signinBtn.setAttribute('aria-expanded', 'false');
-      });
-    }
-
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') {
-        setDrawer(false);
-        if (signinMenu) signinMenu.classList.remove('open');
-        if (signinBtn) signinBtn.setAttribute('aria-expanded', 'false');
-      }
+      if (event.key === 'Escape') setDrawer(false);
     });
   }
 
