@@ -1,7 +1,4 @@
 /* Shared My AGAPAY page header. */
-:root {
-  --app-header-background: #0c1d25;
-}
 .app-shared-header-page .app-header-replaced {
   display: none !important;
 }
@@ -395,7 +392,7 @@
   --app-header-inline-padding: 20px;
   min-height: 65px;
   padding: 10px var(--app-header-inline-padding);
-  background: var(--app-header-background);
+  background: #0c1d25;
 }
 .app-header-brand { min-width:0; flex:1 1 auto; font-size:18px; font-weight:700; letter-spacing:.095em; color:#fff7e7; }
 .app-header-brand > span { min-width:0; }
@@ -417,25 +414,6 @@
 .app-header-back { min-height:36px; margin:0 0 4px; padding:0; border:0; background:transparent; color:#806532; }
 .app-header-description { margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #ded6c6; color:#536773; font-size:.875rem; }
 .app-home-header .app-header-body { display:none; }
-.app-home-status-bar-surface { display: none; }
-
-/* iOS standalone WebKit samples fixed backgrounds taller than 10px at the
-   top edge. Empty text clipping keeps this color sample out of the page paint. */
-@supports (-webkit-touch-callout: none) and (background-clip: text) {
-  @media (display-mode: standalone) {
-    .app-home-status-bar-surface {
-      display: block;
-      position: fixed;
-      inset: 0 0 auto;
-      height: 11px;
-      z-index: 100;
-      pointer-events: none;
-      background-color: var(--app-header-background);
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-  }
-}
 .app-shared-header-page .app-home-header .app-header-bar {
   min-height: calc(65px + env(safe-area-inset-top, 0px));
   padding-top: calc(10px + env(safe-area-inset-top, 0px));
