@@ -206,7 +206,8 @@ async function ingestAccountingSourceEvent(db, { actor, entitlementTier, event }
     db,
     `INSERT INTO accounting_integration_source_events(id,source_system,source_type,source_event_id,source_object_id,event_version,occurred_at,received_at,currency,gross_amount,fee_amount,net_amount,refund_amount,dispute_amount,
     original_source_event_id,donation_id,payment_intent_id,charge_id,balance_transaction_id,refund_id,dispute_id,payout_id,revenue_stream_id,settlement_profile_id,donation_type,campaign_id,designated_fund_id,donor_restricted,fee_coverage_amount,correlation_id,payload_hash)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT(source_system,source_event_id) DO NOTHING`,
     eventId,
     facts.sourceSystem,
     facts.sourceType,
@@ -239,7 +240,16 @@ async function ingestAccountingSourceEvent(db, { actor, entitlementTier, event }
     event.correlationId || null,
     payloadHash
   );
-  return sourceDto(await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', eventId));
+  const inserted = await first(
+    db,
+    'SELECT * FROM accounting_integration_source_events WHERE source_system=? AND source_event_id=?',
+    facts.sourceSystem,
+    facts.sourceEventId
+  );
+  if (inserted?.payload_hash !== payloadHash) {
+    throw new ValidationError('Duplicate source event contains conflicting accounting facts.');
+  }
+  return sourceDto(inserted);
 }
 async function eligibleAccount(db, accountId, category) {
   return (
@@ -266,22 +276,32 @@ async function resolveMapping(db, event, settings) {
     event.settlement_profile_id
   );
   const row = mappings.find((item) => !item.source_object_id || item.source_object_id === event.source_object_id) || {};
-  const original =
-    event.original_source_event_id &&
-    (await first(
-      db,
-      `SELECT l.account_id,l.fund_id FROM accounting_integration_source_events e JOIN accounting_journal_entries j ON j.id=e.journal_entry_id JOIN accounting_journal_lines l ON l.journal_entry_id=j.id JOIN accounting_account_types t ON t.id=(SELECT account_type_id FROM accounting_accounts WHERE id=l.account_id) WHERE e.id=? AND t.category='revenue' LIMIT 1`,
-      event.original_source_event_id
-    ));
+  const original = event.original_source_event_id
+    ? await first(
+        db,
+        `SELECT l.account_id,l.fund_id,
+        (SELECT asset.account_id FROM accounting_journal_lines asset
+          JOIN accounting_accounts a ON a.id=asset.account_id
+          JOIN accounting_account_types at ON at.id=a.account_type_id
+          WHERE asset.journal_entry_id=j.id AND at.category='asset' LIMIT 1) AS clearing_account_id
+        FROM accounting_integration_source_events e
+        JOIN accounting_journal_entries j ON j.id=e.journal_entry_id
+        JOIN accounting_journal_lines l ON l.journal_entry_id=j.id
+        JOIN accounting_accounts a ON a.id=l.account_id
+        JOIN accounting_account_types t ON t.id=a.account_type_id
+        WHERE e.id=? AND t.category='revenue' LIMIT 1`,
+        event.original_source_event_id
+      )
+    : null;
   return {
     revenueAccountId: original?.account_id || row.revenue_account_id || settings.default_contribution_account_id,
     feeExpenseAccountId: row.fee_expense_account_id || settings.stripe_fee_expense_account_id,
-    clearingAccountId: row.clearing_account_id || settings.stripe_clearing_account_id,
+    clearingAccountId: original?.clearing_account_id || row.clearing_account_id || settings.stripe_clearing_account_id,
     bankAccountId: row.bank_account_id || settings.default_bank_account_id,
     disputeAccountId:
+      original?.account_id ||
       row.dispute_account_id ||
       row.refund_account_id ||
-      original?.account_id ||
       row.revenue_account_id ||
       settings.default_contribution_account_id,
     fundId: original?.fund_id || event.designated_fund_id || row.fund_id || settings.default_fund_id,
@@ -418,7 +438,33 @@ async function processAccountingSourceEvent(
     );
     return sourceDto(await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', event.id));
   }
-  const mapping = await resolveMapping(db, event, settings);
+  let mappingEvent = event;
+  const donationDispute = event.source_type === 'stripe_dispute_created' && event.donation_id;
+  const linkedDispute =
+    event.original_source_event_id && ['stripe_dispute_created', 'stripe_dispute_won'].includes(event.source_type);
+  if (donationDispute || linkedDispute) {
+    const original = event.original_source_event_id
+      ? await first(
+          db,
+          'SELECT id,status FROM accounting_integration_source_events WHERE id=?',
+          event.original_source_event_id
+        )
+      : await first(
+          db,
+          "SELECT id,status FROM accounting_integration_source_events WHERE source_system='agapay_give' AND source_event_id=?",
+          `give:${event.donation_id}:succeeded`
+        );
+    if (original?.status !== 'posted') {
+      await run(
+        db,
+        "UPDATE accounting_integration_source_events SET status='waiting_for_source',exception_code='original_entry_unposted',updated_at=datetime('now') WHERE id=?",
+        event.id
+      );
+      return sourceDto(await first(db, 'SELECT * FROM accounting_integration_source_events WHERE id=?', event.id));
+    }
+    mappingEvent = { ...event, original_source_event_id: original.id };
+  }
+  const mapping = await resolveMapping(db, mappingEvent, settings);
   if (event.donor_restricted && !mapping.fundId)
     return exception(
       db,
@@ -588,9 +634,10 @@ async function stripeClearingValidation(
   const row = await first(
     db,
     `SELECT COALESCE(SUM(CASE WHEN source_type='donation_succeeded' THEN gross_amount ELSE 0 END),0) gross,
-    COALESCE(SUM(CASE WHEN source_type='stripe_fee_assessed' THEN fee_amount ELSE 0 END),0) fees,
+    COALESCE(SUM(CASE WHEN source_type IN ('stripe_fee_assessed','stripe_chargeback_fee') THEN fee_amount ELSE 0 END),0) fees,
     COALESCE(SUM(CASE WHEN source_type LIKE 'donation_%refunded' THEN refund_amount ELSE 0 END),0) refunds,
-    COALESCE(SUM(CASE WHEN source_type LIKE 'stripe_dispute_%' THEN dispute_amount ELSE 0 END),0) disputes,
+    COALESCE(SUM(CASE WHEN source_type='stripe_dispute_won' THEN -dispute_amount
+      WHEN source_type IN ('stripe_dispute_created','stripe_dispute_lost') THEN dispute_amount ELSE 0 END),0) disputes,
     COALESCE(SUM(CASE WHEN source_type='stripe_payout_paid' THEN net_amount ELSE 0 END),0) payouts FROM accounting_integration_source_events WHERE status='posted' AND date(occurred_at) BETWEEN ? AND ?`,
     startDate,
     endDate

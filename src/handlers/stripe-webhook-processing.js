@@ -24,6 +24,7 @@ import {
   numericCents,
   stripeAccountStatus,
   stripeGetConnectedRequest,
+  stripeGetRequest,
   stripeObjectId,
 } from '../lib/stripe-connect.js';
 import { upsertStripeChargeVolumeRecord } from '../lib/stripe-volume.js';
@@ -54,6 +55,7 @@ import {
   wireCommerceDisputeToAccounting,
   wireCommerceOrderToAccounting,
   wireCommerceRefundsToAccounting,
+  wireGivingDisputeToAccounting,
   wireGivingOfferingToAccounting,
   wireGivingRefundsToAccounting,
 } from '../accounting/source-wiring.js';
@@ -274,43 +276,74 @@ async function processStripeWebhookEvent(env, event) {
         : /* @__PURE__ */ new Date().toISOString(),
     });
   }
-  if (event.type === 'charge.refunded') {
-    const commerceOrder = await refundCommerceOrderFromStripe(env, object);
-    if (commerceOrder?.id) await wireCommerceRefundsToAccounting(env, commerceOrder.id, object);
-    const refundedOffering = await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
-      status: object.amount_refunded >= object.amount ? 'refunded' : 'partially_refunded',
-      paymentStatus: object.amount_refunded >= object.amount ? 'refunded' : 'partially_refunded',
-      refundedCents: object.amount_refunded || 0,
-      refundedAt: /* @__PURE__ */ new Date().toISOString(),
-    });
-    if (refundedOffering) await wireGivingRefundsToAccounting(env, refundedOffering, object);
+  if (event.type === 'charge.refunded' || (event.type === 'refund.updated' && object.status === 'succeeded')) {
+    let charge = object;
+    if (event.type === 'refund.updated') {
+      const chargeId = stripeObjectId(object.charge);
+      if (!chargeId) return;
+      const path = `/v1/charges/${encodeURIComponent(chargeId)}`;
+      const response = event.account
+        ? await stripeGetConnectedRequest(env, path, event.account)
+        : await stripeGetRequest(env, path);
+      if (!response.ok) throw new Error('Unable to load the charge for the updated Stripe refund.');
+      charge = response.body;
+    }
+    const commerceOrder = await refundCommerceOrderFromStripe(env, charge);
+    if (commerceOrder?.id) await wireCommerceRefundsToAccounting(env, commerceOrder.id, charge, event.account);
+    const paymentIntentId = stripeObjectId(charge.payment_intent);
+    const offering = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
+    const refundedCents = numericCents(charge.amount_refunded);
+    if (offering && refundedCents > 0) {
+      const refunds = await wireGivingRefundsToAccounting(env, offering, charge, event.account);
+      const settledCents = refunds
+        ? refunds.reduce((total, refund) => total + (refund?.refundAmount || 0), 0)
+        : refundedCents;
+      if (!settledCents) return;
+      const status = settledCents >= numericCents(charge.amount) ? 'refunded' : 'partially_refunded';
+      await updateDonorOfferingByPaymentIntent(env, paymentIntentId, {
+        status,
+        paymentStatus: status,
+        refundedCents: settledCents,
+        refundedAt: /* @__PURE__ */ new Date().toISOString(),
+      });
+    } else if (
+      !offering &&
+      !commerceOrder &&
+      paymentIntentId &&
+      charge.metadata?.donor_email &&
+      charge.metadata?.parish_id
+    ) {
+      throw new Error('The original gift is not yet available for this Stripe refund.');
+    }
   }
-  if (event.type === 'charge.dispute.created') {
-    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, 'created');
-    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, 'created');
-    await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
-      status: 'disputed',
-      paymentStatus: 'disputed',
-      stripeDisputeId: object.id || '',
-      disputedCents: object.amount || 0,
-      disputeReason: object.reason || '',
-      disputedAt: object.created
-        ? new Date(object.created * 1e3).toISOString()
-        : /* @__PURE__ */ new Date().toISOString(),
-    });
-  }
-  if (event.type === 'charge.dispute.closed') {
-    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, 'closed');
-    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, 'closed');
-    await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
-      status: object.status === 'won' ? 'completed' : 'dispute_closed',
-      paymentStatus: object.status === 'won' ? 'paid' : 'dispute_closed',
-      stripeDisputeId: object.id || '',
-      disputeStatus: object.status || '',
-      disputeClosedAt: object.created
-        ? new Date(object.created * 1e3).toISOString()
-        : /* @__PURE__ */ new Date().toISOString(),
-    });
+  if (event.type === 'charge.dispute.created' || event.type === 'charge.dispute.closed') {
+    if (String(object.status).startsWith('warning_') || object.status === 'prevented') return;
+    const closed = event.type === 'charge.dispute.closed';
+    const phase = closed ? 'closed' : 'created';
+    const commerceOrder = await disputeCommerceOrderFromStripe(env, object, phase);
+    if (commerceOrder?.id) await wireCommerceDisputeToAccounting(env, commerceOrder.id, object, phase);
+    const paymentIntentId = stripeObjectId(object.payment_intent);
+    const offering = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
+    if (!offering) return;
+    const occurredAt = new Date((event.created || object.created || Date.now() / 1e3) * 1e3).toISOString();
+    await wireGivingDisputeToAccounting(env, offering, object, { phase, occurredAt });
+    const won = closed && object.status === 'won';
+    const status = closed ? (won ? 'completed' : 'dispute_closed') : 'disputed';
+    await updateDonorOfferingByPaymentIntent(
+      env,
+      paymentIntentId,
+      {
+        status,
+        paymentStatus: won ? 'paid' : status,
+        stripeDisputeId: object.id || '',
+        disputedCents: numericCents(object.amount),
+        disputeReason: object.reason || offering.disputeReason || '',
+        disputedAt: object.created ? new Date(object.created * 1e3).toISOString() : occurredAt,
+        disputeStatus: closed ? object.status || '' : '',
+        disputeClosedAt: closed ? occurredAt : '',
+      },
+      { disputeResolution: won }
+    );
   }
   if (event.type === 'invoice.payment_succeeded' || event.type === 'invoice.paid') {
     if (!event.account && !invoiceDonationMetadata(object).donor_email && invoiceSubscriptionId(object)) {

@@ -1,5 +1,6 @@
 import type { DonationInvoice } from '../payments/donation-events.js';
 import type { DashboardRegistration } from './parish-dashboard-handler.js';
+import type { StripeObjectReference } from '../lib/stripe-connect.js';
 export interface StripeWebhookObject extends DonationInvoice {
   [field: string]: unknown;
   metadata?: Record<string, string>;
@@ -22,6 +23,7 @@ export interface StripeWebhookObject extends DonationInvoice {
   amount?: number;
   canceled_at?: number;
   amount_refunded?: number;
+  charge?: StripeObjectReference;
   reason?: string;
   status?: string;
   amount_paid?: number;
@@ -46,6 +48,7 @@ export interface StripeWebhookEvent {
   livemode?: boolean;
   id: string;
   type: string;
+  created?: number;
   account?: string;
   data?: { object?: StripeWebhookObject };
 }

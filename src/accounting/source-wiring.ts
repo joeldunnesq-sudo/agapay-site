@@ -1,6 +1,8 @@
 import type { PortabilityDatabase } from '../portability/contracts.js';
 import type { DashboardRegistration } from '../handlers/parish-dashboard-handler.js';
 import type { CatalogRegistration } from '../handlers/parish-giving-catalog.js';
+import { stripeGetConnectedRequest, stripeGetRequest, stripeObjectId } from '../lib/stripe-connect.js';
+import type { StripeObjectReference } from '../lib/stripe-connect.js';
 export interface OperationalCatalogEntry extends Record<string, unknown> {
   name?: string | null;
   title?: string;
@@ -42,12 +44,14 @@ interface StripeRefundInput {
   amount?: unknown;
   currency?: unknown;
   created?: number;
+  status?: string | null;
 }
 interface StripeChargeInput {
   id?: unknown;
   amount?: unknown;
+  amount_refunded?: unknown;
   currency?: unknown;
-  refunds?: { data?: StripeRefundInput[] };
+  refunds?: { data?: StripeRefundInput[]; has_more?: boolean };
 }
 interface StripeDisputeInput {
   id?: unknown;
@@ -55,6 +59,7 @@ interface StripeDisputeInput {
   status?: unknown;
   created?: number;
   currency?: unknown;
+  charge?: StripeObjectReference;
 }
 interface CommerceItemSql {
   id?: string;
@@ -439,10 +444,41 @@ export async function wireGivingOfferingToAccounting(env: Partial<Env>, offering
   return processed;
 }
 
+async function chargeRefunds(env: Partial<Env>, charge: StripeChargeInput, stripeAccountId: string) {
+  const embedded = charge.refunds;
+  if (embedded?.data?.length && !embedded.has_more) return embedded.data;
+  const chargeId = text(charge.id);
+  if (!chargeId || !cents(charge.amount_refunded)) return [];
+
+  const params = new URLSearchParams({ charge: chargeId, limit: '100' });
+  const refunds: StripeRefundInput[] = [];
+  const cursors = new Set<string>();
+  while (true) {
+    const path = `/v1/refunds?${params}`;
+    const page = stripeAccountId
+      ? await stripeGetConnectedRequest(env, path, stripeAccountId)
+      : await stripeGetRequest(env, path);
+    if (!page.ok || !Array.isArray(page.body.data) || !page.body.data.length) {
+      throw new Error('Unable to load the Stripe charge refund records for Accounting.');
+    }
+    refunds.push(...(page.body.data as StripeRefundInput[]));
+    if (!page.body.has_more) return refunds;
+    const cursor = text(refunds.at(-1)?.id);
+    if (!cursor || cursors.has(cursor)) throw new Error('Stripe refund pagination did not advance.');
+    cursors.add(cursor);
+    params.set('starting_after', cursor);
+  }
+}
+
+function settledRefund(refund: StripeRefundInput) {
+  return text(refund.id) && cents(refund.amount) && (!refund.status || refund.status === 'succeeded');
+}
+
 export async function wireGivingRefundsToAccounting(
   env: Partial<Env>,
   offering: Record<string, unknown> = {},
-  charge: StripeChargeInput = {}
+  charge: StripeChargeInput = {},
+  stripeAccountId = ''
 ) {
   const db = await resolveOperationalAccountingDatabase(env, text(offering.parishId));
   const donationId =
@@ -450,7 +486,7 @@ export async function wireGivingRefundsToAccounting(
     text(offering.reference) ||
     text(offering.stripePaymentIntentId) ||
     text(offering.checkoutSessionId);
-  if (!db || !donationId) return [];
+  if (!db || !donationId) return null;
   const campaignId = text(offering.campaignId);
   const festalAlmsGift = ['alms', 'feast'].includes(text(offering.giftType).toLowerCase());
   const campaignGift = Boolean(campaignId) && !festalAlmsGift;
@@ -469,7 +505,7 @@ export async function wireGivingRefundsToAccounting(
         : text(offering.fund) || text(offering.giftType) || 'General Operating Fund',
     restricted: Boolean(offering.donorRestricted),
   });
-  const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
+  const refunds = await chargeRefunds(env, charge, stripeAccountId);
   const results = [];
   const original = await db
     .prepare(
@@ -478,8 +514,8 @@ export async function wireGivingRefundsToAccounting(
     .bind(`give:${donationId}:succeeded`)
     .first<OperationalSqlRow>();
   for (const refund of refunds) {
+    if (!settledRefund(refund)) continue;
     const refundId = text(refund.id);
-    if (!refundId) continue;
     // Preserve already-ingested refunds, including their original allocation
     // and legacy source-object identity, when Stripe repeats the charge event.
     const existing = await db
@@ -530,6 +566,74 @@ export async function wireGivingRefundsToAccounting(
     );
   }
   return results;
+}
+
+export async function wireGivingDisputeToAccounting(
+  env: Partial<Env>,
+  offering: Record<string, unknown>,
+  dispute: StripeDisputeInput,
+  { phase, occurredAt }: { phase: 'created' | 'closed'; occurredAt: string }
+) {
+  const db = await resolveOperationalAccountingDatabase(env, text(offering.parishId));
+  const donationId = text(
+    offering.id || offering.reference || offering.stripePaymentIntentId || offering.checkoutSessionId
+  );
+  const disputeId = text(dispute.id);
+  const disputeAmount = cents(dispute.amount);
+  if (!db || !donationId || !disputeId || !disputeAmount) return null;
+  const donation = await db
+    .prepare(
+      `SELECT id, designated_fund_id, donor_restricted, campaign_id
+      FROM accounting_integration_source_events WHERE source_system='agapay_give' AND source_event_id=?`
+    )
+    .bind(`give:${donationId}:succeeded`)
+    .first<{ id: string; designated_fund_id: string; donor_restricted: number; campaign_id: string }>();
+  const postingActor = actor('accounting.integrations.post');
+  const facts = {
+    sourceSystem: 'stripe',
+    sourceObjectId: disputeId,
+    currency: text(dispute.currency || offering.currency) || 'USD',
+    disputeAmount,
+    donationId,
+    paymentIntentId: text(offering.stripePaymentIntentId),
+    chargeId: stripeObjectId(dispute.charge),
+    disputeId,
+    campaignId: text(donation?.campaign_id || offering.campaignId),
+    designatedFundId: text(donation?.designated_fund_id),
+    donorRestricted: Boolean(donation?.donor_restricted ?? offering.donorRestricted),
+  };
+  async function postDisputeEvent(sourceType: string, originalSourceEventId: string, date: string) {
+    const sourceEventId = `give:${donationId}:dispute:${disputeId}:${sourceType}`;
+    const existing = await db!
+      .prepare(
+        "SELECT id, dispute_amount FROM accounting_integration_source_events WHERE source_system='stripe' AND source_event_id=?"
+      )
+      .bind(sourceEventId)
+      .first<{ id: string; dispute_amount: number }>();
+    if (existing && Number(existing.dispute_amount) !== disputeAmount) {
+      throw new Error('Dispute amount conflicts with the recorded accounting event.');
+    }
+    const source =
+      existing ||
+      (await ingestAccountingSourceEvent(db!, {
+        actor: postingActor,
+        entitlementTier: 'parish',
+        event: { ...facts, sourceType, sourceEventId, originalSourceEventId, occurredAt: date },
+      }));
+    return processAccountingSourceEvent(db!, {
+      actor: postingActor,
+      entitlementTier: 'parish',
+      sourceEventId: source!.id,
+    });
+  }
+
+  // A closed event can arrive first. A lost dispute does not withdraw the principal again.
+  const openedAt = dispute.created ? new Date(dispute.created * 1000).toISOString() : occurredAt;
+  const withdrawal = await postDisputeEvent('stripe_dispute_created', donation?.id || '', openedAt);
+  if (phase === 'closed' && dispute.status === 'won') {
+    return postDisputeEvent('stripe_dispute_won', withdrawal!.id, occurredAt);
+  }
+  return withdrawal;
 }
 
 export async function synchronizeGivingCatalogWithAccounting(
@@ -837,7 +941,8 @@ export async function wireCommerceDisputeToAccounting(
 export async function wireCommerceRefundsToAccounting(
   env: Partial<Env>,
   orderId: string,
-  charge: StripeChargeInput = {}
+  charge: StripeChargeInput = {},
+  stripeAccountId = ''
 ) {
   if (!env?.AGAPAY_DB?.prepare || !orderId) return [];
   const order = await d1First<CommerceOrderSql>(env, 'SELECT * FROM commerce_orders WHERE id=?', orderId);
@@ -845,12 +950,12 @@ export async function wireCommerceRefundsToAccounting(
   const db = await resolveOperationalAccountingDatabase(env, order.parish_id);
   if (!db) return [];
   const total = cents(order.total_charged_cents) || cents(charge.amount);
-  const refunds = Array.isArray(charge.refunds?.data) ? charge.refunds.data : [];
+  const refunds = await chargeRefunds(env, charge, stripeAccountId);
   const results = [];
   for (const refund of refunds) {
+    if (!settledRefund(refund)) continue;
     const amount = cents(refund.amount);
     const refundId = text(refund.id);
-    if (!refundId || !amount) continue;
     const tax = total ? Math.min(cents(order.tax_cents), Math.round((amount * cents(order.tax_cents)) / total)) : 0;
     const source = await ingestCommerceSourceEvent(db, {
       actor: actor('accounting.commerce.post'),
