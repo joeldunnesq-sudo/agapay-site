@@ -211,7 +211,7 @@ try {
   await page.locator('.refined-liturgical-hero').waitFor();
   const homeBar = page.locator('.app-home-header .app-header-bar');
   assert.match(await page.locator('meta[name="viewport"]').getAttribute('content'), /viewport-fit=cover/);
-  for (const width of [390, 448, 540, 756]) {
+  for (const width of [390, 402, 448, 540, 756]) {
     await page.setViewportSize({ width, height: 844 });
     const bar = await homeBar.boundingBox();
     assert.equal(bar.x, 0, `Home header should start at the left edge at ${width}px`);
@@ -222,10 +222,6 @@ try {
   const homeBrand = homeBar.locator('.app-header-brand');
   const homeMenuButton = homeBar.getByRole('button', { name: 'Open My AGAPAY navigation' });
   const homeSafeAreaMenu = page.locator('.app-home-header [data-myagapay-app-menu]');
-  const statusBarSurface = page.locator('body > .app-home-status-bar-surface');
-  assert.equal(await statusBarSurface.getAttribute('aria-hidden'), 'true');
-  assert.equal(await statusBarSurface.evaluate((surface) => surface.hasChildNodes()), false);
-  assert.equal(await statusBarSurface.isVisible(), false, 'The color surface should be inactive in browser tabs');
   try {
     await page.setViewportSize({ width: 402, height: 681 });
     await homeDevtools.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 62, bottom: 34 } });
@@ -234,31 +230,6 @@ try {
     assert.ok((await homeBrand.boundingBox()).y >= 62, 'The Home brand should be below the status area');
     assert.ok((await homeMenuButton.boundingBox()).y >= 62, 'The menu button should be below the status area');
 
-    const standaloneSurfaceCss = await page.locator('link[href^="/myagapay/app-header.css"]').evaluate((link) => {
-      const webkitRule = [...link.sheet.cssRules].find(
-        (rule) => rule.conditionText === '(-webkit-touch-callout: none) and (background-clip: text)'
-      );
-      const standaloneRule = [...webkitRule.cssRules].find((rule) => rule.conditionText === '(display-mode: standalone)');
-      return [...standaloneRule.cssRules].map((rule) => rule.cssText).join('\n');
-    });
-    // Apply the installed WebKit styles directly to check their layout in Chromium.
-    const simulatedWebKitStyles = await page.addStyleTag({ content: standaloneSurfaceCss });
-    try {
-      assert.deepEqual(await statusBarSurface.boundingBox(), { x: 0, y: 0, width: 402, height: 11 });
-      assert.deepEqual(await homeBar.boundingBox(), bar, 'The color surface should leave the Home header in place');
-      const surfaceStyles = await statusBarSurface.evaluate((surface) => {
-        const styles = getComputedStyle(surface);
-        return [styles.position, styles.pointerEvents, styles.backgroundClip, styles.backgroundColor];
-      });
-      assert.deepEqual(surfaceStyles, [
-        'fixed',
-        'none',
-        'text',
-        await homeBar.evaluate((el) => getComputedStyle(el).backgroundColor),
-      ]);
-    } finally {
-      await simulatedWebKitStyles.evaluate((style) => style.remove());
-    }
     await homeMenuButton.click();
     await homeSafeAreaMenu.waitFor({ state: 'visible' });
     assert.ok((await homeSafeAreaMenu.boundingBox()).y >= bar.y + bar.height, 'The menu should open below the taller bar');

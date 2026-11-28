@@ -16,7 +16,7 @@ import { readParishHandlerSource } from './lib/parish-handler-source.mjs';
 import assert from "node:assert/strict";
 import { runInNewContext } from "node:vm";
 import * as serverLiturgicalCalendar from "../src/liturgical-calendar.js";
-import { access, readFile } from "node:fs/promises";
+import { access, glob, readFile } from "node:fs/promises";
 import { parishSlug } from "../src/lib/format.js";
 import { readWorkerCompositionSource } from "./lib/worker-composition-source.mjs";
 
@@ -239,6 +239,14 @@ assert.ok(/navigator\.serviceWorker\.register\(\s*(["'])\/service-worker\.js\1/.
 assert.ok(includesJavaScriptFragment(pwaRegister, "registerOrUpdate();") && !includesJavaScriptFragment(pwaRegister, 'window.addEventListener("load"'), "PWA registration should start immediately so automated analyzers can detect the service worker");
 assert.ok(rootPage.includes('/manifest.webmanifest') && rootPage.includes('/pwa-register.js'), "public homepage should expose the root manifest and register the root service worker");
 assert.ok(rootManifest.includes('"name": "My AGAPAY"') && rootManifest.includes('"start_url": "/myagapay/login?source=pwa"') && rootManifest.includes('"scope": "/"'), "the homepage installer should launch My AGAPAY at its login page while retaining compatibility with existing root-scope installs");
+// iOS records the status-bar style from My AGAPAY installation pages. The legal pages retain their publication metadata.
+for await (const pagePath of glob("**/*.html", { cwd: "public" })) {
+  if (pagePath === "terms.html" || pagePath === "privacy.html") continue;
+  const pageHtml = await readFile(`public/${pagePath}`, "utf8");
+  if (/href\s*=\s*["']\/(?:myagapay\/)?manifest\.webmanifest(?:\?[^"']*)?["']/i.test(pageHtml)) {
+    assert.doesNotMatch(pageHtml, /name\s*=\s*["']apple-mobile-web-app-status-bar-style["']/i, `${pagePath} should use the default status bar for My AGAPAY installs`);
+  }
+}
 assert.ok(includesJavaScriptFragment(pwaHomeInstall, 'isLegacyHomepageLaunch()') && includesJavaScriptFragment(pwaHomeInstall, 'window.location.replace("/myagapay/login?source=pwa")'), "existing homepage-installed My AGAPAY icons should be repaired to open the login page");
 assert.ok(rootManifest.includes('"orientation": "portrait-primary"'), "root PWA manifest should prefer the phone-first portrait orientation");
 assert.ok(givingOverviewPage.includes('/pwa-register.js') && givingOverviewPage.includes('/myagapay/manifest.webmanifest'), "Give homepage should remain installable without carrying a separate marketing-page installer");
