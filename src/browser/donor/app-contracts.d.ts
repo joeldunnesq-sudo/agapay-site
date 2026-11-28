@@ -13,6 +13,7 @@ export interface DonorAppProfile extends AppHeaderDonorProfile {
   defaultParish?: DonorAppParish | null;
 }
 export interface DonorAppParish extends DonorBookstoreParish {
+  commemorationsEnabled?: boolean;
   type?: string;
   givingPlusEnabled?: boolean;
   candlesEnabled?: boolean;
@@ -36,6 +37,8 @@ export interface DonorAppFund extends ParishGivingOption {
   note?: string;
 }
 export interface DonorAppCampaign {
+  active?: boolean;
+  hidden?: boolean;
   id: string;
   name?: string;
   campaignName?: string;

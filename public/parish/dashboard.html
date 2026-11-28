@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/parish/style.css?v=20260901memorial1" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=737068ab74b4dd84" />
+  <link rel="stylesheet" href="/parish/style.css?v=ecdbaf604a6af0ad" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=c9acd05957727b7f" />
   <link rel="stylesheet" href="/parish/this-week.css?v=4a93ce2f34e72562" />
   <link rel="stylesheet" href="/parish/library.css?v=20260829fullscreen1" />
   <link rel="stylesheet" href="/styles/privileged-mfa.css?v=20261122mfaqr1" />
@@ -68,54 +68,54 @@
         <div class="sidebar-parish-meta" id="sidebarParishMeta">-</div>
         <span class="sidebar-status-chip" id="sidebarStatusChip">active</span>
       </div>
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" aria-label="Parish dashboard sections">
         <div class="sidebar-nav-tier-group" id="nav-tier-give" aria-label="Give tools">
           <span class="sidebar-nav-tier-label">Give</span>
-        <div class="sidebar-nav-item active" onclick="switchTab('giving')" id="nav-giving">
+        <button type="button" class="sidebar-nav-item active" onclick="switchTab('giving')" id="nav-giving" aria-current="page">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16v-4"/><path d="M12 16V8"/><path d="M17 16v-6"/></svg>
           Giving Overview
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
           <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
           Giving History
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('givers')" id="nav-givers">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('givers')" id="nav-givers">
           <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Givers
-        </div>
+        </button>
         <button class="sidebar-nav-item fr-nav-button" type="button" onclick="switchTab('reconcile')" id="nav-reconcile"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h4m0 5 2 2 4-4"/></svg><span class="nav-label">Monthly reconciliation</span></button>
-        <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
           <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           Funds &amp; Alms
-        </div>
+        </button>
         </div>
         <div class="sidebar-nav-tier-group" id="nav-tier-giving-plus" aria-label="Give + tools">
           <span class="sidebar-nav-tier-label">Give +</span>
-        <div class="sidebar-nav-item" onclick="switchTab('campaigns')" id="nav-campaigns">
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('campaigns')" id="nav-campaigns">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Campaigns
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span class="nav-label">Stewardship Health</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
           <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/><circle cx="17" cy="13" r="1"/></svg>
           <span class="nav-label">Directory</span>
           <span class="nav-module-status" id="directoryNavStatus" hidden>Off</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('library')" id="nav-library">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('library')" id="nav-library">
           <svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
           <span class="nav-label">Parish Library</span>
           <span class="nav-module-status" id="libraryNavStatus" hidden>Off</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('communications')" id="nav-communications" hidden>
           <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
           <span class="nav-label">Parish Life</span>
           <span class="nav-module-status" id="communicationsNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="communicationsNavBadge" hidden>Upgrade</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('commerce')" id="nav-bookstore">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('commerce')" id="nav-bookstore">
           <svg viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M8 13h8"/></svg>
           <span class="nav-label-stack">
             <span class="nav-label">Commerce</span>
@@ -123,31 +123,32 @@
           </span>
           <span class="nav-module-status" id="bookstoreNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="bookstoreNavBadge" hidden>Upgrade</span>
-        </div>
+        </button>
         </div>
         <div class="sidebar-nav-tier-group" id="nav-tier-parish" aria-label="Parish tools">
           <span class="sidebar-nav-tier-label">Parish</span>
-        <div class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('sacraments')" id="nav-sacraments">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
           <span class="nav-label">Sacraments &amp; Services</span>
           <span class="nav-module-status" id="sacramentsNavStatus" hidden>Off</span>
           <span class="nav-upgrade-badge" id="sacramentsNavBadge" hidden>Upgrade</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('accounting')" id="nav-accounting">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('accounting')" id="nav-accounting">
           <svg viewBox="0 0 24 24"><path d="M4 3h16v18H4z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h3"/><path d="M15 14v4"/><path d="M13 16h4"/></svg>
           <span class="nav-label">Accounting</span>
           <span class="nav-module-status" id="accountingNavStatus" hidden>Off</span>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('text')" id="nav-text">
+        </button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('text')" id="nav-text">
           <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg>
           <span class="nav-label">Text-to-Give</span>
           <span class="nav-soon-badge">Coming soon</span>
+        </button>
         </div>
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
+        <button type="button" class="sidebar-plan-tools" id="sidebarPlanTools" aria-expanded="false" aria-controls="nav-tier-giving-plus nav-tier-parish" onclick="this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') !== 'true')" hidden><span>Explore plan options</span><span aria-hidden="true">⌄</span></button>
+        <button type="button" class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Settings
-        </div>
+        </button>
       </nav>
       <div class="sidebar-links">
         <a class="sidebar-link" id="sidebarPublicLink" href="/give" target="_blank" rel="noopener">
@@ -176,7 +177,7 @@
   <div class="content">
     <div class="topbar">
       <div class="topbar-identity">
-        <div class="topbar-title"><span class="topbar-title-icon" id="topbarTitleIcon" aria-hidden="true"></span><span id="topbarTitle">Parish Dashboard</span></div>
+        <div class="topbar-title"><span class="topbar-title-icon" id="topbarTitleIcon" aria-hidden="true"></span><span id="topbarTitle">Giving Overview</span></div>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-ghost btn-sm" onclick="loadDashboard(this)">Refresh</button>
@@ -197,18 +198,7 @@
               <h2 class="pdx-hero-title" id="pdxHeroTitle">Year to date</h2>
               <div class="pdx-hero-meta" id="pdxHeroRange">Load dashboard to view giving figures.</div>
             </div>
-            <div class="pdx-hero-qr">
-              <div class="pdx-hero-qr-code" id="qrCodeHero" aria-label="Giving page QR code"></div>
-              <div class="pdx-hero-qr-body">
-                <span class="pdx-hero-qr-label">Giving QR link</span>
-                <button type="button" class="pdx-link-btn" id="editGivingQrDestination">Edit QR link</button>
-                <input class="pdx-hero-qr-link" id="givingUrlHeroInput" value="" placeholder="Loading..." readonly style="background:transparent;border:0;padding:0;color:var(--cream);width:100%;" />
-                <span class="pdx-hero-qr-hint pdx-hero-qr-actions"><a href="#" onclick="copyGivingLink(); return false;">Copy link</a> · <a href="#" onclick="downloadQrPng(); return false;">QR PNG</a> · <a href="#" onclick="downloadQrSvg(); return false;">QR SVG</a></span>
-                <span class="pdx-hero-qr-hint pdx-hero-bulletin-actions"><a href="#" onclick="downloadBulletinPng(); return false;">Download bulletin PNG</a> · <a href="#" onclick="downloadBulletinSvg(); return false;">Download bulletin SVG</a></span>
-                <span class="pdx-hero-qr-hint pdx-hero-embed-actions"><a href="#" title="Copy two lines of website code" onclick="copyGivingEmbedCode(); return false;">Copy embed code</a> · <a id="givingEmbedPreviewLink" href="/give/embed" target="_blank" rel="noopener">Preview box</a></span>
-                <span class="pdx-hero-qr-hint"><a href="#" onclick="openGivingEmbedTheme(); return false;">Customize CSS</a></span>
-              </div>
-            </div>
+
           </div>
           <div class="pdx-hero-figure">
             <div class="pdx-hero-total-block">
@@ -242,6 +232,33 @@
           <button type="button" class="btn btn-sm" id="pdxCouncilRetry" hidden>Retry report</button>
           <form method="dialog"><button class="btn btn-gold btn-sm" autofocus>Close report</button></form>
         </dialog>
+        <section class="pdx-giving-tools" aria-labelledby="givingToolsHeading">
+          <div class="pdx-giving-shortcuts">
+            <h2 id="givingToolsHeading">Giving tools</h2>
+            <div class="pdx-giving-shortcut-grid">
+              <button type="button" onclick="switchTab('history')"><strong>Review gifts <span aria-hidden="true">→</span></strong><small>Find donations and refunds.</small></button>
+              <button type="button" onclick="switchTab('givers')"><strong>Givers &amp; records <span aria-hidden="true">→</span></strong><small>View giver records and export monthly activity.</small></button>
+              <button type="button" onclick="switchTab('options')"><strong>Manage funds <span aria-hidden="true">→</span></strong><small>Set up designated funds and offerings.</small></button>
+            </div>
+          </div>
+          <div class="pdx-giving-share">
+            <div class="pdx-hero-qr pdx-giving-share-card">
+              <div class="pdx-hero-qr-code" id="qrCodeHero" aria-label="Giving page QR code"></div>
+              <div class="pdx-hero-qr-body">
+                <h2 class="pdx-hero-qr-label">Share giving</h2>
+                <button type="button" class="pdx-link-btn" id="editGivingQrDestination">Edit QR link</button>
+                <input class="pdx-hero-qr-link" id="givingUrlHeroInput" value="" placeholder="Loading…" aria-label="Parish giving link" readonly />
+                <button class="btn btn-gold btn-sm" type="button" onclick="copyGivingLink()">Copy link</button>
+                <details class="pdx-giving-share-more"><summary>QR, bulletin &amp; website tools</summary>
+                <span class="pdx-hero-qr-hint pdx-hero-qr-actions"><a href="#" onclick="downloadQrPng(); return false;">QR PNG</a> · <a href="#" onclick="downloadQrSvg(); return false;">QR SVG</a></span>
+                <span class="pdx-hero-qr-hint pdx-hero-bulletin-actions"><a href="#" onclick="downloadBulletinPng(); return false;">Download bulletin PNG</a> · <a href="#" onclick="downloadBulletinSvg(); return false;">Download bulletin SVG</a></span>
+                <span class="pdx-hero-qr-hint pdx-hero-embed-actions"><a href="#" title="Copy two lines of website code" onclick="copyGivingEmbedCode(); return false;">Copy embed code</a> · <a id="givingEmbedPreviewLink" href="/give/embed" target="_blank" rel="noopener">Preview box</a></span>
+                <span class="pdx-hero-qr-hint"><a href="#" onclick="openGivingEmbedTheme(); return false;">Customize giving box</a></span>
+                </details>
+              </div>
+            </div>
+          </div>
+        </section>
         <!-- KPI BAND -->
         <section class="pdx-kpi-band" id="pdxKpiBand">
           <div class="pdx-kpi-card">
@@ -1788,76 +1805,70 @@ Generate Monthly Financial Report
     </div>
   </div><!-- /content -->
 </div><!-- /app -->
-<nav class="mobile-tabbar" aria-label="Parish dashboard sections">
+<nav class="parish-mobile-bar" aria-label="Quick parish navigation">
+  <button type="button" data-section-shortcut="giving" aria-label="Giving Overview" aria-current="page" onclick="switchTab('giving')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 16v-4m4 4V9m4 7V7"/></svg>Overview</button>
+  <button type="button" data-section-shortcut="history" onclick="switchTab('history')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</button>
+  <button type="button" data-section-shortcut="reconcile" onclick="switchTab('reconcile')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6zM9 8h6m-6 4h6m-6 4h3"/></svg>Reconcile</button>
+  <button type="button" id="openParishSections" aria-haspopup="dialog" aria-controls="parishSectionsDialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>Sections</button>
+</nav>
+<dialog id="parishSectionsDialog" class="parish-sections-dialog" aria-labelledby="parishSectionsTitle">
+  <header><h2 id="parishSectionsTitle">Parish sections</h2><form method="dialog"><button type="submit" class="btn btn-ghost btn-sm">Close</button></form></header>
+  <nav class="mobile-tabbar parish-section-list" aria-label="All parish dashboard sections">
   <button class="mobile-tab-link active" type="button" data-nav-tab="giving" onclick="switchTab('giving')">
-    <svg viewBox="0 0 38 38" aria-hidden="true"><rect x="6" y="6" width="26" height="26" rx="3"/><path d="M12 26v-7"/><path d="M19 26V12"/><path d="M26 26V16"/></svg>
     <span>Giving</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="reconcile" onclick="switchTab('reconcile')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 4h18v20H5z"/><path d="M9 9h10"/><path d="M9 14h4"/><path d="m15 18 2 2 4-5"/></svg>
     <span>Reconcile</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="options" onclick="switchTab('options')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 8h14"/><path d="M7 14h14"/><path d="M7 20h14"/><circle cx="4.5" cy="8" r="1"/><circle cx="4.5" cy="14" r="1"/><circle cx="4.5" cy="20" r="1"/></svg>
     <span>Funds &amp; Alms</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="campaigns" onclick="switchTab('campaigns')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 25s9-4.8 9-11.2V6.5L14 3 5 6.5v7.3C5 20.2 14 25 14 25z"/></svg>
     <span>Campaigns</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="stewardship" onclick="switchTab('stewardship')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><polyline points="26 14 21 14 17.5 25 10.5 3 7 14 2 14"/></svg>
     <span>Health</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="bookstore" onclick="switchTab('commerce')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 10h16l1 15H5L6 10z"/><path d="M10 10V7a4 4 0 0 1 8 0v3"/><path d="M9 16h10"/></svg>
     <span>Commerce</span>
     <em class="mobile-module-status" hidden>Off</em>
     <em class="mobile-upgrade-badge" id="mobileBookstoreBadge" hidden>Upgrade</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="sacraments" onclick="switchTab('sacraments')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3.5 23 7v6.5c0 6.2-3.7 10.2-9 12-5.3-1.8-9-5.8-9-12V7l9-3.5Z"/><path d="M14 8v10"/><path d="M10.5 11.5h7"/></svg>
     <span>Sacraments</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 6h16v16H6z"/><path d="M10 11h8"/><path d="M10 16h5"/></svg>
     <span>Directory</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="library" onclick="switchTab('library')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 7a4 4 0 0 1 4-4h14v21H9a4 4 0 0 0-4 4z"/><path d="M5 7v21"/><path d="M10 9h8"/><path d="M10 14h7"/></svg>
     <span>Library</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="communications" onclick="switchTab('communications')" hidden>
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="9" r="2.2"/><circle cx="18.5" cy="9" r="2.2"/><path d="M6.5 20c.4-4 2.4-6 5.5-6s5.1 2 5.5 6"/><path d="M1.5 20c.3-3 1.8-4.7 4-4.7 1 0 1.8.3 2.5.8"/><path d="M16 16.1c.7-.5 1.5-.8 2.5-.8 2.2 0 3.7 1.7 4 4.7"/></svg>
     <span>Parish Life</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="accounting" onclick="switchTab('accounting')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 5h18v18H5z"/><path d="M9 9h10v4H9z"/><path d="M9 17h2"/><path d="M13 17h2"/><path d="M17 17h2"/><path d="M9 20h2"/><path d="M13 20h2"/><path d="M17 20h2"/></svg>
     <span>Accounting</span>
     <em class="mobile-module-status" hidden>Off</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="text" onclick="switchTab('text')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M23 19.8v2.4a1.8 1.8 0 0 1-2 1.8A17.8 17.8 0 0 1 5 8a1.8 1.8 0 0 1 1.8-2h2.4a1.8 1.8 0 0 1 1.8 1.55c.12.9.34 1.78.65 2.6a1.8 1.8 0 0 1-.4 1.9l-1.1 1.1a14.4 14.4 0 0 0 5.4 5.4l1.1-1.1a1.8 1.8 0 0 1 1.9-.4c.82.31 1.7.53 2.6.65A1.8 1.8 0 0 1 23 19.8Z"/></svg>
     <span>Text</span>
     <em class="mobile-soon-badge">Soon</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
     <span>Settings</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="history" onclick="switchTab('history')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 6.5h14"/><path d="M7 11h14"/><path d="M7 15.5h10"/><path d="M7 20h8"/><path d="M4.5 4h19v20h-19z"/></svg>
     <span>History</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="givers" onclick="switchTab('givers')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M4.5 22c.6-4 3-6 5.5-6s4.9 2 5.5 6"/><circle cx="19" cy="11" r="2.5"/><path d="M17 17c2.8.3 4.8 2 5.5 5"/></svg>
     <span>Givers</span>
   </button>
-</nav>
+  </nav>
+</dialog>
 <div class="toast-container" id="toastContainer"></div>
 <dialog id="parishSupportDialog" style="width:min(560px,calc(100% - 32px));border:0;border-radius:16px;padding:0;box-shadow:0 24px 70px rgba(6,21,34,.3)">
   <form method="dialog" style="padding:22px;display:grid;gap:14px">
@@ -1958,7 +1969,7 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving/reconciliation-reports.js?v=33c331f038679b4d"></script>
 <script src="/parish/features/giving/reconciliation.js?v=9e612d00025d704d"></script>
 <script src="/parish/features/giving/recurring.js?v=56b68ececf1f6027"></script>
-<script src="/parish/features/giving/sharing.js?v=7af71bc567b2a902"></script>
+<script src="/parish/features/giving/sharing.js?v=933a03302a3f37df"></script>
 <script src="/parish/features/giving/embed-theme.js?v=bc431b0c4c7afa7c"></script>
 <script src="/parish/features/giving/statements.js?v=97cea8d162ff6e7d"></script>
 <script src="/parish/features/giving/transfers.js?v=c4c120c8886b8769"></script>
@@ -1966,11 +1977,11 @@ Generate Monthly Financial Report
 <script src="/parish/features/giving.js?v=47a087c782872d35"></script>
 <script src="/parish/features/this-week.js?v=7c7fe4e349ed30eb"></script>
 <script src="/parish/diagnostics.js?v=dac605ace7b48aa8"></script>
-<script src="/parish/dashboard-runtime.js?v=a833ed89e9176e41"></script>
-<script src="/parish/app-subscriptions-and-settlement.js?v=655251698d150b9d"></script>
+<script src="/parish/dashboard-runtime.js?v=20bd7badf02bdb4c"></script>
+<script src="/parish/app-subscriptions-and-settlement.js?v=a99b1d28edbd0bb1"></script>
 <script src="/parish/settings-autosave.js?v=d92237959d86033f"></script>
-<script src="/parish/overview-tasks.js?v=ba363a5817d9af98"></script>
-<script src="/parish/app.js?v=9aea36f2297d4fd9"></script>
+<script src="/parish/overview-tasks.js?v=3b5de1ddd0f3db43"></script>
+<script src="/parish/app.js?v=6695566435676449"></script>
 <script src="/parish/stewardship-sections.js?v=2"></script>
 <script src="/parish/givers-sections.js"></script>
 </body>

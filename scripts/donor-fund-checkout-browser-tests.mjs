@@ -114,10 +114,10 @@ try {
   await link.waitFor();
   const expectedSections = [
     'Quick Give',
+    'Next Festal Offering',
     'Active Funds',
     'Active Campaigns',
     'Prayer & Remembrance',
-    'Next Festal Offering',
   ];
   for (const [layout, width] of [
     ['.donor-phone', 390],

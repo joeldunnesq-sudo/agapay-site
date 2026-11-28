@@ -152,7 +152,7 @@ assert.ok(
   'the parish dashboard sidebar should show Parish Life'
 );
 assert.ok(dashboard.includes('<h1>Parish Life</h1>'));
-assert.match(dashboard, /class="mobile-tab-link"[^>]*data-nav-tab="communications"[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*<span>Parish Life<\/span>/);
+assert.match(dashboard, /class="mobile-tab-link"[^>]*data-nav-tab="communications"[^>]*>\s*<span>Parish Life<\/span>/);
 assert.match(dashboard, /aria-label="Parish Life workspace"/);
 assert.match(
   dashboard,

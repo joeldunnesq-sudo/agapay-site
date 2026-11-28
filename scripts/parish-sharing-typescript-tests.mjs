@@ -73,7 +73,7 @@ await context.downloadBulletinPng();
 await context.downloadQrSvg();
 assert.equal(downloads.length, 0);
 assert.equal(copied.length, 0);
-assert.match(elements.get('qrCode').innerHTML, /Load dashboard/);
+assert.match(elements.get('qrCode').innerHTML, /QR pending/);
 context.currentParish = { parishId: 'test', parishName: 'Saint <Test> & Friends' };
 url = 'https://example.test/give/test';
 await context.copyGivingLink();
@@ -121,7 +121,7 @@ assert.match(context.positionBulletinQr('', 10, 20, 30), /QR code/);
 assert.equal(context.positionBulletinQr('invalid', 10, 20, 30), 'invalid');
 context.qrcode = undefined;
 await context.renderQrCode();
-assert.match(elements.get('qrCode').innerHTML, /Load dashboard/);
+assert.match(elements.get('qrCode').innerHTML, /QR unavailable/);
 console.log(
   'PASS - giving sharing: copy, escaping, missing state, logo retry/cache, QR/bulletin downloads, rasterization failures and URL cleanup'
 );

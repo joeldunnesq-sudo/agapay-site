@@ -245,7 +245,10 @@ try {
 
     await homeMenuButton.click();
     await homeSafeAreaMenu.waitFor({ state: 'visible' });
-    assert.ok((await homeSafeAreaMenu.boundingBox()).y >= bar.y + bar.height, 'The menu should open below the taller bar');
+    assert.ok(
+      (await homeSafeAreaMenu.boundingBox()).y >= bar.y + bar.height,
+      'The menu should open below the taller bar'
+    );
     await page.keyboard.press('Escape');
 
     await page.setViewportSize({ width: 756, height: 352 });
@@ -297,7 +300,20 @@ try {
   await page.waitForURL('**/myagapay/giving');
   await page.locator('#greeting').waitFor();
   await page.locator('.app-page-header [data-app-church-name]').getByText(activeParish.name, { exact: true }).waitFor();
-  await page.getByRole('heading', { name: 'Giving', exact: true }).waitFor();
+  assert.equal(await page.locator('.app-giving-header [data-app-page-title]').count(), 0);
+  assert.equal(await page.getByRole('link', { name: /^Make (an )?Offering$/i }).count(), 0);
+  for (const id of ['#quickGiveCampaigns', '#desktopQuickCampaigns']) {
+    assert.equal(
+      await page
+        .locator(id)
+        .evaluate((tile) => tile.closest('section').nextElementSibling.querySelector('h2').textContent),
+      'Next Festal Offering'
+    );
+  }
+  assert.equal(await page.locator('.metric-year .summary-watermark[src="/mark.png"]').count(), 2);
+  const inactiveTile = page.locator('#quickGiveCampaigns[aria-disabled="true"]');
+  await inactiveTile.waitFor();
+  assert.equal(await inactiveTile.getAttribute('href'), null);
   assert.equal(await page.locator('#greeting + #donorParishName').count(), 0);
   assert.equal(await page.getByRole('heading', { name: 'Active Campaigns' }).count(), 0);
   activeParish = {
@@ -359,7 +375,14 @@ try {
   await page.goto('https://agapay.test/myagapay/');
   const shortcuts = page.getByRole('navigation', { name: 'Community tools' });
   const availability = page.locator('#koinoniaShortcutDialog');
-  for (const name of ['Parish Signups', 'Parish Exchange', 'Prayer Requests', 'Browse Ministries', 'Parish Directory', 'Sacraments & Services']) {
+  for (const name of [
+    'Parish Signups',
+    'Parish Exchange',
+    'Prayer Requests',
+    'Browse Ministries',
+    'Parish Directory',
+    'Sacraments & Services',
+  ]) {
     const shortcut = shortcuts.getByRole('button', { name, exact: true });
     await shortcut.click();
     assert.equal(await availability.getByRole('heading', { name, exact: true }).isVisible(), true);
@@ -381,7 +404,10 @@ try {
 
   activeParish = { ...secondParish, bookstoreEnabled: false, directoryEnabled: false, libraryEnabled: false };
   await page.goto('https://agapay.test/myagapay/');
-  assert.equal(await shortcuts.getByRole('link', { name: 'Parish Exchange', exact: true }).getAttribute('href'), '/myagapay/exchange');
+  assert.equal(
+    await shortcuts.getByRole('link', { name: 'Parish Exchange', exact: true }).getAttribute('href'),
+    '/myagapay/exchange'
+  );
   await shortcuts.getByRole('button', { name: 'Parish Directory', exact: true }).click();
   assert.match(await availability.textContent(), /Your parish needs to enable this feature/);
   await availability.getByRole('button', { name: 'OK', exact: true }).click();

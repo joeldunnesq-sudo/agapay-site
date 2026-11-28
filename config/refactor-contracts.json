@@ -121,12 +121,12 @@
       "count": 1
     },
     "src/handlers/parish.js": {
-      "sha256": "41d37d491b135d30fd77eab0827fdba1593691f1f10edfbfc54f2a8483197854",
-      "count": 96
+      "sha256": "53ae61ad97394e1ff770edc8e96de145e82d8faea59d4cef3ba7978c7a8382ba",
+      "count": 97
     },
     "src/handlers/parish-donor-offerings.js": {
-      "sha256": "cb76714e2dede2e91c02a1bfaf924c00b52adc5a4b038d10673861325ac42076",
-      "count": 17
+      "sha256": "a2f877139892623a7afa946fd5a4c25a1edffb1f801dde53534c2d0924faf774",
+      "count": 18
     },
     "src/handlers/parish-giving-read-models.js": {
       "sha256": "3c2956ce92887d71ec98dfa5187c8e96952e5f2bec68a5472bd25709e96f7957",

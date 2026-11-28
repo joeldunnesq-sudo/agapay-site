@@ -77,6 +77,7 @@ try {
         await page.locator('.sw-section-nav [data-sw-view="outside"]').click();
         await page.getByRole('button', { name: 'Record a donor’s gift', exact: true }).click();
       } else {
+        await page.locator('#openParishSections').click();
         await page.locator('.mobile-tab-link[data-nav-tab="givers"]').click();
         await page.locator('.gv-section-nav [data-gv-view="outside"]').click();
         await page.getByRole('button', { name: '＋ Record outside gift', exact: true }).click();

@@ -135,6 +135,7 @@ const functions = new Map(
 const selectedNames = [
   'normalizeDonorGiftType',
   'parishCanUseGiftType',
+  'activeParishCampaigns',
   'parishHasGivingPlus',
   'isGeneralDonorFund',
   'isCandleDonorFund',
@@ -156,6 +157,8 @@ const givingPlusParish = {
   id: 'giving-plus-parish',
   givingPlusEnabled: true,
   candlesEnabled: true,
+  commemorationsEnabled: true,
+  campaigns: [{ id: 'open', status: 'open' }],
   designatedFundsEnabled: true,
   funds: [{ id: 'building', name: 'Building Fund' }],
 };

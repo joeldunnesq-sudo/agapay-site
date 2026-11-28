@@ -1173,7 +1173,7 @@ body {
       const giftType = typeAliases[requestedType] || requestedType;
       if (giftType) {
         const card = document.querySelector(`.gift-type-card[data-type="${CSS.escape(giftType)}"]`);
-        if (card) selectGiftType(card);
+        if (card && !card.hidden) selectGiftType(card);
       }
 
       const requestedCampaign = params.get('campaign');
@@ -1243,7 +1243,8 @@ body {
           const type = card.dataset.type;
           card.hidden = type === 'candle' ? !parish.candlesEnabled
             : type === 'funds' ? !parish.designatedFundsEnabled
-            : ['love', 'campaign', 'feast'].includes(type) ? !parish.givingPlusEnabled
+            : type === 'love' ? !parish.commemorationsEnabled
+            : ['campaign', 'feast'].includes(type) ? !parish.givingPlusEnabled
             : false;
         });
         renderFunds(parish.funds);

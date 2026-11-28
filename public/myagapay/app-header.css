@@ -490,3 +490,5 @@
 @media (max-width: 360px) {
   .app-shared-header-page .app-header-bar { --app-header-inline-padding: 12px; }
 }
+
+.app-giving-header .app-header-body:not(:has(.app-header-actions > :not([hidden]))) { display: none; }

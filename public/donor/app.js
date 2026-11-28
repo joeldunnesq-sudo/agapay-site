@@ -349,13 +349,14 @@ function parishCanUseGiftType(parish, value) {
   const giftType = normalizeDonorGiftType(value);
   if (giftType === 'stewardship') return true;
   if (giftType === 'candles') return Boolean(parish?.candlesEnabled);
-  if (giftType === 'fund') {
+  if (giftType === 'fund')
     return (
       Boolean(parish?.designatedFundsEnabled) &&
       (parish?.funds || []).some((fund) => fund && !isGeneralDonorFund(fund) && !isCandleDonorFund(fund))
     );
-  }
-  return parishHasGivingPlus(parish) && ['commemoration', 'campaign', 'feast'].includes(giftType);
+  if (giftType === 'commemoration') return Boolean(parish?.commemorationsEnabled);
+  if (!parishHasGivingPlus(parish)) return false;
+  return giftType === 'feast' || (giftType === 'campaign' && activeParishCampaigns(parish).length > 0);
 }
 function ensureGivingPlusPaywall() {
   let dialog = document.getElementById('givingPlusPaywall');
@@ -368,7 +369,7 @@ function ensureGivingPlusPaywall() {
       <button class="giving-plus-paywall-close" type="button" aria-label="Close" onclick="closeGivingPlusPaywall()">×</button>
       <span class="giving-plus-paywall-badge">Give + feature</span>
       <h2 id="givingPlusPaywallTitle">Help your parish offer more ways to give</h2>
-      <p id="givingPlusPaywallCopy">Give includes a General Operating Fund, one designated fund, and candles. Give + unlocks unlimited funds, campaigns, commemorations, and festal alms.</p>
+      <p id="givingPlusPaywallCopy">Give includes unlimited designated funds, candles, and memorials. Give + adds campaigns and festal alms.</p>
       <div class="giving-plus-paywall-actions">
         <button class="btn btn-ghost" type="button" onclick="closeGivingPlusPaywall()">Not now</button>
         <button class="btn btn-gold" id="givingPlusEncourageButton" type="button" onclick="requestParishGivingPlusUpgrade(this)">Encourage my parish</button>
@@ -397,10 +398,10 @@ function openGivingPlusPaywall(event, parish, giftType = '') {
   const label = donorGiftTypeCopy[normalizeDonorGiftType(giftType)]?.detailsTitle || 'This giving option';
   const copy = document.getElementById('givingPlusPaywallCopy');
   if (copy) {
-    const starterOption = ['fund', 'candles'].includes(normalizeDonorGiftType(giftType));
+    const starterOption = ['fund', 'candles', 'commemoration'].includes(normalizeDonorGiftType(giftType));
     copy.textContent = starterOption
       ? `${selectedParish?.name || 'This parish'} can offer ${label.toLowerCase()} on Give, but this option has not been configured or is currently paused.`
-      : `${label} is available with Give +. Give includes General Operating, one designated fund, and candle giving.`;
+      : `${label} is available with Give +. Give includes unlimited designated funds, candles, and memorials.`;
   }
   if (status)
     status.textContent = selectedParish
@@ -453,17 +454,18 @@ function updateGivingTierTiles(parish) {
   document.querySelectorAll('[data-giving-plus-gift]').forEach((tile) => {
     const giftType = tile.getAttribute('data-giving-plus-gift') || '';
     const allowed = parishCanUseGiftType(parish, giftType);
+    const noCampaigns = giftType === 'campaign' && !allowed;
     tile.classList.remove('giving-tier-loading');
     tile.classList.toggle('giving-tier-locked', !allowed);
     tile.removeAttribute('aria-busy');
-    tile.removeAttribute('aria-disabled');
     tile.removeAttribute('tabindex');
-    tile.setAttribute(
-      'aria-label',
-      !allowed ? `${tile.textContent.trim()} — not currently available` : tile.textContent.trim()
-    );
-    tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
-    tile.onclick = allowed ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    const availability = allowed ? '' : noCampaigns ? ' — no open campaigns' : ' — not currently available';
+    tile.setAttribute('aria-label', tile.textContent.trim() + availability);
+    if (noCampaigns) tile.setAttribute('aria-disabled', 'true');
+    else tile.removeAttribute('aria-disabled');
+    tile.onclick = allowed || noCampaigns ? null : (event) => openGivingPlusPaywall(event, parish, giftType);
+    if (noCampaigns) tile.removeAttribute('href');
+    else tile.href = allowed ? quickDonorGiftUrl(giftType, parish) : '#giving-plus';
   });
 }
 function markDonorGiftAmountEdited() {
@@ -506,10 +508,8 @@ function donorNavIcon(kind) {
       '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="9" r="4"/><path d="M5.5 24a8.5 8.5 0 0 1 17 0"/></svg>',
     billing:
       '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="14" rx="3"/><path d="M3 12h22"/><path d="M8 17h5"/></svg>',
-    profile:
-      '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="9" r="4"/><path d="M5.5 24a8.5 8.5 0 0 1 17 0"/></svg>',
   };
-  return icons[kind] || icons.home;
+  return icons[kind === 'profile' ? 'account' : kind] || icons.home;
 }
 function donorNavKind(href) {
   const path = String(href || '');
@@ -566,11 +566,14 @@ function updateQuickGiveLinks(parish, { syncGivingTier = true } = {}) {
   syncSacramentsEntry(parish);
 }
 function activeParishCampaigns(parish) {
-  const campaigns = Array.isArray(parish?.campaigns) ? parish.campaigns : [];
-  return campaigns.filter((campaign) => {
-    const status = String(campaign?.status || (campaign?.enabled === false ? 'hidden' : 'active')).toLowerCase();
-    return campaign && !['hidden', 'paused', 'cancelled', 'ended', 'inactive'].includes(status);
-  });
+  return (Array.isArray(parish?.campaigns) ? parish.campaigns : []).filter(
+    (campaign) =>
+      campaign &&
+      campaign.active !== false &&
+      campaign.enabled !== false &&
+      campaign.hidden !== true &&
+      ['active', 'published', 'open'].includes(String(campaign.status || 'active').toLowerCase())
+  );
 }
 function activeParishFeastCampaigns(parish) {
   const campaigns = Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [];
@@ -2068,7 +2071,7 @@ async function startDonorCheckout(event) {
   const parish = (window.agapayPublicParishes || []).find(
     (item) => item.id === document.getElementById('parish')?.value
   );
-  if (!parishHasGivingPlus(parish) && isGivingPlusGiftType(normalizedGiftType)) {
+  if (isGivingPlusGiftType(normalizedGiftType) && !parishCanUseGiftType(parish, normalizedGiftType)) {
     openGivingPlusPaywall(null, parish, normalizedGiftType);
     return;
   }

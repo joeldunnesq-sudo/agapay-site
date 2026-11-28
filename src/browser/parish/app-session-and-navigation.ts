@@ -85,7 +85,7 @@ function setPaymentStatus(msg: string, tone: string) {
 }
 
 // ── TAB NAV ──────────────────────────────────────────────
-function switchTab(tab: string) {
+function switchTab(tab: string, recordHistory = true) {
   if (tab === 'parishplus') tab = 'bookstore';
   if (tab === 'commerce') tab = 'bookstore';
   if (tab === 'funds') tab = 'options';
@@ -103,6 +103,8 @@ function switchTab(tab: string) {
   const content = document.querySelector<HTMLElement>('.content');
   if (panel) panel.classList.add('active');
   if (nav) nav.classList.add('active');
+  if (nav?.classList.contains('sidebar-nav-item--gated'))
+    document.getElementById('sidebarPlanTools')?.setAttribute('aria-expanded', 'true');
   if (mobileNav) mobileNav.classList.add('active');
   content?.classList.toggle('standalone-tab-active', panel?.parentElement === content);
   document.querySelector<HTMLElement>('.app')?.classList.toggle('directory-tab-active', tab === 'directory');
@@ -132,9 +134,28 @@ function switchTab(tab: string) {
     communications: 'Parish Life',
     bookstore: 'Commerce',
   };
-  const isMobile = window.matchMedia('(max-width: 760px)').matches;
-  document.getElementById('topbarTitle')!.textContent =
-    isMobile && currentParish ? currentParish.parishName || 'Parish Dashboard' : titles[tab] || 'Parish Dashboard';
+  const title = document.getElementById('topbarTitle')!;
+  title.textContent = titles[tab] || 'Parish Dashboard';
+  document
+    .querySelectorAll<HTMLElement>('.sidebar-nav-item, .mobile-tab-link, [data-section-shortcut]')
+    .forEach((item) => {
+      const current = item.id === 'nav-' + tab || item.dataset.navTab === tab || item.dataset.sectionShortcut === tab;
+      if (current) item.setAttribute('aria-current', 'page');
+      else item.removeAttribute('aria-current');
+    });
+  if (recordHistory && window.history?.pushState && document.body.classList.contains('dashboard-ready')) {
+    const dialog = document.getElementById('parishSectionsDialog') as HTMLDialogElement | null;
+    if (dialog?.open) dialog.close();
+    const url = new URL(window.location.href);
+    if ((url.searchParams.get('tab') || 'giving') !== tab) {
+      if (tab === 'giving') url.searchParams.delete('tab');
+      else url.searchParams.set('tab', tab);
+      window.history.pushState(null, '', url);
+    }
+    const target = title.getClientRects().length ? title : panel;
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  }
   syncTopbarTabIcon(tab);
   if (tab === 'giving') refreshParishAttention();
   if (['history', 'givers', 'options', 'reconcile'].includes(tab)) loadRegisteredParishFeature('giving', tab);

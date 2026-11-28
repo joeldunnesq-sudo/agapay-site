@@ -134,7 +134,23 @@ declare function refreshSubscriptionStatus(options: { quiet: boolean }): Promise
 declare function refreshStripeStatus(options: { quiet: boolean }): Promise<unknown>;
 declare function saveSession(): void;
 declare function renderDashboard(): void;
-declare function switchTab(tab: 'sacraments' | 'stewardship' | 'accounting'): void;
+type ParishDashboardSection =
+  | 'giving'
+  | 'history'
+  | 'givers'
+  | 'reconcile'
+  | 'options'
+  | 'campaigns'
+  | 'stewardship'
+  | 'directory'
+  | 'library'
+  | 'communications'
+  | 'bookstore'
+  | 'sacraments'
+  | 'accounting'
+  | 'text'
+  | 'settings';
+declare function switchTab(tab: ParishDashboardSection, recordHistory?: boolean): void;
 declare function setSacramentsDashboardTab(tab: 'calendar'): void;
 declare const showParishFeatureRequestPopup: import('./app-session-and-navigation.js').ParishAppPart1['showParishFeatureRequestPopup'];
 declare function updateStewardshipBadges(included: boolean, options: { renderPanel: boolean }): void;

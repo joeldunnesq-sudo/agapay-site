@@ -9,6 +9,7 @@ import { repoRoot } from './browser-composed-source.mjs';
 export const pageAssets = Object.freeze([
   '/myagapay/manifest.webmanifest',
   '/parish/accounting-journey.js',
+  '/parish/style.css',
   '/parish/redesign.css',
   '/myagapay/bookstore-concept/app.js',
   '/myagapay/bookstore-concept/style.css',

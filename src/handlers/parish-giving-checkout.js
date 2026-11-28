@@ -74,10 +74,10 @@ async function handleCheckout(request, env) {
     .toLowerCase();
   const requestedGiftType = giftTypeAliases[rawGiftType] || rawGiftType;
   const permittedGiftType =
-    ['stewardship', 'general'].includes(requestedGiftType) ||
+    ['stewardship', 'general', 'commemoration'].includes(requestedGiftType) ||
     (requestedGiftType === 'fund' && parish.designatedFundsEnabled) ||
     (requestedGiftType === 'candles' && parish.candlesEnabled) ||
-    (parish.givingPlusEnabled && ['commemoration', 'campaign', 'feast'].includes(requestedGiftType));
+    (parish.givingPlusEnabled && ['campaign', 'feast'].includes(requestedGiftType));
   if (!permittedGiftType) {
     return json({ error: 'This offering type is available with Give +.' }, { status: 403 });
   }

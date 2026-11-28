@@ -28,6 +28,7 @@ const LEGACY_MODULES = /* @__PURE__ */ new Set([
 const MODULE_IDS = ['stewardshipHealth', 'sacraments', 'directory', 'bookstore', 'commerceSuite', 'textToGive'];
 const GIVING_FEATURES = Object.freeze({
   basicGiving: null,
+  pledgeTracking: null,
   candles: null,
   starterDesignatedFund: null,
   branding: 'givingPlus',

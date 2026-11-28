@@ -2,7 +2,7 @@
 import './donor-parish-context.js';
 import '../payments/donation-receipts.js';
 import '../payments/donation-events.js';
-import { addOutsideDonorPledgeSummary } from '../lib/outside-pledges.js';
+import { summarizeDonorGiving } from './parish-donor-offerings.js';
 import '../lib/logging.js';
 import '../lib/directory-invitation-next.js';
 import '../lib/legal-acceptance.js';
@@ -26,7 +26,6 @@ import '../lib/format.js';
 import { stripeFormConnectedRequest } from '../lib/stripe-connect.js';
 import '../lib/stripe-fees.js';
 import {
-  donorSummaryFromOfferings,
   findRegistrationByParishId,
   loadDonorOfferings,
   loadReconciledDonorCommemorations,
@@ -48,7 +47,7 @@ async function handleDonorOfferings(request, env) {
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   return json({
     offerings: offerings.map(publicDonorOffering),
-    summary: await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations)),
+    summary: await summarizeDonorGiving(env, donor, offerings, commemorations),
   });
 }
 async function handleDonorSubscriptionPortal(request, env) {

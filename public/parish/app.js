@@ -45,7 +45,7 @@ function setPaymentStatus(msg, tone) {
   if (el) el.textContent = msg || '';
   setStatus(msg, tone);
 }
-function switchTab(tab) {
+function switchTab(tab, recordHistory = true) {
   if (tab === 'parishplus') tab = 'bookstore';
   if (tab === 'commerce') tab = 'bookstore';
   if (tab === 'funds') tab = 'options';
@@ -61,6 +61,8 @@ function switchTab(tab) {
   const content = document.querySelector('.content');
   if (panel) panel.classList.add('active');
   if (nav) nav.classList.add('active');
+  if (nav?.classList.contains('sidebar-nav-item--gated'))
+    document.getElementById('sidebarPlanTools')?.setAttribute('aria-expanded', 'true');
   if (mobileNav) mobileNav.classList.add('active');
   content?.classList.toggle('standalone-tab-active', panel?.parentElement === content);
   document.querySelector('.app')?.classList.toggle('directory-tab-active', tab === 'directory');
@@ -90,9 +92,26 @@ function switchTab(tab) {
     communications: 'Parish Life',
     bookstore: 'Commerce',
   };
-  const isMobile = window.matchMedia('(max-width: 760px)').matches;
-  document.getElementById('topbarTitle').textContent =
-    isMobile && currentParish ? currentParish.parishName || 'Parish Dashboard' : titles[tab] || 'Parish Dashboard';
+  const title = document.getElementById('topbarTitle');
+  title.textContent = titles[tab] || 'Parish Dashboard';
+  document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link, [data-section-shortcut]').forEach((item) => {
+    const current = item.id === 'nav-' + tab || item.dataset.navTab === tab || item.dataset.sectionShortcut === tab;
+    if (current) item.setAttribute('aria-current', 'page');
+    else item.removeAttribute('aria-current');
+  });
+  if (recordHistory && window.history?.pushState && document.body.classList.contains('dashboard-ready')) {
+    const dialog = document.getElementById('parishSectionsDialog');
+    if (dialog?.open) dialog.close();
+    const url = new URL(window.location.href);
+    if ((url.searchParams.get('tab') || 'giving') !== tab) {
+      if (tab === 'giving') url.searchParams.delete('tab');
+      else url.searchParams.set('tab', tab);
+      window.history.pushState(null, '', url);
+    }
+    const target = title.getClientRects().length ? title : panel;
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  }
   syncTopbarTabIcon(tab);
   if (tab === 'giving') refreshParishAttention();
   if (['history', 'givers', 'options', 'reconcile'].includes(tab)) loadRegisteredParishFeature('giving', tab);
@@ -1949,7 +1968,7 @@ function renderDashboard(preserveSettings = false) {
   document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
   const embedPreviewLink = document.getElementById('givingEmbedPreviewLink');
   if (embedPreviewLink) embedPreviewLink.href = dedicatedGivingEmbedUrl();
-  document.getElementById('topbarTitle').textContent = p.parishName || 'Parish Dashboard';
+  if (activeTab === 'giving') document.getElementById('topbarTitle').textContent = 'Giving Overview';
   syncTopbarTabIcon(activeTab);
   const commIcon = document.getElementById('commemorationCommunityIcon');
   if (commIcon) commIcon.innerHTML = communityMarkIcon(p);

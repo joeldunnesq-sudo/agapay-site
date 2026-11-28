@@ -51,6 +51,7 @@ const LEGACY_MODULES = new Set([
 const MODULE_IDS = ['stewardshipHealth', 'sacraments', 'directory', 'bookstore', 'commerceSuite', 'textToGive'];
 export const GIVING_FEATURES = Object.freeze({
   basicGiving: null,
+  pledgeTracking: null,
   candles: null,
   starterDesignatedFund: null,
   branding: 'givingPlus',

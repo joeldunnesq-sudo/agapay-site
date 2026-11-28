@@ -13,7 +13,7 @@ import '../payments/donation-receipts.js';
 
 import '../payments/donation-events.js';
 
-import { addOutsideDonorPledgeSummary } from '../lib/outside-pledges.js';
+import { summarizeDonorGiving } from './parish-donor-offerings.js';
 
 import { logEvent } from '../lib/logging.js';
 
@@ -64,7 +64,6 @@ import '../lib/stripe-connect.js';
 import { offeringFeeBreakdown } from '../lib/stripe-fees.js';
 
 import {
-  donorSummaryFromOfferings,
   findRegistrationByParishId,
   loadDonorOfferings,
   loadReconciledDonorCommemorations,
@@ -257,7 +256,7 @@ export async function handleDonorDashboard(request: Request, env: DonorEnvironme
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const publicOfferings = offerings.map(publicDonorOffering);
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
-  const summary = await addOutsideDonorPledgeSummary(env, donor, donorSummaryFromOfferings(offerings, commemorations));
+  const summary = await summarizeDonorGiving(env, donor, offerings, commemorations);
   let parish = await loadDonorParishContext(env, donor);
   if (parish) {
     const offering = nextFestalOffering(parish.feastCampaigns, parish.liturgicalCalendar);
