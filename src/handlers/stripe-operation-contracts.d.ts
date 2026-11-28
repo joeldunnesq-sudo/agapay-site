@@ -23,7 +23,7 @@ export interface StripeWebhookObject extends DonationInvoice {
   amount?: number;
   arrival_date?: number;
   original_payout?: StripeObjectReference;
-  balance_transaction?: StripeObjectReference;
+  balance_transaction?: string | { id?: string | null; fee?: unknown; net?: unknown } | null;
   failure_balance_transaction?: StripeObjectReference;
   canceled_at?: number;
   amount_refunded?: number;
