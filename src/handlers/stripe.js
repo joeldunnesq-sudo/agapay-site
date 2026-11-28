@@ -267,7 +267,11 @@ async function handleStripeWebhook(request, env) {
       route,
       method: 'POST',
       stripeEventId: event.id,
-      metadata: { type: event.type },
+      metadata: {
+        type: event.type,
+        retryingFailed: Boolean(claim.retryingFailed),
+        retryingStale: Boolean(claim.retryingStale),
+      },
     });
     return json({ received: true });
   } catch (error) {

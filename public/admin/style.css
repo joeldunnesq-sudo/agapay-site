@@ -1597,6 +1597,7 @@
     }
     .payment-exception-list li > * { overflow-wrap: anywhere; }
     .payment-exception-list li > :nth-child(even) { text-align: right; }
+    .payment-exception-guidance { grid-column: 1 / -1; margin: 0.25rem 0 0; color: var(--stone); }
     @media (max-width: 420px) {
       #deploymentHealthPane, .payment-exception-list li { grid-template-columns: minmax(0, 1fr); }
       .payment-exception-list li > :nth-child(even) { text-align: left; }

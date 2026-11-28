@@ -360,15 +360,18 @@ async function claimStripeEvent(env, event = {}) {
       if ((result?.meta?.changes || 0) > 0) return { claimed: true };
       const row = await d1First(env, 'SELECT status, received_at FROM stripe_events WHERE id = ?1', eventId);
       if (row?.status === 'failed' || (row?.status === 'processing' && staleStripeProcessingEvent(row.received_at))) {
-        await d1Run(
+        const retry = await d1Run(
           env,
           `UPDATE stripe_events
            SET event_type = ?2, status = 'processing', received_at = ?3, processed_at = NULL, error_message = ''
-           WHERE id = ?1`,
+           WHERE id = ?1 AND status = ?4 AND received_at = ?5`,
           eventId,
           event.type || '',
-          now
+          now,
+          row.status,
+          row.received_at
         );
+        if (!retry?.meta?.changes) return { claimed: false, duplicate: true, status: 'processing' };
         return { claimed: true, retryingFailed: row?.status === 'failed', retryingStale: row?.status === 'processing' };
       }
       return { claimed: false, duplicate: true, status: row?.status || 'processed' };

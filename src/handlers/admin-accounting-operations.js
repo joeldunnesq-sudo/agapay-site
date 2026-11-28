@@ -77,6 +77,36 @@ async function adminAccountingTarget(env, parishId) {
   const tier = resolved.registration ? accountingTierFor(resolved.registration) : resolved.entity.subscriptionTier;
   return { ...resolved, tier: accountingServiceTier(tier) };
 }
+function paymentRecoveryGuidance(status, message) {
+  if (status === 'processing') {
+    return {
+      reason: 'Processing exceeded the expected time.',
+      nextStep: 'Check the latest delivery in Stripe Workbench before resending it.',
+    };
+  }
+  if (message === 'The original gift is not yet available for this Stripe refund.') {
+    return {
+      reason: 'The original gift has not been recorded yet.',
+      nextStep:
+        'Confirm the original payment is recorded in AGAPAY, then resend the refund event from Stripe Workbench.',
+    };
+  }
+  if (
+    message === 'Unable to load the Stripe charge refund records for Accounting.' ||
+    message === 'Unable to load the charge for the updated Stripe refund.' ||
+    message === 'Unable to resolve the recurring donation invoice payment.'
+  ) {
+    return {
+      reason: 'AGAPAY could not retrieve a related payment record from Stripe.',
+      nextStep:
+        'Check the connected account and Stripe delivery details. Resend from Stripe Workbench once the record is available.',
+    };
+  }
+  return {
+    reason: 'Payment processing failed.',
+    nextStep: 'Review the Stripe delivery and AGAPAY logs for this event before resending it.',
+  };
+}
 async function handleAdminAccountingOperations(request, env) {
   const admin = await requireAdminContext(request, env);
   if (!admin) return unauthorized();
@@ -92,7 +122,7 @@ async function handleAdminAccountingOperations(request, env) {
       const cutoff = new Date(Date.now() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
       const events = await d1All(
         env,
-        `SELECT id, event_type, status, received_at FROM stripe_events
+        `SELECT id, event_type, status, received_at, error_message FROM stripe_events
         WHERE id GLOB 'evt_*' AND (status='failed' OR (status='processing' AND received_at<?))
         ORDER BY received_at DESC, id DESC LIMIT 51`,
         cutoff
@@ -104,6 +134,7 @@ async function handleAdminAccountingOperations(request, env) {
             type: event.event_type,
             status: event.status === 'failed' ? 'failed' : 'stalled',
             receivedAt: event.received_at,
+            ...paymentRecoveryGuidance(event.status, event.error_message),
           })),
           hasMore: events.length > 50,
         },

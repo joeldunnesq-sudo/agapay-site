@@ -22,6 +22,12 @@ async function loadPaymentExceptions(button) {
       received.dateTime = event.receivedAt;
       received.textContent = new Date(event.receivedAt).toLocaleString();
       item.append(type, state, id, received);
+      if (event.reason) {
+        const guidance = document.createElement('p');
+        guidance.className = 'payment-exception-guidance';
+        guidance.textContent = [event.reason, event.nextStep].filter(Boolean).join(' ');
+        item.append(guidance);
+      }
       list.append(item);
     }
     status.textContent = hasMore

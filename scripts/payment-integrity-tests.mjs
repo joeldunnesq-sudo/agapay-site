@@ -410,7 +410,20 @@ try {
   assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).status, 'completed');
   assert.equal((await deliver(refundEnv, 'evt_refund_retry', 'charge.refunded', charge, connected)).status, 500);
   providerUnavailable = false;
-  assert.equal((await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected)).status, 200);
+  const retries = await Promise.all([
+    deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected),
+    deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected),
+  ]);
+  assert.deepEqual(
+    retries.map((response) => response.status),
+    [200, 200]
+  );
+  const retryResults = await Promise.all(retries.map((response) => response.json()));
+  assert.equal(
+    retryResults.filter((result) => result.duplicate).length,
+    1,
+    'Only one delivery may reclaim a failed event'
+  );
   const duplicate = await deliver(refundEnv, 'evt_refund', 'charge.refunded', charge, connected);
   assert.equal((await duplicate.json()).duplicate, true);
   assert.equal((await loadDonorOfferingById(refundEnv, refundPayment.id)).refundedCents, 400);

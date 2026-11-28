@@ -235,8 +235,22 @@ try {
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
   assert.deepEqual(await response.json(), {
     events: [
-      { id: 'evt_failed', type: 'refund.updated', status: 'failed', receivedAt: recent },
-      { id: 'evt_stalled', type: 'charge.dispute.closed', status: 'stalled', receivedAt: old },
+      {
+        id: 'evt_failed',
+        type: 'refund.updated',
+        status: 'failed',
+        receivedAt: recent,
+        reason: 'Payment processing failed.',
+        nextStep: 'Review the Stripe delivery and AGAPAY logs for this event before resending it.',
+      },
+      {
+        id: 'evt_stalled',
+        type: 'charge.dispute.closed',
+        status: 'stalled',
+        receivedAt: old,
+        reason: 'Processing exceeded the expected time.',
+        nextStep: 'Check the latest delivery in Stripe Workbench before resending it.',
+      },
     ],
     hasMore: false,
   });
