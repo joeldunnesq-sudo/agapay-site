@@ -25,35 +25,70 @@ permissions:
   contents: read
 
 jobs:
+  staging-evidence:
+    name: Verify equivalent staging release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      verified: ${{ steps.proof.outputs.verified }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Verify earlier checks against this exact source tree
+        id: proof
+        run: node scripts/reuse-staging-release-checks.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   quality-checks:
     name: Parallel quality
+    needs: staging-evidence
+    if: always() && !cancelled() && needs.staging-evidence.outputs.verified != 'true'
     uses: ./.github/workflows/quality-suite.yml
 
   quality:
     name: Quality
-    needs: quality-checks
+    needs: [staging-evidence, quality-checks]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Require every quality job to succeed
         env:
           QUALITY_RESULT: ${{ needs.quality-checks.result }}
-        run: test "$QUALITY_RESULT" = success
+          STAGING_VERIFIED: ${{ needs.staging-evidence.outputs.verified }}
+          STAGING_RESULT: ${{ needs.staging-evidence.result }}
+        run: |
+          test "$QUALITY_RESULT" = success ||
+            { test "$QUALITY_RESULT" = skipped && test "$STAGING_RESULT" = success && test "$STAGING_VERIFIED" = true; }
 
   test-suites:
     name: Parallel tests
+    needs: staging-evidence
+    if: always() && !cancelled() && needs.staging-evidence.outputs.verified != 'true'
     uses: ./.github/workflows/test-suite.yml
 
   test:
     name: Test
-    needs: test-suites
+    needs: [staging-evidence, test-suites]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Require every test job to succeed
         env:
           TEST_RESULT: ${{ needs.test-suites.result }}
-        run: test "$TEST_RESULT" = success
+          STAGING_VERIFIED: ${{ needs.staging-evidence.outputs.verified }}
+          STAGING_RESULT: ${{ needs.staging-evidence.result }}
+        run: |
+          test "$TEST_RESULT" = success ||
+            { test "$TEST_RESULT" = skipped && test "$STAGING_RESULT" = success && test "$STAGING_VERIFIED" = true; }
 
   deploy:
     name: Deploy

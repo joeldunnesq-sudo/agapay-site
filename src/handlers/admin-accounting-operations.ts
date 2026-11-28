@@ -150,7 +150,7 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
       if (request.method !== 'POST') return json({ error: 'Method not allowed' }, { headers, status: 405 });
       if (!admin.mfaVerifiedAt) return unauthorized();
       if (!env.AGAPAY_DB) return json({ error: 'Payment exception data is unavailable.' }, { headers, status: 503 });
-      const { owner, nextAction, version } = body as Record<string, unknown>;
+      const { owner, nextAction, version, markReviewed } = body as Record<string, unknown>;
       if (
         typeof owner !== 'string' ||
         owner.length > 80 ||
@@ -158,14 +158,38 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
         nextAction.length > 240 ||
         typeof version !== 'number' ||
         !Number.isSafeInteger(version) ||
-        version < 0
+        version < 0 ||
+        (markReviewed !== undefined && typeof markReviewed !== 'boolean') ||
+        (markReviewed === true && !nextAction.trim())
       )
         return json(
           { error: 'Provide an owner, next action and current assignment version.' },
           { headers, status: 422 }
         );
       const eventId = assignment[1];
-      const cutoff = new Date(Date.now() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
+      const now = new Date();
+      const updatedAt = now.toISOString();
+      const cutoff = new Date(now.getTime() - STRIPE_EVENT_PROCESSING_RETRY_MS).toISOString();
+      const observation = await d1First<{ version: number }>(
+        env,
+        `UPDATE stripe_payment_reconciliation_findings
+          SET owner=?2,next_action=?3,version=version+1,updated_by=?5,updated_at=?6,
+            reviewed_at=CASE WHEN ?7 THEN ?6 ELSE NULL END
+          WHERE event_id=?1 AND version=?4 AND reviewed_at IS NULL
+            AND NOT EXISTS (SELECT 1 FROM stripe_events WHERE id=?1)
+          RETURNING version`,
+        eventId,
+        owner.trim(),
+        nextAction.trim(),
+        version,
+        admin.actor,
+        updatedAt,
+        markReviewed === true ? 1 : 0
+      );
+      if (observation)
+        return json({ ok: true, version: observation.version, reviewed: markReviewed === true }, { headers });
+      if (markReviewed)
+        return json({ error: 'This exception changed. Refresh the queue before editing.' }, { headers, status: 409 });
       const updated = await d1First<{ version: number }>(
         env,
         `INSERT INTO stripe_payment_exception_assignments(event_id,owner,next_action,version,updated_by,updated_at)
@@ -180,7 +204,7 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
         nextAction.trim(),
         version,
         admin.actor,
-        new Date().toISOString(),
+        updatedAt,
         cutoff
       );
       if (!updated)
@@ -207,7 +231,7 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
       const cursor = url.searchParams.get('cursor') || '';
       const [cursorAt = '', cursorId = '', ...cursorRemainder] = cursor.split('~');
       if (
-        (statusFilter && !['failed', 'stalled'].includes(statusFilter)) ||
+        (statusFilter && !['failed', 'stalled', 'missing_delivery'].includes(statusFilter)) ||
         (cursor &&
           (!Number.isFinite(Date.parse(cursorAt)) ||
             !/^evt_[A-Za-z0-9_]{1,100}$/.test(cursorId) ||
@@ -217,8 +241,10 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
       const events = await d1All<{
         id: string;
         event_type: string;
-        status: 'failed' | 'processing';
+        status: 'failed' | 'processing' | 'missing_delivery';
         received_at: string;
+        occurred_at: string | null;
+        object_id: string | null;
         error_message: string | null;
         parish_id: string;
         parish_name: string | null;
@@ -227,16 +253,24 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
         version: number;
       }>(
         env,
-        `WITH eligible AS (
-          SELECT e.id, e.event_type, e.status, e.received_at, e.error_message, e.affected_parish_id AS parish_id,
-            (SELECT r.parish_name FROM registrations r WHERE r.parish_id=e.affected_parish_id
-             ORDER BY r.updated_at DESC LIMIT 1) AS parish_name,
+        `WITH candidates AS (
+          SELECT e.id,e.event_type,e.status,e.received_at,e.error_message,e.affected_parish_id AS parish_id,
+            NULL AS occurred_at,NULL AS object_id,
             COALESCE(a.owner,'') AS owner, COALESCE(a.next_action,'') AS next_action, COALESCE(a.version,0) AS version
           FROM stripe_events e LEFT JOIN stripe_payment_exception_assignments a ON a.event_id=e.id
           WHERE e.id GLOB 'evt_*' AND (e.status='failed' OR (e.status='processing' AND e.received_at<?1))
-            AND (?2='' OR e.status=?2)
-            AND (?3='' OR instr(lower(e.id),?3)>0 OR instr(lower(e.event_type),?3)>0)
-            AND (?4='' OR (e.received_at,e.id) ${compare} (?4,?5))
+          UNION ALL
+          SELECT f.event_id,f.event_type,'missing_delivery',f.discovered_at,NULL,f.parish_id,
+            f.occurred_at,f.object_id,f.owner,f.next_action,f.version
+          FROM stripe_payment_reconciliation_findings f
+          WHERE f.reviewed_at IS NULL AND NOT EXISTS (SELECT 1 FROM stripe_events e WHERE e.id=f.event_id)
+        ), eligible AS (
+          SELECT c.*, (SELECT r.parish_name FROM registrations r WHERE r.parish_id=c.parish_id
+             ORDER BY r.updated_at DESC LIMIT 1) AS parish_name
+          FROM candidates c
+          WHERE (?2='' OR c.status=?2)
+            AND (?3='' OR instr(lower(c.id),?3)>0 OR instr(lower(c.event_type),?3)>0 OR instr(lower(c.object_id),?3)>0)
+            AND (?4='' OR (c.received_at,c.id) ${compare} (?4,?5))
         )
         SELECT * FROM eligible
         WHERE ?6='' OR instr(lower(COALESCE(parish_id,'')),?6)>0 OR instr(lower(COALESCE(parish_name,'')),?6)>0
@@ -253,7 +287,7 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
           events: events.slice(0, 50).map((event) => ({
             id: event.id,
             type: event.event_type,
-            status: event.status === 'failed' ? 'failed' : 'stalled',
+            status: event.status === 'processing' ? 'stalled' : event.status,
             receivedAt: event.received_at,
             parishId: event.parish_id,
             parishName: event.parish_name || '',
@@ -261,8 +295,18 @@ export async function handleAdminAccountingOperations(request: Request, env: Adm
             nextAction: event.next_action,
             assignmentVersion: event.version,
             canAssign: Boolean(admin.mfaVerifiedAt),
-            canRetry: RETRYABLE_PAYMENT_EVENTS.has(event.event_type) && Boolean(admin.mfaVerifiedAt),
-            ...paymentRecoveryGuidance(event.status, event.error_message),
+            canRetry:
+              event.status !== 'missing_delivery' &&
+              RETRYABLE_PAYMENT_EVENTS.has(event.event_type) &&
+              Boolean(admin.mfaVerifiedAt),
+            ...(event.status === 'missing_delivery'
+              ? {
+                  occurredAt: event.occurred_at,
+                  objectId: event.object_id,
+                  reason: 'Stripe reported this event, and AGAPAY has no delivery record.',
+                  nextStep: 'Compare the Stripe record with the related payment or journal before marking it reviewed.',
+                }
+              : paymentRecoveryGuidance(event.status, event.error_message)),
           })),
           hasMore: events.length > 50,
           nextCursor: events.length > 50 ? `${events[49].received_at}~${events[49].id}` : '',

@@ -54,11 +54,12 @@ async function stripeGetRequest(env, path) {
   const body = await response.json();
   return { ok: response.ok, status: response.status, body };
 }
-async function stripeGetConnectedRequest(env, path, stripeAccountId) {
+async function stripeGetConnectedRequest(env, path, stripeAccountId, signal) {
   if (!env.STRIPE_SECRET_KEY) {
     return { ok: false, status: 500, body: { error: { message: 'STRIPE_SECRET_KEY is not configured' } } };
   }
   const response = await fetch(`https://api.stripe.com${path}`, {
+    signal,
     headers: {
       Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
       'Stripe-Account': stripeAccountId,

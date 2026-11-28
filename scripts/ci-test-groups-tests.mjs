@@ -91,17 +91,29 @@ assert.doesNotMatch(qualityWorkflow, /secrets:|continue-on-error:/);
 
 for (const path of ['.github/workflows/deploy.yml', '.github/workflows/deploy-staging.yml']) {
   const caller = read(path);
-  assert.match(caller, /test-suites:\s+name: Parallel tests\s+uses: \.\/\.github\/workflows\/test-suite\.yml/);
-  assert.match(caller, /test:\s+name: Test\s+needs: test-suites\s+if: always\(\)/);
+  assert.match(caller, /uses: \.\/\.github\/workflows\/test-suite\.yml/);
   assert.match(caller, /TEST_RESULT: \$\{\{ needs\.test-suites\.result \}\}/);
-  assert.ok(
-    caller.includes('run: test "$TEST_RESULT" = success'),
-    'Failed, skipped, or cancelled jobs must fail the Test gate'
-  );
+  assert.ok(caller.includes('test "$TEST_RESULT" = success'));
   assert.match(caller, /needs: \[quality, test\]/);
   assert.match(caller, /uses: \.\/\.github\/workflows\/quality-suite\.yml/);
-  assert.match(caller, /quality:\s+name: Quality\s+needs: quality-checks\s+if: always\(\)/);
-  assert.ok(caller.includes('run: test "$QUALITY_RESULT" = success'));
+  assert.ok(caller.includes('test "$QUALITY_RESULT" = success'));
+  if (path.endsWith('deploy-staging.yml')) {
+    assert.match(caller, /test:\s+name: Test\s+needs: test-suites\s+if: always\(\)/);
+    assert.match(caller, /quality:\s+name: Quality\s+needs: quality-checks\s+if: always\(\)/);
+    assert.doesNotMatch(caller, /STAGING_VERIFIED/);
+  } else {
+    assert.match(caller, /test:\s+name: Test\s+needs: \[staging-evidence, test-suites\]\s+if: always\(\)/);
+    assert.match(caller, /quality:\s+name: Quality\s+needs: \[staging-evidence, quality-checks\]\s+if: always\(\)/);
+    for (const result of ['TEST_RESULT', 'QUALITY_RESULT']) {
+      assert.ok(
+        caller.includes(
+          `test "$${result}" = skipped && test "$STAGING_RESULT" = success && test "$STAGING_VERIFIED" = true`
+        ),
+        'Only a successful check of equivalent staging evidence may substitute for a skipped suite'
+      );
+    }
+    assert.match(caller, /run: node scripts\/reuse-staging-release-checks\.mjs/);
+  }
 }
 
 for (const args of [['--ci-group'], ['--ci-group', 'unknown'], ['--ci-group', 'core', 'all']]) {

@@ -369,6 +369,7 @@ export const serverTypeScriptSources = Object.freeze([
   'src/operations/scheduled-heartbeats.ts',
   'src/operations/scheduled-task-observer.ts',
   'src/operations/monitoring.ts',
+  'src/operations/stripe-reconciliation.ts',
   'src/accounting/payables/vendor-reporting.ts',
   'src/accounting/payables/check-printing.ts',
   'src/reports/diocesan-statistical-totals.ts',

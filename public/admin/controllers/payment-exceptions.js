@@ -20,16 +20,28 @@ function paymentExceptionAssignment(event, status) {
   owner.value = event.owner || '';
   ownerLabel.append(owner);
   const actionLabel = document.createElement('label');
-  actionLabel.textContent = 'Next action';
+  const actionPrompt = document.createTextNode('Next action');
   const nextAction = document.createElement('textarea');
   nextAction.rows = 2;
   nextAction.maxLength = 240;
   nextAction.value = event.nextAction || '';
-  actionLabel.append(nextAction);
+  actionLabel.append(actionPrompt, nextAction);
   const save = document.createElement('button');
   save.type = 'submit';
   save.textContent = 'Save follow-up';
-  form.append(ownerLabel, actionLabel, save);
+  form.append(ownerLabel, actionLabel);
+  const reviewed = document.createElement('input');
+  reviewed.type = 'checkbox';
+  if (event.status === 'missing_delivery') {
+    const reviewLabel = document.createElement('label');
+    reviewed.addEventListener('change', () => {
+      actionPrompt.textContent = reviewed.checked ? 'Review outcome' : 'Next action';
+      nextAction.required = reviewed.checked;
+    });
+    reviewLabel.append(reviewed, ' Mark reviewed');
+    form.append(reviewLabel);
+  }
+  form.append(save);
   panel.append(summary, form);
   form.addEventListener('submit', async (submitEvent) => {
     submitEvent.preventDefault();
@@ -46,6 +58,7 @@ function paymentExceptionAssignment(event, status) {
             owner: owner.value,
             nextAction: nextAction.value,
             version: event.assignmentVersion || 0,
+            markReviewed: reviewed.checked,
           }),
         }
       );
@@ -53,6 +66,11 @@ function paymentExceptionAssignment(event, status) {
       if (!response.ok || typeof result.version !== 'number')
         throw new Error(result.error || 'Could not save follow-up.');
       event.assignmentVersion = result.version;
+      if (result.reviewed) {
+        panel.closest('li')?.remove();
+        status.textContent = 'Reconciliation finding marked reviewed.';
+        return;
+      }
       summary.textContent = owner.value.trim() ? `Assigned to ${owner.value.trim()}` : 'Assign follow-up';
       status.textContent = 'Follow-up saved.';
     } catch (error) {
@@ -87,14 +105,21 @@ async function loadPaymentExceptions(button, notice = '') {
       const id = document.createElement('code');
       id.textContent = event.id;
       const state = document.createElement('span');
-      state.textContent = event.status === 'failed' ? 'Failed' : 'Stalled';
+      state.textContent =
+        event.status === 'missing_delivery' ? 'Missing delivery' : event.status === 'failed' ? 'Failed' : 'Stalled';
       const received = document.createElement('time');
-      received.dateTime = event.receivedAt;
-      received.textContent = new Date(event.receivedAt).toLocaleString();
+      received.dateTime = event.occurredAt || event.receivedAt;
+      received.textContent = new Date(received.dateTime).toLocaleString();
       const ageHours = Math.max(0, Math.floor((Date.now() - Date.parse(event.receivedAt)) / 36e5));
       if (ageHours >= 1)
         received.textContent += ageHours >= 24 ? ` · ${Math.floor(ageHours / 24)}d ago` : ` · ${ageHours}h ago`;
       item.append(type, state, id, received);
+      if (event.objectId) {
+        const object = document.createElement('code');
+        object.className = 'payment-exception-guidance';
+        object.textContent = event.objectId;
+        item.append(object);
+      }
       const parish = document.createElement('span');
       parish.className = 'payment-exception-guidance';
       parish.textContent = event.parishName || event.parishId || 'Parish unassigned';
